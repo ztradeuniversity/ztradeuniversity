@@ -1,0 +1,643 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn the difference between demo trading and live trading for beginners. Simple 2025 guide covering psychology, risk, practice, mistakes, and when to move from demo to live trading." />
+  <meta name="keywords" content="demo trading vs live trading, demo account trading, live trading for beginners, forex demo account, beginner live trading, trading psychology, risk management for beginners, demo to live trading, forex trading practice, beginner trading mistakes" />
+  <title>Demo Trading vs Live Trading for Beginners – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/demo-trading-vs-live-trading.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0b1120;
+      --purple:  #5b1ac8;
+      --purple2: #7c3aed;
+      --lime:    #acd400;
+      --white:   #ffffff;
+      --text:    #0d1526;
+      --muted:   #5a6580;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+      --teal:    #0d9488;
+      --teal2:   #2dd4bf;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #030e14 0%, #052030 50%, #052538 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(13,148,136,0.16); border: 1px solid rgba(13,148,136,0.35);
+      color: var(--teal2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--teal2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px; border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(124,58,237,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--teal2); }
+
+    .tip-box { background: #f5f7ff; border-left: 4px solid var(--purple2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .quick-answer {
+      background: linear-gradient(135deg, #f0fdf9 0%, #e0f7f4 100%);
+      border: 1.5px solid rgba(13,148,136,0.18); border-left: 4px solid var(--teal);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Comparison table */
+    .compare-box { background: linear-gradient(145deg, #0d1127 0%, #111a38 100%); border-radius: 16px; padding: 22px 24px 18px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.07); overflow-x: auto; }
+    .compare-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .compare-table { width: 100%; border-collapse: collapse; }
+    .compare-table th { font-size: 11.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 9px 14px; text-align: left; }
+    .compare-table th:nth-child(1) { color: rgba(255,255,255,0.35); width: 36%; }
+    .compare-table th:nth-child(2) { color: #4ade80; background: rgba(74,222,128,0.06); border-radius: 6px 6px 0 0; }
+    .compare-table th:nth-child(3) { color: #fb923c; background: rgba(251,146,60,0.06); border-radius: 6px 6px 0 0; }
+    .compare-table td { font-size: 13.5px; padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.05); vertical-align: top; line-height: 1.5; }
+    .compare-table td:nth-child(1) { color: rgba(255,255,255,0.4); font-size: 12.5px; font-weight: 600; }
+    .compare-table td:nth-child(2) { color: rgba(255,255,255,0.78); background: rgba(74,222,128,0.04); font-weight: 500; }
+    .compare-table td:nth-child(3) { color: rgba(255,255,255,0.78); background: rgba(251,146,60,0.04); font-weight: 500; }
+    .compare-table .pos { color: #4ade80; font-weight: 700; }
+    .compare-table .neg { color: #f87171; font-weight: 700; }
+    .compare-table .warn { color: #fb923c; font-weight: 700; }
+
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(13,148,136,0.38); padding: 16px 20px; background: #f0fdf9; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    .mistakes-list { display: flex; flex-direction: column; gap: 16px; margin: 22px 0; }
+    .mistake-item { display: flex; align-items: flex-start; gap: 14px; }
+    .mistake-num { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .mistake-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
+
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #220d5a 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--teal); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(13,148,136,0.22); transform: translateY(-2px); border-bottom: 1px solid rgba(13,148,136,0.22); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--teal); margin-top: 2px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; } .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; } .article-cta { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; } .footer-copy { order: 0; }
+    }
+    @media (max-width: 480px) { .container { padding: 0 20px; } .article-cta-btns { flex-direction: column; } .compare-box { padding: 18px 16px 14px; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+  <a href="index.html#results" onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+</div>
+
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>›</span>
+        <a href="articles.html">Articles</a><span>›</span>
+        <a href="#" aria-current="page">Demo vs Live Trading</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Beginner Trading
+      </div>
+      <h1>Demo Trading vs <em>Live Trading</em> for Beginners</h1>
+      <p class="article-desc">Every new trader starts on demo — but knowing when to move to live trading, and what to expect when you do, is something most beginners learn the hard way. This guide prepares you before that transition happens.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          9 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Demo Trading vs Live Trading for Beginners" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Demo trading feels safe — and that safety is exactly what makes it a poor substitute for real experience. You can be consistently profitable on a demo account for months, then deposit real money and find yourself making completely different decisions under the weight of actual loss. The transition from demo to live is not a technical step. It is a psychological one.</p>
+
+    <p>This guide breaks down what demo and live trading actually offer, where they genuinely differ, and the checklist every beginner should clear before depositing real capital. Understanding this distinction early can save you significant money and frustration.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p><strong>Demo trading</strong> uses virtual money to practice execution, test strategies, and learn a platform — with zero financial risk. <strong>Live trading</strong> uses real capital, where every decision is influenced by genuine emotions: fear of loss, temptation to over-trade, and reluctance to cut losing positions. Demo results do not reliably predict live performance because the psychological experience is fundamentally different. Beginners should use demo trading to build a consistent strategy and process — then move to a <em>small</em> live account to begin developing emotional discipline under real conditions, long before trading with meaningful capital.</p>
+    </div>
+
+    <h2>What Is Demo Trading?</h2>
+
+    <p>A demo account is a simulated trading environment provided by brokers, funded with virtual money — typically $10,000 to $100,000 in fake capital. All price data is real: you are watching the same charts, the same spreads, and the same market movements as live traders. The only thing missing is consequence.</p>
+
+    <p>Demo trading is genuinely valuable for:</p>
+    <ul>
+      <li><strong>Platform familiarisation</strong> — learning how to place, modify, and close orders without accidental errors on a live account</li>
+      <li><strong>Strategy testing</strong> — verifying that an approach produces consistent results before risking real capital</li>
+      <li><strong>Building a routine</strong> — developing pre-trade analysis habits, journalling, and post-trade review without financial pressure</li>
+      <li><strong>Understanding market mechanics</strong> — watching how prices behave around news, sessions, and key levels in a risk-free environment</li>
+    </ul>
+
+    <p>The limitation of demo trading is not the charts — it is the person looking at them. When there is nothing real at stake, the brain processes decisions differently. You hold losing trades longer because there is no real pain. You take larger risks because there is no real fear. You trade more frequently because there is no real cost to being wrong. None of these behaviours will survive first contact with live capital.</p>
+
+    <h2>What Is Live Trading?</h2>
+
+    <p>Live trading is executing trades with real deposited money on a broker account. Every pip of movement translates directly into real financial gain or loss. This distinction — while obvious — produces profound behavioural changes that no demo account can replicate.</p>
+
+    <p>In live trading, emotions that were completely absent on demo become active participants in every decision. The moment a trade moves against you, doubt appears. The moment a winning trade starts to retrace, the urge to close early and protect the profit begins competing with your original plan. When a stop loss is triggered, the instinct to immediately re-enter and "win it back" can override rational thinking entirely.</p>
+
+    <p>This is not a character flaw — it is the normal human response to financial risk. <a href="trading-psychology-successful-traders.html">Trading psychology</a> is the most underestimated challenge in all of trading, and live trading is where it reveals itself. The goal is not to eliminate these emotions, but to develop enough discipline through exposure that they no longer override your rules.</p>
+
+    <h2>Main Differences Between Demo and Live Trading</h2>
+
+    <div class="compare-box">
+      <div class="compare-label">Demo vs Live — Key Differences</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Demo Account</th>
+            <th>Live Account</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Capital at risk</td>
+            <td class="pos">None — virtual money</td>
+            <td class="warn">Real deposited funds</td>
+          </tr>
+          <tr>
+            <td>Emotional pressure</td>
+            <td class="pos">Minimal or absent</td>
+            <td class="neg">Fear, greed, hesitation</td>
+          </tr>
+          <tr>
+            <td>Execution speed</td>
+            <td class="pos">Instant fill (simulated)</td>
+            <td class="warn">Slippage &amp; requotes possible</td>
+          </tr>
+          <tr>
+            <td>Spread &amp; costs</td>
+            <td class="warn">Often tighter than live</td>
+            <td class="neg">Real spreads, swap fees</td>
+          </tr>
+          <tr>
+            <td>Stop loss discipline</td>
+            <td class="pos">Easy to respect</td>
+            <td class="neg">Frequently moved or removed</td>
+          </tr>
+          <tr>
+            <td>Position sizing</td>
+            <td class="neg">Often unrealistically large</td>
+            <td class="pos">Must match real risk rules</td>
+          </tr>
+          <tr>
+            <td>Learning value</td>
+            <td class="pos">High for skills and systems</td>
+            <td class="pos">High for psychology &amp; discipline</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>One frequently overlooked difference is execution quality. Demo accounts typically fill orders instantly at the quoted price. Live accounts — particularly during high-impact news events on Gold (XAUUSD) or volatile crypto markets — can experience slippage, where your order fills at a worse price than expected. This difference alone can turn a demo-profitable strategy into a live-breakeven one if the strategy relies on precise entries.</p>
+
+    <h2>When Should Beginners Move From Demo to Live?</h2>
+
+    <p>There is no single milestone that makes a trader "ready" for live trading — but there are clear criteria that significantly reduce the risk of a costly early live experience. Do not move to a live account until you can honestly check each of the following:</p>
+
+    <div class="causes-list">
+      <div class="cause-item">
+        <b>You Have a Documented Strategy With a Positive Track Record</b>
+        <p>Not a feeling that you can read charts — an actual written set of rules with at least 30–50 demo trades showing consistent application. You should know your entry criteria, stop loss placement, target logic, and the result of each trade recorded in a journal. A strategy that exists only in your head is not ready for live capital.</p>
+      </div>
+      <div class="cause-item">
+        <b>You Understand Position Sizing and Risk Per Trade</b>
+        <p>Before going live, you must know how to calculate the correct lot size for any trade based on your account balance, stop loss distance, and risk percentage. Review the <a href="forex-leverage-explained-beginners.html">leverage and lot size guide</a> until this calculation is automatic. Risking 1–2% of your account per trade should be the default rule on every live trade from day one.</p>
+      </div>
+      <div class="cause-item">
+        <b>You Have Consistently Respected Your Stop Losses on Demo</b>
+        <p>If you move stop losses, remove them, or close trades manually before they reach the stop on demo — you are not ready. These habits will be significantly worse on live, not better. Respecting your stop loss must become a non-negotiable habit in the zero-stakes environment before it can survive real emotional pressure.</p>
+      </div>
+      <div class="cause-item">
+        <b>Start With a Small Live Account, Not a Large One</b>
+        <p>The purpose of your first live account is not to generate income — it is to experience real emotions at low cost. Deposit an amount you are genuinely comfortable losing entirely. For many beginners, $50–$200 is appropriate. Trade micro lots. The goal is to build psychological resilience under real conditions without material financial damage. Scale up only after months of consistent, disciplined live performance.</p>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Practical Rule</div>
+      <p>If your demo performance drops significantly the moment you switch to live — smaller position sizes, hesitating on valid setups, closing winners too early — that is normal and expected. Stay at a small account size until the emotional gap between demo and live narrows. Rushing to increase account size before emotional discipline is developed is the single most common path to early account loss.</p>
+    </div>
+
+    <h2>Common Beginner Mistakes</h2>
+
+    <div class="mistakes-list">
+
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div>
+          <b>Using Unrealistic Lot Sizes on Demo</b>
+          <p>Trading a $100,000 demo account with 5-lot positions feels exciting — and means nothing. If you plan to fund a live account with $500, your demo practice must use the same proportional lot sizes you will use live. Practising with unrealistic sizes trains habits that become immediately dangerous when real money is at stake.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div>
+          <b>Moving to Live After a Short Winning Streak on Demo</b>
+          <p>Three or five consecutive profitable demo trades is not a strategy — it may be luck, favourable conditions, or survivorship bias. A meaningful demo track record requires at least one to two months of consistent trading across different market conditions: trending, ranging, volatile, and slow. Short winning streaks are the most common false signal that a beginner is "ready."</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div>
+          <b>Depositing Too Much for a First Live Account</b>
+          <p>Depositing $5,000 as a first live account when you have two months of demo experience creates psychological pressure that will almost certainly compromise your decision-making. Start with an amount whose complete loss would not significantly affect your life. The first live account is tuition — not investment capital. Treat it accordingly.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div>
+          <b>Abandoning the Strategy When the First Live Trade Loses</b>
+          <p>A losing trade on a live account feels qualitatively different from a demo loss — even when the setup and result were identical. Many beginners interpret the first live loss as proof their strategy is broken and immediately start experimenting with new approaches. Losing trades are part of any strategy. The response to a loss should be journalling and review — not abandonment.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div>
+          <b>Comparing Live Results Directly to Demo Results</b>
+          <p>Demo results are produced by a different version of you — one with no financial pressure, no emotional interference, and often unrealistic position sizes. Expecting live results to match demo results sets up inevitable disappointment. The correct comparison is not demo profit vs live profit. It is: are you following your rules consistently? That is the only metric that predicts long-term live trading success.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Educational Disclaimer</div>
+      <p>This article is for educational purposes only and does not constitute financial advice. Trading with real capital involves significant risk of loss. Demo success does not guarantee live profitability. Never trade with money you cannot afford to lose, and consider consulting a qualified financial adviser before funding any live trading account.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>beginner-friendly trading guidance</span>, risk management support, and research-based analysis?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for structured education, market analysis, and support for Forex, Gold, and Crypto traders at every stage.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="best-trading-strategy-for-beginners-2025.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Best Trading Strategy for Beginners in 2025</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="trading-psychology-successful-traders.html" class="related-card">
+          <span class="related-cat">Trading Psychology</span>
+          <span class="related-title">Trading Psychology Habits of Successful Traders</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-risk-management-strategy.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Best Risk Management Strategy for Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="forex-leverage-explained-beginners.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">Forex Leverage Explained for Beginners</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the difference between demo trading and live trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Demo trading uses virtual money in a simulated account where no real capital is at risk. Live trading uses real deposited funds where every gain and loss has a genuine financial impact. The charts, spreads, and market prices are real on both — the fundamental difference is the psychological experience. Demo trading removes fear and greed from the equation; live trading introduces them fully. This emotional gap is why consistent demo performance does not guarantee consistent live performance.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How long should I demo trade before going live?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Duration alone is not the right measure — consistency and process matter more. A minimum of one to two months of active demo trading is a reasonable starting point, but the real criteria are: a documented strategy with at least 30–50 recorded trades showing consistent rules application, an understanding of position sizing and risk management, and a habit of respecting stop losses without exception. Once those criteria are met, move to a small live account — not a large one — to begin building real emotional discipline at low financial risk.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Why do traders perform better on demo than live?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The performance gap between demo and live exists because real money activates emotional responses that virtual money does not. On demo, traders comfortably hold trades to target, respect stop losses without hesitation, and take valid setups without second-guessing. On live, fear of loss causes early exits, hesitation on valid entries, stop loss removal on losing trades, and revenge trading after losses. These behaviours are not failures of strategy — they are normal human responses to financial risk that require deliberate training through live experience to manage.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How much money should I start with for live trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">For a first live account, deposit only what you are genuinely comfortable losing entirely — for most beginners, this is between $50 and $300. The purpose of a first live account is not income generation; it is emotional education under real conditions. Trade micro lots, apply the same 1–2% risk-per-trade rule used on demo, and focus on rule-following rather than profit. Scale up only after proving consistent, disciplined performance over several months — not after a few good trades.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Does demo trading work for Gold and Crypto?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — demo accounts for Gold (XAUUSD) and Crypto (BTC, ETH) use real market prices and are valuable for practising strategy and platform execution. However, both markets are significantly more volatile than major forex pairs. Demo trading does not prepare you for the psychological experience of watching a live Gold position move 200 pips against you in minutes during a news release, or seeing a crypto position drop 5% overnight. Starting with a small live account on these markets teaches the emotional tolerance that demo cannot replicate.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Is demo trading useful at all, or should beginners go straight to live?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Demo trading is highly valuable and beginners should absolutely start there — going directly to live without any demo experience is unnecessarily costly. Demo is the right environment to learn platform mechanics, test a strategy's logic, build chart-reading habits, and develop a trading journal routine. What demo cannot teach is emotional discipline under real risk. The optimal path is: thorough demo practice first → small live account second → gradual scaling only after consistent live discipline is demonstrated. Skipping demo wastes real money learning what demo could have taught for free.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+</body>
+</html>

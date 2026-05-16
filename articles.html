@@ -1,0 +1,1800 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Research-based Forex, Gold, Crypto, Risk Management, and Trading Strategy articles for beginners and professional traders — Z Trade University." />
+  <title>Trading Articles & Market Education – Z Trade University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0b1120;
+      --navy2:   #111827;
+      --purple:  #5b1ac8;
+      --purple2: #7c3aed;
+      --purple3: #9f6ef5;
+      --lime:    #acd400;
+      --lime2:   #c6f000;
+      --white:   #ffffff;
+      --text:    #0d1526;
+      --muted:   #5a6580;
+      --border:  rgba(0,0,0,0.07);
+      --radius:  16px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── PAGE HERO ── */
+    .page-hero {
+      padding: 128px 0 72px;
+      background: linear-gradient(145deg, #eceff8 0%, #f3f4fb 50%, #e9ecf7 100%);
+      position: relative; overflow: hidden;
+    }
+    .page-hero-dots { position: absolute; inset: 0; background-image: radial-gradient(rgba(91,26,200,0.06) 1px, transparent 1px); background-size: 34px 34px; pointer-events: none; }
+    .page-hero-blob { position: absolute; top: -100px; right: -80px; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 68%); pointer-events: none; }
+    .page-hero-inner { position: relative; z-index: 2; }
+    .page-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11.5px; font-weight: 700; color: var(--purple2);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .page-hero-eyebrow::before { content: ''; width: 22px; height: 1.5px; background: var(--purple2); border-radius: 1px; flex-shrink: 0; }
+    .page-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(32px, 5vw, 56px); font-weight: 900;
+      color: var(--text); letter-spacing: -2px; line-height: 1.07;
+      margin-bottom: 18px;
+    }
+    .page-hero h1 span { color: var(--purple2); }
+    .page-hero-desc { font-size: 17px; color: var(--muted); max-width: 580px; line-height: 1.72; }
+    .hero-meta { display: flex; align-items: center; gap: 24px; margin-top: 28px; flex-wrap: wrap; }
+    .hero-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .hero-meta-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 3px rgba(172,212,0,0.22); flex-shrink: 0; }
+
+    /* ── CATEGORIES ── */
+    .cats-section { padding: 40px 0 0; background: var(--white); border-bottom: 1px solid var(--border); }
+    .cats-inner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-bottom: 0; overflow-x: auto; scrollbar-width: none; }
+    .cats-inner::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 100px;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      background: #f4f5f9; border: 1.5px solid transparent;
+      cursor: pointer; white-space: nowrap;
+      transition: background .18s, color .18s, border-color .18s, box-shadow .18s;
+      user-select: none;
+    }
+    .cat-pill:hover { background: #eceef8; color: var(--purple2); }
+    .cat-pill.active {
+      background: var(--navy); color: var(--white);
+      border-color: var(--navy);
+      box-shadow: 0 3px 12px rgba(11,17,32,0.2);
+    }
+    .cat-pill .cp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .cats-bar { height: 3px; margin-top: 20px; }
+
+    /* ── ARTICLES SECTION ── */
+    .articles-section { padding: 64px 0 80px; background: #f8f9fd; }
+    .articles-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 36px; flex-wrap: wrap; gap: 12px; }
+    .articles-header h2 { font-family: 'Manrope','Inter',sans-serif; font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
+    .articles-count { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+    .articles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    /* ── ARTICLE CARD ── */
+    .ac {
+      background: var(--white);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s;
+    }
+    .ac:hover { transform: translateY(-6px); box-shadow: 0 18px 44px rgba(0,0,0,0.11); border-color: rgba(91,26,200,0.15); }
+
+    /* Card visual header */
+    .ac-visual {
+      height: 110px; position: relative; overflow: hidden;
+      display: flex; align-items: flex-end; padding: 14px 18px;
+      flex-shrink: 0;
+    }
+    .ac-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.32) 100%); }
+    .ac-visual svg.chart { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .ac-visual-label {
+      position: relative; z-index: 1;
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85);
+      letter-spacing: 1.5px; text-transform: uppercase;
+      background: rgba(255,255,255,0.12); backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 3px 10px; border-radius: 100px;
+    }
+
+    /* Visual colour variants */
+    .v-gold    { background: linear-gradient(135deg, #2a1800 0%, #5c3300 60%, #7a4800 100%); }
+    .v-purple  { background: linear-gradient(135deg, #1a0838 0%, #36148a 100%); }
+    .v-lime    { background: linear-gradient(135deg, #0f2200 0%, #1e4800 100%); }
+    .v-navy    { background: linear-gradient(135deg, #060d1e 0%, #0e224c 100%); }
+    .v-orange  { background: linear-gradient(135deg, #2a0a00 0%, #5c2200 100%); }
+    .v-teal    { background: linear-gradient(135deg, #001820 0%, #003848 100%); }
+    .v-red     { background: linear-gradient(135deg, #1a0208 0%, #3a0612 100%); }
+    .v-indigo  { background: linear-gradient(135deg, #060920 0%, #10174a 100%); }
+    .v-cyan    { background: linear-gradient(135deg, #020e14 0%, #063344 100%); }
+    .v-green   { background: linear-gradient(135deg, #001c0f 0%, #003a1e 100%); }
+    .v-blue    { background: linear-gradient(135deg, #020a1a 0%, #061535 100%); }
+    .v-amber   { background: linear-gradient(135deg, #1c1100 0%, #3a2400 100%); }
+    .v-rose    { background: linear-gradient(135deg, #1a0008 0%, #3a0016 100%); }
+    .v-violet  { background: linear-gradient(135deg, #0a0016 0%, #20003e 100%); }
+
+    .ac-body { padding: 22px 22px 22px; display: flex; flex-direction: column; flex: 1; }
+
+    .ac-cat {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 100px; margin-bottom: 10px;
+      align-self: flex-start;
+    }
+    .ac-cat.c-gold    { background: rgba(245,158,11,0.1);  color: #b45309; }
+    .ac-cat.c-purple  { background: rgba(124,58,237,0.1);  color: var(--purple2); }
+    .ac-cat.c-lime    { background: rgba(172,212,0,0.12);  color: #5a7000; }
+    .ac-cat.c-navy    { background: rgba(11,17,32,0.08);   color: var(--navy); }
+    .ac-cat.c-orange  { background: rgba(234,88,12,0.1);   color: #c2410c; }
+    .ac-cat.c-teal    { background: rgba(15,118,110,0.1);  color: #0f766e; }
+    .ac-cat.c-indigo  { background: rgba(99,102,241,0.1);  color: #4f46e5; }
+    .ac-cat.c-cyan    { background: rgba(6,182,212,0.1);   color: #0891b2; }
+    .ac-cat.c-green   { background: rgba(16,185,129,0.1); color: #059669; }
+    .ac-cat.c-blue    { background: rgba(37,99,235,0.1);  color: #1d4ed8; }
+    .ac-cat.c-amber   { background: rgba(234,179,8,0.1);  color: #a16207; }
+    .ac-cat.c-rose    { background: rgba(244,63,94,0.1);  color: #be123c; }
+    .ac-cat.c-violet  { background: rgba(147,51,234,0.1);  color: #9333ea; }
+
+    .ac-title {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: 17px; font-weight: 800; color: var(--text);
+      letter-spacing: -.4px; line-height: 1.3; margin-bottom: 10px;
+    }
+    .ac-excerpt { font-size: 13.5px; color: var(--muted); line-height: 1.68; flex: 1; }
+    .ac-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .ac-read {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; transition: gap .18s, color .18s;
+    }
+    .ac-read:hover { color: var(--purple); gap: 9px; }
+    .ac-read svg { flex-shrink: 0; }
+    .ac-date { font-size: 11.5px; color: rgba(90,101,128,0.6); font-weight: 500; }
+
+    /* ── LOAD MORE ── */
+    .load-more-wrap { text-align: center; margin-top: 48px; }
+    .btn-load {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 12px 30px; border-radius: 100px;
+      background: var(--white); color: var(--text);
+      font-size: 14px; font-weight: 700;
+      border: 1.5px solid rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      cursor: pointer; text-decoration: none;
+      transition: border-color .2s, box-shadow .2s, transform .2s;
+    }
+    .btn-load:hover { border-color: rgba(91,26,200,0.3); box-shadow: 0 6px 20px rgba(91,26,200,0.12); transform: translateY(-2px); }
+
+    /* ── SOFT CTA ── */
+    .articles-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 45%, #220d5a 100%);
+      padding: 84px 0; position: relative; overflow: hidden;
+    }
+    .articles-cta::before {
+      content: ''; position: absolute; top: -80px; right: -60px;
+      width: 460px; height: 460px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .articles-cta::after {
+      content: ''; position: absolute; bottom: -60px; left: -40px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-layout {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 56px; align-items: center;
+    }
+    .cta-label { font-size: 11.5px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--lime); margin-bottom: 14px; }
+    .cta-heading {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(26px, 3.4vw, 40px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.2px; line-height: 1.1; margin-bottom: 16px;
+    }
+    .cta-heading span { color: var(--lime); }
+    .cta-body { font-size: 15.5px; color: rgba(255,255,255,0.5); line-height: 1.72; max-width: 480px; margin-bottom: 28px; }
+    .cta-contact-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px; }
+    .cta-contact-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: rgba(255,255,255,0.6); }
+    .cta-contact-item strong { color: rgba(255,255,255,0.88); font-weight: 600; }
+    .cta-contact-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cta-contact-icon.wa { background: rgba(37,211,102,0.15); }
+    .cta-contact-icon.em { background: rgba(124,58,237,0.2); }
+    .cta-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .btn-tg-cta {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: #0088cc; color: var(--white);
+      font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 12px;
+      text-decoration: none; box-shadow: 0 4px 16px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-cta:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,136,204,0.48); }
+
+    .btn-wa-cta {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 12px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-wa-cta:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); box-shadow: 0 8px 22px rgba(37,211,102,0.22); }
+
+    /* CTA right panel */
+    .cta-right {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px; padding: 34px 30px; min-width: 240px; text-align: center;
+    }
+    .cta-right-icon {
+      width: 60px; height: 60px; border-radius: 18px;
+      background: linear-gradient(145deg, #5820b8 0%, #8b4cf5 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 22px rgba(91,26,200,0.42);
+    }
+    .cta-right p { font-size: 13px; color: rgba(255,255,255,0.44); line-height: 1.6; }
+    .cta-right strong { display: block; font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 4px; letter-spacing: -.2px; }
+
+    /* ── FOOTER ── */
+    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+    .footer-socials { display: flex; gap: 8px; }
+    .soc-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; transition: background .2s, border-color .2s;
+    }
+    .soc-btn:hover { background: rgba(172,212,0,0.14); border-color: rgba(172,212,0,0.38); }
+    .soc-btn svg { color: rgba(255,255,255,0.5); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98);
+      z-index: 99; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .articles-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-join  { display: none; }
+      .hamburger { display: flex; }
+      .cta-layout { grid-template-columns: 1fr; gap: 36px; }
+      .cta-right  { min-width: auto; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .articles-grid { grid-template-columns: 1fr; }
+      .page-hero { padding: 110px 0 56px; }
+      .articles-section { padding: 48px 0 64px; }
+      .articles-cta { padding: 64px 0; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy  { order: 0; }
+    }
+    @media (max-width: 480px) {
+      .container { padding: 0 20px; }
+      .cta-buttons { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+
+    <div class="hamburger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"          onclick="toggleMenu()">Home</a>
+  <a href="about.html"          onclick="toggleMenu()">About</a>
+  <a href="index.html#results"  onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html"       onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"     onclick="toggleMenu()">Join Now</a>
+</div>
+
+<!-- ── PAGE HERO ── -->
+<section class="page-hero">
+  <div class="page-hero-dots"></div>
+  <div class="page-hero-blob"></div>
+  <div class="container page-hero-inner">
+    <p class="page-hero-eyebrow">Trading Knowledge Base</p>
+    <h1>Trading Articles &amp;<br><span>Market Education</span></h1>
+    <p class="page-hero-desc">Research-based Forex, Gold, Crypto, Risk Management, and Trading Strategy articles designed for beginners and professional traders.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>Forex &amp; Gold Strategies</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>Risk Management</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>Trading Psychology</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>Crypto &amp; Smart Money</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CATEGORY FILTER ── -->
+<nav class="cats-section" aria-label="Article categories">
+  <div class="container">
+    <div class="cats-inner" role="tablist">
+      <button class="cat-pill active" data-cat="all" role="tab" aria-selected="true">
+        <span class="cp-dot" style="background:#7c3aed"></span> All Articles
+      </button>
+      <button class="cat-pill" data-cat="forex-basics" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#0e2048"></span> Forex Basics
+      </button>
+      <button class="cat-pill" data-cat="gold-trading" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#d97706"></span> Gold Trading
+      </button>
+      <button class="cat-pill" data-cat="risk-management" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#5a7000"></span> Risk Management
+      </button>
+      <button class="cat-pill" data-cat="trading-psychology" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#7c3aed"></span> Trading Psychology
+      </button>
+      <button class="cat-pill" data-cat="scalping" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#c2410c"></span> Scalping Strategies
+      </button>
+      <button class="cat-pill" data-cat="smart-money" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#0f1830"></span> Smart Money
+      </button>
+      <button class="cat-pill" data-cat="crypto" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#0f766e"></span> Crypto Trading
+      </button>
+      <button class="cat-pill" data-cat="trading-mistakes" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#dc2626"></span> Trading Mistakes
+      </button>
+      <button class="cat-pill" data-cat="beginner-trading" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#0d9488"></span> Beginner Trading
+      </button>
+      <button class="cat-pill" data-cat="trading-strategy" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#c2410c"></span> Trading Strategy
+      </button>
+      <button class="cat-pill" data-cat="price-action" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#059669"></span> Price Action
+      </button>
+      <button class="cat-pill" data-cat="market-structure" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#1d4ed8"></span> Market Structure
+      </button>
+      <button class="cat-pill" data-cat="fundamental-analysis" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#ca8a04"></span> Fundamental Analysis
+      </button>
+      <button class="cat-pill" data-cat="technical-analysis" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#e11d48"></span> Technical Analysis
+      </button>
+      <button class="cat-pill" data-cat="trading-signals" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#4f46e5"></span> Trading Signals
+      </button>
+      <button class="cat-pill" data-cat="broker-guide" role="tab" aria-selected="false">
+        <span class="cp-dot" style="background:#059669"></span> Broker Guide
+      </button>
+    </div>
+    <div class="cats-bar"></div>
+  </div>
+</nav>
+
+<!-- ── ARTICLES GRID ── -->
+<section class="articles-section">
+  <div class="container">
+    <div class="articles-header">
+      <h2>Featured Articles</h2>
+      <span class="articles-count" id="articleCount">Showing 6 articles</span>
+    </div>
+
+    <div class="articles-grid" id="articlesGrid">
+
+      <!-- Article 1 — Gold Trading -->
+      <article class="ac" data-category="gold-trading" itemscope itemtype="https://schema.org/Article">
+        <div class="ac-visual v-gold">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,85 40,75 80,80 110,60 140,55 175,35 210,30 250,18 290,10 320,8" stroke="rgba(245,158,11,0.55)" stroke-width="2" fill="none"/>
+            <polyline points="0,95 40,88 80,90 110,75 140,70 175,55 210,48 250,38 290,28 320,22" stroke="rgba(245,158,11,0.2)" stroke-width="1.5" fill="none"/>
+            <line x1="110" y1="0" x2="110" y2="110" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="210" y1="0" x2="210" y2="110" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          </svg>
+          <span class="ac-visual-label">Gold Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-gold">Gold Trading</span>
+          <h2 class="ac-title" itemprop="headline">Best Gold Trading Strategy for Beginners in 2025</h2>
+          <p class="ac-excerpt" itemprop="description">Discover the most reliable XAUUSD trading strategies used by professional traders. Learn how to identify key support and resistance levels on Gold and time your entries with confidence.</p>
+          <div class="ac-footer">
+            <a href="gold-trading-strategy-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 2 — Trading Psychology / Forex -->
+      <article class="ac" data-category="trading-psychology">
+        <div class="ac-visual v-purple">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,20 50,18 80,25 110,15 140,22 160,65 180,72 210,80 250,88 290,95 320,100" stroke="rgba(159,110,245,0.55)" stroke-width="2" fill="none"/>
+            <polyline points="0,30 50,28 80,34 110,26 140,32 160,72 180,78 210,86 250,92 290,98 320,104" stroke="rgba(159,110,245,0.2)" stroke-width="1.5" fill="none"/>
+            <circle cx="160" cy="65" r="4" fill="rgba(245,80,80,0.7)"/>
+          </svg>
+          <span class="ac-visual-label">Forex Basics</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-purple">Trading Psychology</span>
+          <h2 class="ac-title">Why 90% of Forex Traders Lose Money — And How Smart Traders Avoid It</h2>
+          <p class="ac-excerpt">Over 70% of retail traders lose money in Forex. This article breaks down the real reasons — from emotional trading to poor risk management — and the exact mindset shifts that separate winners from losers.</p>
+          <div class="ac-footer">
+            <a href="why-forex-traders-lose-money.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 3 — Gold Trading -->
+      <article class="ac" data-category="gold-trading">
+        <div class="ac-visual v-gold">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="55" x2="320" y2="55" stroke="rgba(245,158,11,0.18)" stroke-width="1" stroke-dasharray="6 4"/>
+            <polyline points="0,50 60,52 100,48 140,53 175,50 200,52 220,30 260,28 290,32 320,29" stroke="rgba(245,158,11,0.6)" stroke-width="2" fill="none"/>
+            <polyline points="220,30 220,110" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 3"/>
+            <circle cx="220" cy="30" r="3.5" fill="rgba(245,158,11,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Market Analysis</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-gold">Gold Trading</span>
+          <h2 class="ac-title">XAUUSD Buy or Sell Today? How to Read Gold Direction Like a Pro</h2>
+          <p class="ac-excerpt">A step-by-step framework for analysing Gold on multiple timeframes. Learn to read the higher timeframe bias, identify structure, and find your entry on the lower timeframe with precision.</p>
+          <div class="ac-footer">
+            <a href="xauusd-buy-or-sell-today.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 4 — Risk Management -->
+      <article class="ac" data-category="risk-management">
+        <div class="ac-visual v-lime">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="30" y="40" width="18" height="55" rx="3" fill="rgba(172,212,0,0.35)"/>
+            <rect x="70" y="55" width="18" height="40" rx="3" fill="rgba(172,212,0,0.25)"/>
+            <rect x="110" y="30" width="18" height="65" rx="3" fill="rgba(172,212,0,0.4)"/>
+            <rect x="150" y="50" width="18" height="45" rx="3" fill="rgba(172,212,0,0.3)"/>
+            <rect x="190" y="20" width="18" height="75" rx="3" fill="rgba(172,212,0,0.5)"/>
+            <rect x="230" y="35" width="18" height="60" rx="3" fill="rgba(172,212,0,0.35)"/>
+            <rect x="270" y="15" width="18" height="80" rx="3" fill="rgba(172,212,0,0.55)"/>
+            <line x1="0" y1="95" x2="320" y2="95" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          </svg>
+          <span class="ac-visual-label">Risk Management</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-lime">Risk Management</span>
+          <h2 class="ac-title">How to Start Forex Trading in 2025 (Beginner Step-by-Step Guide)</h2>
+          <p class="ac-excerpt">Proper risk management is the foundation of long-term profitability. Learn the 1-2% rule, position sizing formulas, reward-to-risk ratios, and how to protect your account during losing streaks.</p>
+          <div class="ac-footer">
+            <a href="how-to-start-forex-trading-2025.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 5 — Scalping -->
+      <article class="ac" data-category="scalping">
+        <div class="ac-visual v-orange">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,60 20,40 35,70 50,35 65,65 80,30 95,58 110,28 125,55 140,25 155,52 170,22 185,50 200,20 215,48 230,18 245,45 260,15 275,42 290,12 320,35" stroke="rgba(234,88,12,0.6)" stroke-width="2" fill="none"/>
+            <polyline points="0,70 20,52 35,78 50,48 65,74 80,42 95,66 110,40 125,64 140,36 155,62 170,34 185,60 200,32 215,58 230,30 245,56 260,28 275,54 290,24 320,46" stroke="rgba(234,88,12,0.18)" stroke-width="1.5" fill="none"/>
+          </svg>
+          <span class="ac-visual-label">Scalping</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-orange">Scalping Strategies</span>
+          <h2 class="ac-title">Best Scalping Strategy for Gold (XAUUSD) in 2025</h2>
+          <p class="ac-excerpt">Scalping requires speed, precision, and a battle-tested strategy. This guide covers the top M1 and M5 scalping setups, the best indicators for fast markets, and how to avoid overtrading.</p>
+          <div class="ac-footer">
+            <a href="best-gold-scalping-strategy-2025.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 6 — Trading Psychology -->
+      <article class="ac" data-category="trading-psychology">
+        <div class="ac-visual v-purple">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,90 C40,88 60,70 100,55 C140,40 160,38 200,28 C240,18 280,14 320,10" stroke="rgba(159,110,245,0.6)" stroke-width="2" fill="none"/>
+            <path d="M0,100 C40,97 60,80 100,65 C140,50 160,48 200,38 C240,28 280,24 320,20" stroke="rgba(159,110,245,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="100" cy="55" r="3" fill="rgba(172,212,0,0.8)"/>
+            <circle cx="200" cy="28" r="3" fill="rgba(172,212,0,0.8)"/>
+          </svg>
+          <span class="ac-visual-label">Psychology</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-purple">Trading Psychology</span>
+          <h2 class="ac-title">How Professional Traders Control Emotions and Stay Disciplined</h2>
+          <p class="ac-excerpt">Fear, greed, and revenge trading are the biggest account killers. Learn the mental frameworks, pre-trade routines, and discipline habits that professional traders use to stay consistent under pressure.</p>
+          <div class="ac-footer">
+            <a href="#" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">Coming Soon</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 36 — Trading Strategies Hub -->
+      <article class="ac" data-category="trading-strategies">
+        <div class="ac-visual v-violet">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Hub dot -->
+            <circle cx="160" cy="55" r="5.5" fill="rgba(192,132,252,0.95)"/>
+            <!-- Radiating spokes (dashed) -->
+            <line x1="160" y1="55" x2="62" y2="22" stroke="rgba(192,132,252,0.32)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <line x1="160" y1="55" x2="258" y2="22" stroke="rgba(192,132,252,0.32)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <line x1="160" y1="55" x2="32" y2="55" stroke="rgba(192,132,252,0.32)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <line x1="160" y1="55" x2="288" y2="55" stroke="rgba(192,132,252,0.32)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <line x1="160" y1="55" x2="62" y2="88" stroke="rgba(192,132,252,0.32)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <line x1="160" y1="55" x2="258" y2="88" stroke="rgba(192,132,252,0.32)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <!-- Endpoint dots -->
+            <circle cx="62" cy="22" r="2.5" fill="rgba(192,132,252,0.75)"/>
+            <circle cx="258" cy="22" r="2.5" fill="rgba(192,132,252,0.75)"/>
+            <circle cx="32" cy="55" r="2.5" fill="rgba(192,132,252,0.75)"/>
+            <circle cx="288" cy="55" r="2.5" fill="rgba(192,132,252,0.75)"/>
+            <circle cx="62" cy="88" r="2.5" fill="rgba(192,132,252,0.75)"/>
+            <circle cx="258" cy="88" r="2.5" fill="rgba(192,132,252,0.75)"/>
+            <!-- Labels -->
+            <text x="8"   y="19"  fill="rgba(192,132,252,0.6)" font-size="7" font-family="Inter,sans-serif" font-weight="700">PRICE ACTION</text>
+            <text x="232" y="19"  fill="rgba(192,132,252,0.6)" font-size="7" font-family="Inter,sans-serif" font-weight="700">SMC / ICT</text>
+            <text x="4"   y="53"  fill="rgba(192,132,252,0.6)" font-size="7" font-family="Inter,sans-serif" font-weight="700">SWING</text>
+            <text x="261" y="53"  fill="rgba(192,132,252,0.6)" font-size="7" font-family="Inter,sans-serif" font-weight="700">SCALPING</text>
+            <text x="10"  y="100" fill="rgba(192,132,252,0.6)" font-size="7" font-family="Inter,sans-serif" font-weight="700">BREAKOUT</text>
+            <text x="234" y="100" fill="rgba(192,132,252,0.6)" font-size="7" font-family="Inter,sans-serif" font-weight="700">ELLIOTT WAVE</text>
+          </svg>
+          <span class="ac-visual-label">Trading Strategies</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-violet">Trading Strategies</span>
+          <h2 class="ac-title">Most Popular Trading Strategies Explained for Beginners</h2>
+          <p class="ac-excerpt">Price Action, SMC, ICT, Elliott Wave, VSA, Order Blocks, Fair Value Gaps, Liquidity — every major trading strategy and concept explained clearly in one place, with practical guidance on how to choose the right approach for your style and goals.</p>
+          <div class="ac-footer">
+            <a href="most-popular-trading-strategies-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 35 — Beginner Trading -->
+      <article class="ac" data-category="beginner-trading">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ascending staircase: Plan → Entry → Risk → Journal → Results -->
+            <polyline points="18,92 18,74 72,74 72,56 130,56 130,38 190,38 190,20 310,20" stroke="rgba(45,212,191,0.72)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- Fill under staircase -->
+            <polyline points="18,92 18,74 72,74 72,56 130,56 130,38 190,38 190,20 310,20 310,92" fill="rgba(45,212,191,0.06)"/>
+            <!-- Step labels -->
+            <text x="20" y="89" fill="rgba(45,212,191,0.55)" font-size="7" font-family="Inter,sans-serif" font-weight="700">PLAN</text>
+            <text x="74" y="71" fill="rgba(45,212,191,0.55)" font-size="7" font-family="Inter,sans-serif" font-weight="700">ENTRY</text>
+            <text x="132" y="53" fill="rgba(45,212,191,0.55)" font-size="7" font-family="Inter,sans-serif" font-weight="700">RISK</text>
+            <text x="192" y="35" fill="rgba(45,212,191,0.55)" font-size="7" font-family="Inter,sans-serif" font-weight="700">JOURNAL</text>
+            <!-- Result dot -->
+            <circle cx="310" cy="20" r="5" fill="rgba(45,212,191,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Beginner Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Beginner Trading</span>
+          <h2 class="ac-title">How to Build a Forex Trading Plan</h2>
+          <p class="ac-excerpt">Inconsistent results almost always trace back to the absence of a written plan. Learn the six essential components every trading plan must contain, how to build a daily routine around them, and the risk management rules that protect your account through the learning phase.</p>
+          <div class="ac-footer">
+            <a href="how-to-build-forex-trading-plan.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 34 — Market Structure -->
+      <article class="ac" data-category="market-structure">
+        <div class="ac-visual v-blue">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- HH/HL uptrend structure -->
+            <polyline points="10,95 72,58 100,72 170,38 210,56 236,88 258,62 300,32 318,36" stroke="rgba(96,165,250,0.8)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- HL level (dashed orange — liquidity below) -->
+            <line x1="100" y1="72" x2="240" y2="72" stroke="rgba(251,146,60,0.45)" stroke-width="1" stroke-dasharray="4 3"/>
+            <!-- HH2 level (dashed green — BOS line) -->
+            <line x1="170" y1="38" x2="260" y2="38" stroke="rgba(74,222,128,0.4)" stroke-width="1" stroke-dasharray="4 3"/>
+            <!-- Sweep wick (red) — goes below HL -->
+            <line x1="236" y1="56" x2="236" y2="90" stroke="rgba(248,113,113,0.9)" stroke-width="2"/>
+            <circle cx="236" cy="90" r="3" fill="rgba(248,113,113,0.95)"/>
+            <!-- BOS dot (green) -->
+            <circle cx="300" cy="32" r="4" fill="rgba(74,222,128,0.95)"/>
+            <!-- Labels -->
+            <text x="230" y="103" fill="rgba(248,113,113,0.85)" font-size="7.5" font-family="Inter,sans-serif" font-weight="800">SWEEP</text>
+            <text x="292" y="27" fill="rgba(74,222,128,0.9)" font-size="7.5" font-family="Inter,sans-serif" font-weight="800">BOS</text>
+          </svg>
+          <span class="ac-visual-label">Market Structure</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-blue">Market Structure</span>
+          <h2 class="ac-title">Smart Money Concepts for Beginners</h2>
+          <p class="ac-excerpt">Institutions sweep liquidity before the real move begins. Learn how Smart Money Concepts work in practice — market structure, liquidity sweeps, break of structure, order blocks, and fair value gaps — explained clearly for beginners with Forex, Gold, and Crypto examples.</p>
+          <div class="ac-footer">
+            <a href="smart-money-concepts-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 33 — Trading Psychology -->
+      <article class="ac" data-category="trading-psychology">
+        <div class="ac-visual v-purple">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Divider -->
+            <line x1="160" y1="10" x2="160" y2="100" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3 3"/>
+            <!-- Left: chaotic emotional line (red) -->
+            <polyline points="10,55 30,28 48,72 65,35 80,80 98,22 115,65 135,40 155,58" stroke="rgba(248,113,113,0.7)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+            <!-- Left label -->
+            <text x="82" y="104" fill="rgba(248,113,113,0.55)" font-size="8" font-family="Inter,sans-serif" font-weight="800" text-anchor="middle">EMOTION</text>
+            <!-- Right: smooth controlled line (green) -->
+            <polyline points="168,70 188,62 208,52 228,42 248,32 268,22 295,14" stroke="rgba(167,139,250,0.75)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- Glow fill under smooth line -->
+            <polyline points="168,70 188,62 208,52 228,42 248,32 268,22 295,14 295,100 168,100" fill="rgba(124,58,237,0.07)"/>
+            <!-- Right label -->
+            <text x="232" y="104" fill="rgba(167,139,250,0.6)" font-size="8" font-family="Inter,sans-serif" font-weight="800" text-anchor="middle">DISCIPLINE</text>
+          </svg>
+          <span class="ac-visual-label">Trading Psychology</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-purple">Trading Psychology</span>
+          <h2 class="ac-title">How to Avoid Emotional Trading</h2>
+          <p class="ac-excerpt">Fear, greed, and revenge destroy accounts that good analysis built. Learn what emotional trading looks like in practice, why it consistently overrides even solid strategies, and the concrete systems — written plan, fixed risk, and trading journal — that replace willpower with structure.</p>
+          <div class="ac-footer">
+            <a href="how-to-avoid-emotional-trading.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 32 — Risk Management -->
+      <article class="ac" data-category="risk-management">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background grid lines -->
+            <line x1="60" y1="20" x2="60" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="160" y1="20" x2="160" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="260" y1="20" x2="260" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <!-- Risk bar (small, red) -->
+            <rect x="64" y="66" width="52" height="24" rx="4" fill="rgba(248,113,113,0.18)" stroke="rgba(248,113,113,0.55)" stroke-width="1.2"/>
+            <text x="90" y="82" fill="rgba(248,113,113,0.9)" font-size="9" font-family="Inter,sans-serif" font-weight="800" text-anchor="middle">RISK</text>
+            <!-- Reward bar (larger, green) -->
+            <rect x="168" y="18" width="84" height="72" rx="4" fill="rgba(52,211,153,0.15)" stroke="rgba(52,211,153,0.55)" stroke-width="1.2"/>
+            <text x="210" y="60" fill="rgba(52,211,153,0.9)" font-size="9" font-family="Inter,sans-serif" font-weight="800" text-anchor="middle">REWARD</text>
+            <!-- 1:2 label -->
+            <text x="160" y="12" fill="rgba(94,234,212,0.9)" font-size="11" font-family="Inter,sans-serif" font-weight="900" text-anchor="middle">1 : 2</text>
+            <!-- Connector line -->
+            <line x1="116" y1="78" x2="168" y2="78" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3 2"/>
+            <!-- Dollar labels -->
+            <text x="90" y="58" fill="rgba(248,113,113,0.6)" font-size="8" font-family="Inter,sans-serif" font-weight="700" text-anchor="middle">$50</text>
+            <text x="210" y="10" fill="rgba(52,211,153,0.6)" font-size="8" font-family="Inter,sans-serif" font-weight="700" text-anchor="middle">$100</text>
+          </svg>
+          <span class="ac-visual-label">Risk Management</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Risk Management</span>
+          <h2 class="ac-title">Best Risk Reward Ratio in Forex Trading</h2>
+          <p class="ac-excerpt">A high win rate means nothing if your losses are bigger than your wins. Learn why 1:2 is the recommended starting ratio, how expectancy math works in your favour, and the common mistakes that stop traders from applying risk reward consistently.</p>
+          <div class="ac-footer">
+            <a href="best-risk-reward-ratio-forex-trading.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 31 — Gold Trading -->
+      <article class="ac" data-category="gold-trading">
+        <div class="ac-visual v-gold">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Gold uptrend price line -->
+            <polyline points="0,90 40,82 80,70 110,58 150,44 190,34 230,22 280,14 312,8" stroke="rgba(245,158,11,0.7)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- Glow fill under line -->
+            <polyline points="0,90 40,82 80,70 110,58 150,44 190,34 230,22 280,14 312,8 312,110 0,110" fill="rgba(245,158,11,0.05)"/>
+            <!-- Key level zone -->
+            <line x1="0" y1="58" x2="320" y2="58" stroke="rgba(245,158,11,0.25)" stroke-width="1" stroke-dasharray="4 3"/>
+            <!-- Rejection bounce dot at level -->
+            <circle cx="110" cy="58" r="4.5" fill="rgba(245,158,11,0.9)"/>
+            <!-- Price label -->
+            <text x="228" y="10" fill="rgba(245,158,11,0.7)" font-size="8" font-family="Inter,sans-serif" font-weight="700">XAUUSD</text>
+            <!-- Zone label -->
+            <text x="6" y="54" fill="rgba(245,158,11,0.45)" font-size="7.5" font-family="Inter,sans-serif">Key Level</text>
+          </svg>
+          <span class="ac-visual-label">Gold Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-gold">Gold Trading</span>
+          <h2 class="ac-title">How to Trade Gold (XAUUSD) for Beginners</h2>
+          <p class="ac-excerpt">Gold responds to interest rates, USD strength, inflation, and geopolitical risk — not just candlestick patterns. Learn what actually drives XAUUSD, how to find structure-based entries, how to size positions for gold's higher volatility, and the mistakes beginners make most often.</p>
+          <div class="ac-footer">
+            <a href="how-to-trade-gold-xauusd-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 30 — Beginner Trading -->
+      <article class="ac" data-category="beginner-trading">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Scalping side: many small fast candles (left) -->
+            <rect x="8"  y="46" width="5" height="14" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <rect x="17" y="38" width="5" height="18" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <rect x="26" y="52" width="5" height="12" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <rect x="35" y="40" width="5" height="20" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <rect x="44" y="48" width="5" height="15" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <rect x="53" y="34" width="5" height="22" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <rect x="62" y="44" width="5" height="16" rx="1" fill="rgba(45,212,191,0.28)"/>
+            <text x="22" y="98" fill="rgba(45,212,191,0.6)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">Scalping</text>
+            <!-- VS divider -->
+            <line x1="145" y1="8" x2="145" y2="88" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <text x="133" y="55" fill="rgba(255,255,255,0.28)" font-size="10" font-family="Inter,sans-serif" font-weight="800">VS</text>
+            <!-- Swing side: two wide candles (right) -->
+            <line x1="205" y1="22" x2="205" y2="28" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
+            <rect x="196" y="28" width="18" height="48" rx="1" fill="rgba(45,212,191,0.22)" stroke="rgba(45,212,191,0.55)" stroke-width="1.2"/>
+            <line x1="205" y1="76" x2="205" y2="84" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
+            <line x1="268" y1="14" x2="268" y2="24" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
+            <rect x="259" y="24" width="18" height="52" rx="1" fill="rgba(45,212,191,0.22)" stroke="rgba(45,212,191,0.55)" stroke-width="1.2"/>
+            <line x1="268" y1="76" x2="268" y2="86" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
+            <text x="213" y="98" fill="rgba(45,212,191,0.6)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">Swing</text>
+          </svg>
+          <span class="ac-visual-label">Beginner Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Beginner Trading</span>
+          <h2 class="ac-title">Swing Trading vs Scalping: Which Is Better for Beginners?</h2>
+          <p class="ac-excerpt">Scalping is fast, intense, and heavily penalised by spreads. Swing trading is deliberate, structural, and forgiving enough to actually learn from. Find out which style fits your schedule, personality, and current skill level — and why most beginners benefit from starting with the slower one.</p>
+          <div class="ac-footer">
+            <a href="swing-trading-vs-scalping.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 29 — Price Action -->
+      <article class="ac" data-category="price-action">
+        <div class="ac-visual v-green">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Support zone band -->
+            <rect x="0" y="78" width="320" height="10" fill="rgba(16,185,129,0.1)"/>
+            <line x1="0" y1="78" x2="320" y2="78" stroke="rgba(16,185,129,0.38)" stroke-width="1" stroke-dasharray="4 3"/>
+            <!-- Price descending -->
+            <polyline points="0,28 55,42 105,56 160,70 200,78" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+            <!-- Pin bar / rejection candle at zone -->
+            <line x1="210" y1="56" x2="210" y2="66" stroke="rgba(255,255,255,0.65)" stroke-width="1.5"/>
+            <rect x="205" y="66" width="10" height="8" rx="1" fill="rgba(16,185,129,0.6)" stroke="rgba(52,211,153,0.85)" stroke-width="1.2"/>
+            <line x1="210" y1="74" x2="210" y2="88" stroke="rgba(255,255,255,0.65)" stroke-width="1.5"/>
+            <!-- Entry label -->
+            <text x="196" y="52" fill="rgba(52,211,153,0.85)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">Reject</text>
+            <!-- Price rising after -->
+            <polyline points="222,64 256,48 288,32 312,20" stroke="rgba(52,211,153,0.6)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+            <!-- Zone label -->
+            <text x="4" y="92" fill="rgba(16,185,129,0.6)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">Support Zone</text>
+          </svg>
+          <span class="ac-visual-label">Price Action</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-green">Price Action</span>
+          <h2 class="ac-title">Price Action Trading Strategy for Beginners</h2>
+          <p class="ac-excerpt">Indicators show you what price already did. Price action shows you what the market is doing right now. Learn how to identify market structure, mark key support and resistance zones, read rejection candles, and enter high-probability setups — without a single indicator.</p>
+          <div class="ac-footer">
+            <a href="price-action-trading-strategy-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 28 — Risk Management -->
+      <article class="ac" data-category="risk-management">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Price line rising -->
+            <polyline points="0,85 50,72 90,76 130,55 170,60 210,40 260,44 300,28" stroke="rgba(94,234,212,0.55)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- Entry dot -->
+            <circle cx="90" cy="76" r="4" fill="rgba(94,234,212,0.9)"/>
+            <text x="94" y="73" fill="rgba(94,234,212,0.75)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">Entry</text>
+            <!-- Stop Loss line (below entry) -->
+            <line x1="90" y1="90" x2="300" y2="90" stroke="rgba(248,113,113,0.45)" stroke-width="1.2" stroke-dasharray="4 3"/>
+            <text x="8" y="93" fill="rgba(248,113,113,0.7)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">SL</text>
+            <!-- Take Profit line (above) -->
+            <line x1="90" y1="24" x2="300" y2="24" stroke="rgba(74,222,128,0.45)" stroke-width="1.2" stroke-dasharray="4 3"/>
+            <text x="8" y="27" fill="rgba(74,222,128,0.7)" font-size="7.5" font-family="Inter,sans-serif" font-weight="700">TP</text>
+            <!-- TP hit dot -->
+            <circle cx="260" cy="24" r="4" fill="rgba(74,222,128,0.85)"/>
+          </svg>
+          <span class="ac-visual-label">Risk Management</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Risk Management</span>
+          <h2 class="ac-title">How to Use Stop Loss and Take Profit Properly</h2>
+          <p class="ac-excerpt">Most beginners set stop losses too tight, move them emotionally, and exit winning trades too early. Learn how to place stop loss and take profit at structural levels, maintain a minimum 1:2 risk-to-reward ratio, and use trailing stops — with Forex, Gold, and Crypto examples.</p>
+          <div class="ac-footer">
+            <a href="how-to-use-stop-loss-and-take-profit.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 22 — Trading Psychology -->
+      <article class="ac" data-category="trading-psychology">
+        <div class="ac-visual v-purple">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Equity curve line -->
+            <polyline points="0,88 48,72 88,80 132,52 168,60 212,36 260,44 300,28" stroke="rgba(159,110,245,0.6)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- Journal annotation dots -->
+            <circle cx="48"  cy="72" r="4" fill="rgba(172,212,0,0.85)"/>
+            <circle cx="132" cy="52" r="4" fill="rgba(172,212,0,0.85)"/>
+            <circle cx="212" cy="36" r="4" fill="rgba(172,212,0,0.85)"/>
+            <circle cx="300" cy="28" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <!-- Vertical dashed ticks at annotation points -->
+            <line x1="48"  y1="72" x2="48"  y2="58" stroke="rgba(172,212,0,0.4)" stroke-width="1" stroke-dasharray="3 2"/>
+            <line x1="132" y1="52" x2="132" y2="38" stroke="rgba(172,212,0,0.4)" stroke-width="1" stroke-dasharray="3 2"/>
+            <line x1="212" y1="36" x2="212" y2="22" stroke="rgba(172,212,0,0.4)" stroke-width="1" stroke-dasharray="3 2"/>
+          </svg>
+          <span class="ac-visual-label">Trading Psychology</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-purple">Trading Psychology</span>
+          <h2 class="ac-title">Trading Journal for Beginners: How to Track and Improve Your Trades</h2>
+          <p class="ac-excerpt">Most beginners repeat the same mistakes for months without noticing — because they never write them down. Learn what to record in a trading journal, how to review it weekly, and how honest self-tracking builds the discipline that no strategy alone can provide.</p>
+          <div class="ac-footer">
+            <a href="trading-journal-for-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 21 — Beginner Trading -->
+      <article class="ac" data-category="beginner-trading">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Demo line (smooth, ideal) -->
+            <polyline points="0,85 45,65 90,45 135,30 180,18 230,10 280,6 320,4" stroke="rgba(45,212,191,0.55)" stroke-width="1.8" fill="none" stroke-dasharray="7 4" stroke-linejoin="round"/>
+            <!-- Live line (realistic, volatile) -->
+            <polyline points="0,85 38,72 65,82 95,60 118,74 148,52 175,66 210,40 248,55 280,32 320,38" stroke="rgba(45,212,191,0.8)" stroke-width="2.2" fill="none" stroke-linejoin="round"/>
+            <!-- Labels -->
+            <text x="242" y="9"  fill="rgba(45,212,191,0.5)"  font-size="8.5" font-family="Inter,sans-serif" font-weight="600">Demo</text>
+            <text x="284" y="35" fill="rgba(45,212,191,0.85)" font-size="8.5" font-family="Inter,sans-serif" font-weight="700">Live</text>
+          </svg>
+          <span class="ac-visual-label">Beginner Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Beginner Trading</span>
+          <h2 class="ac-title">Demo Trading vs Live Trading for Beginners</h2>
+          <p class="ac-excerpt">Demo success does not guarantee live results. Discover the real psychological and practical differences between demo and live trading, what to prepare before depositing real capital, and how to make the transition without blowing your first account.</p>
+          <div class="ac-footer">
+            <a href="demo-trading-vs-live-trading.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 26 — Technical Analysis -->
+      <article class="ac" data-category="technical-analysis">
+        <div class="ac-visual v-rose">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Price line (jagged) -->
+            <polyline points="0,80 30,68 55,74 85,54 110,60 140,42 168,50 198,34 228,40 265,26 305,30" stroke="rgba(253,164,175,0.55)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+            <!-- Moving average (smoother) -->
+            <polyline points="0,84 45,72 90,62 135,50 180,41 225,32 280,24 320,18" stroke="rgba(253,200,100,0.72)" stroke-width="2.2" fill="none" stroke-linejoin="round"/>
+            <!-- MA label -->
+            <text x="268" y="15" fill="rgba(253,200,100,0.82)" font-size="8" font-family="Inter,sans-serif" font-weight="700">50 MA</text>
+            <!-- RSI divider -->
+            <line x1="0" y1="93" x2="320" y2="93" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <!-- RSI line -->
+            <polyline points="0,102 40,98 80,104 120,96 160,100 200,94 245,101 290,97 320,99" stroke="rgba(253,164,175,0.42)" stroke-width="1.5" fill="none"/>
+            <text x="8" y="108" fill="rgba(253,164,175,0.45)" font-size="7" font-family="Inter,sans-serif">RSI</text>
+          </svg>
+          <span class="ac-visual-label">Technical Analysis</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-rose">Technical Analysis</span>
+          <h2 class="ac-title">Best Indicators for Forex and Gold Trading Beginners</h2>
+          <p class="ac-excerpt">Most beginners add too many indicators and wait for all of them to agree — by which time the move is over. Learn which four indicators actually matter, how to combine them with price action, and the mistakes that turn useful tools into expensive noise.</p>
+          <div class="ac-footer">
+            <a href="best-indicators-forex-gold-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 25 — Fundamental Analysis -->
+      <article class="ac" data-category="fundamental-analysis">
+        <div class="ac-visual v-amber">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Pre-CPI calm -->
+            <polyline points="0,72 55,72 88,72" stroke="rgba(253,224,71,0.3)" stroke-width="1.5" fill="none"/>
+            <!-- CPI spike -->
+            <polyline points="88,72 100,24 112,90 125,52 140,68" stroke="rgba(253,224,71,0.58)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+            <!-- CPI dot -->
+            <circle cx="88" cy="72" r="4.5" fill="rgba(248,113,113,0.88)"/>
+            <line x1="88" y1="72" x2="88" y2="16" stroke="rgba(248,113,113,0.22)" stroke-width="1" stroke-dasharray="3 2"/>
+            <text x="72" y="12" fill="rgba(248,113,113,0.8)" font-size="8" font-family="Inter,sans-serif" font-weight="700">CPI</text>
+            <!-- Brief calm between -->
+            <polyline points="140,68 172,66" stroke="rgba(253,224,71,0.3)" stroke-width="1.5" fill="none"/>
+            <!-- FOMC spike and trend -->
+            <polyline points="172,66 184,14 198,96 214,36 232,56 258,46 292,38 320,30" stroke="rgba(253,224,71,0.65)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- FOMC dot -->
+            <circle cx="172" cy="66" r="4.5" fill="rgba(248,113,113,0.88)"/>
+            <line x1="172" y1="66" x2="172" y2="16" stroke="rgba(248,113,113,0.22)" stroke-width="1" stroke-dasharray="3 2"/>
+            <text x="155" y="12" fill="rgba(248,113,113,0.8)" font-size="8" font-family="Inter,sans-serif" font-weight="700">FOMC</text>
+          </svg>
+          <span class="ac-visual-label">Fundamental Analysis</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-amber">Fundamental Analysis</span>
+          <h2 class="ac-title">FOMC and CPI Gold Trading Guide for Beginners</h2>
+          <p class="ac-excerpt">FOMC decisions and CPI data are the two events that move Gold harder and faster than anything else on the calendar. Learn the logic behind each reaction, how to read hawkish vs dovish signals, and exactly when to trade — and when to stay flat.</p>
+          <div class="ac-footer">
+            <a href="fomc-cpi-gold-trading-guide.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 24 — Fundamental Analysis -->
+      <article class="ac" data-category="fundamental-analysis">
+        <div class="ac-visual v-amber">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Pre-news calm line -->
+            <polyline points="0,68 55,68 100,68" stroke="rgba(253,224,71,0.35)" stroke-width="1.5" fill="none"/>
+            <!-- News spike and post-news volatility settling -->
+            <polyline points="100,68 114,20 128,92 142,38 158,72 175,52 198,60 230,54 275,50 320,46" stroke="rgba(253,224,71,0.68)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- News event marker dot -->
+            <circle cx="100" cy="68" r="5.5" fill="rgba(248,113,113,0.9)"/>
+            <!-- Vertical dashed line at news event -->
+            <line x1="100" y1="68" x2="100" y2="14" stroke="rgba(248,113,113,0.28)" stroke-width="1" stroke-dasharray="3 2"/>
+            <!-- "NEWS" label -->
+            <text x="84" y="11" fill="rgba(248,113,113,0.82)" font-size="8.5" font-family="Inter,sans-serif" font-weight="700">NEWS</text>
+            <!-- Calm zone label -->
+            <text x="8" y="62" fill="rgba(253,224,71,0.4)" font-size="7.5" font-family="Inter,sans-serif">Calm</text>
+          </svg>
+          <span class="ac-visual-label">Fundamental Analysis</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-amber">Fundamental Analysis</span>
+          <h2 class="ac-title">How to Read Forex News for Beginners</h2>
+          <p class="ac-excerpt">Most price spikes in Forex are not random — they are scheduled. Learn how to use an economic calendar, understand NFP, CPI, and interest rate decisions, and manage your trades around high-impact news events before they catch you off guard.</p>
+          <div class="ac-footer">
+            <a href="how-to-read-forex-news-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 27 — Forex Basics -->
+      <article class="ac" data-category="forex-basics">
+        <div class="ac-visual v-navy">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Daily candles (large) -->
+            <rect x="10" y="18" width="11" height="56" rx="1" fill="rgba(147,197,253,0.2)"/>
+            <line x1="15.5" y1="10" x2="15.5" y2="80" stroke="rgba(147,197,253,0.38)" stroke-width="1"/>
+            <rect x="30" y="28" width="11" height="40" rx="1" fill="rgba(147,197,253,0.2)"/>
+            <line x1="35.5" y1="20" x2="35.5" y2="74" stroke="rgba(147,197,253,0.38)" stroke-width="1"/>
+            <text x="8" y="96" fill="rgba(147,197,253,0.62)" font-size="8" font-family="Inter,sans-serif" font-weight="700">Daily</text>
+            <!-- H4 candles (medium) -->
+            <rect x="92" y="32" width="8" height="30" rx="1" fill="rgba(74,222,128,0.22)"/>
+            <line x1="96" y1="24" x2="96" y2="68" stroke="rgba(74,222,128,0.38)" stroke-width="1"/>
+            <rect x="106" y="26" width="8" height="24" rx="1" fill="rgba(74,222,128,0.22)"/>
+            <rect x="120" y="36" width="8" height="20" rx="1" fill="rgba(74,222,128,0.22)"/>
+            <text x="90" y="96" fill="rgba(74,222,128,0.62)" font-size="8" font-family="Inter,sans-serif" font-weight="700">H4</text>
+            <!-- H1 candles (small, many) -->
+            <rect x="178" y="46" width="5" height="14" rx="1" fill="rgba(253,164,175,0.28)"/>
+            <rect x="187" y="38" width="5" height="20" rx="1" fill="rgba(253,164,175,0.28)"/>
+            <rect x="196" y="42" width="5" height="16" rx="1" fill="rgba(253,164,175,0.28)"/>
+            <rect x="205" y="34" width="5" height="22" rx="1" fill="rgba(253,164,175,0.28)"/>
+            <rect x="214" y="40" width="5" height="17" rx="1" fill="rgba(253,164,175,0.28)"/>
+            <rect x="223" y="30" width="5" height="24" rx="1" fill="rgba(253,164,175,0.28)"/>
+            <text x="178" y="96" fill="rgba(253,164,175,0.58)" font-size="8" font-family="Inter,sans-serif" font-weight="700">H1</text>
+          </svg>
+          <span class="ac-visual-label">Forex Basics</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-navy">Forex Basics</span>
+          <h2 class="ac-title">Best Timeframe for Forex Trading Beginners</h2>
+          <p class="ac-excerpt">M1 and M5 are too fast for most beginners — too much noise, too many false signals, too little time to think. Learn which timeframes give beginners the best conditions, how to combine H4 and H1 for higher-probability setups, and why multi-timeframe analysis is the foundation of consistent trading.</p>
+          <div class="ac-footer">
+            <a href="best-timeframe-for-forex-trading-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 23 — Forex Basics -->
+      <article class="ac" data-category="forex-basics">
+        <div class="ac-visual v-navy">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Divider rows -->
+            <line x1="0" y1="40" x2="320" y2="40" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="74" x2="320" y2="74" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <!-- EUR/USD — smooth, climbing -->
+            <polyline points="62,30 110,26 160,22 210,17 265,13 310,10" stroke="rgba(74,222,128,0.7)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <circle cx="310" cy="10" r="3" fill="rgba(74,222,128,0.9)"/>
+            <!-- USD/JPY — steady, slightly less smooth -->
+            <polyline points="62,62 110,58 160,62 210,54 265,56 310,48" stroke="rgba(172,212,0,0.6)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <circle cx="310" cy="48" r="3" fill="rgba(172,212,0,0.8)"/>
+            <!-- GBP/USD — more volatile -->
+            <polyline points="62,96 95,82 124,94 152,76 180,88 210,68 240,80 270,62 310,72" stroke="rgba(147,197,253,0.5)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+            <!-- Labels -->
+            <text x="8" y="22" fill="rgba(74,222,128,0.8)" font-size="8" font-family="Inter,sans-serif" font-weight="700">EUR/USD</text>
+            <text x="8" y="56" fill="rgba(172,212,0,0.75)" font-size="8" font-family="Inter,sans-serif" font-weight="700">USD/JPY</text>
+            <text x="8" y="90" fill="rgba(147,197,253,0.65)" font-size="8" font-family="Inter,sans-serif" font-weight="700">GBP/USD</text>
+          </svg>
+          <span class="ac-visual-label">Forex Basics</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-navy">Forex Basics</span>
+          <h2 class="ac-title">Best Forex Pairs for Beginners in 2025</h2>
+          <p class="ac-excerpt">Not all forex pairs are equal. EURUSD, USDJPY, and GBPUSD offer the tightest spreads, deepest liquidity, and most reliable setups for new traders. Learn which pairs to start with, why exotic pairs destroy beginner accounts, and how volatility affects your risk management.</p>
+          <div class="ac-footer">
+            <a href="best-forex-pairs-for-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 20 — Forex Basics -->
+      <article class="ac" data-category="forex-basics">
+        <div class="ac-visual v-navy">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid lines -->
+            <line x1="0" y1="36" x2="320" y2="36" stroke="rgba(147,197,253,0.08)" stroke-width="1"/>
+            <line x1="0" y1="72" x2="320" y2="72" stroke="rgba(147,197,253,0.08)" stroke-width="1"/>
+            <!-- Low leverage line (steady climb) -->
+            <polyline points="0,90 55,82 110,72 165,58 220,44 280,28 320,20" stroke="rgba(74,222,128,0.6)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- High leverage line (sharp spike then crash) -->
+            <polyline points="0,90 40,70 70,35 95,18 115,48 140,80 165,95 190,100" stroke="rgba(248,113,113,0.6)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- Labels -->
+            <text x="284" y="17" fill="rgba(74,222,128,0.75)" font-size="8.5" font-family="Inter,sans-serif" font-weight="700">Low risk</text>
+            <text x="152" y="108" fill="rgba(248,113,113,0.7)" font-size="8.5" font-family="Inter,sans-serif" font-weight="700">Overleveraged</text>
+          </svg>
+          <span class="ac-visual-label">Forex Basics</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-navy">Forex Basics</span>
+          <h2 class="ac-title">Forex Leverage Explained for Beginners</h2>
+          <p class="ac-excerpt">Leverage increases buying power — but it amplifies losses just as fast as profits. Learn how leverage, margin, and lot size interact, why overleveraging destroys beginner accounts, and how to use leverage safely with proper risk management.</p>
+          <div class="ac-footer">
+            <a href="forex-leverage-explained-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 19 — Trading Strategy -->
+      <article class="ac" data-category="trading-strategy">
+        <div class="ac-visual v-orange">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,98 52,58 84,72 148,30 186,48 258,16 308,24" stroke="rgba(251,146,60,0.65)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <polyline points="0,104 52,64 84,78 148,36 186,54 258,22 308,30" stroke="rgba(251,146,60,0.18)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+            <circle cx="52"  cy="58" r="3.5" fill="rgba(251,146,60,0.9)"/>
+            <circle cx="148" cy="30" r="3.5" fill="rgba(251,146,60,0.9)"/>
+            <circle cx="258" cy="16" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="84"  cy="72" r="3"   fill="rgba(251,146,60,0.45)"/>
+            <circle cx="186" cy="48" r="3"   fill="rgba(251,146,60,0.45)"/>
+          </svg>
+          <span class="ac-visual-label">Trading Strategy</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-orange">Trading Strategy</span>
+          <h2 class="ac-title">Trend Trading Strategy for Beginners</h2>
+          <p class="ac-excerpt">Trade with the market's dominant direction, not against it. Learn how to identify uptrends and downtrends using Higher Highs and Higher Lows, enter on pullbacks, place structural stop losses, and build a consistent trend-following approach.</p>
+          <div class="ac-footer">
+            <a href="trend-trading-strategy-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 18 — Trading Strategy -->
+      <article class="ac" data-category="trading-strategy">
+        <div class="ac-visual v-orange">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Resistance line -->
+            <line x1="0" y1="62" x2="320" y2="62" stroke="rgba(251,146,60,0.4)" stroke-width="1.5" stroke-dasharray="8 4"/>
+            <!-- Range candles below -->
+            <rect x="20" y="72" width="14" height="22" fill="rgba(251,146,60,0.3)" rx="1"/>
+            <rect x="46" y="68" width="14" height="20" fill="rgba(251,146,60,0.25)" rx="1"/>
+            <rect x="72" y="70" width="14" height="22" fill="rgba(251,146,60,0.3)" rx="1"/>
+            <!-- Breakout candle -->
+            <rect x="100" y="28" width="16" height="40" fill="rgba(74,222,128,0.75)" rx="1.5"/>
+            <line x1="108" y1="22" x2="108" y2="74" stroke="rgba(74,222,128,0.5)" stroke-width="1.5"/>
+            <!-- Continuation -->
+            <rect x="130" y="20" width="14" height="20" fill="rgba(74,222,128,0.65)" rx="1.5"/>
+            <rect x="158" y="12" width="14" height="18" fill="rgba(74,222,128,0.7)" rx="1.5"/>
+            <rect x="186" y="6" width="14" height="16" fill="rgba(74,222,128,0.75)" rx="1.5"/>
+            <!-- Trend arrow -->
+            <line x1="220" y1="38" x2="300" y2="10" stroke="rgba(172,212,0,0.5)" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <circle cx="108" cy="28" r="3.5" fill="rgba(172,212,0,0.85)"/>
+          </svg>
+          <span class="ac-visual-label">Trading Strategy</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-orange">Trading Strategy</span>
+          <h2 class="ac-title">Breakout Trading Strategy for Beginners</h2>
+          <p class="ac-excerpt">Learn how to trade breakouts correctly in Forex, Gold, and Crypto. Covers real vs false breakouts, candle close confirmation, retest entry, stop loss placement, and the mistakes that cost most beginners money.</p>
+          <div class="ac-footer">
+            <a href="breakout-trading-strategy-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 17 — Market Structure -->
+      <article class="ac" data-category="market-structure">
+        <div class="ac-visual v-blue">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,95 55,55 90,72 155,28 195,48 265,15 310,25" stroke="rgba(96,165,250,0.65)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <polyline points="0,102 55,62 90,79 155,35 195,55 265,22 310,32" stroke="rgba(96,165,250,0.18)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+            <circle cx="155" cy="28" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="265" cy="15" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Market Structure</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-blue">Market Structure</span>
+          <h2 class="ac-title">How to Identify Market Structure in Forex, Gold, and Crypto Trading</h2>
+          <p class="ac-excerpt">Higher highs, higher lows, break of structure — explained with diagrams. Learn how to read the sequence of swings that defines trend direction before making any trading decision.</p>
+          <div class="ac-footer">
+            <a href="market-structure-trading-guide.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 16 — Price Action -->
+      <article class="ac" data-category="price-action">
+        <div class="ac-visual v-green">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Bearish candles -->
+            <line x1="28" y1="18" x2="28" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <rect x="22" y="24" width="12" height="28" rx="1" fill="rgba(185,28,28,0.7)" stroke="rgba(248,113,113,0.6)" stroke-width="1"/>
+            <line x1="28" y1="52" x2="28" y2="60" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <line x1="60" y1="28" x2="60" y2="36" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <rect x="54" y="36" width="12" height="30" rx="1" fill="rgba(185,28,28,0.7)" stroke="rgba(248,113,113,0.6)" stroke-width="1"/>
+            <line x1="60" y1="66" x2="60" y2="74" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <!-- Pin bar -->
+            <line x1="94" y1="88" x2="94" y2="58" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+            <rect x="88" y="52" width="12" height="10" rx="1" fill="rgba(22,101,52,0.9)" stroke="rgba(74,222,128,0.8)" stroke-width="1.2"/>
+            <line x1="94" y1="52" x2="94" y2="46" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+            <!-- Bullish candles -->
+            <line x1="128" y1="42" x2="128" y2="52" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <rect x="122" y="28" width="12" height="28" rx="1" fill="rgba(22,101,52,0.8)" stroke="rgba(74,222,128,0.7)" stroke-width="1"/>
+            <line x1="128" y1="56" x2="128" y2="64" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <line x1="162" y1="22" x2="162" y2="28" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <rect x="156" y="12" width="12" height="20" rx="1" fill="rgba(22,101,52,0.8)" stroke="rgba(74,222,128,0.7)" stroke-width="1"/>
+            <line x1="162" y1="32" x2="162" y2="38" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <!-- Support zone line -->
+            <line x1="0" y1="88" x2="320" y2="88" stroke="rgba(52,211,153,0.3)" stroke-width="1" stroke-dasharray="4 3"/>
+            <!-- Lime dots -->
+            <circle cx="94" cy="88" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="162" cy="12" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Price Action</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-green">Price Action</span>
+          <h2 class="ac-title">How to Read Candlestick Patterns for Beginners</h2>
+          <p class="ac-excerpt">Pin bars, engulfing candles, doji patterns, and rejection wicks — explained with diagrams. Learn what each candlestick is telling you and how context turns a pattern into a valid trading signal.</p>
+          <div class="ac-footer">
+            <a href="candlestick-patterns-for-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 15 — Trading Strategy -->
+      <article class="ac" data-category="trading-strategy">
+        <div class="ac-visual v-orange">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="38" x2="320" y2="38" stroke="rgba(251,146,60,0.35)" stroke-width="1.2" stroke-dasharray="5 4"/>
+            <line x1="0" y1="78" x2="320" y2="78" stroke="rgba(251,146,60,0.35)" stroke-width="1.2" stroke-dasharray="5 4"/>
+            <polyline points="0,58 50,58 50,28 80,28 115,28 115,58 160,58 160,48 200,48 200,28 240,28 240,58 280,58 280,48 320,48" stroke="rgba(251,146,60,0.7)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <circle cx="115" cy="28" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="240" cy="28" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Trading Strategy</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-orange">Trading Strategy</span>
+          <h2 class="ac-title">Support and Resistance Trading Strategy for Beginners</h2>
+          <p class="ac-excerpt">How to draw zones correctly, why exact lines fail, and how to build a complete entry strategy around support and resistance — with Forex, Gold, and Crypto examples.</p>
+          <div class="ac-footer">
+            <a href="support-and-resistance-trading-strategy.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 14 — Beginner Trading -->
+      <article class="ac" data-category="beginner-trading">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,88 60,88 60,70 60,70 120,70 120,50 120,50 190,50 190,32 190,32 260,32 260,18 320,18" stroke="rgba(45,212,191,0.6)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <polyline points="0,95 60,95 60,77 120,77 120,57 190,57 190,39 260,39 260,25 320,25" stroke="rgba(45,212,191,0.18)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+            <circle cx="60"  cy="70" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="190" cy="32" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="320" cy="18" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Beginner Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Beginner Trading</span>
+          <h2 class="ac-title">Best Trading Strategy for Beginners in 2025</h2>
+          <p class="ac-excerpt">A simple 5-step framework for Forex, Gold, and Crypto — covering trend identification, support and resistance zones, entry confirmation, and risk management. No complex indicators required.</p>
+          <div class="ac-footer">
+            <a href="best-trading-strategy-for-beginners-2025.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 13 — Gold Trading -->
+      <article class="ac" data-category="gold-trading">
+        <div class="ac-visual v-gold">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,85 40,80 80,75 100,68 120,62 150,50 170,44 200,38 230,30 260,22 290,18 320,14" stroke="rgba(245,158,11,0.65)" stroke-width="2" fill="none"/>
+            <polyline points="0,92 40,87 80,82 100,75 120,70 150,58 170,52 200,46 230,38 260,30 290,26 320,22" stroke="rgba(245,158,11,0.2)" stroke-width="1.5" fill="none"/>
+            <circle cx="150" cy="50" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="290" cy="18" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Gold Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-gold">Gold Trading</span>
+          <h2 class="ac-title">Best Time to Trade Gold (XAUUSD) for Beginners</h2>
+          <p class="ac-excerpt">London session, New York overlap, spread conditions, and session timing explained. Discover exactly when XAUUSD moves with reliable liquidity — and which hours to avoid completely.</p>
+          <div class="ac-footer">
+            <a href="best-time-to-trade-gold-xauusd.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 12 — Trading Psychology -->
+      <article class="ac" data-category="trading-psychology">
+        <div class="ac-visual v-purple">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,70 40,65 80,72 110,55 140,60 170,42 200,50 230,35 270,40 310,28 320,25" stroke="rgba(159,110,245,0.6)" stroke-width="2" fill="none"/>
+            <polyline points="0,80 40,75 80,82 110,65 140,70 170,52 200,60 230,45 270,50 310,38 320,35" stroke="rgba(159,110,245,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="170" cy="42" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="310" cy="28" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Trading Psychology</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-purple">Trading Psychology</span>
+          <h2 class="ac-title">The Psychology of Successful Traders: Discipline, Patience, and Risk Control</h2>
+          <p class="ac-excerpt">Fear, greed, revenge trading, and impatience destroy more accounts than bad entries ever could. Learn the mental framework and disciplined habits that separate consistent traders from the rest.</p>
+          <div class="ac-footer">
+            <a href="trading-psychology-successful-traders.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 11 — Crypto Trading -->
+      <article class="ac" data-category="crypto-trading">
+        <div class="ac-visual v-cyan">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,80 30,72 50,78 70,55 90,62 110,40 125,52 140,30 155,45 170,22 195,38 220,20 250,35 280,18 320,25" stroke="rgba(34,211,238,0.6)" stroke-width="2" fill="none"/>
+            <polyline points="0,90 30,82 50,88 70,65 90,72 110,50 125,62 140,40 155,55 170,32 195,48 220,30 250,45 280,28 320,35" stroke="rgba(34,211,238,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="110" cy="40" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="170" cy="22" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="220" cy="20" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Crypto Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-cyan">Crypto Trading</span>
+          <h2 class="ac-title">Best Crypto Trading Signals for Beginners in 2025</h2>
+          <p class="ac-excerpt">Bitcoin, altcoin, and crypto signals explained for beginners. Learn how to evaluate signal quality, avoid pump-and-dump groups, manage risk, and follow crypto signals safely.</p>
+          <div class="ac-footer">
+            <a href="best-crypto-trading-signals-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 37 — Trading Signals (Research-Based Guide) -->
+      <article class="ac" data-category="trading-signals">
+        <div class="ac-visual v-indigo">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,82 40,75 75,78 110,60 145,65 175,45 205,50 240,32 275,36 310,22 320,20" stroke="rgba(167,139,250,0.65)" stroke-width="2" fill="none"/>
+            <polyline points="0,90 40,83 75,86 110,68 145,73 175,53 205,58 240,40 275,44 310,30 320,28" stroke="rgba(167,139,250,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="110" cy="60" r="4" fill="rgba(34,211,238,0.9)"/>
+            <circle cx="175" cy="45" r="4" fill="rgba(34,211,238,0.9)"/>
+            <circle cx="240" cy="32" r="4" fill="rgba(34,211,238,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Trading Signals</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-indigo">Trading Signals</span>
+          <h2 class="ac-title">Trading Signals Explained: A Research-Based Guide for Forex, Gold &amp; Crypto Traders</h2>
+          <p class="ac-excerpt">Learn how serious traders evaluate forex, gold, crypto, BTC, XAUUSD, Telegram, and AI trading signals without hype or unrealistic accuracy claims.</p>
+          <div class="ac-footer">
+            <a href="trading-signals-explained-research-based-guide.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 10 — Trading Signals -->
+      <article class="ac" data-category="trading-signals">
+        <div class="ac-visual v-indigo">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,75 60,65 110,68 150,52 190,56 230,40 270,44 310,28 320,26" stroke="rgba(129,140,248,0.6)" stroke-width="2" fill="none"/>
+            <polyline points="0,84 60,74 110,77 150,61 190,65 230,49 270,53 310,37 320,35" stroke="rgba(129,140,248,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="150" cy="52" r="4" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="230" cy="40" r="4" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="310" cy="28" r="4" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Trading Signals</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-indigo">Trading Signals</span>
+          <h2 class="ac-title">Best Forex Signals for Beginners: How to Follow Signals Safely</h2>
+          <p class="ac-excerpt">Not all signals are worth following. Learn what makes a quality forex, gold, or crypto signal — and how to apply proper risk management so signals help rather than hurt your account.</p>
+          <div class="ac-footer">
+            <a href="best-forex-signals-for-beginners.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 9 — Risk Management (Best Risk Management Strategy) -->
+      <article class="ac" data-category="risk-management">
+        <div class="ac-visual v-red">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,85 50,80 90,70 130,60 160,55 200,58 220,50 260,42 300,35 320,30" stroke="rgba(248,113,113,0.55)" stroke-width="2" fill="none"/>
+            <line x1="0" y1="65" x2="320" y2="65" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="6 4"/>
+            <polyline points="0,92 50,88 90,82 130,74 160,70 200,74 220,68 260,60 300,52 320,47" stroke="rgba(248,113,113,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="160" cy="55" r="3.5" fill="rgba(172,212,0,0.9)"/>
+            <circle cx="320" cy="30" r="3.5" fill="rgba(172,212,0,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Risk Management</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-lime">Risk Management</span>
+          <h2 class="ac-title">Best Risk Management Strategy for Forex and Gold Trading</h2>
+          <p class="ac-excerpt">The 1% rule, stop loss placement, lot sizing, and risk-to-reward ratio — explained simply. The complete beginner's guide to protecting your trading capital in forex and gold.</p>
+          <div class="ac-footer">
+            <a href="best-risk-management-strategy.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 8 — Beginner Trading (Top 10 Mistakes) -->
+      <article class="ac" data-category="beginner-trading">
+        <div class="ac-visual v-teal">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,70 40,62 80,68 100,55 130,72 160,48 190,65 220,38 260,55 290,42 320,30" stroke="rgba(45,212,191,0.55)" stroke-width="2" fill="none"/>
+            <polyline points="0,80 40,72 80,78 100,65 130,82 160,58 190,75 220,48 260,65 290,52 320,40" stroke="rgba(45,212,191,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="130" cy="72" r="4" fill="rgba(251,191,36,0.9)"/>
+            <circle cx="220" cy="48" r="4" fill="rgba(251,191,36,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Beginner Trading</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-teal">Beginner Trading</span>
+          <h2 class="ac-title">Top 10 Forex Trading Mistakes Beginners Make</h2>
+          <p class="ac-excerpt">Overtrading, revenge trading, overleveraging, no plan — the same 10 mistakes appear in every beginner's account. Learn what they are, why they happen, and exactly how to stop making them.</p>
+          <div class="ac-footer">
+            <a href="top-10-forex-trading-mistakes.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Article 7 — Risk Management (Stop Loss) -->
+      <article class="ac" data-category="risk-management">
+        <div class="ac-visual v-navy">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0,80 60,72 110,62 160,55 200,50 220,48 240,75 250,88 260,90 270,82 290,55 320,40" stroke="rgba(100,149,237,0.6)" stroke-width="2" fill="none"/>
+            <polyline points="0,88 60,80 110,70 160,63 200,58 220,56 240,82 250,96 260,98 270,90 290,63 320,48" stroke="rgba(100,149,237,0.18)" stroke-width="1.5" fill="none"/>
+            <circle cx="255" cy="90" r="4" fill="rgba(248,113,113,0.85)"/>
+            <line x1="180" y1="52" x2="320" y2="52" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="5 4"/>
+          </svg>
+          <span class="ac-visual-label">Risk Management</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-lime">Risk Management</span>
+          <h2 class="ac-title">Why Your Stop Loss Always Gets Hit in Forex and Gold Trading</h2>
+          <p class="ac-excerpt">Stop loss hunting, liquidity sweeps, and tight stops explained. Learn the real reasons your stops get triggered early and how smart traders place stop losses that actually survive.</p>
+          <div class="ac-footer">
+            <a href="why-stop-loss-gets-hit.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2025 Guide</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Broker Guide — Best Brokers Account Creation Guide -->
+      <article class="ac" data-category="broker-guide">
+        <div class="ac-visual v-green">
+          <svg class="chart" viewBox="0 0 320 110" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="60" width="28" height="42" rx="2" fill="rgba(16,185,129,0.18)"/>
+            <rect x="72" y="45" width="28" height="57" rx="2" fill="rgba(16,185,129,0.22)"/>
+            <rect x="124" y="30" width="28" height="72" rx="2" fill="rgba(16,185,129,0.28)"/>
+            <rect x="176" y="40" width="28" height="62" rx="2" fill="rgba(16,185,129,0.22)"/>
+            <rect x="228" y="20" width="28" height="82" rx="2" fill="rgba(16,185,129,0.32)"/>
+            <polyline points="34,58 88,43 138,28 190,38 242,18" stroke="rgba(52,211,153,0.75)" stroke-width="2" fill="none"/>
+            <circle cx="34" cy="58" r="3.5" fill="rgba(52,211,153,0.9)"/>
+            <circle cx="138" cy="28" r="3.5" fill="rgba(52,211,153,0.9)"/>
+            <circle cx="242" cy="18" r="3.5" fill="rgba(52,211,153,0.9)"/>
+          </svg>
+          <span class="ac-visual-label">Broker Guide</span>
+        </div>
+        <div class="ac-body">
+          <span class="ac-cat c-green">Broker Guide</span>
+          <h2 class="ac-title">Best Brokers Account Creation Guide for Beginners</h2>
+          <p class="ac-excerpt">Compare beginner-friendly forex brokers and learn the short account-opening steps for Exness, XM, Pepperstone, IC Markets, and FBS with educational IB access placeholders.</p>
+          <div class="ac-footer">
+            <a href="best-brokers-account-creation-guide.html" class="ac-read">
+              Read Article
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <span class="ac-date">2026 Guide</span>
+          </div>
+        </div>
+      </article>
+
+    </div><!-- /articles-grid -->
+
+    <div class="load-more-wrap">
+      <a href="#" class="btn-load">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        Load More Articles
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── SOFT CTA ── -->
+<section class="articles-cta">
+  <div class="container">
+    <div class="cta-layout">
+
+      <div>
+        <p class="cta-label">Get Guided Support</p>
+        <h2 class="cta-heading">Need More Accurate<br><span>Market Analysis?</span></h2>
+        <p class="cta-body">Join our Telegram channel or contact us directly on WhatsApp for research-based trading analysis, guided learning, and live trading support.</p>
+        <div class="cta-contact-row">
+          <div class="cta-contact-item">
+            <div class="cta-contact-icon wa">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            </div>
+            <span><strong>+92 320 0400800</strong> WhatsApp</span>
+          </div>
+          <div class="cta-contact-item">
+            <div class="cta-contact-icon em">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#9f6ef5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <span><strong>ztradeuniversity@gmail.com</strong> Email</span>
+          </div>
+        </div>
+        <div class="cta-buttons">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-cta" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.013 9.484c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.876.737z"/></svg>
+            Join Telegram
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-cta" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <div class="cta-right">
+        <div class="cta-right-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:#fff"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <strong>Live Analysis</strong>
+          <p>Our analysts share daily trade setups, market insights, and education directly in our community channels.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text">
+          <b>Z Trade University</b>
+          <small>Trading Education</small>
+        </div>
+      </a>
+
+      <div class="footer-copy">&copy; 2024 Z Trade University. All rights reserved.</div>
+
+      <div class="footer-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <span class="footer-sep">|</span>
+        <a href="#">Terms of Service</a>
+      </div>
+
+      <div class="footer-socials">
+        <a href="https://x.com/Ztradeuni" class="soc-btn" aria-label="Twitter">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.5 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+        </a>
+        <a href="https://youtube.com/@ztradeuniversity" class="soc-btn" aria-label="YouTube">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.45a2.78 2.78 0 0 0 1.95-1.97A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+        </a>
+        <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" class="soc-btn" aria-label="Instagram">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile menu
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+  document.getElementById('mobileMenu').addEventListener('click', function(e) {
+    if (e.target === this) toggleMenu();
+  });
+
+  // Category filtering
+  const pills  = document.querySelectorAll('.cat-pill');
+  const cards  = document.querySelectorAll('.ac');
+  const countEl = document.getElementById('articleCount');
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => { p.classList.remove('active'); p.setAttribute('aria-selected','false'); });
+      pill.classList.add('active');
+      pill.setAttribute('aria-selected','true');
+
+      const cat = pill.dataset.cat;
+      let visible = 0;
+      cards.forEach(card => {
+        const show = cat === 'all' || card.dataset.category === cat;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      countEl.textContent = 'Showing ' + visible + ' article' + (visible !== 1 ? 's' : '');
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,818 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Best gold scalping strategy for 2025 — a complete XAUUSD scalping guide covering the best timeframes, ideal trading sessions, a simple setup example, risk management rules, and why most beginners fail at scalping." />
+  <meta name="keywords" content="gold scalping strategy, XAUUSD scalping, best scalping strategy for gold, gold scalping for beginners, XAUUSD strategy, scalping gold in forex, best timeframe for gold scalping, gold volatility trading, XAUUSD scalping setup, fast gold trading strategy" />
+  <title>Best Scalping Strategy for Gold (XAUUSD) in 2025 – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/best-gold-scalping-strategy-2025.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0b1120;
+      --purple:  #5b1ac8;
+      --purple2: #7c3aed;
+      --purple3: #9f6ef5;
+      --lime:    #acd400;
+      --white:   #ffffff;
+      --text:    #0d1526;
+      --muted:   #5a6580;
+      --orange:  #ea580c;
+      --orange2: #f97316;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #1a0800 0%, #381400 50%, #270e00 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(234,88,12,0.17) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(234,88,12,0.15); border: 1px solid rgba(234,88,12,0.32);
+      color: var(--orange2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--orange2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    /* ── TYPOGRAPHY ── */
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px;
+      border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap h2:first-child { margin-top: 0; }
+    .article-wrap h3 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: 18px; font-weight: 800; color: var(--text);
+      letter-spacing: -.4px; margin: 32px 0 12px;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(124,58,237,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    /* Lists */
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--orange2); }
+
+    /* Callout boxes */
+    .tip-box {
+      background: #f5f7ff; border-left: 4px solid var(--purple2);
+      border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0;
+    }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box {
+      background: #fff8ed; border-left: 4px solid var(--orange2);
+      border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0;
+    }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    /* Quick answer */
+    .quick-answer {
+      background: linear-gradient(135deg, #fff7f0 0%, #fff1e6 100%);
+      border: 1.5px solid rgba(234,88,12,0.2);
+      border-left: 4px solid var(--orange2);
+      border-radius: 0 14px 14px 0;
+      padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Timeframe table */
+    .risk-table { width: 100%; border-collapse: collapse; margin: 20px 0; border-radius: 14px; overflow: hidden; }
+    .risk-table thead tr { background: var(--navy); }
+    .risk-table thead th { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7); padding: 13px 16px; text-align: left; letter-spacing: .8px; text-transform: uppercase; }
+    .risk-table tbody tr { border-bottom: 1px solid #f0f2f8; }
+    .risk-table tbody tr:last-child { border-bottom: none; }
+    .risk-table tbody tr:nth-child(even) { background: #fafbff; }
+    .risk-table tbody td { font-size: 14.5px; color: #2a3244; padding: 13px 16px; line-height: 1.5; }
+    .risk-table tbody td:first-child { font-weight: 700; color: var(--text); }
+    .badge-good { display: inline-block; background: rgba(74,222,128,0.12); color: #16a34a; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 100px; }
+    .badge-warn { display: inline-block; background: rgba(234,88,12,0.1); color: var(--orange); font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 100px; }
+    .badge-bad  { display: inline-block; background: rgba(220,38,38,0.1); color: #dc2626; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 100px; }
+
+    /* Session cards */
+    .sessions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 22px 0; }
+    .session-card {
+      border-radius: 14px; padding: 18px 20px;
+      border: 1px solid rgba(0,0,0,0.07);
+    }
+    .session-card.best { background: linear-gradient(135deg, #fff7f0 0%, #ffede0 100%); border-color: rgba(234,88,12,0.2); }
+    .session-card.good { background: #f8f9fd; }
+    .session-card.avoid { background: #fdf8f8; border-color: rgba(220,38,38,0.1); }
+    .session-label { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .session-label.orange { color: var(--orange); }
+    .session-label.purple { color: var(--purple2); }
+    .session-label.red    { color: #dc2626; }
+    .session-card b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .session-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+    /* Dark example box */
+    .example-box {
+      background: linear-gradient(145deg, #0d1127 0%, #111a38 100%);
+      border-radius: 18px; padding: 26px 30px; margin: 28px 0;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .example-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .ex-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .ex-row:last-of-type { border-bottom: none; }
+    .ex-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.38); width: 110px; flex-shrink: 0; text-transform: uppercase; letter-spacing: .8px; padding-top: 1px; }
+    .ex-value { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.82); line-height: 1.5; }
+    .ex-value.green { color: #4ade80; font-weight: 700; }
+    .ex-value.red   { color: #f87171; font-weight: 700; }
+    .ex-value.amber { color: var(--orange2); font-weight: 700; }
+    .example-note { font-size: 12.5px; color: rgba(255,255,255,0.32); line-height: 1.6; margin-top: 16px; font-style: italic; }
+
+    /* Mistake cards */
+    .mistakes-grid { display: flex; flex-direction: column; gap: 12px; margin: 22px 0; }
+    .mistake-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: #fdf8f8; border: 1px solid rgba(220,38,38,0.1);
+      border-radius: 12px; padding: 16px 18px;
+    }
+    .mistake-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(220,38,38,0.1); border: 1.5px solid rgba(220,38,38,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: #dc2626; margin-top: 1px;
+    }
+    .mistake-content b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .mistake-content p { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+    /* Soft CTA */
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #220d5a 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(18px, 2.4vw, 24px); font-weight: 800;
+      color: var(--white); letter-spacing: -.5px; margin-bottom: 12px;
+    }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none;
+      box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    /* FAQ */
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--orange); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    /* Related articles */
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(234,88,12,0.25); transform: translateY(-2px); border-bottom: 1px solid rgba(234,88,12,0.25); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--orange); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--orange2); margin-top: 2px; }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* ── FOOTER ── */
+    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98);
+      z-index: 99; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-join  { display: none; }
+      .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .sessions-grid { grid-template-columns: 1fr; }
+      .related-grid  { grid-template-columns: 1fr; }
+      .article-wrap  { padding: 44px 20px 64px; }
+      .article-hero  { padding: 104px 0 44px; }
+      .example-box   { padding: 20px 18px; }
+      .article-cta   { padding: 30px 24px; }
+      .risk-table thead th, .risk-table tbody td { padding: 10px 12px; font-size: 13px; }
+      .footer-inner  { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy   { order: 0; }
+    }
+    @media (max-width: 480px) {
+      .container { padding: 0 20px; }
+      .article-cta-btns { flex-direction: column; }
+      .ex-label { width: 82px; }
+    }
+  
+.table-wrap,.compare-wrap,.comparison-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"         onclick="toggleMenu()">Home</a>
+  <a href="about.html"         onclick="toggleMenu()">About</a>
+  <a href="index.html#results" onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html"      onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"    onclick="toggleMenu()">Join Now</a>
+</div>
+
+<!-- ── ARTICLE HERO ── -->
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <a href="articles.html">Articles</a>
+        <span>›</span>
+        <a href="#" aria-current="page">Gold Scalping Strategy 2025</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Scalping Strategies
+      </div>
+      <h1>Best <em>Scalping Strategy</em> for Gold (XAUUSD) in 2025</h1>
+      <p class="article-desc">Gold is one of the most popular scalping instruments in forex — but most beginners approach it without a proper framework. This guide explains what gold scalping actually requires, the best timeframes and sessions, a practical setup example, and the mistakes that end most scalping attempts early.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          12 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ARTICLE CONTENT ── -->
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Best Scalping Strategy for Gold (XAUUSD) in 2025" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Gold scalping is one of the most searched topics in forex education — and for good reason. XAUUSD offers the daily range, volatility, and technical reactivity that scalpers look for. But it also demands a level of precision and discipline that catches many beginners off guard. The same characteristics that make gold attractive for fast trading also make it unforgiving when approached without a clear framework.</p>
+
+    <p>This guide gives you that framework. Not a magic indicator or a guaranteed signal system — but a practical, honest understanding of what gold scalping is, what it requires, and how to approach it in a way that gives you a genuine edge rather than just more screen time.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>Gold (XAUUSD) is well-suited for scalping because of its high daily volatility, clear technical reactions at key levels, and tight spreads during peak sessions. The M5 timeframe is the most practical for most scalpers. The London–New York overlap (1:00–5:00 PM UTC) is the best window. Risk per trade should stay below 1% of account capital, and a daily loss limit is essential.</p>
+    </div>
+
+    <h2>What Is Gold Scalping?</h2>
+
+    <p>Scalping is a trading style focused on capturing small price moves quickly — usually targeting 5 to 25 pips per trade — and taking multiple trades within a single session. Scalpers typically hold positions open for anywhere from a few seconds to a few minutes, exiting as soon as their target is reached rather than waiting for larger moves.</p>
+
+    <p>Gold scalping specifically means applying this approach to XAUUSD. It's distinct from gold swing trading (which holds positions for days based on the broader trend) and from intraday trading (which targets larger daily moves over hours). Scalping on gold means:</p>
+
+    <ul>
+      <li>Tight stop losses — typically 8 to 15 pips for gold scalps</li>
+      <li>Small but consistent profit targets — 10 to 25 pips per trade</li>
+      <li>Multiple trades per session, each with a defined plan before entry</li>
+      <li>Fast but disciplined execution — no hesitation, no improvising</li>
+    </ul>
+
+    <p>The appeal is straightforward: you don't need gold to trend for three days to make a profitable trade. You just need a short burst of momentum in the right direction at the right time.</p>
+
+    <h2>Why Is XAUUSD Popular for Scalping?</h2>
+
+    <p>Not all instruments are equal for scalping. The best scalping markets need high liquidity (so orders fill quickly), consistent volatility (so there's enough price movement to profit from), and responsive technical levels (so entries have a logical basis). Gold delivers all three — most of the time.</p>
+
+    <h3>Wide Daily Range</h3>
+    <p>On a typical trading day, gold moves 15 to 40 pips in normal conditions. On news days or during the London–New York overlap, that range can expand to 60–120+ pips. That range creates multiple distinct scalping opportunities per session — enough momentum for targets of 10–20 pips without needing to predict the day's overall direction.</p>
+
+    <h3>Strong Technical Reactions</h3>
+    <p>Gold responds well to round numbers and key technical zones. Levels like $2,300, $2,350, and $2,400 attract visible order flow. Previous daily highs and lows tend to produce clear bounces or breaks. This means scalpers have predictable reference points to work from — they're not trading blindly into the middle of a range.</p>
+
+    <h3>Active and Liquid During Peak Hours</h3>
+    <p>During the London and New York sessions, XAUUSD has some of the tightest spreads in the market. A spread of 1.5 to 3 pips is standard with most regulated brokers during peak hours — which makes scalping viable from a cost perspective. Outside peak hours, spreads widen and volatility drops, which is why session awareness is critical.</p>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Honest Caution</div>
+      <p>Gold's volatility is a double-edged characteristic. The same wide range that creates scalping opportunity can produce sudden spikes — especially around US economic data — that hit tight stop losses before a trade has any chance to breathe. Gold scalping rewards preparation and penalises impulsiveness more severely than slower-moving instruments.</p>
+    </div>
+
+    <h2>Best Timeframes for XAUUSD Scalping</h2>
+
+    <p>Timeframe selection is one of the most important decisions a gold scalper makes. The wrong timeframe means too much noise (too short) or moves that take too long to develop (too long for scalping purposes).</p>
+
+    <div class="table-wrap"><table class="risk-table" aria-label="XAUUSD scalping timeframes comparison">
+      <thead>
+        <tr>
+          <th>Timeframe</th>
+          <th>Typical Target</th>
+          <th>Speed Required</th>
+          <th>Suitable For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>M1 (1-min)</td>
+          <td>3–8 pips</td>
+          <td>Very high</td>
+          <td><span class="badge-warn">Advanced only</span></td>
+        </tr>
+        <tr>
+          <td>M5 (5-min)</td>
+          <td>8–18 pips</td>
+          <td>Moderate</td>
+          <td><span class="badge-good">Most scalpers</span></td>
+        </tr>
+        <tr>
+          <td>M15 (15-min)</td>
+          <td>15–30 pips</td>
+          <td>Relaxed</td>
+          <td><span class="badge-good">Beginners</span></td>
+        </tr>
+        <tr>
+          <td>H1 (1-hour)</td>
+          <td>30+ pips</td>
+          <td>Slow</td>
+          <td><span class="badge-bad">Not scalping</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <p>For most beginners, <strong>M5 for entries with M15 for trend bias</strong> is the most practical starting combination. The M15 shows you the recent direction and key levels. The M5 gives you a clear candle signal at those levels without the extreme noise of M1 trading.</p>
+
+    <p>The M1 timeframe is often marketed as the "real" scalping timeframe, but it requires extremely fast execution, very tight spreads, and the ability to read candles forming in real time. It's not a good starting point for anyone learning to scalp. The additional signal noise on M1 leads to more false entries, not more profits.</p>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Spread Check</div>
+      <p>Before every scalping session, check your broker's live spread on XAUUSD. A 3-pip spread is manageable on an 18-pip target — but it's 60% of your profit if your target is only 5 pips. Always calculate the spread as part of your trade cost, not an afterthought.</p>
+    </div>
+
+    <h2>Best Sessions for Gold Scalping</h2>
+
+    <p>Session timing is not optional for gold scalpers — it's part of the strategy. Spreads, volatility, and the quality of technical signals all change significantly across the trading day.</p>
+
+    <div class="sessions-grid">
+      <div class="session-card good">
+        <div class="session-label purple">London Session</div>
+        <b>8:00 AM – 12:00 PM UTC</b>
+        <p>Spreads tighten as European markets open. Gold makes its first significant move of the day. Good volatility with relatively predictable structure. Suitable for scalping.</p>
+      </div>
+      <div class="session-card best">
+        <div class="session-label orange">★ London–NY Overlap</div>
+        <b>1:00 PM – 5:00 PM UTC</b>
+        <p>The best window for XAUUSD scalping. Highest liquidity, tightest spreads, largest intraday moves. Both institutional and retail participation peak during this window.</p>
+      </div>
+      <div class="session-card good">
+        <div class="session-label purple">New York Session</div>
+        <b>1:00 PM – 8:00 PM UTC</b>
+        <p>Continues with strong activity, especially around US data releases. Watch the economic calendar carefully — news events can cause instant 20–50 pip spikes.</p>
+      </div>
+      <div class="session-card avoid">
+        <div class="session-label red">Asian Session</div>
+        <b>12:00 AM – 7:00 AM UTC</b>
+        <p>Low volatility for gold. Spreads widen noticeably. Daily range is small. Avoid scalping during this window unless you specifically trade Asian range breakouts.</p>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">News Warning</div>
+      <p>Do not scalp gold in the 30–60 minutes before or after major US data releases: NFP (Non-Farm Payroll), CPI, PCE, or FOMC statements. These events can spike gold 30–80 pips in seconds — instantly wiping scalp-sized stop losses before a trade even has a chance to develop.</p>
+    </div>
+
+    <h2>Simple Gold Scalping Setup Example</h2>
+
+    <p>The following is a hypothetical example for educational purposes. It shows how a structured scalper approaches a trade — not a live signal or a prediction.</p>
+
+    <div class="example-box">
+      <div class="example-label">Hypothetical Scalp Setup — Educational Only</div>
+      <div class="ex-row">
+        <div class="ex-label">Session</div>
+        <div class="ex-value">London, 9:45 AM UTC — spread is tight at 1.8 pips</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">M15 Context</div>
+        <div class="ex-value">Uptrend — higher highs and higher lows since the session open</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Key Zone</div>
+        <div class="ex-value amber">$2,412 – $2,415 (previous intraday high now acting as support)</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Trigger</div>
+        <div class="ex-value">M5 bullish engulfing candle closing above $2,413 after touching the zone</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Entry</div>
+        <div class="ex-value">$2,413.50</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Stop Loss</div>
+        <div class="ex-value red">$2,405.50 — 8 pips, below the support zone</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Target</div>
+        <div class="ex-value green">$2,427.50 — 14 pips, near next intraday resistance</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">R:R Ratio</div>
+        <div class="ex-value green">1.75:1 — acceptable for a scalp in the direction of M15 trend</div>
+      </div>
+      <div class="example-note">This scenario is entirely hypothetical and created for educational illustration. Real gold price levels, spread conditions, and market context must always be verified before any trade. This does not constitute financial advice.</div>
+    </div>
+
+    <p>Notice the process: the M15 establishes the bias (bullish), the zone provides the reference point, and the M5 candle provides the trigger. The trade is only entered after confirmation — not in anticipation of it. The stop loss is below the zone (not a random number), and the target is at the next identifiable level.</p>
+
+    <h2>Risk Management for Gold Scalping</h2>
+
+    <p>Risk management for scalping is not the same as risk management for swing trading. Because scalping involves multiple trades per session, the compounding effect of losses is much more aggressive. A bad swing trading day might mean one poorly managed trade. A bad scalping session without proper risk controls can mean five or ten of them.</p>
+
+    <h3>Core Scalping Risk Rules</h3>
+    <ul>
+      <li><strong>Max 0.5–1% risk per trade.</strong> With 8–10 trades per session, each at 1% risk, a losing session could cost 8–10% of your account. That's severe. Keep individual trade risk low precisely because frequency is high.</li>
+      <li><strong>Set a daily loss limit.</strong> Most experienced scalpers stop trading for the day after losing 2–3% of account value. Once that level is hit, close everything and walk away. Trying to recover a bad scalping session usually makes it worse.</li>
+      <li><strong>Minimum 1.5:1 reward-to-risk ratio.</strong> Even at a 50% win rate, a 1.5:1 ratio is profitable. With a 60% win rate, it compounds meaningfully. Never take a scalp with a 1:1 or negative ratio.</li>
+      <li><strong>Count the spread in your profit calculation.</strong> If your broker charges 2.5 pips and your target is 12 pips, your effective profit is 9.5 pips. Size your positions based on the real net gain, not the gross pip count.</li>
+      <li><strong>Don't add to losing scalp positions.</strong> Scalping stops are tight for a reason — when they're hit, the setup has failed. Averaging down on a scalp turns a small, managed loss into a large, unmanaged one.</li>
+    </ul>
+
+    <h2>Why Most Beginners Fail at Scalping</h2>
+
+    <p>Scalping is often marketed as the easiest way to make consistent money — quick trades, quick profits, no overnight risk. In reality, it's one of the most demanding trading styles, and the failure rate among beginners who attempt it is high. Here's why:</p>
+
+    <div class="mistakes-grid">
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div class="mistake-content">
+          <b>Overtrading — Quantity Over Quality</b>
+          <p>Beginners often take 15–25 trades per session looking for winners. More trades means more spread costs, more emotional decisions, and more exposure to random noise. Professional scalpers take fewer, higher-quality setups — not every candle movement.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div class="mistake-content">
+          <b>Ignoring the Spread Cost</b>
+          <p>A 3-pip spread on a 5-pip target means 60% of your potential profit is gone before the trade moves at all. Beginners who don't account for spread as a real cost end up losing money even with a positive win rate. Always calculate net profit after spread.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div class="mistake-content">
+          <b>Wrong Session — Trading When Gold Is Asleep</b>
+          <p>Scalping gold during the Asian session, when spreads are wide and the daily range is small, is one of the most common beginner mistakes. The market simply doesn't have enough movement to make scalp targets achievable. Session selection is non-negotiable.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div class="mistake-content">
+          <b>Trading Into News Events</b>
+          <p>A scalp stop loss of 8 pips disappears instantly in a 40-pip NFP spike. Beginners who don't check the economic calendar before their session get caught repeatedly in unpredictable news-driven moves that have nothing to do with their technical setup.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div class="mistake-content">
+          <b>Moving Stop Losses Mid-Scalp</b>
+          <p>Scalping requires fast, decisive action. Moving a stop "just a few pips" when a trade goes against you turns a defined risk into an open-ended one. If the setup was valid, the stop is in the right place. If it's hit, the setup failed — take the loss and move on.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">6</div>
+        <div class="mistake-content">
+          <b>Using Scalping to Recover Losses</b>
+          <p>After a bad trade, the temptation to "scalp your way back" is powerful. But scalping from a frustrated, reactive state produces the worst decision-making. If the daily loss limit is hit, the session is over. No exceptions — this rule alone prevents most account blow-ups.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>research-based XAUUSD analysis</span> and guided trading support?</h3>
+        <p>Join our Telegram channel for regular gold analysis, trading zones, and educational content — or contact us directly on WhatsApp.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="gold-trading-strategy-beginners.html" class="related-card">
+          <span class="related-cat">Gold Trading</span>
+          <span class="related-title">Best Gold Trading Strategy for Beginners in 2025 (Simple XAUUSD Guide)</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="xauusd-buy-or-sell-today.html" class="related-card">
+          <span class="related-cat">Gold Analysis</span>
+          <span class="related-title">XAUUSD Buy or Sell Today? How to Read Gold Direction Like a Pro</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="why-forex-traders-lose-money.html" class="related-card">
+          <span class="related-cat">Trading Psychology</span>
+          <span class="related-title">Why 90% of Forex Traders Lose Money — And How Smart Traders Avoid It</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="articles.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Smart Risk Management Techniques Every Trader Must Know</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Is XAUUSD good for scalping?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — XAUUSD is one of the more popular scalping instruments because of its wide daily range, clear technical reactions at key levels, and tight spreads during peak sessions (London and New York). However, it is also volatile and can spike unpredictably around news events. It rewards prepared, disciplined scalpers and punishes impulsive ones more than lower-volatility instruments.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the best timeframe for gold scalping?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">M5 (5-minute) is the most practical timeframe for most gold scalpers. It offers a good balance between signal quality and execution speed. M1 is used by advanced scalpers but is extremely noisy and demanding. M15 is a good starting point for beginners learning to scalp because it moves slowly enough to observe and react without the stress of M5 or M1 charts.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How many pips should I target when scalping gold?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">On M5, realistic scalp targets for gold are 8–18 pips. On M15, targets of 15–30 pips are more common. The target should always be at least 1.5x the stop loss distance to maintain a viable reward-to-risk ratio. Always subtract the spread from your gross target to calculate the real net profit you're working toward.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the best time of day to scalp XAUUSD?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The London–New York overlap (roughly 1:00 PM to 5:00 PM UTC) is the best window for gold scalping. Liquidity is highest, spreads are tightest, and intraday moves are most consistent during this period. The London open (8:00–10:00 AM UTC) is also a strong window. The Asian session should generally be avoided for scalping due to wide spreads and low volatility.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How risky is scalping gold compared to other styles?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Scalping carries a unique risk profile. Individual trade risk is small (tight stops), but the compounding effect of multiple trades per session means a losing day can accumulate quickly if there's no daily loss limit in place. The high frequency also creates emotional pressure that leads to overtrading. Scalping is not inherently riskier than swing trading — but it requires stricter discipline around trade frequency and session limits.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What indicators do gold scalpers use?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Many successful gold scalpers use minimal indicators — primarily price action, support/resistance zones, and a moving average for trend bias (such as the 20 EMA or 50 EMA on M15). Some add RSI or MACD to filter entries at extreme levels. The key is that indicators should confirm a decision, not make it. Scalpers who rely entirely on indicator signals without reading price structure tend to get too many false signals on gold's volatile short-term charts.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Can beginners learn to scalp gold successfully?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes, but scalping should not be the first trading style a beginner attempts. It's more demanding than swing or intraday trading in terms of speed, discipline, and emotional control. The recommended path is to first develop solid foundational skills — understanding trend, support/resistance, and risk management — on longer timeframes. Once those are consistent, transitioning to scalping on M15 and then M5 is a realistic progression.</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- END FAQ -->
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text">
+          <b>Z Trade University</b>
+          <small>University</small>
+        </div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a>
+        <span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a>
+        <span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>

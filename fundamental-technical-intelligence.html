@@ -1,0 +1,1260 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Fundamental & Technical Intelligence — beginner-friendly educational dashboard explaining what is moving Gold and Bitcoin from real-world fundamentals and technical market structure. Not financial advice." />
+  <meta name="robots" content="index, follow" />
+  <title>Fundamental &amp; Technical Intelligence — Gold &amp; Bitcoin · Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/fundamental-technical-intelligence.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:     #0b1120;
+      --purple:   #5b1ac8;
+      --purple2:  #7c3aed;
+      --purple3:  #a78bfa;
+      --lime:     #acd400;
+      --white:    #ffffff;
+      --text:     #0d1526;
+      --muted:    #5a6580;
+      --bg:       #f7f8fc;
+
+      --gold:     #d97706;
+      --gold2:    #f59e0b;
+      --gold3:    #fbbf24;
+      --btc:      #ea580c;
+      --btc2:     #f97316;
+      --btc3:     #fb923c;
+
+      --cyan:     #06b6d4;
+      --cyan2:    #22d3ee;
+      --cyan3:    #67e8f9;
+
+      --bull:     #10b981;
+      --bull2:    #34d399;
+      --bear:     #ef4444;
+      --bear2:    #f87171;
+      --neutral:  #94a3b8;
+      --neutral2: #cbd5e1;
+      --caution:  #f59e0b;
+      --caution2: #fbbf24;
+
+      --card-bg:    #0a0f1f;
+      --card-bg2:   #111a33;
+      --card-line:  rgba(255,255,255,0.06);
+      --card-line2: rgba(255,255,255,0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header.site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; transition: background .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22);
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── HERO ── */
+    .fti-hero {
+      padding: 124px 0 70px;
+      background: linear-gradient(140deg, #04050d 0%, #0b0820 40%, #0e0a26 70%, #100632 100%);
+      position: relative; overflow: hidden;
+    }
+    .fti-hero::before {
+      content: ''; position: absolute; top: -160px; right: -160px;
+      width: 680px; height: 680px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .fti-hero::after {
+      content: ''; position: absolute; bottom: -200px; left: -140px;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 920px; }
+    .hero-pre {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(124,58,237,0.14); border: 1px solid rgba(192,132,252,0.32);
+      color: #c4b5fd; font-size: 11.5px; font-weight: 700;
+      padding: 6px 14px 6px 10px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 22px;
+    }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan2); position: relative; box-shadow: 0 0 0 0 rgba(34,211,238,0.6); animation: pulse 2.2s ease-out infinite; }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(34,211,238,0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(34,211,238,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,211,238,0); }
+    }
+    .fti-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(30px, 4.8vw, 56px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.8px; line-height: 1.04;
+      margin-bottom: 18px;
+    }
+    .fti-hero h1 .fx { background: linear-gradient(110deg, var(--purple3) 0%, var(--cyan2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .fti-hero h1 .tx { background: linear-gradient(110deg, var(--gold3) 0%, var(--gold2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .fti-hero p.lead { font-size: 17.5px; color: rgba(255,255,255,0.62); line-height: 1.72; max-width: 740px; margin-bottom: 26px; }
+    .hero-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.78); font-size: 12px; font-weight: 600;
+      padding: 7px 14px; border-radius: 100px;
+    }
+    .hero-badge svg { color: var(--cyan2); flex-shrink: 0; }
+    .hero-cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--purple2) 0%, var(--cyan) 100%);
+      color: var(--white); font-size: 13.5px; font-weight: 700;
+      padding: 12px 22px; border-radius: 100px; text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 6px 24px rgba(124,58,237,0.36);
+    }
+    .hero-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 32px rgba(124,58,237,0.48); }
+    .hero-cta-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.92); font-size: 13.5px; font-weight: 700;
+      padding: 11px 22px; border-radius: 100px; text-decoration: none;
+      transition: background .2s, transform .2s;
+    }
+    .hero-cta-ghost:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+
+    /* ── MAIN ── */
+    main { background: var(--bg); padding: 40px 0 90px; }
+
+    /* Section headers */
+    .section-head { margin-bottom: 22px; }
+    .section-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 2.4px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; display: inline-flex; align-items: center; gap: 8px; }
+    .section-eyebrow::before { content: ''; width: 26px; height: 2px; background: linear-gradient(90deg, var(--purple2), var(--cyan2)); border-radius: 2px; }
+    .section-title {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(22px, 2.8vw, 30px); font-weight: 900;
+      color: var(--text); letter-spacing: -.8px; line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .section-desc { font-size: 15px; color: var(--muted); max-width: 780px; line-height: 1.7; }
+
+    .demo-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(124,58,237,0.10); border: 1px solid rgba(124,58,237,0.25);
+      color: var(--purple2); font-size: 10.5px; font-weight: 800;
+      padding: 4px 10px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-top: 12px;
+    }
+    .demo-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); flex-shrink: 0; }
+
+    /* ──────────────────────────────────────────────────────────── */
+    /* SECTION 2 — OVERALL INTELLIGENCE RATING DASHBOARD            */
+    /* ──────────────────────────────────────────────────────────── */
+    .rating-board {
+      background: linear-gradient(135deg, #0a0f1f 0%, #131a35 55%, #0d142a 100%);
+      border-radius: 22px; padding: 30px;
+      border: 1px solid var(--card-line);
+      position: relative; overflow: hidden;
+      box-shadow: 0 12px 48px rgba(11,17,32,0.18);
+      margin-bottom: 60px;
+    }
+    .rating-board::before {
+      content: ''; position: absolute; top: -120px; right: -120px;
+      width: 400px; height: 400px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .rating-board::after {
+      content: ''; position: absolute; bottom: -140px; left: -100px;
+      width: 360px; height: 360px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .rb-head { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; }
+    .rb-head-text .rb-eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.42); margin-bottom: 8px; }
+    .rb-head-text h2 { font-family: 'Manrope',sans-serif; font-size: clamp(20px, 2.4vw, 26px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 6px; }
+    .rb-head-text p { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .rb-live { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.55); letter-spacing: 1px; text-transform: uppercase; }
+    .rb-live .live-dot { width: 6px; height: 6px; }
+
+    .rb-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.7fr 1fr; gap: 22px; }
+    .rb-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .rb-metric {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 13px; padding: 15px 16px; position: relative; overflow: hidden;
+      transition: transform .22s, border-color .22s;
+    }
+    .rb-metric:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.14); }
+    .rb-metric-label { font-size: 10px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.40); margin-bottom: 9px; }
+    .rb-metric-value { font-family: 'Manrope',sans-serif; font-size: 17px; font-weight: 800; letter-spacing: -.3px; }
+    .rb-metric-sub { font-size: 11.5px; color: rgba(255,255,255,0.50); margin-top: 5px; }
+    .v-bull { color: var(--bull2); }
+    .v-bear { color: var(--bear2); }
+    .v-mix  { color: var(--caution2); }
+    .v-caution { color: var(--caution2); }
+    .v-neutral { color: var(--neutral2); }
+
+    /* Clarity score circle */
+    .rb-clarity {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 22px 22px 24px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+    }
+    .rb-clarity-label { font-size: 10.5px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(255,255,255,0.42); margin-bottom: 14px; }
+    .clarity-ring { width: 156px; height: 156px; position: relative; }
+    .clarity-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+    .clarity-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 10; }
+    .clarity-fill  { fill: none; stroke: url(#cgrad); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset .9s cubic-bezier(.4,0,.2,1); }
+    .clarity-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .clarity-num { font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 38px; color: var(--white); letter-spacing: -1.5px; line-height: 1; }
+    .clarity-of  { font-family: 'JetBrains Mono',monospace; font-size: 11px; color: rgba(255,255,255,0.40); font-weight: 600; margin-top: 4px; letter-spacing: .5px; }
+    .clarity-caption { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 14px; line-height: 1.55; max-width: 220px; }
+    .clarity-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(34,211,238,0.10); border: 1px solid rgba(34,211,238,0.26); color: var(--cyan2); font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 100px; letter-spacing: .8px; text-transform: uppercase; margin-top: 11px; }
+
+    /* Clarity score guide */
+    .clarity-def { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6; max-width: 220px; margin-top: 9px; text-align: center; }
+    .clarity-guide { width: 100%; margin-top: 13px; display: flex; flex-direction: column; gap: 3px; }
+    .clarity-guide-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 9px; border-radius: 7px; border: 1px solid transparent; }
+    .cg-range { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,0.30); }
+    .cg-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); }
+    .clarity-guide-item.cg-active-decent { background: rgba(34,211,238,0.09); border-color: rgba(34,211,238,0.24); }
+    .clarity-guide-item.cg-active-decent .cg-range,
+    .clarity-guide-item.cg-active-decent .cg-label { color: var(--cyan2); }
+    .clarity-practical { font-size: 11px; color: rgba(255,255,255,0.52); margin-top: 11px; line-height: 1.6; max-width: 220px; font-style: italic; text-align: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+
+    /* ──────────────────────────────────────────────────────────── */
+    /* SECTION 3 — FUNDAMENTAL INTELLIGENCE                         */
+    /* ──────────────────────────────────────────────────────────── */
+    .asset-block {
+      background: linear-gradient(160deg, #0a0f1f 0%, #111a33 60%, #0c1226 100%);
+      border-radius: 22px; padding: 26px 26px 28px;
+      border: 1px solid var(--card-line);
+      position: relative; overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .asset-block::before {
+      content: ''; position: absolute; top: -120px; right: -120px;
+      width: 360px; height: 360px; border-radius: 50%; pointer-events: none;
+    }
+    .asset-gold::before { background: radial-gradient(circle, rgba(245,158,11,0.16) 0%, transparent 65%); }
+    .asset-btc::before  { background: radial-gradient(circle, rgba(249,115,22,0.16) 0%, transparent 65%); }
+
+    .asset-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 22px; position: relative; z-index: 1; flex-wrap: wrap; }
+    .asset-id { display: flex; align-items: center; gap: 14px; }
+    .asset-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 17px; letter-spacing: -.5px; }
+    .asset-gold .asset-icon { background: linear-gradient(140deg, var(--gold2) 0%, var(--gold) 100%); color: #1a0e00; box-shadow: 0 4px 16px rgba(245,158,11,0.32); }
+    .asset-btc  .asset-icon { background: linear-gradient(140deg, var(--btc2) 0%, var(--btc) 100%); color: #1a0500; box-shadow: 0 4px 16px rgba(249,115,22,0.32); }
+    .asset-name b { display: block; font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 19px; color: var(--white); letter-spacing: -.3px; }
+    .asset-name small { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; }
+    .asset-summary { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: 100px; padding: 6px 13px; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.78); }
+    .asset-summary .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .summary-bull .dot { background: var(--bull2); box-shadow: 0 0 8px rgba(52,211,153,0.6); }
+    .summary-bear .dot { background: var(--bear2); box-shadow: 0 0 8px rgba(248,113,113,0.6); }
+    .summary-mix  .dot { background: var(--caution2); box-shadow: 0 0 8px rgba(251,191,36,0.6); }
+
+    /* Card grid */
+    .fund-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; position: relative; z-index: 1; }
+    .fund-card {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 16px 16px 14px;
+      position: relative; overflow: hidden;
+      transition: transform .22s, border-color .22s, box-shadow .22s;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.04) inset;
+    }
+    .fund-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.18); box-shadow: 0 14px 32px rgba(0,0,0,0.32), 0 1px 0 rgba(255,255,255,0.06) inset; }
+    .fund-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    }
+    .fund-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .fund-name { font-size: 13px; font-weight: 700; color: var(--white); letter-spacing: -.2px; line-height: 1.3; }
+    .fund-tag {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 100px; flex-shrink: 0; white-space: nowrap;
+    }
+    .tag-bull { background: rgba(16,185,129,0.14); color: var(--bull2); border: 1px solid rgba(52,211,153,0.30); }
+    .tag-bear { background: rgba(239,68,68,0.13); color: var(--bear2); border: 1px solid rgba(248,113,113,0.30); }
+    .tag-mix  { background: rgba(245,158,11,0.13); color: var(--caution2); border: 1px solid rgba(251,191,36,0.30); }
+    .tag-neu  { background: rgba(148,163,184,0.13); color: var(--neutral2); border: 1px solid rgba(203,213,225,0.22); }
+
+    .fund-status { font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,0.62); margin-bottom: 10px; line-height: 1.55; }
+    .fund-status b { color: var(--white); font-weight: 700; }
+    .fund-explain { font-size: 12px; color: rgba(255,255,255,0.50); line-height: 1.6; margin-bottom: 12px; }
+
+    .fund-impact { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .fund-impact-label { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.36); }
+    .fund-impact-bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+    .fund-impact-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+    .imp-high { width: 82%; background: linear-gradient(90deg, var(--bear2), var(--caution2)); }
+    .imp-mid  { width: 55%; background: linear-gradient(90deg, var(--caution2), var(--gold3)); }
+    .imp-low  { width: 28%; background: linear-gradient(90deg, var(--cyan2), var(--purple3)); }
+    .fund-impact-text { font-family: 'JetBrains Mono',monospace; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.62); letter-spacing: .4px; }
+
+    /* ──────────────────────────────────────────────────────────── */
+    /* SECTION 4 — TECHNICAL SNAPSHOT                               */
+    /* ──────────────────────────────────────────────────────────── */
+    .tech-block {
+      background: linear-gradient(150deg, #08111f 0%, #0d1830 55%, #060c1e 100%);
+      border-radius: 22px; padding: 30px;
+      border: 1px solid var(--card-line);
+      position: relative; overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .tech-block::before {
+      content: ''; position: absolute; top: -100px; right: -80px;
+      width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .tech-block::after {
+      content: ''; position: absolute; bottom: -120px; left: -100px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .tech-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 24px; position: relative; z-index: 1; flex-wrap: wrap; }
+    .tech-head h3 { font-family: 'Manrope',sans-serif; font-size: 22px; font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 6px; }
+    .tech-head p { font-size: 13.5px; color: rgba(255,255,255,0.55); max-width: 560px; }
+    .tech-disclaimer { display: inline-flex; align-items: center; gap: 7px; background: rgba(34,211,238,0.10); border: 1px solid rgba(34,211,238,0.24); color: var(--cyan2); font-size: 10.5px; font-weight: 800; padding: 5px 11px; border-radius: 100px; letter-spacing: .8px; text-transform: uppercase; }
+
+    .tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; position: relative; z-index: 1; }
+    .tech-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 16px 16px 14px;
+      position: relative; transition: transform .22s, border-color .22s;
+    }
+    .tech-card:hover { transform: translateY(-3px); border-color: rgba(34,211,238,0.28); }
+    .tech-card-label { font-size: 10px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(34,211,238,0.85); margin-bottom: 9px; }
+    .tech-card-value { font-family: 'Manrope',sans-serif; font-size: 15.5px; font-weight: 800; color: var(--white); letter-spacing: -.2px; line-height: 1.3; margin-bottom: 6px; }
+    .tech-card-sub { font-size: 11.5px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+
+    /* Telegram CTA */
+    .tg-cta {
+      position: relative; z-index: 1;
+      background: linear-gradient(135deg, rgba(34,211,238,0.12) 0%, rgba(124,58,237,0.15) 100%);
+      border: 1px solid rgba(34,211,238,0.30);
+      border-radius: 18px; padding: 22px 26px;
+      display: flex; align-items: center; justify-content: space-between; gap: 22px; flex-wrap: wrap;
+    }
+    .tg-cta-text b { display: block; font-family: 'Manrope',sans-serif; font-size: 17px; font-weight: 800; color: var(--white); letter-spacing: -.3px; margin-bottom: 5px; }
+    .tg-cta-text p { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; max-width: 580px; }
+    .tg-btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: linear-gradient(135deg, #229ED9 0%, #0e80c0 100%);
+      color: var(--white); font-size: 14px; font-weight: 800;
+      padding: 12px 22px; border-radius: 100px; text-decoration: none;
+      box-shadow: 0 6px 22px rgba(34,158,217,0.42);
+      transition: transform .2s, box-shadow .2s;
+      white-space: nowrap;
+    }
+    .tg-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(34,158,217,0.56); }
+
+    /* ──────────────────────────────────────────────────────────── */
+    /* SECTION 5 — DIFFERENCE EXPLAINER                             */
+    /* ──────────────────────────────────────────────────────────── */
+    .diff-box {
+      display: grid; grid-template-columns: 1fr 60px 1fr; gap: 18px; align-items: stretch;
+      background: var(--white); border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 20px; padding: 26px; margin-bottom: 28px;
+      box-shadow: 0 6px 24px rgba(15,23,42,0.05);
+    }
+    .diff-side { padding: 4px 4px; }
+    .diff-side h4 { display: flex; align-items: center; gap: 10px; font-family: 'Manrope',sans-serif; font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -.3px; margin-bottom: 10px; }
+    .diff-side h4 .diff-ico { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+    .diff-fund h4 .diff-ico { background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(124,58,237,0.04)); color: var(--purple2); }
+    .diff-tech h4 .diff-ico { background: linear-gradient(135deg, rgba(6,182,212,0.12), rgba(6,182,212,0.04)); color: var(--cyan); }
+    .diff-side p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .diff-side p b { color: var(--text); font-weight: 700; }
+    .diff-vs { display: flex; align-items: center; justify-content: center; font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 13px; color: var(--muted); letter-spacing: 2px; }
+    .diff-vs span { background: var(--bg); border: 1px solid rgba(0,0,0,0.06); border-radius: 100px; padding: 7px 11px; }
+
+    /* ──────────────────────────────────────────────────────────── */
+    /* SECTION 6 — METHODOLOGY                                      */
+    /* ──────────────────────────────────────────────────────────── */
+    .method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .method-card {
+      background: var(--white); border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px; padding: 22px 20px; position: relative;
+      transition: transform .22s, box-shadow .22s;
+      box-shadow: 0 4px 14px rgba(15,23,42,0.04);
+    }
+    .method-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(15,23,42,0.08); }
+    .method-ico {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+    .mi-1 { background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(245,158,11,0.04)); color: var(--gold); }
+    .mi-2 { background: linear-gradient(135deg, rgba(6,182,212,0.16),  rgba(6,182,212,0.04));  color: var(--cyan); }
+    .mi-3 { background: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(124,58,237,0.04)); color: var(--purple2); }
+    .mi-4 { background: linear-gradient(135deg, rgba(16,185,129,0.16), rgba(16,185,129,0.04)); color: var(--bull); }
+    .method-title { font-family: 'Manrope',sans-serif; font-size: 15.5px; font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -.2px; }
+    .method-body { font-size: 13.5px; color: var(--muted); line-height: 1.65; }
+
+    /* ──────────────────────────────────────────────────────────── */
+    /* SECTION 7 — FINAL CTA                                         */
+    /* ──────────────────────────────────────────────────────────── */
+    .final-cta {
+      background: linear-gradient(135deg, #0a0f1f 0%, #170a3a 55%, #0d142a 100%);
+      border-radius: 22px; padding: 38px 32px;
+      border: 1px solid var(--card-line);
+      position: relative; overflow: hidden;
+      margin-bottom: 28px; text-align: center;
+    }
+    .final-cta::before {
+      content: ''; position: absolute; top: -160px; left: 50%; transform: translateX(-50%);
+      width: 620px; height: 420px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .final-cta::after {
+      content: ''; position: absolute; bottom: -120px; right: -80px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .fc-inner { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+    .fc-pre { font-size: 11px; font-weight: 800; letter-spacing: 2.4px; text-transform: uppercase; color: var(--cyan3); margin-bottom: 14px; }
+    .fc-title { font-family: 'Manrope',sans-serif; font-size: clamp(22px, 3vw, 30px); font-weight: 900; color: var(--white); letter-spacing: -.8px; line-height: 1.18; margin-bottom: 12px; }
+    .fc-desc { font-size: 15px; color: rgba(255,255,255,0.65); margin-bottom: 24px; line-height: 1.7; }
+    .fc-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .fc-btn-tg {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: linear-gradient(135deg, #229ED9 0%, #0e80c0 100%);
+      color: var(--white); font-size: 14px; font-weight: 800;
+      padding: 13px 24px; border-radius: 100px; text-decoration: none;
+      box-shadow: 0 6px 22px rgba(34,158,217,0.42);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .fc-btn-tg:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(34,158,217,0.56); }
+    .fc-btn-wa {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      color: var(--white); font-size: 14px; font-weight: 800;
+      padding: 13px 24px; border-radius: 100px; text-decoration: none;
+      box-shadow: 0 6px 22px rgba(37,211,102,0.42);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .fc-btn-wa:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(37,211,102,0.56); }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer-box {
+      background: var(--white); border: 1px solid rgba(0,0,0,0.06);
+      border-left: 4px solid var(--purple2);
+      border-radius: 14px; padding: 16px 20px;
+      font-size: 12.5px; color: var(--muted); line-height: 1.7;
+    }
+    .disclaimer-box b { color: var(--text); font-weight: 700; }
+
+    /* ── FOOTER ── */
+    footer.site-footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 15px; color: var(--lime); letter-spacing: -.8px;
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.98); z-index: 200;
+      flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .rb-grid { grid-template-columns: 1fr; }
+      .fund-grid { grid-template-columns: repeat(2, 1fr); }
+      .tech-grid { grid-template-columns: repeat(2, 1fr); }
+      .method-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-join { display: none; }
+      .hamburger { display: flex; }
+      .fti-hero { padding: 110px 0 56px; }
+      .rating-board, .asset-block, .tech-block, .final-cta { padding: 22px 20px; }
+      .rb-metrics { grid-template-columns: 1fr 1fr; }
+      .fund-grid { grid-template-columns: 1fr; }
+      .tech-grid { grid-template-columns: 1fr 1fr; }
+      .method-grid { grid-template-columns: 1fr; }
+      .diff-box { grid-template-columns: 1fr; gap: 8px; padding: 22px; }
+      .diff-vs { padding: 6px 0; }
+      .tg-cta { flex-direction: column; align-items: flex-start; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .tech-grid { grid-template-columns: 1fr; }
+      .rb-metrics { grid-template-columns: 1fr; }
+      .fc-btn-tg, .fc-btn-wa { width: 100%; justify-content: center; }
+      .tg-btn { width: 100%; justify-content: center; }
+      .fund-grid { grid-template-columns: 1fr; }
+      .hero-cta-row { flex-direction: column; }
+      .hero-cta, .hero-cta-ghost { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<header class="site-nav">
+  <nav class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="live-sentiment.html">Sentiment</a></li>
+      <li><a href="fundamental-technical-intelligence.html" class="active">Intelligence</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"                                onclick="toggleMenu()">Home</a>
+  <a href="about.html"                                onclick="toggleMenu()">About</a>
+  <a href="index.html#results"                        onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html"                             onclick="toggleMenu()">Articles</a>
+  <a href="live-sentiment.html"                       onclick="toggleMenu()">Sentiment</a>
+  <a href="fundamental-technical-intelligence.html"   onclick="toggleMenu()">Intelligence</a>
+  <a href="index.html#join"                           onclick="toggleMenu()">Join Now</a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 — HERO                                                -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<section class="fti-hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-pre">
+        <span class="live-dot"></span>
+        Pro-Trader Intelligence · Phase 1 Demo
+      </div>
+      <h1><span class="fx">Fundamental</span> &amp; <span class="tx">Technical</span> Intelligence</h1>
+      <p class="lead">Understand what is moving <b>Gold</b> and <b>Bitcoin</b> from both real-world fundamentals and technical market structure — translated into beginner-friendly language, with no signals, no guarantees, and no noise.</p>
+      <div class="hero-badges">
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Educational only
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Research-based
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Not financial advice
+        </span>
+      </div>
+      <div class="hero-cta-row">
+        <a href="#tech-snapshot" class="hero-cta">
+          See Live Technical Snapshot
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="live-sentiment.html" class="hero-cta-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back to Sentiment Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MAIN                                                            -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<main>
+  <div class="container">
+
+    <!-- ── SECTION 2 — OVERALL INTELLIGENCE RATING ── -->
+    <section aria-label="Overall Intelligence Rating">
+      <div class="section-head">
+        <div class="section-eyebrow">Section 1 · Today's Read</div>
+        <h2 class="section-title">Overall Intelligence Rating</h2>
+        <p class="section-desc">A single dashboard view of where fundamentals, technicals, volatility, and news risk stand right now — combined into one beginner-friendly market clarity score.</p>
+      </div>
+
+      <div class="rating-board">
+        <div class="rb-head">
+          <div class="rb-head-text">
+            <div class="rb-eyebrow">Market Pulse · Updated Today</div>
+            <h2>What the market looks like right now</h2>
+            <p>Cards on the left show the four core readings. The dial on the right combines them into one clarity score.</p>
+          </div>
+          <div class="rb-live">
+            <span class="live-dot"></span>
+            Phase 1 Demo
+          </div>
+        </div>
+
+        <div class="rb-grid">
+          <div class="rb-metrics">
+            <div class="rb-metric">
+              <div class="rb-metric-label">Fundamental Bias</div>
+              <div class="rb-metric-value v-bull">Bullish Pressure</div>
+              <div class="rb-metric-sub">Macro backdrop tilts in favour of risk &amp; metals.</div>
+            </div>
+            <div class="rb-metric">
+              <div class="rb-metric-label">Technical Bias</div>
+              <div class="rb-metric-value v-mix">Mixed</div>
+              <div class="rb-metric-sub">Higher timeframe up, intraday consolidating.</div>
+            </div>
+            <div class="rb-metric">
+              <div class="rb-metric-label">Volatility State</div>
+              <div class="rb-metric-value v-caution">Elevated</div>
+              <div class="rb-metric-sub">Larger candles &amp; wider ranges than normal.</div>
+            </div>
+            <div class="rb-metric">
+              <div class="rb-metric-label">News Risk (24h)</div>
+              <div class="rb-metric-value v-caution">High Caution</div>
+              <div class="rb-metric-sub">High-impact macro release inside next session.</div>
+            </div>
+          </div>
+
+          <div class="rb-clarity">
+            <div class="rb-clarity-label">Market Clarity Score</div>
+            <div class="clarity-ring">
+              <svg viewBox="0 0 160 160" aria-hidden="true">
+                <defs>
+                  <linearGradient id="cgrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%"  stop-color="#7c3aed"/>
+                    <stop offset="60%" stop-color="#22d3ee"/>
+                    <stop offset="100%" stop-color="#fbbf24"/>
+                  </linearGradient>
+                </defs>
+                <circle class="clarity-track" cx="80" cy="80" r="68"/>
+                <circle class="clarity-fill"  cx="80" cy="80" r="68"
+                        stroke-dasharray="427.26"
+                        stroke-dashoffset="128.18"/>
+              </svg>
+              <div class="clarity-text">
+                <div class="clarity-num">70</div>
+                <div class="clarity-of">/ 100</div>
+              </div>
+            </div>
+            <div class="clarity-pill">Decent Clarity</div>
+            <p class="clarity-def">Shows how clearly fundamentals, technical structure, volatility, and news risk currently align.</p>
+            <div class="clarity-guide">
+              <div class="clarity-guide-item">
+                <span class="cg-range">0–39</span>
+                <span class="cg-label">Low Clarity</span>
+              </div>
+              <div class="clarity-guide-item">
+                <span class="cg-range">40–69</span>
+                <span class="cg-label">Mixed / Caution</span>
+              </div>
+              <div class="clarity-guide-item cg-active-decent">
+                <span class="cg-range">70–84</span>
+                <span class="cg-label">Decent Clarity ◂ now</span>
+              </div>
+              <div class="clarity-guide-item">
+                <span class="cg-range">85–100</span>
+                <span class="cg-label">Strong Clarity</span>
+              </div>
+            </div>
+            <p class="clarity-practical">70/100 means conditions are readable, but news risk and mixed technical structure still require caution.</p>
+          </div>
+        </div>
+
+        <div class="demo-tag">Live market model preview</div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 3 — FUNDAMENTAL INTELLIGENCE ── -->
+    <section aria-label="Fundamental Intelligence">
+      <div class="section-head">
+        <div class="section-eyebrow">Section 2 · The "Why"</div>
+        <h2 class="section-title">Fundamental Intelligence</h2>
+        <p class="section-desc">These are the real-world forces that move Gold and Bitcoin. Each card shows the current state, our expected 24-hour impact, and a one-line plain-English explanation.</p>
+      </div>
+
+      <!-- ── GOLD ── -->
+      <div class="asset-block asset-gold">
+        <div class="asset-head">
+          <div class="asset-id">
+            <div class="asset-icon">Au</div>
+            <div class="asset-name">
+              <b>Gold · XAUUSD</b>
+              <small>9 fundamental inputs</small>
+            </div>
+          </div>
+          <div class="asset-summary summary-bull">
+            <span class="dot"></span>
+            Overall fundamentals: Mildly Bullish
+          </div>
+        </div>
+
+        <div class="fund-grid">
+          <!-- Central Bank Buying -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Central Bank Buying</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status"><b>Strong &amp; sustained</b> — global central banks continue to accumulate gold reserves.</div>
+            <div class="fund-explain">Central banks are the largest long-term holders. Persistent buying tightens supply.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-low"></div></div>
+              <span class="fund-impact-text">Slow</span>
+            </div>
+          </div>
+
+          <!-- ETF Flows -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">ETF Flows</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status">Net <b>inflows</b> for the third consecutive week into major gold ETFs.</div>
+            <div class="fund-explain">Inflows mean institutions are increasing gold exposure — supportive for price.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+
+          <!-- Mining Supply -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Mining Supply</div>
+              <span class="fund-tag tag-neu">Neutral</span>
+            </div>
+            <div class="fund-status">Production <b>stable</b>; no major disruption in current quarter.</div>
+            <div class="fund-explain">Supply moves slowly — rarely shifts short-term prices but caps long-term upside.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-low"></div></div>
+              <span class="fund-impact-text">Low</span>
+            </div>
+          </div>
+
+          <!-- Jewelry Demand -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Jewelry Demand</div>
+              <span class="fund-tag tag-mix">Mixed</span>
+            </div>
+            <div class="fund-status">India strong, China softer at current price levels.</div>
+            <div class="fund-explain">Physical demand acts as a price floor — important on dips, less so on rallies.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-low"></div></div>
+              <span class="fund-impact-text">Low</span>
+            </div>
+          </div>
+
+          <!-- Real Yield Pressure -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Real Yield Pressure</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status">10Y real yields <b>drifting lower</b> — easing the headwind on gold.</div>
+            <div class="fund-explain">Lower real yields raise the opportunity cost advantage of holding gold.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-high"></div></div>
+              <span class="fund-impact-text">High</span>
+            </div>
+          </div>
+
+          <!-- Dollar Strength -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Dollar Strength (DXY)</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status">DXY <b>softening</b> back toward range lows.</div>
+            <div class="fund-explain">A weaker dollar typically supports gold — they tend to move opposite directions.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-high"></div></div>
+              <span class="fund-impact-text">High</span>
+            </div>
+          </div>
+
+          <!-- Inflation / CPI -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Inflation / CPI</div>
+              <span class="fund-tag tag-mix">Mixed</span>
+            </div>
+            <div class="fund-status">Headline cooling, core sticky — next CPI release inside 24 hours.</div>
+            <div class="fund-explain">CPI prints can move gold sharply within minutes of release — handle with care.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-high"></div></div>
+              <span class="fund-impact-text">Very High</span>
+            </div>
+          </div>
+
+          <!-- Fed Stance -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Fed Stance</div>
+              <span class="fund-tag tag-bull">Dovish</span>
+            </div>
+            <div class="fund-status">Recent commentary leans toward <b>future easing</b>.</div>
+            <div class="fund-explain">A dovish Fed is generally supportive for gold — rate cuts lower real yields.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+
+          <!-- Geopolitical Risk -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Geopolitical Risk</div>
+              <span class="fund-tag tag-bull">Elevated</span>
+            </div>
+            <div class="fund-status">Ongoing global tensions — <b>safe-haven flows active</b>.</div>
+            <div class="fund-explain">Gold is the classic "uncertainty" asset — heightened risk fuels demand.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-tag">Live market model preview</div>
+      </div>
+
+      <!-- ── BTC ── -->
+      <div class="asset-block asset-btc">
+        <div class="asset-head">
+          <div class="asset-id">
+            <div class="asset-icon">₿</div>
+            <div class="asset-name">
+              <b>Bitcoin · BTC</b>
+              <small>8 fundamental inputs</small>
+            </div>
+          </div>
+          <div class="asset-summary summary-mix">
+            <span class="dot"></span>
+            Overall fundamentals: Mixed
+          </div>
+        </div>
+
+        <div class="fund-grid">
+          <!-- ETF Flows -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">ETF Flows</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status">Spot BTC ETFs posting <b>net inflows</b> across the past 5 sessions.</div>
+            <div class="fund-explain">Inflows = new institutional buyers — a major structural support.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-high"></div></div>
+              <span class="fund-impact-text">High</span>
+            </div>
+          </div>
+
+          <!-- Stablecoin Liquidity -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Stablecoin Liquidity</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status">USDT &amp; USDC supply <b>expanding</b> — more dry powder on exchanges.</div>
+            <div class="fund-explain">More stablecoin liquidity often precedes increased buying pressure on BTC.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+
+          <!-- Miner Pressure -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Miner Pressure</div>
+              <span class="fund-tag tag-bear">Bearish</span>
+            </div>
+            <div class="fund-status">Miner outflow to exchanges <b>elevated</b> — distribution risk rising.</div>
+            <div class="fund-explain">When miners send BTC to exchanges, supply increases — typically headwind.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+
+          <!-- Risk Appetite -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Risk Appetite</div>
+              <span class="fund-tag tag-mix">Mixed</span>
+            </div>
+            <div class="fund-status">Equities firm; VIX in mid-range; risk tone <b>neutral-to-positive</b>.</div>
+            <div class="fund-explain">BTC behaves like a high-beta risk asset — equity tone matters.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+
+          <!-- Macro Liquidity -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Macro Liquidity</div>
+              <span class="fund-tag tag-bull">Bullish</span>
+            </div>
+            <div class="fund-status">Global liquidity proxies <b>expanding</b> — supportive for risk assets.</div>
+            <div class="fund-explain">Bitcoin has historically tracked global M2 and liquidity conditions.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-low"></div></div>
+              <span class="fund-impact-text">Slow</span>
+            </div>
+          </div>
+
+          <!-- Regulation -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Regulation</div>
+              <span class="fund-tag tag-neu">Neutral</span>
+            </div>
+            <div class="fund-status">No major regulatory action pending this week.</div>
+            <div class="fund-explain">Regulatory headlines can flip sentiment fast — currently quiet.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-low"></div></div>
+              <span class="fund-impact-text">Low</span>
+            </div>
+          </div>
+
+          <!-- Fed Stance -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Fed Stance</div>
+              <span class="fund-tag tag-bull">Dovish</span>
+            </div>
+            <div class="fund-status">Same dovish lean as Gold — supportive for risk assets.</div>
+            <div class="fund-explain">Easier monetary policy historically lifts BTC alongside equities.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-mid"></div></div>
+              <span class="fund-impact-text">Moderate</span>
+            </div>
+          </div>
+
+          <!-- Crypto News Risk -->
+          <div class="fund-card">
+            <div class="fund-card-head">
+              <div class="fund-name">Crypto News Risk</div>
+              <span class="fund-tag tag-mix">Caution</span>
+            </div>
+            <div class="fund-status">Industry headlines elevated — exchange &amp; protocol watch on.</div>
+            <div class="fund-explain">Surprise news (hacks, listings, lawsuits) can cause sudden moves either direction.</div>
+            <div class="fund-impact">
+              <span class="fund-impact-label">24h Impact</span>
+              <div class="fund-impact-bar"><div class="fund-impact-fill imp-high"></div></div>
+              <span class="fund-impact-text">High</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-tag">Live market model preview</div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 4 — TECHNICAL SNAPSHOT ── -->
+    <section aria-label="Technical Snapshot" id="tech-snapshot">
+      <div class="section-head">
+        <div class="section-eyebrow">Section 3 · The "Where"</div>
+        <h2 class="section-title">Technical Snapshot</h2>
+        <p class="section-desc">High-level chart structure for context. These are the variables our team monitors in real time — for live levels, breakout alerts, and intraday updates, our Telegram channel is where the work happens.</p>
+      </div>
+
+      <div class="tech-block">
+        <div class="tech-head">
+          <div>
+            <h3>Current technical read</h3>
+            <p>A clean overview of where price sits within its higher-timeframe structure — without naming any signal or entry.</p>
+          </div>
+          <span class="tech-disclaimer">
+            <span class="live-dot" style="width:6px;height:6px;"></span>
+            Updated on every new candle
+          </span>
+        </div>
+
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-card-label">Higher TF Bias</div>
+            <div class="tech-card-value">Uptrend</div>
+            <div class="tech-card-sub">Weekly &amp; daily structure still printing higher highs.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Market Structure</div>
+            <div class="tech-card-value">Pullback in trend</div>
+            <div class="tech-card-sub">Intraday consolidation inside a larger up move.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Key Zones</div>
+            <div class="tech-card-value">Tested twice</div>
+            <div class="tech-card-sub">Prior demand zone holding — supply zone above untouched.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Liquidity Areas</div>
+            <div class="tech-card-value">Both sides primed</div>
+            <div class="tech-card-sub">Equal highs above and resting lows below.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Volatility State</div>
+            <div class="tech-card-value">Elevated</div>
+            <div class="tech-card-sub">ATR expanding — expect wider ranges intraday.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Breakout / Retest</div>
+            <div class="tech-card-value">In progress</div>
+            <div class="tech-card-sub">Price re-testing prior breakout level — reaction pending.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Trend Strength</div>
+            <div class="tech-card-value">Moderate</div>
+            <div class="tech-card-sub">Momentum cooling, but not yet reversing.</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-card-label">Session Activity</div>
+            <div class="tech-card-value">NY Open</div>
+            <div class="tech-card-sub">Most active window — larger moves likely.</div>
+          </div>
+        </div>
+
+        <div class="tg-cta">
+          <div class="tg-cta-text">
+            <b>Technical conditions change with every new candle.</b>
+            <p>For live chart updates, exact zones, breakout/retest alerts, and execution context, join our Telegram channel where our team posts in real time.</p>
+          </div>
+          <a href="https://t.me/ztradeuniversity" class="tg-btn" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+            Join Telegram for Live Updates
+          </a>
+        </div>
+
+        <div class="demo-tag">Live market model preview</div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 5 — DIFFERENCE EXPLAINER ── -->
+    <section aria-label="Fundamentals vs Technicals">
+      <div class="section-head">
+        <div class="section-eyebrow">Section 4 · Quick Concept</div>
+        <h2 class="section-title">Fundamentals vs Technicals</h2>
+        <p class="section-desc">Two different lenses on the same market. Pro traders use both — never just one.</p>
+      </div>
+
+      <div class="diff-box">
+        <div class="diff-side diff-fund">
+          <h4>
+            <span class="diff-ico">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </span>
+            Fundamentals
+          </h4>
+          <p>Explain <b>WHY</b> the market may move. Real-world forces — interest rates, ETF flows, supply, liquidity, geopolitics. They are slow-moving but set the underlying tide.</p>
+        </div>
+        <div class="diff-vs"><span>VS</span></div>
+        <div class="diff-side diff-tech">
+          <h4>
+            <span class="diff-ico">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+            </span>
+            Technicals
+          </h4>
+          <p>Show <b>WHERE</b> price may react. Chart structure, key zones, liquidity, momentum, breakouts. They move fast and pinpoint the exact areas where decisions get made.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 6 — METHODOLOGY ── -->
+    <section aria-label="Methodology">
+      <div class="section-head">
+        <div class="section-eyebrow">Section 5 · How To Read This Page</div>
+        <h2 class="section-title">Methodology</h2>
+        <p class="section-desc">A short note on how this intelligence is built — so you know exactly what you're looking at.</p>
+      </div>
+
+      <div class="method-grid">
+        <div class="method-card">
+          <div class="method-ico mi-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <div class="method-title">Fundamentals are slow</div>
+          <p class="method-body">They shift over weeks and months. Use them to understand the bigger tide — not for entries.</p>
+        </div>
+        <div class="method-card">
+          <div class="method-ico mi-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div class="method-title">Technicals are fast</div>
+          <p class="method-body">They change candle by candle. Use them to identify where price is likely to react.</p>
+        </div>
+        <div class="method-card">
+          <div class="method-ico mi-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg>
+          </div>
+          <div class="method-title">Best traders combine both</div>
+          <p class="method-body">Fundamentals choose the direction of conviction; technicals choose the location of execution.</p>
+        </div>
+        <div class="method-card">
+          <div class="method-ico mi-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="method-title">Education, not advice</div>
+          <p class="method-body">Every reading on this page is educational. There are no trade signals, no guarantees, and no predictions.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 7 — FINAL CTA ── -->
+    <section aria-label="Join Our Channels">
+      <div class="final-cta">
+        <div class="fc-inner">
+          <div class="fc-pre">Stay Informed · Free Channels</div>
+          <div class="fc-title">Get live technical updates the moment they happen</div>
+          <p class="fc-desc">Our Telegram channel posts intraday levels, key zone reactions, and market context as candles close. WhatsApp is for direct questions and 1-on-1 guidance.</p>
+          <div class="fc-btns">
+            <a href="https://t.me/ztradeuniversity" target="_blank" rel="noopener" class="fc-btn-tg">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+              Join Telegram for Live Technical Updates
+            </a>
+            <a href="https://wa.me/17189730347" target="_blank" rel="noopener" class="fc-btn-wa">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.02 0C5.4 0 .03 5.37.03 11.99c0 2.11.55 4.17 1.6 5.99L0 24l6.18-1.62a11.97 11.97 0 0 0 5.84 1.49h.01c6.62 0 11.99-5.37 11.99-11.99 0-3.2-1.25-6.21-3.5-8.4zM12.02 21.8h-.01a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.67.96.98-3.58-.23-.37a9.81 9.81 0 0 1-1.51-5.24c0-5.43 4.42-9.85 9.86-9.85a9.79 9.79 0 0 1 6.97 2.89 9.78 9.78 0 0 1 2.88 6.97c0 5.44-4.42 9.8-9.9 9.8zm5.39-7.36c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.49-.5-.66-.51-.17-.01-.37-.01-.57-.01s-.51.07-.78.37c-.27.3-1.03 1.01-1.03 2.46s1.05 2.86 1.2 3.06c.15.2 2.08 3.18 5.04 4.46.7.3 1.25.48 1.68.62.71.23 1.35.2 1.86.12.57-.08 1.75-.71 2-1.4.25-.69.25-1.28.17-1.4-.07-.12-.27-.2-.57-.34z"/></svg>
+              Contact on WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 8 — DISCLAIMER ── -->
+    <section aria-label="Disclaimer">
+      <div class="disclaimer-box">
+        <b>Disclaimer.</b> All content on this page is for <b>educational purposes only</b>. Nothing here is financial advice, investment advice, or a trade signal. Markets carry risk — past behaviour is not indicative of future results. Always do your own research and consult a licensed advisor before making any trading or investment decision.
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html" class="footer-logo-wrap">
+      <div class="footer-logo-mark">Z</div>
+      <div class="footer-brand-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <span class="footer-copy">© 2026 Z Trade University. Educational purposes only.</span>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <span class="footer-sep">·</span>
+      <a href="articles.html">Articles</a>
+      <span class="footer-sep">·</span>
+      <a href="live-sentiment.html">Sentiment</a>
+      <span class="footer-sep">·</span>
+      <a href="fundamental-technical-intelligence.html">Intelligence</a>
+      <span class="footer-sep">·</span>
+      <a href="about.html">About</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>

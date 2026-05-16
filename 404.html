@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <title>Page Not Found – Z Trade University</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0b1120;
+      --purple2: #7c3aed;
+      --lime: #acd400;
+      --white: #ffffff;
+      --muted: rgba(255,255,255,0.45);
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      text-align: center;
+      max-width: 480px;
+    }
+    .code {
+      font-size: clamp(80px, 20vw, 128px);
+      font-weight: 900;
+      letter-spacing: -4px;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--purple2) 0%, #a855f7 50%, var(--lime) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+    .heading {
+      font-size: clamp(18px, 4vw, 24px);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+    .sub {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--purple2);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 13px 28px;
+      border-radius: 100px;
+      text-decoration: none;
+      transition: background .2s, transform .18s, box-shadow .2s;
+      box-shadow: 0 4px 18px rgba(124,58,237,0.4);
+    }
+    .btn-home:hover {
+      background: #6d28d9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(124,58,237,0.55);
+    }
+    .divider {
+      width: 40px;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--purple2), var(--lime));
+      margin: 0 auto 28px;
+    }
+    .footer-note {
+      margin-top: 48px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="code">404</div>
+    <div class="divider"></div>
+    <h1 class="heading">This page could not be found.</h1>
+    <p class="sub">The page you're looking for may have moved or no longer exists. Head back to the homepage and continue learning.</p>
+    <a href="index.html" class="btn-home">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Return to Homepage
+    </a>
+    <p class="footer-note">© 2026 Z Trade University · Educational Trading Resource</p>
+  </div>
+
+</body>
+</html>

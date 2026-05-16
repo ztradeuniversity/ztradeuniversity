@@ -1,0 +1,1977 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Trade Assistant | Z Trade University</title>
+<meta name="description" content="An educational trade-quality auditor. Submit a trade idea and receive a structured review across structure, zone, risk, news, session, emotion, volatility, and timing. Not a signal service." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-1: #060818;
+    --bg-2: #0a0d22;
+    --bg-3: #0d1230;
+    --bg-card: #11163a;
+    --bg-card2: #161c47;
+    --bg-panel: #0c1126;
+    --vio:   #7c3aed;
+    --vio2:  #a78bfa;
+    --vio3:  #c4b5fd;
+    --indigo:#6366f1;
+    --bull:  #10b981;
+    --bull2: #34d399;
+    --bear:  #ef4444;
+    --bear2: #f87171;
+    --amber: #f59e0b;
+    --amber2:#fbbf24;
+    --cyan:  #06b6d4;
+    --cyan2: #22d3ee;
+    --neutral:#94a3b8;
+    --text:  rgba(255,255,255,0.92);
+    --muted: rgba(255,255,255,0.62);
+    --muted2:rgba(255,255,255,0.42);
+    --border:rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.14);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-1);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(6,8,24,0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 66px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: inherit; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, #7c3aed 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(91,26,200,0.40);
+  }
+  .brand-mark span {
+    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 900;
+    color: #c6f000; line-height: 1;
+  }
+  .brand-text { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
+  .topnav { display: flex; align-items: center; gap: 4px; }
+  .topnav a {
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.66);
+    text-decoration: none; padding: 8px 14px; border-radius: 8px;
+    transition: color .18s, background .18s;
+  }
+  .topnav a:hover { color: var(--vio2); background: rgba(167,139,250,0.07); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    padding: 72px 0 60px;
+    background:
+      radial-gradient(900px 460px at 80% -10%, rgba(124,58,237,0.18), transparent 60%),
+      radial-gradient(700px 380px at 10% 20%, rgba(99,102,241,0.12), transparent 60%),
+      linear-gradient(180deg, #060818 0%, #0a0d22 60%, #060818 100%);
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content:''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(167,139,250,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(167,139,250,0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at 50% 30%, black, transparent 70%);
+    -webkit-mask-image: radial-gradient(circle at 50% 30%, black, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; text-align: center; }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 7px 14px 7px 11px; border-radius: 100px;
+    background: rgba(167,139,250,0.10);
+    border: 1px solid rgba(167,139,250,0.32);
+    color: var(--vio2);
+    font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase;
+  }
+  .live-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--vio2);
+    box-shadow: 0 0 0 0 rgba(167,139,250,0.55);
+    animation: pulseDot 2.2s ease-out infinite;
+  }
+  @keyframes pulseDot {
+    0%   { box-shadow: 0 0 0 0 rgba(167,139,250,0.55); }
+    70%  { box-shadow: 0 0 0 9px rgba(167,139,250,0); }
+    100% { box-shadow: 0 0 0 0 rgba(167,139,250,0); }
+  }
+  .hero h1 {
+    font-family: 'Manrope', 'Inter', sans-serif;
+    font-size: clamp(34px, 5.4vw, 58px);
+    font-weight: 800; letter-spacing: -1.4px; line-height: 1.05;
+    margin: 20px auto 16px; max-width: 880px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(120deg, var(--vio2) 0%, var(--cyan2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .hero-sub {
+    color: var(--muted); font-size: clamp(15px, 1.4vw, 17px);
+    max-width: 660px; margin: 0 auto 12px;
+  }
+  .hero-note {
+    display: inline-block;
+    font-size: 12px; color: var(--muted2);
+    font-weight: 600; letter-spacing: .2px;
+    margin-bottom: 30px;
+    padding: 6px 12px; border-radius: 100px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+  }
+  .start-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 16px 32px; border-radius: 100px;
+    background: linear-gradient(135deg, var(--vio) 0%, var(--indigo) 100%);
+    color: #fff; font-size: 15px; font-weight: 800; letter-spacing: -.2px;
+    border: 0; cursor: pointer; text-decoration: none;
+    box-shadow: 0 10px 30px rgba(124,58,237,0.42), 0 1px 0 rgba(255,255,255,0.18) inset;
+    transition: transform .2s, box-shadow .22s;
+  }
+  .start-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(124,58,237,0.55); }
+  .start-btn svg { transition: transform .2s; }
+  .start-btn:hover svg { transform: translateX(3px); }
+
+  /* ── HOW IT WORKS ── */
+  .howit { padding: 52px 0 30px; background: var(--bg-1); }
+  .howit-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  .ex-card {
+    background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px 22px;
+    transition: border-color .2s, transform .2s;
+  }
+  .ex-card:hover { border-color: rgba(167,139,250,0.28); transform: translateY(-2px); }
+  .ex-icon {
+    width: 40px; height: 40px; border-radius: 11px;
+    background: rgba(167,139,250,0.10);
+    border: 1px solid rgba(167,139,250,0.24);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--vio2);
+    margin-bottom: 14px;
+  }
+  .ex-title { font-size: 14.5px; font-weight: 800; margin-bottom: 6px; }
+  .ex-body { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+  /* ── FORM ── */
+  .form-section { padding: 30px 0 70px; }
+  .form-shell {
+    max-width: 820px; margin: 0 auto;
+    background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 30px 32px 28px;
+    box-shadow: 0 22px 60px rgba(0,0,0,0.50);
+    position: relative;
+  }
+  .form-shell.is-locked { opacity: 0.55; pointer-events: none; filter: blur(1px); }
+  .form-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .form-counter {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+  }
+  .form-counter strong { color: var(--vio2); }
+  .form-title { font-size: 12px; font-weight: 800; letter-spacing: 1.4px;
+    color: var(--vio3); text-transform: uppercase; }
+
+  .step-dots {
+    display: flex; gap: 8px; margin-bottom: 22px;
+  }
+  .step-dot {
+    flex: 1; height: 5px; border-radius: 100px;
+    background: rgba(255,255,255,0.06);
+    transition: background .35s;
+  }
+  .step-dot.is-active { background: linear-gradient(90deg, var(--vio) 0%, var(--vio2) 100%); }
+  .step-dot.is-done   { background: linear-gradient(90deg, var(--vio2) 0%, var(--cyan2) 100%); }
+
+  .form-step { display: none; animation: fadeUp .32s ease-out; }
+  .form-step.is-on { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .field { margin-bottom: 22px; }
+  .field-label {
+    display: block;
+    font-size: 11px; font-weight: 800; letter-spacing: 1.8px;
+    color: var(--vio3); text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .field-label .opt-flag {
+    color: var(--muted2); font-weight: 600; letter-spacing: .4px;
+    text-transform: none; margin-left: 6px;
+  }
+  .field-grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  }
+  .field-grid-3 {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;
+  }
+
+  /* Inputs */
+  .input-base {
+    width: 100%;
+    background: rgba(255,255,255,0.035);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 16px;
+    color: #fff;
+    font-size: 14.5px; font-weight: 600;
+    font-family: inherit;
+    transition: border-color .18s, background .18s;
+  }
+  .input-base:focus {
+    outline: 0; border-color: var(--vio2);
+    background: rgba(124,58,237,0.06);
+  }
+  .input-base::placeholder { color: rgba(255,255,255,0.30); font-weight: 500; }
+  select.input-base {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 42px;
+    cursor: pointer;
+  }
+  select.input-base option { background: var(--bg-3); color: #fff; }
+  textarea.input-base {
+    min-height: 80px; resize: vertical; line-height: 1.55;
+    font-size: 14px;
+  }
+
+  /* Option chips (mini cards) */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip-opt {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 16px; border-radius: 100px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--border);
+    cursor: pointer; user-select: none;
+    font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.78);
+    transition: background .18s, border-color .18s, color .18s, transform .12s;
+  }
+  .chip-opt:hover { background: rgba(167,139,250,0.06); border-color: rgba(167,139,250,0.32); color: #fff; }
+  .chip-opt.is-selected {
+    background: rgba(124,58,237,0.16);
+    border-color: var(--vio2);
+    color: var(--vio2);
+    box-shadow: 0 0 0 4px rgba(124,58,237,0.10);
+  }
+
+  /* Checklist (multi-select cards) */
+  .check-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .check-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1.5px solid var(--border);
+    cursor: pointer; user-select: none;
+    transition: background .18s, border-color .18s;
+  }
+  .check-item:hover { background: rgba(167,139,250,0.05); border-color: rgba(167,139,250,0.30); }
+  .check-item.is-selected {
+    background: rgba(124,58,237,0.12);
+    border-color: var(--vio2);
+  }
+  .check-mark {
+    width: 18px; height: 18px; border-radius: 6px;
+    border: 2px solid rgba(255,255,255,0.22);
+    flex-shrink: 0; position: relative;
+    transition: border-color .18s, background .18s;
+  }
+  .check-item.is-selected .check-mark { border-color: var(--vio2); background: var(--vio2); }
+  .check-item.is-selected .check-mark::after {
+    content:''; position: absolute;
+    top: 50%; left: 50%;
+    width: 9px; height: 5px;
+    border-bottom: 2px solid #fff;
+    border-left:   2px solid #fff;
+    transform: translate(-55%, -70%) rotate(-45deg);
+  }
+  .check-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.84); }
+
+  /* Form nav */
+  .form-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 24px; padding-top: 22px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-back, .btn-next {
+    font-size: 13px; font-weight: 700;
+    padding: 12px 24px; border-radius: 100px;
+    cursor: pointer; border: 0;
+    transition: background .18s, transform .14s, border-color .18s, box-shadow .22s;
+  }
+  .btn-back {
+    background: transparent;
+    border: 1.5px solid var(--border-strong);
+    color: var(--muted);
+  }
+  .btn-back:hover:not(:disabled) { color: #fff; border-color: rgba(255,255,255,0.30); }
+  .btn-back:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-next {
+    background: linear-gradient(135deg, var(--vio) 0%, var(--indigo) 100%);
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(124,58,237,0.36);
+  }
+  .btn-next:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(124,58,237,0.50); }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+  .audit-overlay {
+    position: absolute; inset: 0; border-radius: 22px;
+    background: rgba(8,12,30,0.90);
+    backdrop-filter: blur(6px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .28s;
+  }
+  .audit-overlay.is-on { opacity: 1; pointer-events: all; }
+  .audit-spin {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid rgba(167,139,250,0.16);
+    border-top-color: var(--vio2);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .audit-text {
+    font-size: 13px; font-weight: 800; letter-spacing: 1.5px;
+    color: var(--vio2); text-transform: uppercase;
+  }
+
+  /* Validation */
+  .val-msg {
+    display: none;
+    margin-top: 16px;
+    padding: 10px 14px; border-radius: 10px;
+    background: rgba(239,68,68,0.10);
+    border: 1px solid rgba(239,68,68,0.30);
+    font-size: 12.5px; font-weight: 700;
+    color: var(--bear2);
+  }
+  .val-msg.is-on { display: block; }
+
+  /* ── SCORE LOGIC TRANSPARENCY ── */
+  .scoring {
+    padding: 60px 0;
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .section-eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--vio2); text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-family: 'Manrope', sans-serif;
+    font-size: clamp(24px, 3.4vw, 34px);
+    font-weight: 800; letter-spacing: -.8px;
+    margin-bottom: 12px;
+  }
+  .section-sub {
+    color: var(--muted); font-size: 14.5px;
+    max-width: 620px; margin-bottom: 28px;
+  }
+  .sc-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .sc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+  }
+  .sc-pts {
+    font-family: 'Manrope', sans-serif;
+    font-size: 26px; font-weight: 800;
+    background: linear-gradient(120deg, var(--vio2) 0%, var(--cyan2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1; margin-bottom: 7px;
+  }
+  .sc-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .sc-desc { font-size: 11.5px; color: var(--muted2); line-height: 1.5; }
+
+  /* ── RESULT CARD ── */
+  .result-section { padding: 60px 0; display: none; }
+  .result-section.is-on { display: block; animation: fadeUp .55s ease-out; }
+  .result-wrap {
+    background: linear-gradient(165deg, var(--bg-card2) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px;
+    padding: 30px 32px;
+    box-shadow: 0 28px 80px rgba(0,0,0,0.55);
+    position: relative;
+    overflow: hidden;
+  }
+  .result-wrap::before {
+    content:''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--vio2), var(--cyan2), transparent);
+  }
+
+  /* Warnings stack */
+  .warn-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+  .warn-stack:empty { display: none; }
+  .warn-banner {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 13px 16px; border-radius: 12px;
+    animation: fadeUp .35s ease-out;
+  }
+  .warn-banner.sev-critical {
+    background: linear-gradient(120deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.04) 100%);
+    border: 1.5px solid rgba(239,68,68,0.45);
+  }
+  .warn-banner.sev-caution {
+    background: linear-gradient(120deg, rgba(245,158,11,0.16) 0%, rgba(245,158,11,0.04) 100%);
+    border: 1.5px solid rgba(245,158,11,0.40);
+  }
+  .warn-banner.sev-note {
+    background: rgba(148,163,184,0.06);
+    border: 1px solid rgba(148,163,184,0.22);
+  }
+  .warn-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sev-critical .warn-icon { background: rgba(239,68,68,0.22); color: var(--bear2); }
+  .sev-caution  .warn-icon { background: rgba(245,158,11,0.18); color: var(--amber2); }
+  .sev-note     .warn-icon { background: rgba(148,163,184,0.16); color: var(--neutral); }
+  .warn-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 2px;
+  }
+  .sev-critical .warn-title { color: var(--bear2); }
+  .sev-caution  .warn-title { color: var(--amber2); }
+  .sev-note     .warn-title { color: var(--neutral); }
+  .warn-text { font-size: 13.5px; color: rgba(255,255,255,0.86); line-height: 1.55; }
+
+  /* Result top: score + category */
+  .res-top {
+    display: grid; grid-template-columns: 1.05fr 1fr;
+    gap: 28px; align-items: center;
+    margin-bottom: 26px;
+  }
+  .res-eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .cat-badge {
+    display: inline-block;
+    font-family: 'Manrope', sans-serif;
+    font-size: 26px; font-weight: 800; letter-spacing: -.5px;
+    margin-bottom: 14px;
+    line-height: 1.1;
+  }
+  .cat-strong    { color: var(--bull2); }
+  .cat-good      { color: var(--cyan2); }
+  .cat-mixed     { color: var(--amber2); }
+  .cat-weak      { color: #fb923c; }
+  .cat-high_risk { color: var(--bear2); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
+    padding: 7px 13px; border-radius: 100px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-strong);
+  }
+  .chip-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--vio2); flex-shrink: 0;
+  }
+  .chip.tone-green { color: var(--bull2); border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.08); }
+  .chip.tone-green .chip-dot { background: var(--bull2); }
+  .chip.tone-teal  { color: var(--cyan2); border-color: rgba(34,211,238,0.32); background: rgba(34,211,238,0.08); }
+  .chip.tone-teal  .chip-dot { background: var(--cyan2); }
+  .chip.tone-amber { color: var(--amber2); border-color: rgba(251,191,36,0.32); background: rgba(251,191,36,0.08); }
+  .chip.tone-amber .chip-dot { background: var(--amber2); }
+  .chip.tone-orange{ color: #fb923c; border-color: rgba(251,146,60,0.32); background: rgba(251,146,60,0.08); }
+  .chip.tone-orange .chip-dot { background: #fb923c; }
+  .chip.tone-red   { color: var(--bear2); border-color: rgba(248,113,113,0.32); background: rgba(248,113,113,0.08); }
+  .chip.tone-red   .chip-dot { background: var(--bear2); }
+  .chip.tone-violet{ color: var(--vio2); border-color: rgba(167,139,250,0.32); background: rgba(167,139,250,0.08); }
+  .chip.tone-violet .chip-dot { background: var(--vio2); }
+
+  /* Score panel */
+  .score-panel {
+    background: rgba(0,0,0,0.30);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    text-align: center;
+  }
+  .score-eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .score-num {
+    font-family: 'Manrope', sans-serif;
+    font-size: 60px; font-weight: 800; line-height: 1;
+    background: linear-gradient(120deg, var(--vio2) 0%, var(--cyan2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .score-out {
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    margin-top: 4px;
+  }
+  .score-bar {
+    height: 6px; border-radius: 100px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden; margin-top: 14px;
+  }
+  .score-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--vio) 0%, var(--cyan2) 100%);
+    border-radius: 100px;
+    width: 0%;
+    transition: width 1s cubic-bezier(.2,.7,.3,1);
+  }
+
+  /* Sub-bars (6 buckets) */
+  .submeters {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px 30px; margin: 28px 0 6px;
+  }
+  .sm-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 7px;
+  }
+  .sm-name { font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.80); }
+  .sm-val { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.92); }
+  .sm-pct { color: var(--muted2); font-weight: 600; font-size: 11px; margin-left: 5px; }
+  .sm-track { height: 7px; border-radius: 100px; background: rgba(255,255,255,0.06); overflow: hidden; }
+  .sm-fill { height: 100%; border-radius: 100px; width: 0%; transition: width 1s cubic-bezier(.2,.7,.3,1); }
+  .sm-fill.t-violet { background: linear-gradient(90deg, var(--vio) 0%, var(--vio2) 100%); }
+  .sm-fill.t-cyan   { background: linear-gradient(90deg, var(--cyan) 0%, var(--cyan2) 100%); }
+  .sm-fill.t-amber  { background: linear-gradient(90deg, var(--amber) 0%, var(--amber2) 100%); }
+  .sm-fill.t-bull   { background: linear-gradient(90deg, var(--bull) 0%, var(--bull2) 100%); }
+  .sm-fill.t-bear   { background: linear-gradient(90deg, var(--bear) 0%, var(--bear2) 100%); }
+  .sm-fill.t-indigo { background: linear-gradient(90deg, var(--indigo) 0%, var(--vio2) 100%); }
+
+  /* Mini tiles: Volatility + Timing */
+  .mini-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin: 26px 0 10px;
+  }
+  .mini-tile {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .mini-eyebrow {
+    font-size: 10.5px; font-weight: 800; letter-spacing: 1.6px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .mini-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 17px; font-weight: 800; letter-spacing: -.3px;
+    margin-bottom: 5px;
+  }
+  .mini-label.tone-green  { color: var(--bull2); }
+  .mini-label.tone-cyan   { color: var(--cyan2); }
+  .mini-label.tone-amber  { color: var(--amber2); }
+  .mini-label.tone-orange { color: #fb923c; }
+  .mini-label.tone-red    { color: var(--bear2); }
+  .mini-label.tone-violet { color: var(--vio2); }
+  .mini-note { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+  /* Context lines list */
+  .ctx-list {
+    margin-top: 26px;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px 18px;
+  }
+  .ctx-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .ctx-row:last-child { border-bottom: 0; }
+  .ctx-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .4px;
+    color: var(--muted); text-transform: uppercase;
+  }
+  .ctx-val {
+    font-size: 13.5px; font-weight: 700; color: #fff;
+    display: inline-flex; align-items: center; gap: 8px;
+    text-align: right;
+  }
+  .ctx-val .vd {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .vd.tone-green  { background: var(--bull2); }
+  .vd.tone-cyan   { background: var(--cyan2); }
+  .vd.tone-amber  { background: var(--amber2); }
+  .vd.tone-orange { background: #fb923c; }
+  .vd.tone-red    { background: var(--bear2); }
+  .vd.tone-violet { background: var(--vio2); }
+  .vd.tone-neutral{ background: var(--neutral); }
+
+  /* AI Summary */
+  .ai-summary {
+    margin-top: 22px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(167,139,250,0.07) 0%, rgba(34,211,238,0.04) 100%);
+    border: 1px solid rgba(167,139,250,0.20);
+    border-left: 3px solid var(--vio2);
+  }
+  .ai-lead {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--vio2); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .ai-body { font-size: 14px; color: rgba(255,255,255,0.86); line-height: 1.65; }
+  .ai-guard {
+    margin-top: 10px;
+    font-size: 11.5px; color: var(--muted2); font-style: italic;
+  }
+
+  /* ── SUGGESTED LEARNING ── */
+  .learn-section {
+    padding: 60px 0; display: none;
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+  }
+  .learn-section.is-on { display: block; }
+  .learn-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .learn-item {
+    display: flex; align-items: center; gap: 18px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none; color: inherit;
+    transition: border-color .2s, background .2s, transform .18s;
+  }
+  .learn-item:hover {
+    border-color: rgba(167,139,250,0.45);
+    background: var(--bg-card2);
+    transform: translateY(-2px);
+  }
+  .learn-num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(167,139,250,0.10);
+    border: 1px solid rgba(167,139,250,0.28);
+    color: var(--vio2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .learn-text { flex: 1; }
+  .learn-title { font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .learn-cat   { font-size: 12px; color: var(--muted2); }
+  .learn-arrow { color: var(--vio2); flex-shrink: 0; transition: transform .18s; }
+  .learn-item:hover .learn-arrow { transform: translateX(4px); }
+
+  /* ── CTA ── */
+  .cta-section { padding: 60px 0; display: none; text-align: center; }
+  .cta-section.is-on { display: block; }
+  .cta-wrap {
+    max-width: 720px; margin: 0 auto;
+    background: linear-gradient(160deg, var(--bg-card2) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 36px 32px;
+  }
+  .cta-headline {
+    font-family: 'Manrope', sans-serif;
+    font-size: clamp(20px, 2.6vw, 26px);
+    font-weight: 800; letter-spacing: -.4px;
+    margin-bottom: 8px;
+  }
+  .cta-sub { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+  .cta-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 24px; border-radius: 100px;
+    font-size: 14px; font-weight: 800;
+    text-decoration: none; color: #fff;
+    transition: transform .18s, box-shadow .2s;
+  }
+  .cta-wa {
+    background: linear-gradient(135deg, #1ebd5f 0%, #25d366 100%);
+    box-shadow: 0 8px 22px rgba(37,211,102,0.32);
+  }
+  .cta-wa:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(37,211,102,0.46); }
+  .cta-tg {
+    background: linear-gradient(135deg, #2080cf 0%, #29b6f6 100%);
+    box-shadow: 0 8px 22px rgba(41,182,246,0.32);
+  }
+  .cta-tg:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(41,182,246,0.46); }
+  .restart-link {
+    display: inline-block; margin-top: 22px;
+    font-size: 12.5px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--muted); text-transform: uppercase;
+    text-decoration: none; cursor: pointer;
+  }
+  .restart-link:hover { color: var(--vio2); }
+
+  /* ── DISCLAIMER ── */
+  .disclaim {
+    padding: 50px 0 70px;
+    background: var(--bg-1);
+    border-top: 1px solid var(--border);
+  }
+  .disclaim-wrap {
+    max-width: 880px; margin: 0 auto;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 26px;
+  }
+  .disclaim-head {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .disclaim-body { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+
+  footer {
+    text-align: center;
+    padding: 24px 0 30px;
+    font-size: 12px; color: var(--muted2);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sc-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 820px) {
+    .howit-grid { grid-template-columns: 1fr; }
+    .field-grid-2 { grid-template-columns: 1fr; gap: 18px; }
+    .field-grid-3 { grid-template-columns: 1fr; gap: 14px; }
+    .check-grid   { grid-template-columns: 1fr; }
+    .res-top      { grid-template-columns: 1fr; }
+    .submeters    { grid-template-columns: 1fr; }
+    .mini-grid    { grid-template-columns: 1fr; }
+    .topnav a     { padding: 8px 10px; font-size: 12.5px; }
+  }
+  @media (max-width: 560px) {
+    .container { padding: 0 18px; }
+    .hero { padding: 56px 0 50px; }
+    .form-shell { padding: 24px 20px 22px; border-radius: 18px; }
+    .sc-grid { grid-template-columns: 1fr 1fr; }
+    .result-wrap { padding: 24px 20px; border-radius: 18px; }
+    .cat-badge { font-size: 22px; }
+    .score-num { font-size: 50px; }
+    .mini-label { font-size: 16px; }
+    .ctx-row { flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 0; }
+    .ctx-val { font-size: 13px; }
+    .cta-row { flex-direction: column; }
+    .cta-btn { width: 100%; justify-content: center; }
+    .brand-text { display: none; }
+    .topnav a { padding: 6px 8px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="brand">
+      <div class="brand-mark"><span>Z</span></div>
+      <span class="brand-text">Z Trade University</span>
+    </a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="articles.html">Articles</a>
+      <a href="live-sentiment.html">Live Sentiment</a>
+      <a href="trader-assessment.html">Assessment</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── 1. HERO ── -->
+<section class="hero">
+  <div class="container hero-inner">
+    <span class="live-pill"><span class="dot"></span>AI Trade Assistant</span>
+    <h1>Audit your trade before <span class="accent">you risk a single dollar</span>.</h1>
+    <p class="hero-sub">A structured AI-style review of your trade idea across market structure, zone quality, risk, news, session, emotional state, volatility, and timing.</p>
+    <div class="hero-note">Educational audit · Not a signal service · Not financial advice</div>
+    <div>
+      <button class="start-btn" id="startBtn" type="button">
+        Audit My Trade
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ── 2. HOW IT WORKS ── -->
+<section class="howit">
+  <div class="container">
+    <div class="howit-grid">
+      <div class="ex-card">
+        <div class="ex-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        </div>
+        <div class="ex-title">What you submit</div>
+        <div class="ex-body">Symbol, timeframe, style, your bias, entry, stop loss, target, risk %, zone basis, news awareness, session, emotional state, and a pre-trade checklist.</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
+        </div>
+        <div class="ex-title">What it checks</div>
+        <div class="ex-body">Six weighted dimensions plus volatility regime, trade timing quality, and session conflict detection — all evaluated against locked educational rules.</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="ex-title">What you receive</div>
+        <div class="ex-body">A trade quality score out of 100, a result category, six animated sub-scores, surfaced risk warnings, and an educational recommendation. No buy/sell calls — ever.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. INPUT FORM ── -->
+<section class="form-section" id="formSection">
+  <div class="container">
+    <div class="form-shell" id="formShell">
+      <div class="form-head">
+        <span class="form-counter">Step <strong id="stepNum">1</strong> of 3</span>
+        <span class="form-title" id="stepTitle">Trade Setup</span>
+      </div>
+      <div class="step-dots">
+        <span class="step-dot is-active" data-d="1"></span>
+        <span class="step-dot" data-d="2"></span>
+        <span class="step-dot" data-d="3"></span>
+      </div>
+
+      <!-- STEP 1: TRADE SETUP -->
+      <div class="form-step is-on" data-step="1">
+
+        <div class="field-grid-2">
+          <div class="field">
+            <label class="field-label">Market Symbol</label>
+            <select class="input-base" id="f_symbol">
+              <option value="">Select instrument…</option>
+              <option value="XAUUSD">Gold · XAUUSD</option>
+              <option value="EURUSD">EURUSD</option>
+              <option value="GBPUSD">GBPUSD</option>
+              <option value="USDJPY">USDJPY</option>
+              <option value="AUDUSD">AUDUSD</option>
+              <option value="USDCAD">USDCAD</option>
+              <option value="BTCUSD">Bitcoin · BTCUSD</option>
+              <option value="ETHUSD">Ethereum · ETHUSD</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Timeframe</label>
+            <select class="input-base" id="f_tf">
+              <option value="">Select timeframe…</option>
+              <option value="M1">M1</option>
+              <option value="M5">M5</option>
+              <option value="M15">M15</option>
+              <option value="M30">M30</option>
+              <option value="H1">H1</option>
+              <option value="H4">H4</option>
+              <option value="D1">D1</option>
+              <option value="W1">W1</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Trading Style</label>
+          <div class="chip-row" data-key="style">
+            <span class="chip-opt" data-v="scalping">Scalping</span>
+            <span class="chip-opt" data-v="intraday">Intraday</span>
+            <span class="chip-opt" data-v="swing">Swing</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Higher Timeframe Trend</label>
+          <div class="chip-row" data-key="htf">
+            <span class="chip-opt" data-v="up">Up</span>
+            <span class="chip-opt" data-v="down">Down</span>
+            <span class="chip-opt" data-v="sideways">Sideways</span>
+            <span class="chip-opt" data-v="unsure">Unsure</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Your Bias</label>
+          <div class="chip-row" data-key="bias">
+            <span class="chip-opt" data-v="bullish">Bullish</span>
+            <span class="chip-opt" data-v="bearish">Bearish</span>
+            <span class="chip-opt" data-v="unsure">Unsure</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- STEP 2: TRADE PLAN -->
+      <div class="form-step" data-step="2">
+
+        <div class="field-grid-3">
+          <div class="field">
+            <label class="field-label">Entry Price</label>
+            <input class="input-base" type="number" step="any" id="f_entry" placeholder="e.g. 2345.20" />
+          </div>
+          <div class="field">
+            <label class="field-label">Stop Loss <span class="opt-flag">(price)</span></label>
+            <input class="input-base" type="number" step="any" id="f_sl" placeholder="e.g. 2342.00" />
+          </div>
+          <div class="field">
+            <label class="field-label">Target <span class="opt-flag">(price)</span></label>
+            <input class="input-base" type="number" step="any" id="f_target" placeholder="e.g. 2352.00" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Account Risk per Trade</label>
+          <div class="chip-row" data-key="riskPct">
+            <span class="chip-opt" data-v="sub1">Less than 1%</span>
+            <span class="chip-opt" data-v="1to2">1% to 2%</span>
+            <span class="chip-opt" data-v="3to5">3% to 5%</span>
+            <span class="chip-opt" data-v="5plus">5% or more</span>
+            <span class="chip-opt" data-v="unknown">I don't know</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Zone Basis (why this entry)</label>
+          <div class="chip-row" data-key="zoneBasis">
+            <span class="chip-opt" data-v="ob">Order Block</span>
+            <span class="chip-opt" data-v="fvg">Fair Value Gap</span>
+            <span class="chip-opt" data-v="liqSweep">Liquidity Sweep</span>
+            <span class="chip-opt" data-v="sr">Support / Resistance</span>
+            <span class="chip-opt" data-v="breakout">Breakout</span>
+            <span class="chip-opt" data-v="round">Round Number</span>
+            <span class="chip-opt" data-v="noReason">No specific reason</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- STEP 3: CONTEXT & STATE -->
+      <div class="form-step" data-step="3">
+
+        <div class="field">
+          <label class="field-label">News Awareness</label>
+          <div class="chip-row" data-key="news">
+            <span class="chip-opt" data-v="checkedClean">I checked — no high-impact news</span>
+            <span class="chip-opt" data-v="checkedHigh">I checked — high-impact news is near</span>
+            <span class="chip-opt" data-v="noNews">No news scheduled</span>
+            <span class="chip-opt" data-v="notChecked">I have not checked</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Current Session</label>
+          <div class="chip-row" data-key="session">
+            <span class="chip-opt" data-v="asia">Asia</span>
+            <span class="chip-opt" data-v="london">London</span>
+            <span class="chip-opt" data-v="ny">New York</span>
+            <span class="chip-opt" data-v="overlap">London / NY Overlap</span>
+            <span class="chip-opt" data-v="offHours">Off-hours</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Emotional State</label>
+          <div class="chip-row" data-key="emotion">
+            <span class="chip-opt" data-v="calm">Calm</span>
+            <span class="chip-opt" data-v="confident">Confident</span>
+            <span class="chip-opt" data-v="doubtful">Doubtful</span>
+            <span class="chip-opt" data-v="rushed">Rushed</span>
+            <span class="chip-opt" data-v="fomo">FOMO</span>
+            <span class="chip-opt" data-v="revenge">Revenge</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Pre-Trade Checklist <span class="opt-flag">(select all you have actually done)</span></label>
+          <div class="check-grid" data-key="checklist">
+            <div class="check-item" data-v="structure"><span class="check-mark"></span><span class="check-label">Market structure confirmed</span></div>
+            <div class="check-item" data-v="trend"><span class="check-mark"></span><span class="check-label">Trend aligned with bias</span></div>
+            <div class="check-item" data-v="zone"><span class="check-mark"></span><span class="check-label">Zone validated</span></div>
+            <div class="check-item" data-v="sl"><span class="check-mark"></span><span class="check-label">Stop loss is set</span></div>
+            <div class="check-item" data-v="rr"><span class="check-mark"></span><span class="check-label">Risk-to-reward ≥ 1:1.5</span></div>
+            <div class="check-item" data-v="newsChk"><span class="check-mark"></span><span class="check-label">News calendar checked</span></div>
+            <div class="check-item" data-v="sessChk"><span class="check-mark"></span><span class="check-label">Active session for this instrument</span></div>
+            <div class="check-item" data-v="size"><span class="check-mark"></span><span class="check-label">Position sized to risk %</span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Notes <span class="opt-flag">(optional, kept locally)</span></label>
+          <textarea class="input-base" id="f_notes" maxlength="280" placeholder="A short note for your own record (max 280 chars). This is not scored."></textarea>
+        </div>
+
+      </div>
+
+      <div class="val-msg" id="valMsg">Please complete the required fields on this step.</div>
+
+      <div class="form-nav">
+        <button class="btn-back" id="btnBack" type="button">← Back</button>
+        <button class="btn-next" id="btnNext" type="button">Next →</button>
+      </div>
+
+      <div class="audit-overlay" id="auditOverlay">
+        <div class="audit-spin"></div>
+        <div class="audit-text">Auditing your trade…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. SCORE LOGIC ── -->
+<section class="scoring">
+  <div class="container">
+    <div class="section-eyebrow">Score Logic</div>
+    <h2 class="section-title">A 100-point audit. Fully transparent.</h2>
+    <p class="section-sub">Every input maps to a weighted bucket. The same inputs always produce the same output. Hard rule caps protect against unsafe combinations.</p>
+    <div class="sc-grid">
+      <div class="sc-card"><div class="sc-pts">20</div><div class="sc-name">Structure</div><div class="sc-desc">HTF trend ↔ bias alignment + style/timeframe coherence.</div></div>
+      <div class="sc-card"><div class="sc-pts">20</div><div class="sc-name">Zone Quality</div><div class="sc-desc">Structural basis of the entry zone (OB, FVG, sweep, S/R).</div></div>
+      <div class="sc-card"><div class="sc-pts">25</div><div class="sc-name">Risk</div><div class="sc-desc">Stop loss present, risk-to-reward, account risk %.</div></div>
+      <div class="sc-card"><div class="sc-pts">15</div><div class="sc-name">News / Session</div><div class="sc-desc">News awareness + session alignment to the instrument.</div></div>
+      <div class="sc-card"><div class="sc-pts">10</div><div class="sc-name">Emotion</div><div class="sc-desc">Calm vs rushed vs revenge / FOMO — discipline outranks setup.</div></div>
+      <div class="sc-card"><div class="sc-pts">10</div><div class="sc-name">Checklist</div><div class="sc-desc">How many of eight pre-trade items were actually completed.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. RESULT CARD ── -->
+<section class="result-section" id="resultSection">
+  <div class="container">
+    <div class="result-wrap">
+      <div class="warn-stack" id="warnStack"></div>
+
+      <div class="res-top">
+        <div>
+          <div class="res-eyebrow">Trade Quality Audit</div>
+          <div class="cat-badge" id="catBadge">Mixed / Needs Confirmation</div>
+          <div class="chips">
+            <span class="chip" id="confChip"><span class="chip-dot"></span><span id="confText">Confidence</span></span>
+          </div>
+        </div>
+        <div class="score-panel">
+          <div class="score-eyebrow">Trade Quality Score</div>
+          <div class="score-num"><span id="scoreNum">0</span></div>
+          <div class="score-out">out of 100</div>
+          <div class="score-bar"><div class="score-bar-fill" id="scoreFill"></div></div>
+        </div>
+      </div>
+
+      <div class="submeters" id="subMeters"></div>
+
+      <!-- Volatility + Timing mini tiles -->
+      <div class="mini-grid">
+        <div class="mini-tile">
+          <div class="mini-eyebrow">Volatility Regime</div>
+          <div class="mini-label" id="volLabel">—</div>
+          <div class="mini-note" id="volNote"></div>
+        </div>
+        <div class="mini-tile">
+          <div class="mini-eyebrow">Trade Timing Quality</div>
+          <div class="mini-label" id="timeLabel">—</div>
+          <div class="mini-note" id="timeNote"></div>
+        </div>
+      </div>
+
+      <!-- Context lines -->
+      <div class="ctx-list" id="ctxList"></div>
+
+      <!-- AI Summary -->
+      <div class="ai-summary">
+        <div class="ai-lead">Educational Recommendation</div>
+        <div class="ai-body" id="aiSummary"></div>
+        <div class="ai-guard">This is an educational audit, not a recommendation to buy or sell.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 7. SUGGESTED LEARNING ── -->
+<section class="learn-section" id="learnSection">
+  <div class="container">
+    <div class="section-eyebrow">Suggested Next Learning</div>
+    <h2 class="section-title">Strengthen your weakest dimension first.</h2>
+    <p class="section-sub">Routed from the dimension that scored the lowest on this audit.</p>
+    <div class="learn-list" id="learnList"></div>
+  </div>
+</section>
+
+<!-- ── 8. CTA ── -->
+<section class="cta-section" id="ctaSection">
+  <div class="container">
+    <div class="cta-wrap">
+      <div class="cta-headline" id="ctaHeadline">Want a deeper review of this trade?</div>
+      <div class="cta-sub" id="ctaSub">A Z Trade University mentor can walk through this audit with you before you make a decision.</div>
+      <div class="cta-row">
+        <a class="cta-btn cta-wa" id="ctaWa" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.8-.9-3-1.6-4.2-3.6-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5 0-.1-.6-1.5-.9-2.1-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.5 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.2 5.1 4.5 1.9.8 2.6.9 3.6.7.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.3-.5-.4zM12 2C6.5 2 2 6.5 2 12c0 1.7.4 3.4 1.3 4.8L2 22l5.3-1.4c1.4.7 3 1.1 4.7 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.5-1.2l-.3-.2-3.1.8.8-3-.2-.3C3.9 14.8 3.5 13.4 3.5 12c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5-3.8 8.5-8.5 8.5z"/></svg>
+          WhatsApp Mentor
+        </a>
+        <a class="cta-btn cta-tg" id="ctaTg" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 3 2 11.2l5.3 1.9 2 6.2c.2.7 1 .9 1.6.4l3-2.7 5 3.7c.6.5 1.5.2 1.7-.6l3.3-15c.2-1-.7-1.8-1.6-1.4zM10 14.7l-.4 4.1L8.3 14l11-9.4L10 14.7z"/></svg>
+          Telegram Mentor
+        </a>
+      </div>
+      <a class="restart-link" id="restartLink">↻ Audit Another Trade</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── 9. DISCLAIMER ── -->
+<section class="disclaim">
+  <div class="container">
+    <div class="disclaim-wrap">
+      <div class="disclaim-head">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Disclaimer
+      </div>
+      <div class="disclaim-body">
+        The AI Trade Assistant is an <strong>educational trade-quality auditor</strong>. It is not a signal service, not investment advice, not financial advice, and not a recommendation to buy or sell any instrument. All output is computed from inputs the user provides and uses fixed, locked rules to surface caution. Trading foreign exchange, cryptocurrency, commodities, and other leveraged instruments carries substantial risk of loss and is not suitable for every investor. Past behaviour and historical results do not predict future outcomes. Z Trade University is an educational platform and is not a regulated financial advisor; we do not manage funds, execute trades on behalf of users, or guarantee any outcome. By using this tool you accept that every decision you take in the markets is your own responsibility.
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">© Z Trade University · Educational content only</div>
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   AI TRADE ASSISTANT — Phase 1 client-side engine
+   Educational audit only. No signals. No financial advice.
+   All scoring, rules and language are deterministic and locked.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ============ LANGUAGE LOCK ============ */
+const LANG = {
+  category: {
+    strong: {
+      label: 'Strong Setup Quality', tone: 'green',
+      framing: 'Conditions around this trade are favorable. The decision to take it or skip it remains yours alone.'
+    },
+    good: {
+      label: 'Good but Needs Caution', tone: 'teal',
+      framing: 'Conditions are mostly aligned, but caution is warranted on at least one dimension before commitment.'
+    },
+    mixed: {
+      label: 'Mixed / Needs Confirmation', tone: 'amber',
+      framing: 'The setup shows mixed conditions. More confirmation is recommended before risking capital.'
+    },
+    weak: {
+      label: 'Weak Setup', tone: 'orange',
+      framing: 'This is a weak setup. The probability profile is unfavorable as described.'
+    },
+    high_risk: {
+      label: 'High Risk / Avoidable Mistake', tone: 'red',
+      framing: 'Risk is not acceptable as described. Consider skipping or returning later with a cleaner setup.'
+    }
+  },
+  weakAdvice: {
+    structure: 'Market structure does not clearly support the bias. Until the higher timeframe direction is defined, entries operate without context.',
+    zone:      'The entry zone is not clearly defined by a structural reference. Without a clean basis, entries become arbitrary.',
+    risk:      'Risk management is the weakest part of this trade. No idea, however technical, survives broken risk discipline.',
+    news:      'News and session risk are under-managed. The macro window often matters more than the chart setup.',
+    emotion:   'Emotional readiness is compromised. The same setup taken in a calm state is a different trade than one taken in revenge or FOMO.',
+    checklist: 'The pre-trade checklist is incomplete. A trade without a checklist is a guess at scale.'
+  }
+};
+
+/* ============ STATE ============ */
+const STATE = {
+  step: 1,
+  inputs: {
+    symbol:'', tf:'', style:'', htf:'', bias:'',
+    entry:null, sl:null, target:null,
+    riskPct:'', zoneBasis:'',
+    news:'', session:'', emotion:'',
+    checklist: [],
+    notes:''
+  }
+};
+
+/* ============ DOM REFS ============ */
+const formShell = document.getElementById('formShell');
+const stepNumEl = document.getElementById('stepNum');
+const stepTitleEl = document.getElementById('stepTitle');
+const stepDots = document.querySelectorAll('.step-dot');
+const formSteps = document.querySelectorAll('.form-step');
+const btnBack = document.getElementById('btnBack');
+const btnNext = document.getElementById('btnNext');
+const valMsg = document.getElementById('valMsg');
+const auditOverlay = document.getElementById('auditOverlay');
+const STEP_TITLES = { 1: 'Trade Setup', 2: 'Trade Plan', 3: 'Context & State' };
+
+/* ============ INPUT HANDLERS ============ */
+// Chip rows (single-select)
+document.querySelectorAll('.chip-row').forEach(row => {
+  const key = row.dataset.key;
+  row.querySelectorAll('.chip-opt').forEach(chip => {
+    chip.addEventListener('click', () => {
+      row.querySelectorAll('.chip-opt').forEach(c => c.classList.remove('is-selected'));
+      chip.classList.add('is-selected');
+      STATE.inputs[key] = chip.dataset.v;
+      hideValidation();
+    });
+  });
+});
+// Checklist (multi-select)
+document.querySelectorAll('.check-grid').forEach(grid => {
+  const key = grid.dataset.key;
+  grid.querySelectorAll('.check-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const v = item.dataset.v;
+      item.classList.toggle('is-selected');
+      const cur = STATE.inputs[key] || [];
+      if (cur.includes(v)) STATE.inputs[key] = cur.filter(x => x !== v);
+      else                 STATE.inputs[key] = [...cur, v];
+    });
+  });
+});
+// Selects + number inputs
+document.getElementById('f_symbol').addEventListener('change', e => { STATE.inputs.symbol = e.target.value; hideValidation(); });
+document.getElementById('f_tf').addEventListener('change',     e => { STATE.inputs.tf     = e.target.value; hideValidation(); });
+document.getElementById('f_entry').addEventListener('input',   e => { STATE.inputs.entry  = e.target.value === '' ? null : parseFloat(e.target.value); hideValidation(); });
+document.getElementById('f_sl').addEventListener('input',      e => { STATE.inputs.sl     = e.target.value === '' ? null : parseFloat(e.target.value); });
+document.getElementById('f_target').addEventListener('input',  e => { STATE.inputs.target = e.target.value === '' ? null : parseFloat(e.target.value); });
+document.getElementById('f_notes').addEventListener('input',   e => { STATE.inputs.notes  = e.target.value; });
+
+/* ============ STEP NAV ============ */
+function showStep(n) {
+  STATE.step = n;
+  stepNumEl.textContent = n;
+  stepTitleEl.textContent = STEP_TITLES[n];
+  formSteps.forEach(s => s.classList.toggle('is-on', parseInt(s.dataset.step,10) === n));
+  stepDots.forEach(d => {
+    const i = parseInt(d.dataset.d, 10);
+    d.classList.toggle('is-active', i === n);
+    d.classList.toggle('is-done',   i < n);
+  });
+  btnBack.disabled = (n === 1);
+  btnNext.textContent = (n === 3) ? 'Audit Trade →' : 'Next →';
+  hideValidation();
+}
+function hideValidation() { valMsg.classList.remove('is-on'); }
+function showValidation(msg) {
+  valMsg.textContent = msg || 'Please complete the required fields on this step.';
+  valMsg.classList.add('is-on');
+}
+function validateStep(n) {
+  const i = STATE.inputs;
+  if (n === 1) {
+    if (!i.symbol)                          return 'Please select a market symbol.';
+    if (!i.tf)                              return 'Please select a timeframe.';
+    if (!i.style)                           return 'Please select a trading style.';
+    if (!i.htf)                             return 'Please indicate the higher timeframe trend.';
+    if (!i.bias)                            return 'Please indicate your bias.';
+  }
+  if (n === 2) {
+    if (i.entry === null || isNaN(i.entry)) return 'Please enter an entry price.';
+    if (!i.riskPct)                         return 'Please indicate your account risk per trade.';
+    if (!i.zoneBasis)                       return 'Please indicate the zone basis.';
+  }
+  if (n === 3) {
+    if (!i.news)                            return 'Please indicate your news awareness.';
+    if (!i.session)                         return 'Please indicate the current session.';
+    if (!i.emotion)                         return 'Please indicate your emotional state.';
+  }
+  return null;
+}
+btnBack.addEventListener('click', () => { if (STATE.step > 1) showStep(STATE.step - 1); });
+btnNext.addEventListener('click', () => {
+  const err = validateStep(STATE.step);
+  if (err) { showValidation(err); return; }
+  if (STATE.step < 3) showStep(STATE.step + 1);
+  else finishAudit();
+});
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('formSection').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+/* ============ RR COMPUTATION ============ */
+function computeRR(i) {
+  if (i.entry === null || i.sl === null || i.target === null) return null;
+  const riskDist = Math.abs(i.entry - i.sl);
+  const rewardDist = Math.abs(i.target - i.entry);
+  if (riskDist === 0) return null;
+  return rewardDist / riskDist;
+}
+
+/* ============ STRUCTURE SCORING (max 20) ============ */
+function scoreStructure(i) {
+  let pts = 0;
+  const aligned = (i.htf === 'up' && i.bias === 'bullish') ||
+                  (i.htf === 'down' && i.bias === 'bearish');
+  const opposite = (i.htf === 'up' && i.bias === 'bearish') ||
+                   (i.htf === 'down' && i.bias === 'bullish');
+  if (aligned)                                   pts += 15;
+  else if (i.htf === 'sideways' && i.bias === 'unsure') pts += 12;
+  else if (i.htf === 'sideways')                 pts += 8;
+  else if (opposite)                             pts += 3;
+  else if (i.htf === 'unsure')                   pts += 5;
+  // TF coherence bonus
+  const tf = i.tf;
+  const style = i.style;
+  const scalpTF = ['M1','M5','M15'];
+  const intraTF = ['M15','M30','H1','H4'];
+  const swingTF = ['H4','D1','W1'];
+  const tfMatch =
+    (style==='scalping' && scalpTF.includes(tf)) ||
+    (style==='intraday' && intraTF.includes(tf)) ||
+    (style==='swing'    && swingTF.includes(tf));
+  if (tfMatch) pts += 5;
+  return Math.min(pts, 20);
+}
+
+/* ============ ZONE SCORING (max 20) ============ */
+function scoreZone(i) {
+  const map = { ob:18, fvg:16, liqSweep:17, sr:14, breakout:12, round:8, noReason:0 };
+  return map[i.zoneBasis] !== undefined ? map[i.zoneBasis] : 0;
+}
+
+/* ============ RISK SCORING (max 25) ============ */
+function scoreRisk(i, rr) {
+  let pts = 0;
+  // SL present
+  if (i.sl !== null && !isNaN(i.sl)) pts += 8;
+  // RR
+  if (rr !== null) {
+    if      (rr >= 3)    pts += 10;
+    else if (rr >= 2)    pts += 8;
+    else if (rr >= 1.5)  pts += 6;
+    else if (rr >= 1)    pts += 3;
+    else                 pts += 0;
+  } else {
+    pts += (i.target === null) ? 4 : 0;
+  }
+  // Risk %
+  const rmap = { '1to2':7, 'sub1':6, '3to5':3, '5plus':0, 'unknown':0 };
+  pts += rmap[i.riskPct] || 0;
+  return Math.min(pts, 25);
+}
+
+/* ============ NEWS / SESSION SCORING (max 15) ============ */
+function scoreNewsSession(i) {
+  let pts = 0;
+  // News awareness
+  const nmap = { checkedClean:7, noNews:7, checkedHigh:4, notChecked:0 };
+  pts += nmap[i.news] || 0;
+  // Session alignment by instrument
+  const s = i.session, sym = i.symbol;
+  const goldGood   = ['london','ny','overlap'];
+  const goldOk     = ['asia'];
+  const eurGood    = ['london','ny','overlap'];
+  const gbpGood    = ['london','overlap'];
+  const gbpOk      = ['ny'];
+  const jpyGood    = ['asia','london','overlap'];
+  const jpyOk      = ['ny'];
+  let sessPts = 0;
+  if (sym === 'XAUUSD') {
+    if (goldGood.includes(s))      sessPts = 8;
+    else if (goldOk.includes(s))   sessPts = 4;
+    else if (s === 'offHours')     sessPts = 1;
+  } else if (sym === 'EURUSD' || sym === 'USDCAD' || sym === 'AUDUSD') {
+    if (eurGood.includes(s))       sessPts = 8;
+    else if (s === 'asia')         sessPts = 3;
+    else if (s === 'offHours')     sessPts = 1;
+  } else if (sym === 'GBPUSD') {
+    if (gbpGood.includes(s))       sessPts = 8;
+    else if (gbpOk.includes(s))    sessPts = 5;
+    else                            sessPts = 2;
+  } else if (sym === 'USDJPY') {
+    if (jpyGood.includes(s))       sessPts = 8;
+    else if (jpyOk.includes(s))    sessPts = 5;
+    else                            sessPts = 2;
+  } else if (sym === 'BTCUSD' || sym === 'ETHUSD') {
+    if (s === 'overlap' || s === 'ny' || s === 'asia') sessPts = 8;
+    else if (s === 'london')       sessPts = 7;
+    else if (s === 'offHours')     sessPts = 3;
+  } else {
+    sessPts = (s === 'offHours') ? 2 : 6;
+  }
+  pts += sessPts;
+  return Math.min(pts, 15);
+}
+
+/* ============ EMOTION SCORING (max 10) ============ */
+function scoreEmotion(i) {
+  const m = { calm:10, confident:9, doubtful:6, rushed:4, fomo:2, revenge:0 };
+  return m[i.emotion] !== undefined ? m[i.emotion] : 0;
+}
+
+/* ============ CHECKLIST SCORING (max 10) ============ */
+function scoreChecklist(i) {
+  const n = (i.checklist || []).length;
+  if (n >= 8) return 10;
+  if (n >= 6) return 8;
+  if (n >= 4) return 5;
+  if (n >= 2) return 2;
+  return 0;
+}
+
+/* ============ VOLATILITY REGIME ============ */
+function detectVolatility(i) {
+  let v = 0;
+  // Instrument
+  if (i.symbol === 'BTCUSD' || i.symbol === 'ETHUSD') v += 2.2;
+  else if (i.symbol === 'XAUUSD')                     v += 1.2;
+  else if (i.symbol === 'GBPUSD')                     v += 0.8;
+  else if (i.symbol === 'USDJPY')                     v += 0.6;
+  // Session
+  if (i.session === 'overlap')                        v += 1.4;
+  else if (i.session === 'ny' || i.session === 'london') v += 0.5;
+  else if (i.session === 'asia')                      v += -0.3;
+  else if (i.session === 'offHours')                  v += -1.0;
+  // Pending high-impact news
+  if (i.news === 'checkedHigh')                       v += 1.5;
+  // Timeframe noise
+  if (i.tf === 'M1' || i.tf === 'M5')                 v += 0.4;
+
+  let regime, tone, note;
+  if (v >= 4) {
+    regime = 'Extreme Volatility';     tone = 'red';
+    note   = 'Wide ranges and sharp reversals are likely. Position sizing should be tighter than usual.';
+  } else if (v >= 2.4) {
+    regime = 'High Volatility';        tone = 'amber';
+    note   = 'Above-average swings expected. Stop distance and slippage risk both rise.';
+  } else if (v >= 0.6) {
+    regime = 'Normal Volatility';      tone = 'cyan';
+    note   = 'Typical conditions for this instrument and session.';
+  } else {
+    regime = 'Low Volatility';         tone = 'green';
+    note   = 'Compressed range — fewer follow-throughs, more false breakouts possible.';
+  }
+  return { regime, tone, note };
+}
+
+/* ============ TIMING QUALITY ============ */
+function detectTiming(i, breakdown) {
+  const htfAligned = (i.htf === 'up' && i.bias === 'bullish') ||
+                     (i.htf === 'down' && i.bias === 'bearish');
+  const goodZone   = ['ob','fvg','liqSweep'].includes(i.zoneBasis);
+  const lateZone   = i.zoneBasis === 'breakout' || i.zoneBasis === 'round';
+  const cleanEmotion = ['calm','confident','doubtful'].includes(i.emotion);
+  const sessionConflicted = detectSessionConflict(i).length > 0;
+
+  let pts = 0;
+  if (htfAligned)     pts += 2;
+  if (goodZone)       pts += 2;
+  if (!sessionConflicted) pts += 1;
+  if (cleanEmotion)   pts += 1;
+  if (lateZone)       pts -= 1;
+  if (i.emotion === 'fomo' || i.emotion === 'revenge') pts -= 2;
+
+  let label, tone, note;
+  if (pts >= 5)      { label='Excellent Timing';   tone='green';  note='HTF alignment, clean zone basis, and active session combine into a well-timed read.'; }
+  else if (pts >= 3) { label='Acceptable Timing';  tone='cyan';   note='Timing is reasonable, though one or two factors are weaker than ideal.'; }
+  else if (pts >= 1) { label='Late Entry';         tone='amber';  note='Entry sits late in the move or outside the cleanest window for this instrument.'; }
+  else               { label='Chasing Move';       tone='red';    note='Entry profile shows hallmarks of chasing — counter-trend, off-session, or emotionally rushed.'; }
+  return { label, tone, note };
+}
+
+/* ============ SESSION CONFLICT DETECTION ============ */
+function detectSessionConflict(i) {
+  const conflicts = [];
+  const isScalpOrIntraday = i.style === 'scalping' || i.style === 'intraday';
+  if (i.symbol === 'XAUUSD' && i.session === 'asia' && isScalpOrIntraday) {
+    conflicts.push('Gold scalp or intraday during Asia session — historically thin liquidity for this instrument at this time.');
+  }
+  if (i.symbol === 'GBPUSD' && i.session !== 'london' && i.session !== 'overlap' && i.session !== 'ny') {
+    conflicts.push('GBPUSD outside London / Overlap hours — reduced participation and choppier price action.');
+  }
+  if (i.symbol === 'EURUSD' && (i.session === 'asia' || i.session === 'offHours')) {
+    conflicts.push('EURUSD outside European hours — choppy, low-conviction conditions are common.');
+  }
+  if (i.symbol === 'USDJPY' && i.session === 'offHours') {
+    conflicts.push('USDJPY in off-hours — limited directional drivers, range-bound risk.');
+  }
+  if ((i.symbol === 'BTCUSD' || i.symbol === 'ETHUSD') && i.session === 'offHours') {
+    conflicts.push('Crypto low-liquidity window — sudden moves with wider spreads are more likely.');
+  }
+  if (i.session === 'offHours' && conflicts.length === 0) {
+    conflicts.push('Off-hours generally reduce the reliability of technical signals across most instruments.');
+  }
+  return conflicts;
+}
+
+/* ============ RISK RULE ENGINE (caps applied in order) ============ */
+function applyRules(score, breakdown, i, rr) {
+  const warnings = [];
+  let cap = 100;
+  let labelOverride = null;
+
+  // R1 — No SL
+  if (i.sl === null) {
+    cap = Math.min(cap, 50);
+    warnings.push({ sev:'critical', title:'No Stop Loss', text:'A stop loss was not provided. Without a defined invalidation, the trade carries unbounded downside. Score is capped at 50.' });
+  }
+  // R2 — Emotional state
+  if (i.emotion === 'revenge') {
+    cap = Math.min(cap, 60);
+    warnings.push({ sev:'critical', title:'Revenge State Detected', text:'You are entering this trade in a revenge state. The same setup taken calm is statistically a different trade. Score is capped at 60.' });
+  } else if (i.emotion === 'fomo') {
+    cap = Math.min(cap, 60);
+    warnings.push({ sev:'critical', title:'FOMO State Detected', text:'You are entering this trade under FOMO. The fear of missing out is one of the most expensive emotions in trading. Score is capped at 60.' });
+  }
+  // R3 — News mismatch
+  if (i.news === 'notChecked') {
+    warnings.push({ sev:'caution', title:'News Not Checked', text:'High-impact news could invalidate the technical setup in seconds. Check the economic calendar before commitment.' });
+  } else if (i.news === 'checkedHigh') {
+    warnings.push({ sev:'caution', title:'High-Impact News Near', text:'A high-impact event is near. Volatility and spread risk both rise around the release window.' });
+  }
+  // R4 — Broken RR
+  if (rr !== null && rr < 1) {
+    cap = Math.min(cap, 65);
+    warnings.push({ sev:'caution', title:'Weak Risk Profile', text:`Risk-to-reward is below 1:1 (${rr.toFixed(2)}). Even a high win-rate cannot compensate over time. Score is capped at 65.` });
+  }
+  // R5 — HTF conflict
+  const opposite = (i.htf === 'up' && i.bias === 'bearish') || (i.htf === 'down' && i.bias === 'bullish');
+  if (opposite) {
+    labelOverride = 'mixed';
+    warnings.push({ sev:'caution', title:'Higher Timeframe Conflict', text:'Your bias is opposite of the stated higher-timeframe trend. Counter-trend trades require tighter rules and faster invalidation.' });
+  }
+  // R6 — Random entry
+  if (i.zoneBasis === 'noReason') {
+    cap = Math.min(cap, 49);
+    warnings.push({ sev:'critical', title:'Random Entry', text:'No structural reason was provided for this entry. Random entries cannot accumulate edge. Result label is capped at "Weak Setup".' });
+  }
+  // R7 — Style / TF mismatch
+  const tf = i.tf, style = i.style;
+  const tfMatch =
+    (style==='scalping' && ['M1','M5','M15'].includes(tf)) ||
+    (style==='intraday' && ['M15','M30','H1','H4'].includes(tf)) ||
+    (style==='swing'    && ['H4','D1','W1'].includes(tf));
+  if (!tfMatch) {
+    warnings.push({ sev:'note', title:'Style / Timeframe Mismatch', text:`The selected timeframe (${tf}) is not typical for the chosen style (${style}). Consider whether the trade really fits this style.` });
+  }
+  // R8 — Risk % unknown
+  if (i.riskPct === 'unknown' || i.riskPct === '5plus') {
+    warnings.push({ sev:'caution', title:'Account Risk Unsafe', text:'Account risk is unknown or excessive. Position sizing must be defined before entry.' });
+  }
+  // Session conflicts (already from detector)
+  const sc = detectSessionConflict(i);
+  sc.forEach(t => warnings.push({ sev:'caution', title:'Session Conflict', text: t }));
+
+  // Apply cap
+  let final = Math.min(score, cap);
+  return { final, warnings, labelOverride };
+}
+
+/* ============ CATEGORY FROM FINAL SCORE ============ */
+function pickCategory(final, labelOverride) {
+  if (labelOverride === 'mixed' && final >= 65) return 'mixed';
+  if (final >= 80) return 'strong';
+  if (final >= 65) return 'good';
+  if (final >= 50) return 'mixed';
+  if (final >= 30) return 'weak';
+  return 'high_risk';
+}
+
+/* ============ CONTEXT LINES ============ */
+function lineStructureBias(i) {
+  const aligned = (i.htf==='up' && i.bias==='bullish') || (i.htf==='down' && i.bias==='bearish');
+  const opposite = (i.htf==='up' && i.bias==='bearish') || (i.htf==='down' && i.bias==='bullish');
+  if (aligned)             return { v:'Trend-aligned', tone:'green' };
+  if (opposite)            return { v:'Trend-conflicting', tone:'red' };
+  if (i.htf==='sideways')  return { v:'Range / Sideways', tone:'amber' };
+  return { v:'Undefined', tone:'neutral' };
+}
+function lineTrendQuality(i, breakdown) {
+  if (i.htf === 'sideways') return { v:'Choppy', tone:'amber' };
+  if (i.htf === 'unsure')   return { v:'Undefined', tone:'neutral' };
+  if (breakdown.structure >= 16) return { v:'Clean Trend', tone:'green' };
+  if (breakdown.structure >= 10) return { v:'Developing', tone:'cyan' };
+  return { v:'Weak', tone:'orange' };
+}
+function lineZoneQuality(i) {
+  const map = {
+    ob:       { v:'Clean (Order Block)',        tone:'green' },
+    fvg:      { v:'Clean (Fair Value Gap)',     tone:'green' },
+    liqSweep: { v:'Clean (Liquidity Sweep)',    tone:'green' },
+    sr:       { v:'Developing (Support / Resistance)', tone:'cyan' },
+    breakout: { v:'Developing (Breakout)',      tone:'amber' },
+    round:    { v:'Unclear (Round Number)',     tone:'amber' },
+    noReason: { v:'Random — No basis',          tone:'red' }
+  };
+  return map[i.zoneBasis] || { v:'—', tone:'neutral' };
+}
+function lineRiskMgmt(i, rr) {
+  if (i.sl === null) return { v:'Broken (No stop loss)', tone:'red' };
+  if (rr !== null && rr < 1) return { v:`Broken (RR ${rr.toFixed(2)})`, tone:'red' };
+  if (i.riskPct === 'unknown' || i.riskPct === '5plus') return { v:'Marginal (Risk % unsafe)', tone:'amber' };
+  if (rr !== null && rr >= 1.5) return { v:`Acceptable (RR ${rr.toFixed(2)})`, tone:'green' };
+  if (rr !== null && rr >= 1)   return { v:`Marginal (RR ${rr.toFixed(2)})`, tone:'amber' };
+  if (rr === null)               return { v:'Unknown (no target)', tone:'amber' };
+  return { v:'Acceptable', tone:'cyan' };
+}
+function lineNewsSession(i) {
+  if (i.news === 'notChecked') return { v:'High Caution (news unchecked)', tone:'red' };
+  if (i.news === 'checkedHigh') return { v:'High Caution (event near)', tone:'amber' };
+  const conflicts = detectSessionConflict(i);
+  if (conflicts.length) return { v:'Moderate (session conflict)', tone:'amber' };
+  return { v:'Low', tone:'green' };
+}
+function lineEmotional(i) {
+  if (i.emotion === 'revenge' || i.emotion === 'fomo') return { v:'Compromised', tone:'red' };
+  if (i.emotion === 'rushed')                           return { v:'Rushed', tone:'amber' };
+  if (i.emotion === 'doubtful')                         return { v:'Hesitant', tone:'amber' };
+  if (i.emotion === 'calm' || i.emotion === 'confident')return { v:'Stable', tone:'green' };
+  return { v:'—', tone:'neutral' };
+}
+
+/* ============ MARKET CONTEXT SUMMARY ============ */
+function buildContextLine(i) {
+  const htfWord = i.htf === 'unsure' ? 'undefined' : i.htf;
+  const biasWord = i.bias === 'unsure' ? 'undefined' : i.bias;
+  return `${i.symbol} · ${i.tf} · ${i.style.charAt(0).toUpperCase()+i.style.slice(1)}. HTF trend: ${htfWord}. Bias: ${biasWord}.`;
+}
+
+/* ============ EDUCATIONAL RECOMMENDATION ============ */
+function buildRecommendation(category, breakdown, weakestKey) {
+  const cat = LANG.category[category];
+  const top = topBucketKey(breakdown);
+  const weakLine = LANG.weakAdvice[weakestKey] || '';
+  const topName = bucketName(top);
+  return `${cat.framing} Strongest dimension: <strong>${topName}</strong>. ${weakLine}`;
+}
+function bucketName(k) {
+  return ({ structure:'Structure', zone:'Zone Quality', risk:'Risk Management', news:'News &amp; Session', emotion:'Emotion', checklist:'Checklist' })[k];
+}
+function topBucketKey(b) {
+  const caps = { structure:20, zone:20, risk:25, news:15, emotion:10, checklist:10 };
+  return Object.keys(b).sort((a,c)=>(b[c]/caps[c])-(b[a]/caps[a]))[0];
+}
+function weakestBucketKey(b) {
+  const caps = { structure:20, zone:20, risk:25, news:15, emotion:10, checklist:10 };
+  return Object.keys(b).sort((a,c)=>(b[a]/caps[a])-(b[c]/caps[c]))[0];
+}
+
+/* ============ SUGGESTED LEARNING ROUTER ============ */
+const LEARN_LIB = {
+  structure: [
+    { title:'Smart Money Concepts for Beginners',          cat:'Market Structure',   href:'smart-money-concepts-beginners.html' },
+    { title:'Most Popular Trading Strategies Explained',    cat:'Trading Strategies', href:'most-popular-trading-strategies-beginners.html' }
+  ],
+  zone: [
+    { title:'Smart Money Concepts for Beginners',          cat:'Market Structure',   href:'smart-money-concepts-beginners.html' },
+    { title:'Most Popular Trading Strategies Explained',    cat:'Trading Strategies', href:'most-popular-trading-strategies-beginners.html' }
+  ],
+  risk: [
+    { title:'Best Risk-Reward Ratio for Forex Trading',     cat:'Risk Management',    href:'best-risk-reward-ratio-forex-trading.html' },
+    { title:'How to Build a Forex Trading Plan',            cat:'Beginner Trading',   href:'how-to-build-forex-trading-plan.html' }
+  ],
+  news: [
+    { title:'Browse All Articles',                          cat:'Education Hub',      href:'articles.html' },
+    { title:'Live Market Sentiment',                        cat:'Live Tool',          href:'live-sentiment.html' }
+  ],
+  emotion: [
+    { title:'How to Avoid Emotional Trading',               cat:'Trading Psychology', href:'how-to-avoid-emotional-trading.html' },
+    { title:'Trader Self-Assessment',                       cat:'AI Diagnostic',      href:'trader-assessment.html' }
+  ],
+  checklist: [
+    { title:'How to Build a Forex Trading Plan',            cat:'Beginner Trading',   href:'how-to-build-forex-trading-plan.html' },
+    { title:'Best Risk-Reward Ratio for Forex Trading',     cat:'Risk Management',    href:'best-risk-reward-ratio-forex-trading.html' }
+  ]
+};
+function buildLearningPath(weakestKey) {
+  const seen = new Set();
+  const path = [];
+  (LEARN_LIB[weakestKey] || []).forEach(it => { if (!seen.has(it.href)) { seen.add(it.href); path.push(it); } });
+  // Universal fillers
+  [
+    { title:'How to Build a Forex Trading Plan', cat:'Beginner Trading', href:'how-to-build-forex-trading-plan.html' },
+    { title:'How to Avoid Emotional Trading',    cat:'Trading Psychology', href:'how-to-avoid-emotional-trading.html' },
+    { title:'Browse All Articles',               cat:'Education Hub', href:'articles.html' }
+  ].forEach(f => { if (!seen.has(f.href) && path.length < 5) { seen.add(f.href); path.push(f); } });
+  path.push({ title:'Talk to a Mentor', cat:'Personalised Review', href:'#cta' });
+  return path.slice(0, 6);
+}
+
+/* ============ FINISH AUDIT ============ */
+function finishAudit() {
+  formShell.classList.add('is-locked');
+  auditOverlay.classList.add('is-on');
+
+  setTimeout(() => {
+    const i = STATE.inputs;
+    const rr = computeRR(i);
+    const breakdown = {
+      structure: scoreStructure(i),
+      zone:      scoreZone(i),
+      risk:      scoreRisk(i, rr),
+      news:      scoreNewsSession(i),
+      emotion:   scoreEmotion(i),
+      checklist: scoreChecklist(i)
+    };
+    // Apply R8 — cap RM at 12 when risk % unknown
+    if (i.riskPct === 'unknown') breakdown.risk = Math.min(breakdown.risk, 12);
+
+    const raw = breakdown.structure + breakdown.zone + breakdown.risk + breakdown.news + breakdown.emotion + breakdown.checklist;
+    const ruled = applyRules(raw, breakdown, i, rr);
+    const category = pickCategory(ruled.final, ruled.labelOverride);
+
+    const volatility = detectVolatility(i);
+    const timing     = detectTiming(i, breakdown);
+    const weakest    = weakestBucketKey(breakdown);
+    const recommendation = buildRecommendation(category, breakdown, weakest);
+    const learningPath   = buildLearningPath(weakest);
+
+    renderResult({
+      final: ruled.final, breakdown, category, warnings: ruled.warnings,
+      rr, volatility, timing, recommendation, learningPath, inputs: i
+    });
+
+    auditOverlay.classList.remove('is-on');
+    document.getElementById('resultSection').classList.add('is-on');
+    document.getElementById('learnSection').classList.add('is-on');
+    document.getElementById('ctaSection').classList.add('is-on');
+    document.getElementById('resultSection').scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 1400);
+}
+
+/* ============ RENDER RESULT ============ */
+function renderResult(r) {
+  // Warnings stack (sorted: critical → caution → note)
+  const sevOrder = { critical:0, caution:1, note:2 };
+  const sortedWarn = [...r.warnings].sort((a,b)=>sevOrder[a.sev]-sevOrder[b.sev]);
+  const ws = document.getElementById('warnStack');
+  ws.innerHTML = sortedWarn.map(w => `
+    <div class="warn-banner sev-${w.sev}">
+      <div class="warn-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          ${w.sev === 'critical'
+            ? '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+            : (w.sev === 'caution'
+              ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+              : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>') }
+        </svg>
+      </div>
+      <div>
+        <div class="warn-title">${w.title}</div>
+        <div class="warn-text">${w.text}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Category badge + framing chip
+  const cat = LANG.category[r.category];
+  const catEl = document.getElementById('catBadge');
+  catEl.textContent = cat.label;
+  catEl.className = 'cat-badge cat-' + r.category;
+
+  // Confidence chip mirrors category tone with educational language
+  const confMap = {
+    strong:    'Favorable Conditions',
+    good:      'Caution',
+    mixed:     'Mixed Conditions',
+    weak:      'Weak Setup',
+    high_risk: 'Risk Not Acceptable'
+  };
+  const confChip = document.getElementById('confChip');
+  confChip.className = 'chip tone-' + cat.tone;
+  document.getElementById('confText').textContent = confMap[r.category];
+
+  // Score animation
+  animateNumber('scoreNum', 0, r.final, 1150);
+  setTimeout(()=> { document.getElementById('scoreFill').style.width = r.final + '%'; }, 70);
+
+  // Sub-bars (6 buckets)
+  const meters = [
+    { key:'structure', max:20, tone:'violet' },
+    { key:'zone',      max:20, tone:'cyan'   },
+    { key:'risk',      max:25, tone:'bull'   },
+    { key:'news',      max:15, tone:'amber'  },
+    { key:'emotion',   max:10, tone:'indigo' },
+    { key:'checklist', max:10, tone:'cyan'   }
+  ];
+  const subEl = document.getElementById('subMeters');
+  subEl.innerHTML = meters.map(m => {
+    const val = r.breakdown[m.key];
+    const pct = Math.round((val / m.max) * 100);
+    return `<div class="sm-row">
+      <div class="sm-head">
+        <span class="sm-name">${bucketName(m.key).replace('&amp;','&')}</span>
+        <span class="sm-val">${val}<span class="sm-pct">/${m.max} · ${pct}%</span></span>
+      </div>
+      <div class="sm-track"><div class="sm-fill t-${m.tone}" data-pct="${pct}"></div></div>
+    </div>`;
+  }).join('');
+  setTimeout(()=> { subEl.querySelectorAll('.sm-fill').forEach(f => { f.style.width = f.dataset.pct + '%'; }); }, 90);
+
+  // Volatility + Timing tiles
+  const volLabel = document.getElementById('volLabel');
+  volLabel.textContent = r.volatility.regime;
+  volLabel.className = 'mini-label tone-' + r.volatility.tone;
+  document.getElementById('volNote').textContent = r.volatility.note;
+  const timeLabel = document.getElementById('timeLabel');
+  timeLabel.textContent = r.timing.label;
+  timeLabel.className = 'mini-label tone-' + r.timing.tone;
+  document.getElementById('timeNote').textContent = r.timing.note;
+
+  // Context list
+  const rows = [
+    { label:'Market Context', html: buildContextLine(r.inputs), tone:'violet' },
+    Object.assign({ label:'Structure Bias' }, lineStructureBias(r.inputs)),
+    Object.assign({ label:'Trend Quality' },  lineTrendQuality(r.inputs, r.breakdown)),
+    Object.assign({ label:'Zone Quality' },   lineZoneQuality(r.inputs)),
+    Object.assign({ label:'Risk Management' },lineRiskMgmt(r.inputs, r.rr)),
+    Object.assign({ label:'News & Session' }, lineNewsSession(r.inputs)),
+    { label:'Volatility', v: r.volatility.regime, tone: r.volatility.tone },
+    { label:'Timing Quality', v: r.timing.label, tone: r.timing.tone },
+    Object.assign({ label:'Emotional Risk' }, lineEmotional(r.inputs))
+  ];
+  const ctxEl = document.getElementById('ctxList');
+  ctxEl.innerHTML = rows.map(row => {
+    if (row.html) {
+      return `<div class="ctx-row"><span class="ctx-label">${row.label}</span><span class="ctx-val"><span class="vd tone-${row.tone}"></span>${row.html}</span></div>`;
+    }
+    return `<div class="ctx-row"><span class="ctx-label">${row.label}</span><span class="ctx-val"><span class="vd tone-${row.tone}"></span>${row.v}</span></div>`;
+  }).join('');
+
+  // Educational recommendation
+  document.getElementById('aiSummary').innerHTML = r.recommendation;
+
+  // Suggested learning
+  const learnEl = document.getElementById('learnList');
+  learnEl.innerHTML = r.learningPath.map((item, i) => `
+    <a class="learn-item" href="${item.href}">
+      <div class="learn-num">${i+1}</div>
+      <div class="learn-text">
+        <div class="learn-title">${item.title}</div>
+        <div class="learn-cat">${item.cat}</div>
+      </div>
+      <div class="learn-arrow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </a>
+  `).join('');
+
+  // CTA messaging adapts to severity
+  const ctaHead = document.getElementById('ctaHeadline');
+  const ctaSub  = document.getElementById('ctaSub');
+  const hasCritical = sortedWarn.some(w => w.sev === 'critical');
+  if (hasCritical) {
+    ctaHead.textContent = 'Walk this trade through with a mentor before entering.';
+    ctaSub.textContent  = 'A critical risk was flagged. A mentor can help you neutralise it before commitment.';
+  } else if (r.category === 'strong') {
+    ctaHead.textContent = 'Want a second opinion on a strong-looking setup?';
+    ctaSub.textContent  = 'A second pair of eyes often catches what a checklist cannot.';
+  } else {
+    ctaHead.textContent = 'Want a deeper review of this trade?';
+    ctaSub.textContent  = 'A Z Trade University mentor can walk through this audit with you before you commit capital.';
+  }
+  // Pre-filled WhatsApp / Telegram
+  const topWarn = sortedWarn[0] ? sortedWarn[0].title : 'None';
+  const styleW = r.inputs.style.charAt(0).toUpperCase()+r.inputs.style.slice(1);
+  const preMsg = `Hi, I just ran the Z Trade University AI Trade Assistant on ${r.inputs.symbol} ${r.inputs.tf} (${styleW}). Result: ${r.final}/100 — ${cat.label}. Top warning: ${topWarn}. I'd like a deeper review.`;
+  document.getElementById('ctaWa').href = `https://wa.me/17189730347?text=${encodeURIComponent(preMsg)}`;
+  document.getElementById('ctaTg').href = `https://t.me/share/url?url=${encodeURIComponent('https://ztradeuniversity')}&text=${encodeURIComponent(preMsg)}`;
+}
+
+function animateNumber(id, from, to, duration) {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ============ RESTART ============ */
+document.getElementById('restartLink').addEventListener('click', () => {
+  // Reset state
+  STATE.step = 1;
+  STATE.inputs = {
+    symbol:'', tf:'', style:'', htf:'', bias:'',
+    entry:null, sl:null, target:null,
+    riskPct:'', zoneBasis:'',
+    news:'', session:'', emotion:'',
+    checklist: [],
+    notes:''
+  };
+  // Reset UI
+  document.querySelectorAll('.chip-opt.is-selected').forEach(c => c.classList.remove('is-selected'));
+  document.querySelectorAll('.check-item.is-selected').forEach(c => c.classList.remove('is-selected'));
+  document.getElementById('f_symbol').value = '';
+  document.getElementById('f_tf').value = '';
+  document.getElementById('f_entry').value = '';
+  document.getElementById('f_sl').value = '';
+  document.getElementById('f_target').value = '';
+  document.getElementById('f_notes').value = '';
+  formShell.classList.remove('is-locked');
+  document.getElementById('resultSection').classList.remove('is-on');
+  document.getElementById('learnSection').classList.remove('is-on');
+  document.getElementById('ctaSection').classList.remove('is-on');
+  showStep(1);
+  document.getElementById('formSection').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+/* ============ BOOT ============ */
+showStep(1);
+</script>
+
+</body>
+</html>

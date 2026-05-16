@@ -1,0 +1,2899 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live Market Sentiment dashboard for Gold (XAUUSD) and Bitcoin (BTC). Research-based, AI-assisted educational sentiment engine. Not financial advice." />
+  <meta name="robots" content="index, follow" />
+  <title>Live Market Sentiment — Gold &amp; Bitcoin · Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/live-sentiment.html" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:     #0b1120;
+      --purple:   #5b1ac8;
+      --purple2:  #7c3aed;
+      --lime:     #acd400;
+      --white:    #ffffff;
+      --text:     #0d1526;
+      --muted:    #5a6580;
+      --bg:       #f7f8fc;
+
+      --gold:     #d97706;
+      --gold2:    #f59e0b;
+      --gold3:    #fbbf24;
+      --btc:      #ea580c;
+      --btc2:     #f97316;
+      --btc3:     #fb923c;
+
+      --bull:     #10b981;
+      --bull2:    #34d399;
+      --bear:     #ef4444;
+      --bear2:    #f87171;
+      --neutral:  #94a3b8;
+      --neutral2: #cbd5e1;
+      --caution:  #f59e0b;
+      --caution2: #fbbf24;
+
+      --card-bg:    #0a0f1f;
+      --card-bg2:   #111a33;
+      --card-line:  rgba(255,255,255,0.06);
+      --card-line2: rgba(255,255,255,0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; user-select: none; -webkit-user-select: none; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR (reused style) ── */
+    header.site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; transition: background .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22);
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── HERO ── */
+    .sent-hero {
+      padding: 124px 0 64px;
+      background: linear-gradient(145deg, #04050d 0%, #0b0820 45%, #15052e 100%);
+      position: relative; overflow: hidden;
+    }
+    .sent-hero::before {
+      content: ''; position: absolute; top: -120px; right: -120px;
+      width: 620px; height: 620px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.20) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .sent-hero::after {
+      content: ''; position: absolute; bottom: -180px; left: -120px;
+      width: 540px; height: 540px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,158,11,0.10) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 900px; }
+    .hero-pre {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(124,58,237,0.14); border: 1px solid rgba(192,132,252,0.32);
+      color: #c4b5fd; font-size: 11.5px; font-weight: 700;
+      padding: 6px 14px 6px 10px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 22px;
+    }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bull2); position: relative; box-shadow: 0 0 0 0 rgba(52,211,153,0.6); animation: pulse 2.2s ease-out infinite; }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+      100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+    }
+    .sent-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(30px, 4.6vw, 52px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.8px; line-height: 1.05;
+      margin-bottom: 18px;
+    }
+    .sent-hero h1 .gx { background: linear-gradient(110deg, var(--gold3) 0%, var(--gold2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sent-hero h1 .bx { background: linear-gradient(110deg, var(--btc3) 0%, var(--btc2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sent-hero p.lead { font-size: 17.5px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 720px; margin-bottom: 26px; }
+    .hero-badges { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.78); font-size: 12px; font-weight: 600;
+      padding: 7px 14px; border-radius: 100px;
+    }
+    .hero-badge svg { color: var(--bull2); flex-shrink: 0; }
+    .hero-cta { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.92); font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 100px; text-decoration: none; transition: background .2s, transform .2s; }
+    .hero-cta:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+    .hero-cta svg { transition: transform .18s; }
+    .hero-cta:hover svg { transform: translateX(-3px); }
+
+    /* ── MAIN ── */
+    main { background: var(--bg); padding: 36px 0 80px; }
+
+    /* ── REFRESH STRIP ── */
+    .refresh-strip {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      background: var(--white); border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 14px; padding: 14px 20px; margin-bottom: 22px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .rs-group { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .rs-item { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text); }
+    .rs-item b { font-weight: 700; }
+    .rs-item .muted { color: var(--muted); font-weight: 500; }
+    .rs-sep { width: 1px; height: 18px; background: rgba(0,0,0,0.08); }
+    .rs-sources { display: flex; gap: 6px; align-items: center; }
+    .rs-source-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .8px; padding: 3px 8px; border-radius: 5px; background: rgba(91,26,200,0.06); color: var(--purple); }
+
+    /* ── REGIME BANNER ── */
+    .regime-banner {
+      background: linear-gradient(125deg, #0a0f1f 0%, #131a35 50%, #0d142a 100%);
+      border-radius: 18px; padding: 22px 26px;
+      margin-bottom: 28px; position: relative; overflow: hidden;
+      border: 1px solid var(--card-line);
+    }
+    .regime-banner::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(16,185,129,0.14) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .regime-banner-inner { position: relative; z-index: 1; display: grid; grid-template-columns: 1.4fr 2.6fr; gap: 32px; align-items: center; }
+    .regime-label-box .regime-pre { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+    .regime-label-box h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.4vw, 24px); font-weight: 800;
+      color: var(--white); letter-spacing: -.5px; margin-bottom: 6px;
+    }
+    .regime-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: rgba(255,255,255,0.5); }
+    .regime-conf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bull2); display: inline-block; }
+    .regime-readings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .regime-stat {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 11px; padding: 13px 14px;
+    }
+    .regime-stat-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.42); margin-bottom: 7px; }
+    .regime-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; color: var(--white); letter-spacing: -.3px; }
+    .regime-stat-delta { font-size: 11.5px; font-weight: 600; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+    .delta-down { color: var(--bull2); }
+    .delta-up   { color: var(--bear2); }
+    .delta-flat { color: rgba(255,255,255,0.5); }
+
+    /* ── SENTIMENT GRID ── */
+    .sentiment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 28px; }
+    .sentiment-block {
+      background: linear-gradient(160deg, #0a0f1f 0%, #111a33 60%, #0c1226 100%);
+      border-radius: 22px; border: 1px solid var(--card-line);
+      padding: 26px 26px 24px; position: relative; overflow: hidden;
+    }
+    .sb-glow {
+      position: absolute; top: -120px; right: -120px;
+      width: 360px; height: 360px; border-radius: 50%; pointer-events: none;
+    }
+    .gold-block .sb-glow { background: radial-gradient(circle, rgba(245,158,11,0.16) 0%, transparent 65%); }
+    .btc-block  .sb-glow { background: radial-gradient(circle, rgba(249,115,22,0.16) 0%, transparent 65%); }
+
+    .sb-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; position: relative; z-index: 1; }
+    .sb-asset { display: flex; align-items: center; gap: 12px; }
+    .sb-asset-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 16px; letter-spacing: -.5px; }
+    .gold-block .sb-asset-icon { background: linear-gradient(140deg, var(--gold2) 0%, var(--gold) 100%); color: #1a0e00; box-shadow: 0 4px 16px rgba(245,158,11,0.32); }
+    .btc-block  .sb-asset-icon { background: linear-gradient(140deg, var(--btc2) 0%, var(--btc) 100%); color: #1a0500; box-shadow: 0 4px 16px rgba(249,115,22,0.32); }
+    .sb-asset-text b { display: block; font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 17px; color: var(--white); letter-spacing: -.3px; }
+    .sb-asset-text small { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+    .sb-live { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.55); letter-spacing: 1px; text-transform: uppercase; }
+    .sb-live .live-dot { width: 6px; height: 6px; }
+
+    .sentiment-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; position: relative; z-index: 1; }
+    .sl-label {
+      font-family: 'Manrope',sans-serif; font-weight: 900;
+      font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -.8px; line-height: 1.1;
+    }
+    .sl-bull   { color: var(--bull2); }
+    .sl-bull-s { color: var(--bull2); text-shadow: 0 0 32px rgba(52,211,153,0.45); }
+    .sl-bear   { color: var(--bear2); }
+    .sl-bear-s { color: var(--bear2); text-shadow: 0 0 32px rgba(248,113,113,0.45); }
+    .sl-neutral{ color: var(--neutral2); }
+    .sl-caution{ color: var(--caution2); }
+
+    .sl-score { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: -.5px; }
+    .sl-score-prefix { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; margin-right: 6px; }
+
+    .sl-conf { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; position: relative; z-index: 1; }
+    .sl-conf-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); letter-spacing: .5px; text-transform: uppercase; }
+    .sl-conf-value { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; color: var(--white); }
+    .sl-conf-tier { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 100px; letter-spacing: 1px; text-transform: uppercase; }
+    .tier-high { background: rgba(16,185,129,0.15); color: var(--bull2); border: 1px solid rgba(52,211,153,0.30); }
+    .tier-mod  { background: rgba(245,158,11,0.13); color: var(--caution2); border: 1px solid rgba(251,191,36,0.30); }
+    .tier-low  { background: rgba(239,68,68,0.13); color: var(--bear2); border: 1px solid rgba(248,113,113,0.30); }
+    .tier-vlow { background: rgba(239,68,68,0.18); color: var(--bear2); border: 1px solid rgba(248,113,113,0.40); }
+
+    /* Composite Meter */
+    .meter-wrap { margin: 18px 0 16px; position: relative; z-index: 1; }
+    .meter-track {
+      height: 10px; border-radius: 6px; position: relative;
+      background: linear-gradient(90deg, rgba(239,68,68,0.55) 0%, rgba(239,68,68,0.30) 22.5%, rgba(148,163,184,0.20) 38.75%, rgba(148,163,184,0.20) 61.25%, rgba(16,185,129,0.30) 77.5%, rgba(16,185,129,0.55) 100%);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .meter-marker {
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--white); border: 3px solid var(--card-bg);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.18);
+      transition: left .6s cubic-bezier(.4,0,.2,1);
+    }
+    .meter-threshold {
+      position: absolute; top: -4px; bottom: -4px;
+      width: 1px; background: rgba(255,255,255,0.18);
+    }
+    .meter-labels { display: flex; justify-content: space-between; margin-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.42); letter-spacing: .5px; }
+
+    /* Penalties */
+    .penalties-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; position: relative; z-index: 1; }
+    .penalty-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(245,158,11,0.10); border: 1px solid rgba(251,191,36,0.28);
+      color: var(--caution2); font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 100px; letter-spacing: .4px;
+    }
+    .penalty-badge svg { color: var(--caution2); flex-shrink: 0; }
+    .contradiction-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(248,113,113,0.32);
+      color: var(--bear2); font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 100px; letter-spacing: .4px;
+    }
+
+    /* Reason summary */
+    .reason-box {
+      background: rgba(255,255,255,0.03); border-left: 3px solid rgba(192,132,252,0.45);
+      border-radius: 0 11px 11px 0; padding: 13px 16px; margin-bottom: 20px;
+      position: relative; z-index: 1;
+    }
+    .reason-label { font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(192,132,252,0.85); margin-bottom: 6px; }
+    .reason-text { font-size: 14px; color: rgba(255,255,255,0.78); line-height: 1.65; }
+
+    /* Mini widgets row */
+    .mini-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-bottom: 24px; position: relative; z-index: 1; }
+    .mini-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 13px 14px; }
+    .mini-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.42); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .mini-trend-svg { width: 100%; height: 50px; display: block; }
+    .mini-trend-svg .trend-line { fill: none; stroke-width: 2; }
+    .gold-block .mini-trend-svg .trend-line { stroke: var(--gold3); }
+    .btc-block  .mini-trend-svg .trend-line { stroke: var(--btc3); }
+    .gold-block .mini-trend-svg .trend-fill { fill: rgba(251,191,36,0.10); }
+    .btc-block  .mini-trend-svg .trend-fill { fill: rgba(251,146,60,0.10); }
+    .mini-trend-svg .trend-baseline { stroke: rgba(255,255,255,0.10); stroke-width: 1; stroke-dasharray: 3 3; }
+    .mini-trend-svg .trend-endpoint { stroke-width: 2; }
+    .gold-block .mini-trend-svg .trend-endpoint { fill: var(--gold3); stroke: var(--card-bg); }
+    .btc-block  .mini-trend-svg .trend-endpoint { fill: var(--btc3); stroke: var(--card-bg); }
+
+    .session-meter { display: flex; gap: 3px; margin-top: 10px; }
+    .session-seg { flex: 1; height: 22px; border-radius: 4px; background: rgba(255,255,255,0.04); position: relative; opacity: 0.55; transition: opacity .2s; }
+    .session-seg.active { background: linear-gradient(180deg, rgba(192,132,252,0.50), rgba(124,58,237,0.32)); box-shadow: 0 0 16px rgba(124,58,237,0.42), 0 0 5px rgba(192,132,252,0.20); border: 1px solid rgba(192,132,252,0.26); opacity: 1; }
+    .session-seg-label { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 8.5px; font-weight: 700; color: rgba(255,255,255,0.28); letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+    .session-seg.active .session-seg-label { color: var(--white); text-shadow: 0 0 10px rgba(192,132,252,0.6); }
+    .session-meter-wrap { margin-top: 0; }
+
+    /* Session activity pill */
+    .sm-current { display: inline-flex; align-items: center; gap: 6px; background: rgba(192,132,252,0.10); border: 1px solid rgba(192,132,252,0.22); border-radius: 100px; padding: 3px 10px 3px 7px; margin-bottom: 11px; position: relative; z-index: 1; }
+    .sm-current-dot { width: 6px; height: 6px; border-radius: 50%; background: #c084fc; box-shadow: 0 0 6px rgba(192,132,252,0.7); animation: sm-pulse 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes sm-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.55;transform:scale(.82)} }
+    .sm-current-label { font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,0.42); letter-spacing: 1px; text-transform: uppercase; }
+    .sm-current-name { font-size: 11px; font-weight: 800; color: #c084fc; letter-spacing: .2px; }
+
+    /* Activity Impact structured fields */
+    .sm-field-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; position: relative; z-index: 1; }
+    .sm-field-label { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.36); flex-shrink: 0; }
+    .sm-field-val { font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.80); text-align: right; }
+    .act-meter { display: flex; gap: 4px; align-items: center; }
+    .act-seg { font-size: 8.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; padding: 2px 7px; border-radius: 100px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); color: rgba(255,255,255,0.24); white-space: nowrap; }
+    .act-seg.act-high { background: rgba(16,185,129,0.15); border-color: rgba(52,211,153,0.32); color: var(--bull2); }
+    .act-seg.act-midhigh { background: rgba(245,158,11,0.13); border-color: rgba(251,191,36,0.30); color: var(--caution2); }
+    .sm-meaning { font-size: 11px; color: rgba(255,255,255,0.60); line-height: 1.6; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 5px; position: relative; z-index: 1; }
+
+    /* Factor breakdown */
+    .factor-section-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin: 8px 0 12px; display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+    .factor-section-label::before, .factor-section-label::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+    .factor-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }
+    .factor-table thead th {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(255,255,255,0.42); text-align: left; padding: 8px 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .factor-table tbody td {
+      padding: 11px 8px; font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.045);
+      color: rgba(255,255,255,0.75);
+    }
+    .factor-table tbody tr:last-child td { border-bottom: none; }
+    .factor-table tbody tr:hover td { background: rgba(255,255,255,0.018); }
+    .ft-name { font-weight: 700; color: rgba(255,255,255,0.92); }
+    .ft-read { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.62); }
+    .ft-weight { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: rgba(255,255,255,0.42); }
+    .ft-score {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 30px; height: 22px; padding: 0 6px; border-radius: 5px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
+    }
+    .score-p2 { background: rgba(16,185,129,0.20); color: var(--bull2); border: 1px solid rgba(52,211,153,0.32); }
+    .score-p1 { background: rgba(16,185,129,0.12); color: var(--bull2); border: 1px solid rgba(52,211,153,0.22); }
+    .score-z  { background: rgba(148,163,184,0.10); color: var(--neutral2); border: 1px solid rgba(148,163,184,0.22); }
+    .score-n1 { background: rgba(239,68,68,0.12); color: var(--bear2); border: 1px solid rgba(248,113,113,0.22); }
+    .score-n2 { background: rgba(239,68,68,0.20); color: var(--bear2); border: 1px solid rgba(248,113,113,0.32); }
+    .ft-bias { font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+    .bias-pos { color: var(--bull2); }
+    .bias-neg { color: var(--bear2); }
+    .bias-neu { color: var(--neutral2); }
+    .ft-plain { font-size: 11.5px; color: rgba(255,255,255,0.50); line-height: 1.5; }
+
+    /* ── NEWS ALERT ── */
+    .news-alert {
+      background: linear-gradient(135deg, #0a0f1f 0%, #1a1340 50%, #0b0f24 100%);
+      border-radius: 22px; padding: 28px 30px; margin-bottom: 28px;
+      border: 1px solid rgba(192,132,252,0.22); position: relative; overflow: hidden;
+    }
+    .news-alert::before {
+      content: ''; position: absolute; top: -100px; right: -100px;
+      width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(192,132,252,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .news-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; position: relative; z-index: 1; flex-wrap: wrap; }
+    .news-head-left { flex: 1; min-width: 240px; }
+    .news-pre { display: inline-flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 800; color: var(--caution2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 11px; }
+    .news-pre .live-dot { background: var(--caution2); }
+    .news-pre .live-dot { animation: pulse-amber 2.2s ease-out infinite; box-shadow: 0 0 0 0 rgba(251,191,36,0.55); }
+    @keyframes pulse-amber {
+      0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(251,191,36,0); }
+      100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+    }
+    .news-headline {
+      font-family: 'Manrope',sans-serif; font-weight: 800;
+      font-size: clamp(18px, 2.4vw, 22px); color: var(--white);
+      letter-spacing: -.4px; line-height: 1.3; margin-bottom: 14px;
+    }
+    .news-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .news-tag {
+      font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 100px;
+      letter-spacing: .6px;
+    }
+    .tag-cat   { background: rgba(192,132,252,0.13); color: #c4b5fd; border: 1px solid rgba(192,132,252,0.30); }
+    .tag-asset { background: rgba(245,158,11,0.13); color: var(--gold3); border: 1px solid rgba(251,191,36,0.30); }
+    .tag-impact-bull { background: rgba(16,185,129,0.14); color: var(--bull2); border: 1px solid rgba(52,211,153,0.30); }
+    .tag-impact-bear { background: rgba(239,68,68,0.14); color: var(--bear2); border: 1px solid rgba(248,113,113,0.30); }
+    .tag-impact-mix  { background: rgba(245,158,11,0.14); color: var(--caution2); border: 1px solid rgba(251,191,36,0.30); }
+
+    .news-classification {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Manrope',sans-serif; font-weight: 800;
+      font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+      padding: 8px 16px; border-radius: 100px;
+      background: rgba(16,185,129,0.13); color: var(--bull2); border: 1px solid rgba(52,211,153,0.32);
+      flex-shrink: 0;
+    }
+
+    .news-ai-note {
+      background: rgba(255,255,255,0.025); border-left: 3px solid rgba(192,132,252,0.45);
+      border-radius: 0 12px 12px 0; padding: 14px 18px; margin-bottom: 22px;
+      position: relative; z-index: 1;
+    }
+    .news-ai-label { font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(192,132,252,0.85); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .news-ai-label svg { color: rgba(192,132,252,0.85); }
+    .news-ai-text { font-size: 14px; color: rgba(255,255,255,0.78); line-height: 1.65; }
+
+    .filter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin-bottom: 18px; position: relative; z-index: 1; }
+    .filter-card {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 11px; padding: 13px 14px;
+    }
+    .filter-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .filter-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+    .fi-pos  { background: rgba(16,185,129,0.16); color: var(--bull2); }
+    .fi-mid  { background: rgba(245,158,11,0.14); color: var(--caution2); }
+    .fi-neg  { background: rgba(239,68,68,0.14); color: var(--bear2); }
+    .filter-card-label { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+    .filter-card-result { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 3px; }
+    .filter-card-detail { font-size: 11.5px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+    .news-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07); position: relative; z-index: 1; flex-wrap: wrap; }
+    .news-footer-warning { font-size: 11.5px; color: rgba(255,255,255,0.5); font-style: italic; flex: 1; min-width: 240px; }
+    .news-timestamp { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.42); font-weight: 600; }
+
+    /* ── HISTORY SECTION ── */
+    .history-section { background: var(--white); border: 1px solid rgba(0,0,0,0.06); border-radius: 18px; padding: 26px 28px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+    .hs-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+    .hs-head h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -.4px; color: var(--text); }
+    .hs-toggle { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 11px; }
+    .hs-toggle button {
+      font-family: 'Inter',sans-serif;
+      font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;
+      background: transparent; color: var(--muted); border: none; cursor: pointer;
+      transition: background .18s, color .18s; letter-spacing: .4px;
+    }
+    .hs-toggle button.active { background: var(--white); color: var(--text); box-shadow: 0 1px 3px rgba(15,23,42,0.06); }
+    .hs-toggle button:hover:not(.active) { color: var(--text); }
+    .hs-desc { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+    .hs-chart-wrap { position: relative; }
+    .hs-chart-bg { background: linear-gradient(155deg, #0a0f1f 0%, #111a33 50%, #0c1226 100%); border-radius: 14px; padding: 22px 22px 16px; }
+    .hs-chart-legend { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; flex-wrap: wrap; }
+    .hs-legend-item { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: rgba(255,255,255,0.72); font-weight: 600; }
+    .hs-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .hs-gold-dot { background: var(--gold3); }
+    .hs-btc-dot  { background: var(--btc3); }
+    .hs-chart-svg { width: 100%; height: 240px; display: block; }
+    .hs-chart-svg .grid-line { stroke: rgba(255,255,255,0.05); stroke-width: 1; }
+    .hs-chart-svg .threshold-line { stroke: rgba(255,255,255,0.10); stroke-width: 1; stroke-dasharray: 3 4; }
+    .hs-chart-svg .zone-bull { fill: rgba(16,185,129,0.06); }
+    .hs-chart-svg .zone-bear { fill: rgba(239,68,68,0.06); }
+    .hs-chart-svg .axis-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; fill: rgba(255,255,255,0.4); }
+    .hs-chart-svg .axis-label-y { text-anchor: end; }
+    .hs-chart-svg .axis-label-x { text-anchor: middle; }
+    .hs-chart-svg .gold-line { stroke: var(--gold3); stroke-width: 2; fill: none; stroke-linejoin: round; }
+    .hs-chart-svg .btc-line  { stroke: var(--btc3);  stroke-width: 2; fill: none; stroke-linejoin: round; }
+    .hs-chart-svg .gold-fill { fill: rgba(251,191,36,0.08); }
+    .hs-chart-svg .btc-fill  { fill: rgba(251,146,60,0.08); }
+    .hs-chart-svg .event-marker { fill: rgba(192,132,252,0.85); stroke: var(--card-bg); stroke-width: 1.5; }
+    .hs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+    .hs-stat { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
+    .hs-stat-label { font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .hs-stat-value { font-family: 'Manrope',sans-serif; font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .hs-stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* ── METHODOLOGY ── */
+    .meth-section { background: var(--white); border: 1px solid rgba(0,0,0,0.06); border-radius: 18px; padding: 28px 30px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+    .meth-section h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -.4px; color: var(--text); margin-bottom: 6px; }
+    .meth-section > p.meth-intro { font-size: 14.5px; color: var(--muted); line-height: 1.65; margin-bottom: 22px; max-width: 760px; }
+    .meth-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .meth-card {
+      background: var(--bg); border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 14px; padding: 18px 18px 17px;
+    }
+    .meth-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .mci-1 { background: linear-gradient(140deg, #fef3c7, #fde68a); color: var(--gold); }
+    .mci-2 { background: linear-gradient(140deg, #fed7aa, #fdba74); color: var(--btc); }
+    .mci-3 { background: linear-gradient(140deg, #d1fae5, #a7f3d0); color: var(--bull); }
+    .mci-4 { background: linear-gradient(140deg, #ede9fe, #ddd6fe); color: var(--purple); }
+    .meth-card h4 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 14px; color: var(--text); margin-bottom: 6px; letter-spacing: -.2px; }
+    .meth-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── DATA SOURCES ── */
+    .ds-section { background: var(--white); border: 1px solid rgba(0,0,0,0.06); border-radius: 18px; padding: 28px 30px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+    .ds-section h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -.4px; color: var(--text); margin-bottom: 6px; }
+    .ds-intro { font-size: 14.5px; color: var(--muted); line-height: 1.65; margin-bottom: 22px; max-width: 760px; }
+    .ds-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .ds-card {
+      background: var(--bg); border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 12px; padding: 15px 16px; transition: border-color .2s, transform .2s, background .2s;
+    }
+    .ds-card:hover { background: var(--white); border-color: rgba(91,26,200,0.2); transform: translateY(-2px); }
+    .ds-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .ds-card-name { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 14px; color: var(--text); letter-spacing: -.2px; }
+    .ds-badge { font-size: 9.5px; font-weight: 800; letter-spacing: .8px; padding: 3px 7px; border-radius: 4px; }
+    .ds-free { background: rgba(16,185,129,0.10); color: #047857; }
+    .ds-paid { background: rgba(245,158,11,0.10); color: var(--gold); }
+    .ds-card-desc { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 6px; }
+    .ds-card-freq { font-size: 10.5px; font-weight: 700; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer-block {
+      background: linear-gradient(135deg, #fffbf2 0%, #fef3c7 100%);
+      border: 1px solid rgba(245,158,11,0.30);
+      border-radius: 18px; padding: 26px 28px;
+      margin-bottom: 0;
+    }
+    .disclaimer-block h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 16px; color: #78350f; margin-bottom: 10px; display: flex; align-items: center; gap: 9px; letter-spacing: -.2px; }
+    .disclaimer-block p { font-size: 13.5px; color: #5c2e0a; line-height: 1.72; margin-bottom: 10px; }
+    .disclaimer-block p:last-child { margin-bottom: 0; }
+    .disclaimer-block strong { color: #451a03; font-weight: 700; }
+
+    /* ── FOOTER (reused) ── */
+    footer.site-footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .sentiment-grid { grid-template-columns: 1fr; }
+      .regime-banner-inner { grid-template-columns: 1fr; gap: 22px; }
+      .regime-readings { grid-template-columns: repeat(4, 1fr); }
+      .meth-grid { grid-template-columns: repeat(2, 1fr); }
+      .ds-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-join  { display: none; }
+      .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 720px) {
+      .regime-readings { grid-template-columns: repeat(2, 1fr); }
+      .filter-grid { grid-template-columns: repeat(2, 1fr); }
+      .hs-stats { grid-template-columns: 1fr; }
+      .meth-grid { grid-template-columns: 1fr; }
+      .ds-grid { grid-template-columns: repeat(2, 1fr); }
+      .mini-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .container { padding: 0 18px; }
+      .sent-hero { padding: 104px 0 48px; }
+      .sentiment-block { padding: 22px 20px; }
+      .news-alert { padding: 22px 20px; }
+      .history-section, .meth-section, .ds-section { padding: 22px 20px; }
+      .filter-grid { grid-template-columns: 1fr; }
+      .ds-grid { grid-template-columns: 1fr; }
+      .ft-plain { display: none; }
+      .factor-table thead th:nth-child(5), .factor-table tbody td:nth-child(5) { display: none; }
+    }
+    @media (max-width: 400px) {
+      .factor-table thead th:nth-child(3), .factor-table tbody td:nth-child(3) { display: none; }
+      .mini-row { gap: 10px; }
+      .sentiment-block { padding: 18px 16px; }
+    }
+
+    /* ── BEGINNER-FRIENDLY ENHANCEMENTS ── */
+    .sb-explain {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-left: 3px solid rgba(192,132,252,0.45);
+      border-radius: 0 11px 11px 0;
+      padding: 12px 15px;
+      font-size: 13px; line-height: 1.65;
+      color: rgba(255,255,255,0.78);
+      margin: 0 0 18px;
+      position: relative; z-index: 1;
+    }
+    .sb-explain b { color: var(--white); font-weight: 700; }
+
+    .pressure-summary {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      margin-bottom: 18px; position: relative; z-index: 1;
+    }
+    .ps-cell {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 10px 11px;
+      min-height: 64px;
+    }
+    .ps-cell-label {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px;
+      text-transform: uppercase; color: rgba(255,255,255,0.42);
+      margin-bottom: 6px;
+    }
+    .ps-cell-value {
+      font-family: 'Manrope',sans-serif;
+      font-size: 18px; font-weight: 800; color: var(--white);
+      letter-spacing: -.3px; line-height: 1.1;
+    }
+    .ps-bull    .ps-cell-value { color: var(--bull2); }
+    .ps-bear    .ps-cell-value { color: var(--bear2); }
+    .ps-neu     .ps-cell-value { color: var(--neutral2); }
+    .ps-overall .ps-cell-value { font-size: 14px; }
+    .ps-overall.bias-pos .ps-cell-value { color: var(--bull2); }
+    .ps-overall.bias-neg .ps-cell-value { color: var(--bear2); }
+    .ps-overall.bias-mix .ps-cell-value { color: var(--caution2); }
+
+    /* Beginner-friendly factor pill */
+    .ft-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 3px 10px; border-radius: 100px;
+      font-size: 10.5px; font-weight: 800; letter-spacing: .5px;
+      min-width: 64px;
+    }
+    .pill-bull { background: rgba(16,185,129,0.14); color: var(--bull2); border:1px solid rgba(52,211,153,0.28); }
+    .pill-bear { background: rgba(239,68,68,0.14); color: var(--bear2); border:1px solid rgba(248,113,113,0.28); }
+    .pill-neu  { background: rgba(148,163,184,0.12); color: var(--neutral2); border:1px solid rgba(148,163,184,0.28); }
+
+    /* News alert next-catalyst countdown line */
+    .news-catalyst {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(245,158,11,0.10); border: 1px solid rgba(251,191,36,0.28);
+      color: var(--caution2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 12px; border-radius: 100px; letter-spacing: .3px;
+      margin-bottom: 14px; position: relative; z-index: 1;
+    }
+
+    /* ── OVERALL PRESSURE BOX (replaces white market-score table) ── */
+    .ovr-pressure {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 13px;
+      padding: 13px 15px;
+      margin-bottom: 18px;
+      position: relative; z-index: 1;
+    }
+    .ovr-title {
+      font-size: 9px; font-weight: 800; letter-spacing: 2px;
+      text-transform: uppercase; color: rgba(255,255,255,0.38);
+      margin-bottom: 11px;
+    }
+    .ovr-cells { display: flex; flex-direction: column; gap: 7px; }
+    .ovr-cell {
+      display: flex; align-items: center; gap: 9px;
+    }
+    .ovr-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .ovr-bull-dot { background: var(--bull2); box-shadow: 0 0 0 2px rgba(52,211,153,0.18); }
+    .ovr-bear-dot { background: var(--bear2); box-shadow: 0 0 0 2px rgba(248,113,113,0.18); }
+    .ovr-neu-dot  { background: var(--neutral);  box-shadow: 0 0 0 2px rgba(148,163,184,0.18); }
+    .ovr-name {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.60);
+      flex: 1; letter-spacing: -.1px;
+    }
+    .ovr-pts {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px; font-weight: 700; letter-spacing: -.4px;
+      min-width: 20px; text-align: right;
+    }
+    .ovr-unit {
+      font-size: 9px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.30);
+      min-width: 14px;
+    }
+    .ovr-bull-cell .ovr-pts { color: var(--bull2); }
+    .ovr-bear-cell .ovr-pts { color: var(--bear2); }
+    .ovr-neu-cell  .ovr-pts { color: var(--neutral2); }
+    /* Progress bar inside pressure box */
+    .ovr-bar-wrap {
+      margin-top: 12px; padding-top: 11px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .ovr-bar-track {
+      height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.06);
+      position: relative; overflow: hidden;
+    }
+    .ovr-bar-fill {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, var(--bull2), rgba(52,211,153,0.7));
+      transition: width .6s cubic-bezier(.4,0,.2,1);
+    }
+    .ovr-bar-fill.bear { background: linear-gradient(90deg, var(--bear2), rgba(248,113,113,0.7)); }
+    .ovr-bar-fill.mix  { background: linear-gradient(90deg, var(--caution2), rgba(251,191,36,0.7)); }
+    .ovr-bar-label {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 6px;
+    }
+    .ovr-bar-verdict {
+      font-size: 10.5px; font-weight: 800; letter-spacing: .4px;
+    }
+    .ovr-bar-ratio {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; color: rgba(255,255,255,0.38); letter-spacing: -.2px;
+    }
+    .verdict-bull { color: var(--bull2); }
+    .verdict-bear { color: var(--bear2); }
+    .verdict-mix  { color: var(--caution2); }
+
+    /* Point indicator inside factor pill */
+    .ft-pts {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; font-weight: 700;
+      opacity: 0.60; margin-left: 4px; letter-spacing: 0;
+    }
+
+    /* ── FUNDAMENTAL INTELLIGENCE (placeholder) ── */
+    .fi-section {
+      background: var(--white); border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 18px; padding: 28px 30px; margin-bottom: 28px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .fi-section h3 { font-family:'Manrope',sans-serif; font-weight:800; font-size:20px; color: var(--text); letter-spacing:-.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+    .fi-coming {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1.4px;
+      text-transform: uppercase; padding: 4px 9px; border-radius: 100px;
+      background: rgba(147,51,234,0.12); color: var(--purple);
+      border: 1px solid rgba(147,51,234,0.28);
+    }
+    .fi-intro { font-size: 13.5px; color: var(--muted); line-height: 1.65; margin-bottom: 22px; max-width: 720px; }
+    .fi-group { margin-bottom: 22px; }
+    .fi-group:last-child { margin-bottom: 0; }
+    .fi-group-label {
+      font-size: 11px; font-weight: 800; letter-spacing: 1.6px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .fi-group-label::after { content:''; flex:1; height:1px; background: rgba(0,0,0,0.06); }
+    .fi-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .fi-card {
+      background: var(--bg); border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 12px; padding: 14px 15px;
+      transition: border-color .2s, transform .2s, background .2s;
+    }
+    .fi-card:hover { background: var(--white); border-color: rgba(91,26,200,0.18); transform: translateY(-2px); }
+    .fi-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; gap: 8px; }
+    .fi-card-name { font-family:'Manrope',sans-serif; font-weight:800; font-size:13.5px; color: var(--text); letter-spacing:-.2px; }
+    .fi-status {
+      font-size: 9px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; padding: 3px 7px; border-radius: 4px;
+      background: rgba(91,26,200,0.08); color: var(--purple); white-space: nowrap;
+    }
+    .fi-card-desc { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    /* ── TECHNICAL SNAPSHOT ── */
+    .tech-section {
+      background: linear-gradient(160deg, #0a0f1f 0%, #111a33 60%, #0c1226 100%);
+      border-radius: 18px; padding: 28px 30px; margin-bottom: 28px;
+      border: 1px solid var(--card-line);
+      position: relative; overflow: hidden;
+    }
+    .tech-section::before {
+      content:''; position:absolute; top:-100px; right:-80px;
+      width:300px; height:300px; border-radius:50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .tech-head { position: relative; z-index: 1; margin-bottom: 18px; }
+    .tech-pre { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(192,132,252,0.85); margin-bottom: 8px; }
+    .tech-head h3 { font-family:'Manrope',sans-serif; font-weight:800; font-size:20px; color: var(--white); letter-spacing:-.4px; }
+    .tech-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      position: relative; z-index: 1; margin-bottom: 18px;
+    }
+    .tech-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 11px; padding: 14px 15px;
+    }
+    .tech-card-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 7px; }
+    .tech-card-value { font-family:'Manrope',sans-serif; font-weight: 800; font-size: 14.5px; color: var(--white); letter-spacing: -.3px; line-height: 1.3; margin-bottom: 4px; }
+    .tech-card-sub { font-size: 11.5px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+    .tech-cta {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px; padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      position: relative; z-index: 1; flex-wrap: wrap;
+    }
+    .tech-cta-text { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; flex: 1; min-width: 240px; }
+    .tg-btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: linear-gradient(135deg, #229ED9 0%, #0e80c0 100%);
+      color: #fff; font-size: 14px; font-weight: 800;
+      padding: 13px 24px; border-radius: 100px;
+      text-decoration: none;
+      box-shadow: 0 6px 22px rgba(34,158,217,0.36);
+      transition: transform .2s, box-shadow .2s;
+      white-space: nowrap;
+    }
+    .tg-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(34,158,217,0.52); }
+
+    @media (max-width: 720px) {
+      .pressure-summary { grid-template-columns: repeat(2, 1fr); }
+      .fi-grid { grid-template-columns: repeat(2, 1fr); }
+      .tech-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .fi-grid, .tech-grid { grid-template-columns: 1fr; }
+      .market-score-section, .fi-section, .tech-section { padding: 22px 20px; }
+    }
+  
+.table-wrap,.compare-wrap,.comparison-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ── PHASE 2D · TRUST HARMONIZATION ─────────────────────────────────────── */
+/* Layout-shift prevention on live values */
+.regime-stat-value { min-width: 64px; display: inline-block; }
+.regime-stat-delta { min-width: 80px; display: inline-block; }
+.ft-read { min-width: 90px; }
+
+/* Subtle stale-data fade — applied by JS when last successful fetch is old */
+.is-stale { opacity: 0.62; transition: opacity .4s ease; }
+
+/* Compact research-snapshot pill used inside both dark and light sections */
+.research-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 100px;
+  color: rgba(124,58,237,.95);
+  background: rgba(124,58,237,.10);
+  border: 1px solid rgba(124,58,237,.28);
+  white-space: nowrap;
+}
+.research-badge.is-dark {
+  color: rgba(255,255,255,.78);
+  background: rgba(124,58,237,.22);
+  border-color: rgba(124,58,237,.45);
+}
+.research-badge .rb-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; opacity: .9;
+}
+
+/* Research-frame strip between live news headline and editorial interpretation */
+.news-research-frame {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px 0 4px;
+  padding: 8px 12px;
+  background: rgba(124,58,237,.10);
+  border-left: 2px solid rgba(124,58,237,.55);
+  border-radius: 0 6px 6px 0;
+  font-size: 11px; line-height: 1.5;
+  color: rgba(255,255,255,.7);
+}
+.news-research-frame svg { flex: 0 0 auto; opacity: .75; }
+
+/* Block-level research badge slot — used inside sentiment cards */
+.sb-research-tag { margin-top: 6px; }
+.tech-research-tag { margin-top: 4px; }
+
+/* ─── GROUP 1 · MOBILE OVERFLOW PREVENTION ──────────────────────────────── */
+/* Prevent any section from causing horizontal scroll */
+body { overflow-x: hidden; }
+
+/* Allow text to wrap in all data-bearing cells */
+.factor-table tbody td,
+.reason-text,
+.news-ai-text,
+.tech-card-value,
+.tech-card-sub,
+.filter-card-detail,
+.filter-card-result,
+.sb-explain,
+.sm-meaning,
+.fi-card-desc,
+.ovr-name {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Factor table Read column: allow natural wrapping (CLS min-width still applies
+   for value cells via .regime-stat-value; ft-read is adjusted below at small bp) */
+.ft-read { white-space: normal; }
+
+/* Sentiment label row: let score wrap under label on very narrow screens */
+.sentiment-label-row { flex-wrap: wrap; }
+.sl-score            { white-space: nowrap; }
+
+/* News head left: allow it to shrink on small screens */
+.news-head-left { min-width: 0; }
+
+/* Source tags: never break mid-word */
+.rs-source-tag { white-space: nowrap; }
+
+/* ─── GROUP 3 · LIVE PRICE DISPLAY STYLE ───────────────────────────────── */
+.sb-live-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; font-weight: 700;
+  color: rgba(255,255,255,0.82);
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 3px; flex-wrap: wrap;
+}
+.sb-live-price .lp-delta { font-size: 11px; }
+
+/* ─── MOBILE BREAKPOINTS (additive — do not alter desktop) ──────────────── */
+@media (max-width: 480px) {
+  /* Regime stat labels: tighten letter-spacing and size so 4-col grid survives */
+  .regime-stat-label  { font-size: 9px; letter-spacing: 0.8px; }
+  .regime-stat-value  { font-size: 14px; }
+  /* Reduce Read-column min-width so Factor name has more space */
+  .ft-read            { min-width: 70px; }
+  /* News classification badge: full-width row on mobile */
+  .news-head          { flex-direction: column; gap: 14px; }
+  .news-classification{ width: 100%; justify-content: center; }
+}
+@media (max-width: 380px) {
+  /* Sentiment label: stack composite score below label */
+  .sentiment-label-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  /* Regime stat: tighten further */
+  .regime-stat         { padding: 10px 10px; }
+  .regime-stat-value   { font-size: 13px; min-width: 52px; }
+  .regime-stat-delta   { min-width: 60px; font-size: 10.5px; }
+  /* Factor table Read column: narrow further */
+  .ft-read             { min-width: 58px; }
+  /* Refresh strip: tighter source tags */
+  .rs-source-tag       { font-size: 9px; padding: 2px 6px; }
+}
+/* ─── ERROR STATE · Status strip red text ──────────────────────────────── */
+#liveStatusText.status-err {
+  color: #ef4444;
+  font-weight: 800;
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header class="site-nav">
+  <nav class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="live-sentiment.html" class="active">Sentiment</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"          onclick="toggleMenu()">Home</a>
+  <a href="about.html"          onclick="toggleMenu()">About</a>
+  <a href="index.html#results"  onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html"       onclick="toggleMenu()">Articles</a>
+  <a href="live-sentiment.html" onclick="toggleMenu()">Sentiment</a>
+  <a href="index.html#join"     onclick="toggleMenu()">Join Now</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="sent-hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-pre">
+        <span class="live-dot"></span>
+        Live Market Sentiment
+      </div>
+      <h1>Live Market Sentiment — <span class="gx">Gold</span> &amp; <span class="bx">Bitcoin</span></h1>
+      <p class="lead">A research-based, AI-assisted market sentiment dashboard that synthesises macro, technical, positioning, flow, and news inputs into a single transparent reading. Built for traders who want to understand <em>why</em> markets are positioned the way they are — not just what to do next.</p>
+      <div class="hero-badges">
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Educational
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Research-based
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Not financial advice
+        </span>
+      </div>
+      <a href="articles.html" class="hero-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to Articles
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── MAIN ── -->
+<main>
+  <div class="container">
+
+    <!-- ── REFRESH STRIP ── -->
+    <section class="refresh-strip" aria-label="Update status">
+      <div class="rs-group">
+        <div class="rs-item">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="muted">Model status:</span>
+          <b id="liveStatusText">Connecting&hellip;</b>
+        </div>
+        <div class="rs-sep"></div>
+        <div class="rs-item">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span class="muted">Last update:</span>
+          <b id="liveUpdateText">&mdash;</b>
+        </div>
+      </div>
+      <div class="rs-sources">
+        <span class="muted" style="font-size:10px;letter-spacing:.5px;text-transform:uppercase;">Methodology sources:</span>
+        <span class="rs-source-tag">FRED</span>
+        <span class="rs-source-tag">CME</span>
+        <span class="rs-source-tag">CFTC</span>
+        <span class="rs-source-tag">CoinGecko</span>
+        <span class="rs-source-tag">WGC</span>
+      </div>
+    </section>
+
+    <!-- ── REGIME BANNER ── -->
+    <section class="regime-banner" aria-label="Current macro regime">
+      <div class="regime-banner-inner">
+        <div class="regime-label-box">
+          <div class="regime-pre">Current Market Regime <span class="research-badge is-dark" style="margin-left:8px;vertical-align:middle;"><span class="rb-dot"></span>Research Snapshot</span></div>
+          <h2 id="regimeLabel">Easing Cycle / Disinflation</h2>
+          <div class="regime-meta">
+            <span class="regime-conf-dot"></span>
+            <span>Regime strength: <b style="color:rgba(255,255,255,0.85);font-weight:700;">Moderate</b></span>
+            <span>·</span>
+            <span>Last model review: Manual snapshot &middot; Macro readings below are live</span>
+          </div>
+        </div>
+        <div class="regime-readings">
+          <div class="regime-stat">
+            <div class="regime-stat-label">DXY</div>
+            <div class="regime-stat-value" id="liveDXY">&mdash;</div>
+            <div class="regime-stat-delta delta-flat" id="liveDXYDelta">&mdash;</div>
+          </div>
+          <div class="regime-stat">
+            <div class="regime-stat-label">US 10Y</div>
+            <div class="regime-stat-value" id="liveUS10Y">&mdash;</div>
+            <div class="regime-stat-delta delta-flat" id="liveUS10YDelta">&mdash;</div>
+          </div>
+          <div class="regime-stat">
+            <div class="regime-stat-label">Real Yield (10Y)</div>
+            <div class="regime-stat-value" id="liveRealYield">&mdash;</div>
+            <div class="regime-stat-delta delta-flat" id="liveRealYieldDelta">&mdash;</div>
+          </div>
+          <div class="regime-stat">
+            <div class="regime-stat-label">VIX</div>
+            <div class="regime-stat-value" id="liveVIX">&mdash;</div>
+            <div class="regime-stat-delta delta-flat" id="liveVIXDelta">&mdash;</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SENTIMENT GRID ── -->
+    <section class="sentiment-grid" aria-label="Asset sentiment">
+
+      <!-- ─── GOLD BLOCK ─── -->
+      <article class="sentiment-block gold-block" id="goldBlock">
+        <div class="sb-glow"></div>
+
+        <header class="sb-head">
+          <div class="sb-asset">
+            <div class="sb-asset-icon">Au</div>
+            <div class="sb-asset-text">
+              <b>XAUUSD</b>
+              <small>Gold Spot</small>
+              <div class="sb-live-price">
+                <span id="liveGoldPriceVal">&mdash;</span>
+                <span id="liveGoldPriceDelta" class="delta-flat lp-delta">&mdash;</span>
+              </div>
+            </div>
+          </div>
+          <span class="sb-live" style="color:rgba(255,255,255,0.45)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+            Research Model
+          </span>
+        </header>
+
+        <div class="sb-explain">
+          <span id="goldExplainText">Bullish pressure outweighs bearish pressure based on today&rsquo;s macro and liquidity conditions.</span>
+        </div>
+
+        <div class="sentiment-label-row">
+          <div class="sl-label sl-bull">Moderate Bullish Pressure</div>
+          <div class="sl-score"><span class="sl-score-prefix">Composite</span><span id="goldComposite">+0.72</span></div>
+        </div>
+
+        <div class="sl-conf">
+          <span class="sl-conf-label">Trend Strength</span>
+          <span class="sl-conf-value">72%</span>
+          <span class="sl-conf-tier tier-mod">Moderate</span>
+          <span class="research-badge is-dark sb-research-tag" style="margin-left:auto;"><span class="rb-dot"></span>Research Snapshot</span>
+        </div>
+
+        <div class="ovr-pressure" aria-label="Overall Market Pressure — Gold">
+          <div class="ovr-title">Overall Market Pressure</div>
+          <div class="ovr-cells">
+            <div class="ovr-cell ovr-bull-cell">
+              <span class="ovr-dot ovr-bull-dot"></span>
+              <span class="ovr-name">Bullish Pressure</span>
+              <span class="ovr-pts" id="goldBullPts">—</span>
+              <span class="ovr-unit">pts</span>
+            </div>
+            <div class="ovr-cell ovr-bear-cell">
+              <span class="ovr-dot ovr-bear-dot"></span>
+              <span class="ovr-name">Bearish Pressure</span>
+              <span class="ovr-pts" id="goldBearPts">—</span>
+              <span class="ovr-unit">pts</span>
+            </div>
+            <div class="ovr-cell ovr-neu-cell">
+              <span class="ovr-dot ovr-neu-dot"></span>
+              <span class="ovr-name">Neutral Factors</span>
+              <span class="ovr-pts" id="goldNeuCount">—</span>
+            </div>
+          </div>
+          <div class="ovr-bar-wrap">
+            <div class="ovr-bar-track">
+              <div class="ovr-bar-fill" id="goldBarFill" style="width:0%"></div>
+            </div>
+            <div class="ovr-bar-label">
+              <span class="ovr-bar-verdict" id="goldBarVerdict"></span>
+              <span class="ovr-bar-ratio" id="goldBarRatio"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="meter-wrap">
+          <div class="meter-track">
+            <div class="meter-threshold" style="left:20%"></div>
+            <div class="meter-threshold" style="left:38.75%"></div>
+            <div class="meter-threshold" style="left:50%"></div>
+            <div class="meter-threshold" style="left:61.25%"></div>
+            <div class="meter-threshold" style="left:80%"></div>
+            <div class="meter-marker" id="goldMarker" style="left: 68%"></div>
+          </div>
+          <div class="meter-labels">
+            <span>−2.0</span><span>−1.2</span><span>0</span><span>+1.2</span><span>+2.0</span>
+          </div>
+        </div>
+
+        <div class="penalties-row">
+          <span class="penalty-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>CPI calendar pending</span>
+          </span>
+          <span class="penalty-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Regime Transition (19d)
+          </span>
+        </div>
+
+        <div class="reason-box">
+          <div class="reason-label">Reason Summary</div>
+          <div class="reason-text">Falling real yields and a softening DXY remain the dominant macro tailwind. Daily structure confirms with higher highs and higher lows above the 50-day moving average. Conflicting: imminent CPI release introduces an event-risk caution overlay reducing model confidence.</div>
+        </div>
+
+        <div class="mini-row">
+          <div class="mini-card">
+            <div class="mini-label">
+              <span>24h Composite Trend</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--bull2);">+0.34</span>
+            </div>
+            <svg class="mini-trend-svg" viewBox="0 0 280 50" preserveAspectRatio="none">
+              <line class="trend-baseline" x1="0" y1="25" x2="280" y2="25"/>
+              <polygon class="trend-fill" points="0,32 14,30 28,33 42,28 56,26 70,28 84,24 98,22 112,20 126,22 140,18 154,16 168,14 182,12 196,14 210,11 224,9 238,11 252,10 266,9 280,9 280,50 0,50"/>
+              <polyline class="trend-line" points="0,32 14,30 28,33 42,28 56,26 70,28 84,24 98,22 112,20 126,22 140,18 154,16 168,14 182,12 196,14 210,11 224,9 238,11 252,10 266,9 280,9"/>
+              <circle class="trend-endpoint" cx="280" cy="9" r="3.5"/>
+            </svg>
+          </div>
+          <div class="mini-card session-meter-wrap">
+            <div class="mini-label"><span>Market Activity Impact</span></div>
+            <div class="sm-current">
+              <span class="sm-current-dot"></span>
+              <span class="sm-current-label">Active Now</span>
+              <span class="sm-current-name" id="liveGoldSession">NY Open</span>
+            </div>
+            <div class="sm-field-row">
+              <span class="sm-field-label">Current Session</span>
+              <span class="sm-field-val" id="liveGoldSessionFull">New York Open</span>
+            </div>
+            <div class="sm-field-row">
+              <span class="sm-field-label">Activity Level</span>
+              <div class="act-meter">
+                <span class="act-seg">Low</span>
+                <span class="act-seg">Medium</span>
+                <span class="act-seg act-high">High</span>
+              </div>
+            </div>
+            <p class="sm-meaning">More active session; larger moves are possible. Wait for confirmation during volatility.</p>
+          </div>
+        </div>
+
+        <div class="factor-section-label">Factor Breakdown · 14 Inputs</div>
+        <div class="table-wrap"><table class="factor-table">
+          <thead>
+            <tr><th>Factor</th><th>Read</th><th>Wt</th><th>Score</th><th>Plain English</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="ft-name">Real Yields (10Y TIPS)</td>
+              <td class="ft-read"><span id="factGoldRealYield">&mdash;</span> <span style="color:var(--bull2)">↓</span></td>
+              <td class="ft-weight">16%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Falling real yields reduce the cost of holding gold</td>
+            </tr>
+            <tr>
+              <td class="ft-name">US Dollar Index (DXY)</td>
+              <td class="ft-read"><span id="factGoldDXY">&mdash;</span> <span style="color:var(--bull2)">↓</span></td>
+              <td class="ft-weight">13%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Weaker dollar makes gold cheaper for foreign buyers</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Fed Rate Path</td>
+              <td class="ft-read">Dovish lean</td>
+              <td class="ft-weight">11%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Market pricing more cuts than 30 days ago</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Treasury Yields (10Y)</td>
+              <td class="ft-read"><span id="factGoldUS10Y">&mdash;</span> <span style="color:var(--bull2)">↓</span></td>
+              <td class="ft-weight">7%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Lower bond yields reduce opportunity cost</td>
+            </tr>
+            <tr>
+              <td class="ft-name">CPI / Inflation Regime</td>
+              <td class="ft-read">Sticky core</td>
+              <td class="ft-weight">7%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Pre-release; awaiting tomorrow's print</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Central Bank Demand</td>
+              <td class="ft-read">1,037t YTD</td>
+              <td class="ft-weight">7%</td>
+              <td><span class="ft-pill pill-bull" data-score="2">Bullish <span class="ft-pts">+2</span></span></td>
+              <td class="ft-plain">Structurally elevated CB buying; long-term floor</td>
+            </tr>
+            <tr>
+              <td class="ft-name">COT Positioning</td>
+              <td class="ft-read">Mgr Long: 76%</td>
+              <td class="ft-weight">7%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Long positioning elevated; contrarian caution</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Geopolitical Risk</td>
+              <td class="ft-read">Elevated</td>
+              <td class="ft-weight">6%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Ongoing tensions support safe-haven flows</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Risk-On / Risk-Off</td>
+              <td class="ft-read"><span id="factGoldVIX">VIX &mdash;</span></td>
+              <td class="ft-weight">5%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Calm risk environment; minimal flight-to-safety</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Technical Structure</td>
+              <td class="ft-read">D1 HH/HL</td>
+              <td class="ft-weight">10%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Daily structure bullish above 50-day MA</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Volatility (GVZ)</td>
+              <td class="ft-read">15.8</td>
+              <td class="ft-weight">3%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Normal vol regime; no modifier applied</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Session Strength</td>
+              <td class="ft-read">NY Open</td>
+              <td class="ft-weight">2%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">High-liquidity session supports signal weight</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Imminent Events</td>
+              <td class="ft-read"><span>CPI calendar pending</span></td>
+              <td class="ft-weight">3%</td>
+              <td><span class="ft-pill pill-bear" data-score="-1">Bearish <span class="ft-pts">−1</span></span></td>
+              <td class="ft-plain">Pre-event caution; trend strength reduced</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Market Regime</td>
+              <td class="ft-read">Easing/Disinflation</td>
+              <td class="ft-weight">3%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Easing cycle structurally supportive for gold</td>
+            </tr>
+          </tbody>
+        </table></div>
+      </article>
+
+      <!-- ─── BITCOIN BLOCK ─── -->
+      <article class="sentiment-block btc-block" id="btcBlock">
+        <div class="sb-glow"></div>
+
+        <header class="sb-head">
+          <div class="sb-asset">
+            <div class="sb-asset-icon">₿</div>
+            <div class="sb-asset-text">
+              <b>BTC</b>
+              <small>Bitcoin</small>
+              <div class="sb-live-price">
+                <span id="liveBtcPriceVal">&mdash;</span>
+                <span id="liveBtcPriceDelta" class="delta-flat lp-delta">&mdash;</span>
+              </div>
+            </div>
+          </div>
+          <span class="sb-live" style="color:rgba(255,255,255,0.45)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+            Research Model
+          </span>
+        </header>
+
+        <div class="sb-explain">
+          <span id="btcExplainText">Bullish and bearish factors are broadly balanced — mixed conditions with elevated uncertainty.</span>
+        </div>
+
+        <div class="sentiment-label-row">
+          <div class="sl-label sl-caution">Mixed Conditions</div>
+          <div class="sl-score"><span class="sl-score-prefix">Composite</span><span id="btcComposite">+0.35</span></div>
+        </div>
+
+        <div class="sl-conf">
+          <span class="sl-conf-label">Trend Strength</span>
+          <span class="sl-conf-value">47%</span>
+          <span class="sl-conf-tier tier-low">Low</span>
+          <span class="research-badge is-dark sb-research-tag" style="margin-left:auto;"><span class="rb-dot"></span>Research Snapshot</span>
+        </div>
+
+        <div class="ovr-pressure" aria-label="Overall Market Pressure — BTC">
+          <div class="ovr-title">Overall Market Pressure</div>
+          <div class="ovr-cells">
+            <div class="ovr-cell ovr-bull-cell">
+              <span class="ovr-dot ovr-bull-dot"></span>
+              <span class="ovr-name">Bullish Pressure</span>
+              <span class="ovr-pts" id="btcBullPts">—</span>
+              <span class="ovr-unit">pts</span>
+            </div>
+            <div class="ovr-cell ovr-bear-cell">
+              <span class="ovr-dot ovr-bear-dot"></span>
+              <span class="ovr-name">Bearish Pressure</span>
+              <span class="ovr-pts" id="btcBearPts">—</span>
+              <span class="ovr-unit">pts</span>
+            </div>
+            <div class="ovr-cell ovr-neu-cell">
+              <span class="ovr-dot ovr-neu-dot"></span>
+              <span class="ovr-name">Neutral Factors</span>
+              <span class="ovr-pts" id="btcNeuCount">—</span>
+            </div>
+          </div>
+          <div class="ovr-bar-wrap">
+            <div class="ovr-bar-track">
+              <div class="ovr-bar-fill" id="btcBarFill" style="width:0%"></div>
+            </div>
+            <div class="ovr-bar-label">
+              <span class="ovr-bar-verdict" id="btcBarVerdict"></span>
+              <span class="ovr-bar-ratio" id="btcBarRatio"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="meter-wrap">
+          <div class="meter-track">
+            <div class="meter-threshold" style="left:20%"></div>
+            <div class="meter-threshold" style="left:38.75%"></div>
+            <div class="meter-threshold" style="left:50%"></div>
+            <div class="meter-threshold" style="left:61.25%"></div>
+            <div class="meter-threshold" style="left:80%"></div>
+            <div class="meter-marker" id="btcMarker" style="left: 58.75%"></div>
+          </div>
+          <div class="meter-labels">
+            <span>−2.0</span><span>−1.2</span><span>0</span><span>+1.2</span><span>+2.0</span>
+          </div>
+        </div>
+
+        <div class="penalties-row">
+          <span class="contradiction-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Contradiction Detected
+          </span>
+          <span class="penalty-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>CPI calendar pending</span>
+          </span>
+        </div>
+
+        <div class="reason-box">
+          <div class="reason-label">Reason Summary</div>
+          <div class="reason-text">Macro liquidity and stablecoin supply lean bullish, but spot BTC ETF flows turned net-negative over the last 3 sessions — a direct contradiction at high-weight factors (USD Liquidity +1 vs ETF Flows −1). Engine forces High Caution until flow direction resolves. Composite remains mildly positive but should not be read as a directional signal.</div>
+        </div>
+
+        <div class="mini-row">
+          <div class="mini-card">
+            <div class="mini-label">
+              <span>24h Composite Trend</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--bear2);">−0.10</span>
+            </div>
+            <svg class="mini-trend-svg" viewBox="0 0 280 50" preserveAspectRatio="none">
+              <line class="trend-baseline" x1="0" y1="25" x2="280" y2="25"/>
+              <polygon class="trend-fill" points="0,18 14,20 28,22 42,24 56,21 70,19 84,22 98,25 112,28 126,26 140,23 154,22 168,25 182,27 196,30 210,28 224,26 238,24 252,27 266,29 280,28 280,50 0,50"/>
+              <polyline class="trend-line" points="0,18 14,20 28,22 42,24 56,21 70,19 84,22 98,25 112,28 126,26 140,23 154,22 168,25 182,27 196,30 210,28 224,26 238,24 252,27 266,29 280,28"/>
+              <circle class="trend-endpoint" cx="280" cy="28" r="3.5"/>
+            </svg>
+          </div>
+          <div class="mini-card session-meter-wrap">
+            <div class="mini-label"><span>Market Activity Impact</span></div>
+            <div class="sm-current">
+              <span class="sm-current-dot"></span>
+              <span class="sm-current-label">Active Now</span>
+              <span class="sm-current-name" id="liveBtcSession">US AM</span>
+            </div>
+            <div class="sm-field-row">
+              <span class="sm-field-label">Current Session</span>
+              <span class="sm-field-val" id="liveBtcSessionFull">US Morning Session</span>
+            </div>
+            <div class="sm-field-row">
+              <span class="sm-field-label">Activity Level</span>
+              <div class="act-meter">
+                <span class="act-seg">Low</span>
+                <span class="act-seg act-midhigh">Med–High</span>
+                <span class="act-seg">High</span>
+              </div>
+            </div>
+            <p class="sm-meaning">US session can react faster to ETF/news flow. Avoid rushed decisions.</p>
+          </div>
+        </div>
+
+        <div class="factor-section-label">Factor Breakdown · 13 Inputs</div>
+        <div class="table-wrap"><table class="factor-table">
+          <thead>
+            <tr><th>Factor</th><th>Read</th><th>Wt</th><th>Score</th><th>Plain English</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="ft-name">Technical Structure</td>
+              <td class="ft-read">Consolidating</td>
+              <td class="ft-weight">16%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Weekly range-bound between 100k and 108k</td>
+            </tr>
+            <tr>
+              <td class="ft-name">USD Liquidity</td>
+              <td class="ft-read">M2 expanding</td>
+              <td class="ft-weight">12%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Global liquidity expanding supports risk assets</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Spot BTC ETF Flows</td>
+              <td class="ft-read">−$248M (3d)</td>
+              <td class="ft-weight">13%</td>
+              <td><span class="ft-pill pill-bear" data-score="-1">Bearish <span class="ft-pts">−1</span></span></td>
+              <td class="ft-plain">Three consecutive sessions of net outflows</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Stablecoin Liquidity</td>
+              <td class="ft-read">+$1.8B WoW</td>
+              <td class="ft-weight">9%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Stablecoin supply rising; sideline capital growing</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Equity Risk Appetite</td>
+              <td class="ft-read">NDX +1.2% WoW</td>
+              <td class="ft-weight">9%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Tech equities trending higher; risk-on tone</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Fed Rate Path</td>
+              <td class="ft-read">Dovish lean</td>
+              <td class="ft-weight">8%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Lower rate path supports BTC long-term</td>
+            </tr>
+            <tr>
+              <td class="ft-name">BTC Dominance</td>
+              <td class="ft-read">58.4% ↑</td>
+              <td class="ft-weight">7%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Rising dominance reflects capital prioritising BTC</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Crypto-Specific News</td>
+              <td class="ft-read">Neutral</td>
+              <td class="ft-weight">7%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">No major regulatory or structural news active</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Macro News</td>
+              <td class="ft-read">CPI pending</td>
+              <td class="ft-weight">5%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Pre-event; awaiting CPI release tomorrow</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Volatility (DVOL)</td>
+              <td class="ft-read">52.4</td>
+              <td class="ft-weight">4%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Compressed vol; potential breakout pending</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Session / Calendar</td>
+              <td class="ft-read">US AM</td>
+              <td class="ft-weight">3%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">Active US session; standard liquidity profile</td>
+            </tr>
+            <tr>
+              <td class="ft-name">Market Regime</td>
+              <td class="ft-read">Easing/Disinflation</td>
+              <td class="ft-weight">3%</td>
+              <td><span class="ft-pill pill-bull" data-score="1">Bullish <span class="ft-pts">+1</span></span></td>
+              <td class="ft-plain">Easing cycle structurally supports risk assets</td>
+            </tr>
+            <tr>
+              <td class="ft-name">On-Chain Demand</td>
+              <td class="ft-read">Phase 3 only</td>
+              <td class="ft-weight">4%</td>
+              <td><span class="ft-pill pill-neu" data-score="0">Neutral <span class="ft-pts">0</span></span></td>
+              <td class="ft-plain">On-chain layer activates in fully automated phase</td>
+            </tr>
+          </tbody>
+        </table></div>
+      </article>
+
+    </section>
+
+    <!-- ── MARKET NEWS ALERT ── -->
+    <section class="news-alert" aria-label="Market News Alert">
+      <header class="news-head">
+        <div class="news-head-left">
+          <div class="news-pre">
+            <span class="live-dot"></span>
+            Latest Market Headline &middot; Live feed
+          </div>
+          <h3 class="news-headline" id="liveNewsHeadline">Loading latest market headline&hellip;</h3>
+          <div class="news-catalyst" id="newsCatalystLine">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Next catalyst &mdash; loading&hellip;</span>
+          </div>
+          <div class="news-tags">
+            <span class="news-tag tag-cat">Macro · Central Bank</span>
+            <span class="news-tag tag-asset" id="liveNewsAffects">Affects: Gold &amp; Bitcoin</span>
+            <span class="news-tag tag-impact-bull">Expected Impact: Bullish</span>
+            <span class="news-tag tag-impact-mix">Trend Strength: Moderate</span>
+          </div>
+        </div>
+        <div class="news-classification">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Macro Alignment
+        </div>
+      </header>
+
+      <div class="news-research-frame">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><b style="color:rgba(255,255,255,0.85);font-weight:700;">Research interpretation framework.</b> Headline above updates live. Tags, AI note, and filter cards below illustrate how this class of news typically affects markets &mdash; they update periodically, not per-headline.</span>
+      </div>
+
+      <div class="news-ai-note">
+        <div class="news-ai-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          AI Note &middot; Research framework
+        </div>
+        <div class="news-ai-text">Falling real yields and softer Fed tone broadly support both Gold and Bitcoin near-term. However, the move is partially priced ahead of tomorrow's CPI release — meaning a hot inflation print could quickly reverse this dynamic. This news reinforces existing macro positioning rather than introducing fresh directional pressure.</div>
+      </div>
+
+      <div class="filter-grid">
+        <div class="filter-card">
+          <div class="filter-card-head">
+            <div class="filter-icon fi-pos">✓</div>
+            <div class="filter-card-label">Historical Behavior</div>
+          </div>
+          <div class="filter-card-result">Bullish Both</div>
+          <div class="filter-card-detail">Yield drops &gt; 5 bps historically bullish for gold (78%) and BTC (64%)</div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-card-head">
+            <div class="filter-icon fi-pos">✓</div>
+            <div class="filter-card-label">Current Scenario</div>
+          </div>
+          <div class="filter-card-result">Aligned (Gold)</div>
+          <div class="filter-card-detail">Gold structure already bullish; BTC structure neutral / consolidating</div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-card-head">
+            <div class="filter-icon fi-pos">✓</div>
+            <div class="filter-card-label">Volatility Condition</div>
+          </div>
+          <div class="filter-card-result">Normal</div>
+          <div class="filter-card-detail">GVZ 15.8 / DVOL 52.4 — within typical 30-day ranges</div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-card-head">
+            <div class="filter-icon fi-mid">◐</div>
+            <div class="filter-card-label">Already Priced In</div>
+          </div>
+          <div class="filter-card-result">Partly</div>
+          <div class="filter-card-detail">Some dovishness already in yields curve; CPI is the real test</div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-card-head">
+            <div class="filter-icon fi-mid">◐</div>
+            <div class="filter-card-label">Surprise vs Forecast</div>
+          </div>
+          <div class="filter-card-result">Moderate</div>
+          <div class="filter-card-detail">Slightly more dovish than consensus; not a major surprise</div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-card-head">
+            <div class="filter-icon fi-pos">✓</div>
+            <div class="filter-card-label">Liquidity / Session</div>
+          </div>
+          <div class="filter-card-result">High</div>
+          <div class="filter-card-detail">London/NY overlap; full liquidity supports clean read</div>
+        </div>
+      </div>
+
+      <footer class="news-footer">
+        <div class="news-footer-warning">News interpretation is educational. Markets can react in unexpected ways. This is not a trade signal and not financial advice.</div>
+        <div class="news-timestamp" id="newsTimestamp">Research snapshot</div>
+      </footer>
+    </section>
+
+    <!-- ── FUNDAMENTAL INTELLIGENCE (placeholder, Phase 2/3) ── -->
+    <section class="fi-section" aria-label="Fundamental Intelligence">
+      <h3>Fundamental Intelligence <span class="fi-coming">Coming Soon</span></h3>
+      <p class="fi-intro">A deeper layer of asset-specific fundamentals. This is not live data yet &mdash; each card describes the data stream that will be wired in. Educational use only.</p>
+
+      <div class="fi-group">
+        <div class="fi-group-label">Gold &mdash; Structural Drivers</div>
+        <div class="fi-grid">
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Central Bank Buying</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Quarterly central-bank gold purchases &mdash; the structural floor under prices.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">ETF Flows</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Net inflows or outflows across global gold-backed ETFs.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Mining Supply</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Annual production, all-in sustaining cost trends, supply-side pressure.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Jewelry Demand</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Consumer demand from key markets like India and China.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Real Yield Pressure</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Real-yield direction &mdash; the single biggest macro driver of non-yielding gold.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Dollar Strength</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">DXY trend and trade-weighted dollar pressure on the gold price.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fi-group">
+        <div class="fi-group-label">Bitcoin &mdash; Structural Drivers</div>
+        <div class="fi-grid">
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">ETF Flows</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Daily net flows across US spot Bitcoin ETFs &mdash; institutional demand proxy.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Stablecoin Liquidity</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Aggregate stablecoin supply &mdash; sideline capital available to enter risk.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Miner Pressure</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Miner sell-side flow and hash-price dynamics that pressure supply.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Risk Appetite</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Global risk tone &mdash; equity beta, credit spreads, growth-asset rotation.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Macro Liquidity</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Global M2 trend and central-bank balance-sheet expansion.</div>
+          </div>
+          <div class="fi-card">
+            <div class="fi-card-head"><div class="fi-card-name">Regulation</div><span class="fi-status">Awaiting Data</span></div>
+            <div class="fi-card-desc">Active regulatory shifts in major jurisdictions affecting market structure.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TECHNICAL SNAPSHOT ── -->
+    <section class="tech-section" aria-label="Technical Snapshot">
+      <div class="tech-head">
+        <div class="tech-pre">Technical Snapshot <span class="research-badge tech-research-tag" style="margin-left:8px;vertical-align:middle;"><span class="rb-dot"></span>Research Snapshot &middot; Periodic</span></div>
+        <h3>Where price sits, at a glance</h3>
+      </div>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-card-label">Higher Timeframe Bias</div>
+          <div class="tech-card-value">Bullish &middot; Daily &amp; Weekly</div>
+          <div class="tech-card-sub">HH/HL structure intact above 50-day MA.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-label">Key Zones</div>
+          <div class="tech-card-value" id="techKeyZones">2,580 / 2,640 / 2,720</div>
+          <div class="tech-card-sub">Active demand, mid-range pivot, and supply ceiling.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-label">Liquidity Areas</div>
+          <div class="tech-card-value" id="techLiqZones">Above 2,725 &middot; Below 2,560</div>
+          <div class="tech-card-sub">Equal highs and prior-week lows likely to draw price.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-label">Volatility State</div>
+          <div class="tech-card-value" id="techVolState">Normal &middot; Pre-Event</div>
+          <div class="tech-card-sub">GVZ in 30-day range; expansion likely around CPI.</div>
+        </div>
+      </div>
+      <div class="tech-cta">
+        <div class="tech-cta-text">Technical conditions change continuously as market structure evolves. For live chart updates and execution context, follow our Telegram channel.</div>
+        <a href="https://t.me/ztradeuniversity" class="tg-btn" target="_blank" rel="noopener" aria-label="Join Z Trade University on Telegram">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1zm-4.03 13.3-4.3-3.16a1 1 0 0 0-1.28.1l-1.44 1.56-.9-2.84 8.28-7.2-2.36 11.54z"/></svg>
+          Join Telegram for Live Updates
+        </a>
+      </div>
+    </section>
+
+    <!-- ── SENTIMENT HISTORY ── -->
+    <section class="history-section" aria-label="Sentiment History">
+      <div class="hs-head">
+        <h3>Sentiment History <span class="research-badge" style="margin-left:8px;vertical-align:middle;font-size:9px;"><span class="rb-dot"></span>Research Snapshot</span></h3>
+        <div class="hs-toggle" role="tablist">
+          <button class="active" data-period="24h" onclick="setHistoryPeriod('24h', this)">24H</button>
+          <button data-period="7d"  onclick="setHistoryPeriod('7d',  this)">7D</button>
+          <button data-period="30d" onclick="setHistoryPeriod('30d', this)">30D</button>
+        </div>
+      </div>
+      <p class="hs-desc">Rolling sentiment composite for Gold and Bitcoin over the selected window. Coloured bands show sentiment threshold zones. Purple dots mark notable news events.</p>
+
+      <div class="hs-chart-wrap">
+        <div class="hs-chart-bg">
+          <div class="hs-chart-legend">
+            <div class="hs-legend-item"><span class="hs-legend-dot hs-gold-dot"></span> Gold (XAUUSD)</div>
+            <div class="hs-legend-item"><span class="hs-legend-dot hs-btc-dot"></span> Bitcoin (BTC)</div>
+            <div class="hs-legend-item"><span class="hs-legend-dot" style="background:#c4b5fd;"></span> Event Marker</div>
+            <div class="hs-legend-item" style="margin-left:auto;color:rgba(255,255,255,0.45);font-family:'JetBrains Mono',monospace;font-size:10.5px;">Y-axis: composite score (−2 to +2)</div>
+          </div>
+          <svg id="historyChart" class="hs-chart-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
+            <!-- Threshold bands -->
+            <rect class="zone-bull" x="40" y="20"  width="755" height="40"/>
+            <rect class="zone-bear" x="40" y="180" width="755" height="40"/>
+            <!-- Grid lines -->
+            <line class="grid-line" x1="40" y1="20"  x2="795" y2="20"/>
+            <line class="grid-line" x1="40" y1="60"  x2="795" y2="60"/>
+            <line class="threshold-line" x1="40" y1="120" x2="795" y2="120"/>
+            <line class="grid-line" x1="40" y1="180" x2="795" y2="180"/>
+            <line class="grid-line" x1="40" y1="220" x2="795" y2="220"/>
+            <!-- Y axis labels -->
+            <text class="axis-label axis-label-y" x="34" y="24">+2.0</text>
+            <text class="axis-label axis-label-y" x="34" y="64">+1.2</text>
+            <text class="axis-label axis-label-y" x="34" y="124">0</text>
+            <text class="axis-label axis-label-y" x="34" y="184">−1.2</text>
+            <text class="axis-label axis-label-y" x="34" y="224">−2.0</text>
+            <!-- Data paths injected by JS -->
+            <g id="historyPaths"></g>
+            <!-- Event markers injected by JS -->
+            <g id="historyEvents"></g>
+            <!-- X axis labels injected by JS -->
+            <g id="historyXAxis"></g>
+          </svg>
+        </div>
+
+        <div class="hs-stats">
+          <div class="hs-stat">
+            <div class="hs-stat-label">Avg Trend Strength (Period)</div>
+            <div class="hs-stat-value" id="statAvgConf">68%</div>
+            <div class="hs-stat-sub">Across both assets</div>
+          </div>
+          <div class="hs-stat">
+            <div class="hs-stat-label">Regime Transitions</div>
+            <div class="hs-stat-value" id="statRegimeTrans">1</div>
+            <div class="hs-stat-sub">Most recent: 19 days ago</div>
+          </div>
+          <div class="hs-stat">
+            <div class="hs-stat-label">Time in High Caution</div>
+            <div class="hs-stat-value" id="statCautionTime">14%</div>
+            <div class="hs-stat-sub">Periods with contradiction flag</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── METHODOLOGY ── -->
+    <section class="meth-section" aria-label="Methodology">
+      <h3>How This Engine Works</h3>
+      <p class="meth-intro">The Z Trade University Live Sentiment Engine is a transparent, weighted model that combines 14 factors for Gold and 13 factors for Bitcoin. Every factor is scored from −2 to +2 against its historical behaviour. Weighted scores aggregate into a composite ranging from −2.0 to +2.0, which maps to one of six labels. Trend strength is derived from how aligned the factors are with that composite — not invented.</p>
+
+      <div class="meth-grid">
+        <div class="meth-card">
+          <div class="meth-card-icon mci-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <h4>Weighted Factor Model</h4>
+          <p>Each factor carries a weight reflecting its historically observed influence on the asset. Macro and yield factors dominate Gold; flow and liquidity factors dominate BTC.</p>
+        </div>
+        <div class="meth-card">
+          <div class="meth-card-icon mci-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h4>−2 to +2 Scoring Scale</h4>
+          <p>Every factor receives an integer from −2 (strongly bearish) to +2 (strongly bullish). The sum × weights produces the composite score that determines the sentiment label.</p>
+        </div>
+        <div class="meth-card">
+          <div class="meth-card-icon mci-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h4>Trend Strength Logic</h4>
+          <p>Trend strength reflects factor alignment, not bias size. Penalties reduce trend strength for low liquidity, imminent events, extreme volatility, and active contradiction.</p>
+        </div>
+        <div class="meth-card">
+          <div class="meth-card-icon mci-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h4>Contradiction Detection</h4>
+          <p>When high-weight factors disagree, the engine forces a "Mixed Conditions / High Caution" reading — protecting against false confidence in genuinely conflicted markets.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── DATA SOURCES ── -->
+    <section class="ds-section" aria-label="Data Sources">
+      <h3>Data Sources</h3>
+      <p class="ds-intro">All factor inputs are sourced from established financial data providers and official statistical agencies. This dashboard does not aggregate retail sentiment polls or unverified data streams.</p>
+
+      <div class="ds-grid">
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">FRED</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Federal Reserve Economic Data — real yields, M2, Treasury yields, balance sheet</div>
+          <div class="ds-card-freq">Daily / Weekly</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">CME FedWatch</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Implied Fed funds rate probabilities derived from futures markets</div>
+          <div class="ds-card-freq">Real-time</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">CFTC COT</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Commitments of Traders report — institutional gold positioning</div>
+          <div class="ds-card-freq">Weekly (Fri)</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">World Gold Council</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Central bank gold demand and global flow reports</div>
+          <div class="ds-card-freq">Quarterly</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">CoinGecko</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">BTC price, market cap, dominance ratio</div>
+          <div class="ds-card-freq">Real-time</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">SoSoValue / Farside</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">US spot Bitcoin ETF daily flow data</div>
+          <div class="ds-card-freq">Daily</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">DeFiLlama</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Aggregated stablecoin supply and on-chain liquidity</div>
+          <div class="ds-card-freq">Daily</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">CBOE Indices</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">VIX and GVZ implied volatility indices</div>
+          <div class="ds-card-freq">Daily</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">Deribit DVOL</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Bitcoin implied volatility index</div>
+          <div class="ds-card-freq">Real-time</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">TradingEconomics</div><span class="ds-badge ds-paid">Free / Paid</span></div>
+          <div class="ds-card-desc">Economic calendar with consensus vs actual values</div>
+          <div class="ds-card-freq">Real-time</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">BLS</div><span class="ds-badge ds-free">Free</span></div>
+          <div class="ds-card-desc">Bureau of Labor Statistics — CPI, employment data</div>
+          <div class="ds-card-freq">Monthly</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-card-head"><div class="ds-card-name">Glassnode <em>(Phase 3)</em></div><span class="ds-badge ds-paid">Paid</span></div>
+          <div class="ds-card-desc">On-chain BTC analytics: exchange flows, LTH behavior, MVRV</div>
+          <div class="ds-card-freq">Daily</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── DISCLAIMER ── -->
+    <section class="disclaimer-block" aria-label="Disclaimer">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Disclaimer
+      </h3>
+      <p>This Live Market Sentiment dashboard is provided by Z Trade University for <strong>educational and research purposes only</strong>. It is not financial advice, not a guaranteed prediction of market direction, and not a trade signal or recommendation to buy or sell any asset.</p>
+      <p>Sentiment readings reflect a transparent weighted model of macro, technical, positioning, flow, and news factors. They do not account for individual circumstances, risk tolerance, or specific trading conditions. Market conditions change rapidly; readings shown may not reflect the current state of the market.</p>
+      <p>Trading any financial instrument — including Gold (XAUUSD), Bitcoin (BTC), Forex pairs, or any other market — carries significant risk of loss. Always use stop losses, manage position size within a written trading plan, and conduct your own analysis before making any trading decision.</p>
+      <p><strong>Past patterns observed in the model do not guarantee future outcomes. Z Trade University accepts no liability for trading or investment decisions made based on the information presented on this page.</strong></p>
+    </section>
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html" class="footer-logo-wrap">
+      <div class="footer-logo-mark">Z</div>
+      <div class="footer-brand-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <span class="footer-copy">© 2026 Z Trade University. Educational purposes only.</span>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <span class="footer-sep">·</span>
+      <a href="articles.html">Articles</a>
+      <span class="footer-sep">·</span>
+      <a href="live-sentiment.html">Sentiment</a>
+      <span class="footer-sep">·</span>
+      <a href="about.html">About</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  Z TRADE UNIVERSITY — LIVE SENTIMENT ENGINE · PHASE 1 (FRONT-END ONLY)
+// ─────────────────────────────────────────────────────────────────────────
+//  This script renders demo data inline. It is structured so that, in
+//  Phase 2, every SENTIMENT_DATA value can be replaced by a single fetch()
+//  call to a backend endpoint without changing the rendering logic below.
+//
+//  PHASE 2 INTEGRATION POINT:
+//    Replace `const SENTIMENT_DATA = {...}` with:
+//    async function loadSentiment() {
+//      const res = await fetch('/api/sentiment.json');
+//      return res.json();
+//    }
+//    Then call render(await loadSentiment()) on page load + every 30 min.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── DEMO DATA (Phase 1) ──────────────────────────────────────────────────
+const SENTIMENT_DATA = {
+  schemaVersion: '1.0',
+  updateMode: 'manual',
+  // Phase 1: static research snapshot — fake Date.now() offsets disabled
+  // Phase 2 API integration placeholder: replace with ISO string from API response
+  // lastUpdated: new Date(Date.now() - 14 * 60 * 1000).toISOString(),
+  lastUpdated: null,
+  // Phase 2 API integration placeholder: replace with ISO string from API response
+  // nextUpdate:  new Date(Date.now() + 16 * 60 * 1000).toISOString(),
+  nextUpdate:  null,
+
+  newsAlert: {
+    // Phase 2 API integration placeholder: replace with ISO string from news feed
+    // timestamp: new Date(Date.now() - 134 * 60 * 1000).toISOString(),
+    timestamp: null,
+  },
+
+  // ─── ECONOMIC EVENTS (Phase 1 — disabled) ─────────────────────────────
+  // Phase 2 API integration placeholder: pull from a live economic-calendar
+  // API (e.g. TradingEconomics, Forex Factory) inside refreshFromAPI() and
+  // replace SENTIMENT_DATA.events before calling updateEventCountdowns().
+  // Date.now() offsets disabled — they reset on every page load and are
+  // deceptive (always show the same countdown regardless of real data age).
+  events: [
+    {
+      id:    'cpi',
+      label: 'CPI Release',
+      short: 'CPI',
+      // Phase 2 API integration placeholder: iso from live calendar feed
+      // iso:   new Date(Date.now() + (7 * 60 + 42) * 60 * 1000).toISOString()
+      iso:   null
+    },
+    {
+      id:    'fomc',
+      label: 'FOMC',
+      short: 'FOMC',
+      // Phase 2 API integration placeholder: iso from live calendar feed
+      // iso:   new Date(Date.now() + (27 * 60) * 60 * 1000).toISOString()
+      iso:   null
+    }
+  ],
+
+  // 24-hour composite trends (one point per ~70 min, ~21 points)
+  history24h: {
+    gold: [0.38, 0.42, 0.40, 0.45, 0.50, 0.48, 0.52, 0.55, 0.58, 0.55, 0.60, 0.62, 0.65, 0.68, 0.65, 0.70, 0.72, 0.68, 0.70, 0.72, 0.72],
+    btc:  [0.45, 0.42, 0.38, 0.35, 0.40, 0.42, 0.38, 0.35, 0.32, 0.35, 0.40, 0.42, 0.38, 0.35, 0.30, 0.32, 0.35, 0.38, 0.35, 0.32, 0.35],
+    events: [{ x: 6,  label: 'Fed Speak' }, { x: 16, label: 'NY Open' }],
+    labels: ['24h ago', '18h', '12h', '6h', 'Now']
+  },
+
+  // 7-day composite trends (one point per ~6 hours, ~28 points)
+  history7d: {
+    gold: [0.10, 0.05, 0.15, 0.20, 0.28, 0.32, 0.35, 0.30, 0.38, 0.42, 0.40, 0.45, 0.48, 0.42, 0.50, 0.55, 0.52, 0.58, 0.60, 0.62, 0.58, 0.65, 0.68, 0.65, 0.70, 0.72, 0.68, 0.72],
+    btc:  [0.65, 0.60, 0.55, 0.58, 0.50, 0.45, 0.48, 0.52, 0.55, 0.50, 0.45, 0.42, 0.38, 0.42, 0.35, 0.30, 0.32, 0.28, 0.30, 0.35, 0.38, 0.32, 0.30, 0.35, 0.38, 0.35, 0.32, 0.35],
+    events: [{ x: 4, label: 'FOMC' }, { x: 14, label: 'ETF Flow Shift' }, { x: 24, label: 'Fed Speak' }],
+    labels: ['7d ago', '5d', '3d', '1d', 'Now']
+  },
+
+  // 30-day composite trends (daily, 30 points)
+  history30d: {
+    gold: [-0.35, -0.28, -0.30, -0.20, -0.15, -0.08, -0.05, 0.02, 0.05, 0.08, 0.12, 0.05, 0.10, 0.15, 0.20, 0.18, 0.22, 0.28, 0.32, 0.30, 0.35, 0.42, 0.38, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.72],
+    btc:  [0.85, 0.80, 0.75, 0.70, 0.78, 0.72, 0.68, 0.65, 0.70, 0.60, 0.55, 0.58, 0.50, 0.48, 0.45, 0.42, 0.50, 0.45, 0.38, 0.42, 0.40, 0.35, 0.32, 0.38, 0.42, 0.38, 0.35, 0.40, 0.32, 0.35],
+    events: [{ x: 4, label: 'CPI' }, { x: 11, label: 'FOMC' }, { x: 19, label: 'NFP' }, { x: 26, label: 'Fed Speak' }],
+    labels: ['30d ago', '22d', '15d', '7d', 'Now']
+  }
+};
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function relativeTimeFromNow(isoString) {
+  const then = new Date(isoString).getTime();
+  const now  = Date.now();
+  const diffMs = now - then;
+  const futureMode = diffMs < 0;
+  const abs = Math.abs(diffMs);
+
+  const mins  = Math.floor(abs / 60000);
+  const hours = Math.floor(mins / 60);
+  const days  = Math.floor(hours / 24);
+
+  let label;
+  if (mins < 1)         label = 'just now';
+  else if (mins < 60)   label = `${mins} min`;
+  else if (hours < 24)  label = `${hours}h ${mins % 60}m`;
+  else                  label = `${days}d ${hours % 24}h`;
+
+  if (futureMode) return label;
+  return label === 'just now' ? label : `${label} ago`;
+}
+
+function formatAbsTime(isoString) {
+  const d = new Date(isoString);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `· ${hh}:${mm} local`;
+}
+
+function countdownTo(isoString) {
+  const then = new Date(isoString).getTime();
+  const diffMs = then - Date.now();
+  if (diffMs <= 0) return 'refresh due';
+  const mins = Math.floor(diffMs / 60000);
+  const secs = Math.floor((diffMs % 60000) / 1000);
+  return `${mins}m ${String(secs).padStart(2, '0')}s`;
+}
+
+// ─── EVENT COUNTDOWN ──────────────────────────────────────────────────────
+// Formats time-until-event for an ISO timestamp. Outputs:
+//   '1d 3h'  '7h 42m'  '34m'  'Event live now'  'Event passed'
+// Used for penalty badges, news catalyst line, factor-table event cells.
+function formatEventCountdown(isoString) {
+  const then = new Date(isoString).getTime();
+  const diff = then - Date.now();
+  // Treat anything more than ~30 min in the past as "passed"
+  if (diff <= -30 * 60 * 1000) return 'Event passed';
+  // Inside ±30 min window = live now
+  if (diff <=  0)              return 'Event live now';
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days  = Math.floor(hours / 24);
+  if (days  > 0) return `${days}d ${hours % 24}h`;
+  if (hours > 0) return `${hours}h ${mins % 60}m`;
+  return `${mins}m`;
+}
+
+function findEvent(id) {
+  return SENTIMENT_DATA.events.find(e => e.id === id);
+}
+
+// Refresh every event countdown reference in the DOM. Runs once at load and
+// then every 60s. PHASE 2: when wired to a live economic-calendar API,
+// re-pull the event list before each tick so timestamps stay authoritative.
+function updateEventCountdowns() {
+  // Penalty badges + news alert catalyst lines use [data-event-badge="id"]
+  document.querySelectorAll('[data-event-badge]').forEach(el => {
+    const ev = findEvent(el.getAttribute('data-event-badge'));
+    if (!ev) return;
+    const cd = formatEventCountdown(ev.iso);
+    el.textContent = (cd === 'Event passed' || cd === 'Event live now')
+      ? `${ev.label} — ${cd}`
+      : `${ev.label} in ${cd}`;
+  });
+
+  // Compact factor-table cells use [data-event-short="id"]
+  document.querySelectorAll('[data-event-short]').forEach(el => {
+    const ev = findEvent(el.getAttribute('data-event-short'));
+    if (!ev) return;
+    const cd = formatEventCountdown(ev.iso);
+    el.textContent = (cd === 'Event passed' || cd === 'Event live now')
+      ? `${ev.short} — ${cd}`
+      : `${ev.short} in ${cd}`;
+  });
+
+  // News alert catalyst line (single dedicated element)
+  const newsLine = document.getElementById('newsCatalystLine');
+  if (newsLine) {
+    const cpi = findEvent('cpi');
+    if (cpi) {
+      const cd = formatEventCountdown(cpi.iso);
+      const span = newsLine.querySelector('span');
+      if (span) {
+        span.textContent = (cd === 'Event passed' || cd === 'Event live now')
+          ? `Next major catalyst — ${cpi.label} ${cd.toLowerCase()}`
+          : `Next major catalyst — ${cpi.label} in ${cd}`;
+      }
+    }
+  }
+}
+
+// ─── REFRESH STRIP TIMERS (Phase 1 — disabled) ────────────────────────────
+// Phase 2 API integration placeholder: re-enable updateRefreshStrip() when
+// SENTIMENT_DATA.lastUpdated / nextUpdate / newsAlert.timestamp are populated
+// from a real API. The function is preserved below for Phase 2 wiring.
+function updateRefreshStrip() {
+  if (!SENTIMENT_DATA.lastUpdated) return; // Phase 2: guard — no-op until API is wired
+  const lastRel = relativeTimeFromNow(SENTIMENT_DATA.lastUpdated);
+  document.getElementById('lastUpdatedRelative').textContent = lastRel;
+  document.getElementById('lastUpdatedAbs').textContent = formatAbsTime(SENTIMENT_DATA.lastUpdated);
+  document.getElementById('nextRefresh').textContent = countdownTo(SENTIMENT_DATA.nextUpdate);
+  document.getElementById('newsTimestamp').textContent = `Posted ${relativeTimeFromNow(SENTIMENT_DATA.newsAlert.timestamp)}`;
+}
+// Phase 2 API integration placeholder: uncomment these two lines when API data is live
+// updateRefreshStrip();
+// setInterval(updateRefreshStrip, 1000);
+
+// ─── EVENT COUNTDOWN TIMERS (Phase 1 — disabled) ─────────────────────────
+// Phase 2 API integration placeholder: re-enable updateEventCountdowns() when
+// SENTIMENT_DATA.events are populated from a live economic-calendar API feed
+// inside refreshFromAPI(). Function preserved below for Phase 2 wiring.
+// Phase 2: uncomment these two lines when live calendar data is available
+// updateEventCountdowns();
+// setInterval(updateEventCountdowns, 60 * 1000);
+
+// ─── HISTORY CHART RENDERER ───────────────────────────────────────────────
+// Render Gold + BTC composite history as two overlaid lines, plus event dots.
+function renderHistory(period) {
+  const data = SENTIMENT_DATA[`history${period.toUpperCase()}`];
+  if (!data) return;
+
+  const CHART_W = 800, CHART_H = 240;
+  const PAD_L = 40, PAD_R = 5, PAD_T = 20, PAD_B = 20;
+  const innerW = CHART_W - PAD_L - PAD_R;
+  const innerH = CHART_H - PAD_T - PAD_B;
+
+  // Map composite score (−2 to +2) to Y pixel
+  // y(score) = PAD_T + (1 - (score + 2) / 4) * innerH
+  const yOf = s => PAD_T + (1 - (s + 2) / 4) * innerH;
+
+  // Build path from data array
+  function pathOf(scores) {
+    const n = scores.length;
+    return scores.map((s, i) => {
+      const x = PAD_L + (i / (n - 1)) * innerW;
+      const y = yOf(s);
+      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+  }
+  function fillOf(scores) {
+    const n = scores.length;
+    const top = scores.map((s, i) => {
+      const x = PAD_L + (i / (n - 1)) * innerW;
+      const y = yOf(s);
+      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+    const bottomX = PAD_L + innerW;
+    const baselineY = yOf(0);
+    return `${top} L ${bottomX.toFixed(1)} ${baselineY.toFixed(1)} L ${PAD_L} ${baselineY.toFixed(1)} Z`;
+  }
+
+  const goldPath = pathOf(data.gold);
+  const btcPath  = pathOf(data.btc);
+  const goldFill = fillOf(data.gold);
+  const btcFill  = fillOf(data.btc);
+
+  // Paths
+  const pathsEl = document.getElementById('historyPaths');
+  pathsEl.innerHTML = `
+    <path class="gold-fill" d="${goldFill}"/>
+    <path class="btc-fill"  d="${btcFill}"/>
+    <path class="gold-line" d="${goldPath}"/>
+    <path class="btc-line"  d="${btcPath}"/>
+  `;
+
+  // Event markers
+  const eventsEl = document.getElementById('historyEvents');
+  const n = data.gold.length;
+  eventsEl.innerHTML = data.events.map(ev => {
+    const x = PAD_L + (ev.x / (n - 1)) * innerW;
+    const y = yOf((data.gold[ev.x] + data.btc[ev.x]) / 2);
+    return `<circle class="event-marker" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4">
+              <title>${ev.label}</title>
+            </circle>`;
+  }).join('');
+
+  // X axis labels (5 evenly spaced)
+  const xAxisEl = document.getElementById('historyXAxis');
+  xAxisEl.innerHTML = data.labels.map((label, i) => {
+    const x = PAD_L + (i / (data.labels.length - 1)) * innerW;
+    return `<text class="axis-label axis-label-x" x="${x.toFixed(1)}" y="236">${label}</text>`;
+  }).join('');
+
+  // Update stat values based on period
+  const statMap = {
+    '24h': { conf: '72%', trans: '0', caution: '8%' },
+    '7d':  { conf: '68%', trans: '1', caution: '14%' },
+    '30d': { conf: '64%', trans: '2', caution: '22%' }
+  };
+  const s = statMap[period];
+  document.getElementById('statAvgConf').textContent = s.conf;
+  document.getElementById('statRegimeTrans').textContent = s.trans;
+  document.getElementById('statCautionTime').textContent = s.caution;
+}
+
+function setHistoryPeriod(period, btn) {
+  document.querySelectorAll('.hs-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory(period);
+}
+
+renderHistory('24h');
+
+// ─── MOBILE MENU ──────────────────────────────────────────────────────────
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+
+// ─── PRESSURE COMPUTATION ENGINE ─────────────────────────────────────────
+// Reads [data-score] attributes from ft-pill elements inside the given block,
+// accumulates bullish points, bearish points, and neutral count, then:
+//   1. Renders the Overall Market Pressure box (pts + thin bar)
+//   2. Generates a dynamic directional explain line
+//
+// Scoring:  each +1 = 1 bullish pt · each +2 = 2 bullish pts
+//           each -1 = 1 bearish pt · each -2 = 2 bearish pts
+//           each  0 = 1 neutral count
+//
+// PHASE 2: replace DOM-scanning with server-sent factor payloads inside
+// refreshFromAPI() so this computation stays in sync with live data.
+
+function computePressure(blockId, bullPtsId, bearPtsId, neuId,
+                         barFillId, barVerdictId, barRatioId, explainId) {
+  const block = document.getElementById(blockId);
+  if (!block) return;
+
+  let bullPts = 0, bearPts = 0, neuCount = 0;
+  block.querySelectorAll('.ft-pill[data-score]').forEach(pill => {
+    const s = parseInt(pill.getAttribute('data-score'), 10);
+    if      (s > 0) bullPts  += s;
+    else if (s < 0) bearPts  += Math.abs(s);
+    else            neuCount += 1;
+  });
+
+  // ── Fill pressure cells ────────────────────────────────────────────────
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set(bullPtsId, bullPts);
+  set(bearPtsId, bearPts);
+  set(neuId,     neuCount);
+
+  // ── Direction bar ──────────────────────────────────────────────────────
+  const total      = bullPts + bearPts || 1;
+  const bullPct    = Math.round((bullPts / total) * 100);
+  const bearPct    = 100 - bullPct;
+  const isBull     = bullPts > bearPts;
+  const isMixed    = Math.abs(bullPts - bearPts) <= 1;
+
+  const fillEl    = document.getElementById(barFillId);
+  const verdictEl = document.getElementById(barVerdictId);
+  const ratioEl   = document.getElementById(barRatioId);
+
+  if (fillEl) {
+    fillEl.style.width = `${isBull ? bullPct : bearPct}%`;
+    fillEl.className   = 'ovr-bar-fill' + (isMixed ? ' mix' : isBull ? '' : ' bear');
+  }
+  if (verdictEl) {
+    if (isMixed) {
+      verdictEl.textContent  = 'Mixed Pressure';
+      verdictEl.className    = 'ovr-bar-verdict verdict-mix';
+    } else if (isBull) {
+      verdictEl.textContent  = 'Bullish Bias';
+      verdictEl.className    = 'ovr-bar-verdict verdict-bull';
+    } else {
+      verdictEl.textContent  = 'Bearish Bias';
+      verdictEl.className    = 'ovr-bar-verdict verdict-bear';
+    }
+  }
+  if (ratioEl) ratioEl.textContent = `${bullPts}↑ vs ${bearPts}↓`;
+
+  // ── Dynamic explain line ───────────────────────────────────────────────
+  const explainEl = document.getElementById(explainId);
+  if (explainEl) {
+    let line;
+    if (isMixed) {
+      line = `Bullish (<b>${bullPts} pts</b>) and bearish (<b>${bearPts} pts</b>) factors are broadly balanced &mdash; mixed conditions with elevated uncertainty.`;
+    } else if (isBull) {
+      line = `Current <b>bullish pressure (${bullPts} pts)</b> outweighs bearish pressure based on today&rsquo;s macro and liquidity conditions.`;
+    } else {
+      line = `Current <b>bearish pressure (${bearPts} pts)</b> remains stronger despite several neutral factors. Exercise caution.`;
+    }
+    explainEl.innerHTML = line;
+  }
+}
+
+// Run once on load — PHASE 2: call again inside refreshFromAPI()
+computePressure(
+  'goldBlock', 'goldBullPts', 'goldBearPts', 'goldNeuCount',
+  'goldBarFill', 'goldBarVerdict', 'goldBarRatio', 'goldExplainText'
+);
+computePressure(
+  'btcBlock', 'btcBullPts', 'btcBearPts', 'btcNeuCount',
+  'btcBarFill', 'btcBarVerdict', 'btcBarRatio', 'btcExplainText'
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── LIVE DATA INTEGRATION LAYER (Phase 2B) ──────────────────────────────
+// Staggered fetch against internal Cloudflare Pages Functions:
+//   /api/market     — gold, btc, dxy, vix, yields    (45 s cycle)
+//   /api/sentiment  — regime + composite + calendar  (90 s cycle)
+//   /api/news       — financial headlines            (7 m  cycle)
+//
+// All API keys live server-side in /functions/utils/fetchers.js. The frontend
+// only calls internal endpoints. No secrets, no fake timers, no simulated
+// timestamps. updatedAt values come straight from the API response.
+// ═══════════════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+
+  const ENDPOINTS = {
+    market:    '/api/market',
+    sentiment: '/api/sentiment',
+    news:      '/api/news',
+  };
+
+  const REFRESH_MS = {
+    market:    45 * 1000,
+    sentiment: 90 * 1000,
+    news:      7 * 60 * 1000,
+  };
+
+  const FETCH_TIMEOUT_MS = 12000;
+  const LIVE_BOOT_TIME   = Date.now();
+
+  // Per-endpoint state — last-known-good data persists across failed fetches.
+  // err: null | 'limit' | 'timeout' | 'fail'
+  const live = {
+    market:    { data: null, lastOk: 0, ctrl: null, err: null },
+    sentiment: { data: null, lastOk: 0, ctrl: null, err: null },
+    news:      { data: null, lastOk: 0, ctrl: null, err: null },
+  };
+
+  // ─── Safe fetch: abort-protected, timed-out, silent on failure ──────────
+  async function safeFetch(name) {
+    // Cancel any in-flight request for this endpoint (stale-cancel)
+    if (live[name].ctrl) {
+      try { live[name].ctrl.abort(); } catch (_) {}
+    }
+    const ctrl  = new AbortController();
+    const timer = setTimeout(function () {
+      try { ctrl.abort(); } catch (_) {}
+    }, FETCH_TIMEOUT_MS);
+    live[name].ctrl = ctrl;
+
+    try {
+      const res = await fetch(ENDPOINTS[name], {
+        cache:  'no-store',
+        signal: ctrl.signal,
+      });
+      if (res.status === 429) {
+        live[name].err = 'limit';
+        return null;
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      live[name].data   = data;
+      live[name].lastOk = Date.now();
+      live[name].err    = null;
+      return data;
+    } catch (fetchErr) {
+      // Classify: AbortError = timeout; all others = generic fail.
+      // Last-known-good data remains in live[name].data.
+      if (fetchErr && fetchErr.name === 'AbortError') {
+        live[name].err = 'timeout';
+      } else if (live[name].err !== 'limit') {
+        // Don't overwrite a 429 that was set before the catch path
+        live[name].err = 'fail';
+      }
+      return null;
+    } finally {
+      clearTimeout(timer);
+      if (live[name].ctrl === ctrl) live[name].ctrl = null;
+    }
+  }
+
+  // ─── DOM helpers ─────────────────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+
+  function setText(id, val) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = (val === null || val === undefined || val === '') ? '—' : val;
+  }
+
+  function fmtPrice(n, decimals) {
+    if (n === null || n === undefined || !Number.isFinite(n)) return null;
+    const d = decimals == null ? 2 : decimals;
+    return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  function fmtPct(n, decimals) {
+    if (n === null || n === undefined || !Number.isFinite(n)) return null;
+    const d = decimals == null ? 2 : decimals;
+    return n.toFixed(d) + '%';
+  }
+
+  function fmtDelta(pct) {
+    if (pct === null || pct === undefined || !Number.isFinite(pct)) return null;
+    const sign = pct > 0 ? '+' : pct < 0 ? '−' : '±';
+    return sign + Math.abs(pct).toFixed(2) + '%';
+  }
+
+  function setDelta(id, pct) {
+    const el = $(id);
+    if (!el) return;
+    el.classList.remove('delta-up', 'delta-down', 'delta-flat');
+    if (pct === null || pct === undefined || !Number.isFinite(pct)) {
+      el.textContent = '—';
+      el.classList.add('delta-flat');
+      return;
+    }
+    el.textContent = fmtDelta(pct);
+    if (Math.abs(pct) < 0.05)      el.classList.add('delta-flat');
+    else if (pct > 0)              el.classList.add('delta-up');
+    else                           el.classList.add('delta-down');
+  }
+
+  function relTimeAgo(iso) {
+    if (!iso) return null;
+    const then = new Date(iso).getTime();
+    if (!Number.isFinite(then)) return null;
+    const diff  = Math.max(0, Date.now() - then);
+    const mins  = Math.floor(diff / 60000);
+    if (mins < 1)   return 'just now';
+    if (mins < 60)  return mins + ' min ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ' + (mins % 60) + 'm ago';
+    const days  = Math.floor(hours / 24);
+    return days + 'd ago';
+  }
+
+  function sanitizeTitle(t) {
+    if (!t || typeof t !== 'string') return null;
+    const cleaned = t.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (!cleaned) return null;
+    return cleaned.length > 200 ? cleaned.slice(0, 197) + '…' : cleaned;
+  }
+
+  // ─── Renderers ──────────────────────────────────────────────────────────
+  function renderMarket(data) {
+    if (!data) return;
+    const dxy    = data.dxy    || {};
+    const vix    = data.vix    || {};
+    const yields = data.yields || {};
+    const gold   = data.gold   || {};
+    const btc    = data.btc    || {};
+
+    // Regime banner — DXY
+    setText('liveDXY', fmtPrice(dxy.value, 2));
+    setDelta('liveDXYDelta', dxy.changePct);
+
+    // Regime banner — US 10Y nominal yield (FRED, end-of-day; no intraday delta)
+    setText('liveUS10Y',      fmtPct(yields.us10y, 2));
+    setText('liveUS10YDelta', '—');
+
+    // Regime banner — Real Yield (TIPS, end-of-day; no intraday delta)
+    setText('liveRealYield',      fmtPct(yields.real10y, 2));
+    setText('liveRealYieldDelta', '—');
+
+    // Regime banner — VIX
+    setText('liveVIX', fmtPrice(vix.value, 1));
+    setDelta('liveVIXDelta', vix.changePct);
+
+    // Gold factor table — live macro inputs
+    setText('factGoldRealYield', fmtPct(yields.real10y, 2));
+    setText('factGoldDXY',       fmtPrice(dxy.value, 2));
+    setText('factGoldUS10Y',     fmtPct(yields.us10y, 2));
+    setText('factGoldVIX',
+      (vix.value !== null && vix.value !== undefined && Number.isFinite(vix.value))
+        ? ('VIX ' + vix.value.toFixed(1))
+        : 'VIX —'
+    );
+
+    // ── GROUP 3 · Live price display ────────────────────────────────────────
+    // Gold: bind price + % change to sb-live-price slots in the XAUUSD card
+    var gp = gold.price, gpPct = gold.changePct;
+    var gpEl = $('liveGoldPriceVal'), gdEl = $('liveGoldPriceDelta');
+    if (gpEl) gpEl.textContent = (gp !== null && gp !== undefined && Number.isFinite(gp))
+      ? ('$' + fmtPrice(gp, 2)) : '—';
+    if (gdEl) {
+      gdEl.textContent = fmtDelta(gpPct) || '—';
+      gdEl.className = 'lp-delta ' + (
+        gpPct === null || !Number.isFinite(gpPct) ? 'delta-flat' :
+        gpPct > 0 ? 'delta-up' : gpPct < 0 ? 'delta-down' : 'delta-flat'
+      );
+    }
+
+    // BTC: bind price + % change to sb-live-price slots in the Bitcoin card
+    var bp = btc.price, bpPct = btc.changePct;
+    var bpEl = $('liveBtcPriceVal'), bdEl = $('liveBtcPriceDelta');
+    if (bpEl) bpEl.textContent = (bp !== null && bp !== undefined && Number.isFinite(bp))
+      ? ('$' + fmtPrice(bp, 0)) : '—';
+    if (bdEl) {
+      bdEl.textContent = fmtDelta(bpPct) || '—';
+      bdEl.className = 'lp-delta ' + (
+        bpPct === null || !Number.isFinite(bpPct) ? 'delta-flat' :
+        bpPct > 0 ? 'delta-up' : bpPct < 0 ? 'delta-down' : 'delta-flat'
+      );
+    }
+
+    // ── GROUP 2/11 · Tech Snapshot — live price zones from /api/market ─────
+    var kzEl = $('techKeyZones');
+    if (kzEl && gp !== null && gp !== undefined && Number.isFinite(gp)) {
+      var lo  = (gold.low  !== null && Number.isFinite(gold.low))  ? gold.low  : gp * 0.985;
+      var hi  = (gold.high !== null && Number.isFinite(gold.high)) ? gold.high : gp * 1.015;
+      kzEl.textContent = fmtPrice(lo, 0) + ' / ' + fmtPrice(gp, 0) + ' / ' + fmtPrice(hi, 0);
+    }
+    var lzEl = $('techLiqZones');
+    if (lzEl && gp !== null && gp !== undefined && Number.isFinite(gp)) {
+      var lo2 = (gold.low  !== null && Number.isFinite(gold.low))  ? gold.low  : gp * 0.985;
+      var hi2 = (gold.high !== null && Number.isFinite(gold.high)) ? gold.high : gp * 1.015;
+      lzEl.textContent = 'Above ' + fmtPrice(hi2, 0) + ' · Below ' + fmtPrice(lo2, 0);
+    }
+    var vsEl = $('techVolState');
+    if (vsEl && vix.value !== null && vix.value !== undefined && Number.isFinite(vix.value)) {
+      var vv = vix.value;
+      vsEl.textContent = vv < 15  ? 'Low · Calm'          :
+                         vv < 20  ? 'Normal · Steady'      :
+                         vv < 25  ? 'Elevated · Caution'   :
+                                    'High · Risk-Off';
+    }
+
+    // ── Market session — computed from UTC clock (no API required) ──────────
+    var utcH = new Date().getUTCHours();
+    var utcM = new Date().getUTCMinutes();
+    var utcT = utcH + utcM / 60;
+    var sess;
+    if      (utcT >= 13 && utcT < 17) { sess = { short: 'LDN/NY', full: 'London – NY Overlap' }; }
+    else if (utcT >= 8  && utcT < 13) { sess = { short: 'London', full: 'London Session' }; }
+    else if (utcT >= 17 && utcT < 22) { sess = { short: 'NY',     full: 'New York Session' }; }
+    else if (utcT >= 23 || utcT < 2)  { sess = { short: 'Tokyo',  full: 'Tokyo Open' }; }
+    else if (utcT >= 2  && utcT < 8)  { sess = { short: 'Asia',   full: 'Asian Session' }; }
+    else                               { sess = { short: 'Pre-Mkt',full: 'Pre-Market Hours' }; }
+    setText('liveGoldSession',    sess.short);
+    setText('liveGoldSessionFull', sess.full);
+    setText('liveBtcSession',     sess.short);
+    setText('liveBtcSessionFull', sess.full);
+  }
+
+  function renderSentiment(data) {
+    if (!data) return;
+    // NOTE (Phase 2D): the server-side regime classifier is intentionally NOT
+    // mapped to #regimeLabel. The visible label is editorial research framing
+    // ("Easing Cycle / Disinflation") reviewed manually and is consistent with
+    // the rest of the dashboard. The /api/sentiment.marketRegime payload is
+    // available for future Phase 3 wiring once the full multi-factor engine
+    // emits research-style labels.
+    // Reserved hook — sentiment payload still updates lastOk timestamp via
+    // safeFetch() so the status strip reflects sentiment-endpoint health.
+    return;
+  }
+
+  // ── GROUP 2 · Calendar catalyst line — populated from /api/sentiment ─────
+  // Reads economicEvents (high/medium-impact, next 7 days) from the sentiment
+  // payload and updates the "Next major catalyst" line in the news section.
+  // renderSentiment() is an intentional no-op; this is a separate function.
+  function renderCalendar(data) {
+    if (!data) return;
+    // Always resolve the DOM first — we must update the span even when
+    // economicEvents is an empty array (clears the static HTML placeholder).
+    var catalystEl = $('newsCatalystLine');
+    if (!catalystEl) return;
+    var span = catalystEl.querySelector('span');
+    if (!span) return;
+
+    var events = data.economicEvents;
+    if (!Array.isArray(events) || events.length === 0) {
+      span.textContent = 'Next catalyst — calendar updating…';
+      return;
+    }
+
+    var now = Date.now();
+    var upcoming = events
+      .filter(function(e) { return e.date && new Date(e.date).getTime() > now; })
+      .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+    if (upcoming.length > 0) {
+      var ev = upcoming[0];
+      var diffMs    = new Date(ev.date).getTime() - now;
+      var diffMins  = Math.floor(diffMs / 60000);
+      var diffHours = Math.floor(diffMins / 60);
+      var diffDays  = Math.floor(diffHours / 24);
+      var cd = diffDays  > 0 ? (diffDays  + 'd ' + (diffHours % 24) + 'h') :
+               diffHours > 0 ? (diffHours + 'h ' + (diffMins  % 60) + 'm') :
+                                (diffMins  + 'm');
+      var label = (ev.event || 'Economic Event') +
+                  (ev.impact === 'high' ? ' ●' : '');
+      span.textContent = 'Next catalyst — ' + label + ' in ' + cd;
+    } else {
+      span.textContent = 'Next catalyst — no high-impact events in range';
+    }
+  }
+
+  function renderNews(data) {
+    if (!data || !Array.isArray(data.articles) || data.articles.length === 0) return;
+    const top   = data.articles[0];
+    const title = sanitizeTitle(top && top.title);
+    if (title) {
+      const el = $('liveNewsHeadline');
+      if (el && el.textContent !== title) el.textContent = title;
+    }
+    const tsEl = $('newsTimestamp');
+    if (tsEl) {
+      const rel = relTimeAgo(top && top.publishedAt);
+      tsEl.textContent = rel ? ('Posted ' + rel) : 'Research snapshot';
+    }
+    // ── GROUP 2 · "Affects:" tag — update from live article asset list ─────
+    var affEl = $('liveNewsAffects');
+    if (affEl && top && Array.isArray(top.assets) && top.assets.length > 0) {
+      var ASSET_LABELS = { gold: 'Gold', btc: 'BTC', dxy: 'DXY',
+                           macro: 'Macro', inflation: 'Inflation',
+                           volatility: 'VIX', yields: 'Yields' };
+      var names = top.assets.map(function(a) {
+        return ASSET_LABELS[a] || a.toUpperCase();
+      });
+      affEl.textContent = 'Affects: ' + names.join(' & ');
+    }
+  }
+
+  // ─── Status strip + per-cell staleness fade ─────────────────────────────
+  // Standardised terminology (Phase 2D):
+  //   "Live Market Data"  — fresh (< 3 min since last successful market fetch)
+  //   "Data Delayed"      — stale (3–10 min)
+  //   "Market Snapshot"   — degraded (> 10 min, displayed values may be old)
+  //
+  // Staleness fade: live value containers receive .is-stale class once the
+  // market endpoint has been failing for > 5 min. This is a visual cue, not
+  // a content change — values remain visible (last-known-good).
+
+  // DOM elements that mirror live /api/market data — receive .is-stale on staleness
+  const LIVE_NODES = [
+    'liveDXY', 'liveDXYDelta',
+    'liveUS10Y', 'liveUS10YDelta',
+    'liveRealYield', 'liveRealYieldDelta',
+    'liveVIX', 'liveVIXDelta',
+    'factGoldRealYield', 'factGoldDXY', 'factGoldUS10Y', 'factGoldVIX',
+  ];
+
+  function setLiveStaleness(isStale) {
+    for (let i = 0; i < LIVE_NODES.length; i++) {
+      const el = $(LIVE_NODES[i]);
+      if (!el) continue;
+      if (isStale) el.classList.add('is-stale');
+      else         el.classList.remove('is-stale');
+    }
+  }
+
+  function updateStatusStrip() {
+    const statusEl = $('liveStatusText');
+    const updateEl = $('liveUpdateText');
+    if (!statusEl || !updateEl) return;
+
+    // Status is driven primarily by the market endpoint (45 s cadence is the
+    // most sensitive to staleness). Sentiment and news contribute to lastOk
+    // computation but market drives the user-visible state.
+    const newest = Math.max(live.market.lastOk, live.sentiment.lastOk, live.news.lastOk);
+
+    if (!newest) {
+      // No successful fetch yet. After 15 s from boot, show an error if the
+      // market endpoint has already reported a failure; otherwise keep "Connecting…".
+      const bootAge = Date.now() - LIVE_BOOT_TIME;
+      const mErr    = live.market.err;
+      statusEl.classList.remove('status-err');
+      if (bootAge > 15000 && mErr) {
+        statusEl.classList.add('status-err');
+        if (mErr === 'limit') {
+          statusEl.textContent = 'API limit reached';
+        } else {
+          statusEl.textContent = 'Data temporarily unavailable';
+        }
+      } else {
+        statusEl.classList.add('status-err');
+        statusEl.textContent = 'Waiting for live data...';
+      }
+      updateEl.textContent = '—';
+      setLiveStaleness(false);
+      return;
+    }
+
+    const marketAge = live.market.lastOk ? (Date.now() - live.market.lastOk) : Infinity;
+    statusEl.classList.remove('status-err');
+
+    // If market has never succeeded but other endpoints have, check for errors.
+    if (!live.market.lastOk && live.market.err) {
+      statusEl.classList.add('status-err');
+      statusEl.textContent = live.market.err === 'limit'
+        ? 'API limit reached'
+        : 'Data temporarily unavailable';
+    } else if (marketAge < 3 * 60 * 1000) {
+      statusEl.textContent = 'Live Market Data';
+      setLiveStaleness(false);
+    } else if (marketAge < 10 * 60 * 1000) {
+      statusEl.textContent = 'Data Delayed';
+      setLiveStaleness(marketAge > 5 * 60 * 1000);
+    } else {
+      statusEl.textContent = 'Market Snapshot';
+      setLiveStaleness(true);
+    }
+
+    // Prefer the market endpoint's own updatedAt (real server timestamp)
+    const apiTs = (live.market.data    && live.market.data.updatedAt)    ||
+                  (live.sentiment.data && live.sentiment.data.updatedAt) ||
+                  (live.news.data      && live.news.data.updatedAt)      ||
+                  null;
+    const rel = relTimeAgo(apiTs);
+    updateEl.textContent = rel || 'just now';
+  }
+
+  // ─── Tick functions: fetch + render + status refresh ────────────────────
+  async function tickMarket() {
+    const d = await safeFetch('market');
+    if (d) renderMarket(d);
+    updateStatusStrip();
+  }
+  async function tickSentiment() {
+    const d = await safeFetch('sentiment');
+    if (d) renderSentiment(d);
+    if (d) renderCalendar(d);
+    updateStatusStrip();
+  }
+  async function tickNews() {
+    const d = await safeFetch('news');
+    if (d) renderNews(d);
+    updateStatusStrip();
+  }
+
+  // ─── Lifecycle resume handlers ──────────────────────────────────────────
+  // On mobile, backgrounded tabs throttle setInterval and missed ticks do not
+  // fire on resume. These handlers force an immediate refresh when the user
+  // returns to the page or when network connectivity is restored.
+  let lastResumeAt = 0;
+  function handleResume() {
+    // Debounce: ignore resume bursts within 3 s of each other
+    if (Date.now() - lastResumeAt < 3000) return;
+    lastResumeAt = Date.now();
+    tickMarket();
+    tickSentiment();
+    // News refresh is expensive (and less time-critical); only force if news
+    // is stale by more than its normal cycle
+    if (Date.now() - live.news.lastOk > REFRESH_MS.news) {
+      tickNews();
+    }
+  }
+
+  // ─── Boot ────────────────────────────────────────────────────────────────
+  function boot() {
+    // Initial parallel fetch — all three endpoints kick off simultaneously
+    tickMarket();
+    tickSentiment();
+    tickNews();
+
+    // Staggered refresh cycles. Status strip "X min ago" granularity is
+    // minutes, so the 45 s market tick already keeps the display fresh —
+    // no separate status-only interval needed.
+    setInterval(tickMarket,    REFRESH_MS.market);
+    setInterval(tickSentiment, REFRESH_MS.sentiment);
+    setInterval(tickNews,      REFRESH_MS.news);
+
+    // Visibility resume: when tab becomes active after being backgrounded
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') handleResume();
+    });
+
+    // Network reconnect: when navigator transitions back online
+    if (typeof window.addEventListener === 'function') {
+      window.addEventListener('online', handleResume);
+    }
+
+    // bfcache restoration (Android Chrome back-button)
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) handleResume();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<script>
+// ─── CONTENT PROTECTION (light) ──────────────────────────────────────────────
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) ||
+    (e.ctrlKey && e.key === 'U')
+  ) {
+    e.preventDefault();
+  }
+});
+
+// ─── PWA INSTALL PROMPT ───────────────────────────────────────────────────────
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+});
+window.addEventListener('appinstalled', () => {
+  _pwaPrompt = null;
+});
+</script>
+</body>
+</html>

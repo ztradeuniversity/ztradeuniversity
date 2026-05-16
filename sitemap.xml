@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Legal -->
+  <url>
+    <loc>https://ztradeuniversity.com/privacy-policy.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Core pages -->
+  <url>
+    <loc>https://ztradeuniversity.com/</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/articles.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/about.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- AI Tools & Interactive Pages -->
+  <url>
+    <loc>https://ztradeuniversity.com/live-sentiment.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/ai-trade-assistant.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/trader-assessment.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/fundamental-technical-intelligence.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/global-market-opportunity-radar.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Broker Guide -->
+  <url>
+    <loc>https://ztradeuniversity.com/best-brokers-account-creation-guide.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Gold Trading Articles -->
+  <url>
+    <loc>https://ztradeuniversity.com/gold-trading-strategy-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/how-to-trade-gold-xauusd-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-time-to-trade-gold-xauusd.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-gold-scalping-strategy-2025.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/xauusd-buy-or-sell-today.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/fomc-cpi-gold-trading-guide.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Trading Signals Articles -->
+  <url>
+    <loc>https://ztradeuniversity.com/trading-signals-explained-research-based-guide.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-forex-signals-for-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-crypto-trading-signals-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Forex Basics Articles -->
+  <url>
+    <loc>https://ztradeuniversity.com/how-to-start-forex-trading-2025.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/forex-leverage-explained-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-forex-pairs-for-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Risk Management Articles -->
+  <url>
+    <loc>https://ztradeuniversity.com/best-risk-management-strategy.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-risk-reward-ratio-forex-trading.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/how-to-use-stop-loss-and-take-profit.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/why-stop-loss-gets-hit.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Trading Strategy Articles -->
+  <url>
+    <loc>https://ztradeuniversity.com/best-trading-strategy-for-beginners-2025.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/most-popular-trading-strategies-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/price-action-trading-strategy-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/support-and-resistance-trading-strategy.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/breakout-trading-strategy-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/trend-trading-strategy-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/swing-trading-vs-scalping.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/how-to-build-forex-trading-plan.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Market Structure & Analysis -->
+  <url>
+    <loc>https://ztradeuniversity.com/market-structure-trading-guide.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/smart-money-concepts-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/candlestick-patterns-for-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/best-indicators-forex-gold-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/how-to-read-forex-news-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Fundamental Analysis -->
+  <url>
+    <loc>https://ztradeuniversity.com/best-timeframe-for-forex-trading-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Trading Psychology -->
+  <url>
+    <loc>https://ztradeuniversity.com/trading-psychology-successful-traders.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/how-to-avoid-emotional-trading.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/why-forex-traders-lose-money.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/top-10-forex-trading-mistakes.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Beginner & Lifestyle Trading -->
+  <url>
+    <loc>https://ztradeuniversity.com/demo-trading-vs-live-trading.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ztradeuniversity.com/trading-journal-for-beginners.html</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>

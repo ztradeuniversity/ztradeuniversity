@@ -1,0 +1,646 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn how to read Forex news for beginners in 2025. Simple guide covering economic calendar, CPI, NFP, interest rates, USD strength, Gold/XAUUSD news, and risk management." />
+  <meta name="keywords" content="forex news for beginners, how to read forex news, forex fundamental analysis, economic calendar forex, forex news trading, CPI forex impact, NFP forex trading, interest rates forex, gold news trading, XAUUSD news" />
+  <title>How to Read Forex News for Beginners – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/how-to-read-forex-news-beginners.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0b1120;
+      --purple:  #5b1ac8;
+      --purple2: #7c3aed;
+      --lime:    #acd400;
+      --white:   #ffffff;
+      --text:    #0d1526;
+      --muted:   #5a6580;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+      --amb:     #ca8a04;
+      --amb2:    #fde047;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #100a00 0%, #1e1200 50%, #180e00 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(202,138,4,0.18) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(202,138,4,0.16); border: 1px solid rgba(202,138,4,0.35);
+      color: var(--amb2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--amb2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px; border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(124,58,237,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--amb2); }
+
+    .tip-box { background: #fffdf0; border-left: 4px solid var(--amb); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--amb); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .quick-answer {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1.5px solid rgba(202,138,4,0.18); border-left: 4px solid var(--amb);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--amb); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* News events table */
+    .compare-box { background: linear-gradient(145deg, #0d1127 0%, #111a38 100%); border-radius: 16px; padding: 22px 24px 18px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.07); overflow-x: auto; }
+    .compare-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .compare-table { width: 100%; border-collapse: collapse; min-width: 460px; }
+    .compare-table th { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 9px 14px; text-align: left; }
+    .compare-table td { font-size: 13px; padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.05); vertical-align: middle; line-height: 1.5; }
+    .news-table td:nth-child(1) { color: rgba(255,255,255,0.88); font-weight: 700; }
+    .news-table th:nth-child(1) { color: rgba(255,255,255,0.35); width: 34%; }
+    .news-table th:nth-child(2) { color: #fde047; background: rgba(253,224,71,0.07); border-radius: 6px 6px 0 0; }
+    .news-table th:nth-child(3) { color: #fb923c; background: rgba(251,146,60,0.07); border-radius: 6px 6px 0 0; }
+    .news-table td:nth-child(2) { color: rgba(255,255,255,0.72); background: rgba(253,224,71,0.04); }
+    .news-table td:nth-child(3) { color: rgba(255,255,255,0.72); background: rgba(251,146,60,0.04); }
+    .imp-high   { color: #f87171; font-weight: 700; }
+    .imp-med    { color: #fb923c; font-weight: 700; }
+    .imp-ext    { color: #f43f5e; font-weight: 800; }
+
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(202,138,4,0.4); padding: 16px 20px; background: #fffdf0; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    .mistakes-list { display: flex; flex-direction: column; gap: 16px; margin: 22px 0; }
+    .mistake-item { display: flex; align-items: flex-start; gap: 14px; }
+    .mistake-num { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .mistake-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
+
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #220d5a 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--amb); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(202,138,4,0.3); transform: translateY(-2px); border-bottom: 1px solid rgba(202,138,4,0.3); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--amb); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--amb); margin-top: 2px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; } .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; } .article-cta { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; } .footer-copy { order: 0; }
+    }
+    @media (max-width: 480px) { .container { padding: 0 20px; } .article-cta-btns { flex-direction: column; } .compare-box { padding: 18px 16px 14px; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+  <a href="index.html#results" onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+</div>
+
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>›</span>
+        <a href="articles.html">Articles</a><span>›</span>
+        <a href="#" aria-current="page">How to Read Forex News</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"/><path d="M2 16h12"/><path d="M2 12h8"/><path d="M2 8h4"/><path d="M6 22V8"/></svg>
+        Fundamental Analysis
+      </div>
+      <h1>How to Read <em>Forex News for Beginners</em></h1>
+      <p class="article-desc">Forex price doesn't move randomly — behind every major spike, trend shift, or reversal is usually a scheduled economic event. Learning to read Forex news separates traders who react blindly from those who plan intelligently around the calendar.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          9 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="How to Read Forex News for Beginners" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Most beginners treat news as noise — something that randomly disrupts their trades. They see a sudden 80-pip candle appear out of nowhere and assume the market is unpredictable. In reality, the majority of these sharp moves are entirely scheduled. The exact date, time, and expected impact of major economic releases are publicly available, usually 24–48 hours in advance.</p>
+
+    <p>The problem is not a lack of information — it is not knowing what to look at or how to interpret it. This guide breaks down the economic calendar, the events that actually move markets, and the specific way Forex news affects pairs like EUR/USD and instruments like Gold. It also covers the mistakes beginners make when they try to trade news before they understand it.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>To read Forex news as a beginner: use a free economic calendar (Forex Factory or Investing.com), filter for <strong>red/high-impact events</strong>, note the currency affected and the release time in your local timezone. The three events that move markets most consistently are <strong>NFP (Non-Farm Payrolls), CPI (inflation data), and central bank interest rate decisions</strong>. Most beginners should <strong>avoid holding open trades 15 minutes before and after</strong> high-impact releases — not because news is unpredictable, but because spread costs spike and price often whipsaws before choosing a direction.</p>
+    </div>
+
+    <h2>What Is Forex News?</h2>
+
+    <p>Forex news refers to scheduled economic data releases and central bank communications that reveal the financial health of a country or currency zone. Unlike random rumours or social media commentary, official economic data — inflation figures, employment numbers, interest rate decisions — is released on a fixed schedule by government agencies and central banks.</p>
+
+    <p>This is what separates <strong>fundamental analysis</strong> from technical analysis. Technical analysis reads price charts to find patterns and levels. Fundamental analysis asks <em>why</em> price might move — what economic condition is driving demand for one currency over another. You do not need to become an economist to use fundamentals as a trader. You need to know:</p>
+
+    <ul>
+      <li>Which events are scheduled in the coming 24–48 hours</li>
+      <li>Which currency pairs are affected by each event</li>
+      <li>How strong the expected market reaction is likely to be</li>
+      <li>Whether your open positions are exposed during the release window</li>
+    </ul>
+
+    <p>That four-point checklist, done the evening before your trading session, gives you a meaningful edge over traders who open charts without any awareness of what is scheduled.</p>
+
+    <h2>How to Use an Economic Calendar</h2>
+
+    <p>An economic calendar lists every scheduled news event for the week, along with the currency it affects, the time of release, an impact rating (high/medium/low), and the previous and forecast figures. The two most widely used free tools are <strong>Forex Factory</strong> and <strong>Investing.com</strong> — both are free and updated in real time.</p>
+
+    <p>Here is what each column in the calendar tells you:</p>
+
+    <div class="causes-list">
+      <div class="cause-item">
+        <b>Date &amp; Time — Plan Your Session Around It</b>
+        <p>Always set the calendar to your local timezone. A mistake here is dangerous — seeing "14:30" and assuming it is your local time when it is US Eastern Time can mean your stop loss is in the market exactly when a 100-pip spike fires. Every serious beginner sets timezone correctly before using any economic calendar.</p>
+      </div>
+      <div class="cause-item">
+        <b>Impact Rating — Focus Only on Red Events</b>
+        <p>Most calendars use red (high), orange (medium), and yellow (low) impact flags. For position management purposes, only red-flag events warrant real caution. Yellow and orange events can cause brief reactions but rarely sustain multi-hour moves. If you are early in your trading journey, simplify: mark the reds the night before, plan your trades around them, and ignore the rest.</p>
+      </div>
+      <div class="cause-item">
+        <b>Previous / Forecast / Actual — The Gap Is the Signal</b>
+        <p>Markets often price in the forecast before a release. The real move happens when the <strong>actual</strong> figure differs significantly from the forecast. A CPI print that comes in above forecast (hotter inflation) typically strengthens the USD because it suggests the Federal Reserve may raise or hold interest rates. A weaker-than-forecast NFP print weakens the USD because it signals a cooling economy. The direction of the surprise, not just the event itself, drives the initial move.</p>
+      </div>
+    </div>
+
+    <h2>Most Important News Events for Beginners</h2>
+
+    <p>Not every news event requires the same level of attention. The following are the releases that most consistently produce sharp, sustained moves across major pairs:</p>
+
+    <div class="compare-box">
+      <div class="compare-label">Key News Events — Beginner Reference</div>
+      <table class="compare-table news-table">
+        <thead>
+          <tr>
+            <th>News Event</th>
+            <th>Market Impact</th>
+            <th>Beginner Caution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>NFP (Non-Farm Payrolls)</td>
+            <td><span class="imp-high">Very High</span> — USD, all pairs</td>
+            <td>Close or widen stops 15 min before</td>
+          </tr>
+          <tr>
+            <td>CPI (Inflation Data)</td>
+            <td><span class="imp-high">Very High</span> — USD dominant</td>
+            <td>Avoid open USD positions at release</td>
+          </tr>
+          <tr>
+            <td>Fed Interest Rate Decision</td>
+            <td><span class="imp-ext">Extreme</span> — all markets</td>
+            <td>Stay flat unless experienced</td>
+          </tr>
+          <tr>
+            <td>ECB Rate Decision</td>
+            <td><span class="imp-high">High</span> — EUR pairs, Gold</td>
+            <td>Watch EUR/USD closely, widen stops</td>
+          </tr>
+          <tr>
+            <td>GDP Data</td>
+            <td><span class="imp-med">Medium–High</span></td>
+            <td>Monitor open positions</td>
+          </tr>
+          <tr>
+            <td>PMI / ISM Data</td>
+            <td><span class="imp-med">Medium</span></td>
+            <td>Note forecast vs previous</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Practical Tip</div>
+      <p>NFP is released on the <strong>first Friday of every month</strong> at 13:30 UTC (8:30 AM US Eastern). It is the single most watched economic release in the world. Whether you plan to trade it or not, check the calendar every Thursday to confirm Friday's session risk. Many professional traders simply reduce position sizes on NFP Fridays as a standing rule, regardless of their setup quality.</p>
+    </div>
+
+    <h2>How News Affects Gold (XAU/USD)</h2>
+
+    <p>Gold does not have its own economic calendar the way a currency does — but it is one of the most news-reactive instruments in the market. This is because Gold is priced in US dollars globally, which means <strong>any event that weakens the USD tends to push Gold higher</strong>, and any event that strengthens the USD tends to pull Gold lower.</p>
+
+    <p>The relationship is not always perfectly inverse. During extreme global uncertainty — geopolitical crises, banking panics, or unexpected economic shocks — Gold can rise even as the USD strengthens, because both serve as safe-haven assets simultaneously. But for the majority of scheduled news events, the USD reaction drives Gold directly.</p>
+
+    <p>The events that move Gold most consistently are:</p>
+
+    <ul>
+      <li><strong>Federal Reserve decisions</strong> — Rate hikes (or hike signals) strengthen USD and typically press Gold lower. Rate cuts or dovish language weaken USD and lift Gold.</li>
+      <li><strong>US CPI data</strong> — High inflation prints raise rate-hike expectations, initially strengthening USD. Surprisingly low prints do the opposite.</li>
+      <li><strong>NFP</strong> — Strong job numbers suggest a healthy economy and a firmer Fed, pushing Gold lower. Weak prints often send Gold sharply higher as rate-cut bets increase.</li>
+      <li><strong>Geopolitical crises</strong> — These are unscheduled and unpredictable. Gold can gap 100+ pips at open when weekend geopolitical events occur.</li>
+    </ul>
+
+    <p>For beginners trading Gold: never hold an unprotected position into a Fed meeting or CPI release. The 200–400 pip swings that Gold can produce on these days will overwhelm any stop-loss placement that seemed reasonable during a quiet session.</p>
+
+    <h2>Common Beginner News Trading Mistakes</h2>
+
+    <div class="mistakes-list">
+
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div>
+          <b>Trading Directly Into the Release Without Preparation</b>
+          <p>Opening a trade 2 minutes before NFP because "it looks like it's going up" is one of the fastest ways to get hurt. In the 5-minute window around a major release, spreads can triple or quadruple, stop losses may be skipped entirely, and the initial candle direction often reverses within 30 seconds as the market digests the actual vs forecast gap. Preparation — not impulse — is what separates news-aware traders from gamblers.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div>
+          <b>Assuming "Good News = Price Goes Up"</b>
+          <p>Market reactions to news are not a simple "good/bad" formula. A strong NFP print might cause EUR/USD to drop (USD strengthens) but Gold to fall, while simultaneously lifting USD/JPY. The direction depends on which currency is affected, whether the result was better or worse than the consensus forecast, and how the broader market was positioned before the release. Context matters far more than the headline number.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div>
+          <b>Ignoring the Calendar Entirely</b>
+          <p>The opposite of overtrading news is ignoring it. A trader who sets a tight 20-pip stop on EUR/USD on a Tuesday evening without checking that US CPI releases at 13:30 UTC the next day will find that stop triggered almost regardless of entry quality. Checking the calendar takes two minutes. Skipping it can cost two weeks of profits in a single candle.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div>
+          <b>Chasing the Spike After the Release</b>
+          <p>A common beginner pattern: price shoots 80 pips in 15 seconds, the trader misses it, then enters late trying to capture the momentum. More often than not, the initial spike is partially or fully retraced before the real direction establishes. Entering 10 minutes after a major release, when spread is still elevated and price is still volatile, puts you at the worst possible position — chasing an already-exhausted move at maximum transaction cost.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div>
+          <b>Treating a News Spike as a New Trend</b>
+          <p>A 100-pip news candle looks dramatic on a 1-hour chart. It is tempting to conclude that the trend has permanently changed direction. In practice, many news spikes are fully absorbed within 2–4 hours as the market reassesses. The sustained post-news trend — which can last days or weeks — is driven by the broader fundamental shift the news confirms, not the initial spike itself. Learn to distinguish between a spike and a structural shift before sizing into news-driven moves.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Important</div>
+      <p>Forex and Gold news trading carries significant risk. News events can cause spreads to widen dramatically, slippage to occur on stop losses, and price to move 3–5× the normal range in seconds. There is no guarantee of profit from any news trading approach. Always use proper <a href="best-risk-management-strategy.html">risk management</a>, never risk more than 1–2% per trade, and treat the economic calendar as a risk tool first — not a profit signal.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>beginner-friendly Forex news guidance</span>, Gold/XAUUSD analysis, and research-based market updates?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for structured market education, weekly news breakdowns, and content built for Forex and Gold beginners.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="forex-leverage-explained-beginners.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">Forex Leverage Explained for Beginners</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-forex-pairs-for-beginners.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">Best Forex Pairs for Beginners in 2025</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-risk-management-strategy.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Best Risk Management Strategy for Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="how-to-start-forex-trading-2025.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">How to Start Forex Trading in 2025 — Beginner's Guide</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is fundamental analysis in forex for beginners?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Fundamental analysis in forex means evaluating economic data, central bank decisions, and macroeconomic conditions to understand why a currency is likely to strengthen or weaken. For beginners, it does not require a deep knowledge of economics. The practical starting point is learning to use an economic calendar to identify when major data releases are scheduled, which currencies they affect, and whether the actual result was better or worse than the market forecast. Understanding this helps traders avoid holding positions during high-risk news windows and recognise when a sustained directional move is fundamentally driven rather than noise.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is an economic calendar and how do I use it?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">An economic calendar is a free online tool that lists all scheduled economic data releases for the week, including the date, time, the currency affected, an impact rating (high/medium/low), and the previous and consensus forecast figures. Forex Factory and Investing.com both offer free, real-time economic calendars. To use one effectively: set it to your local timezone, filter for high-impact (red) events only, note which currency pairs are affected, and plan your trading sessions around those windows. Most beginners benefit from simply avoiding open trades 15 minutes before and after any red-flag event until they have more experience with news volatility.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is NFP and how does it affect forex trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">NFP stands for Non-Farm Payrolls — the US Bureau of Labor Statistics' monthly employment report, released on the first Friday of every month at 13:30 UTC. It reports how many jobs were added to the US economy outside the farming sector, and is considered one of the most market-moving economic releases in the world. A stronger-than-expected NFP typically strengthens the US Dollar (USD) because it signals a healthy economy and supports Federal Reserve rate policy. A weak NFP print typically weakens the USD as it raises expectations of rate cuts. All USD-denominated pairs — including EUR/USD, USD/JPY, GBP/USD, and Gold (XAU/USD) — react sharply to NFP data.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How does CPI data affect forex and Gold?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">CPI (Consumer Price Index) measures inflation — how much the general price level of goods and services has changed over a specific period. In forex, CPI data matters because central banks use inflation as a primary indicator for setting interest rates. When US CPI comes in above the forecast (hotter inflation), markets expect the Federal Reserve to keep rates higher for longer, which typically strengthens the USD and pushes Gold lower. When CPI is below forecast (cooling inflation), rate-cut expectations rise, the USD weakens, and Gold often rallies sharply. US CPI is released monthly and consistently produces high volatility across forex, Gold, and broader financial markets.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How do interest rate decisions affect Gold (XAUUSD)?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Interest rate decisions by the Federal Reserve are the most powerful single event affecting Gold prices. When the Fed raises interest rates, holding USD-denominated bonds and savings accounts becomes more attractive (they pay more yield), which reduces the relative appeal of Gold — which pays no yield. This typically causes Gold to fall when rates rise or when rate hikes are strongly signalled. Conversely, when the Fed cuts rates or signals a dovish policy shift, the yield advantage of holding USD decreases, making Gold more attractive as a store of value — and Gold prices tend to rise. Gold also reacts to the ECB, Bank of England, and Bank of Japan decisions, but the Fed has by far the dominant impact.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Should beginners trade during news events?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">For most beginners, the answer is no — at least not until they have a consistent edge on non-news setups and a solid understanding of how different events affect their chosen instruments. During high-impact news releases, spreads can widen significantly, stop losses can be skipped due to slippage, and price often makes a dramatic initial move that reverses within minutes. The risk-to-reward calculation for news trading is genuinely different from standard technical setups and requires its own preparation. The safest approach for early-stage traders is to use the economic calendar defensively: identify news windows, reduce or close positions before major releases, and look for post-news structure once volatility has settled.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+</body>
+</html>

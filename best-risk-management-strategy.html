@@ -1,0 +1,689 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn the best risk management strategy for Forex and Gold trading. Beginner-friendly guide covering stop loss, lot size, risk-to-reward ratio, and capital protection." />
+  <meta name="keywords" content="forex risk management, gold trading risk management, best risk management strategy, trading risk management, risk management in forex, lot size management, stop loss strategy, risk to reward ratio, capital protection" />
+  <title>Best Risk Management Strategy for Forex and Gold Trading – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/best-risk-management-strategy.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0b1120;
+      --purple:  #5b1ac8;
+      --purple2: #7c3aed;
+      --purple3: #9f6ef5;
+      --lime:    #acd400;
+      --white:   #ffffff;
+      --text:    #0d1526;
+      --muted:   #5a6580;
+      --red:     #dc2626;
+      --red2:    #f87171;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #100208 0%, #22040f 50%, #1a0309 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(220,38,38,0.14) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.28);
+      color: var(--red2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--red2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    /* ── TYPOGRAPHY ── */
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px;
+      border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap h3 { font-family: 'Manrope','Inter',sans-serif; font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -.4px; margin: 32px 0 12px; }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(124,58,237,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    /* Lists */
+    .article-wrap ul, .article-wrap ol { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li, .article-wrap ol li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--red2); }
+    .article-wrap ol { counter-reset: ol-c; }
+    .article-wrap ol li { counter-increment: ol-c; }
+    .article-wrap ol li::before { content: counter(ol-c); position: absolute; left: 0; top: 5px; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: var(--white); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+    /* Callout boxes */
+    .tip-box { background: #f5f7ff; border-left: 4px solid var(--purple2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    /* Quick answer */
+    .quick-answer {
+      background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 100%);
+      border: 1.5px solid rgba(220,38,38,0.18); border-left: 4px solid var(--red);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Dark example box */
+    .example-box {
+      background: linear-gradient(145deg, #0d1127 0%, #111a38 100%);
+      border-radius: 18px; padding: 26px 30px; margin: 28px 0;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .example-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .ex-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .ex-row:last-of-type { border-bottom: none; }
+    .ex-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.38); width: 120px; flex-shrink: 0; text-transform: uppercase; letter-spacing: .8px; padding-top: 1px; }
+    .ex-value { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.82); line-height: 1.55; }
+    .ex-value.green { color: #4ade80; font-weight: 700; }
+    .ex-value.red   { color: #f87171; font-weight: 700; }
+    .ex-value.amber { color: var(--gold2); font-weight: 700; }
+    .example-note { font-size: 12.5px; color: rgba(255,255,255,0.32); line-height: 1.6; margin-top: 16px; font-style: italic; }
+
+    /* Cause cards */
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(220,38,38,0.35); padding: 16px 20px; background: #fdf8f8; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    /* Smart steps */
+    .smart-list { display: flex; flex-direction: column; gap: 13px; margin: 22px 0; }
+    .smart-item { display: flex; align-items: flex-start; gap: 14px; background: #f8f9fd; border: 1px solid rgba(0,0,0,0.06); border-radius: 13px; padding: 16px 18px; }
+    .smart-icon { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; background: rgba(124,58,237,0.1); display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .smart-item b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .smart-item p { font-size: 13.5px; color: var(--muted); line-height: 1.65; margin: 0; }
+
+    /* Soft CTA */
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #220d5a 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    /* FAQ */
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--red); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    /* Related articles */
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(220,38,38,0.2); transform: translateY(-2px); border-bottom: 1px solid rgba(220,38,38,0.2); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--red); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--red); margin-top: 2px; }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* ── FOOTER ── */
+    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-join  { display: none; }
+      .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; }
+      .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; }
+      .example-box  { padding: 20px 18px; }
+      .article-cta  { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy  { order: 0; }
+    }
+    @media (max-width: 480px) {
+      .container { padding: 0 20px; }
+      .article-cta-btns { flex-direction: column; }
+      .ex-label { width: 90px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#results">Results &amp; Analysis</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"         onclick="toggleMenu()">Home</a>
+  <a href="about.html"         onclick="toggleMenu()">About</a>
+  <a href="index.html#results" onclick="toggleMenu()">Results &amp; Analysis</a>
+  <a href="articles.html"      onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"    onclick="toggleMenu()">Join Now</a>
+</div>
+
+<!-- ── ARTICLE HERO ── -->
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <a href="articles.html">Articles</a>
+        <span>›</span>
+        <a href="#" aria-current="page">Risk Management Strategy</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Risk Management
+      </div>
+      <h1>Best <em>Risk Management Strategy</em> for Forex and Gold Trading</h1>
+      <p class="article-desc">Profitable trading is not about finding the perfect entry — it's about protecting your capital when you're wrong. This guide covers the complete risk management framework every forex and gold trader needs, explained simply for beginners.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          12 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ARTICLE CONTENT ── -->
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Best Risk Management Strategy for Forex and Gold Trading" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Two traders can use the exact same strategy, the same currency pair, and the same entry signals — and get completely different results. The difference is almost always risk management. One protects their capital and survives long enough to be profitable. The other bets too much, hits a losing streak, and blows the account.</p>
+
+    <p>Risk management is not a secondary consideration in trading. It is the primary one. Everything else — entries, analysis, indicators — is built on top of it. Without a solid risk framework, no trading strategy can save you.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>The best risk management strategy for forex and gold trading combines four rules: risk no more than 1–2% of your account per trade, always use a stop loss, only take trades with a minimum 1:2 risk-to-reward ratio, and size your position based on the stop distance — not on how much you want to make. These four principles, applied consistently, protect capital and give any strategy the best chance to work.</p>
+    </div>
+
+    <h2>Why Most Beginners Fail at Risk Management</h2>
+
+    <p>Risk management failures don't usually happen because traders don't know the rules. They happen because traders know the rules and ignore them under emotional pressure. Here are the most common failure patterns.</p>
+
+    <div class="causes-list">
+
+      <div class="cause-item">
+        <b>Risking Too Much Per Trade</b>
+        <p>The most common and most destructive mistake. Beginners routinely risk 5%, 10%, or even 20% of their account on a single trade. A strategy with a 60% win rate — which is excellent — will still experience 5 or 6 consecutive losses at some point. Risking 10% per trade means 6 consecutive losses = 47% of the account gone. Risking 1–2% means 6 consecutive losses = 6–12% drawdown — serious but survivable.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Ignoring the Risk-to-Reward Ratio</b>
+        <p>Many beginners focus entirely on win rate — wanting to be "right" as often as possible. But a trader who wins 70% of trades and risks $200 to make $50 is still losing money. The math only works when wins are larger than losses. Taking trades with less than 1:1.5 reward-to-risk consistently creates a negative expectancy no matter how good the entries look.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Sizing Positions Based on Emotion</b>
+        <p>"I'm very confident about this trade" is not a position sizing method. Lot size should be calculated mechanically from three inputs: account balance, percentage risk, and stop loss distance in pips. When confidence (or overconfidence) drives sizing, positions become inconsistent — and one oversized losing trade can erase weeks of disciplined gains.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>No Daily or Weekly Loss Limit</b>
+        <p>Without a maximum daily loss rule, a bad day can become a catastrophic day. A trader who loses 2% and keeps trading — now emotionally compromised — frequently turns a 2% loss into a 10–15% one. Professional trading desks have strict daily loss limits for every trader for this exact reason. Retail traders who lack this rule expose themselves to the same risk with no safety net.</p>
+      </div>
+
+    </div>
+
+    <h2>The Core Rules of Forex and Gold Risk Management</h2>
+
+    <h3>Rule 1: The 1–2% Rule</h3>
+    <p>Never risk more than 1–2% of your total account balance on any single trade. This is the foundational rule of professional risk management. At 1% risk per trade, you would need 50 consecutive losses to wipe half the account — a near-statistical impossibility for any reasonable strategy. It keeps you in the game long enough to learn, improve, and let your edge play out.</p>
+
+    <h3>Rule 2: Always Use a Stop Loss</h3>
+    <p>A stop loss is not optional. It is the mechanism that enforces your risk limit. Trading without one means a single bad trade can grow into an account-destroying position as you "wait for it to come back." Markets can move far further against you than seems possible in the moment. The stop loss ends the uncertainty and caps the loss at the amount you agreed to risk when you entered.</p>
+
+    <h3>Rule 3: Minimum 1:2 Risk-to-Reward Ratio</h3>
+    <p>For every $1 you risk, aim to make at least $2. This means your target must be at least twice the distance of your stop loss. At a 1:2 ratio, you only need to win 34% of your trades to break even — which gives your strategy enormous room for losing periods. Most traders with solid setups win 45–60% of the time, making a consistent 1:2 approach genuinely profitable over time.</p>
+
+    <h3>Rule 4: Calculate Lot Size from the Stop — Not the Profit</h3>
+    <p>The correct process: find the entry, find the structural stop level, calculate the pip distance, then determine the lot size that makes that distance equal to 1–2% of your account. The lot size is the output — not the starting point. Most beginners do this backwards, picking a lot size first and then placing a stop wherever it lands.</p>
+
+    <div class="example-box">
+      <div class="example-label">Hypothetical Lot Size Calculation — XAUUSD</div>
+      <div class="ex-row">
+        <div class="ex-label">Account</div>
+        <div class="ex-value">$2,000 trading account</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Max Risk</div>
+        <div class="ex-value amber">1% of $2,000 = $20 maximum loss</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Stop Distance</div>
+        <div class="ex-value">25 pips (structural stop below support)</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Lot Size</div>
+        <div class="ex-value amber">$20 ÷ 25 pips = $0.80/pip → 0.08 lots on XAUUSD</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Target (1:2)</div>
+        <div class="ex-value">50 pips away from entry</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Potential Win</div>
+        <div class="ex-value green">$40 — double the risk, consistent with 1:2 R:R</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Max Loss</div>
+        <div class="ex-value red">$20 — exactly 1% of account if stop is hit</div>
+      </div>
+      <div class="example-note">This is a hypothetical example for educational purposes. Pip values and lot sizes vary by broker and instrument. Always verify calculations with your broker's position size calculator before placing a trade.</div>
+    </div>
+
+    <h2>Overtrading — The Silent Account Killer</h2>
+
+    <p>Overtrading is one of the most overlooked risk management failures. Every trade has a cost — the spread — and every substandard trade taken out of boredom or impatience carries a higher probability of loss than a properly selected setup. Taking 10 mediocre trades per day instead of 3 high-quality ones doesn't increase opportunity — it increases exposure.</p>
+
+    <p>Risk management includes knowing when <strong>not</strong> to trade. Experienced traders define a maximum number of trades per session and stop when that limit is reached — regardless of what the market appears to be doing. Set a maximum of 3–5 trades per day while learning, and track the results against your unlimited-trading days. The pattern is almost always clear.</p>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Rule of Thumb</div>
+      <p>If you cannot clearly explain — in one sentence — why you are entering a trade right now, don't take it. "It looks like it might go up" is not a reason. "Price has rejected the $2,380 support zone on the H4 with a bearish engulfing candle targeting the $2,350 level with a 1:2.5 R:R" is a reason.</p>
+    </div>
+
+    <h2>Emotional Discipline and Capital Protection</h2>
+
+    <p>Risk management rules are only effective when followed consistently — including on the days you least want to follow them. After a string of wins, the temptation is to increase size because "I'm on a roll." After a string of losses, the temptation is to increase size to "recover faster." Both are emotional responses that destroy the mathematical advantage that proper sizing creates.</p>
+
+    <p>The solution is making risk management mechanical. Before every trade, run the same calculation. Risk the same percentage. Apply the same minimum R:R filter. When the rules are defined in advance and executed without discretion, emotions have no lever to pull. The plan runs — not the feeling.</p>
+
+    <p>Additionally, always define a <strong>daily loss limit</strong> — typically 3–5% of account. If that level is hit, the session ends. No exceptions. This prevents the snowball effect where a bad morning becomes a blown account by afternoon.</p>
+
+    <h2>How Smart Traders Protect Their Capital</h2>
+
+    <div class="smart-list">
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <b>Use a position size calculator for every trade</b>
+          <p>Never estimate lot size in your head. Use your broker's built-in calculator or a dedicated tool. Enter your account balance, risk percentage, stop distance in pips, and the instrument. The output tells you exactly how many lots to trade. This takes 30 seconds and removes all guesswork from the most important variable in your trade.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <b>Set a minimum R:R filter — and apply it without exception</b>
+          <p>Before entering any trade, confirm the target is at least 2× the stop distance. If the setup doesn't offer this, skip it. A trade that looks good technically but offers 1:0.8 R:R is not a good trade — it's a trade that needs the market to be wrong about you more than half the time just to break even. Pass and wait for better geometry.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <b>Stop trading after the daily loss limit is hit</b>
+          <p>Define your daily loss limit before the session starts — typically 2–4% of account. If losses reach that level, close the platform and stop for the day. Trading while in drawdown and emotionally affected is statistically the worst time to trade. The losses taken trying to recover are almost always larger than the original loss.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+        </div>
+        <div>
+          <b>Track every trade in a journal — including R:R outcomes</b>
+          <p>Log entry, stop, target, actual exit, and result for every trade. After 30–50 trades, your actual reward-to-risk ratio becomes visible. Many traders who believe they're trading 1:2 discover their average is closer to 1:0.9 because of early exits and moved targets. The journal makes the real numbers undeniable — and shows exactly where to improve.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <b>Check the economic calendar before every session</b>
+          <p>High-impact news events — NFP, CPI, FOMC — can move XAUUSD 50–150 pips in seconds. Even a perfectly sized trade becomes dangerous if a news spike hits an open position. Check for red-flag events before entering any trade. If a major release is imminent, either wait or stay out entirely. No setup is worth news spike exposure.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Educational Disclaimer</div>
+      <p>This article is for educational purposes only and does not constitute financial advice. All examples shown are hypothetical. Risk management principles reduce — but do not eliminate — the risk of loss. All trading carries significant risk. Always apply your own analysis and consult a qualified financial adviser before trading with real capital.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>research-based trading guidance</span> and beginner-friendly market analysis?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for regular educational content, practical risk management guidance, and structured market analysis.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="why-stop-loss-gets-hit.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Why Your Stop Loss Always Gets Hit in Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="why-forex-traders-lose-money.html" class="related-card">
+          <span class="related-cat">Trading Psychology</span>
+          <span class="related-title">Why 90% of Forex Traders Lose Money — And How Smart Traders Avoid It</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="top-10-forex-trading-mistakes.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Top 10 Forex Trading Mistakes Beginners Make</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="how-to-start-forex-trading-2025.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">How to Start Forex Trading in 2025 (Beginner Step-by-Step Guide)</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the best risk management strategy for forex trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The best forex risk management strategy combines four core rules: risk no more than 1–2% of your account per trade, always use a stop loss, only take trades with at least a 1:2 risk-to-reward ratio, and size your position based on the stop distance rather than on how much you want to make. These four principles work together to protect capital during losing streaks and give your strategy the mathematical chance to be profitable over time.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is risk-to-reward ratio and why does it matter?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The risk-to-reward ratio compares how much you stand to lose (risk) against how much you stand to gain (reward) on a trade. A 1:2 ratio means you risk $1 to potentially make $2. This matters because win rate alone doesn't determine profitability — the size of wins versus losses does. A trader winning 40% of trades with a 1:2 R:R can be profitable, while a trader winning 70% of trades at 1:0.5 R:R will lose money. Always confirm the R:R before entering any trade.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How do I calculate lot size for XAUUSD (gold)?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">To calculate lot size for XAUUSD: (1) decide your risk amount — e.g., 1% of a $2,000 account = $20; (2) determine your stop distance in pips based on the structural level; (3) divide your risk amount by the pip value multiplied by the stop distance. For example, with a $20 risk and a 25-pip stop on XAUUSD where 1 pip = $1 per 0.01 lot, you would trade 0.08 lots. Always use your broker's position size calculator to verify, as pip values vary by instrument and account currency.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How much should a beginner risk per trade?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Beginners should risk no more than 1% of their account per trade — ideally starting with 0.5% while still learning. This may feel small, but it is the number that keeps you in the market long enough to develop real skill. At 1% risk, you would need 50 consecutive losses to lose half your account — which gives any reasonable strategy ample room to produce positive results over time. Increasing risk before demonstrating consistent profitability is one of the most common ways beginners destroy their accounts.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Is it possible to trade profitably without a stop loss?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Trading without a stop loss is one of the highest-risk approaches in retail forex. While some professional strategies (like certain options or hedging approaches) can function without conventional stops, retail traders on leveraged spot forex without stop losses are exposed to unlimited downside on every open position. A single unexpected market move — a news event, a flash crash, weekend gap — can cause losses far beyond what was intended. Always use a stop loss. The goal is never to remove downside protection but to place it correctly.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is a good daily loss limit for forex traders?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">A common and effective daily loss limit for retail forex traders is 2–3% of account balance. Once losses reach this level for the day, trading stops — regardless of how many setups appear to be forming. This prevents the emotionally compromised decision-making that follows a bad session from compounding losses further. For context, professional prop trading firms typically impose daily loss limits of 2–5% for their traders. Setting and honouring a daily loss limit is one of the simplest and most effective risk management rules available.</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- END FAQ -->
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text">
+          <b>Z Trade University</b>
+          <small>University</small>
+        </div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a>
+        <span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a>
+        <span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>

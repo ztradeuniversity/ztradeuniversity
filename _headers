@@ -1,0 +1,18 @@
+# Cloudflare Pages — response headers
+# Phase 2D · Trust harmonization
+
+# HTML pages: short cache so deploys propagate fast and live-sentiment.html
+# never serves stale JS hooks that don't match the deployed API contract.
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Internal API endpoints intentionally NOT listed here — each Pages Function
+# in /functions/api/ sets its own Cache-Control header (max-age 45 s for
+# /api/market, 90 s for /api/sentiment, 420 s for /api/news). Overriding
+# them via _headers would break edge caching.
+
+# Static assets (favicons, images): long cache, immutable URLs.
+/assets/*
+  Cache-Control: public, max-age=2592000, immutable
