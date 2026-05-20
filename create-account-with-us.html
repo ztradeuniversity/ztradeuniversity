@@ -141,8 +141,8 @@
     .guide-hero h1 em { color: #d4ae5e !important; font-style: normal !important; }
 
     /* Description paragraph — solid warm white, not rgba-composited */
-    .guide-hero .guide-hero-inner .guide-desc,
-    .guide-hero .guide-desc {
+    .guide-hero .guide-hero-inner .guide-para,
+    .guide-hero .guide-para {
       font-size: 17px !important; color: #ede8e0 !important;
       line-height: 1.74 !important; max-width: 660px !important; margin-bottom: 20px !important;
     }
@@ -157,13 +157,13 @@
 
     /* Metadata row — solid readable light gray, not near-invisible opacity */
     .guide-meta { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-bottom: 40px; }
-    .guide-hero .guide-meta-item,
-    .guide-hero .guide-hero-inner .guide-meta-item {
+    .guide-hero .guide-meta-cell,
+    .guide-hero .guide-hero-inner .guide-meta-cell {
       display: flex !important; align-items: center !important; gap: 7px !important;
       font-size: 13px !important; color: #c4bdb5 !important;
     }
-    .guide-hero .guide-meta-item svg,
-    .guide-hero .guide-hero-inner .guide-meta-item svg {
+    .guide-hero .guide-meta-cell svg,
+    .guide-hero .guide-hero-inner .guide-meta-cell svg {
       flex-shrink: 0 !important; color: #c89c3f !important;
     }
 
@@ -469,7 +469,7 @@
       font-size: 14px; font-weight: 700; padding: 5px 14px; letter-spacing: 1.5px;
       font-style: normal;
     }
-    .ref-note {
+    .ref-copy {
       font-size: 12.5px; color: var(--muted) !important; max-width: 500px;
       line-height: 1.55; margin: 0;
     }
@@ -576,7 +576,7 @@
 
       <h1>Create Your Account <em>With Us</em></h1>
 
-      <p class="guide-desc">
+      <p class="guide-para">
         A complete, screenshot-verified step-by-step guide to opening your Exness trading account through Z Trade University's official referral link — and unlocking your full suite of premium trading benefits.
       </p>
 
@@ -585,15 +585,15 @@
       </p>
 
       <div class="guide-meta">
-        <div class="guide-meta-item">
+        <div class="guide-meta-cell">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
           30 Steps · ~20 min to complete
         </div>
-        <div class="guide-meta-item">
+        <div class="guide-meta-cell">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Updated 2025
         </div>
-        <div class="guide-meta-item">
+        <div class="guide-meta-cell">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Beginner Friendly
         </div>
@@ -780,7 +780,7 @@
             <span>Referral Code:</span>
             <code class="ref-code">5dogk171n8</code>
           </div>
-          <p class="ref-note">Use this referral code if Exness asks for a partner or invite code during the registration process.</p>
+          <p class="ref-copy">Use this referral code if Exness asks for a partner or invite code during the registration process.</p>
         </div>
 
       </div>
