@@ -1,0 +1,2894 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Z Trade University – Trade Like a Pro</title>
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <!-- PWA install metadata (lightweight) -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1a1410" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Z Trade University" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #0b1120;
+      --navy2:     #111827;
+      --purple:    #5b1ac8;
+      --purple2:   #7c3aed;
+      --purple3:   #9f6ef5;
+      --lime:      #acd400;
+      --lime2:     #c6f000;
+      --white:     #ffffff;
+      --hero-bg:   #eef0f8;
+      --hero-bg2:  #f5f6fc;
+      --text:      #0d1526;
+      --muted:     #5a6580;
+      --radius:    16px;
+      --radius-lg: 24px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+
+    nav {
+      display: flex; align-items: center;
+      justify-content: space-between; height: 72px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+
+    /* Official Z Trade University logo image */
+    .logo-mark {
+      height: 46px;
+      width: auto;
+      max-width: 220px;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+      filter: drop-shadow(0 2px 8px rgba(11,17,32,0.10));
+      transition: filter .22s, transform .22s;
+    }
+    .logo:hover .logo-mark { filter: drop-shadow(0 4px 14px rgba(91,26,200,0.18)); transform: translateY(-1px); }
+
+    /* Legacy shield kept for compatibility — only renders if HTML uses it */
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    }
+    .logo-shield span {
+      position: relative; z-index: 1;
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: 20px; font-weight: 900; color: var(--lime);
+      letter-spacing: -1px; line-height: 1;
+    }
+
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b {
+      font-size: 15px; font-weight: 800; color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .logo-text small {
+      font-size: 9.5px; font-weight: 700; color: var(--muted);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a {
+      font-size: 13.5px; font-weight: 500; color: #3a3f52;
+      text-decoration: none; padding: 8px 15px; border-radius: 8px;
+      transition: color .18s, background .18s;
+      position: relative;
+    }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active {
+      font-weight: 700; color: var(--text);
+    }
+    .nav-links a.active::after {
+      content: '';
+      position: absolute; bottom: -2px; left: 15px; right: 15px;
+      height: 2px; border-radius: 2px;
+      background: var(--navy);
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+
+    .nav-sentiment {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(11,17,32,0.80); color: rgba(255,255,255,0.90);
+      font-size: 12.5px; font-weight: 700;
+      padding: 9px 16px; border-radius: 100px;
+      text-decoration: none; letter-spacing: -.1px;
+      border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 10px rgba(11,17,32,0.16);
+      white-space: nowrap;
+    }
+    .nav-sentiment:hover {
+      background: var(--navy);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(11,17,32,0.28);
+    }
+
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700;
+      padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; letter-spacing: -.1px;
+      border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover {
+      background: var(--purple); transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(91,26,200,0.35);
+    }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #eceff8 0%, #f3f4fb 45%, #e9ecf7 100%);
+      display: flex; align-items: center;
+      padding: 110px 0 70px; position: relative; overflow: hidden;
+    }
+
+    .hero-blob1 {
+      position: absolute; top: -140px; right: -120px;
+      width: 620px; height: 620px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.11) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .hero-blob2 {
+      position: absolute; bottom: -100px; left: -100px;
+      width: 480px; height: 480px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.09) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .hero-blob3 {
+      position: absolute; top: 40%; right: 42%;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(91,26,200,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-dots {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(91,26,200,0.07) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+
+    .hero-layout {
+      display: grid; grid-template-columns: minmax(0, 480px) 1fr;
+      gap: 100px; align-items: center; position: relative; z-index: 2;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600; color: var(--muted);
+      letter-spacing: .5px; margin-bottom: 16px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--lime);
+      box-shadow: 0 0 0 3px rgba(172,212,0,0.22);
+      flex-shrink: 0;
+    }
+
+    .hero-copy { max-width: 420px; }
+    @media (min-width: 901px) {
+      .hero-copy { transform: translateX(-20px); }
+    }
+
+    .hero-copy h1 {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: clamp(44px, 5.8vw, 74px);
+      font-weight: 900; line-height: 0.97;
+      color: var(--text); margin-bottom: 0;
+      letter-spacing: -2.5px;
+    }
+    .hero-copy h1 .h1-purple { color: var(--purple2); }
+    .hero-copy h1 .h1-line2  { display: block; }
+
+    .hero-sub {
+      font-size: 17px; color: #5c647e; margin: 20px 0 34px;
+      font-weight: 400; max-width: 400px; line-height: 1.68;
+    }
+
+    .btn-lime {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: linear-gradient(135deg, #b8de00 0%, #c8f200 100%);
+      color: #0a1018;
+      font-size: 15.5px; font-weight: 800;
+      padding: 15px 30px; border-radius: 13px;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: transform .22s ease, box-shadow .22s ease;
+      box-shadow: 0 6px 24px rgba(172,212,0,0.42), 0 1px 0 rgba(255,255,255,0.4) inset;
+      letter-spacing: -.2px; position: relative;
+    }
+    .btn-lime .btn-arrow-wrap {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(10,16,24,0.12);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .2s;
+    }
+    .btn-lime:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(172,212,0,0.52); }
+    .btn-lime:hover .btn-arrow-wrap { background: rgba(10,16,24,0.2); }
+
+    .btn-lime-sub {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11.5px; font-weight: 600;
+      color: rgba(13,21,38,0.48); letter-spacing: .3px; margin-top: 10px;
+    }
+    .btn-lime-sub::before {
+      content: '';
+      width: 18px; height: 1.5px;
+      background: rgba(13,21,38,0.22); border-radius: 1px;
+    }
+
+    .hero-btns {
+      display: flex; align-items: flex-start; flex-wrap: wrap; gap: 18px;
+    }
+
+    .hero-btn-main {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+    }
+
+    /* ── ONBOARDING LINK (Create Account Guide — compact pill) ── */
+    .hero-onboard {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(91,26,200,0.10);
+      border-radius: 11px;
+      padding: 7px 11px 7px 8px;
+      text-decoration: none;
+      margin-top: 22px;
+      max-width: 250px;
+      transition: transform .22s, border-color .22s, background .22s;
+    }
+    .hero-onboard:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.85);
+      border-color: rgba(91,26,200,0.26);
+    }
+    .onb-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: rgba(124,58,237,0.10);
+      border: 1px solid rgba(124,58,237,0.18);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--purple2);
+      flex-shrink: 0;
+    }
+    .onb-icon svg { width: 13px; height: 13px; }
+    .onb-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .onb-title {
+      font-size: 11.5px; font-weight: 700; color: var(--text);
+      letter-spacing: -.1px; line-height: 1.25;
+    }
+    .onb-sub {
+      font-size: 10.5px; font-weight: 600; color: var(--purple2);
+      display: inline-flex; align-items: center; gap: 3px;
+      letter-spacing: .1px; line-height: 1.2;
+    }
+    .onb-sub-arrow { transition: transform .22s; }
+    .hero-onboard:hover .onb-sub-arrow { transform: translateX(3px); }
+
+    .cta-sentiment {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(160deg, rgba(254,243,199,0.88) 0%, rgba(253,230,138,0.45) 100%);
+      border: 1.5px solid rgba(245,158,11,0.42);
+      box-shadow: 0 3px 14px rgba(217,119,6,0.18), 0 1px 0 rgba(255,255,255,0.72) inset;
+      color: #92400e; font-size: 14px; font-weight: 700;
+      padding: 13px 26px; border-radius: 100px; text-decoration: none;
+      transition: background .22s, border-color .22s, box-shadow .22s, transform .20s;
+      letter-spacing: -.1px; white-space: nowrap;
+    }
+    .cta-sentiment:hover {
+      background: linear-gradient(160deg, rgba(254,243,199,1) 0%, rgba(253,230,138,0.72) 100%);
+      border-color: rgba(245,158,11,0.62);
+      box-shadow: 0 7px 24px rgba(217,119,6,0.28), 0 1px 0 rgba(255,255,255,0.8) inset;
+      transform: translateY(-2px);
+    }
+
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981; flex-shrink: 0;
+      box-shadow: 0 0 0 0 rgba(52,211,153,0.6);
+      animation: livePulse 2.2s ease-out infinite;
+    }
+    @keyframes livePulse {
+      0%   { box-shadow: 0 0 0 0   rgba(52,211,153,0.55); }
+      70%  { box-shadow: 0 0 0 9px rgba(52,211,153,0); }
+      100% { box-shadow: 0 0 0 0   rgba(52,211,153,0); }
+    }
+
+    /* ── HERO VISUAL — Premium integrated banner ── */
+    .hero-visual {
+      position: relative;
+      width: 100%;
+      padding-left: 0;
+    }
+    .hero-banner {
+      position: relative;
+      background:
+        linear-gradient(160deg, rgba(255,255,255,0.62) 0%, rgba(245,247,253,0.72) 100%);
+      border: 1px solid rgba(255,255,255,0.92);
+      border-radius: 26px;
+      padding: 16px;
+      box-shadow:
+        0 30px 70px -14px rgba(91,26,200,0.20),
+        0 14px 32px rgba(15,23,42,0.08),
+        0 1px 0 rgba(255,255,255,0.85) inset;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+    /* decorative gradient glows inside the banner */
+    .hero-banner::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.16) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
+    }
+    .hero-banner::after {
+      content: ''; position: absolute; bottom: -80px; left: -60px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.13) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
+    }
+    /* Team images row — upper half of the banner */
+    .hb-team-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      position: relative; z-index: 1;
+    }
+    .hb-photo {
+      display: block;
+      aspect-ratio: 5 / 4;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.92);
+      box-shadow: 0 10px 26px rgba(15,23,42,0.14);
+      transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s;
+      position: relative;
+    }
+    .hb-photo:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(91,26,200,0.22);
+    }
+    .hb-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center 24%;
+      display: block;
+    }
+    /* subtle gradient overlay at bottom of each photo for depth */
+    .hb-photo::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 36%;
+      background: linear-gradient(180deg, transparent 0%, rgba(11,17,32,0.18) 100%);
+      pointer-events: none;
+    }
+    /* Chart elements row — lower half of the banner */
+    .hb-chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+      position: relative; z-index: 1;
+    }
+    .hb-monitor, .hb-bars {
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.40);
+    }
+    /* Monitor cell content */
+    .hb-monitor {
+      background: linear-gradient(160deg, #141928 0%, #0d1120 100%);
+      padding: 11px;
+      display: flex; flex-direction: column;
+    }
+    .hb-monitor .monitor-wrap { position: static; display: block; }
+    .hb-monitor .monitor {
+      width: 100%; background: transparent; box-shadow: none; border: none;
+      border-radius: 0; padding: 0;
+    }
+    .hb-monitor .monitor-bar { margin-bottom: 7px; }
+    .hb-monitor .m-title { font-size: 9.5px; }
+    .hb-monitor .monitor-screen { flex: 1; padding: 8px 10px; }
+    .hb-monitor .screen-top { margin-bottom: 7px; }
+    .hb-monitor .screen-pair, .hb-monitor .screen-growth { font-size: 10px; }
+    .hb-monitor .screen-candles { height: 50px; gap: 4px; }
+    .hb-monitor .sc-body { max-width: 8px; }
+    /* Bars cell content */
+    .hb-bars {
+      background: linear-gradient(160deg, #181d36 0%, #0a0f24 100%);
+      padding: 12px 12px 0;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .hb-bars .platform { position: static; transform: none; width: 100%; }
+    .hb-bars .bars-row {
+      position: static; gap: 5px; padding: 0 4px;
+      align-items: flex-end; justify-content: center;
+    }
+    .hb-bars .bar3d { width: 18px; }
+    .hb-bars .platform-base { border-radius: 12px 12px 0 0; margin-top: 2px; height: 26px; }
+    .hb-bars .platform-ring { display: none; }
+    /* Hide legacy decorations */
+    .hero-visual > .hdot,
+    .hero-visual > .laptop-shell,
+    .hero-visual > .growth-arrow { display: none; }
+
+    .hdot { position: absolute; border-radius: 50%; }
+    .hdot1 { width: 13px; height: 13px; top: 44px; right: 24px; background: var(--lime); box-shadow: 0 0 0 4px rgba(172,212,0,0.2); }
+    .hdot2 { width: 8px;  height: 8px;  top: 190px; left: 4px;  background: var(--purple3); box-shadow: 0 0 0 3px rgba(159,110,245,0.2); }
+    .hdot3 { width: 10px; height: 10px; bottom: 90px; right: -6px; background: var(--purple2); opacity: .7; }
+
+    /* Laptop shell behind monitor */
+    .laptop-shell {
+      position: absolute; bottom: 38px; left: 50%; transform: translateX(-50%);
+      width: 370px; height: 18px;
+      background: linear-gradient(180deg, #1c2238 0%, #111827 100%);
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      z-index: 1;
+    }
+    .laptop-shell::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 6px; border-radius: 0 0 6px 6px;
+      background: #0d1120;
+    }
+
+    /* Monitor */
+    .monitor-wrap {
+      position: absolute; top: 10px; left: 0; right: 0;
+      display: flex; justify-content: center;
+    }
+
+    .monitor {
+      width: 355px;
+      background: linear-gradient(160deg, #141928 0%, #0d1120 100%);
+      border-radius: 18px 18px 8px 8px;
+      padding: 16px 16px 12px;
+      box-shadow:
+        0 2px 0 rgba(255,255,255,0.07) inset,
+        0 -1px 0 rgba(0,0,0,0.4) inset,
+        0 32px 80px rgba(0,0,0,0.45),
+        0 8px 24px rgba(91,26,200,0.15);
+      position: relative; z-index: 3;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .monitor-bar {
+      display: flex; align-items: center; gap: 5px; margin-bottom: 11px;
+    }
+    .m-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .m-dot:nth-child(1) { background: #ff5f57; }
+    .m-dot:nth-child(2) { background: #febc2e; }
+    .m-dot:nth-child(3) { background: #28c840; }
+    .m-title {
+      font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.28);
+      margin-left: 6px; letter-spacing: .8px; text-transform: uppercase;
+    }
+
+    .monitor-screen {
+      background: #060a15; border-radius: 9px; padding: 13px 14px;
+      position: relative; overflow: hidden;
+      border: 1px solid rgba(124,58,237,0.12);
+    }
+    .monitor-screen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(124,58,237,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,237,0.06) 1px, transparent 1px);
+      background-size: 38px 28px;
+    }
+
+    .screen-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px; position: relative; z-index: 1;
+    }
+    .screen-pair { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.65); letter-spacing: .3px; }
+    .screen-growth {
+      font-size: 11.5px; font-weight: 800; color: var(--lime);
+      background: rgba(172,212,0,0.13); border: 1px solid rgba(172,212,0,0.28);
+      border-radius: 100px; padding: 3px 11px; letter-spacing: .2px;
+    }
+
+    .screen-candles {
+      display: flex; align-items: flex-end; gap: 5px;
+      height: 96px; position: relative; z-index: 1; padding: 0 2px;
+    }
+    .sc { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .sc-wick { width: 1.5px; border-radius: 1px; }
+    .sc-body { width: 100%; max-width: 11px; border-radius: 2.5px; min-height: 6px; }
+    .sc.up .sc-wick { background: #1fcc6e; }
+    .sc.up .sc-body { background: linear-gradient(180deg, #26e87e 0%, #1aaa58 100%); }
+    .sc.dn .sc-wick { background: #f04c5a; }
+    .sc.dn .sc-body { background: linear-gradient(180deg, #f5606e 0%, #cc2d3a 100%); }
+
+    .screen-line {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; pointer-events: none;
+    }
+
+    /* Platform & bars */
+    .platform {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 340px; z-index: 2;
+    }
+
+    .platform-base {
+      width: 100%; height: 42px;
+      background: linear-gradient(160deg, #1e2440 0%, #0f1322 100%);
+      border-radius: 18px;
+      box-shadow:
+        0 10px 40px rgba(0,0,0,0.5),
+        0 1px 0 rgba(255,255,255,0.06) inset,
+        0 0 0 1px rgba(124,58,237,0.15);
+      position: relative;
+    }
+    .platform-ring {
+      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      width: 82%; height: 22px; border-radius: 50%;
+      border: 1.5px solid rgba(172,212,0,0.3);
+      filter: blur(1.5px);
+    }
+
+    .bars-row {
+      display: flex; align-items: flex-end; justify-content: center;
+      gap: 9px; padding: 0 22px;
+      position: absolute; bottom: 42px; left: 0; right: 0;
+    }
+
+    .bar3d {
+      border-radius: 7px 7px 0 0;
+      position: relative; flex-shrink: 0;
+    }
+    .bar3d::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 40%; border-radius: 7px 7px 0 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 100%);
+    }
+    .bar3d::after {
+      content: '';
+      position: absolute; top: -4px; left: 1px; right: 1px; height: 4px;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .b1 { width: 30px; height: 64px;  background: linear-gradient(180deg, #6030e0 0%, #3a178a 100%); }
+    .b1::after { background: #8055f8; }
+    .b2 { width: 30px; height: 96px;  background: linear-gradient(180deg, #7040ee 0%, #4422b0 100%); }
+    .b2::after { background: #9068ff; }
+    .b3 { width: 30px; height: 52px;  background: linear-gradient(180deg, #5228c8 0%, #311475 100%); }
+    .b3::after { background: #6e48e4; }
+    .b4 { width: 30px; height: 122px; background: linear-gradient(180deg, #9058ff 0%, #602ed8 100%); }
+    .b4::after { background: #aa78ff; }
+    .b5 { width: 30px; height: 80px;  background: linear-gradient(180deg, #7840f0 0%, #4c24c0 100%); }
+    .b5::after { background: #9468ff; }
+    .b6 { width: 30px; height: 138px; background: linear-gradient(180deg, #aa70ff 0%, #7035f5 100%); }
+    .b6::after { background: #c498ff; }
+    .b7 { width: 30px; height: 104px; background: linear-gradient(180deg, #8048f8 0%, #522cc8 100%); }
+    .b7::after { background: #a070ff; }
+
+    .growth-arrow {
+      position: absolute; top: 22px; right: 16px; z-index: 4;
+      filter: drop-shadow(0 2px 8px rgba(172,212,0,0.4));
+    }
+
+    /* ── LIMITED TIME OFFER ── */
+    /* ── SOCIAL STRIP ── */
+    .social-strip {
+      background: #f8f9fd;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 16px 0;
+    }
+    .social-strip-inner {
+      display: flex; align-items: center; justify-content: center;
+      gap: 20px; flex-wrap: wrap;
+    }
+    .social-strip-label {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      letter-spacing: 1.6px; text-transform: uppercase; white-space: nowrap;
+    }
+    .social-strip-div {
+      width: 1px; height: 22px;
+      background: rgba(0,0,0,0.1); flex-shrink: 0;
+    }
+    .social-icons { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* Base icon button */
+    .soc-link {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: var(--white);
+      border: 1px solid rgba(0,0,0,0.09);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.9) inset;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s, background .22s;
+    }
+    .soc-link svg { transition: color .2s; color: #6b7280; }
+    .soc-link:hover { transform: translateY(-3px); }
+
+    /* Brand hover colours — edit freely */
+    .soc-link.fb:hover { border-color: rgba(24,119,242,0.4);  box-shadow: 0 8px 18px rgba(24,119,242,0.18); }
+    .soc-link.fb:hover svg { color: #1877f2; }
+    .soc-link.yt:hover { border-color: rgba(255,0,0,0.35);    box-shadow: 0 8px 18px rgba(255,0,0,0.15); }
+    .soc-link.yt:hover svg { color: #ff0000; }
+    .soc-link.tg:hover { border-color: rgba(0,136,204,0.4);   box-shadow: 0 8px 18px rgba(0,136,204,0.18); }
+    .soc-link.tg:hover svg { color: #0088cc; }
+    .soc-link.tt:hover { border-color: rgba(0,0,0,0.22);      box-shadow: 0 8px 18px rgba(0,0,0,0.14); }
+    .soc-link.tt:hover svg { color: #010101; }
+    .soc-link.ig:hover { border-color: rgba(225,48,108,0.38); box-shadow: 0 8px 18px rgba(225,48,108,0.18); }
+    .soc-link.ig:hover svg { color: #e1306c; }
+    /* WhatsApp CTA pill */
+    .wa-cta {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 9px 18px 9px 13px; border-radius: 100px;
+      background: var(--white);
+      border: 1.5px solid rgba(37,211,102,0.32);
+      box-shadow: 0 2px 8px rgba(37,211,102,0.13), 0 1px 0 rgba(255,255,255,0.9) inset;
+      text-decoration: none; white-space: nowrap;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s, background .22s;
+    }
+    .wa-cta svg { color: #25d366; flex-shrink: 0; }
+    .wa-cta-text {
+      font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: -.1px;
+    }
+    .wa-cta:hover {
+      transform: translateY(-3px);
+      border-color: rgba(37,211,102,0.55);
+      box-shadow: 0 8px 20px rgba(37,211,102,0.22), 0 1px 0 rgba(255,255,255,0.9) inset;
+      background: rgba(37,211,102,0.04);
+    }
+
+    /* ── FEATURE CARDS ── */
+    .features-section {
+      background: linear-gradient(180deg, #eceff8 0%, #e8ebf6 100%);
+      padding: 88px 0 96px;
+    }
+
+    .dark-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+
+    .dark-card {
+      background: linear-gradient(160deg, #161d30 0%, #0f1422 100%);
+      border-radius: 22px;
+      padding: 38px 32px 34px;
+      display: flex; flex-direction: column;
+      border: 1px solid rgba(255,255,255,0.055);
+      transition: transform .28s ease, box-shadow .28s ease, border-color .28s;
+      position: relative; overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.04) inset;
+    }
+
+    /* top-left purple glow */
+    .dark-card::before {
+      content: '';
+      position: absolute; top: -40px; left: -40px;
+      width: 180px; height: 180px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+      pointer-events: none; transition: opacity .28s;
+    }
+    /* bottom-right subtle shine */
+    .dark-card::after {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .dark-card:hover {
+      transform: translateY(-7px);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.42), 0 0 0 1px rgba(124,58,237,0.22);
+      border-color: rgba(124,58,237,0.25);
+    }
+    .dark-card:hover::before { opacity: 1.4; }
+
+    .dcard-icon {
+      width: 68px; height: 68px; border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; margin-bottom: 26px;
+      position: relative; z-index: 1; flex-shrink: 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.15) inset;
+    }
+    .dcard-icon.purple {
+      background: linear-gradient(145deg, #5820b8 0%, #8b4cf5 100%);
+    }
+    .dcard-icon.lime {
+      background: linear-gradient(145deg, #7aab00 0%, #b0d800 100%);
+    }
+
+    .dark-card h3 {
+      font-size: 19.5px; font-weight: 800; color: var(--white);
+      margin-bottom: 11px; line-height: 1.28; position: relative; z-index: 1;
+      letter-spacing: -.3px;
+    }
+
+    .dark-card p {
+      font-size: 13.5px; color: rgba(255,255,255,0.44);
+      line-height: 1.72; flex: 1; position: relative; z-index: 1;
+    }
+
+    .dcard-arrow {
+      margin-top: 30px; position: relative; z-index: 1; align-self: flex-start;
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.14);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .22s, background .22s, transform .22s;
+      cursor: pointer; text-decoration: none;
+      background: rgba(255,255,255,0.04);
+    }
+    .dcard-arrow svg { color: rgba(255,255,255,0.45); transition: color .22s; }
+    .dark-card:hover .dcard-arrow {
+      border-color: var(--lime); background: rgba(172,212,0,0.12);
+      transform: scale(1.08);
+    }
+    .dark-card:hover .dcard-arrow svg { color: var(--lime); }
+
+    /* ── STATS SECTION ── */
+    .stats-section {
+      background: linear-gradient(160deg, #0b1020 0%, #0e1428 50%, #0a0e1c 100%);
+      padding: 0;
+      position: relative; overflow: hidden;
+    }
+
+    /* dot grid */
+    .stats-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(124,58,237,0.12) 1px, transparent 1px);
+      background-size: 28px 28px; pointer-events: none;
+    }
+    /* centre glow */
+    .stats-section::after {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 260px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(124,58,237,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .stats-inner {
+      position: relative; z-index: 1;
+      display: flex; align-items: stretch;
+    }
+
+    .scard {
+      flex: 1;
+      padding: 52px 40px;
+      display: flex; flex-direction: column; align-items: flex-start;
+      position: relative;
+      transition: background .25s;
+    }
+    .scard:hover { background: rgba(124,58,237,0.07); }
+
+    /* vertical divider between cards */
+    .scard + .scard::before {
+      content: '';
+      position: absolute; left: 0; top: 20%; bottom: 20%;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.08) 60%, transparent);
+    }
+
+    .scard-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid rgba(124,58,237,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0; margin-bottom: 18px;
+      box-shadow: 0 4px 14px rgba(91,26,200,0.2);
+    }
+
+    .scard-num {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: clamp(32px, 3.5vw, 44px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1;
+      margin-bottom: 8px;
+    }
+    .scard-num span { color: var(--lime); }
+
+    .scard-label {
+      font-size: 12px; font-weight: 700;
+      color: var(--lime); text-transform: uppercase;
+      letter-spacing: 1.4px; margin-bottom: 10px;
+    }
+
+    .scard-desc {
+      font-size: 13.5px; color: rgba(255,255,255,0.38);
+      line-height: 1.65; max-width: 260px;
+    }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      padding: 72px 0 80px;
+      background: linear-gradient(180deg, #e8ebf6 0%, #eef0f8 100%);
+    }
+
+    .cta-card {
+      background: linear-gradient(125deg, #130830 0%, #220d5e 30%, #3614a0 65%, #1e0b60 100%);
+      border-radius: 28px;
+      padding: 68px 76px;
+      display: grid; grid-template-columns: 1fr 280px;
+      align-items: center; gap: 48px;
+      position: relative; overflow: hidden;
+      border: 1px solid rgba(124,58,237,0.25);
+      box-shadow:
+        0 32px 80px rgba(20,8,48,0.55),
+        0 1px 0 rgba(255,255,255,0.06) inset;
+    }
+
+    /* diagonal mesh lines */
+    .cta-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(124,58,237,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,237,0.08) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+    }
+    /* left purple bloom */
+    .cta-card::after {
+      content: '';
+      position: absolute; top: -80px; left: -60px;
+      width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.28) 0%, transparent 68%);
+      pointer-events: none;
+    }
+
+    /* lime bloom bottom-right */
+    .cta-lime-bloom {
+      position: absolute; bottom: -60px; right: 80px;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .cta-copy { position: relative; z-index: 1; }
+
+    .cta-copy h2 {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: clamp(28px, 3.8vw, 46px);
+      font-weight: 900; color: var(--white);
+      line-height: 1.1; letter-spacing: -1.5px;
+    }
+    .cta-copy h2 .cta-lime { color: var(--lime); }
+
+    .cta-underline {
+      width: 44px; height: 3px;
+      background: var(--lime); border-radius: 2px;
+      margin: 20px 0 30px;
+    }
+
+    .btn-lime-cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #b8de00 0%, #c8f200 100%);
+      color: #080e18;
+      font-size: 15px; font-weight: 800;
+      padding: 14px 30px; border-radius: 100px;
+      text-decoration: none; letter-spacing: -.1px;
+      transition: transform .22s, box-shadow .22s;
+      box-shadow: 0 6px 22px rgba(172,212,0,0.42), 0 1px 0 rgba(255,255,255,0.35) inset;
+    }
+    .btn-lime-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(172,212,0,0.55); }
+    .btn-lime-cta svg { flex-shrink: 0; }
+
+    /* ── 3D TARGET VISUAL ── */
+    .cta-target {
+      position: relative; z-index: 1; flex-shrink: 0;
+      width: 240px; height: 240px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* platform shadow disc at bottom */
+    .cta-target::before {
+      content: '';
+      position: absolute; bottom: -8px; left: 50%;
+      transform: translateX(-50%);
+      width: 180px; height: 22px; border-radius: 50%;
+      background: rgba(0,0,0,0.45);
+      filter: blur(10px);
+    }
+
+    .target-ring {
+      position: absolute; border-radius: 50%;
+    }
+    .tr1 {
+      width: 220px; height: 220px;
+      border: 2.5px solid rgba(124,58,237,0.35);
+      background: rgba(91,26,200,0.04);
+    }
+    .tr2 {
+      width: 168px; height: 168px;
+      border: 2.5px solid rgba(124,58,237,0.5);
+      background: rgba(91,26,200,0.1);
+    }
+    .tr3 {
+      width: 116px; height: 116px;
+      border: 2.5px solid rgba(124,58,237,0.72);
+      background: rgba(91,26,200,0.22);
+    }
+    .tr4 {
+      width: 62px; height: 62px;
+      border: none;
+      background: radial-gradient(circle, #9b5cf6 0%, #6d28d9 100%);
+      box-shadow:
+        0 0 0 3px rgba(124,58,237,0.3),
+        0 0 30px rgba(124,58,237,0.85),
+        0 6px 18px rgba(0,0,0,0.4);
+    }
+
+    /* arrow shaft into bullseye */
+    .target-arrow {
+      position: absolute;
+      top: 22px; right: 10px;
+      width: 88px; height: 5px;
+      background: linear-gradient(90deg, rgba(172,212,0,0) 0%, var(--lime) 100%);
+      border-radius: 3px;
+      transform: rotate(42deg);
+      transform-origin: right center;
+      filter: drop-shadow(0 2px 6px rgba(172,212,0,0.5));
+    }
+    .target-arrow::before {
+      content: '';
+      position: absolute; left: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--lime);
+      box-shadow: 0 0 8px rgba(172,212,0,0.8);
+    }
+    .target-arrow::after {
+      content: '';
+      position: absolute; right: -2px; top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-left: 11px solid var(--lime);
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+    }
+
+    /* decorative spheres */
+    .tball {
+      position: absolute; border-radius: 50%;
+    }
+    .tb1 {
+      width: 18px; height: 18px; bottom: 28px; left: 2px;
+      background: radial-gradient(circle at 35% 35%, #9b5cf6, #5b1ac8);
+      box-shadow: 0 4px 14px rgba(91,26,200,0.5);
+    }
+    .tb2 {
+      width: 11px; height: 11px; top: 46px; right: 0;
+      background: radial-gradient(circle at 35% 35%, var(--lime2), var(--lime));
+      box-shadow: 0 2px 10px rgba(172,212,0,0.6);
+    }
+    .tb3 {
+      width: 13px; height: 13px; bottom: 58px; right: -4px;
+      background: radial-gradient(circle at 35% 35%, #8b4cf7, #4820b8);
+      box-shadow: 0 3px 10px rgba(91,26,200,0.45);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #05090f;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 26px 0 28px;
+    }
+
+    .footer-inner {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 20px;
+    }
+
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: 17px; font-weight: 900; color: var(--lime);
+      letter-spacing: -1px;
+      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b   { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+
+    .footer-copy {
+      font-size: 12px; color: rgba(255,255,255,0.26);
+    }
+
+    .footer-links {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .footer-links a {
+      font-size: 12px; color: rgba(255,255,255,0.3);
+      text-decoration: none; transition: color .18s;
+    }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    .footer-socials { display: flex; gap: 8px; }
+    .soc-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; transition: background .2s, border-color .2s;
+    }
+    .soc-btn:hover { background: rgba(172,212,0,0.14); border-color: rgba(172,212,0,0.38); }
+    .soc-btn svg { color: rgba(255,255,255,0.5); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98);
+      z-index: 99; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-size: 20px; font-weight: 700; color: var(--text);
+      text-decoration: none; padding: 14px 40px; border-radius: 14px;
+      transition: background .18s, color .18s;
+    }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .dark-cards { grid-template-columns: repeat(2, 1fr); }
+      .hero-copy h1 { font-size: 52px; }
+      .cta-card { grid-template-columns: 1fr 220px; padding: 52px 48px; gap: 32px; }
+      .cta-target { width: 200px; height: 200px; }
+      .tr1 { width: 185px; height: 185px; }
+      .tr2 { width: 140px; height: 140px; }
+      .tr3 { width: 96px;  height: 96px; }
+      .stats-inner { flex-direction: column; }
+      .scard + .scard::before { display: none; }
+      .scard { padding: 36px 32px; border-top: 1px solid rgba(255,255,255,0.06); }
+    }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-right { display: none; }
+      .hamburger { display: flex; }
+      .hero-layout { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .hero { padding: 100px 0 60px; min-height: auto; }
+      .logo-mark { height: 40px; max-width: 180px; }
+      .dark-cards { grid-template-columns: 1fr; }
+      .cta-card { grid-template-columns: 1fr; padding: 48px 40px; }
+      .cta-target { display: none; }
+      .cta-lime-bloom { display: none; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+
+    @media (max-width: 640px) {
+      .dark-cards { grid-template-columns: 1fr; }
+      .hero-copy h1 { font-size: 44px; letter-spacing: -1.5px; }
+      .hero { padding: 90px 0 52px; }
+      .features-section { padding: 64px 0 72px; }
+      .cta-card { padding: 40px 28px; border-radius: 20px; }
+      .cta-copy h2 { font-size: 30px; letter-spacing: -1px; }
+      .scard { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy { order: 0; width: auto; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 0 20px; }
+      .hero-copy h1 { font-size: 38px; letter-spacing: -1px; }
+      .hero-sub { font-size: 15px; }
+      .btn-lime { font-size: 14.5px; padding: 14px 24px; }
+      .hero-btns { flex-direction: column; align-items: stretch; gap: 10px; }
+      .hero-btn-main { align-items: stretch; }
+      .hero-btn-main .btn-lime { width: 100%; justify-content: center; }
+      .cta-sentiment { width: 100%; justify-content: center; }
+      .dark-card { padding: 30px 24px 28px; }
+      .dcard-icon { width: 58px; height: 58px; font-size: 24px; }
+      .cta-card { padding: 36px 22px; }
+      .cta-copy h2 { font-size: 27px; }
+      .scard { padding: 28px 20px; }
+      .scard-num { font-size: 34px; }
+      .footer-inner { gap: 12px; }
+      .footer-links { flex-wrap: wrap; gap: 8px; }
+    }
+
+    /* ── AI TOOLS SECTION ── */
+    .ai-tools {
+      background: var(--navy);
+      padding: 52px 0 56px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .ait-header { text-align: center; margin-bottom: 28px; }
+    .ait-eyebrow {
+      display: inline-block; font-size: 10.5px; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(255,255,255,0.38); margin-bottom: 9px;
+    }
+    .ait-title {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: clamp(21px, 2.4vw, 27px);
+      font-weight: 800; letter-spacing: -.5px;
+      color: #fff; margin-bottom: 8px;
+    }
+    .ait-sub { font-size: 13.5px; color: rgba(255,255,255,0.46); max-width: 520px; margin: 0 auto; }
+
+    .ait-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    }
+    .ait-card {
+      position: relative; overflow: hidden;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px; padding: 22px 20px 20px;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+    .ait-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+    }
+    .ait-card:hover:not(.ait-soon) {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.13);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.32);
+    }
+    .ait-icon {
+      width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 13px;
+    }
+    .ait-name {
+      font-size: 15px; font-weight: 800; color: #fff;
+      letter-spacing: -.2px; margin-bottom: 7px;
+    }
+    .ait-desc {
+      font-size: 12.5px; color: rgba(255,255,255,0.52);
+      line-height: 1.58; margin-bottom: 16px;
+    }
+    .ait-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 800; letter-spacing: .1px;
+      padding: 9px 17px; border-radius: 100px;
+      text-decoration: none; white-space: nowrap;
+      border: 1.5px solid transparent;
+      transition: transform .16s, background .18s, border-color .18s;
+    }
+    .ait-btn:hover { transform: translateY(-1px); }
+    .ait-soon-tag {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1.4px;
+      text-transform: uppercase; padding: 4px 9px;
+      border-radius: 100px;
+      background: rgba(147,51,234,0.14);
+      border: 1px solid rgba(147,51,234,0.30);
+      color: rgba(167,139,250,0.80);
+    }
+    /* Gold */
+    .ait-gold::before { background: linear-gradient(90deg,rgba(245,158,11,0.7) 0%,rgba(217,119,6,0.20) 100%); }
+    .ait-gold .ait-icon { background:rgba(245,158,11,0.10); color:#fbbf24; border:1px solid rgba(245,158,11,0.22); }
+    .ait-gold .ait-btn  { background:rgba(245,158,11,0.10); color:#d97706; border-color:rgba(245,158,11,0.28); }
+    .ait-gold .ait-btn:hover { background:rgba(245,158,11,0.17); border-color:rgba(245,158,11,0.44); }
+    /* Cyan */
+    .ait-cyan::before { background: linear-gradient(90deg,rgba(6,182,212,0.7) 0%,rgba(20,184,166,0.20) 100%); }
+    .ait-cyan .ait-icon { background:rgba(6,182,212,0.10); color:#22d3ee; border:1px solid rgba(6,182,212,0.22); }
+    .ait-cyan .ait-btn  { background:rgba(6,182,212,0.10); color:#06b6d4; border-color:rgba(6,182,212,0.28); }
+    .ait-cyan .ait-btn:hover { background:rgba(6,182,212,0.17); border-color:rgba(6,182,212,0.44); }
+    /* Purple */
+    .ait-purple::before { background: linear-gradient(90deg,rgba(124,58,237,0.55) 0%,rgba(147,51,234,0.16) 100%); }
+    .ait-purple .ait-icon { background:rgba(124,58,237,0.12); color:#a78bfa; border:1px solid rgba(124,58,237,0.22); }
+    .ait-purple .ait-btn  { background:rgba(124,58,237,0.10); color:#a78bfa; border-color:rgba(124,58,237,0.28); }
+    .ait-purple .ait-btn:hover { background:rgba(124,58,237,0.17); border-color:rgba(124,58,237,0.44); }
+
+    /* Gold–Cyan (Fundamental & Technical Intelligence) */
+    .ait-goldcyan::before { background: linear-gradient(90deg,rgba(245,158,11,0.68) 0%,rgba(6,182,212,0.52) 100%); }
+    .ait-goldcyan .ait-icon { background:rgba(245,158,11,0.08); color:#22d3ee; border:1px solid rgba(6,182,212,0.24); }
+    .ait-goldcyan .ait-btn  { background:rgba(6,182,212,0.09); color:#06b6d4; border-color:rgba(6,182,212,0.26); }
+    .ait-goldcyan .ait-btn:hover { background:rgba(6,182,212,0.17); border-color:rgba(6,182,212,0.44); }
+
+    /* Cyan–Lime (Global Market Radar) */
+    .ait-radar::before { background: linear-gradient(90deg,rgba(34,211,238,0.65) 0%,rgba(172,212,0,0.50) 100%); }
+    .ait-radar .ait-icon { background:rgba(34,211,238,0.10); color:#22d3ee; border:1px solid rgba(34,211,238,0.24); }
+    .ait-radar .ait-btn  { background:rgba(34,211,238,0.10); color:#06b6d4; border-color:rgba(34,211,238,0.26); }
+    .ait-radar .ait-btn:hover { background:rgba(34,211,238,0.18); border-color:rgba(34,211,238,0.45); }
+
+    /* Radar dual-CTA stack (scoped to Global Market Radar card only) */
+    .ait-radar-stack { display: flex; flex-direction: column; gap: 9px; margin-top: 2px; }
+    .ait-radar-cta {
+      display: block; text-decoration: none; color: inherit;
+      background: rgba(34,211,238,0.05);
+      border: 1px solid rgba(34,211,238,0.18);
+      border-radius: 12px;
+      padding: 11px 13px 12px;
+      transition: background .18s, border-color .18s, transform .16s;
+    }
+    .ait-radar-cta:hover {
+      background: rgba(34,211,238,0.13);
+      border-color: rgba(34,211,238,0.36);
+      transform: translateY(-1px);
+    }
+    .ait-radar-cta.is-primary {
+      background: rgba(34,211,238,0.10);
+      border-color: rgba(34,211,238,0.30);
+    }
+    .ait-radar-cta.is-primary:hover {
+      background: rgba(34,211,238,0.18);
+      border-color: rgba(34,211,238,0.48);
+    }
+    .ait-radar-cta-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; flex-wrap: wrap; margin-bottom: 4px;
+    }
+    .ait-radar-cta-title {
+      font-size: 12.5px; font-weight: 800; color: #fff;
+      letter-spacing: -.1px; line-height: 1.3; flex: 1; min-width: 0;
+    }
+    .ait-radar-cta-tag {
+      font-size: 8.5px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
+      background: rgba(172,212,0,0.13); color: #c6f000;
+      border: 1px solid rgba(172,212,0,0.28);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .ait-radar-cta-arrow {
+      color: rgba(34,211,238,0.85); flex-shrink: 0;
+      transition: transform .18s;
+    }
+    .ait-radar-cta:hover .ait-radar-cta-arrow { transform: translateX(2px); }
+    .ait-radar-cta-desc {
+      font-size: 11px; color: rgba(255,255,255,0.52);
+      line-height: 1.5;
+    }
+
+    /* 5-card responsive ladder */
+    .ait-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    @media (max-width: 1199px) { .ait-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 720px)  { .ait-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 460px)  { .ait-grid { grid-template-columns: 1fr; } }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       Z TRADE UNIVERSITY — LUXURY REBUILD (production-safe)
+       Full visual reconstruction. New .lux-* classes scoped to new HTML.
+       Old CSS rules above remain harmless (unused by the rebuilt sections).
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    :root {
+      --lux-cream:    #f6f3eb;
+      --lux-cream2:   #fbf8f1;
+      --lux-cream3:   #ede4cf;
+      --lux-paper:    #ffffff;
+      --lux-gold:     #c89c3f;
+      --lux-gold2:    #d4ae5e;
+      --lux-gold3:    #e6c987;
+      --lux-gold4:    #f7e0a8;
+      --lux-gold-deep:#8c6c1f;
+      --lux-gold-soft:#f3e6c2;
+      --lux-ink:      #1a1410;
+      --lux-text:     #2b2520;
+      --lux-muted:    #756347;
+      --lux-line:     rgba(200,156,63,0.18);
+      --lux-line-d:   rgba(26,20,16,0.08);
+      --lux-grad-gold:linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%);
+      --lux-grad-gold-soft:linear-gradient(135deg, #f7e9c8 0%, #ecd49a 100%);
+      --lux-shadow-s: 0 4px 14px rgba(140,108,31,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --lux-shadow-m: 0 10px 28px rgba(140,108,31,0.10), 0 3px 8px rgba(0,0,0,0.05);
+      --lux-shadow-l: 0 22px 54px rgba(140,108,31,0.16), 0 6px 16px rgba(0,0,0,0.06);
+      --lux-shadow-xl:0 30px 70px rgba(140,108,31,0.22), 0 10px 22px rgba(0,0,0,0.08);
+    }
+
+    /* ── BASE ─────────────────────────────────────────────────────────────── */
+    body { background: var(--lux-cream); color: var(--lux-text); font-family: 'Inter', system-ui, sans-serif; }
+    body *, body *::before, body *::after { box-sizing: border-box; }
+
+    .lux-wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ───────────────────────────────────────────────────────────── */
+    .lux-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 251, 240, 0.86);
+      backdrop-filter: saturate(180%) blur(14px);
+      -webkit-backdrop-filter: saturate(180%) blur(14px);
+      border-bottom: 1px solid var(--lux-line);
+      box-shadow: 0 2px 18px rgba(140,108,31,0.06);
+      padding: 14px 0;
+    }
+    .lux-nav-inner {
+      max-width: 1320px; margin: 0 auto; padding: 0 28px;
+      display: flex; align-items: center; gap: 28px;
+    }
+    .lux-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+    .lux-logo-shield {
+      width: 44px; height: 44px; border-radius: 11px;
+      background: var(--lux-grad-gold);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 14px rgba(200,156,63,0.32), 0 1px 0 rgba(255,255,255,0.4) inset;
+      position: relative; overflow: hidden;
+    }
+    .lux-logo-shield::after {
+      content: ''; position: absolute; inset: 1px;
+      border-radius: 10px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.22) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .lux-logo-shield img { width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); position: relative; z-index: 1; }
+    .lux-logo-text { display: flex; flex-direction: column; line-height: 1.05; }
+    .lux-logo-text b { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 900; color: var(--lux-ink); letter-spacing: -.2px; }
+    .lux-logo-text i { font-style: normal; font-size: 10px; font-weight: 700; color: var(--lux-gold-deep); letter-spacing: 2.2px; }
+
+    .lux-nav-links { display: flex; gap: 26px; margin: 0 auto; }
+    .lux-nav-links a {
+      color: var(--lux-ink); text-decoration: none;
+      font-size: 14px; font-weight: 600;
+      position: relative; padding: 6px 2px;
+      transition: color .18s;
+    }
+    .lux-nav-links a:hover { color: var(--lux-gold-deep); }
+    .lux-nav-links a.active { color: var(--lux-gold-deep); }
+    .lux-nav-links a.active::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
+      height: 2.5px; border-radius: 2px;
+      background: var(--lux-grad-gold);
+    }
+
+    .lux-nav-right { display: flex; align-items: center; gap: 12px; }
+    .lux-nav-socials { display: flex; gap: 6px; }
+    .lux-nav-soc {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      color: var(--lux-ink);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      box-shadow: var(--lux-shadow-s);
+      transition: transform .18s, color .18s, box-shadow .18s;
+    }
+    .lux-nav-soc:hover { transform: translateY(-2px); color: var(--lux-gold-deep); box-shadow: var(--lux-shadow-m); }
+
+    .lux-nav-live {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 100px;
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      color: var(--lux-ink);
+      font-size: 13px; font-weight: 700;
+      text-decoration: none;
+      box-shadow: var(--lux-shadow-s);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .lux-nav-live:hover { transform: translateY(-1px); box-shadow: var(--lux-shadow-m); }
+    .lux-nav-live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--lux-gold);
+      box-shadow: 0 0 0 3px rgba(200,156,63,0.22);
+      animation: luxPulse 2s ease-in-out infinite;
+    }
+    @keyframes luxPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+    .lux-nav-join {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 100px;
+      background: var(--lux-grad-gold);
+      color: #fff !important;
+      font-size: 13.5px; font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(200,156,63,0.38), 0 1px 2px rgba(0,0,0,0.08);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .lux-nav-join:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(200,156,63,0.50); }
+
+    .lux-nav-hamburger {
+      display: none; width: 40px; height: 40px;
+      background: var(--lux-paper); border: 1px solid var(--lux-line);
+      border-radius: 11px; cursor: pointer;
+      flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      padding: 0;
+    }
+    .lux-nav-hamburger span { width: 18px; height: 2px; background: var(--lux-ink); border-radius: 2px; }
+
+    /* ── HERO ─────────────────────────────────────────────────────────────── */
+    .lux-hero {
+      padding: 60px 0 80px;
+      background:
+        /* cinematic left side fade (warm cream vignette) */
+        radial-gradient(ellipse 280px 100% at 0% 50%,    rgba(218,200,158,0.42) 0%, rgba(218,200,158,0) 65%),
+        /* cinematic right side fade */
+        radial-gradient(ellipse 280px 100% at 100% 50%,  rgba(218,200,158,0.42) 0%, rgba(218,200,158,0) 65%),
+        /* subtle top-edge soft glow */
+        radial-gradient(ellipse 100% 240px at 50% 0%,    rgba(255,247,220,0.40) 0%, rgba(255,247,220,0) 70%),
+        /* base vertical gradient */
+        linear-gradient(180deg, var(--lux-cream2) 0%, var(--lux-cream) 100%);
+      position: relative; overflow: hidden;
+    }
+    .lux-hero-ambient {
+      position: absolute; border-radius: 50%;
+      pointer-events: none;
+    }
+    .lux-ambient-1 {
+      top: 40px; right: 10%;
+      width: 460px; height: 460px;
+      background: radial-gradient(circle, rgba(212,174,94,0.22) 0%, transparent 60%);
+      filter: blur(20px);
+    }
+    .lux-ambient-2 {
+      bottom: -80px; left: -100px;
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, rgba(243,230,194,0.5) 0%, transparent 65%);
+      filter: blur(20px);
+    }
+    .lux-hero-inner {
+      max-width: 1260px; margin: 0 auto; padding: 0 56px;
+      display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr);
+      gap: 36px; align-items: center;
+      position: relative; z-index: 1;
+    }
+    .lux-hero-left { max-width: 520px; }
+    .lux-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11.5px; font-weight: 800; color: var(--lux-gold-deep);
+      letter-spacing: 2.4px; text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+    .lux-eyebrow::before { content: '★'; color: var(--lux-gold); font-size: 14px; }
+    .lux-hero-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(48px, 7vw, 84px);
+      font-weight: 900; line-height: 1.02; letter-spacing: -2.6px;
+      color: var(--lux-ink);
+      margin-bottom: 22px;
+    }
+    .lux-hero-title > span { display: block; }
+    .lux-gold-text {
+      background: var(--lux-grad-gold);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+    }
+    .lux-hero-sub {
+      font-size: 16.5px; color: var(--lux-ink);
+      font-weight: 500; margin-bottom: 30px;
+    }
+    .lux-cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+
+    .lux-btn-gold {
+      display: inline-flex; align-items: center; gap: 11px;
+      padding: 14px 26px; border-radius: 100px;
+      background: var(--lux-grad-gold);
+      color: #fff; text-decoration: none;
+      font-size: 14px; font-weight: 800; letter-spacing: .3px;
+      box-shadow: 0 12px 26px rgba(200,156,63,0.40), 0 2px 4px rgba(0,0,0,0.06);
+      border: 0; cursor: pointer;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .lux-btn-gold:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(200,156,63,0.50); }
+    .lux-btn-gold svg { transition: transform .18s; }
+    .lux-btn-gold:hover svg { transform: translateX(3px); }
+
+    .lux-btn-white {
+      display: inline-flex; align-items: center; gap: 11px;
+      padding: 10px 24px 10px 10px; border-radius: 100px;
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      color: var(--lux-ink);
+      font-size: 14px; font-weight: 800;
+      text-decoration: none;
+      box-shadow: var(--lux-shadow-s);
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+    }
+    .lux-btn-white:hover { transform: translateY(-2px); box-shadow: var(--lux-shadow-m); border-color: rgba(200,156,63,0.40); }
+    .lux-btn-play {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #1ea96b 0%, #15803d 55%, #0f5a2c 100%);
+      color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 6px 14px rgba(21,128,61,0.42),
+        0 0 0 1px rgba(255,255,255,0.22) inset,
+        0 2px 4px rgba(0,0,0,0.10);
+      flex-shrink: 0;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .lux-btn-white:hover .lux-btn-play {
+      box-shadow:
+        0 8px 18px rgba(21,128,61,0.52),
+        0 0 0 1px rgba(255,255,255,0.28) inset,
+        0 2px 4px rgba(0,0,0,0.10);
+      transform: scale(1.05);
+    }
+
+    .lux-create-card {
+      display: inline-flex; align-items: center; gap: 14px;
+      padding: 12px 18px 12px 12px; border-radius: 16px;
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      box-shadow: var(--lux-shadow-m);
+      text-decoration: none;
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+    }
+    .lux-create-card:hover { transform: translateY(-2px); box-shadow: var(--lux-shadow-l); border-color: rgba(200,156,63,0.40); }
+    .lux-create-icon {
+      width: 42px; height: 42px; border-radius: 11px;
+      background: var(--lux-ink);
+      color: var(--lux-gold3);
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(26,20,16,0.30);
+      flex-shrink: 0;
+    }
+    .lux-create-text { display: flex; flex-direction: column; gap: 2px; }
+    .lux-create-text b { font-size: 14.5px; color: var(--lux-ink); font-weight: 800; letter-spacing: -.2px; }
+    .lux-create-text i { font-style: normal; font-size: 12px; color: var(--lux-gold-deep); font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+
+    /* Hero right side - podium + photos */
+    .lux-hero-right {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 32px;
+      align-items: center;
+    }
+    .lux-podium {
+      position: relative; width: 100%; aspect-ratio: 1 / 1;
+      margin-left: -20px; /* pull centerpiece slightly toward the text side */
+    }
+    .lux-podium svg { width: 100%; height: 100%; display: block; }
+    @media (max-width: 1024px) { .lux-podium { margin-left: 0; } }
+
+    .lux-photos {
+      display: flex; flex-direction: column; gap: 26px;
+      perspective: 1600px;
+      perspective-origin: 30% 50%;
+    }
+    .lux-photo-card {
+      display: block; position: relative;
+      border-radius: 22px;
+      padding: 3.5px;
+      background:
+        linear-gradient(135deg, #fff5d0 0%, #fbe5a8 14%, #d4ae5e 46%, #8c6c1f 76%, #3d2a08 100%);
+      box-shadow:
+        0 0 70px rgba(212,174,94,0.36),
+        0 44px 90px rgba(58,42,12,0.46),
+        0 18px 34px rgba(0,0,0,0.24),
+        0 0 0 1px rgba(255,255,255,0.62) inset,
+        0 2px 8px rgba(0,0,0,0.12);
+      transform: rotateY(-9deg) rotateX(4deg) translateZ(22px);
+      transform-style: preserve-3d;
+      transition: transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s ease;
+      will-change: transform;
+      isolation: isolate;
+    }
+    .lux-photo-card + .lux-photo-card {
+      transform: rotateY(-9deg) rotateX(-4deg) translate(16px, 0) translateZ(0);
+    }
+    .lux-photo-card img {
+      display: block; width: 100%; height: auto;
+      aspect-ratio: 16 / 10; object-fit: cover;
+      border-radius: 17px;
+      position: relative; z-index: 0;
+    }
+    .lux-photo-card::before {
+      content: ''; position: absolute; inset: 3px;
+      border-radius: 17px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.06) 14%, transparent 26%),
+        linear-gradient(150deg, rgba(255,255,255,0.10) 0%, transparent 30%, transparent 68%, rgba(58,42,12,0.34) 100%);
+      pointer-events: none; z-index: 1;
+    }
+    .lux-photo-card::after {
+      content: ''; position: absolute; inset: 3px;
+      border-radius: 17px;
+      box-shadow:
+        0 0 32px 3px rgba(212,174,94,0.34) inset,
+        0 0 0 1px rgba(255,255,255,0.22) inset;
+      pointer-events: none; z-index: 2;
+    }
+    .lux-photo-card:hover {
+      transform: rotateY(-3deg) rotateX(2deg) translateY(-6px);
+      box-shadow:
+        0 0 90px rgba(212,174,94,0.50),
+        0 50px 100px rgba(58,42,12,0.54),
+        0 18px 34px rgba(0,0,0,0.26),
+        0 0 0 1px rgba(255,255,255,0.80) inset;
+    }
+    .lux-photo-card + .lux-photo-card:hover {
+      transform: rotateY(-3deg) rotateX(-2deg) translate(10px, -6px);
+    }
+    @media (max-width: 1024px) {
+      .lux-photo-card,
+      .lux-photo-card + .lux-photo-card { transform: none; }
+      .lux-photo-card:hover,
+      .lux-photo-card + .lux-photo-card:hover { transform: translateY(-4px); }
+    }
+
+    /* ── TRUST BAR ────────────────────────────────────────────────────────── */
+    .lux-trust { padding: 0 28px 18px; position: relative; z-index: 2; }
+    .lux-trust-card {
+      max-width: 1280px; margin: -10px auto 0;
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      border-radius: 22px;
+      padding: 18px 26px;
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 22px;
+      box-shadow: var(--lux-shadow-l);
+    }
+    .lux-trust-item { display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .lux-trust-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--lux-grad-gold-soft);
+      border: 1px solid rgba(200,156,63,0.34);
+      color: var(--lux-gold-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(200,156,63,0.18);
+      flex-shrink: 0;
+    }
+    .lux-trust-text { display: flex; flex-direction: column; line-height: 1.25; }
+    .lux-trust-text b { font-family: 'Manrope', sans-serif; font-size: 16.5px; font-weight: 900; color: var(--lux-ink); letter-spacing: -.2px; }
+    .lux-trust-text small { font-size: 11.5px; color: var(--lux-muted); font-weight: 600; max-width: 170px; }
+    .lux-trust-sep { width: 1px; align-self: stretch; background: var(--lux-line); margin: 4px 0; }
+    .lux-trust-socials { display: inline-flex; gap: 6px; flex-shrink: 0; }
+    .lux-trust-socials a {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--lux-cream);
+      color: var(--lux-ink);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: color .18s, transform .18s, background .18s;
+    }
+    .lux-trust-socials a:hover { color: var(--lux-gold-deep); background: var(--lux-gold-soft); transform: translateY(-2px); }
+    .lux-trust-wa {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      border-radius: 100px;
+      padding: 7px 20px 7px 7px;
+      text-decoration: none;
+      box-shadow:
+        0 6px 18px rgba(37,211,102,0.18),
+        var(--lux-shadow-s);
+      transition: transform .18s, box-shadow .18s;
+      /* margin-left: auto removed — now sits inline with social group for proper alignment */
+    }
+    .lux-trust-wa:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 10px 24px rgba(37,211,102,0.26),
+        var(--lux-shadow-m);
+    }
+    .lux-trust-wa-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #25d366 0%, #1aa84f 100%);
+      color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 6px 14px rgba(37,211,102,0.36),
+        0 0 0 1px rgba(255,255,255,0.22) inset;
+      flex-shrink: 0;
+    }
+    .lux-trust-wa-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .lux-trust-wa-text b { font-size: 13.5px; color: var(--lux-ink); font-weight: 800; }
+    .lux-trust-wa-text small { font-size: 11px; color: var(--lux-muted); font-weight: 600; }
+
+    /* ── AI TOOLS ─────────────────────────────────────────────────────────── */
+    .lux-tools { padding: 70px 0 60px; background: var(--lux-cream); }
+    .lux-tools-head { text-align: center; max-width: 700px; margin: 0 auto 38px; padding: 0 28px; }
+    .lux-tools-eyebrow {
+      font-size: 12px; font-weight: 800; color: var(--lux-gold-deep);
+      letter-spacing: 3.2px; text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .lux-tools-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(26px, 3.2vw, 36px); font-weight: 900;
+      color: var(--lux-ink); letter-spacing: -.8px; line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .lux-tools-sub { font-size: 14.5px; color: var(--lux-muted); line-height: 1.6; }
+
+    .lux-tools-grid {
+      max-width: 1280px; margin: 0 auto; padding: 0 28px;
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px;
+      align-items: stretch;
+    }
+    .lux-tool {
+      background: var(--lux-paper);
+      border: 1px solid var(--lux-line);
+      border-radius: 18px;
+      padding: 24px 22px 22px;
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column;
+      box-shadow: var(--lux-shadow-s);
+      transition: transform .22s, box-shadow .22s, border-color .22s;
+      position: relative; overflow: hidden;
+    }
+    .lux-tool::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--lux-grad-gold);
+      opacity: 0; transition: opacity .22s;
+    }
+    .lux-tool:hover { transform: translateY(-4px); box-shadow: var(--lux-shadow-l); border-color: rgba(200,156,63,0.34); }
+    .lux-tool:hover::before { opacity: 1; }
+    .lux-tool-icon {
+      width: 48px; height: 48px; border-radius: 13px;
+      background: var(--lux-grad-gold-soft);
+      border: 1px solid rgba(200,156,63,0.34);
+      color: var(--lux-gold-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(200,156,63,0.22);
+      margin-bottom: 18px; flex-shrink: 0;
+    }
+    .lux-tool-name {
+      font-family: 'Manrope', sans-serif;
+      font-size: 16px; font-weight: 800; color: var(--lux-ink);
+      letter-spacing: -.3px; line-height: 1.3; margin-bottom: 10px;
+    }
+    .lux-tool-desc { font-size: 13px; color: var(--lux-muted); line-height: 1.62; flex: 1; margin-bottom: 16px; overflow-wrap: break-word; }
+    .lux-tool-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--lux-gold-deep); font-weight: 800; font-size: 13px;
+      text-decoration: none;
+      transition: gap .18s, color .18s;
+    }
+    .lux-tool:hover .lux-tool-link { color: var(--lux-gold); gap: 9px; }
+
+    /* Dual card (last col: Weekly Report + Investment Opportunities) */
+    .lux-tool-dual { padding: 22px 20px; gap: 10px; display: flex; flex-direction: column; }
+    .lux-tool-dual .lux-tool-icon { margin-bottom: 14px; width: 44px; height: 44px; }
+    .lux-dual-cta {
+      background: var(--lux-cream2);
+      border: 1px solid var(--lux-line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-decoration: none; color: inherit;
+      display: block;
+      transition: background .18s, border-color .18s, transform .18s;
+    }
+    .lux-dual-cta:hover { background: var(--lux-paper); border-color: rgba(200,156,63,0.40); transform: translateY(-1px); }
+    .lux-dual-cta b {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 13.5px; font-weight: 800; color: var(--lux-ink);
+      letter-spacing: -.2px; margin-bottom: 4px;
+    }
+    .lux-dual-cta b svg { color: var(--lux-gold-deep); flex-shrink: 0; }
+    .lux-dual-cta span { font-size: 11.5px; color: var(--lux-muted); line-height: 1.5; display: block; }
+    .lux-dual-cta + .lux-dual-cta { margin-top: 8px; }
+
+    /* ── TRUSTED BY TRADERS ───────────────────────────────────────────────── */
+    .lux-trusted { padding: 30px 0 60px; background: var(--lux-cream); }
+    .lux-trusted-card {
+      max-width: 1280px; margin: 0 auto;
+      background: var(--lux-cream2);
+      border: 1px solid var(--lux-line);
+      border-radius: 28px;
+      padding: 36px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 32px;
+      align-items: center;
+      box-shadow: var(--lux-shadow-m);
+    }
+    .lux-king-visual {
+      position: relative; aspect-ratio: 1 / 1.05;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lux-king-visual svg { width: 100%; height: 100%; display: block; }
+    .lux-trusted-body { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 28px; align-items: center; }
+    .lux-trusted-copy h2 {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(24px, 2.6vw, 30px); font-weight: 900;
+      color: var(--lux-ink); letter-spacing: -.6px; line-height: 1.18;
+      margin-bottom: 4px;
+    }
+    .lux-trusted-copy h2 span { color: var(--lux-gold-deep); }
+    .lux-trusted-copy p { font-size: 13.5px; color: var(--lux-muted); line-height: 1.6; margin-top: 12px; max-width: 280px; }
+    .lux-trusted-copy .lux-btn-gold { margin-top: 18px; padding: 11px 22px; font-size: 13px; }
+
+    .lux-stat { text-align: center; }
+    .lux-stat-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--lux-grad-gold-soft);
+      color: var(--lux-gold-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px;
+      box-shadow: 0 4px 10px rgba(200,156,63,0.20);
+    }
+    .lux-stat-value {
+      font-family: 'Manrope', sans-serif;
+      font-size: 26px; font-weight: 900;
+      color: var(--lux-gold-deep); letter-spacing: -.6px;
+      margin-bottom: 4px;
+    }
+    .lux-stat-label {
+      font-size: 11.5px; font-weight: 800; color: var(--lux-ink);
+      letter-spacing: .4px; margin-bottom: 6px;
+    }
+    .lux-stat-desc { font-size: 11.5px; color: var(--lux-muted); line-height: 1.5; max-width: 180px; margin: 0 auto 10px; }
+    .lux-stat-chart { width: 100%; height: 36px; }
+
+    /* ── START YOUR JOURNEY ───────────────────────────────────────────────── */
+    .lux-start { padding: 30px 0 80px; background: var(--lux-cream); }
+    .lux-start-card {
+      max-width: 1280px; margin: 0 auto;
+      background: var(--lux-cream2);
+      border: 1px solid var(--lux-line);
+      border-radius: 28px;
+      padding: 40px 36px;
+      display: grid;
+      grid-template-columns: 1fr 240px 1fr;
+      gap: 36px;
+      align-items: center;
+      box-shadow: var(--lux-shadow-m);
+    }
+    .lux-start-left h2 {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(24px, 2.6vw, 32px); font-weight: 900;
+      color: var(--lux-ink); letter-spacing: -.6px; line-height: 1.18;
+    }
+    .lux-start-left h2 span { color: var(--lux-gold-deep); display: block; }
+    .lux-start-left p { font-size: 13.5px; color: var(--lux-muted); margin-top: 12px; }
+    .lux-start-actions { display: flex; align-items: center; gap: 14px; margin-top: 18px; }
+    .lux-btn-dark {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--lux-ink); color: var(--lux-cream);
+      border-radius: 100px; padding: 12px 22px;
+      font-size: 13.5px; font-weight: 800;
+      text-decoration: none; border: 0; cursor: pointer;
+      box-shadow: 0 8px 22px rgba(26,20,16,0.28);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .lux-btn-dark:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,20,16,0.40); }
+    .lux-yt-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 30px; border-radius: 8px;
+      background: #ff0033; color: #fff;
+      box-shadow: 0 4px 10px rgba(255,0,51,0.34);
+      cursor: pointer; border: 0;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .lux-yt-pill:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(255,0,51,0.46); }
+
+    .lux-target-visual { width: 100%; height: auto; aspect-ratio: 1/1; }
+    .lux-target-visual svg { width: 100%; height: 100%; display: block; }
+    .lux-start-right { text-align: left; }
+    .lux-start-right h3 {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(20px, 2.2vw, 26px); font-weight: 900;
+      color: var(--lux-ink); letter-spacing: -.4px; line-height: 1.25;
+    }
+    .lux-start-right p { font-size: 13.5px; color: var(--lux-muted); margin-top: 10px; max-width: 280px; }
+
+    /* ── MOBILE MENU (luxury restyle, same hrefs) ────────────────────────── */
+    .mobile-menu { background: rgba(251, 248, 241, 0.97); }
+    .mobile-menu a { color: var(--lux-ink); }
+    .mobile-menu a:hover { background: var(--lux-gold-soft); color: var(--lux-gold-deep); }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────────────────── */
+    @media (max-width: 1200px) {
+      .lux-tools-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .lux-trusted-body { grid-template-columns: 1fr 1fr 1fr; }
+      .lux-trusted-copy { grid-column: 1 / -1; }
+    }
+    @media (max-width: 1024px) {
+      .lux-nav-links { display: none; }
+      .lux-nav-socials { display: none; }
+      .lux-nav-hamburger { display: inline-flex; }
+      .lux-hero-inner { grid-template-columns: 1fr; gap: 32px; }
+      .lux-hero-right { grid-template-columns: 1.4fr 1fr; }
+      .lux-trusted-card { grid-template-columns: 1fr; }
+      .lux-king-visual { max-width: 260px; margin: 0 auto; }
+      .lux-trusted-body { grid-template-columns: 1fr 1fr; }
+      .lux-trusted-copy { grid-column: 1 / -1; text-align: center; }
+      .lux-trusted-copy p { margin-left: auto; margin-right: auto; }
+      .lux-start-card { grid-template-columns: 1fr; text-align: center; }
+      .lux-start-actions { justify-content: center; }
+      .lux-target-visual { max-width: 240px; margin: 0 auto; }
+      .lux-start-right { text-align: center; }
+      .lux-start-right p { margin-left: auto; margin-right: auto; }
+    }
+    @media (max-width: 760px) {
+      .lux-tools-grid { grid-template-columns: 1fr 1fr; }
+      .lux-tool-dual { grid-column: 1 / -1; }
+      .lux-trust-card { padding: 16px 18px; gap: 16px; }
+      .lux-trust-sep { display: none; }
+      .lux-trust-wa { margin-left: 0; }
+      .lux-hero { padding: 36px 0 60px; }
+      .lux-hero-right { grid-template-columns: 1fr; }
+      .lux-photos { flex-direction: row; gap: 12px; }
+      .lux-photo-card img { aspect-ratio: 4 / 3; }
+      .lux-trusted-body { grid-template-columns: 1fr; }
+      .lux-trusted-card, .lux-start-card { padding: 28px 22px; border-radius: 22px; }
+      .lux-nav-live { display: none; }
+    }
+    @media (max-width: 480px) {
+      .lux-tools-grid { grid-template-columns: 1fr; }
+      .lux-cta-row { flex-direction: column; align-items: stretch; }
+      .lux-btn-gold, .lux-btn-white { justify-content: center; }
+      .lux-create-card { width: 100%; }
+      .lux-trust-card { padding: 14px 16px; border-radius: 18px; }
+      .lux-logo-text i { font-size: 9px; letter-spacing: 1.8px; }
+    }
+
+    /* (Old theme override fully removed — luxury rebuild uses lux-* classes only) */
+  </style>
+</head>
+<body class="lux-themed lux-home">
+
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     Z TRADE UNIVERSITY — Luxury rebuilt visual layer. All hrefs preserved.
+     Mobile menu + PWA + security + scripts untouched below this block.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- ── NAVBAR ── -->
+<header class="lux-nav">
+  <div class="lux-nav-inner">
+    <a href="#hero" class="lux-logo" aria-label="Z Trade University home">
+      <span class="lux-logo-shield">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" />
+      </span>
+      <span class="lux-logo-text">
+        <b>Z TRADE</b>
+        <i>UNIVERSITY</i>
+      </span>
+    </a>
+    <nav class="lux-nav-links" aria-label="Primary">
+      <a href="#hero" class="active">Home</a>
+      
+      <a href="articles.html">Articles</a>
+      <a href="#join">Join Now</a>
+      <a href="about.html">About</a>
+    </nav>
+    <div class="lux-nav-right">
+      <div class="lux-nav-socials" aria-label="Social channels">
+        <a href="https://www.facebook.com/@ztradeuniversity" class="lux-nav-soc" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://x.com/Ztradeuni" class="lux-nav-soc" target="_blank" rel="noopener" aria-label="X / Twitter">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" class="lux-nav-soc" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="https://youtube.com/@ztradeuniversity" class="lux-nav-soc" target="_blank" rel="noopener" aria-label="YouTube">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.6 2.8 12 2.8 12 2.8s-4.6 0-6.8.2c-.6 0-1.9.1-3 1.3C1.3 5 1 7 1 7S.7 9.2.7 11.5v2.1c0 2.3.3 4.5.3 4.5s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.5 22.2 12 22.2 12 22.2s4.6 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.2.3-4.5v-2.1C23.3 9.2 23 7 23 7zm-13.4 9V8.6l8.1 3.7-8.1 3.7z"/></svg>
+        </a>
+        <a href="https://t.me/ztradeuniversity" class="lux-nav-soc" target="_blank" rel="noopener" aria-label="Telegram">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg>
+        </a>
+      </div>
+      <a href="live-sentiment.html" class="lux-nav-live">
+        <span class="lux-nav-live-dot"></span>Live Sentiment
+      </a>
+      <a href="#join" class="lux-nav-join">
+        Join Now
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <button class="lux-nav-hamburger" type="button" onclick="toggleMenu()" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── MOBILE MENU ── -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()" aria-label="Close menu">&#10005;</button>
+  <a href="#hero"                          onclick="toggleMenu()">Home</a>
+  <a href="articles.html"                  onclick="toggleMenu()">Articles</a>
+  <a href="#join"                          onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"                     onclick="toggleMenu()">About</a>
+  <a href="live-sentiment.html"            onclick="toggleMenu()">Live Sentiment</a>
+  <a href="fundamentals.html"              onclick="toggleMenu()">Fundamentals</a>
+  <a href="weekly-report.html"             onclick="toggleMenu()">Weekly Report</a>
+  <a href="investment-opportunities.html"  onclick="toggleMenu()">Investment Opportunities</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="lux-hero" id="hero">
+  <div class="lux-hero-ambient lux-ambient-1"></div>
+  <div class="lux-hero-ambient lux-ambient-2"></div>
+  <div class="lux-hero-inner">
+
+    <!-- LEFT -->
+    <div class="lux-hero-left">
+      <div class="lux-eyebrow">Welcome to Z Trade University</div>
+      <h1 class="lux-hero-title">
+        <span>Z Trade</span>
+        <span class="lux-gold-text">University</span>
+      </h1>
+      <p class="lux-hero-sub">Join &amp; Learn to Trade like a Pro</p>
+
+      <div class="lux-cta-row">
+        <a href="#join" class="lux-btn-gold">
+          Join Now For Free
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <button type="button" id="heroWatchIntro" class="lux-btn-white" aria-label="Watch intro video">
+          <span class="lux-btn-play" aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+          </span>
+          Watch Intro
+        </button>
+      </div>
+
+      <a href="best-brokers-account-creation-guide.html" class="lux-create-card" aria-label="Step-by-step complete account creation guide">
+        <span class="lux-create-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        </span>
+        <span class="lux-create-text">
+          <b>Create Your Account With Us</b>
+          <i>Step-by-Step Complete Guide
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </i>
+        </span>
+      </a>
+    </div>
+
+    <!-- RIGHT: Podium centerpiece + stacked photos -->
+    <div class="lux-hero-right">
+      <div class="lux-podium" aria-hidden="true">
+        <svg viewBox="0 0 540 540" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <radialGradient id="luxRing" cx="50%" cy="44%" r="48%">
+              <stop offset="45%" stop-color="rgba(255,235,180,0)"/>
+              <stop offset="72%" stop-color="rgba(212,174,94,0.38)"/>
+              <stop offset="92%" stop-color="rgba(140,108,31,0)"/>
+            </radialGradient>
+            <radialGradient id="luxSpot" cx="50%" cy="28%" r="55%">
+              <stop offset="0%"  stop-color="rgba(255,240,200,0.55)"/>
+              <stop offset="45%" stop-color="rgba(243,230,194,0.16)"/>
+              <stop offset="100%" stop-color="rgba(243,230,194,0)"/>
+            </radialGradient>
+            <linearGradient id="luxAnimal" x1="0.12" y1="0" x2="0.58" y2="1">
+              <stop offset="0%"   stop-color="#fff7dc"/>
+              <stop offset="12%"  stop-color="#fbe5a8"/>
+              <stop offset="36%"  stop-color="#d4a850"/>
+              <stop offset="62%"  stop-color="#8c6c1f"/>
+              <stop offset="85%"  stop-color="#3d2a08"/>
+              <stop offset="100%" stop-color="#1a1004"/>
+            </linearGradient>
+            <linearGradient id="luxAnimalDk" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#7a5612"/>
+              <stop offset="55%"  stop-color="#2a1c08"/>
+              <stop offset="100%" stop-color="#0a0602"/>
+            </linearGradient>
+            <linearGradient id="luxAnimal2" x1="0.18" y1="0" x2="0.88" y2="1">
+              <stop offset="0%"   stop-color="#fff5d0"/>
+              <stop offset="14%"  stop-color="#f7d99b"/>
+              <stop offset="38%"  stop-color="#c89c3f"/>
+              <stop offset="68%"  stop-color="#6b4f12"/>
+              <stop offset="88%"  stop-color="#2a1c08"/>
+              <stop offset="100%" stop-color="#0d0902"/>
+            </linearGradient>
+            <linearGradient id="luxAnimal2Dk" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#6b4f12"/>
+              <stop offset="55%"  stop-color="#2a1c08"/>
+              <stop offset="100%" stop-color="#0a0602"/>
+            </linearGradient>
+            <linearGradient id="luxCandle" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"   stop-color="#6b4f12"/>
+              <stop offset="22%"  stop-color="#c89c3f"/>
+              <stop offset="50%"  stop-color="#fff7dc"/>
+              <stop offset="78%"  stop-color="#c89c3f"/>
+              <stop offset="100%" stop-color="#6b4f12"/>
+            </linearGradient>
+            <linearGradient id="luxPodTop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#ffffff"/>
+              <stop offset="55%"  stop-color="#fbf6e6"/>
+              <stop offset="100%" stop-color="#ede1c1"/>
+            </linearGradient>
+            <linearGradient id="luxPodSide" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#f7efd5"/>
+              <stop offset="100%" stop-color="#c9b787"/>
+            </linearGradient>
+            <linearGradient id="luxPodStrip" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#fbe5a8"/>
+              <stop offset="50%"  stop-color="#d4ae5e"/>
+              <stop offset="100%" stop-color="#a17a23"/>
+            </linearGradient>
+            <filter id="luxDrop" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#8c6c1f" flood-opacity="0.30"/>
+            </filter>
+            <filter id="luxDropL" x="-70%" y="-70%" width="240%" height="240%">
+              <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#3d2a08" flood-opacity="0.50"/>
+              <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2a1c08" flood-opacity="0.32"/>
+              <feDropShadow dx="0" dy="2"  stdDeviation="3"  flood-color="#1a1004" flood-opacity="0.24"/>
+            </filter>
+            <filter id="luxDropS" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#5a4410" flood-opacity="0.32"/>
+            </filter>
+            <filter id="luxBlur"><feGaussianBlur stdDeviation="3"/></filter>
+            <filter id="luxBlurL"><feGaussianBlur stdDeviation="14"/></filter>
+            <filter id="luxGlow" x="-70%" y="-70%" width="240%" height="240%">
+              <feGaussianBlur stdDeviation="7" result="blurA"/>
+              <feGaussianBlur in="blurA" stdDeviation="3" result="blurB"/>
+              <feMerge>
+                <feMergeNode in="blurA"/>
+                <feMergeNode in="blurB"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <clipPath id="luxBoardClip">
+              <ellipse cx="270" cy="418" rx="178" ry="11"/>
+            </clipPath>
+          </defs>
+
+          <!-- Cinematic backlit spotlight -->
+          <ellipse cx="270" cy="170" rx="260" ry="130" fill="url(#luxSpot)"/>
+
+          <!-- Backlit glow rings -->
+          <circle cx="270" cy="240" r="222" fill="url(#luxRing)"/>
+          <circle cx="270" cy="240" r="184" fill="none" stroke="rgba(212,174,94,0.46)" stroke-width="2.2" filter="url(#luxBlur)"/>
+          <circle cx="270" cy="240" r="152" fill="none" stroke="rgba(212,174,94,0.24)" stroke-width="1.1"/>
+          <circle cx="270" cy="240" r="118" fill="none" stroke="rgba(212,174,94,0.14)" stroke-width="0.8"/>
+
+          <!-- Cinematic atmospheric depth haze (warm gold backdrop blur) -->
+          <ellipse cx="270" cy="270" rx="210" ry="190" fill="#f3e6c2" opacity="0.16" filter="url(#luxBlurL)"/>
+          <!-- Soft central bloom behind candlesticks -->
+          <ellipse cx="270" cy="300" rx="118" ry="170" fill="#d4ae5e" opacity="0.22" filter="url(#luxBlurL)"/>
+          <!-- Tight luminous core -->
+          <ellipse cx="270" cy="280" rx="60"  ry="140" fill="#fff5d0" opacity="0.18" filter="url(#luxBlurL)"/>
+
+          <!-- Candlestick chart — 4 candles each side, flanking the king centerpiece -->
+          <g filter="url(#luxGlow)">
+            <!-- LEFT side candles (ascending toward center) -->
+            <rect x="86"  y="338" width="14" height="74"  rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <rect x="110" y="310" width="14" height="102" rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <rect x="138" y="276" width="14" height="136" rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <rect x="168" y="240" width="14" height="172" rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <!-- RIGHT side candles (descending away from center) -->
+            <rect x="358" y="240" width="14" height="172" rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <rect x="388" y="276" width="14" height="136" rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <rect x="416" y="310" width="14" height="102" rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <rect x="440" y="338" width="14" height="74"  rx="3" fill="url(#luxCandle)" stroke="#a17a23" stroke-width="0.6"/>
+            <!-- Inner shine streaks (centered on each candle) -->
+            <line x1="89"  y1="344" x2="89"  y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="113" y1="316" x2="113" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="141" y1="282" x2="141" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="171" y1="246" x2="171" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="361" y1="246" x2="361" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="391" y1="282" x2="391" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="419" y1="316" x2="419" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+            <line x1="443" y1="344" x2="443" y2="408" stroke="#fff5d6" stroke-width="1.4" opacity="0.62"/>
+          </g>
+
+          <!-- ════ PREMIUM 3D CHESS KING centerpiece (clean cinematic form, no cross) ════ -->
+          <g transform="translate(218 158)" filter="url(#luxDropL)">
+
+            <!-- Top finial sphere (replaces cross — smooth luxury finial) -->
+            <circle cx="52" cy="20" r="12" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.9"/>
+            <ellipse cx="48" cy="15" rx="4.2" ry="2.6" fill="#ffffff" opacity="0.78"/>
+            <ellipse cx="48" cy="15" rx="1.6" ry="1"   fill="#ffffff"/>
+            <path d="M44,28 Q52,31 60,28" stroke="#1a1004" stroke-width="1.4" fill="none" opacity="0.44" stroke-linecap="round"/>
+
+            <!-- Finial stem -->
+            <path d="M48,32 L56,32 L55,42 L49,42 Z" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.7"/>
+
+            <!-- Crown bulb (smooth ellipsoid) -->
+            <ellipse cx="52" cy="54" rx="22" ry="11" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.95"/>
+            <ellipse cx="52" cy="49" rx="20" ry="2"  fill="#fff7dc" opacity="0.66"/>
+            <ellipse cx="52" cy="63" rx="20" ry="1.8" fill="#1a1004" opacity="0.42"/>
+
+            <!-- Tapered neck (clean trapezoid) -->
+            <path d="M38,66 L66,66 L70,82 L34,82 Z" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.8"/>
+            <path d="M39.5,68 L36.5,80" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.58"/>
+            <path d="M64.5,68 L67.5,80" stroke="#1a1004" stroke-width="1.8" stroke-linecap="round" opacity="0.46"/>
+
+            <!-- Shoulder bulge (smooth curve) -->
+            <path d="M22,84 L82,84 C82,98 70,108 52,108 C34,108 22,98 22,84 Z"
+                  fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.95" stroke-linejoin="round"/>
+            <ellipse cx="52" cy="84.5" rx="28" ry="1.7" fill="#fff7dc" opacity="0.64"/>
+            <path d="M22,106 Q52,112 82,106" stroke="#1a1004" stroke-width="1.6" fill="none" opacity="0.46" stroke-linecap="round"/>
+
+            <!-- Mid collar (single clean ring) -->
+            <ellipse cx="52" cy="114" rx="32" ry="5"  fill="url(#luxPodStrip)" stroke="#a17a23" stroke-width="0.9"/>
+            <ellipse cx="52" cy="112" rx="32" ry="1.4" fill="#fff7dc" opacity="0.72"/>
+            <path d="M20,118 Q52,121 84,118" stroke="#1a1004" stroke-width="1.3" fill="none" opacity="0.42" stroke-linecap="round"/>
+
+            <!-- Body shaft (cylindrical metal) -->
+            <path d="M22,120 L82,120 L72,208 L32,208 Z" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.95" stroke-linejoin="round"/>
+            <path d="M25,124 L33.5,204" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" fill="none" opacity="0.62"/>
+            <path d="M79,124 L70.5,204" stroke="#1a1004" stroke-width="2.6" stroke-linecap="round" fill="none" opacity="0.52"/>
+            <path d="M52,126 L52,202"   stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.16"/>
+
+            <!-- Lower bulge (smooth ellipsoid) -->
+            <ellipse cx="52" cy="216" rx="46" ry="10" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.95"/>
+            <ellipse cx="52" cy="210" rx="42" ry="1.6" fill="#fff7dc" opacity="0.64"/>
+            <path d="M8,222 Q52,228 96,222" stroke="#1a1004" stroke-width="1.6" fill="none" opacity="0.46" stroke-linecap="round"/>
+
+            <!-- Base flare -->
+            <path d="M12,228 L92,228 L84,250 L20,250 Z" fill="url(#luxAnimal)" stroke="#7a5612" stroke-width="0.95" stroke-linejoin="round"/>
+            <path d="M22,234 L82,234" stroke="#fff7dc" stroke-width="1.4" stroke-linecap="round" opacity="0.48"/>
+
+            <!-- Base disc (stands on podium) -->
+            <ellipse cx="52" cy="254" rx="58" ry="10" fill="url(#luxPodSide)" stroke="#a17a23" stroke-width="1.4"/>
+            <ellipse cx="52" cy="258" rx="60" ry="10" fill="url(#luxAnimal)"  stroke="#7a5612" stroke-width="1"/>
+            <ellipse cx="52" cy="256" rx="52" ry="6"  fill="#fff7dc" opacity="0.42"/>
+            <path d="M-6,264 Q52,269 110,264" stroke="#1a1004" stroke-width="1.8" fill="none" opacity="0.48" stroke-linecap="round"/>
+
+            <!-- Ground reflection -->
+            <ellipse cx="52" cy="266" rx="66" ry="3" fill="#3d2a08" opacity="0.32"/>
+
+            <!-- Cathedral ambient sheen -->
+            <ellipse cx="52" cy="158" rx="3" ry="80" fill="#ffffff" opacity="0.10"/>
+          </g>
+
+          <!-- Premium multi-tier podium with cinematic depth -->
+          <g transform="translate(0 358)" filter="url(#luxDropL)">
+            <!-- Stage floor reflection -->
+            <ellipse cx="270" cy="172" rx="252" ry="20" fill="#fff" opacity="0.40"/>
+            <ellipse cx="270" cy="172" rx="216" ry="14" fill="url(#luxPodTop)" opacity="0.55"/>
+
+            <!-- Widest base tier -->
+            <ellipse cx="270" cy="150" rx="246" ry="30" fill="url(#luxPodSide)" stroke="#a17a23" stroke-width="2"/>
+            <ellipse cx="270" cy="140" rx="246" ry="30" fill="url(#luxPodTop)" stroke="#d4ae5e" stroke-width="2.5"/>
+            <!-- Gold strip widest -->
+            <path d="M26,140 L514,140 L512,164 L28,164 Z" fill="url(#luxPodStrip)" opacity="0.78"/>
+            <line x1="30" y1="142" x2="510" y2="142" stroke="#fff5d6" stroke-width="0.9" opacity="0.55"/>
+
+            <!-- Middle tier -->
+            <ellipse cx="270" cy="106" rx="214" ry="22" fill="url(#luxPodSide)" stroke="#a17a23" stroke-width="1.8"/>
+            <ellipse cx="270" cy="98"  rx="214" ry="22" fill="url(#luxPodTop)" stroke="#d4ae5e" stroke-width="2"/>
+            <!-- Gold strip middle -->
+            <path d="M60,98 L480,98 L478,118 L62,118 Z" fill="url(#luxPodStrip)" opacity="0.66"/>
+            <line x1="64" y1="100" x2="476" y2="100" stroke="#fff5d6" stroke-width="0.9" opacity="0.55"/>
+
+            <!-- Top tier (statues stand here) -->
+            <ellipse cx="270" cy="66" rx="184" ry="16" fill="url(#luxPodSide)" stroke="#a17a23" stroke-width="1.6"/>
+            <ellipse cx="270" cy="60" rx="184" ry="16" fill="url(#luxPodTop)" stroke="#d4ae5e" stroke-width="2"/>
+
+            <!-- Inner gold rim on top -->
+            <ellipse cx="270" cy="60" rx="160" ry="12" fill="none" stroke="#d4ae5e" stroke-width="1.4" opacity="0.72"/>
+            <!-- Top highlight -->
+            <ellipse cx="270" cy="56" rx="140" ry="5" fill="#fff" opacity="0.58"/>
+          </g>
+
+          <!-- ════ Subtle premium chessboard integration on podium top tier ════ -->
+          <g clip-path="url(#luxBoardClip)" opacity="0.16">
+            <!-- Outer ring (perspective-compressed squares) -->
+            <rect x="100" y="404" width="46" height="9"  fill="#1a1004"/>
+            <rect x="192" y="404" width="46" height="9"  fill="#1a1004"/>
+            <rect x="284" y="404" width="46" height="9"  fill="#1a1004"/>
+            <rect x="376" y="404" width="46" height="9"  fill="#1a1004"/>
+            <!-- Inner ring (offset for chess pattern) -->
+            <rect x="146" y="416" width="46" height="9"  fill="#1a1004"/>
+            <rect x="238" y="416" width="46" height="9"  fill="#1a1004"/>
+            <rect x="330" y="416" width="46" height="9"  fill="#1a1004"/>
+            <!-- Faint light-square chrome accents -->
+            <rect x="146" y="404" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+            <rect x="238" y="404" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+            <rect x="330" y="404" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+            <rect x="100" y="416" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+            <rect x="192" y="416" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+            <rect x="284" y="416" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+            <rect x="376" y="416" width="46" height="9"  fill="#fff7dc" opacity="0.32"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="lux-photos">
+        <a href="about.html" class="lux-photo-card" aria-label="Z Trade Mentors">
+          <img src="assets/Male%20team-founders.jpg" alt="Z Trade Mentors" loading="lazy" />
+        </a>
+        <a href="about.html" class="lux-photo-card" aria-label="Education and Research Team">
+          <img src="assets/Female%20team-mentors.jpg" alt="Education and Research Team" loading="lazy" />
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── TRUST BAR ── -->
+<section class="lux-trust" aria-label="Trusted by traders">
+  <div class="lux-trust-card">
+
+    <div class="lux-trust-item">
+      <span class="lux-trust-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      </span>
+      <div class="lux-trust-text">
+        <b>10K+</b>
+        <small>Students</small>
+      </div>
+    </div>
+
+    <div class="lux-trust-sep"></div>
+
+    <div class="lux-trust-item">
+      <span class="lux-trust-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/><path d="M9 17h6M12 6V3"/></svg>
+      </span>
+      <div class="lux-trust-text">
+        <b>AI Trade Bot</b>
+        <small>Research-based profit assurance</small>
+      </div>
+    </div>
+
+    <div class="lux-trust-sep"></div>
+
+    <div class="lux-trust-item">
+      <span class="lux-trust-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 18 0v3a2 2 0 0 1-2 2h-1v-6h3M3 12v3a2 2 0 0 0 2 2h1v-6H3"/></svg>
+      </span>
+      <div class="lux-trust-text">
+        <b>24/7</b>
+        <small>AI Market Support</small>
+      </div>
+    </div>
+
+    <div class="lux-trust-sep"></div>
+
+    <div class="lux-trust-item">
+      <span class="lux-trust-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </span>
+      <div class="lux-trust-text">
+        <b>100%</b>
+        <small>Trusted Platform</small>
+      </div>
+    </div>
+
+    <div class="lux-trust-sep"></div>
+
+    <div class="lux-trust-socials" aria-label="Follow channels">
+      <a href="https://www.facebook.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="Facebook">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </a>
+      <a href="https://x.com/Ztradeuni" target="_blank" rel="noopener" aria-label="X / Twitter">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </a>
+      <a href="https://youtube.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="YouTube">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.6 2.8 12 2.8 12 2.8s-4.6 0-6.8.2c-.6 0-1.9.1-3 1.3C1.3 5 1 7 1 7S.7 9.2.7 11.5v2.1c0 2.3.3 4.5.3 4.5s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.5 22.2 12 22.2 12 22.2s4.6 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.2.3-4.5v-2.1C23.3 9.2 23 7 23 7zm-13.4 9V8.6l8.1 3.7-8.1 3.7z"/></svg>
+      </a>
+      <a href="https://t.me/ztradeuniversity" target="_blank" rel="noopener" aria-label="Telegram">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg>
+      </a>
+    </div>
+
+    <a href="https://wa.me/17189730347" class="lux-trust-wa" target="_blank" rel="noopener" aria-label="Contact us on WhatsApp">
+      <span class="lux-trust-wa-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+      </span>
+      <div class="lux-trust-wa-text">
+        <b>Contact Us</b>
+        <small>On WhatsApp</small>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ── AI TOOLS ── -->
+<section class="lux-tools" id="about">
+  <div class="lux-tools-head">
+    <div class="lux-tools-eyebrow">AI Trading Tools</div>
+    <h2 class="lux-tools-title">Research-based tools for serious traders.</h2>
+    <p class="lux-tools-sub">Understand sentiment, analyse your own behaviour, and evaluate trade quality &mdash; all in one place.</p>
+  </div>
+  <div class="lux-tools-grid">
+
+    <a href="trader-assessment.html" class="lux-tool">
+      <span class="lux-tool-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <div class="lux-tool-name">Trader Self-Assessment</div>
+      <p class="lux-tool-desc">Discover your trader level, strengths, weaknesses, risk profile, and personalised learning roadmap.</p>
+      <span class="lux-tool-link">Start Assessment
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
+
+    <a href="ai-trade-assistant.html" class="lux-tool">
+      <span class="lux-tool-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="11" r="1.4"/><circle cx="15" cy="11" r="1.4"/><path d="M9 16h6M12 4V1"/></svg>
+      </span>
+      <div class="lux-tool-name">AI Trade Assistant</div>
+      <p class="lux-tool-desc">Structure, volatility, session, news-risk, and trade-quality guidance &mdash; before you enter.</p>
+      <span class="lux-tool-link">Audit Trade Idea
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
+
+    <a href="live-sentiment.html" class="lux-tool">
+      <span class="lux-tool-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </span>
+      <div class="lux-tool-name">Live Market Sentiment</div>
+      <p class="lux-tool-desc">Gold &amp; Bitcoin sentiment with factor-based confidence, market regime, and news reality filter.</p>
+      <span class="lux-tool-link">Check Sentiment
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
+
+    <a href="fundamentals.html" class="lux-tool">
+      <span class="lux-tool-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a12.5 12.5 0 0 1 3.2 9 12.5 12.5 0 0 1-3.2 9M12 3a12.5 12.5 0 0 0-3.2 9 12.5 12.5 0 0 0 3.2 9"/></svg>
+      </span>
+      <div class="lux-tool-name">Fundamental &amp; Technical Intelligence</div>
+      <p class="lux-tool-desc">Understand what moves Gold and Bitcoin through real-world fundamentals and technical market structure.</p>
+      <span class="lux-tool-link">Check Intelligence
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
+
+    <div class="lux-tool lux-tool-dual">
+      <span class="lux-tool-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+      </span>
+      <a href="weekly-report.html" class="lux-dual-cta">
+        <b>Weekly Report
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </b>
+        <span>Research-based weekly macro and market intelligence report.</span>
+      </a>
+      <a href="investment-opportunities.html" class="lux-dual-cta">
+        <b>Explore Investment Opportunities
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </b>
+        <span>Current early-access opportunities across crypto, commodities, AI and technology.</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── TRUSTED BY TRADERS ── -->
+<section class="lux-trusted" id="results">
+  <div class="lux-trusted-card" id="signals">
+
+    <div class="lux-king-visual" aria-hidden="true">
+      <svg viewBox="0 0 280 320" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="luxKingGrad" x1="0.18" y1="0" x2="0.56" y2="1">
+            <stop offset="0%"   stop-color="#fff7dc"/>
+            <stop offset="14%"  stop-color="#fbe5a8"/>
+            <stop offset="40%"  stop-color="#d4a850"/>
+            <stop offset="68%"  stop-color="#8c6c1f"/>
+            <stop offset="88%"  stop-color="#3d2a08"/>
+            <stop offset="100%" stop-color="#1a1004"/>
+          </linearGradient>
+          <linearGradient id="luxKingBase" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#fff5d0"/>
+            <stop offset="30%"  stop-color="#f0e6cb"/>
+            <stop offset="80%"  stop-color="#a17a23"/>
+            <stop offset="100%" stop-color="#3d2a08"/>
+          </linearGradient>
+          <filter id="luxKingShadow" x="-70%" y="-70%" width="240%" height="240%">
+            <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#3d2a08" flood-opacity="0.50"/>
+            <feDropShadow dx="0" dy="8"  stdDeviation="10" flood-color="#2a1c08" flood-opacity="0.32"/>
+            <feDropShadow dx="0" dy="2"  stdDeviation="3"  flood-color="#1a1004" flood-opacity="0.22"/>
+          </filter>
+        </defs>
+
+        <ellipse cx="140" cy="200" rx="110" ry="110" fill="url(#luxKingGrad)" opacity="0.10"/>
+
+        <g transform="translate(40 60)" opacity="0.32">
+          <rect x="0"   y="40" width="9" height="50" fill="#d4ae5e"/>
+          <rect x="14"  y="20" width="9" height="70" fill="#d4ae5e"/>
+          <rect x="28"  y="10" width="9" height="80" fill="#d4ae5e"/>
+          <rect x="170" y="60" width="9" height="40" fill="#d4ae5e"/>
+          <rect x="184" y="40" width="9" height="60" fill="#d4ae5e"/>
+          <rect x="198" y="20" width="9" height="80" fill="#d4ae5e"/>
+        </g>
+
+        <g filter="url(#luxKingShadow)">
+          <!-- Top finial sphere (replaces cross — smooth luxury finial) -->
+          <circle cx="140" cy="34" r="14" fill="url(#luxKingGrad)" stroke="#7a5612" stroke-width="0.9"/>
+          <ellipse cx="135" cy="28" rx="5" ry="3" fill="#ffffff" opacity="0.78"/>
+          <ellipse cx="135" cy="28" rx="2" ry="1.2" fill="#ffffff"/>
+          <path d="M130,44 Q140,48 150,44" stroke="#1a1004" stroke-width="1.6" fill="none" opacity="0.42" stroke-linecap="round"/>
+          <!-- Finial stem connecting to crown bulb -->
+          <path d="M134,48 L146,48 L144,58 L136,58 Z" fill="url(#luxKingGrad)" stroke="#7a5612" stroke-width="0.7"/>
+          <ellipse cx="140" cy="68" rx="28" ry="12" fill="url(#luxKingGrad)"/>
+          <path d="M120,76 L160,76 L156,98 L124,98 Z" fill="url(#luxKingGrad)"/>
+          <ellipse cx="140" cy="102" rx="36" ry="10" fill="url(#luxKingGrad)"/>
+          <path d="M114,108 L166,108 L158,200 L122,200 Z" fill="url(#luxKingGrad)"/>
+          <path d="M128,120 L130,194" stroke="#f7e0a8" stroke-width="3" opacity="0.45"/>
+          <ellipse cx="140" cy="208" rx="48" ry="14" fill="url(#luxKingGrad)"/>
+          <path d="M92,210 L188,210 L182,252 L98,252 Z" fill="url(#luxKingGrad)"/>
+          <ellipse cx="140" cy="258" rx="58" ry="14" fill="url(#luxKingBase)" stroke="#a17a23" stroke-width="2"/>
+          <ellipse cx="140" cy="262" rx="60" ry="14" fill="url(#luxKingGrad)"/>
+          <ellipse cx="140" cy="268" rx="64" ry="16" fill="url(#luxKingBase)" stroke="#a17a23" stroke-width="2"/>
+
+          <!-- ════ INSTITUTIONAL REALISM OVERLAY (matching hero king material language) ════ -->
+
+          <!-- Sphere bulb: hotspot + ambient undercut -->
+          <ellipse cx="131.5" cy="62" rx="3.6" ry="2" fill="#ffffff" opacity="0.86"/>
+          <ellipse cx="131.5" cy="62" rx="1.4" ry="0.8" fill="#ffffff"/>
+          <ellipse cx="140"   cy="60" rx="22" ry="1.8" fill="#fff7dc" opacity="0.50"/>
+          <path d="M115,77 Q140,82 165,77" stroke="#1a1004" stroke-width="2" fill="none" opacity="0.44" stroke-linecap="round"/>
+
+          <!-- Neck section: side chrome / shadow edges -->
+          <path d="M121.5,80 L125,96" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.62"/>
+          <path d="M158.5,80 L155,96" stroke="#1a1004" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+
+          <!-- Mid collar (cy=102): top chrome ring + undercut -->
+          <ellipse cx="140" cy="95.5" rx="32" ry="1.6" fill="#fff7dc" opacity="0.62"/>
+          <path d="M104,108 Q140,112 176,108" stroke="#1a1004" stroke-width="2" fill="none" opacity="0.44" stroke-linecap="round"/>
+
+          <!-- Body shaft: chrome left edge + dark right edge -->
+          <path d="M116,114 L124,194" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.62"/>
+          <path d="M164,114 L156,194" stroke="#1a1004" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.50"/>
+
+          <!-- Lower bulge (cy=208): top rim + deep undercut -->
+          <ellipse cx="140" cy="201" rx="44" ry="1.6" fill="#fff7dc" opacity="0.62"/>
+          <path d="M90,217 Q140,222 190,217" stroke="#1a1004" stroke-width="2" fill="none" opacity="0.44" stroke-linecap="round"/>
+
+          <!-- Flared base body: side edge lights -->
+          <path d="M94,214 L100,246" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.58"/>
+          <path d="M186,214 L180,246" stroke="#1a1004" stroke-width="2.2" stroke-linecap="round" opacity="0.50"/>
+
+          <!-- Base discs: chrome rings + bottom ambient occlusion -->
+          <ellipse cx="140" cy="254" rx="56" ry="1.8" fill="#fff7dc" opacity="0.58"/>
+          <ellipse cx="140" cy="265" rx="60" ry="1.6" fill="#fff7dc" opacity="0.45"/>
+          <path d="M74,274 Q140,280 206,274" stroke="#1a1004" stroke-width="2.2" fill="none" opacity="0.46" stroke-linecap="round"/>
+
+          <!-- Cathedral ambient sheen down center -->
+          <ellipse cx="140" cy="154" rx="4" ry="80" fill="#ffffff" opacity="0.10"/>
+        </g>
+
+        <g opacity="0.7">
+          <ellipse cx="60"  cy="288" rx="20" ry="8" fill="#d4ae5e"/>
+          <ellipse cx="100" cy="290" rx="22" ry="9" fill="#bfa056"/>
+          <ellipse cx="180" cy="290" rx="22" ry="9" fill="#bfa056"/>
+          <ellipse cx="220" cy="288" rx="20" ry="8" fill="#d4ae5e"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="lux-trusted-body">
+
+      <div class="lux-trusted-copy">
+        <h2>Trusted by Traders<br><span>Proven by Results</span></h2>
+        <p>Join a growing community of successful traders and experience the difference.</p>
+        <a href="#join" class="lux-btn-gold">
+          Join Now
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <div class="lux-stat">
+        <span class="lux-stat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <div class="lux-stat-value">+15,000+</div>
+        <div class="lux-stat-label">Members Joined</div>
+        <svg class="lux-stat-chart" viewBox="0 0 180 40" preserveAspectRatio="none">
+          <polyline points="4,32 24,28 44,22 64,24 84,18 104,14 124,16 144,8 164,6 176,2" fill="none" stroke="#c89c3f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="lux-stat">
+        <span class="lux-stat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </span>
+        <div class="lux-stat-value">Overall Profit</div>
+        <div class="lux-stat-label">Results</div>
+        <div class="lux-stat-desc">Our previous data confirms consistent results in overall profit.</div>
+        <svg class="lux-stat-chart" viewBox="0 0 180 40" preserveAspectRatio="none">
+          <g fill="#c89c3f">
+            <rect x="4"  y="22" width="14" height="16" rx="2"/>
+            <rect x="24" y="18" width="14" height="20" rx="2"/>
+            <rect x="44" y="14" width="14" height="24" rx="2"/>
+            <rect x="64" y="20" width="14" height="18" rx="2"/>
+            <rect x="84" y="10" width="14" height="28" rx="2"/>
+            <rect x="104" y="6" width="14" height="32" rx="2"/>
+            <rect x="124" y="12" width="14" height="26" rx="2"/>
+            <rect x="144" y="2" width="14" height="36" rx="2"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="lux-stat">
+        <span class="lux-stat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>
+        </span>
+        <div class="lux-stat-value">Daily Signal</div>
+        <div class="lux-stat-label">High Quality</div>
+        <div class="lux-stat-desc">Depend on only high-quality, research-based daily signals.</div>
+        <svg class="lux-stat-chart" viewBox="0 0 180 40" preserveAspectRatio="none">
+          <polyline points="4,28 24,24 44,18 64,22 84,12 104,16 124,8 144,12 164,4 176,2" fill="none" stroke="#c89c3f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── START YOUR JOURNEY ── -->
+<section class="lux-start" id="join">
+  <div class="lux-start-card">
+
+    <div class="lux-start-left">
+      <h2>Start Your Trading<br><span>Journey Today with Learning</span></h2>
+      <p>Join our platform for learning.</p>
+      <div class="lux-start-actions">
+        <a href="https://t.me/ztradeuniversity" class="lux-btn-dark" target="_blank" rel="noopener">
+          Start Learning
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="https://youtube.com/@ztradeuniversity" class="lux-yt-pill" target="_blank" rel="noopener" aria-label="Watch on YouTube">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="lux-target-visual" aria-hidden="true">
+      <svg viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="luxTargetRing" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f7e0a8"/>
+            <stop offset="100%" stop-color="#a17a23"/>
+          </linearGradient>
+          <linearGradient id="luxStand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f0e6cb"/>
+            <stop offset="100%" stop-color="#bca669"/>
+          </linearGradient>
+          <filter id="luxTargetShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#8c6c1f" flood-opacity="0.32"/>
+          </filter>
+        </defs>
+
+        <g filter="url(#luxTargetShadow)">
+          <ellipse cx="130" cy="232" rx="80" ry="14" fill="url(#luxStand)" stroke="#a17a23" stroke-width="2"/>
+          <ellipse cx="130" cy="222" rx="76" ry="10" fill="url(#luxStand)"/>
+        </g>
+
+        <g filter="url(#luxTargetShadow)" transform="translate(130 124)">
+          <circle r="90" fill="url(#luxTargetRing)" stroke="#a17a23" stroke-width="2"/>
+          <circle r="72" fill="#fff" stroke="#1a1410" stroke-width="3"/>
+          <circle r="60" fill="#1a1410"/>
+          <circle r="48" fill="#fff" stroke="#1a1410" stroke-width="2"/>
+          <circle r="36" fill="#1a1410"/>
+          <circle r="24" fill="url(#luxTargetRing)" stroke="#8c6c1f" stroke-width="2"/>
+          <circle r="12" fill="#1a1410"/>
+          <circle r="5"  fill="url(#luxTargetRing)"/>
+        </g>
+
+        <g filter="url(#luxTargetShadow)">
+          <line x1="200" y1="50" x2="135" y2="120" stroke="#1a1410" stroke-width="5" stroke-linecap="round"/>
+          <polygon points="135,120 142,118 144,128 138,134" fill="url(#luxTargetRing)" stroke="#8c6c1f" stroke-width="1"/>
+          <polygon points="200,50 214,52 206,40" fill="url(#luxTargetRing)" stroke="#8c6c1f" stroke-width="1"/>
+          <polygon points="200,50 198,64 210,58" fill="#fff" stroke="#8c6c1f" stroke-width="1"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="lux-start-right">
+      <h3>Learn Quality Trading</h3>
+      <p>More than 5 international languages.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text">
+          <b>Z Trade University</b>
+          <small>Trading Education</small>
+        </div>
+      </a>
+
+      <div class="footer-copy">&copy; 2024 Z Trade University. All rights reserved.</div>
+
+      <div class="footer-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <span class="footer-sep">|</span>
+        <a href="#">Terms of Service</a>
+      </div>
+
+      <div class="footer-socials">
+        <a href="https://x.com/Ztradeuni" class="soc-btn" aria-label="Twitter">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.5 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+        </a>
+        <a href="https://youtube.com/@ztradeuniversity" class="soc-btn" aria-label="YouTube">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.45a2.78 2.78 0 0 0 1.95-1.97A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+        </a>
+        <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" class="soc-btn" aria-label="Instagram">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+  document.getElementById('mobileMenu').addEventListener('click', function(e) {
+    if (e.target === this) toggleMenu();
+  });
+</script>
+
+<!-- ── PWA INSTALL PROMPT ── -->
+<style>
+  .ztu-install {
+    position: fixed; right: 16px; bottom: 16px; z-index: 9000;
+    display: inline-flex; align-items: stretch; gap: 0;
+    background: linear-gradient(135deg, #180a42 0%, #3d18a8 55%, #5b1ac8 100%);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(91,26,200,0.35), 0 2px 8px rgba(0,0,0,0.2);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    transform: translateY(20px); opacity: 0;
+    transition: transform .35s ease, opacity .35s ease;
+    max-width: calc(100vw - 32px);
+  }
+  .ztu-install.is-visible { transform: translateY(0); opacity: 1; }
+  .ztu-install-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 11px 14px 11px 13px;
+    background: transparent; border: 0; cursor: pointer;
+    color: #fff; font: inherit; text-align: left;
+  }
+  .ztu-install-icon {
+    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+    background: rgba(255,255,255,0.14);
+    display: flex; align-items: center; justify-content: center; color: #c6f000;
+  }
+  .ztu-install-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .ztu-install-text b { font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -.1px; }
+  .ztu-install-text i { font-size: 11px; font-weight: 600; font-style: normal; color: rgba(255,255,255,0.72); letter-spacing: .1px; margin-top: 2px; }
+  .ztu-install-x {
+    align-self: stretch; padding: 0 12px;
+    background: rgba(0,0,0,0.18); border: 0; cursor: pointer;
+    color: rgba(255,255,255,0.75); font-size: 18px; font-weight: 700; line-height: 1;
+  }
+  .ztu-install-x:hover { background: rgba(0,0,0,0.32); color: #fff; }
+  @media (max-width: 480px) {
+    .ztu-install { right: 12px; bottom: 12px; }
+    .ztu-install-text b { font-size: 12.5px; }
+    .ztu-install-text i { font-size: 10.5px; }
+  }
+</style>
+<div id="ztuInstall" class="ztu-install" hidden>
+  <button id="ztuInstallBtn" class="ztu-install-btn" type="button">
+    <span class="ztu-install-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+    </span>
+    <span class="ztu-install-text"><b>Install App</b><i>Z Trade University</i></span>
+  </button>
+  <button id="ztuInstallX" class="ztu-install-x" type="button" aria-label="Dismiss install prompt">&times;</button>
+</div>
+
+<script>
+/* ─── PWA: install prompt + service-worker registration (lightweight) ─── */
+(function () {
+  'use strict';
+
+  /* Register the service worker so the install criteria are satisfied. */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { /* silent */ });
+    });
+  }
+
+  var wrap = document.getElementById('ztuInstall');
+  var btn  = document.getElementById('ztuInstallBtn');
+  var btnX = document.getElementById('ztuInstallX');
+  if (!wrap || !btn) return;
+
+  /* Don't show inside an installed app instance */
+  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return;
+  if (window.navigator.standalone === true) return;
+
+  /* Honour a recent user dismissal for 7 days */
+  try {
+    var dismissed = localStorage.getItem('ztuInstallDismissed');
+    if (dismissed && (Date.now() - parseInt(dismissed, 10)) < 7 * 24 * 60 * 60 * 1000) return;
+  } catch (e) {}
+
+  var deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    wrap.hidden = false;
+    /* Trigger reflow so the CSS transition runs */
+    requestAnimationFrame(function () { wrap.classList.add('is-visible'); });
+  });
+
+  btn.addEventListener('click', function () {
+    if (!deferredPrompt) { wrap.hidden = true; return; }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function () {
+      deferredPrompt = null;
+      wrap.classList.remove('is-visible');
+      setTimeout(function () { wrap.hidden = true; }, 300);
+    });
+  });
+
+  btnX.addEventListener('click', function (e) {
+    e.stopPropagation();
+    wrap.classList.remove('is-visible');
+    setTimeout(function () { wrap.hidden = true; }, 300);
+    try { localStorage.setItem('ztuInstallDismissed', String(Date.now())); } catch (err) {}
+  });
+
+  window.addEventListener('appinstalled', function () {
+    deferredPrompt = null;
+    wrap.classList.remove('is-visible');
+    setTimeout(function () { wrap.hidden = true; }, 300);
+    try { localStorage.removeItem('ztuInstallDismissed'); } catch (e) {}
+  });
+})();
+</script>
+
+<script>
+/* ─── CONTENT PROTECTION (lightweight, parity with sentiment/fundamentals) ── */
+document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+document.addEventListener('keydown', function (e) {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) ||
+    (e.ctrlKey && e.key === 'U')
+  ) { e.preventDefault(); }
+});
+</script>
+</body>
+</html>
