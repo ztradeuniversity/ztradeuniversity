@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
@@ -14,8 +15,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy: #0b1120; --purple2: #7c3aed; --lime: #acd400;
-      --white: #ffffff; --text: #0d1526; --muted: #5a6580;
+      --navy: #1a1410; --purple2: #d4ae5e; --lime: #c89c3f;
+      --white: #ffffff; --text: #2b2520; --muted: #756347;
       --bg: #f5f6fa; --card-bg: #ffffff; --border: rgba(0,0,0,0.07);
     }
     body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -24,11 +25,11 @@
     header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
     nav { max-width: 900px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; }
     .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .logo-mark { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(150deg,#180f50,#3d18a8,var(--purple2)); display: flex; align-items: center; justify-content: center; }
+    .logo-mark { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(150deg,#3d2a08,#8c6c1f,var(--purple2)); display: flex; align-items: center; justify-content: center; }
     .logo-mark span { font-size: 17px; font-weight: 900; color: var(--lime); letter-spacing: -1px; }
     .logo-text b { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.2px; }
     .nav-home { font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; padding: 7px 16px; border-radius: 100px; border: 1px solid var(--border); transition: color .18s, border-color .18s; }
-    .nav-home:hover { color: var(--purple2); border-color: rgba(124,58,237,0.3); }
+    .nav-home:hover { color: var(--purple2); border-color: rgba(212,174,94,0.3); }
 
     /* HERO */
     .hero { background: var(--navy); padding: 52px 24px 44px; text-align: center; }
@@ -55,7 +56,7 @@
     .ft-copy a:hover { color: var(--lime); }
   </style>
 </head>
-<body>
+<body class="lux-themed">
 
 <header>
   <nav>

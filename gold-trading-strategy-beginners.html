@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,14 +16,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:    #0b1120;
-      --purple:  #5b1ac8;
-      --purple2: #7c3aed;
-      --purple3: #9f6ef5;
-      --lime:    #acd400;
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --purple3: #e6c987;
+      --lime:    #c89c3f;
       --white:   #ffffff;
-      --text:    #0d1526;
-      --muted:   #5a6580;
+      --text:    #2b2520;
+      --muted:   #756347;
       --border:  rgba(0,0,0,0.07);
       --gold:    #d97706;
       --gold2:   #f59e0b;
@@ -44,9 +45,9 @@
     .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
     .logo-shield {
       width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
-      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
       position: relative; overflow: hidden;
     }
     .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
@@ -55,8 +56,8 @@
     .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
     .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
     .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
-    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
-    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
     .nav-links a.active { font-weight: 700; color: var(--text); }
     .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
     .nav-join {
@@ -65,9 +66,9 @@
       font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
       text-decoration: none; border: 1.5px solid transparent;
       transition: background .22s, box-shadow .22s, transform .18s;
-      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
     }
-    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
     .nav-join svg { transition: transform .2s; flex-shrink: 0; }
     .nav-join:hover svg { transform: translateX(3px); }
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
@@ -134,7 +135,7 @@
     .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
     .article-wrap p:last-child { margin-bottom: 0; }
     .article-wrap strong { font-weight: 700; color: var(--text); }
-    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(124,58,237,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
     .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
 
     /* Lists */
@@ -206,14 +207,14 @@
 
     /* Soft CTA */
     .article-cta {
-      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #220d5a 100%);
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
       border-radius: 22px; padding: 40px 38px; margin: 48px 0;
       position: relative; overflow: hidden;
     }
     .article-cta::before {
       content: ''; position: absolute; top: -40px; right: -40px;
       width: 280px; height: 280px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 68%);
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
       pointer-events: none;
     }
     .article-cta-inner { position: relative; z-index: 1; }
@@ -270,15 +271,15 @@
     .back-link:hover svg { transform: translateX(-3px); }
 
     /* ── FOOTER ── */
-    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
     .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .footer-logo-mark {
       width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
-      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
       display: flex; align-items: center; justify-content: center;
       font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
-      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
     }
     .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
     .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
@@ -295,7 +296,7 @@
       display: flex; align-items: center; justify-content: center;
       text-decoration: none; transition: background .2s, border-color .2s;
     }
-    .soc-btn:hover { background: rgba(172,212,0,0.14); border-color: rgba(172,212,0,0.38); }
+    .soc-btn:hover { background: rgba(200,156,63,0.14); border-color: rgba(200,156,63,0.38); }
     .soc-btn svg { color: rgba(255,255,255,0.5); }
 
     /* Quick answer / featured snippet */
@@ -314,9 +315,9 @@
     .wg-item { background: #f8f9fd; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; padding: 16px 18px; display: flex; align-items: flex-start; gap: 12px; }
     .wg-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .wg-icon.gold   { background: rgba(245,158,11,0.12); }
-    .wg-icon.purple { background: rgba(124,58,237,0.1); }
-    .wg-icon.lime   { background: rgba(172,212,0,0.12); }
-    .wg-icon.navy   { background: rgba(11,17,32,0.08); }
+    .wg-icon.purple { background: rgba(212,174,94,0.1); }
+    .wg-icon.lime   { background: rgba(200,156,63,0.12); }
+    .wg-icon.navy   { background: rgba(26,20,16,0.08); }
     .wg-icon.teal   { background: rgba(15,118,110,0.1); }
     .wg-text b { display: block; font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
     .wg-text p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 0; }
@@ -331,7 +332,7 @@
       text-decoration: none; display: flex; flex-direction: column; gap: 6px;
       transition: background .2s, border-color .2s, transform .2s;
     }
-    .related-card:hover { background: var(--white); border-color: rgba(124,58,237,0.2); transform: translateY(-2px); border-bottom: 1px solid rgba(124,58,237,0.2); }
+    .related-card:hover { background: var(--white); border-color: rgba(212,174,94,0.2); transform: translateY(-2px); border-bottom: 1px solid rgba(212,174,94,0.2); }
     .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple3); }
     .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
     .related-arrow { font-size: 12px; font-weight: 700; color: var(--purple2); margin-top: 2px; }
@@ -345,7 +346,7 @@
     }
     .mobile-menu.open { display: flex; }
     .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
-    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
     .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
 
     /* ── RESPONSIVE ── */
@@ -375,7 +376,7 @@
   
 .table-wrap,.compare-wrap,.comparison-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}</style>
 </head>
-<body>
+<body class="lux-themed">
 
 <!-- ── NAVBAR ── -->
 <header>
@@ -389,10 +390,9 @@
     </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="about.html">About</a></li>
-      <li><a href="index.html#results">Results &amp; Analysis</a></li>
       <li><a href="articles.html" class="active">Articles</a></li>
       <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
     </ul>
     <a href="index.html#join" class="nav-join">
       Join Now
@@ -405,10 +405,9 @@
 <div class="mobile-menu" id="mobileMenu">
   <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
   <a href="index.html"         onclick="toggleMenu()">Home</a>
-  <a href="about.html"         onclick="toggleMenu()">About</a>
-  <a href="index.html#results" onclick="toggleMenu()">Results &amp; Analysis</a>
   <a href="articles.html"      onclick="toggleMenu()">Articles</a>
   <a href="index.html#join"    onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"         onclick="toggleMenu()">About</a>
 </div>
 
 <!-- ── ARTICLE HERO ── -->
@@ -480,15 +479,15 @@
         <div class="wg-text"><b>Strong Daily Range</b><p>Gold typically moves $20–$60 per day, offering real opportunity without needing scalping-level precision.</p></div>
       </div>
       <div class="wg-item">
-        <div class="wg-icon purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7c3aed"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></div>
+        <div class="wg-icon purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#d4ae5e"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></div>
         <div class="wg-text"><b>Clear Trending Behaviour</b><p>Gold follows trend logic well. When it trends, it tends to trend strongly — fewer endless sideways traps than many currency pairs.</p></div>
       </div>
       <div class="wg-item">
-        <div class="wg-icon lime"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#5a7000"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <div class="wg-icon lime"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#8c6c1f"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
         <div class="wg-text"><b>Predictable News Reactions</b><p>Gold reacts consistently to USD events like CPI and FOMC — once you learn the pattern, you can plan around it.</p></div>
       </div>
       <div class="wg-item">
-        <div class="wg-icon navy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7c3aed"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div class="wg-icon navy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#d4ae5e"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
         <div class="wg-text"><b>Available Everywhere</b><p>XAUUSD is on virtually every MT4/MT5 broker with tight spreads, high liquidity, and no restrictions on position direction.</p></div>
       </div>
       <div class="wg-item">
@@ -496,7 +495,7 @@
         <div class="wg-text"><b>Respects Key Price Levels</b><p>Support, resistance, and demand/supply zones work reliably on gold — arguably better than many forex majors.</p></div>
       </div>
       <div class="wg-item">
-        <div class="wg-icon teal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#0f766e"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></div>
+        <div class="wg-icon teal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#8c6c1f"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></div>
         <div class="wg-text"><b>Real-World Context</b><p>Gold's connection to inflation, rates, and geopolitics helps beginners understand the broader market — accelerating overall trading education.</p></div>
       </div>
     </div>

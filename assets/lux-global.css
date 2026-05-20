@@ -1,0 +1,2095 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Z TRADE UNIVERSITY — LUXURY GLOBAL DESIGN SYSTEM
+   File: /assets/lux-global.css
+
+   Loaded FIRST on every HTML page (right after <head>).
+   - Provides shared brand tokens (CSS custom properties)
+   - Provides safe global polish (scrollbar, selection, fonts)
+   - Provides opt-in luxury components (body.lux-themed, .lux-btn-shared, .lux-card-shared)
+   - NEVER overrides page-specific inline <style> blocks (those load after this
+     file and win on cascade order automatically)
+
+   ⚠ This file is BRAND-LAYER ONLY. It does NOT:
+   - touch any JS / API / route / form / dashboard logic
+   - rewrite any page-specific styling
+   - force a dark dashboard to become light or vice-versa
+   - change responsive breakpoints
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. BRAND TOKENS ───────────────────────────────────────────────────── */
+:root {
+  /* Cream / paper backgrounds */
+  --lux-cream:        #f6f3eb;
+  --lux-cream2:       #fbf8f1;
+  --lux-cream3:       #ede4cf;
+  --lux-paper:        #ffffff;
+
+  /* Gold scale (lightest → deepest) */
+  --lux-gold4:        #f7e0a8;
+  --lux-gold3:        #e6c987;
+  --lux-gold2:        #d4ae5e;
+  --lux-gold:         #c89c3f;
+  --lux-gold-deep:    #8c6c1f;
+  --lux-gold-soft:    #f3e6c2;
+
+  /* Ink / text scale */
+  --lux-ink:          #1a1410;
+  --lux-text:         #2b2520;
+  --lux-muted:        #756347;
+  --lux-muted-2:      #9c8a68;
+
+  /* Lines / borders */
+  --lux-line:         rgba(200,156,63,0.18);
+  --lux-line-strong:  rgba(200,156,63,0.38);
+  --lux-line-dark:    rgba(26,20,16,0.08);
+
+  /* Gradients */
+  --lux-grad-gold:        linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%);
+  --lux-grad-gold-soft:   linear-gradient(135deg, #f7e9c8 0%, #ecd49a 100%);
+  --lux-grad-cream:       linear-gradient(180deg, #fbf8f1 0%, #f6f3eb 100%);
+  --lux-grad-ink:         linear-gradient(135deg, #2b2520 0%, #1a1410 100%);
+
+  /* Shadow scale (warm gold-tinted) */
+  --lux-shadow-xs:    0 1px 3px rgba(0,0,0,0.04);
+  --lux-shadow-s:     0 4px 14px rgba(140,108,31,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --lux-shadow-m:     0 10px 28px rgba(140,108,31,0.10), 0 3px 8px rgba(0,0,0,0.05);
+  --lux-shadow-l:     0 22px 54px rgba(140,108,31,0.16), 0 6px 16px rgba(0,0,0,0.06);
+  --lux-shadow-xl:    0 30px 70px rgba(140,108,31,0.22), 0 10px 22px rgba(0,0,0,0.08);
+
+  /* Radii */
+  --lux-r-sm:  10px;
+  --lux-r-md:  14px;
+  --lux-r-lg:  20px;
+  --lux-r-xl:  28px;
+  --lux-r-pill: 100px;
+
+  /* Typography (Inter primary, Manrope display) */
+  --lux-font-sans:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --lux-font-display: 'Manrope', 'Inter', system-ui, sans-serif;
+  --lux-font-mono:    'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
+/* ── 2. SAFE GLOBAL POLISH (universally beneficial; never breaks layouts) ─ */
+
+html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+
+/* Premium selection highlight in brand gold */
+::selection {
+  background: rgba(200,156,63,0.30);
+  color: var(--lux-ink);
+}
+::-moz-selection {
+  background: rgba(200,156,63,0.30);
+  color: var(--lux-ink);
+}
+
+/* Subtle gold-tinted scrollbar (skipped on dashboards w/ their own scrollbars) */
+* {
+  scrollbar-color: rgba(200,156,63,0.55) transparent;
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--lux-gold3), var(--lux-gold-deep));
+  border-radius: 100px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--lux-gold2), var(--lux-gold));
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Smooth focus ring in brand gold for ALL focusable elements,
+   without changing layouts (only the outline color shifts) */
+:focus-visible {
+  outline: 2px solid var(--lux-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── 3. OPT-IN LUXURY THEME — body class="lux-themed" only ─────────────── */
+/* Pages that should fully adopt the luxury look (articles, about, privacy,
+   404, etc.) add `class="lux-themed"` to <body>. Dashboards/tools DO NOT
+   add this class — they keep their existing palette for data readability. */
+
+body.lux-themed {
+  background: var(--lux-cream);
+  color: var(--lux-text);
+  font-family: var(--lux-font-sans);
+}
+body.lux-themed h1,
+body.lux-themed h2,
+body.lux-themed h3,
+body.lux-themed h4 {
+  color: var(--lux-ink);
+  font-family: var(--lux-font-display);
+  letter-spacing: -.3px;
+}
+body.lux-themed a:not([class]) {
+  color: var(--lux-gold-deep);
+  text-decoration: underline;
+  text-decoration-color: rgba(200,156,63,0.42);
+  text-underline-offset: 3px;
+  transition: color .18s, text-decoration-color .18s;
+}
+body.lux-themed a:not([class]):hover {
+  color: var(--lux-gold);
+  text-decoration-color: var(--lux-gold);
+}
+body.lux-themed hr {
+  border: 0;
+  height: 1px;
+  background: var(--lux-line);
+  margin: 32px 0;
+}
+body.lux-themed blockquote {
+  border-left: 4px solid var(--lux-gold);
+  background: rgba(243,230,194,0.18);
+  border-radius: 0 var(--lux-r-md) var(--lux-r-md) 0;
+  padding: 18px 22px;
+  margin: 22px 0;
+  color: var(--lux-text);
+  font-style: italic;
+}
+body.lux-themed code {
+  background: rgba(200,156,63,0.10);
+  color: var(--lux-gold-deep);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--lux-font-mono);
+  font-size: 0.9em;
+}
+body.lux-themed pre {
+  background: var(--lux-ink);
+  color: var(--lux-cream2);
+  border-radius: var(--lux-r-md);
+  padding: 18px;
+  overflow-x: auto;
+}
+body.lux-themed table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 22px 0;
+  background: var(--lux-paper);
+  border-radius: var(--lux-r-md);
+  overflow: hidden;
+  box-shadow: var(--lux-shadow-s);
+}
+body.lux-themed th,
+body.lux-themed td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--lux-line);
+}
+body.lux-themed th {
+  background: var(--lux-cream3);
+  font-weight: 800;
+  color: var(--lux-ink);
+  font-size: 12.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+body.lux-themed tr:last-child td { border-bottom: none; }
+
+/* ── 4. REUSABLE LUXURY COMPONENTS (used by class name) ────────────────── */
+
+/* Container utility */
+.lux-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 640px) { .lux-container { padding: 0 18px; } }
+
+/* Section eyebrow label */
+.lux-eyebrow-shared {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--lux-gold-deep);
+}
+.lux-eyebrow-shared::before {
+  content: ''; width: 26px; height: 2px;
+  background: var(--lux-grad-gold); border-radius: 2px;
+}
+
+/* Premium gold button (shared) */
+.lux-btn-gold-shared {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 26px;
+  border-radius: var(--lux-r-pill);
+  background: var(--lux-grad-gold);
+  color: #fff !important;
+  text-decoration: none !important;
+  font-family: var(--lux-font-sans);
+  font-size: 14px; font-weight: 800; letter-spacing: .3px;
+  border: 0; cursor: pointer;
+  box-shadow: 0 12px 26px rgba(200,156,63,0.40), 0 2px 4px rgba(0,0,0,0.06);
+  transition: transform .18s, box-shadow .18s;
+  white-space: nowrap;
+}
+.lux-btn-gold-shared:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(200,156,63,0.50);
+}
+
+/* Premium white-bordered button (shared) */
+.lux-btn-white-shared {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 24px;
+  border-radius: var(--lux-r-pill);
+  background: var(--lux-paper);
+  border: 1px solid var(--lux-line);
+  color: var(--lux-ink) !important;
+  text-decoration: none !important;
+  font-family: var(--lux-font-sans);
+  font-size: 14px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--lux-shadow-s);
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+}
+.lux-btn-white-shared:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--lux-shadow-m);
+  border-color: var(--lux-line-strong);
+}
+
+/* Luxury card surface (shared) */
+.lux-card-shared {
+  background: var(--lux-paper);
+  border: 1px solid var(--lux-line);
+  border-radius: var(--lux-r-lg);
+  box-shadow: var(--lux-shadow-m);
+  padding: 24px;
+}
+
+/* Soft luxury surface (cream tinted) */
+.lux-surface-cream {
+  background: var(--lux-cream2);
+  border: 1px solid var(--lux-line);
+  border-radius: var(--lux-r-lg);
+}
+
+/* Dark luxury surface (for footers / dark dashboards' new accents) */
+.lux-surface-ink {
+  background: var(--lux-grad-ink);
+  color: var(--lux-cream2);
+  border-radius: var(--lux-r-lg);
+}
+
+/* Gold pill tag (for tags/categories) */
+.lux-tag-shared {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--lux-r-pill);
+  background: var(--lux-grad-gold-soft);
+  border: 1px solid var(--lux-line-strong);
+  color: var(--lux-gold-deep);
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.8px; text-transform: uppercase;
+}
+
+/* ── 5. UNIVERSAL LINK COLOR ACROSS BRAND (very light touch) ──────────── */
+/* We intentionally only color naked <a> tags (no class) inside content
+   areas marked with `.lux-content` so dashboards/nav are unaffected. */
+.lux-content a:not([class]) {
+  color: var(--lux-gold-deep);
+  text-decoration: underline;
+  text-decoration-color: rgba(200,156,63,0.40);
+  text-underline-offset: 3px;
+}
+.lux-content a:not([class]):hover {
+  color: var(--lux-gold);
+  text-decoration-color: var(--lux-gold);
+}
+
+/* ── 6. PRINT STYLES (clean luxury feel for printed articles) ─────────── */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .lux-btn-gold-shared, .lux-btn-white-shared { display: none !important; }
+}
+
+/* ── 7. REDUCED MOTION (accessibility — universal) ────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ── 8. AGGRESSIVE LEGACY-TEMPLATE OVERRIDES (body.lux-themed only) ──
+   These directly REPAINT the existing article/about/privacy/etc. template
+   from purple/navy/lime palette into luxury gold/cream — without rewriting
+   any page's HTML or local CSS. Page-local <style> blocks load before this
+   file is parsed at runtime, but our higher-specificity selectors (and
+   targeted !important on color/background only) win on cascade resolution.
+   Layout properties (width/height/margin/padding/grid/flex) are NEVER
+   overridden — so responsive behaviour stays intact.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* — Re-map the legacy article template CSS variables — */
+body.lux-themed {
+  --navy:    #1a1410 !important;
+  --navy2:   #2b2520 !important;
+  --purple:  #c89c3f !important;
+  --purple2: #d4ae5e !important;
+  --purple3: #e6c987 !important;
+  --lime:    #c89c3f !important;
+  --lime2:   #a17a23 !important;
+  --teal:    #8c6c1f !important;
+  --gold:    #c89c3f !important;
+  --gold2:   #d4ae5e !important;
+  --text:    #2b2520 !important;
+  --muted:   #756347 !important;
+  --hero-bg: #f6f3eb !important;
+  --hero-bg2:#fbf8f1 !important;
+}
+
+/* — Logo shield (purple gradient → luxury gold gradient) — */
+body.lux-themed .logo-shield,
+body.lux-themed .footer-logo-mark {
+  background: linear-gradient(150deg, #8c6c1f 0%, #c89c3f 55%, #e6c987 100%) !important;
+  box-shadow: 0 4px 16px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+body.lux-themed .logo-shield span,
+body.lux-themed .footer-logo-mark { color: #fff !important; }
+body.lux-themed .logo-shield::before { background: linear-gradient(180deg, rgba(255,255,255,0.20) 0%, transparent 60%) !important; }
+
+/* — Navbar header — */
+body.lux-themed header {
+  background: rgba(251,248,241,0.86) !important;
+  border-bottom: 1px solid rgba(200,156,63,0.18) !important;
+  box-shadow: 0 2px 18px rgba(140,108,31,0.06) !important;
+}
+body.lux-themed .nav-links a { color: #1a1410 !important; }
+body.lux-themed .nav-links a:hover { background: rgba(200,156,63,0.10) !important; color: #8c6c1f !important; }
+body.lux-themed .nav-links a.active { color: #8c6c1f !important; }
+body.lux-themed .nav-links a.active::after { background: linear-gradient(90deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important; }
+
+/* — Nav join button (navy → gold) — */
+body.lux-themed .nav-join {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 20px rgba(200,156,63,0.40), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+body.lux-themed .nav-join:hover {
+  background: linear-gradient(135deg, #f7e0a8 0%, #d4ae5e 50%, #a17a23 100%) !important;
+  box-shadow: 0 12px 26px rgba(200,156,63,0.52) !important;
+}
+
+/* — Hamburger / mobile menu — */
+body.lux-themed .hamburger span { background: #1a1410 !important; }
+body.lux-themed .mobile-menu { background: rgba(251,248,241,0.98) !important; }
+body.lux-themed .mobile-menu a { color: #1a1410 !important; }
+body.lux-themed .mobile-menu a:hover { background: rgba(200,156,63,0.10) !important; color: #8c6c1f !important; }
+
+/* — Article hero (only specific classes; preserve intentionally-dark heroes) — */
+body.lux-themed .article-hero,
+body.lux-themed .page-hero {
+  background: linear-gradient(180deg, #fbf8f1 0%, #f6f3eb 100%) !important;
+  color: #2b2520 !important;
+}
+body.lux-themed .article-hero h1,
+body.lux-themed .page-hero h1 { color: #1a1410 !important; }
+/* NOTE: removed the broad [class*="-hero"] wildcard — it was forcing
+   intentionally-dark heroes (.bb-hero, .live-hero etc.) to cream,
+   making their white-on-dark text invisible. Each page's hero now keeps
+   its designed palette. */
+
+/* — Article body / typography — */
+body.lux-themed article,
+body.lux-themed .article-body,
+body.lux-themed main { color: #2b2520 !important; }
+body.lux-themed article h2,
+body.lux-themed article h3,
+body.lux-themed .article-body h2,
+body.lux-themed .article-body h3 { color: #1a1410 !important; }
+
+/* — Boxes / callouts — */
+body.lux-themed .tip-box,
+body.lux-themed .quick-answer {
+  background: linear-gradient(135deg, #fbf6e6 0%, #f3e6c2 100%) !important;
+  border-left: 4px solid #c89c3f !important;
+  border-color: #c89c3f !important;
+}
+body.lux-themed .warning-box {
+  background: rgba(239,68,68,0.06) !important;
+  border-left: 4px solid #c89c3f !important;
+}
+body.lux-themed .tip-box strong,
+body.lux-themed .quick-answer strong { color: #8c6c1f !important; }
+
+/* — Step cards / related cards / generic content cards — */
+body.lux-themed .step-card,
+body.lux-themed .related-card,
+body.lux-themed .mistake-item {
+  background: #ffffff !important;
+  border: 1px solid rgba(200,156,63,0.18) !important;
+  box-shadow: 0 10px 28px rgba(140,108,31,0.10), 0 3px 8px rgba(0,0,0,0.05) !important;
+}
+body.lux-themed .step-card:hover,
+body.lux-themed .related-card:hover {
+  border-color: rgba(200,156,63,0.40) !important;
+  box-shadow: 0 16px 38px rgba(140,108,31,0.16) !important;
+}
+
+/* — Numbered badges ONLY — specific class allowlist (no wildcards) — */
+body.lux-themed .mistake-num,
+body.lux-themed .step-num,
+body.lux-themed .lesson-num,
+body.lux-themed .point-num,
+body.lux-themed .q-num,
+body.lux-themed .tip-num,
+body.lux-themed .item-num,
+body.lux-themed .card-num,
+body.lux-themed .num-badge,
+body.lux-themed .number-badge {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(200,156,63,0.40) !important;
+}
+
+/* — Defensive: never give a gold gradient bg to inline numeric/stat text — */
+body.lux-themed .rstat-num,
+body.lux-themed .stat-num,
+body.lux-themed .scard-num,
+body.lux-themed .metric-num,
+body.lux-themed .value-num,
+html body .rstat-num,
+html body .stat-num,
+html body .scard-num {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* — Status badges — */
+body.lux-themed .badge-good,
+body.lux-themed .positive { background: rgba(16,185,129,0.12) !important; color: #047857 !important; border: 1px solid rgba(16,185,129,0.22) !important; }
+body.lux-themed .caution  { background: rgba(245,158,11,0.14) !important; color: #8c6c1f !important; border: 1px solid rgba(200,156,63,0.30) !important; }
+body.lux-themed .demo,
+body.lux-themed .micro,
+body.lux-themed .std { background: rgba(243,230,194,0.50) !important; color: #8c6c1f !important; border: 1px solid rgba(200,156,63,0.22) !important; }
+
+/* — Article CTA / final CTA section — */
+body.lux-themed .article-cta,
+body.lux-themed [class*="cta-section"]:not(.lux-start) {
+  background: linear-gradient(135deg, #1a1410 0%, #3d2a08 60%, #2a1c08 100%) !important;
+  color: rgba(255,255,255,0.86) !important;
+}
+body.lux-themed .article-cta h2,
+body.lux-themed .article-cta h3,
+body.lux-themed [class*="cta-section"] h2 { color: #ffffff !important; }
+body.lux-themed .article-cta p,
+body.lux-themed [class*="cta-section"] p { color: rgba(255,255,255,0.72) !important; }
+
+/* — Telegram / WhatsApp action buttons (keep semantic color but luxify shadow) — */
+body.lux-themed .btn-tg-a,
+body.lux-themed .btn-tg-cta {
+  background: linear-gradient(135deg, #0088cc 0%, #0070ad 100%) !important;
+  box-shadow: 0 10px 26px rgba(0,136,204,0.42) !important;
+}
+body.lux-themed .btn-wa-a,
+body.lux-themed .btn-wa-cta {
+  background: linear-gradient(135deg, #25d366 0%, #1aa84f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 26px rgba(37,211,102,0.36) !important;
+}
+
+/* — Footer (dark luxury, gold logo) — */
+body.lux-themed footer {
+  background: linear-gradient(180deg, #1a1410 0%, #0b0905 100%) !important;
+  color: rgba(255,255,255,0.78) !important;
+  border-top: 1px solid rgba(200,156,63,0.18) !important;
+}
+body.lux-themed footer a { color: rgba(255,255,255,0.82) !important; }
+body.lux-themed footer a:hover { color: #e6c987 !important; }
+body.lux-themed footer .footer-copy { color: rgba(255,255,255,0.42) !important; }
+body.lux-themed .soc-btn,
+body.lux-themed footer .soc-btn {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(200,156,63,0.18) !important;
+  color: rgba(255,255,255,0.78) !important;
+}
+body.lux-themed .soc-btn:hover { background: rgba(200,156,63,0.18) !important; color: #fff !important; border-color: rgba(200,156,63,0.42) !important; }
+
+/* — General "primary action" buttons across articles — */
+body.lux-themed .btn-primary,
+body.lux-themed .btn-lime,
+body.lux-themed .btn-purple,
+body.lux-themed .article-btn {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 26px rgba(200,156,63,0.42) !important;
+  border: 0 !important;
+}
+
+/* — Tags / categories (rewriting purple pills) — */
+body.lux-themed .article-tag,
+body.lux-themed .category-tag,
+body.lux-themed .pill {
+  background: linear-gradient(135deg, #f7e9c8 0%, #ecd49a 100%) !important;
+  color: #8c6c1f !important;
+  border: 1px solid rgba(200,156,63,0.30) !important;
+}
+
+/* — Cover / hero badges — */
+body.lux-themed .hero-badge,
+body.lux-themed .article-meta-badge {
+  background: rgba(200,156,63,0.10) !important;
+  color: #8c6c1f !important;
+  border: 1px solid rgba(200,156,63,0.28) !important;
+}
+
+/* — Table of contents (articles often have one) — */
+body.lux-themed .toc,
+body.lux-themed .article-toc {
+  background: #ffffff !important;
+  border: 1px solid rgba(200,156,63,0.18) !important;
+  box-shadow: 0 4px 14px rgba(140,108,31,0.08) !important;
+}
+body.lux-themed .toc a { color: #2b2520 !important; }
+body.lux-themed .toc a:hover { color: #8c6c1f !important; }
+
+/* — Dashboard top nav (live-sentiment, fundamentals, weekly-report) —
+     Even though those dashboards don't carry .lux-themed (kept dark intentionally),
+     we still want their navbar to feel branded. We target the .site-nav class
+     used in those pages, with a SCOPED selector that does not touch the dashboard body. */
+body:not(.lux-themed) header.site-nav,
+body:not(.lux-themed) .site-nav {
+  border-bottom: 1px solid rgba(200,156,63,0.22) !important;
+}
+body:not(.lux-themed) .site-nav .nav-join,
+body:not(.lux-themed) .site-nav .nav-cta {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.18) inset !important;
+  border: 0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ── 9. DASHBOARD / TOOL-PAGE LUXURY BRAND CHROME ──
+   For pages that intentionally keep dark inner panels (live-sentiment,
+   fundamentals, weekly-report, investment-opportunities, articles,
+   trader-assessment, ai-trade-assistant): even though their inner panels
+   stay dark for data readability, the OUTER CHROME (navbar, footer,
+   buttons, brand accents) must visibly match the homepage luxury system.
+
+   These rules target high-specificity universally-used class names + tag
+   selectors. They use !important on color/background/border/shadow only
+   (never layout properties), so responsive grids and scrolling are intact.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* — Dashboard logo shield (whatever palette → luxury gold gradient) — */
+body:not(.lux-themed) .logo-shield,
+body:not(.lux-themed) .footer-logo-mark,
+body:not(.lux-themed) .lux-logo-shield {
+  background: linear-gradient(150deg, #8c6c1f 0%, #c89c3f 55%, #e6c987 100%) !important;
+  box-shadow: 0 4px 16px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+body:not(.lux-themed) .logo-shield span,
+body:not(.lux-themed) .footer-logo-mark { color: #fff !important; }
+
+/* — Dashboard navbar/header brand chrome — */
+body:not(.lux-themed) header {
+  border-bottom-color: rgba(200,156,63,0.22) !important;
+}
+
+/* — Dashboard nav-join / nav-cta — universally gold — */
+body:not(.lux-themed) .nav-join,
+body:not(.lux-themed) .nav-cta,
+body:not(.lux-themed) .lux-nav-join {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 20px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+  border: 0 !important;
+}
+body:not(.lux-themed) .nav-join:hover,
+body:not(.lux-themed) .nav-cta:hover,
+body:not(.lux-themed) .lux-nav-join:hover {
+  box-shadow: 0 12px 28px rgba(200,156,63,0.55) !important;
+}
+
+/* — Dashboard primary CTAs converted to gold — */
+body:not(.lux-themed) .btn-primary,
+body:not(.lux-themed) .btn-lime,
+body:not(.lux-themed) .btn-purple,
+body:not(.lux-themed) .btn-tg-cta {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 26px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+  border: 0 !important;
+}
+
+/* — Dashboard footer: warm ink instead of black — */
+body:not(.lux-themed) footer {
+  background: linear-gradient(180deg, #1a1410 0%, #0b0905 100%) !important;
+  border-top: 1px solid rgba(200,156,63,0.20) !important;
+  color: rgba(255,255,255,0.78) !important;
+}
+body:not(.lux-themed) footer a { color: rgba(255,255,255,0.82) !important; }
+body:not(.lux-themed) footer a:hover { color: #e6c987 !important; }
+
+/* — Dashboard inner panels: warm dark instead of cold black —
+     Only touches the BACKGROUND of dark panels with these specific
+     class names. Borders subtly gold-tinted. */
+body:not(.lux-themed) .lux-card,
+body:not(.lux-themed) .panel-dark,
+body:not(.lux-themed) .dashboard-card,
+body:not(.lux-themed) .dark-panel,
+body:not(.lux-themed) .stats-section,
+body:not(.lux-themed) .cta-section.dark {
+  border-color: rgba(200,156,63,0.16) !important;
+}
+
+/* — Dashboard purple-ish accents → gold (variable remap for those pages) — */
+body:not(.lux-themed) .nav-links a:hover,
+body:not(.lux-themed) .lux-nav-links a:hover {
+  color: #8c6c1f !important;
+}
+body:not(.lux-themed) .nav-links a.active::after {
+  background: linear-gradient(90deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+}
+
+/* — Dashboard hover-link unified gold — */
+body:not(.lux-themed) a.brand-link,
+body:not(.lux-themed) a.lux-link {
+  color: #8c6c1f !important;
+}
+
+/* — Dashboard scrollable code blocks / mono panels keep dark but warmer — */
+body:not(.lux-themed) pre,
+body:not(.lux-themed) .mono-panel {
+  background: #1a1410 !important;
+  color: #f5e8c4 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ── 10. ★ UNIVERSAL LUXURY DOMINATION ★ (applies EVERYWHERE) ──
+   This is the maximum-force final layer. It applies to ALL pages,
+   regardless of body class, hitting the most common button/component
+   class names used across the article template AND the dashboards.
+   Specificity is amplified via `html body` prefix + !important on
+   color/background/border/shadow ONLY. Layout never touched.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── DASHBOARD/TOOL ACTION BUTTONS (Start Assessment, Audit Trade Idea, etc.) ── */
+html body .start-btn,
+html body .restart-link,
+html body .btn-next,
+html body .audit-btn,
+html body .submit-btn,
+html body .cta-btn,
+html body button.cta-tg,
+html body a.cta-tg,
+html body button.lux-btn-gold,
+html body a.lux-btn-gold {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 12px 26px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+html body .start-btn:hover,
+html body .restart-link:hover,
+html body .btn-next:hover,
+html body .audit-btn:hover,
+html body .submit-btn:hover,
+html body .cta-btn:hover {
+  box-shadow: 0 16px 34px rgba(200,156,63,0.54), 0 1px 0 rgba(255,255,255,0.28) inset !important;
+  transform: translateY(-1px) !important;
+}
+
+/* — "Back" / secondary buttons → warm cream pill — */
+html body .btn-back,
+html body .back-btn,
+html body .secondary-btn {
+  background: #fbf8f1 !important;
+  color: #2b2520 !important;
+  border: 1px solid rgba(200,156,63,0.28) !important;
+  box-shadow: 0 4px 14px rgba(140,108,31,0.10) !important;
+}
+
+/* — Scale / option buttons (assessment quiz answers etc.) → cream with gold hover — */
+html body .scale-btn,
+html body .option-btn,
+html body .choice-btn {
+  background: #ffffff !important;
+  color: #2b2520 !important;
+  border: 1.5px solid rgba(200,156,63,0.22) !important;
+  box-shadow: 0 2px 8px rgba(140,108,31,0.06) !important;
+}
+html body .scale-btn:hover,
+html body .option-btn:hover,
+html body .choice-btn:hover,
+html body .scale-btn.is-selected,
+html body .scale-btn.selected,
+html body .scale-btn.active {
+  background: linear-gradient(135deg, #fbe5a8 0%, #d4ae5e 100%) !important;
+  border-color: #c89c3f !important;
+  color: #1a1410 !important;
+  box-shadow: 0 8px 18px rgba(200,156,63,0.32) !important;
+}
+
+/* ── DASHBOARD CTA SECTIONS (universal warm-ink instead of cool-dark) ── */
+html body .cta-section,
+html body section.cta-section,
+html body .lux-cta-section,
+html body .promo-section {
+  background: linear-gradient(135deg, #1a1410 0%, #2b2520 50%, #3d2a08 100%) !important;
+  color: rgba(255,255,255,0.86) !important;
+  border: 1px solid rgba(200,156,63,0.18) !important;
+}
+html body .cta-section h1,
+html body .cta-section h2,
+html body .cta-section h3,
+html body .cta-section .cta-headline { color: #ffffff !important; }
+html body .cta-section p,
+html body .cta-section .cta-sub { color: rgba(255,255,255,0.76) !important; }
+
+/* — Telegram CTA action (kept blue, warmer shadow) — */
+html body .cta-btn.cta-tg,
+html body .btn-tg-cta,
+html body .btn-tg-a {
+  background: linear-gradient(135deg, #0088cc 0%, #0070ad 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 26px rgba(0,136,204,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+/* — WhatsApp CTA action (kept green, warmer shadow) — */
+html body .cta-btn.cta-wa,
+html body .btn-wa-cta,
+html body .btn-wa-a {
+  background: linear-gradient(135deg, #25d366 0%, #1aa84f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 26px rgba(37,211,102,0.40), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+
+/* ── DASHBOARD CARDS / PANELS → warm ink with gold borders ── */
+html body .card,
+html body .panel,
+html body .info-card,
+html body .stat-card,
+html body .quiz-card,
+html body .progress-card,
+html body .result-card,
+html body .assessment-card,
+html body .lux-card {
+  border-color: rgba(200,156,63,0.18) !important;
+  box-shadow: 0 10px 28px rgba(140,108,31,0.10), 0 3px 8px rgba(0,0,0,0.05) !important;
+}
+
+/* ── UNIVERSAL HEADER LUX TREATMENT ── */
+html body header,
+html body header.site-nav,
+html body header.lux-nav {
+  border-bottom: 1px solid rgba(200,156,63,0.22) !important;
+}
+html body header .logo-shield,
+html body header .lux-logo-shield {
+  background: linear-gradient(150deg, #8c6c1f 0%, #c89c3f 55%, #e6c987 100%) !important;
+  box-shadow: 0 4px 16px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+html body header .logo-shield span,
+html body header .lux-logo-shield img { filter: brightness(1.05); }
+
+/* ── UNIVERSAL FOOTER LUX TREATMENT ── */
+html body footer,
+html body .site-footer {
+  background: linear-gradient(180deg, #1a1410 0%, #0b0905 100%) !important;
+  border-top: 1px solid rgba(200,156,63,0.20) !important;
+  color: rgba(255,255,255,0.78) !important;
+}
+html body footer a,
+html body .site-footer a { color: rgba(255,255,255,0.82) !important; }
+html body footer a:hover,
+html body .site-footer a:hover { color: #e6c987 !important; }
+html body footer .footer-logo-mark,
+html body .footer-logo-mark {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(200,156,63,0.42) !important;
+}
+
+/* ── UNIVERSAL NAV BUTTONS (Join, Sign Up, etc.) ── */
+html body .nav-join,
+html body .nav-cta,
+html body .lux-nav-join,
+html body header .btn-primary,
+html body nav .btn-primary,
+html body nav button[type="submit"] {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 8px 20px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.18) inset !important;
+}
+
+/* ── UNIVERSAL HERO BUTTONS ── */
+html body .hero-cta,
+html body .hero-btn,
+html body .hero-action {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 24px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+
+/* ── UNIVERSAL TAGS / PILLS / BADGES → gold accent ── */
+html body .pill,
+html body .tag,
+html body .badge:not(.badge-good):not(.badge-bull):not(.badge-bear):not(.bullish):not(.bearish),
+html body .chip {
+  background: linear-gradient(135deg, #f7e9c8 0%, #ecd49a 100%) !important;
+  color: #8c6c1f !important;
+  border-color: rgba(200,156,63,0.30) !important;
+}
+
+/* ── UNIVERSAL FORM INPUTS → cream tinted, gold focus ── */
+html body input[type="text"],
+html body input[type="email"],
+html body input[type="tel"],
+html body input[type="number"],
+html body input[type="search"],
+html body textarea,
+html body select {
+  background: #fbf8f1 !important;
+  border-color: rgba(200,156,63,0.24) !important;
+  color: #2b2520 !important;
+}
+html body input[type="text"]:focus,
+html body input[type="email"]:focus,
+html body input[type="tel"]:focus,
+html body input[type="number"]:focus,
+html body input[type="search"]:focus,
+html body textarea:focus,
+html body select:focus {
+  border-color: #c89c3f !important;
+  box-shadow: 0 0 0 3px rgba(200,156,63,0.18) !important;
+  outline: 0 !important;
+}
+
+/* ── DASHBOARD INNER PANELS (sentiment/fundamentals/weekly) ──
+     Keep them readable but warm-ink instead of cold black. — */
+html body .lux-card.dark,
+html body .panel.dark,
+html body [class*="card"].dark-card {
+  background: linear-gradient(180deg, #2b2520 0%, #1a1410 100%) !important;
+  border-color: rgba(200,156,63,0.18) !important;
+}
+
+/* ── REMOVE LINGERING GENERIC PURPLE/INDIGO/BLUE SECTION BACKGROUNDS ── */
+html body [style*="background:#5b1ac8"],
+html body [style*="background: #5b1ac8"],
+html body [style*="background:#7c3aed"],
+html body [style*="background: #7c3aed"] {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+}
+
+/* ── PWA INSTALL PROMPT → gold luxury instead of purple ── */
+html body .ztu-install {
+  background: linear-gradient(135deg, #1a1410 0%, #2b2520 55%, #3d2a08 100%) !important;
+  box-shadow: 0 10px 30px rgba(140,108,31,0.38), 0 2px 8px rgba(0,0,0,0.22) !important;
+}
+html body .ztu-install-icon {
+  background: rgba(212,174,94,0.18) !important;
+  color: #e6c987 !important;
+}
+html body .ztu-install-text b { color: #ffffff !important; }
+html body .ztu-install-text i { color: rgba(230,201,135,0.72) !important; }
+html body .ztu-install-x {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.65) !important;
+}
+
+/* ── LINKS IN ARTICLE CONTENT → gold deep ── */
+html body article a:not(.btn):not([class*="btn"]):not([class*="cta"]),
+html body main a:not(.btn):not([class*="btn"]):not([class*="cta"]):not(.logo):not(.nav-join):not([class*="nav-"]) {
+  color: #8c6c1f !important;
+}
+html body article a:hover,
+html body main a:not(.logo):not([class*="nav-"]):hover { color: #c89c3f !important; }
+
+/* ── GENERIC "SUCCESS / PRIMARY" BUTTON CLASSES UNIVERSALLY GOLD ── */
+html body .btn-success,
+html body .btn-primary,
+html body button.primary,
+html body input[type="submit"],
+html body button[type="submit"] {
+  background: linear-gradient(135deg, #e6c987 0%, #c89c3f 50%, #8c6c1f 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 24px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.20) inset !important;
+}
+
+/* ── ANY SVG ELEMENT WITH PURPLE/BLUE STROKE/FILL → reset to gold (cosmetic) ── */
+html body svg [stroke="#5b1ac8"],
+html body svg [stroke="#7c3aed"] { stroke: #c89c3f !important; }
+html body svg [fill="#5b1ac8"],
+html body svg [fill="#7c3aed"]   { fill: #c89c3f !important; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ── 11. ★ READABILITY & CONTRAST GUARANTEE LAYER ★
+   Final pass ensuring text is always readable against its surface,
+   regardless of which luxury color combination is in play.
+   No layout changes — only text/icon colors are adjusted for AA contrast.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── DARK SURFACES → cream/white text always ──
+   Selectors that we know are dark luxury surfaces. Force their text
+   to be high-contrast cream/white. */
+html body .dark-card,
+html body .robot-visual,
+html body .robot-feat,
+html body .cta-section,
+html body .lux-cta-section,
+html body .article-cta,
+html body .step-block,
+html body .scard,
+html body .stats-section,
+html body footer,
+html body .site-footer,
+html body .lux-trust-card.dark,
+html body .panel-dark {
+  /* Ensure body text within is light by default */
+  color: rgba(255,255,255,0.86) !important;
+}
+html body .dark-card h2,
+html body .dark-card h3,
+html body .dark-card h4,
+html body .robot-visual h2,
+html body .robot-visual h3,
+html body .robot-visual h4,
+html body .robot-visual .robot-title,
+html body .robot-feat h3,
+html body .robot-feat h4,
+html body .robot-feat b,
+html body .robot-feat strong,
+html body .cta-section h1,
+html body .cta-section h2,
+html body .cta-section h3,
+html body .article-cta h1,
+html body .article-cta h2,
+html body .article-cta h3,
+html body .step-block h2,
+html body .step-block h3,
+html body .step-block h4,
+html body .scard h3,
+html body .scard h4,
+html body .scard-label,
+html body footer h3,
+html body footer h4,
+html body .site-footer h3,
+html body .site-footer h4 {
+  color: #ffffff !important;
+}
+html body .dark-card p,
+html body .robot-visual p,
+html body .robot-feat p,
+html body .cta-section p,
+html body .article-cta p,
+html body .step-block p,
+html body .scard p,
+html body .scard-desc,
+html body footer p,
+html body .site-footer p {
+  color: rgba(255,255,255,0.72) !important;
+}
+
+/* ── GOLD GRADIENT BUTTONS → text always pure white ──
+   Targets every gold-gradient pill we apply (Section 8/9/10). */
+html body .lux-btn-gold,
+html body .lux-btn-gold-shared,
+html body .lux-nav-join,
+html body .nav-join,
+html body .nav-cta,
+html body .hero-cta,
+html body .hero-btn,
+html body .hero-action,
+html body .start-btn,
+html body .btn-next,
+html body .audit-btn,
+html body .submit-btn,
+html body .cta-btn,
+html body .btn-primary,
+html body .btn-lime,
+html body .btn-purple,
+html body .article-btn,
+html body .btn-tg-cta,
+html body button.primary,
+html body input[type="submit"],
+html body button[type="submit"] {
+  color: #ffffff !important;
+}
+html body .lux-btn-gold svg,
+html body .lux-btn-gold-shared svg,
+html body .nav-join svg,
+html body .hero-cta svg,
+html body .start-btn svg,
+html body .btn-next svg,
+html body .cta-btn svg,
+html body .btn-primary svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* ── GOLD-SOFT SURFACES (pills, tags, soft chips) → deep-gold text ──
+   These backgrounds are lighter so deep gold reads well, not white. */
+html body .lux-tag-shared,
+html body .pill,
+html body .tag,
+html body .badge:not(.badge-good):not(.badge-bull):not(.badge-bear):not(.bullish):not(.bearish),
+html body .chip,
+html body .lux-eyebrow,
+html body .article-tag,
+html body .category-tag {
+  color: #5a4410 !important;
+}
+
+/* ── CREAM/LIGHT SURFACES → warm-ink text ──
+   On bright cream paper, text must be deep warm ink for legibility.
+   These selectors are SCOPED to cream/light surfaces so dark cards
+   are not affected. */
+html body.lux-themed,
+html body.lux-themed > main,
+html body.lux-themed > article,
+html body.lux-themed .lux-card,
+html body.lux-themed .lux-card-shared,
+html body.lux-themed .related-card,
+html body.lux-themed .step-card,
+html body.lux-themed .mistake-item,
+html body.lux-themed .quick-answer,
+html body.lux-themed .tip-box,
+html body.lux-themed .info-card {
+  color: #2b2520 !important;
+}
+/* Only headings inside KNOWN cream/light surfaces get dark ink — NOT all
+   headings on the page (which would also hit dark cards like .learn-card). */
+html body.lux-themed .lux-card h1,
+html body.lux-themed .lux-card h2,
+html body.lux-themed .lux-card h3,
+html body.lux-themed .lux-card h4,
+html body.lux-themed .step-card h2,
+html body.lux-themed .step-card h3,
+html body.lux-themed .step-card h4,
+html body.lux-themed .related-card h2,
+html body.lux-themed .related-card h3,
+html body.lux-themed .related-card h4,
+html body.lux-themed .tip-box h2,
+html body.lux-themed .tip-box h3,
+html body.lux-themed .tip-box h4,
+html body.lux-themed .article-hero h1,
+html body.lux-themed .page-hero h1,
+html body.lux-themed .quick-answer h2,
+html body.lux-themed .quick-answer h3 {
+  color: #1a1410 !important;
+}
+
+/* — DARK CARDS on lux-themed pages → headings MUST be white — */
+html body.lux-themed .learn-card,
+html body.lux-themed .robot-feat,
+html body.lux-themed .robot-visual,
+html body.lux-themed .dark-card,
+html body.lux-themed .scard,
+html body.lux-themed .ib-card,
+html body.lux-themed .partner-card,
+html body.lux-themed .step-block,
+html body.lux-themed [class*="-card-dark"],
+html body.lux-themed [class*="card dark"] {
+  color: rgba(255,255,255,0.86) !important;
+}
+html body.lux-themed .learn-card h1,
+html body.lux-themed .learn-card h2,
+html body.lux-themed .learn-card h3,
+html body.lux-themed .learn-card h4,
+html body.lux-themed .learn-card h5,
+html body.lux-themed .robot-feat h1,
+html body.lux-themed .robot-feat h2,
+html body.lux-themed .robot-feat h3,
+html body.lux-themed .robot-feat h4,
+html body.lux-themed .robot-feat b,
+html body.lux-themed .robot-feat strong,
+html body.lux-themed .robot-visual h1,
+html body.lux-themed .robot-visual h2,
+html body.lux-themed .robot-visual h3,
+html body.lux-themed .robot-visual h4,
+html body.lux-themed .dark-card h1,
+html body.lux-themed .dark-card h2,
+html body.lux-themed .dark-card h3,
+html body.lux-themed .dark-card h4,
+html body.lux-themed .scard h2,
+html body.lux-themed .scard h3,
+html body.lux-themed .scard h4,
+html body.lux-themed .ib-card h2,
+html body.lux-themed .ib-card h3,
+html body.lux-themed .ib-card h4,
+html body.lux-themed .partner-card h2,
+html body.lux-themed .partner-card h3,
+html body.lux-themed .partner-card h4,
+html body.lux-themed .step-block h2,
+html body.lux-themed .step-block h3,
+html body.lux-themed .step-block h4 {
+  color: #ffffff !important;
+}
+/* — Body text inside dark cards on lux-themed pages → boost contrast — */
+html body.lux-themed .learn-card p,
+html body.lux-themed .robot-feat p,
+html body.lux-themed .robot-visual p,
+html body.lux-themed .dark-card p,
+html body.lux-themed .scard p,
+html body.lux-themed .ib-card p,
+html body.lux-themed .partner-card p,
+html body.lux-themed .step-block p {
+  color: rgba(255,255,255,0.74) !important;
+}
+
+/* ── STAT NUMBERS / METRIC VALUES → always high-contrast ──
+   On dark cards: pure white. On cream cards: deep ink. */
+html body .stat-num,
+html body .stat-value,
+html body .scard-num,
+html body .rstat-num,
+html body .metric-num,
+html body .lux-stat-value {
+  font-weight: 900 !important;
+}
+/* On dark surface, the number itself is white, but the unit/span accent stays gold */
+html body .robot-visual .rstat-num,
+html body .robot-visual .rstat-num span,
+html body .scard .scard-num,
+html body .stats-section .scard-num,
+html body .dark-card .stat-num {
+  color: #ffffff !important;
+}
+/* Numbers inside gold-soft pills (light cream-gold) — use deep ink */
+html body .lux-card-shared .stat-num,
+html body .lux-card-shared .metric-num,
+html body .lux-surface-cream .stat-num {
+  color: #1a1410 !important;
+}
+
+/* ── ALL LABELS UNDER STAT NUMBERS → readable muted cream on dark ── */
+html body .rstat-label,
+html body .scard-label,
+html body .stat-label,
+html body .metric-label,
+html body .lux-stat-label {
+  color: rgba(255,255,255,0.68) !important;
+}
+html body.lux-themed .stat-label,
+html body.lux-themed .metric-label {
+  color: #756347 !important;
+}
+
+/* ── HERO HEADLINES ON DARK → white with gold accent words ──
+   "Z Trade University" type headings — base white, gold accent kept gold. */
+html body .robot-section h1,
+html body .robot-section h2,
+html body .robot-section .robot-title,
+html body section.dark-hero h1,
+html body section.dark-hero h2 {
+  color: #ffffff !important;
+}
+/* Accent spans inside dark headings (the gold colored words) stay readable gold */
+html body .robot-section h1 .gold,
+html body .robot-section h1 span,
+html body section.dark-hero h1 span,
+html body h2 .lux-gold-text {
+  color: #e6c987 !important;
+  background: none !important;
+  -webkit-text-fill-color: #e6c987 !important;
+}
+
+/* ── ICONS on dark surfaces → soft gold ──
+   Generic icon containers on dark backgrounds get gold tone. */
+html body .dark-card .icon,
+html body .dark-card .feature-icon,
+html body .robot-feat .feat-icon,
+html body .scard-icon,
+html body footer .soc-btn svg {
+  color: #e6c987 !important;
+}
+html body .robot-feat .feat-icon svg {
+  color: #e6c987 !important;
+  stroke: #e6c987 !important;
+}
+
+/* ── FOOTER LINKS → cream with gold hover ── */
+html body footer a,
+html body .site-footer a {
+  color: rgba(255,255,255,0.84) !important;
+}
+html body footer a:hover,
+html body .site-footer a:hover {
+  color: #e6c987 !important;
+}
+html body footer .footer-copy,
+html body footer .legal,
+html body .site-footer .footer-copy {
+  color: rgba(255,255,255,0.50) !important;
+}
+
+/* ── FORM LABELS / FIELD LABELS → cream on dark, ink on cream ── */
+html body label,
+html body .form-label {
+  font-weight: 600 !important;
+}
+html body.lux-themed label,
+html body.lux-themed .form-label { color: #1a1410 !important; }
+html body:not(.lux-themed) .dark-card label,
+html body:not(.lux-themed) .robot-visual label,
+html body:not(.lux-themed) form.dark label { color: #ffffff !important; }
+html body input::placeholder,
+html body textarea::placeholder {
+  color: rgba(43,37,32,0.50) !important;
+}
+
+/* ── NAVBAR LINKS → ensure visible across both light and dark navbars ── */
+html body .nav-links a,
+html body .lux-nav-links a {
+  color: #1a1410 !important;
+}
+html body .nav-links a.active,
+html body .lux-nav-links a.active {
+  color: #8c6c1f !important;
+}
+html body .nav-links a:hover,
+html body .lux-nav-links a:hover {
+  color: #8c6c1f !important;
+}
+
+/* ── BORDER CONTRAST on dark stat boxes (about page robot stats) ──
+   Keep box visible against dark bg without making it gold-filled. */
+html body .robot-visual .rstat,
+html body .robot-visual .stat-box {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(212,174,94,0.20) !important;
+}
+
+/* ── BODY-LEVEL DEFAULT TEXT — DO NOT GLOBALLY FORCE ──
+   Removed previous rule that forced `body:not(.lux-themed)` to dark ink.
+   That rule was breaking dashboard pages (trader-assessment, ai-trade-assistant,
+   live-sentiment, fundamentals, weekly-report) which intentionally have DARK
+   backgrounds — and their own CSS already sets body color to white correctly.
+   Each page keeps its own designed body color (white on dark / ink on cream). */
+
+/* ════════════════════════════════════════════════════════════════════════
+   ── 12. ★ EXHAUSTIVE HERO / SUBTITLE / META READABILITY ★
+   On lux-themed pages, the page hero and article hero are now CREAM
+   (luxury aesthetic). But the original article template wrote their
+   subtitle/lead/meta CSS as `rgba(255,255,255,0.x)` (designed for the
+   old dark hero). That now renders WHITE on CREAM = invisible.
+
+   This section forces every common subtitle/lead/description/meta
+   class name to warm-ink text on lux-themed pages. Discovered via
+   programmatic scan of all 48 pages — covers every unique class
+   that uses rgba(255,255,255,...) in its color rule (and is not in
+   a confirmed dark-context like dashboards/footers/cards).
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── A. ARTICLE / PAGE HERO subtitle/lead/meta family ── */
+html body.lux-themed .article-desc,
+html body.lux-themed .article-lead,
+html body.lux-themed .article-subtitle,
+html body.lux-themed .article-meta,
+html body.lux-themed .article-meta-item,
+html body.lux-themed .article-tag,
+html body.lux-themed .page-hero-desc,
+html body.lux-themed .page-hero-eyebrow,
+html body.lux-themed .page-hero-sub,
+html body.lux-themed .hero-lead,
+html body.lux-themed .hero-desc,
+html body.lux-themed .hero-sub,
+html body.lux-themed .hero-subtitle,
+html body.lux-themed .hero-meta,
+html body.lux-themed .hero-meta-item,
+html body.lux-themed .lead,
+html body.lux-themed .subtitle,
+html body.lux-themed .page-subtitle,
+html body.lux-themed .bb-lead,
+html body.lux-themed .br-lead,
+html body.lux-themed .kw-lead,
+html body.lux-themed .article-hero p,
+html body.lux-themed .page-hero p {
+  color: rgba(43, 37, 32, 0.78) !important;
+}
+
+/* ── B. ICONS / DOTS / SEPARATORS in hero meta-items → warm gold ── */
+html body.lux-themed .article-meta-item svg,
+html body.lux-themed .hero-meta-item svg,
+html body.lux-themed .page-hero-meta svg {
+  color: #8c6c1f !important;
+  stroke: #8c6c1f !important;
+}
+
+/* ── C. HERO EYEBROWS / BADGES / TAGS on cream hero → deep gold ── */
+html body.lux-themed .article-hero .article-tag,
+html body.lux-themed .page-hero .page-hero-eyebrow,
+html body.lux-themed .article-hero .hero-badge,
+html body.lux-themed .page-hero .hero-badge,
+html body.lux-themed .article-hero .article-cat,
+html body.lux-themed .article-hero .article-category,
+html body.lux-themed .article-hero .category-badge {
+  background: rgba(200,156,63,0.12) !important;
+  border-color: rgba(200,156,63,0.32) !important;
+  color: #8c6c1f !important;
+}
+
+/* ── D. HERO H1 ACCENT SPANS (the gold-gradient styled words) ──
+   Sometimes the inline CSS uses background-clip:text on a span inside h1.
+   On cream bg, those need to read as solid deep gold (not transparent). */
+html body.lux-themed .article-hero h1 span,
+html body.lux-themed .article-hero h1 .gold,
+html body.lux-themed .article-hero h1 .accent,
+html body.lux-themed .article-hero h1 .hx,
+html body.lux-themed .page-hero h1 span,
+html body.lux-themed .page-hero h1 .gold,
+html body.lux-themed .page-hero h1 .hx {
+  background: none !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: #8c6c1f !important;
+  color: #8c6c1f !important;
+}
+
+/* ── E. NOTES / CAPTIONS / EXAMPLES / TABLE-NOTES (article content) ── */
+html body.lux-themed .table-note,
+html body.lux-themed .example-note,
+html body.lux-themed .diagram-note,
+html body.lux-themed .ex-label,
+html body.lux-themed .ex-value,
+html body.lux-themed .clarity-caption,
+html body.lux-themed .wl-reasons,
+html body.lux-themed .wl-scenario-note,
+html body.lux-themed .wl-win,
+html body.lux-themed .wl-score-head,
+html body.lux-themed .sm-name,
+html body.lux-themed .reality-title,
+html body.lux-themed .tech-why,
+html body.lux-themed .tech-expose-toggle,
+html body.lux-themed .cg-range,
+html body.lux-themed .chev,
+html body.lux-themed .im-read,
+html body.lux-themed .fund-explain,
+html body.lux-themed .tf-dash-val,
+html body.lux-themed .tf-ticker,
+html body.lux-themed .neut,
+html body.lux-themed .data-note,
+html body.lux-themed .field-note,
+html body.lux-themed .info-note,
+html body.lux-themed .meta-info,
+html body.lux-themed .caption,
+html body.lux-themed .helper-text,
+html body.lux-themed .small-text,
+html body.lux-themed .micro-text {
+  color: rgba(43, 37, 32, 0.72) !important;
+}
+
+/* ── E2. RESTORE LIGHT TEXT inside DARK EMBEDDED CONTAINERS on lux-themed pages ──
+   Section E above forces these elements dark-ink to fix white-on-cream issues.
+   But these same classes live INSIDE dark navy boxes (.example-box, .compare-box,
+   .candle-diagram, .diagram-box, .journal-box, .session-box, .trade-example,
+   .dark-box, .section-dark, .section-dark2, etc.)
+   Dark ink on dark navy = completely invisible. Restore white/light colors here.
+
+   FOUNDATIONAL FIX: Set base text color on dark container elements.
+   Children that don't have explicit color rules inherit white text.
+   Children that DO have explicit inline CSS color rules will keep their own colors
+   (explicit rules beat inherited values even when inherited via !important parent). */
+html body.lux-themed .example-box,
+html body.lux-themed .compare-box,
+html body.lux-themed .candle-diagram,
+html body.lux-themed .diagram-box,
+html body.lux-themed .journal-box,
+html body.lux-themed .session-box,
+html body.lux-themed .trade-example,
+html body.lux-themed .entry-box,
+html body.lux-themed .signal-box,
+html body.lux-themed .trade-box,
+html body.lux-themed .news-box,
+html body.lux-themed .dark-box,
+html body.lux-themed .section-dark,
+html body.lux-themed .section-dark2 { color: rgba(255,255,255,0.80) !important; }
+
+/* Headings inside dark containers — override lux-global's article h2/h3 !important rule */
+html body.lux-themed .example-box h1,
+html body.lux-themed .example-box h2,
+html body.lux-themed .example-box h3,
+html body.lux-themed .example-box h4,
+html body.lux-themed .compare-box h1,
+html body.lux-themed .compare-box h2,
+html body.lux-themed .compare-box h3,
+html body.lux-themed .compare-box h4,
+html body.lux-themed .candle-diagram h2,
+html body.lux-themed .candle-diagram h3,
+html body.lux-themed .candle-diagram h4,
+html body.lux-themed .diagram-box h2,
+html body.lux-themed .diagram-box h3,
+html body.lux-themed .diagram-box h4,
+html body.lux-themed .journal-box h2,
+html body.lux-themed .journal-box h3,
+html body.lux-themed .session-box h2,
+html body.lux-themed .session-box h3,
+html body.lux-themed .trade-example h2,
+html body.lux-themed .trade-example h3,
+html body.lux-themed .trade-example h4,
+html body.lux-themed .dark-box h2,
+html body.lux-themed .dark-box h3,
+html body.lux-themed .section-dark h1,
+html body.lux-themed .section-dark h2,
+html body.lux-themed .section-dark h3,
+html body.lux-themed .section-dark h4,
+html body.lux-themed .section-dark2 h1,
+html body.lux-themed .section-dark2 h2,
+html body.lux-themed .section-dark2 h3,
+html body.lux-themed .section-dark2 h4 { color: rgba(255,255,255,0.95) !important; }
+
+/* Labels (ex-label / session-key) inside dark containers */
+html body.lux-themed .example-box .ex-label,
+html body.lux-themed .compare-box .ex-label,
+html body.lux-themed .candle-diagram .ex-label,
+html body.lux-themed .diagram-box .ex-label,
+html body.lux-themed .journal-box .ex-label,
+html body.lux-themed .session-box .ex-label,
+html body.lux-themed .entry-box .ex-label,
+html body.lux-themed .signal-box .ex-label,
+html body.lux-themed .trade-box .ex-label,
+html body.lux-themed .news-box .ex-label,
+html body.lux-themed .dark-box .ex-label,
+html body.lux-themed .section-dark .ex-label,
+html body.lux-themed .section-dark2 .ex-label,
+html body.lux-themed .session-box .session-key { color: rgba(255,255,255,0.55) !important; }
+
+/* Values (ex-value / session-val) inside dark containers */
+html body.lux-themed .example-box .ex-value,
+html body.lux-themed .compare-box .ex-value,
+html body.lux-themed .candle-diagram .ex-value,
+html body.lux-themed .diagram-box .ex-value,
+html body.lux-themed .journal-box .ex-value,
+html body.lux-themed .session-box .ex-value,
+html body.lux-themed .entry-box .ex-value,
+html body.lux-themed .signal-box .ex-value,
+html body.lux-themed .trade-box .ex-value,
+html body.lux-themed .news-box .ex-value,
+html body.lux-themed .dark-box .ex-value,
+html body.lux-themed .section-dark .ex-value,
+html body.lux-themed .section-dark2 .ex-value,
+html body.lux-themed .session-box .session-val { color: rgba(255,255,255,0.88) !important; }
+
+/* Semantic value colours: green / red / amber in dark containers */
+html body.lux-themed .example-box .ex-value.green,
+html body.lux-themed .compare-box .ex-value.green,
+html body.lux-themed .session-box .ex-value.green,
+html body.lux-themed .session-box .session-val.good { color: #4ade80 !important; }
+
+html body.lux-themed .example-box .ex-value.red,
+html body.lux-themed .compare-box .ex-value.red,
+html body.lux-themed .session-box .session-val.bad { color: #f87171 !important; }
+
+html body.lux-themed .example-box .ex-value.amber,
+html body.lux-themed .compare-box .ex-value.amber,
+html body.lux-themed .session-box .session-val.warn { color: rgba(212,174,94,0.92) !important; }
+
+/* Header eyebrow labels (example-label / session-label) inside dark containers.
+   var(--lime) gets converted to dark gold #8c6c1f by lux-global — insufficient contrast
+   on dark navy. Restore to bright legible gold (#d4ae5e). */
+html body.lux-themed .example-box .example-label,
+html body.lux-themed .compare-box .example-label,
+html body.lux-themed .candle-diagram .example-label,
+html body.lux-themed .diagram-box .example-label,
+html body.lux-themed .journal-box .example-label,
+html body.lux-themed .session-box .example-label,
+html body.lux-themed .session-box .session-label,
+html body.lux-themed .dark-box .example-label,
+html body.lux-themed .section-dark .example-label,
+html body.lux-themed .section-dark2 .example-label { color: rgba(212,174,94,0.88) !important; }
+
+/* Notes / captions inside dark containers */
+html body.lux-themed .example-box .example-note,
+html body.lux-themed .example-box .table-note,
+html body.lux-themed .example-box .diagram-note,
+html body.lux-themed .compare-box .example-note,
+html body.lux-themed .compare-box .table-note,
+html body.lux-themed .session-box .example-note,
+html body.lux-themed .session-box .table-note,
+html body.lux-themed .candle-diagram .diagram-note,
+html body.lux-themed .candle-diagram .example-note,
+html body.lux-themed .diagram-box .diagram-note,
+html body.lux-themed .diagram-box .example-note,
+html body.lux-themed .journal-box .table-note,
+html body.lux-themed .journal-box .example-note,
+html body.lux-themed .entry-box .example-note,
+html body.lux-themed .signal-box .example-note,
+html body.lux-themed .trade-box .example-note,
+html body.lux-themed .news-box .example-note,
+html body.lux-themed .dark-box .table-note,
+html body.lux-themed .dark-box .example-note,
+html body.lux-themed .dark-box .diagram-note,
+html body.lux-themed .section-dark .table-note,
+html body.lux-themed .section-dark .diagram-note,
+html body.lux-themed .section-dark2 .table-note,
+html body.lux-themed .section-dark2 .diagram-note { color: rgba(255,255,255,0.50) !important; }
+
+/* Win/loss / scenario labels inside dark containers */
+html body.lux-themed .example-box .wl-win,
+html body.lux-themed .example-box .wl-score-head,
+html body.lux-themed .example-box .wl-reasons,
+html body.lux-themed .example-box .wl-scenario-note,
+html body.lux-themed .compare-box .wl-win,
+html body.lux-themed .compare-box .wl-score-head,
+html body.lux-themed .session-box .wl-win,
+html body.lux-themed .section-dark .wl-win,
+html body.lux-themed .section-dark .wl-reasons,
+html body.lux-themed .section-dark2 .wl-win { color: rgba(255,255,255,0.80) !important; }
+
+/* Misc muted helpers inside dark containers */
+html body.lux-themed .example-box .meta-info,
+html body.lux-themed .example-box .data-note,
+html body.lux-themed .example-box .field-note,
+html body.lux-themed .example-box .info-note,
+html body.lux-themed .example-box .caption,
+html body.lux-themed .example-box .small-text,
+html body.lux-themed .example-box .micro-text,
+html body.lux-themed .compare-box .meta-info,
+html body.lux-themed .compare-box .data-note,
+html body.lux-themed .compare-box .caption,
+html body.lux-themed .session-box .meta-info,
+html body.lux-themed .session-box .caption,
+html body.lux-themed .diagram-box .caption,
+html body.lux-themed .candle-diagram .caption,
+html body.lux-themed .dark-box .caption,
+html body.lux-themed .dark-box .meta-info,
+html body.lux-themed .section-dark .caption,
+html body.lux-themed .section-dark .meta-info,
+html body.lux-themed .section-dark2 .caption,
+html body.lux-themed .section-dark2 .meta-info { color: rgba(255,255,255,0.45) !important; }
+
+/* Tech / chart specifics inside dark containers */
+html body.lux-themed .example-box .tf-dash-val,
+html body.lux-themed .example-box .tf-ticker,
+html body.lux-themed .compare-box .tf-dash-val,
+html body.lux-themed .compare-box .tf-ticker,
+html body.lux-themed .diagram-box .tf-dash-val,
+html body.lux-themed .session-box .tf-dash-val,
+html body.lux-themed .example-box .cg-range,
+html body.lux-themed .compare-box .cg-range,
+html body.lux-themed .example-box .neut,
+html body.lux-themed .compare-box .neut,
+html body.lux-themed .session-box .neut { color: rgba(255,255,255,0.70) !important; }
+
+/* sm-name / reality-title / tech-why inside dark containers */
+html body.lux-themed .example-box .sm-name,
+html body.lux-themed .example-box .reality-title,
+html body.lux-themed .example-box .tech-why,
+html body.lux-themed .compare-box .sm-name,
+html body.lux-themed .compare-box .reality-title,
+html body.lux-themed .session-box .sm-name,
+html body.lux-themed .dark-box .sm-name,
+html body.lux-themed .section-dark .sm-name,
+html body.lux-themed .section-dark .reality-title,
+html body.lux-themed .section-dark2 .sm-name,
+html body.lux-themed .section-dark2 .reality-title { color: rgba(255,255,255,0.85) !important; }
+
+/* fund-explain / im-read / clarity-caption inside dark containers */
+html body.lux-themed .example-box .fund-explain,
+html body.lux-themed .example-box .im-read,
+html body.lux-themed .example-box .clarity-caption,
+html body.lux-themed .compare-box .fund-explain,
+html body.lux-themed .compare-box .clarity-caption,
+html body.lux-themed .session-box .fund-explain,
+html body.lux-themed .dark-box .fund-explain,
+html body.lux-themed .section-dark .fund-explain,
+html body.lux-themed .section-dark2 .fund-explain { color: rgba(255,255,255,0.65) !important; }
+
+/* ── F. UNIVERSAL "*-desc" / "*-sub" / "*-note" / "*-meta" PATTERNS ──
+   Catch-all for any class ending in these patterns on lux-themed pages.
+   Uses attribute substring selectors which work in all modern browsers.
+   Dark containers excluded so white text is not overridden to dark ink. */
+html body.lux-themed [class$="-desc"]:not(.dark-card *):not(.lux-card *):not(.scard *):not(.lux-stat *):not(.example-box *):not(.compare-box *):not(.candle-diagram *):not(.diagram-box *):not(.journal-box *):not(.dark-box *):not(.section-dark *):not(.entry-box *):not(.signal-box *):not(.trade-box *):not(.news-box *),
+html body.lux-themed [class$="-sub"]:not(.dark-card *):not(.lux-card *):not(.scard *):not(.example-box *):not(.compare-box *):not(.candle-diagram *):not(.diagram-box *):not(.dark-box *):not(.section-dark *),
+html body.lux-themed [class$="-note"]:not(.example-box *):not(.compare-box *):not(.candle-diagram *):not(.diagram-box *):not(.journal-box *):not(.dark-box *):not(.section-dark *):not(.entry-box *):not(.signal-box *):not(.trade-box *):not(.news-box *),
+html body.lux-themed [class$="-caption"]:not(.example-box *):not(.compare-box *):not(.candle-diagram *):not(.diagram-box *):not(.dark-box *):not(.section-dark *),
+html body.lux-themed [class$="-meta-item"]:not(.example-box *):not(.compare-box *):not(.dark-box *):not(.section-dark *),
+html body.lux-themed [class$="-eyebrow"]:not(.lux-eyebrow):not(.ait-eyebrow),
+html body.lux-themed [class$="-lead"] {
+  color: rgba(43, 37, 32, 0.78) !important;
+}
+
+/* ── G. EYEBROWS / SECTION-LABELS on cream → deep gold (institutional) ── */
+html body.lux-themed [class$="-eyebrow"],
+html body.lux-themed .ait-eyebrow,
+html body.lux-themed .section-eyebrow,
+html body.lux-themed .eyebrow,
+html body.lux-themed .page-hero-eyebrow {
+  color: #8c6c1f !important;
+  font-weight: 800 !important;
+}
+
+/* ── H. SUBTLE GRAY TEXT (any low-opacity text) on cream pages →
+        force to readable warm-ink at proper opacity ── */
+html body.lux-themed .muted,
+html body.lux-themed .text-muted,
+html body.lux-themed .subtle,
+html body.lux-themed .faded,
+html body.lux-themed small.muted,
+html body.lux-themed .dim-text {
+  color: rgba(43, 37, 32, 0.68) !important;
+}
+
+/* ── I. ENSURE BUTTON / CTA TEXT ALWAYS READABLE WITHIN ARTICLE HEROES ── */
+html body.lux-themed .article-hero .cta-primary,
+html body.lux-themed .article-hero .cta-ghost,
+html body.lux-themed .article-hero .hero-btn,
+html body.lux-themed .page-hero .cta-primary,
+html body.lux-themed .page-hero .cta-ghost {
+  color: #ffffff !important;
+}
+html body.lux-themed .article-hero .cta-ghost,
+html body.lux-themed .page-hero .cta-ghost {
+  background: #ffffff !important;
+  border: 1px solid rgba(200,156,63,0.32) !important;
+  color: #1a1410 !important;
+  box-shadow: 0 4px 14px rgba(140,108,31,0.10) !important;
+}
+
+/* ── J. ARTICLE PARAGRAPHS within main content area → warm ink ── */
+html body.lux-themed article p,
+html body.lux-themed main > p,
+html body.lux-themed .article-content p,
+html body.lux-themed .article-body p,
+html body.lux-themed .post-content p {
+  color: #2b2520 !important;
+}
+
+/* ── K. INLINE STRONG / EMPHASIS in articles → keep readable ── */
+html body.lux-themed article strong,
+html body.lux-themed article b,
+html body.lux-themed .article-content strong,
+html body.lux-themed .article-content b {
+  color: #1a1410 !important;
+}
+
+/* ── L. "BACK TO ARTICLES" / similar nav links on light bg → deep gold ── */
+html body.lux-themed .back-link,
+html body.lux-themed .breadcrumb a,
+html body.lux-themed .nav-back,
+html body.lux-themed a.back {
+  color: #8c6c1f !important;
+}
+html body.lux-themed .back-link:hover,
+html body.lux-themed .breadcrumb a:hover,
+html body.lux-themed .nav-back:hover,
+html body.lux-themed a.back:hover {
+  color: #c89c3f !important;
+}
+
+/* ── M. ARTICLE BREADCRUMB on cream hero → warm ink / gold ── */
+html body.lux-themed .article-breadcrumb a {
+  color: rgba(140,108,31,0.82) !important;
+}
+html body.lux-themed .article-breadcrumb a:hover {
+  color: #8c6c1f !important;
+}
+html body.lux-themed .article-breadcrumb span {
+  color: rgba(43,37,32,0.30) !important;
+}
+
+/* ── N. ARTICLE CATEGORY BADGE on cream hero → gold accent ── */
+html body.lux-themed .article-cat-badge {
+  background: rgba(200,156,63,0.12) !important;
+  border-color: rgba(200,156,63,0.32) !important;
+  color: #8c6c1f !important;
+}
+
+/* ── O. ARTICLE HERO h1 em (accent word) on cream → deep gold ── */
+html body.lux-themed .article-hero h1 em {
+  background: none !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: #8c6c1f !important;
+  color: #8c6c1f !important;
+  font-style: normal !important;
+}
+
+/* ── P. CALLOUT-BOX LABELS on cream/light backgrounds → deep gold (readable) ──
+   After lux theming: .tip-box becomes cream-gold bg (#fbf6e6); .warning-box
+   becomes light-red tint. Their labels use var(--purple2) = #d4ae5e (too light
+   on cream) or var(--gold) = #c89c3f. Force to deep gold #8c6c1f for legibility. */
+html body.lux-themed .tip-box-label,
+html body.lux-themed .quick-answer-label { color: #8c6c1f !important; font-weight: 800 !important; }
+html body.lux-themed .warning-box-label { color: #7a3b10 !important; font-weight: 800 !important; }
+html body.lux-themed .tip-box p,
+html body.lux-themed .quick-answer p { color: #2b2520 !important; }
+html body.lux-themed .warning-box p { color: #2b2520 !important; }
+
+/* ── Q. COMPARE-LABEL / TABLE HEADER LABELS inside dark containers → bright gold ──
+   .compare-label typically uses var(--lime) = #c89c3f — OK on dark navy, but to
+   keep consistent with .example-label override in E2, ensure bright gold here too. */
+html body.lux-themed .compare-box .compare-label,
+html body.lux-themed .compare-box .table-label,
+html body.lux-themed .example-box .compare-label,
+html body.lux-themed .candle-diagram .diagram-label,
+html body.lux-themed .diagram-box .diagram-label,
+html body.lux-themed .journal-box .journal-label { color: rgba(212,174,94,0.88) !important; }
+
+/* ── R. ARTICLE-BODY PARAGRAPH LINKS → gold (not blue) on cream ── */
+html body.lux-themed .article-body a:not([class]),
+html body.lux-themed article a:not([class]),
+html body.lux-themed main > section a:not([class]) { color: #8c6c1f !important; }
+html body.lux-themed .article-body a:not([class]):hover,
+html body.lux-themed article a:not([class]):hover { color: #c89c3f !important; }
+
+/* ── S. REMOVED — foundational E2 .compare-box color !important covers th/td
+   inheritance correctly. Explicit nth-child column colors remain unaffected. */
+
+/* ── T. NON-STANDARD DARK HERO / DARK CTA SECTIONS → restore white text ──
+   Pages like best-brokers-account-creation-guide.html use .bb-hero / .bb-final
+   (dark navy) and trading-signals-explained-research-based-guide.html uses
+   .ts-hero / .ts-final-cta (dark navy). These intentionally dark sections must
+   NOT have dark ink forced onto their text by Section A / Section F wildcards.
+
+   FOUNDATIONAL: set base white on these dark containers (beats lux-global
+   "main { color: #2b2520 !important }" since these sections are outside <main>). */
+html body.lux-themed .bb-hero,
+html body.lux-themed .bb-final,
+html body.lux-themed .ts-hero,
+html body.lux-themed .ts-final-cta { color: rgba(255,255,255,0.80) !important; }
+
+/* Counter Section A: .bb-lead / .hero-lead are explicitly listed in Section A
+   as cream-hero text, but they actually live inside DARK hero sections. Restore. */
+html body.lux-themed .bb-hero .bb-lead { color: rgba(255,255,255,0.62) !important; }
+html body.lux-themed .ts-hero .hero-lead { color: rgba(255,255,255,0.62) !important; }
+
+/* Counter Section F wildcard [class$="-lead"]: .fci-lead inside dark CTA sections */
+html body.lux-themed .bb-final .fci-lead,
+html body.lux-themed .ts-final-cta .fci-lead { color: rgba(255,255,255,0.56) !important; }
+
+/* ── U. BEST-BROKERS PAGE LIGHT-SECTION LOW-CONTRAST LABELS ──
+   best-brokers-account-creation-guide.html uses class names (.s-eye, .rc-tag,
+   .bk-reg, .bb-bc a) that resolve to var(--purple2) = #d4ae5e (light gold)
+   on white/cream sections. Contrast ≈ 2.2:1 — fails WCAG AA. Force deep gold. */
+html body.lux-themed .s-eye { color: #8c6c1f !important; }
+html body.lux-themed .rc-tag { color: #8c6c1f !important; }
+html body.lux-themed .bk-reg { color: #8c6c1f !important; }
+html body.lux-themed .bb-bc a { color: rgba(140,108,31,0.82) !important; }
+html body.lux-themed .bb-bc a:hover { color: #8c6c1f !important; }
+
+/* ── V. ABOUT.HTML .ib-card IS A LIGHT (WHITE) CARD — NOT DARK ──
+   lux-global's dark-card list includes .ib-card (with white text) but about.html
+   uses .ib-card for white-background IB condition cards. Fix: restore dark ink.
+   Same specificity as dark-card rules but placed LATER → wins on cascade order. */
+html body.lux-themed .ib-card { color: #2b2520 !important; }
+html body.lux-themed .ib-card h2,
+html body.lux-themed .ib-card h3,
+html body.lux-themed .ib-card h4 { color: #1a1410 !important; }
+html body.lux-themed .ib-card p { color: #756347 !important; }
+html body.lux-themed .ib-card .ib-highlight { color: #8c6c1f !important; }
+
+/* ── W. RELATED ARTICLE CARDS — category label & arrow → deep gold ──
+   .related-cat and .related-arrow use page-specific color variables that
+   resolve to medium gold (#c89c3f ≈ 2.6:1) or light gold (#d4ae5e ≈ 2.2:1,
+   #e6c987 ≈ 1.5:1) on white related-card backgrounds — all fail WCAG AA
+   for small text. Force all to deep gold #8c6c1f = 4.4:1 on white. */
+html body.lux-themed .related-cat,
+html body.lux-themed .related-arrow { color: #8c6c1f !important; }
+
+/* ── X. SESSION-LABEL VARIANTS IN LIGHT SESSION-CARDS ──
+   best-gold-scalping-strategy-2025.html uses .session-card (light bg:
+   orange gradient / #f8f9fd / #fdf8f8) with .session-label.purple that
+   resolves to var(--purple2) = #d4ae5e ≈ 1.3:1 on orange tint — critical
+   failure. Force to deep gold for all session-label color variants inside
+   light .session-card elements. */
+html body.lux-themed .session-card .session-label,
+html body.lux-themed .session-card .session-label.purple,
+html body.lux-themed .session-card .session-label.gold,
+html body.lux-themed .session-card .session-label.teal { color: #8c6c1f !important; }
+
+/* ── Y. ABOUT.HTML — PAGE-HERO h1 ACCENT SPAN & SECTION-LABEL on cream ──
+   lux-global converts .page-hero to cream (#fbf8f1). Both the h1 span and
+   .section-label use var(--lime)=#c89c3f which gives ~2.4:1 on cream —
+   fails WCAG AA even for large text (3:1 needed). Force to deep gold.
+   Restore bright gold for .section-label instances inside dark-section
+   wrappers where it needs to stay legible against navy backgrounds. */
+html body.lux-themed .page-hero h1 span { color: #8c6c1f !important; }
+html body.lux-themed .section-label { color: #8c6c1f !important; }
+html body.lux-themed .section-dark .section-label,
+html body.lux-themed .section-dark2 .section-label { color: rgba(212,174,94,0.90) !important; }
+
+/* ── Z. FAQ "Q:" PREFIX — universal deep gold ──
+   .faq-q::before {content:'Q: '} uses 30+ different page-level color vars.
+   Many resolve to values that fail WCAG AA on cream article backgrounds:
+     --gold / --cyan = #c89c3f → 2.4:1  |  --green = #10b981 → 2.4:1
+     --purple2 / --psy2 = #d4ae5e → 2.2:1  |  --amb = #ca8a04 → 2.78:1
+     --orange = #ea580c → 3.38:1  |  --tl = #0d9488 → 3.55:1
+     --indigo (page-level) = #a17a23 → 3.75:1
+   All fail for 16px bold small text (WCAG AA requires 4.5:1).
+   Force all faq-q::before to deep gold #8c6c1f = 4.82:1 on cream. */
+html body.lux-themed .faq-q::before { color: #8c6c1f !important; }
+
+/* ── AA. ARTICLE TABLE FIRST-COLUMN TEXT — low-contrast cell colors ──
+   how-to-build-forex-trading-plan.html .tp-table td:nth-child(1) uses
+   var(--teal2)=#d4ae5e (light gold, ~2.2:1 on cream table bg) — fails AA.
+   Force all first-column cells in tp-tables and plan-tables to dark ink. */
+html body.lux-themed .tp-table td:nth-child(1),
+html body.lux-themed .plan-table td:nth-child(1) { color: #1a1410 !important; }
+
+/* ── AB. DARK-SECTION MUTED PARAGRAPH TEXT — minimum legibility ──
+   about.html .section-dark/.section-dark2 contain elements styled with
+   rgba(255,255,255,0.36–0.42) which composites to ~3.5–4.3:1 on the dark
+   navy backgrounds — fails WCAG AA for 10.5–13px text. Boost all paragraph
+   text and small secondary labels inside dark section wrappers to a minimum
+   readable opacity. Section-E2's inherited base (0.80) doesn't override
+   explicit page-CSS rules on child elements, so we add direct coverage. */
+html body.lux-themed .section-dark p,
+html body.lux-themed .section-dark2 p { color: rgba(255,255,255,0.75) !important; }
+html body.lux-themed .section-dark .rstat-label,
+html body.lux-themed .section-dark2 .rstat-label,
+html body.lux-themed .section-dark .robot-sub,
+html body.lux-themed .section-dark2 .robot-sub { color: rgba(255,255,255,0.62) !important; }
+
+/* ── AC. TABLE BACKGROUND RESET INSIDE DARK CONTAINERS ──
+   lux-global's general table rules apply universally:
+     body.lux-themed table  { background: #ffffff }  ← forces white bg
+     body.lux-themed th     { background: var(--lux-cream3) }  ← cream header
+   Inside dark containers (.compare-box, .example-box, .dark-box, etc.)
+   the intended table styling uses white/rgba text (e.g. rgba(255,255,255,0.78))
+   that becomes INVISIBLE on the white background.
+   Fix: reset table, thead, tbody, and th backgrounds to transparent inside all
+   dark containers so the container's dark navy shows through. The existing
+   per-cell nth-child backgrounds (rgba tints) remain unaffected since they
+   use higher-specificity page CSS selectors. */
+html body.lux-themed .compare-box table,
+html body.lux-themed .compare-box thead,
+html body.lux-themed .compare-box tbody,
+html body.lux-themed .example-box table,
+html body.lux-themed .example-box thead,
+html body.lux-themed .example-box tbody,
+html body.lux-themed .dark-box table,
+html body.lux-themed .dark-box thead,
+html body.lux-themed .dark-box tbody,
+html body.lux-themed .diagram-box table,
+html body.lux-themed .journal-box table,
+html body.lux-themed .session-box table,
+html body.lux-themed .trade-example table,
+html body.lux-themed .entry-box table,
+html body.lux-themed .signal-box table,
+html body.lux-themed .trade-box table,
+html body.lux-themed .news-box table,
+html body.lux-themed .candle-diagram table { background: transparent !important; box-shadow: none !important; }
+
+/* Reset th (header cell) cream3 background inside dark containers so column
+   headers render against the dark navy background, not a cream stripe. */
+html body.lux-themed .compare-box th,
+html body.lux-themed .example-box th,
+html body.lux-themed .dark-box th,
+html body.lux-themed .diagram-box th,
+html body.lux-themed .journal-box th,
+html body.lux-themed .session-box th,
+html body.lux-themed .trade-example th,
+html body.lux-themed .entry-box th,
+html body.lux-themed .signal-box th,
+html body.lux-themed .trade-box th,
+html body.lux-themed .news-box th,
+html body.lux-themed .candle-diagram th { background: transparent !important; }
+
+/* td border lines: replace lux-global's gold border with a dark-mode subtle line */
+html body.lux-themed .compare-box td,
+html body.lux-themed .compare-box th,
+html body.lux-themed .example-box td,
+html body.lux-themed .example-box th,
+html body.lux-themed .dark-box td,
+html body.lux-themed .dark-box th { border-bottom-color: rgba(255,255,255,0.07) !important; }
+
+/* ── AD. BEST-BROKERS LIGHT-SECTION COMPARISON TABLE HEADERS ──
+   best-brokers-account-creation-guide.html .cmp-tbl sits in a light section
+   (no dark container). Its column headers use:
+     th.th-b { color: var(--purple2) = #d4ae5e } → ~1.7:1 on cream3 → FAILS
+     th.th-e { color: var(--cyan) = #c89c3f }    → ~2.4:1 on cream3 → FAILS
+   Force both to deep gold for legibility. General th background (cream3)
+   already provides good contrast for the dark-ink first-child header. */
+html body.lux-themed .cmp-tbl th.th-b,
+html body.lux-themed .cmp-tbl th.th-e { color: #8c6c1f !important; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ── 13. ★ DARK-PAGE TYPOGRAPHY SAFETY NET ★
+   ONLY applies to non-lux-themed pages (the actual dark dashboards).
+   The homepage uses class="lux-themed lux-home" so these rules don't fire.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── INDEX HOMEPAGE PROTECTION — explicitly cancel any leftover white-on-cream
+       text-color rule that might still try to apply via cascade. The homepage
+       has its OWN luxury cream design — let it own its colors entirely. */
+html body.lux-home .lux-nav-links a { color: #1a1410; }
+html body.lux-home .lux-nav-links a.active { color: #8c6c1f; }
+html body.lux-home .lux-logo-text b { color: #1a1410; }
+html body.lux-home .lux-logo-text i { color: #8c6c1f; }
+html body.lux-home .lux-nav-live { color: #1a1410; }
+html body.lux-home .lux-eyebrow { color: #8c6c1f; background: transparent; border: 0; }
+html body.lux-home .lux-hero-sub { color: #2b2520; }
+html body.lux-home .lux-start-left h2 { color: #1a1410; }
+html body.lux-home .lux-start-left h2 span { color: #8c6c1f; }
+html body.lux-home .lux-start-left p { color: #756347; }
+html body.lux-home .lux-start-right h3 { color: #1a1410; }
+html body.lux-home .lux-start-right p { color: #756347; }
+html body.lux-home .lux-trust-text b { color: #1a1410; }
+html body.lux-home .lux-trust-text small { color: #756347; }
+html body.lux-home .lux-tools-eyebrow { color: #8c6c1f; }
+html body.lux-home .lux-tools-title { color: #1a1410; }
+html body.lux-home .lux-tools-sub { color: #756347; }
+html body.lux-home .lux-tool-name { color: #1a1410; }
+html body.lux-home .lux-tool-desc { color: #756347; }
+html body.lux-home .lux-trusted-copy h2 { color: #1a1410; }
+html body.lux-home .lux-trusted-copy h2 span { color: #8c6c1f; }
+html body.lux-home .lux-trusted-copy p { color: #756347; }
+html body.lux-home .lux-stat-value { color: #8c6c1f; }
+html body.lux-home .lux-stat-label { color: #1a1410; }
+html body.lux-home .lux-stat-desc { color: #756347; }
+html body.lux-home .lux-photo-card { /* keep its luxury styling intact */ }
+html body.lux-home footer .footer-logo-mark b,
+html body.lux-home footer .footer-logo-mark span { color: #fff; }
+
+/* The Section 11/12 wildcard rules ([class$="-sub"], [class$="-desc"]) should
+   NOT override .lux-hero-sub on the homepage — keep it readable warm-ink */
+html body.lux-home [class$="-sub"],
+html body.lux-home [class$="-desc"],
+html body.lux-home [class$="-lead"],
+html body.lux-home [class$="-eyebrow"] {
+  /* let the explicit .lux-home rules above own this */
+}
+
+/* ── Hero h1 on dashboard pages (NOT lux-themed) → bright cream ── */
+html body:not(.lux-themed) .hero h1,
+html body:not(.lux-themed) .hero h2,
+html body:not(.lux-themed) section.hero h1,
+html body:not(.lux-themed) .lux-hero h1 {
+  color: #f5e8c4 !important;
+}
+/* Accent inside hero h1 keeps its gold gradient (semantic emphasis) */
+html body:not(.lux-themed) .hero h1 .accent,
+html body:not(.lux-themed) .hero h1 .gold,
+html body:not(.lux-themed) .hero h1 .hx,
+html body:not(.lux-themed) .hero h1 span.lux-gold-text {
+  /* These use background-clip:text — leave them alone (they're working) */
+}
+
+/* ── Feature cards on dashboard pages → titles must be bright cream/white ── */
+html body:not(.lux-themed) .ex-title,
+html body:not(.lux-themed) .ex-card .ex-title,
+html body:not(.lux-themed) .intro-card .ex-title,
+html body:not(.lux-themed) .feat-title,
+html body:not(.lux-themed) .feat h3,
+html body:not(.lux-themed) .feat h4,
+html body:not(.lux-themed) .info-card h3,
+html body:not(.lux-themed) .info-card h4,
+html body:not(.lux-themed) .panel h3,
+html body:not(.lux-themed) .panel h4,
+html body:not(.lux-themed) .card-title,
+html body:not(.lux-themed) .stat-title,
+html body:not(.lux-themed) .lux-card h3,
+html body:not(.lux-themed) .lux-card h4 {
+  color: #ffffff !important;
+}
+
+/* ── Feature card body on dashboard pages → readable cream ── */
+html body:not(.lux-themed) .ex-body,
+html body:not(.lux-themed) .feat-body,
+html body:not(.lux-themed) .feat p,
+html body:not(.lux-themed) .info-card p,
+html body:not(.lux-themed) .panel p,
+html body:not(.lux-themed) .card-body,
+html body:not(.lux-themed) .stat-body {
+  color: rgba(255,255,255,0.78) !important;
+}
+
+/* ── Hero subtitle / sub on dashboard pages → bright cream ── */
+html body:not(.lux-themed) .hero-sub,
+html body:not(.lux-themed) .hero-lead,
+html body:not(.lux-themed) .hero-desc,
+html body:not(.lux-themed) .hero-subtitle,
+html body:not(.lux-themed) section.hero p,
+html body:not(.lux-themed) section.lux-hero p {
+  color: rgba(255,255,255,0.84) !important;
+}
+
+/* ── Live/Status pills on dashboard heroes → bright readable gold ── */
+html body:not(.lux-themed) .live-pill,
+html body:not(.lux-themed) .hero-pill,
+html body:not(.lux-themed) .lux-eyebrow {
+  color: #f5e8c4 !important;
+  background: rgba(212,174,94,0.18) !important;
+  border: 1px solid rgba(212,174,94,0.40) !important;
+}
+html body:not(.lux-themed) .live-pill .dot,
+html body:not(.lux-themed) .hero-pill .dot,
+html body:not(.lux-themed) .hero-pill .live-dot {
+  background: #f5e8c4 !important;
+  box-shadow: 0 0 0 3px rgba(212,174,94,0.30) !important;
+}
+
+/* ── Dashboard logo wordmark text (e.g., "Z Trade University") on dark ── */
+html body:not(.lux-themed) header .logo span,
+html body:not(.lux-themed) header .logo b,
+html body:not(.lux-themed) header .lux-logo-text b,
+html body:not(.lux-themed) header .lux-logo-text i,
+html body:not(.lux-themed) header .logo-text b,
+html body:not(.lux-themed) header .logo-text small {
+  color: #ffffff !important;
+}
+html body:not(.lux-themed) header .lux-logo-text i,
+html body:not(.lux-themed) header .logo-text small {
+  color: rgba(255,255,255,0.62) !important;
+}
+
+/* ── Nav links on dark dashboard headers → bright cream ── */
+html body:not(.lux-themed) header .nav-links a,
+html body:not(.lux-themed) header .lux-nav-links a {
+  color: rgba(255,255,255,0.82) !important;
+}
+html body:not(.lux-themed) header .nav-links a:hover,
+html body:not(.lux-themed) header .lux-nav-links a:hover {
+  color: #f5e8c4 !important;
+}
+html body:not(.lux-themed) header .nav-links a.active,
+html body:not(.lux-themed) header .lux-nav-links a.active {
+  color: #f5e8c4 !important;
+}
+
+/* ── Section eyebrows / labels on dark dashboards → bright gold ── */
+html body:not(.lux-themed) .section-eyebrow,
+html body:not(.lux-themed) .eyebrow,
+html body:not(.lux-themed) .page-eyebrow,
+html body:not(.lux-themed) .ait-eyebrow,
+html body:not(.lux-themed) [class$="-eyebrow"] {
+  color: #f5e8c4 !important;
+  font-weight: 800 !important;
+}
+
+/* ── QUIZ / Question text on dashboard tools → bright cream ── */
+html body:not(.lux-themed) .q-title,
+html body:not(.lux-themed) .question-title,
+html body:not(.lux-themed) .q-text,
+html body:not(.lux-themed) .question-text,
+html body:not(.lux-themed) .quiz-question {
+  color: #ffffff !important;
+}
+html body:not(.lux-themed) .q-cat,
+html body:not(.lux-themed) .q-category,
+html body:not(.lux-themed) .question-cat,
+html body:not(.lux-themed) .question-num,
+html body:not(.lux-themed) .q-num,
+html body:not(.lux-themed) .quiz-meta {
+  color: rgba(255,255,255,0.78) !important;
+}
+
+/* ── Section labels / table-of-contents items on dark dashboards ── */
+html body:not(.lux-themed) .toc-item,
+html body:not(.lux-themed) .toc a,
+html body:not(.lux-themed) .section-label,
+html body:not(.lux-themed) .label,
+html body:not(.lux-themed) .meta-label {
+  color: rgba(255,255,255,0.82) !important;
+}
+
+/* ── DEFENSIVE: only KNOWN dashboard hero h1/h2 are forced to cream — the
+   broad `section h*:not([class])` rule was removed because it was matching
+   cream-page section headings (e.g., "Start Your Trading Journey" on the
+   homepage) and forcing them invisible-white on cream. Each page's local
+   CSS handles its own h*. */

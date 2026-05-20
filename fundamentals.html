@@ -1,0 +1,2367 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Rule-based Fundamental and Technical Intelligence Dashboard for Gold and Bitcoin. Real-time macro signals, upcoming events, news sentiment, and Fibonacci levels. Educational only." />
+  <meta name="robots" content="index, follow" />
+  <title>Fundamental &amp; Technical Intelligence — Gold &amp; BTC · Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/fundamentals.html" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1410" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1a1410;
+      --purple:    #c89c3f;
+      --purple2:   #d4ae5e;
+      --lime:      #c89c3f;
+      --white:     #ffffff;
+      --text:      #2b2520;
+      --muted:     #756347;
+      --bg:        #fbf8f1;
+      --gold:      #d97706;
+      --gold2:     #f59e0b;
+      --gold3:     #fbbf24;
+      --btc:       #ea580c;
+      --btc2:      #f97316;
+      --btc3:      #fb923c;
+      --bull:      #059669;
+      --bull2:     #10b981;
+      --bull3:     #34d399;
+      --bear:      #dc2626;
+      --bear2:     #ef4444;
+      --bear3:     #f87171;
+      --card-bg:   #1a1410;
+      --card-bg2:  #2b2520;
+      --card-line: rgba(255,255,255,0.07);
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── LIVE DOT ── */
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--bull3); display: inline-block;
+      box-shadow: 0 0 0 0 rgba(52,211,153,0.6);
+      animation: pulse 2.2s ease-out infinite; flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+      100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+    }
+
+    .data-flash { animation: dataFlash 0.55s ease-out; }
+    @keyframes dataFlash {
+      0%   { opacity: 0.45; }
+      100% { opacity: 1; }
+    }
+
+    /* ── NAVBAR ── */
+    header.site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; transition: background .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22);
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── HERO ── */
+    .page-hero {
+      padding: 124px 0 58px;
+      background: linear-gradient(145deg, #0d0902 0%, #0d0902 45%, #1a1410 100%);
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: ''; position: absolute; top: -100px; right: -100px;
+      width: 520px; height: 520px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,174,94,0.16) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .page-hero::after {
+      content: ''; position: absolute; bottom: -140px; left: -100px;
+      width: 480px; height: 480px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 820px; }
+    .hero-pre {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(212,174,94,0.14); border: 1px solid rgba(192,132,252,0.32);
+      color: #f7e0a8; font-size: 11.5px; font-weight: 700;
+      padding: 6px 14px 6px 10px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .page-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(26px, 4vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.07;
+      margin-bottom: 16px;
+    }
+    .page-hero h1 .gx { background: linear-gradient(110deg, var(--gold3) 0%, var(--gold2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .page-hero h1 .bx { background: linear-gradient(110deg, var(--btc3) 0%, var(--btc2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .page-hero p.lead { font-size: 15.5px; color: rgba(255,255,255,0.50); line-height: 1.72; max-width: 660px; margin-bottom: 24px; }
+    .hero-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.76); font-size: 12px; font-weight: 600;
+      padding: 7px 13px; border-radius: 100px;
+    }
+    .hero-badge svg { color: var(--bull3); flex-shrink: 0; }
+    .hero-cta { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.90); font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 100px; text-decoration: none; transition: background .2s, transform .2s; }
+    .hero-cta:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+    .hero-cta svg { transition: transform .18s; }
+    .hero-cta:hover svg { transform: translateX(-3px); }
+
+    /* ── MAIN ── */
+    main { background: var(--bg); padding: 28px 0 80px; }
+
+    /* ── REFRESH STRIP ── */
+    .refresh-strip {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 13px 18px; margin-bottom: 22px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .rs-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+    .rs-status-text { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .rs-status-text.is-err { color: var(--bear2); }
+    .rs-sep { width: 1px; height: 16px; background: rgba(0,0,0,0.08); flex-shrink: 0; }
+    .rs-age { font-size: 12px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+    .rs-sources { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .src-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 700; letter-spacing: .6px;
+      padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    }
+    .src-pill .sp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .src-pill.sp-ok       { background: rgba(16,185,129,0.10); color: var(--bull2); }
+    .src-pill.sp-ok .sp-dot       { background: var(--bull2); }
+    .src-pill.sp-err      { background: rgba(239,68,68,0.10);  color: var(--bear2); }
+    .src-pill.sp-err .sp-dot      { background: var(--bear2); }
+    .src-pill.sp-fallback { background: rgba(245,158,11,0.10); color: var(--gold2); }
+    .src-pill.sp-fallback .sp-dot { background: var(--gold2); }
+    .src-pill.sp-wait     { background: rgba(90,101,128,0.08); color: var(--muted); }
+    .src-pill.sp-wait .sp-dot     { background: var(--muted); }
+
+    /* ── SECTION ── */
+    .section-wrap { margin-bottom: 22px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    .section-head h2 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 17px; color: var(--text); letter-spacing: -.25px; }
+    .section-badge { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+
+    /* ── CAUSE → EFFECT SUMMARY ── */
+    .summary-card {
+      background: linear-gradient(135deg, #1a1410 0%, #1a1410 55%, #1a1410 100%);
+      border: 1px solid rgba(212,174,94,0.25);
+      border-radius: 20px; padding: 24px 28px;
+      position: relative; overflow: hidden; margin-bottom: 22px;
+    }
+    .summary-card::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,174,94,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .summary-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 14px; position: relative; z-index: 1;
+    }
+    .summary-title {
+      font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 13px;
+      color: rgba(255,255,255,0.55); letter-spacing: 1.2px; text-transform: uppercase;
+    }
+    .summary-auto-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; padding: 3px 9px; border-radius: 6px;
+      background: rgba(212,174,94,0.18); color: #f7e0a8;
+      border: 1px solid rgba(212,174,94,0.28);
+    }
+    .summary-text {
+      font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.82);
+      line-height: 1.72; position: relative; z-index: 1;
+    }
+    .summary-text strong.s-bull { color: var(--bull3); font-weight: 700; }
+    .summary-text strong.s-bear { color: var(--bear3); font-weight: 700; }
+    .summary-text strong.s-neut { color: rgba(255,255,255,0.65); font-weight: 600; }
+    .summary-scorerow {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-top: 14px; position: relative; z-index: 1;
+    }
+    .summary-score-item {
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 8px 14px;
+    }
+    .ss-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; flex-shrink: 0; font-family: 'Manrope',sans-serif; }
+    .ss-icon.gold-i { background: linear-gradient(140deg, var(--gold2), var(--gold)); color: #1a0e00; }
+    .ss-icon.btc-i  { background: linear-gradient(140deg, var(--btc2),  var(--btc));  color: #1a0500; }
+    .ss-data { display: flex; flex-direction: column; gap: 2px; }
+    .ss-asset { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.40); letter-spacing: 1px; text-transform: uppercase; }
+    .ss-tally { font-family: 'JetBrains Mono',monospace; font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.82); white-space: nowrap; }
+    .ss-tally .tb { color: var(--bull3); }
+    .ss-tally .tr { color: var(--bear3); }
+    .ss-tally .tn { color: rgba(255,255,255,0.35); }
+    .ss-bias { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; }
+    .ss-bias.bull { color: var(--bull3); }
+    .ss-bias.bear { color: var(--bear3); }
+    .ss-bias.neut { color: rgba(255,255,255,0.35); }
+
+    /* ── MACRO INTELLIGENCE LAYER ── */
+    .macro-intel-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .macro-card {
+      background: linear-gradient(160deg, var(--card-bg) 0%, var(--card-bg2) 55%, #1a1410 100%);
+      border: 1px solid var(--card-line);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      position: relative; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .macro-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.22); }
+    .macro-card-glow {
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px; border-radius: 50%; pointer-events: none;
+    }
+    .macro-card.bull-tint .macro-card-glow { background: radial-gradient(circle, rgba(16,185,129,0.14) 0%, transparent 65%); }
+    .macro-card.bear-tint .macro-card-glow { background: radial-gradient(circle, rgba(239,68,68,0.14) 0%, transparent 65%); }
+    .macro-card.neut-tint .macro-card-glow { background: radial-gradient(circle, rgba(212,174,94,0.10) 0%, transparent 65%); }
+
+    .macro-card-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 8px; position: relative; z-index: 1;
+    }
+    .macro-card-label {
+      font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 12.5px;
+      color: rgba(255,255,255,0.85); letter-spacing: -.1px; line-height: 1.3;
+    }
+    .macro-card-tag {
+      font-size: 9px; font-weight: 800; letter-spacing: .8px;
+      padding: 2px 7px; border-radius: 5px; white-space: nowrap;
+    }
+    .macro-card-tag.hawk { background: rgba(239,68,68,0.14);  color: var(--bear3); border: 1px solid rgba(239,68,68,0.22); }
+    .macro-card-tag.dove { background: rgba(16,185,129,0.14); color: var(--bull3); border: 1px solid rgba(16,185,129,0.22); }
+    .macro-card-tag.tight { background: rgba(239,68,68,0.14);  color: var(--bear3); border: 1px solid rgba(239,68,68,0.22); }
+    .macro-card-tag.loose { background: rgba(16,185,129,0.14); color: var(--bull3); border: 1px solid rgba(16,185,129,0.22); }
+    .macro-card-tag.risk-off { background: rgba(245,158,11,0.14); color: var(--gold3); border: 1px solid rgba(245,158,11,0.22); }
+    .macro-card-tag.risk-on  { background: rgba(16,185,129,0.14); color: var(--bull3); border: 1px solid rgba(16,185,129,0.22); }
+    .macro-card-tag.neut { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.40); border: 1px solid rgba(255,255,255,0.10); }
+
+    .macro-card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px; font-weight: 700; color: var(--white);
+      letter-spacing: -.5px; line-height: 1; margin-bottom: 8px;
+      position: relative; z-index: 1;
+    }
+    .macro-card-status {
+      display: inline-block;
+      font-size: 10px; font-weight: 800; letter-spacing: .8px;
+      padding: 3px 9px; border-radius: 5px; margin-bottom: 10px;
+      position: relative; z-index: 1;
+    }
+    .macro-card-status.bull { background: rgba(16,185,129,0.14); color: var(--bull3); }
+    .macro-card-status.bear { background: rgba(239,68,68,0.14);  color: var(--bear3); }
+    .macro-card-status.neut { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.40); }
+    .macro-card-desc {
+      font-size: 11px; color: rgba(255,255,255,0.50); line-height: 1.5;
+      position: relative; z-index: 1;
+    }
+
+    /* ── FUNDAMENTAL ENGINE GRID (asset-level) ── */
+    .fund-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .fund-card {
+      background: linear-gradient(160deg, var(--card-bg) 0%, var(--card-bg2) 55%, #1a1410 100%);
+      border: 1px solid var(--card-line); border-radius: 20px;
+      padding: 24px 26px; position: relative; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .fund-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.22); }
+    .fund-card-glow {
+      position: absolute; top: -80px; right: -80px;
+      width: 300px; height: 300px; border-radius: 50%; pointer-events: none;
+    }
+    .fund-gold .fund-card-glow { background: radial-gradient(circle, rgba(245,158,11,0.14) 0%, transparent 65%); }
+    .fund-btc  .fund-card-glow { background: radial-gradient(circle, rgba(249,115,22,0.14) 0%, transparent 65%); }
+
+    .fund-card-header {
+      display: flex; align-items: center; gap: 13px;
+      margin-bottom: 20px; position: relative; z-index: 1;
+    }
+    .fund-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 16px; flex-shrink: 0;
+    }
+    .fund-gold .fund-icon { background: linear-gradient(140deg, var(--gold2), var(--gold)); color: #1a0e00; box-shadow: 0 4px 14px rgba(245,158,11,0.32); }
+    .fund-btc  .fund-icon { background: linear-gradient(140deg, var(--btc2),  var(--btc));  color: #1a0500; box-shadow: 0 4px 14px rgba(249,115,22,0.32); }
+    .fund-card-title { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 16px; color: var(--white); letter-spacing: -.2px; display: block; }
+    .fund-card-sub { font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; margin-top: 2px; display: block; }
+
+    /* ── SIGNAL ROWS ── */
+    .signal-list { list-style: none; position: relative; z-index: 1; }
+    .signal-item {
+      display: grid;
+      grid-template-columns: 10px 1fr auto;
+      gap: 0 10px;
+      align-items: start;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.055);
+    }
+    .signal-item:last-child { border-bottom: none; }
+    .signal-bullet {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 5px;
+      grid-column: 1; grid-row: 1;
+    }
+    .signal-bullet.bull { background: var(--bull2); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+    .signal-bullet.bear { background: var(--bear2); box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+    .signal-bullet.neut { background: rgba(255,255,255,0.22); }
+    .signal-bullet.none { background: rgba(255,255,255,0.10); }
+    .signal-body { grid-column: 2; }
+    .signal-label {
+      font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.78);
+      line-height: 1.3; margin-bottom: 2px;
+    }
+    .signal-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.38);
+    }
+    .signal-desc {
+      font-size: 11px; color: rgba(255,255,255,0.32); line-height: 1.45;
+      margin-top: 3px;
+    }
+    .signal-badge {
+      grid-column: 3; grid-row: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; letter-spacing: .8px;
+      padding: 3px 8px; border-radius: 5px; white-space: nowrap; flex-shrink: 0;
+    }
+    .signal-badge.bull { background: rgba(16,185,129,0.14); color: var(--bull3); border: 1px solid rgba(16,185,129,0.22); }
+    .signal-badge.bear { background: rgba(239,68,68,0.14);  color: var(--bear3); border: 1px solid rgba(239,68,68,0.22); }
+    .signal-badge.neut { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.35); border: 1px solid rgba(255,255,255,0.09); }
+    .signal-badge.none { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.20); border: 1px solid rgba(255,255,255,0.07); }
+
+    /* ── TALLY BAR ── */
+    .tally-wrap {
+      margin-top: 18px; padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      position: relative; z-index: 1;
+    }
+    .tally-counts { display: flex; gap: 8px; margin-bottom: 10px; }
+    .tally-box { flex: 1; border-radius: 9px; padding: 8px 10px; text-align: center; }
+    .tally-box.bull-box { background: rgba(16,185,129,0.11); border: 1px solid rgba(16,185,129,0.18); }
+    .tally-box.bear-box { background: rgba(239,68,68,0.11);  border: 1px solid rgba(239,68,68,0.18); }
+    .tally-box.neut-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+    .tally-num  { font-family: 'JetBrains Mono',monospace; font-size: 20px; font-weight: 700; line-height: 1; display: block; }
+    .tally-box.bull-box .tally-num { color: var(--bull3); }
+    .tally-box.bear-box .tally-num { color: var(--bear3); }
+    .tally-box.neut-box .tally-num { color: rgba(255,255,255,0.30); }
+    .tally-lbl  { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.30); margin-top: 4px; display: block; }
+    .tally-bar-track {
+      height: 5px; background: rgba(255,255,255,0.06);
+      border-radius: 10px; overflow: hidden; display: flex; margin-bottom: 10px;
+    }
+    .tally-bar-bull { height: 100%; background: linear-gradient(90deg, var(--bull2), var(--bull3)); border-radius: 10px; transition: width .4s ease; }
+    .tally-bar-bear { height: 100%; background: linear-gradient(90deg, var(--bear2), var(--bear3)); border-radius: 10px; transition: width .4s ease; }
+    .overall-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .overall-text { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 600; }
+    .overall-badge { font-size: 10.5px; font-weight: 800; letter-spacing: .6px; padding: 4px 11px; border-radius: 7px; }
+    .overall-badge.bull { background: rgba(16,185,129,0.16); color: var(--bull3); border: 1px solid rgba(16,185,129,0.25); }
+    .overall-badge.bear { background: rgba(239,68,68,0.16);  color: var(--bear3); border: 1px solid rgba(239,68,68,0.25); }
+    .overall-badge.neut { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.40); border: 1px solid rgba(255,255,255,0.10); }
+
+    /* ── EVENTS TABLE ── */
+    .events-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 22px 24px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .events-note {
+      font-size: 10.5px; color: var(--muted); font-style: italic;
+      margin-bottom: 14px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .events-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .events-table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    .events-table thead th {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted); padding: 8px 10px; text-align: left;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .events-table thead th.col-num { text-align: right; }
+    .events-table thead th.col-impact { text-align: center; }
+    .events-table tbody tr { transition: background .15s; }
+    .events-table tbody tr:hover { background: rgba(200,156,63,0.025); }
+    .events-table tbody td {
+      padding: 11px 10px; border-bottom: 1px solid rgba(0,0,0,0.04);
+      vertical-align: middle; font-size: 12.5px;
+    }
+    .events-table tbody tr:last-child td { border-bottom: none; }
+    .ev-name { font-weight: 700; color: var(--text); }
+    .ev-cat-pill {
+      display: inline-block; font-size: 8.5px; font-weight: 800;
+      letter-spacing: .7px; padding: 2px 6px; border-radius: 4px;
+      margin-left: 6px; text-transform: uppercase;
+      background: rgba(200,156,63,0.07); color: var(--purple);
+      vertical-align: middle;
+    }
+    .ev-date { font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .ev-num  { font-family: 'JetBrains Mono',monospace; font-size: 12px; color: var(--text); font-weight: 700; text-align: right; }
+    .ev-num.muted { color: var(--muted); font-weight: 500; }
+    .ev-impact-cell { text-align: center; }
+    .ev-bias {
+      display: inline-flex; flex-direction: column; gap: 2px;
+      align-items: center;
+    }
+    .ev-bias-tag {
+      font-size: 9px; font-weight: 800; letter-spacing: .7px;
+      padding: 3px 9px; border-radius: 5px; white-space: nowrap;
+    }
+    .ev-bias-tag.bull { background: rgba(5,150,105,0.10); color: var(--bull); border: 1px solid rgba(5,150,105,0.18); }
+    .ev-bias-tag.bear { background: rgba(220,38,38,0.10); color: var(--bear); border: 1px solid rgba(220,38,38,0.18); }
+    .ev-bias-tag.neut { background: rgba(0,0,0,0.04); color: var(--muted); border: 1px solid rgba(0,0,0,0.06); }
+    .ev-bias-sub {
+      font-size: 9px; font-weight: 700; letter-spacing: .4px;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .ev-empty {
+      text-align: center; padding: 32px 0; color: var(--muted);
+      font-size: 13px; font-weight: 500;
+    }
+
+    /* ── NEWS SENTIMENT CARD ── */
+    .news-sent-card {
+      background: linear-gradient(160deg, var(--card-bg) 0%, var(--card-bg2) 55%, #1a1410 100%);
+      border: 1px solid var(--card-line);
+      border-radius: 20px; padding: 22px 26px;
+      position: relative; overflow: hidden;
+    }
+    .news-sent-glow {
+      position: absolute; top: -80px; right: -80px;
+      width: 300px; height: 300px; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(circle, rgba(212,174,94,0.12) 0%, transparent 65%);
+    }
+    .news-sent-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 16px; position: relative; z-index: 1;
+    }
+    .news-sent-title {
+      font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 14px;
+      color: rgba(255,255,255,0.85); letter-spacing: -.2px;
+    }
+    .news-sent-sub { font-size: 10px; color: rgba(255,255,255,0.32); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; margin-top: 2px; display: block; }
+    .news-sent-overall-badge {
+      font-size: 11px; font-weight: 800; letter-spacing: .7px;
+      padding: 5px 13px; border-radius: 7px;
+    }
+    .news-sent-overall-badge.bull { background: rgba(16,185,129,0.16); color: var(--bull3); border: 1px solid rgba(16,185,129,0.25); }
+    .news-sent-overall-badge.bear { background: rgba(239,68,68,0.16); color: var(--bear3); border: 1px solid rgba(239,68,68,0.25); }
+    .news-sent-overall-badge.neut { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.40); border: 1px solid rgba(255,255,255,0.10); }
+
+    .news-sent-body { position: relative; z-index: 1; }
+    .news-sent-counts {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+    }
+    .news-sent-stat {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .news-sent-stat-row { display: flex; align-items: baseline; gap: 8px; }
+    .news-sent-stat-val { font-family: 'JetBrains Mono',monospace; font-size: 22px; font-weight: 700; line-height: 1; }
+    .news-sent-stat-val.bull { color: var(--bull3); }
+    .news-sent-stat-val.bear { color: var(--bear3); }
+    .news-sent-stat-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+    .news-sent-stat-hint { font-size: 10.5px; color: rgba(255,255,255,0.42); margin-top: 6px; line-height: 1.45; }
+
+    .news-conf-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+    .news-conf-label { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: .9px; white-space: nowrap; }
+    .news-conf-track {
+      flex: 1; height: 5px; background: rgba(255,255,255,0.06);
+      border-radius: 10px; overflow: hidden;
+    }
+    .news-conf-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--purple2)); border-radius: 10px; transition: width .4s ease; }
+    .news-conf-val { font-family: 'JetBrains Mono',monospace; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.78); min-width: 36px; text-align: right; }
+
+    .news-sent-desc {
+      font-size: 11.5px; color: rgba(255,255,255,0.45); line-height: 1.6;
+      margin-top: 12px; font-style: italic;
+    }
+
+    /* ── NEWS PERCENTAGE GRID ── */
+    .news-pct-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 14px;
+      position: relative; z-index: 1;
+    }
+    .news-pct-cell {
+      border-radius: 10px; padding: 11px 12px; text-align: center;
+      border: 1px solid;
+    }
+    .news-pct-cell.bull { background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.20); }
+    .news-pct-cell.bear { background: rgba(239,68,68,0.10);  border-color: rgba(239,68,68,0.20); }
+    .news-pct-cell.neut { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+    .news-pct-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px; font-weight: 700; line-height: 1;
+      display: block; margin-bottom: 4px;
+    }
+    .news-pct-cell.bull .news-pct-val { color: var(--bull3); }
+    .news-pct-cell.bear .news-pct-val { color: var(--bear3); }
+    .news-pct-cell.neut .news-pct-val { color: rgba(255,255,255,0.55); }
+    .news-pct-lbl {
+      font-size: 9.5px; font-weight: 800; letter-spacing: .7px;
+      text-transform: uppercase; color: rgba(255,255,255,0.45);
+      display: block; line-height: 1.3;
+    }
+
+    /* ── HEADLINE LIST ── */
+    .news-headlines-divider {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.35);
+      margin: 14px 0 8px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      position: relative; z-index: 1;
+    }
+    .news-headlines-list {
+      list-style: none; position: relative; z-index: 1;
+    }
+    .news-headline-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px 14px;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      align-items: center;
+    }
+    .news-headline-item:last-child { border-bottom: none; }
+    .news-h-main { grid-column: 1; min-width: 0; }
+    .news-h-meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 10px; color: rgba(255,255,255,0.35);
+      font-weight: 600; margin-bottom: 4px; letter-spacing: .3px;
+    }
+    .news-h-source { color: rgba(255,255,255,0.55); font-weight: 700; }
+    .news-h-text {
+      display: block; font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.82); line-height: 1.45;
+      text-decoration: none; transition: color .18s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    a.news-h-text:hover { color: var(--bull3); }
+    .news-h-badges {
+      grid-column: 2;
+      display: flex; flex-direction: column; gap: 4px;
+      align-items: flex-end; flex-shrink: 0;
+    }
+    .news-h-tone, .news-h-impact {
+      font-size: 8.5px; font-weight: 800; letter-spacing: .8px;
+      padding: 3px 7px; border-radius: 4px; white-space: nowrap;
+      text-transform: uppercase;
+    }
+    .news-h-tone.hawk   { background: rgba(239,68,68,0.14); color: var(--bear3); border: 1px solid rgba(239,68,68,0.22); }
+    .news-h-tone.dove   { background: rgba(16,185,129,0.14); color: var(--bull3); border: 1px solid rgba(16,185,129,0.22); }
+    .news-h-tone.neut   { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.40); border: 1px solid rgba(255,255,255,0.08); }
+    .news-h-impact.bull { background: rgba(16,185,129,0.18); color: var(--bull3); border: 1px solid rgba(16,185,129,0.28); }
+    .news-h-impact.bear { background: rgba(239,68,68,0.18); color: var(--bear3); border: 1px solid rgba(239,68,68,0.28); }
+    .news-h-impact.neut { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.42); border: 1px solid rgba(255,255,255,0.10); }
+    .news-headlines-empty {
+      font-size: 12px; color: rgba(255,255,255,0.35);
+      text-align: center; padding: 16px 0;
+    }
+
+    @media (max-width: 560px) {
+      .news-pct-grid { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+      .news-pct-val  { font-size: 18px; }
+      .news-headline-item { grid-template-columns: 1fr; }
+      .news-h-badges { grid-column: 1; flex-direction: row; align-items: flex-start; }
+    }
+
+    /* ── FIBONACCI SECTION ── */
+    .fib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .fib-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px 26px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .fib-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .fib-icon {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 15px; flex-shrink: 0;
+    }
+    .fib-gold .fib-icon { background: linear-gradient(140deg, var(--gold2), var(--gold)); color: #1a0e00; box-shadow: 0 3px 12px rgba(245,158,11,0.28); }
+    .fib-btc  .fib-icon { background: linear-gradient(140deg, var(--btc2),  var(--btc));  color: #1a0500; box-shadow: 0 3px 12px rgba(249,115,22,0.28); }
+    .fib-card-title { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px; color: var(--text); display: block; letter-spacing: -.2px; }
+    .fib-card-sub { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .7px; text-transform: uppercase; margin-top: 1px; display: block; }
+
+    .fib-summary {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 14px; padding: 10px 12px;
+      background: rgba(15,23,42,0.04); border: 1px solid var(--border);
+      border-radius: 11px;
+    }
+    .fib-sum-item { display: flex; flex-direction: column; gap: 1px; }
+    .fib-sum-label { font-size: 9px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; color: var(--muted); }
+    .fib-sum-val {
+      font-family: 'JetBrains Mono',monospace; font-size: 13px; font-weight: 700; color: var(--text);
+    }
+    .fib-sum-sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+
+    /* Sell / Buy zone callouts */
+    .fib-zones {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .fib-zone-pill {
+      border-radius: 10px; padding: 9px 12px; border: 1px solid;
+    }
+    .fib-zone-pill.sell { background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.18); }
+    .fib-zone-pill.buy  { background: rgba(5,150,105,0.06); border-color: rgba(5,150,105,0.18); }
+    .fib-zone-head { font-size: 9.5px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; margin-bottom: 4px; }
+    .fib-zone-pill.sell .fib-zone-head { color: var(--bear); }
+    .fib-zone-pill.buy  .fib-zone-head { color: var(--bull); }
+    .fib-zone-val { font-family: 'JetBrains Mono',monospace; font-size: 13.5px; font-weight: 700; color: var(--text); }
+    .fib-zone-val.na { color: var(--muted); font-weight: 600; }
+
+    /* Fib level table */
+    .fib-table { width: 100%; border-collapse: collapse; }
+    .fib-table thead th {
+      font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted); padding: 0 0 8px; border-bottom: 1px solid var(--border);
+    }
+    .fib-table thead th:last-child { text-align: right; }
+    .fib-table thead th:nth-child(2) { text-align: right; }
+    .fib-table tbody tr { position: relative; }
+    .fib-table tbody tr td {
+      padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+      font-size: 12.5px; vertical-align: middle;
+    }
+    .fib-table tbody tr:last-child td { border-bottom: none; }
+
+    .fib-level-name { font-weight: 700; color: var(--muted); font-size: 11.5px; }
+    .fib-level-name.key-level { color: var(--text); }
+    .fib-price-val {
+      font-family: 'JetBrains Mono',monospace; font-weight: 700;
+      font-size: 12.5px; text-align: right; color: var(--text);
+    }
+    .fib-zone-tag {
+      font-size: 9px; font-weight: 800; letter-spacing: .6px;
+      padding: 2px 7px; border-radius: 4px; text-align: right;
+      display: block; white-space: nowrap; margin-left: auto; width: fit-content;
+    }
+    .fib-zone-tag.res { background: rgba(220,38,38,0.08); color: var(--bear); }
+    .fib-zone-tag.sup { background: rgba(5,150,105,0.08); color: var(--bull); }
+    .fib-zone-tag.near-res { background: rgba(220,38,38,0.14); color: var(--bear2); border: 1px solid rgba(220,38,38,0.20); }
+    .fib-zone-tag.near-sup { background: rgba(5,150,105,0.14); color: var(--bull2); border: 1px solid rgba(5,150,105,0.20); }
+
+    .fib-curr-row td { padding: 4px 0 !important; border: none !important; }
+    .fib-curr-banner {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(90deg, rgba(200,156,63,0.10) 0%, transparent 100%);
+      border: 1px solid rgba(200,156,63,0.20); border-radius: 8px;
+      padding: 6px 10px; margin: 2px 0;
+    }
+    .fib-curr-arrow { font-size: 12px; color: var(--purple2); font-weight: 900; }
+    .fib-curr-label { font-size: 10.5px; font-weight: 700; color: var(--purple2); letter-spacing: .3px; }
+    .fib-curr-price {
+      font-family: 'JetBrains Mono',monospace; font-size: 13px; font-weight: 700;
+      color: var(--purple2); margin-left: auto;
+    }
+
+    .fib-no-data {
+      text-align: center; padding: 32px 0; color: var(--muted);
+      font-size: 13px; font-weight: 500;
+    }
+    .fib-footnote {
+      font-size: 10.5px; color: var(--muted); font-style: italic;
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      line-height: 1.55;
+    }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer-block {
+      background: linear-gradient(135deg, #fffbf2 0%, #fef3c7 100%);
+      border: 1px solid rgba(245,158,11,0.28);
+      border-radius: 18px; padding: 24px 26px;
+    }
+    .disclaimer-block h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px; color: #78350f; margin-bottom: 9px; display: flex; align-items: center; gap: 9px; letter-spacing: -.2px; }
+    .disclaimer-block p { font-size: 13px; color: #3d2a08; line-height: 1.70; }
+    .disclaimer-block strong { color: #451a03; font-weight: 700; }
+
+    /* ── FOOTER ── */
+    footer.site-footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.30); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.30); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .macro-intel-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .nav-links, .nav-join { display: none; }
+      .hamburger { display: flex; }
+    }
+    @media (max-width: 820px) {
+      .fund-grid { grid-template-columns: 1fr; }
+      .fib-grid  { grid-template-columns: 1fr; }
+      .summary-scorerow { gap: 8px; }
+    }
+    @media (max-width: 680px) {
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+      .news-sent-counts { grid-template-columns: 1fr; }
+      .fib-zones { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .container        { padding: 0 16px; }
+      .page-hero        { padding: 104px 0 44px; }
+      .fund-card        { padding: 20px 18px; }
+      .fib-card         { padding: 20px 18px; }
+      .summary-card     { padding: 18px 18px; }
+      .events-card      { padding: 18px 16px; }
+      .news-sent-card   { padding: 18px 18px; }
+      .macro-intel-grid { grid-template-columns: 1fr; }
+      .rs-sources       { gap: 4px; }
+    }
+    @media (max-width: 420px) {
+      .tally-counts { gap: 5px; }
+      .tally-num    { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header class="site-nav">
+  <nav class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="live-sentiment.html">Sentiment</a></li>
+      <li><a href="fundamentals.html" class="active">Intelligence</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<!-- ── MOBILE MENU ── -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"          onclick="toggleMenu()">Home</a>
+  <a href="articles.html"       onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"     onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"          onclick="toggleMenu()">About</a>
+  <a href="live-sentiment.html" onclick="toggleMenu()">Sentiment</a>
+  <a href="fundamentals.html"   onclick="toggleMenu()">Intelligence</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="page-hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-pre">
+        <span class="live-dot"></span>
+        Auto-Updating Intelligence Engine
+      </div>
+      <h1>Fundamental &amp; Technical<br><span class="gx">Gold</span> &amp; <span class="bx">Bitcoin</span> Intelligence</h1>
+      <p class="lead">Rule-based macro signals derived from real yield, breakeven inflation, VIX, and US Treasuries. Live event calendar, news sentiment scoring, and Fibonacci retracement levels. Educational only — not financial advice.</p>
+      <div class="hero-badges">
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Rule-Based · Real Data Only
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Live Event Calendar
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Educational Use Only
+        </span>
+      </div>
+      <a href="live-sentiment.html" class="hero-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Live Sentiment Dashboard
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── MAIN ── -->
+<main>
+  <div class="container">
+
+    <!-- STATUS STRIP -->
+    <div class="refresh-strip" aria-label="Data status">
+      <div class="rs-left">
+        <span class="live-dot" style="width:7px;height:7px;"></span>
+        <span class="rs-status-text" id="statusText">Connecting&hellip;</span>
+        <div class="rs-sep"></div>
+        <span class="rs-age" id="ageText">&mdash;</span>
+      </div>
+      <div class="rs-sources" id="sourcePills">
+        <span class="src-pill sp-wait"><span class="sp-dot"></span>FRED</span>
+        <span class="src-pill sp-wait"><span class="sp-dot"></span>TWELVEDATA</span>
+        <span class="src-pill sp-wait"><span class="sp-dot"></span>FINNHUB</span>
+      </div>
+    </div>
+
+    <!-- ── CAUSE → EFFECT SUMMARY ── -->
+    <div class="summary-card" id="summaryCard" aria-label="Cause and effect market summary">
+      <div class="summary-header">
+        <span class="summary-title">Cause &rarr; Effect Summary</span>
+        <span class="summary-auto-badge">&#9679; Auto-generated</span>
+      </div>
+      <p class="summary-text" id="summaryText">Awaiting data&hellip;</p>
+      <div class="summary-scorerow" id="summaryScoreRow">
+        <div class="summary-score-item">
+          <div class="ss-icon gold-i">Au</div>
+          <div class="ss-data">
+            <span class="ss-asset">Gold</span>
+            <span class="ss-tally" id="goldTallyLine">&mdash;</span>
+            <span class="ss-bias neut" id="goldBiasLabel">&mdash;</span>
+          </div>
+        </div>
+        <div class="summary-score-item">
+          <div class="ss-icon btc-i">&#8383;</div>
+          <div class="ss-data">
+            <span class="ss-asset">Bitcoin</span>
+            <span class="ss-tally" id="btcTallyLine">&mdash;</span>
+            <span class="ss-bias neut" id="btcBiasLabel">&mdash;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 1: MACRO INTELLIGENCE LAYER ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Macro Intelligence Layer</h2>
+        <span class="section-badge">FRED &middot; Derived &middot; Live Rules</span>
+      </div>
+      <div class="macro-intel-grid">
+
+        <div class="macro-card neut-tint" id="macroInflationCard">
+          <div class="macro-card-glow"></div>
+          <div class="macro-card-row">
+            <span class="macro-card-label">Inflation Pressure</span>
+            <span class="macro-card-tag neut" id="macroInflationTag">&mdash;</span>
+          </div>
+          <div class="macro-card-value" id="macroInflationVal">&mdash;</div>
+          <span class="macro-card-status neut" id="macroInflationStatus">&mdash;</span>
+          <p class="macro-card-desc" id="macroInflationDesc">Awaiting breakeven inflation data&hellip;</p>
+        </div>
+
+        <div class="macro-card neut-tint" id="macroMonetaryCard">
+          <div class="macro-card-glow"></div>
+          <div class="macro-card-row">
+            <span class="macro-card-label">Monetary Pressure</span>
+            <span class="macro-card-tag neut" id="macroMonetaryTag">&mdash;</span>
+          </div>
+          <div class="macro-card-value" id="macroMonetaryVal">&mdash;</div>
+          <span class="macro-card-status neut" id="macroMonetaryStatus">&mdash;</span>
+          <p class="macro-card-desc" id="macroMonetaryDesc">Awaiting real yield data&hellip;</p>
+        </div>
+
+        <div class="macro-card neut-tint" id="macroRiskCard">
+          <div class="macro-card-glow"></div>
+          <div class="macro-card-row">
+            <span class="macro-card-label">Risk Sentiment</span>
+            <span class="macro-card-tag neut" id="macroRiskTag">&mdash;</span>
+          </div>
+          <div class="macro-card-value" id="macroRiskVal">&mdash;</div>
+          <span class="macro-card-status neut" id="macroRiskStatus">&mdash;</span>
+          <p class="macro-card-desc" id="macroRiskDesc">Awaiting VIX data&hellip;</p>
+        </div>
+
+        <div class="macro-card neut-tint" id="macroLiquidityCard">
+          <div class="macro-card-glow"></div>
+          <div class="macro-card-row">
+            <span class="macro-card-label">Liquidity Conditions</span>
+            <span class="macro-card-tag neut" id="macroLiquidityTag">&mdash;</span>
+          </div>
+          <div class="macro-card-value" id="macroLiquidityVal">&mdash;</div>
+          <span class="macro-card-status neut" id="macroLiquidityStatus">&mdash;</span>
+          <p class="macro-card-desc" id="macroLiquidityDesc">Awaiting US10Y + Real Yield data&hellip;</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: ASSET FUNDAMENTAL ENGINES ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Asset Fundamental Signal Engine</h2>
+        <span class="section-badge">FRED &middot; TwelveData &middot; Rule-based</span>
+      </div>
+      <div class="fund-grid">
+
+        <!-- GOLD FUNDAMENTAL ENGINE -->
+        <div class="fund-card fund-gold" id="goldFundCard" aria-label="Gold fundamental signals">
+          <div class="fund-card-glow"></div>
+          <div class="fund-card-header">
+            <div class="fund-icon">Au</div>
+            <div>
+              <span class="fund-card-title">Gold (XAUUSD)</span>
+              <span class="fund-card-sub">Fundamental Engine &middot; 5 Signals</span>
+            </div>
+          </div>
+          <ul class="signal-list" id="goldSignalList">
+            <li class="signal-item">
+              <span class="signal-bullet none"></span>
+              <div class="signal-body"><span class="signal-label">Loading signals&hellip;</span></div>
+              <span class="signal-badge none"></span>
+            </li>
+          </ul>
+          <div class="tally-wrap" id="goldTallyWrap">
+            <div class="tally-counts">
+              <div class="tally-box bull-box"><span class="tally-num" id="goldBullCount">—</span><span class="tally-lbl">Bullish</span></div>
+              <div class="tally-box bear-box"><span class="tally-num" id="goldBearCount">—</span><span class="tally-lbl">Bearish</span></div>
+              <div class="tally-box neut-box"><span class="tally-num" id="goldNeutCount">—</span><span class="tally-lbl">Neutral</span></div>
+            </div>
+            <div class="tally-bar-track">
+              <div class="tally-bar-bull" id="goldBarBull" style="width:0%"></div>
+              <div class="tally-bar-bear" id="goldBarBear" style="width:0%"></div>
+            </div>
+            <div class="overall-label">
+              <span class="overall-text">Overall fundamental bias</span>
+              <span class="overall-badge neut" id="goldOverallBadge">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BTC FUNDAMENTAL ENGINE -->
+        <div class="fund-card fund-btc" id="btcFundCard" aria-label="Bitcoin fundamental signals">
+          <div class="fund-card-glow"></div>
+          <div class="fund-card-header">
+            <div class="fund-icon">&#8383;</div>
+            <div>
+              <span class="fund-card-title">Bitcoin (BTCUSD)</span>
+              <span class="fund-card-sub">Fundamental Engine &middot; 4 Signals</span>
+            </div>
+          </div>
+          <ul class="signal-list" id="btcSignalList">
+            <li class="signal-item">
+              <span class="signal-bullet none"></span>
+              <div class="signal-body"><span class="signal-label">Loading signals&hellip;</span></div>
+              <span class="signal-badge none"></span>
+            </li>
+          </ul>
+          <div class="tally-wrap" id="btcTallyWrap">
+            <div class="tally-counts">
+              <div class="tally-box bull-box"><span class="tally-num" id="btcBullCount">—</span><span class="tally-lbl">Bullish</span></div>
+              <div class="tally-box bear-box"><span class="tally-num" id="btcBearCount">—</span><span class="tally-lbl">Bearish</span></div>
+              <div class="tally-box neut-box"><span class="tally-num" id="btcNeutCount">—</span><span class="tally-lbl">Neutral</span></div>
+            </div>
+            <div class="tally-bar-track">
+              <div class="tally-bar-bull" id="btcBarBull" style="width:0%"></div>
+              <div class="tally-bar-bear" id="btcBarBear" style="width:0%"></div>
+            </div>
+            <div class="overall-label">
+              <span class="overall-text">Overall fundamental bias</span>
+              <span class="overall-badge neut" id="btcOverallBadge">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: UPCOMING EVENTS ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Upcoming Market Events</h2>
+        <span class="section-badge">Finnhub &middot; Live Calendar</span>
+      </div>
+      <div class="events-card">
+        <p class="events-note">
+          Impact based on historical macro behavior &middot;
+          <strong>CPI higher</strong> &rarr; <strong>Bearish (Hawkish)</strong> &nbsp;|&nbsp;
+          <strong>CPI lower</strong> &rarr; <strong>Bullish (Dovish)</strong> &nbsp;|&nbsp;
+          <strong>FOMC hike</strong> &rarr; <strong>Bearish (Hawkish)</strong> &nbsp;|&nbsp;
+          <strong>FOMC cut</strong> &rarr; <strong>Bullish (Dovish)</strong> &nbsp;|&nbsp;
+          <strong>NFP strong</strong> &rarr; <strong>Bearish (Hawkish)</strong> &nbsp;|&nbsp;
+          <strong>NFP weak</strong> &rarr; <strong>Bullish (Dovish)</strong> &nbsp;|&nbsp;
+          <strong>Missing data</strong> &rarr; <strong>Neutral (Uncertain)</strong>.
+        </p>
+        <div class="events-table-wrap">
+          <table class="events-table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Date / Time</th>
+                <th class="col-num">Previous</th>
+                <th class="col-num">Estimate</th>
+                <th class="col-num">Actual</th>
+                <th class="col-impact">Expected Impact</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+              <tr>
+                <td colspan="6" class="ev-empty">Loading upcoming events&hellip;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: NEWS TONE ENGINE ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>News Tone Engine</h2>
+        <span class="section-badge">Finnhub Headlines &middot; Hawkish/Dovish Classifier</span>
+      </div>
+      <div class="news-sent-card" id="newsSentCard">
+        <div class="news-sent-glow"></div>
+        <div class="news-sent-head">
+          <div>
+            <span class="news-sent-title">Per-Headline Tone &amp; Impact</span>
+            <span class="news-sent-sub" id="newsSentSub">Awaiting headlines&hellip;</span>
+          </div>
+          <span class="news-sent-overall-badge neut" id="newsSentOverall">&mdash;</span>
+        </div>
+
+        <div class="news-pct-grid">
+          <div class="news-pct-cell bull">
+            <span class="news-pct-val" id="newsPctBull">0%</span>
+            <span class="news-pct-lbl">Bullish<br>(Dovish)</span>
+          </div>
+          <div class="news-pct-cell bear">
+            <span class="news-pct-val" id="newsPctBear">0%</span>
+            <span class="news-pct-lbl">Bearish<br>(Hawkish)</span>
+          </div>
+          <div class="news-pct-cell neut">
+            <span class="news-pct-val" id="newsPctNeut">0%</span>
+            <span class="news-pct-lbl">Neutral<br>(Mixed)</span>
+          </div>
+        </div>
+
+        <div class="news-conf-row">
+          <span class="news-conf-label">Confidence</span>
+          <div class="news-conf-track"><div class="news-conf-fill" id="newsConfFill" style="width:0%"></div></div>
+          <span class="news-conf-val" id="newsConfVal">0%</span>
+        </div>
+
+        <div class="news-headlines-divider">Recent Headlines &middot; Per-Item Classification</div>
+        <ul class="news-headlines-list" id="newsHeadlinesList">
+          <li class="news-headlines-empty">Loading headlines&hellip;</li>
+        </ul>
+
+        <p class="news-sent-desc" id="newsSentDesc">
+          Each headline is scanned for hawkish (rate hike, tightening, higher rates) and dovish (rate cut, easing, slowdown) keywords. Hawkish &rarr; Bearish for Gold/BTC. Dovish &rarr; Bullish. No matches &rarr; Neutral.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── SECTION 5: FIBONACCI TECHNICAL ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Technical Engine &mdash; Fibonacci Retracement</h2>
+        <span class="section-badge">Intraday High / Low &middot; Live</span>
+      </div>
+      <div class="fib-grid">
+
+        <!-- GOLD FIB -->
+        <div class="fib-card fib-gold" id="goldFibCard" aria-label="Gold Fibonacci levels">
+          <div class="fib-card-header">
+            <div class="fib-icon">Au</div>
+            <div>
+              <span class="fib-card-title">Gold Fibonacci Levels</span>
+              <span class="fib-card-sub">XAUUSD &middot; Intraday Range</span>
+            </div>
+          </div>
+          <div class="fib-summary" id="goldFibSummary">
+            <div class="fib-sum-item">
+              <span class="fib-sum-label">High</span>
+              <span class="fib-sum-val" id="goldFibHigh">&mdash;</span>
+            </div>
+            <div class="fib-sum-sep"></div>
+            <div class="fib-sum-item">
+              <span class="fib-sum-label">Low</span>
+              <span class="fib-sum-val" id="goldFibLow">&mdash;</span>
+            </div>
+            <div class="fib-sum-sep"></div>
+            <div class="fib-sum-item">
+              <span class="fib-sum-label">Current</span>
+              <span class="fib-sum-val" id="goldFibCurrent">&mdash;</span>
+            </div>
+          </div>
+          <div class="fib-zones">
+            <div class="fib-zone-pill sell">
+              <div class="fib-zone-head">Expected Sell Zone</div>
+              <div class="fib-zone-val na" id="goldFibSell">&mdash;</div>
+            </div>
+            <div class="fib-zone-pill buy">
+              <div class="fib-zone-head">Expected Buy Zone</div>
+              <div class="fib-zone-val na" id="goldFibBuy">&mdash;</div>
+            </div>
+          </div>
+          <div id="goldFibTable"></div>
+          <p class="fib-footnote">These are Fibonacci levels derived from intraday high/low. Not trading advice.</p>
+        </div>
+
+        <!-- BTC FIB -->
+        <div class="fib-card fib-btc" id="btcFibCard" aria-label="Bitcoin Fibonacci levels">
+          <div class="fib-card-header">
+            <div class="fib-icon">&#8383;</div>
+            <div>
+              <span class="fib-card-title">Bitcoin Fibonacci Levels</span>
+              <span class="fib-card-sub">BTCUSD &middot; Intraday Range</span>
+            </div>
+          </div>
+          <div class="fib-summary" id="btcFibSummary">
+            <div class="fib-sum-item">
+              <span class="fib-sum-label">High</span>
+              <span class="fib-sum-val" id="btcFibHigh">&mdash;</span>
+            </div>
+            <div class="fib-sum-sep"></div>
+            <div class="fib-sum-item">
+              <span class="fib-sum-label">Low</span>
+              <span class="fib-sum-val" id="btcFibLow">&mdash;</span>
+            </div>
+            <div class="fib-sum-sep"></div>
+            <div class="fib-sum-item">
+              <span class="fib-sum-label">Current</span>
+              <span class="fib-sum-val" id="btcFibCurrent">&mdash;</span>
+            </div>
+          </div>
+          <div class="fib-zones">
+            <div class="fib-zone-pill sell">
+              <div class="fib-zone-head">Expected Sell Zone</div>
+              <div class="fib-zone-val na" id="btcFibSell">&mdash;</div>
+            </div>
+            <div class="fib-zone-pill buy">
+              <div class="fib-zone-head">Expected Buy Zone</div>
+              <div class="fib-zone-val na" id="btcFibBuy">&mdash;</div>
+            </div>
+          </div>
+          <div id="btcFibTable"></div>
+          <p class="fib-footnote">These are Fibonacci levels derived from intraday high/low. Not trading advice.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer-block" role="note" aria-label="Disclaimer">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Not Financial Advice
+      </h3>
+      <p>This dashboard is <strong>educational only</strong>. All signals are derived from real public data via FRED, TwelveData, and Finnhub — no static or simulated values. Macro signal classifications and event impact bias use simple rule-based logic, not analysis from a financial advisor. <strong>Always do your own research before making any trading decisions.</strong></p>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html" class="footer-logo-wrap">
+      <div class="footer-logo-mark">Z</div>
+      <div class="footer-brand-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <span class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <span class="footer-sep">/</span>
+      <a href="about.html">About</a>
+      <span class="footer-sep">/</span>
+      <a href="articles.html">Articles</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ── DASHBOARD LOGIC ── -->
+<script>
+(function () {
+  'use strict';
+
+  /* ─── CONFIG ──────────────────────────────────────────────────────────── */
+  var MARKET_URL   = '/api/market';
+  var NEWS_URL     = '/api/news';
+  var CALENDAR_URL = '/api/calendar';
+
+  var MARKET_MS    = 45 * 1000;
+  var NEWS_MS      = 5 * 60 * 1000;
+  var CALENDAR_MS  = 30 * 60 * 1000;
+  var AGE_TICK_MS  = 10 * 1000;
+  var TIMEOUT_MS   = 12000;
+
+  /* ─── STATE ───────────────────────────────────────────────────────────── */
+  var state = {
+    market:   { data: null, lastOk: 0, pending: false },
+    news:     { data: null, lastOk: 0, pending: false },
+    calendar: { data: null, lastOk: 0, pending: false },
+  };
+
+  /* ─── DOM ─────────────────────────────────────────────────────────────── */
+  function $(id) { return document.getElementById(id); }
+  function flashEl(el) {
+    if (!el) return;
+    el.classList.remove('data-flash');
+    void el.offsetWidth;
+    el.classList.add('data-flash');
+  }
+
+  /* ─── FORMAT ──────────────────────────────────────────────────────────── */
+  function fmt(n, dec) {
+    if (!Number.isFinite(n)) return '—';
+    return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  function fmtPrice(n, dec) {
+    if (!Number.isFinite(n)) return '—';
+    return '$' + fmt(n, dec === undefined ? 2 : dec);
+  }
+  function fmtPct(n) {
+    if (!Number.isFinite(n)) return '—';
+    return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+  }
+  function fmtYield(n) {
+    if (!Number.isFinite(n)) return '—';
+    return n.toFixed(3) + '%';
+  }
+  function fmtNum(n, dec) {
+    if (!Number.isFinite(n)) return '—';
+    return n.toFixed(dec === undefined ? 2 : dec);
+  }
+  function secsAgo(ts) {
+    if (!ts) return null;
+    var s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 5)  return 'just now';
+    if (s < 60) return s + 's ago';
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + 'm ago';
+    return Math.floor(m / 60) + 'h ago';
+  }
+
+  /* ─── FETCH ───────────────────────────────────────────────────────────── */
+  function safeFetch(name, url) {
+    if (state[name].pending) return Promise.resolve(null);
+    state[name].pending = true;
+    var ctrl  = new AbortController();
+    var timer = setTimeout(function () { try { ctrl.abort(); } catch (_) {} }, TIMEOUT_MS);
+    return fetch(url, { cache: 'no-store', signal: ctrl.signal })
+      .then(function (res) {
+        clearTimeout(timer);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        state[name].data    = data;
+        state[name].lastOk  = Date.now();
+        state[name].pending = false;
+        return data;
+      })
+      .catch(function () {
+        clearTimeout(timer);
+        state[name].pending = false;
+        return null;
+      });
+  }
+
+  /* ─── SOURCE PILLS ────────────────────────────────────────────────────── */
+  function pillClass(v) {
+    if (v === 'ok')       return 'sp-ok';
+    if (v === 'fallback') return 'sp-fallback';
+    if (v === 'error')    return 'sp-err';
+    return 'sp-wait';
+  }
+  function renderSourceStatus() {
+    var container = $('sourcePills');
+    if (!container) return;
+    var ms = (state.market.data   && state.market.data.sourceStatus)   || {};
+    var cs = (state.calendar.data && state.calendar.data.sourceStatus) || {};
+    var items = [
+      { label: 'FRED',       status: ms.fred       },
+      { label: 'TWELVEDATA', status: ms.twelvedata },
+      { label: 'FINNHUB',    status: cs.finnhub    },
+    ];
+    container.innerHTML = items.map(function (it) {
+      var status = it.status || 'wait';
+      var cls    = pillClass(status);
+      var badge  = status === 'fallback' ? 'FALLBACK' : status === 'ok' ? 'OK' : status === 'error' ? 'ERROR' : '…';
+      return '<span class="src-pill ' + cls + '"><span class="sp-dot"></span>' + it.label + ': ' + badge + '</span>';
+    }).join('');
+  }
+
+  /* ─── AGE TICK ────────────────────────────────────────────────────────── */
+  function tickAge() {
+    var el = $('ageText');
+    if (el && state.market.lastOk) el.textContent = 'Updated ' + secsAgo(state.market.lastOk);
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     MACRO INTELLIGENCE LAYER — 4 derived signals
+  ════════════════════════════════════════════════════════════════════════ */
+
+  // 1. Inflation Pressure (Breakeven)
+  function computeInflationPressure(breakeven) {
+    if (!Number.isFinite(breakeven)) {
+      return {
+        dir: 'neut', tag: 'neut', tagText: '—', tint: 'neut-tint',
+        value: '—', status: 'NO DATA',
+        desc: 'Breakeven inflation data unavailable from FRED.',
+      };
+    }
+    if (breakeven > 2.5) {
+      return {
+        dir: 'bull', tag: 'hawk', tagText: 'HAWKISH', tint: 'bear-tint',
+        value: fmtYield(breakeven), status: 'BULLISH',
+        desc: 'Elevated inflation expectations support gold as an inflation hedge.',
+      };
+    }
+    if (breakeven < 2.0) {
+      return {
+        dir: 'bear', tag: 'dove', tagText: 'DOVISH', tint: 'bull-tint',
+        value: fmtYield(breakeven), status: 'BEARISH',
+        desc: 'Low inflation expectations reduce demand for gold as inflation hedge.',
+      };
+    }
+    return {
+      dir: 'neut', tag: 'neut', tagText: 'BALANCED', tint: 'neut-tint',
+      value: fmtYield(breakeven), status: 'NEUTRAL',
+      desc: 'Breakeven near Fed target — no strong inflation hedge demand signal.',
+    };
+  }
+
+  // 2. Monetary Pressure (Real Yield)
+  function computeMonetaryPressure(real10y) {
+    if (!Number.isFinite(real10y)) {
+      return {
+        dir: 'neut', tag: 'neut', tagText: '—', tint: 'neut-tint',
+        value: '—', status: 'NO DATA',
+        desc: 'Real yield data unavailable from FRED.',
+      };
+    }
+    if (real10y > 2.0) {
+      return {
+        dir: 'bear', tag: 'hawk', tagText: 'HAWKISH', tint: 'bear-tint',
+        value: fmtYield(real10y), status: 'BEARISH',
+        desc: 'High real yields raise opportunity cost of holding non-yielding gold.',
+      };
+    }
+    if (real10y < 0.5) {
+      return {
+        dir: 'bull', tag: 'dove', tagText: 'DOVISH', tint: 'bull-tint',
+        value: fmtYield(real10y), status: 'BULLISH',
+        desc: 'Low/negative real rates reduce opportunity cost — supportive for gold.',
+      };
+    }
+    return {
+      dir: 'neut', tag: 'neut', tagText: 'BALANCED', tint: 'neut-tint',
+      value: fmtYield(real10y), status: 'NEUTRAL',
+      desc: 'Real yield in neutral range — no strong directional pressure.',
+    };
+  }
+
+  // 3. Risk Sentiment (VIX)
+  function computeRiskSentiment(vix) {
+    if (!Number.isFinite(vix)) {
+      return {
+        dir: 'neut', tag: 'neut', tagText: '—', tint: 'neut-tint',
+        value: '—', status: 'NO DATA',
+        desc: 'VIX data unavailable from FRED.',
+      };
+    }
+    if (vix > 20) {
+      return {
+        dir: 'bull', tag: 'risk-off', tagText: 'RISK-OFF', tint: 'bear-tint',
+        value: fmtNum(vix, 2), status: 'BULLISH GOLD',
+        desc: 'Elevated fear — safe-haven flows favor gold, BTC typically sells off.',
+      };
+    }
+    if (vix < 15) {
+      return {
+        dir: 'bear', tag: 'risk-on', tagText: 'RISK-ON', tint: 'bull-tint',
+        value: fmtNum(vix, 2), status: 'BULLISH BTC',
+        desc: 'Low volatility — risk-on environment favors BTC, reduces gold demand.',
+      };
+    }
+    return {
+      dir: 'neut', tag: 'neut', tagText: 'NEUTRAL', tint: 'neut-tint',
+      value: fmtNum(vix, 2), status: 'NEUTRAL',
+      desc: 'VIX in moderate range — no extreme risk-on or risk-off signal.',
+    };
+  }
+
+  // 4. Liquidity Conditions (US10Y + Real Yield combo)
+  function computeLiquidityConditions(us10y, real10y) {
+    if (!Number.isFinite(us10y) || !Number.isFinite(real10y)) {
+      return {
+        dir: 'neut', tag: 'neut', tagText: '—', tint: 'neut-tint',
+        value: '—', status: 'NO DATA',
+        desc: 'Yield curve inputs unavailable from FRED.',
+      };
+    }
+    var display = fmtYield(us10y) + ' / ' + fmtYield(real10y);
+    // Tight: high nominal + high real yields
+    if (us10y > 4.5 && real10y > 1.5) {
+      return {
+        dir: 'bear', tag: 'tight', tagText: 'TIGHT', tint: 'bear-tint',
+        value: display, status: 'BEARISH',
+        desc: 'High nominal + real yields signal restrictive liquidity — headwind for assets.',
+      };
+    }
+    // Loose: low nominal + low real
+    if (us10y < 3.5 && real10y < 0.5) {
+      return {
+        dir: 'bull', tag: 'loose', tagText: 'LOOSE', tint: 'bull-tint',
+        value: display, status: 'BULLISH',
+        desc: 'Low nominal + real yields signal accommodative liquidity — tailwind for gold.',
+      };
+    }
+    return {
+      dir: 'neut', tag: 'neut', tagText: 'BALANCED', tint: 'neut-tint',
+      value: display, status: 'NEUTRAL',
+      desc: 'Liquidity conditions are in a neutral middle band.',
+    };
+  }
+
+  function renderMacroCard(prefix, sig) {
+    var card    = $('macro' + prefix + 'Card');
+    var tagEl   = $('macro' + prefix + 'Tag');
+    var valEl   = $('macro' + prefix + 'Val');
+    var statEl  = $('macro' + prefix + 'Status');
+    var descEl  = $('macro' + prefix + 'Desc');
+
+    if (card) {
+      card.classList.remove('bull-tint', 'bear-tint', 'neut-tint');
+      card.classList.add(sig.tint);
+    }
+    if (tagEl)  { tagEl.textContent  = sig.tagText; tagEl.className  = 'macro-card-tag ' + sig.tag; }
+    if (valEl)  valEl.textContent  = sig.value;
+    if (statEl) { statEl.textContent = sig.status;  statEl.className = 'macro-card-status ' + sig.dir; }
+    if (descEl) descEl.textContent = sig.desc;
+  }
+
+  function renderMacroLayer(d) {
+    var yields    = d.yields || {};
+    var vix       = d.vix    || {};
+    var us10y     = yields.us10y;
+    var real10y   = yields.real10y;
+    var breakeven = (Number.isFinite(us10y) && Number.isFinite(real10y)) ? us10y - real10y : null;
+    var vixVal    = vix.value;
+
+    var inflation = computeInflationPressure(breakeven);
+    var monetary  = computeMonetaryPressure(real10y);
+    var risk      = computeRiskSentiment(vixVal);
+    var liquidity = computeLiquidityConditions(us10y, real10y);
+
+    renderMacroCard('Inflation', inflation);
+    renderMacroCard('Monetary',  monetary);
+    renderMacroCard('Risk',      risk);
+    renderMacroCard('Liquidity', liquidity);
+
+    return { inflation: inflation, monetary: monetary, risk: risk, liquidity: liquidity };
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     ASSET FUNDAMENTAL ENGINE — Gold & BTC rules
+  ════════════════════════════════════════════════════════════════════════ */
+
+  function ruleGoldRealYield(real10y) {
+    if (!Number.isFinite(real10y)) return { dir: 'none', label: 'Real Yield (TIPS)', valueStr: '—', desc: 'FRED data unavailable.' };
+    if (real10y < 0.5) return { dir: 'bull', label: 'Real Yield (TIPS)', valueStr: fmtYield(real10y), desc: 'Low/negative real rates reduce opportunity cost of holding gold.' };
+    if (real10y > 2.0) return { dir: 'bear', label: 'Real Yield (TIPS)', valueStr: fmtYield(real10y), desc: 'High real yields increase opportunity cost vs. gold.' };
+    return { dir: 'neut', label: 'Real Yield (TIPS)', valueStr: fmtYield(real10y), desc: 'Real yield in neutral range — no strong pressure on gold.' };
+  }
+  function ruleGoldBreakeven(breakeven) {
+    if (!Number.isFinite(breakeven)) return { dir: 'none', label: 'Breakeven Inflation', valueStr: '—', desc: 'Derived data unavailable.' };
+    if (breakeven > 2.5) return { dir: 'bull', label: 'Breakeven Inflation', valueStr: fmtYield(breakeven), desc: 'Elevated inflation expectations strengthen gold hedge appeal.' };
+    if (breakeven < 2.0) return { dir: 'bear', label: 'Breakeven Inflation', valueStr: fmtYield(breakeven), desc: 'Low inflation expectations reduce demand for gold hedge.' };
+    return { dir: 'neut', label: 'Breakeven Inflation', valueStr: fmtYield(breakeven), desc: 'Breakeven near Fed target — neutral signal.' };
+  }
+  function ruleGoldVIX(vix) {
+    if (!Number.isFinite(vix)) return { dir: 'none', label: 'VIX (Fear Gauge)', valueStr: '—', desc: 'FRED VIXCLS unavailable.' };
+    if (vix > 20) return { dir: 'bull', label: 'VIX (Fear Gauge)', valueStr: fmtNum(vix, 2), desc: 'Elevated fear index drives safe-haven flows into gold.' };
+    if (vix < 15) return { dir: 'bear', label: 'VIX (Fear Gauge)', valueStr: fmtNum(vix, 2), desc: 'Risk-on environment reduces safe-haven bid for gold.' };
+    return { dir: 'neut', label: 'VIX (Fear Gauge)', valueStr: fmtNum(vix, 2), desc: 'VIX in moderate range — no extreme signal.' };
+  }
+  function ruleGoldUS10Y(us10y) {
+    if (!Number.isFinite(us10y)) return { dir: 'none', label: 'US 10Y Nominal Yield', valueStr: '—', desc: 'FRED DGS10 unavailable.' };
+    if (us10y > 4.5) return { dir: 'bear', label: 'US 10Y Nominal Yield', valueStr: fmtYield(us10y), desc: 'Elevated yields strengthen USD — headwind for gold.' };
+    if (us10y < 3.5) return { dir: 'bull', label: 'US 10Y Nominal Yield', valueStr: fmtYield(us10y), desc: 'Low yields weaken USD — tailwind for gold prices.' };
+    return { dir: 'neut', label: 'US 10Y Nominal Yield', valueStr: fmtYield(us10y), desc: 'Nominal yield in neutral band.' };
+  }
+  function ruleGoldMomentum(pct) {
+    if (!Number.isFinite(pct)) return { dir: 'none', label: 'Gold Momentum (1D %)', valueStr: '—', desc: 'Price data unavailable.' };
+    if (pct < -0.5) return { dir: 'bull', label: 'Gold Momentum (1D %)', valueStr: fmtPct(pct), desc: 'Pullback may represent short-term value entry.' };
+    if (pct >  1.5) return { dir: 'bear', label: 'Gold Momentum (1D %)', valueStr: fmtPct(pct), desc: 'Strong surge may indicate near-term overbought.' };
+    return { dir: 'neut', label: 'Gold Momentum (1D %)', valueStr: fmtPct(pct), desc: 'Price action within normal daily range.' };
+  }
+
+  function computeGoldSignals(data) {
+    var yields    = data.yields || {};
+    var vix       = data.vix    || {};
+    var gold      = data.gold   || {};
+    var us10y     = yields.us10y;
+    var real10y   = yields.real10y;
+    var breakeven = (Number.isFinite(us10y) && Number.isFinite(real10y)) ? us10y - real10y : null;
+    return [
+      ruleGoldRealYield(real10y),
+      ruleGoldBreakeven(breakeven),
+      ruleGoldVIX(vix.value),
+      ruleGoldUS10Y(us10y),
+      ruleGoldMomentum(gold.changePct),
+    ];
+  }
+
+  function ruleBTCRiskMode(vix) {
+    if (!Number.isFinite(vix)) return { dir: 'none', label: 'Risk Sentiment (VIX)', valueStr: '—', desc: 'FRED VIXCLS unavailable.' };
+    if (vix < 15) return { dir: 'bull', label: 'Risk Sentiment (VIX)', valueStr: fmtNum(vix, 2), desc: 'Risk-on environment favors BTC outperformance.' };
+    if (vix > 25) return { dir: 'bear', label: 'Risk Sentiment (VIX)', valueStr: fmtNum(vix, 2), desc: 'High fear — BTC typically sells off with risk assets.' };
+    return { dir: 'neut', label: 'Risk Sentiment (VIX)', valueStr: fmtNum(vix, 2), desc: 'Moderate volatility — no strong directional signal.' };
+  }
+  function ruleBTCRealYield(real10y) {
+    if (!Number.isFinite(real10y)) return { dir: 'none', label: 'Real Yield (Debasement)', valueStr: '—', desc: 'FRED data unavailable.' };
+    if (real10y < 0)   return { dir: 'bull', label: 'Real Yield (Debasement)', valueStr: fmtYield(real10y), desc: 'Negative real yields fuel monetary debasement narrative.' };
+    if (real10y > 2.0) return { dir: 'bear', label: 'Real Yield (Debasement)', valueStr: fmtYield(real10y), desc: 'High real yields make risk-free returns attractive vs BTC.' };
+    return { dir: 'neut', label: 'Real Yield (Debasement)', valueStr: fmtYield(real10y), desc: 'Moderate real yield — neutral for debasement narrative.' };
+  }
+  function ruleBTCBreakeven(breakeven) {
+    if (!Number.isFinite(breakeven)) return { dir: 'none', label: 'Breakeven Inflation', valueStr: '—', desc: 'Derived data unavailable.' };
+    if (breakeven > 2.5) return { dir: 'bull', label: 'Breakeven Inflation', valueStr: fmtYield(breakeven), desc: 'High inflation expectations support BTC store-of-value narrative.' };
+    return { dir: 'neut', label: 'Breakeven Inflation', valueStr: fmtYield(breakeven), desc: 'Inflation expectations not extreme — limited BTC narrative support.' };
+  }
+  function ruleBTCMomentum(pct) {
+    if (!Number.isFinite(pct)) return { dir: 'none', label: 'BTC Momentum (1D %)', valueStr: '—', desc: 'Price data unavailable.' };
+    if (pct >  2.0) return { dir: 'bull', label: 'BTC Momentum (1D %)', valueStr: fmtPct(pct), desc: 'Strong positive momentum with meaningful gains.' };
+    if (pct < -2.0) return { dir: 'bear', label: 'BTC Momentum (1D %)', valueStr: fmtPct(pct), desc: 'Significant selling pressure today.' };
+    return { dir: 'neut', label: 'BTC Momentum (1D %)', valueStr: fmtPct(pct), desc: 'Price change within normal daily range.' };
+  }
+
+  function computeBTCSignals(data) {
+    var yields    = data.yields || {};
+    var vix       = data.vix    || {};
+    var btc       = data.btc    || {};
+    var us10y     = yields.us10y;
+    var real10y   = yields.real10y;
+    var breakeven = (Number.isFinite(us10y) && Number.isFinite(real10y)) ? us10y - real10y : null;
+    return [
+      ruleBTCRiskMode(vix.value),
+      ruleBTCRealYield(real10y),
+      ruleBTCBreakeven(breakeven),
+      ruleBTCMomentum(btc.changePct),
+    ];
+  }
+
+  function badgeText(dir) {
+    if (dir === 'bull') return 'BULLISH';
+    if (dir === 'bear') return 'BEARISH';
+    if (dir === 'neut') return 'NEUTRAL';
+    return 'NO DATA';
+  }
+
+  function renderSignalList(listId, signals) {
+    var el = $(listId);
+    if (!el) return;
+    el.innerHTML = signals.map(function (sig) {
+      return '<li class="signal-item">' +
+        '<span class="signal-bullet ' + sig.dir + '"></span>' +
+        '<div class="signal-body">' +
+          '<span class="signal-label">' + sig.label + '</span> ' +
+          '<span class="signal-value">' + sig.valueStr + '</span>' +
+          '<span class="signal-desc">' + sig.desc + '</span>' +
+        '</div>' +
+        '<span class="signal-badge ' + sig.dir + '">' + badgeText(sig.dir) + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
+  function overallBias(bull, bear, total) {
+    var diff = bull - bear;
+    if (total === 0) return { cls: 'neut', text: 'No Data' };
+    if (diff >=  3) return { cls: 'bull', text: 'Strong Bullish' };
+    if (diff ===  2) return { cls: 'bull', text: 'Bullish Lean' };
+    if (diff ===  1) return { cls: 'bull', text: 'Mild Bullish' };
+    if (diff === -1) return { cls: 'bear', text: 'Mild Bearish' };
+    if (diff === -2) return { cls: 'bear', text: 'Bearish Lean' };
+    if (diff <= -3) return { cls: 'bear', text: 'Strong Bearish' };
+    return { cls: 'neut', text: 'Neutral / Mixed' };
+  }
+
+  function renderTally(prefix, signals) {
+    var bull  = signals.filter(function (s) { return s.dir === 'bull'; }).length;
+    var bear  = signals.filter(function (s) { return s.dir === 'bear'; }).length;
+    var avail = signals.filter(function (s) { return s.dir !== 'none'; }).length;
+    var neut  = avail - bull - bear;
+
+    var bullEl = $(prefix + 'BullCount');
+    var bearEl = $(prefix + 'BearCount');
+    var neutEl = $(prefix + 'NeutCount');
+    var bb     = $(prefix + 'BarBull');
+    var br     = $(prefix + 'BarBear');
+    var badgeEl= $(prefix + 'OverallBadge');
+
+    if (bullEl) bullEl.textContent = bull;
+    if (bearEl) bearEl.textContent = bear;
+    if (neutEl) neutEl.textContent = neut;
+
+    var pBull = avail > 0 ? (bull / avail) * 100 : 0;
+    var pBear = avail > 0 ? (bear / avail) * 100 : 0;
+    if (bb) bb.style.width = pBull.toFixed(1) + '%';
+    if (br) br.style.width = pBear.toFixed(1) + '%';
+
+    var bias = overallBias(bull, bear, avail);
+    if (badgeEl) {
+      badgeEl.textContent = bias.text;
+      badgeEl.className   = 'overall-badge ' + bias.cls;
+    }
+    return { bull: bull, bear: bear, neut: neut, avail: avail, bias: bias };
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     CAUSE → EFFECT SUMMARY (rule-based, uses macro layer)
+  ════════════════════════════════════════════════════════════════════════ */
+  function spanFor(dir, text) {
+    if (dir === 'bull') return '<strong class="s-bull">' + text + '</strong>';
+    if (dir === 'bear') return '<strong class="s-bear">' + text + '</strong>';
+    return '<strong class="s-neut">' + text + '</strong>';
+  }
+
+  function generateCauseEffect(macro) {
+    var inflation = macro.inflation;
+    var monetary  = macro.monetary;
+    var risk      = macro.risk;
+    var liquidity = macro.liquidity;
+
+    var causes = [];
+    if (inflation.dir !== 'neut' && inflation.status !== 'NO DATA') {
+      causes.push({
+        text: inflation.dir === 'bull'
+          ? 'Rising inflation expectations'
+          : 'Easing inflation expectations',
+        dir: inflation.dir, weight: 2,
+      });
+    }
+    if (monetary.dir !== 'neut' && monetary.status !== 'NO DATA') {
+      causes.push({
+        text: monetary.dir === 'bull'
+          ? 'falling real yields'
+          : 'elevated real yields',
+        dir: monetary.dir, weight: 3,
+      });
+    }
+    if (risk.dir !== 'neut' && risk.status !== 'NO DATA') {
+      causes.push({
+        text: risk.dir === 'bull'
+          ? 'rising risk aversion (high VIX)'
+          : 'risk-on sentiment (low VIX)',
+        dir: risk.dir, weight: 2,
+      });
+    }
+    if (liquidity.dir !== 'neut' && liquidity.status !== 'NO DATA') {
+      causes.push({
+        text: liquidity.dir === 'bull'
+          ? 'loose liquidity conditions'
+          : 'tight liquidity conditions',
+        dir: liquidity.dir, weight: 2,
+      });
+    }
+
+    if (causes.length === 0) {
+      return 'Macro signals are <strong class="s-neut">balanced</strong> across inflation, monetary, risk and liquidity dimensions — no dominant directional force in current conditions.';
+    }
+
+    // Sort by weight desc, take top 2
+    causes.sort(function (a, b) { return b.weight - a.weight; });
+    var top = causes.slice(0, 2);
+
+    var bullCount = causes.filter(function (c) { return c.dir === 'bull'; }).length;
+    var bearCount = causes.filter(function (c) { return c.dir === 'bear'; }).length;
+    var netDir    = bullCount > bearCount ? 'bull' : bearCount > bullCount ? 'bear' : 'neut';
+
+    var effect;
+    if (netDir === 'bull') {
+      effect = 'supportive for gold and other safe-haven / debasement-narrative assets';
+    } else if (netDir === 'bear') {
+      effect = 'a headwind for gold and risk-sensitive assets';
+    } else {
+      effect = 'mixed across asset classes with no decisive directional read';
+    }
+
+    var causePart;
+    if (top.length === 1) {
+      causePart = spanFor(top[0].dir, top[0].text);
+    } else {
+      causePart = spanFor(top[0].dir, top[0].text) + ' combined with ' + spanFor(top[1].dir, top[1].text);
+    }
+
+    return causePart + ' suggest a macro backdrop that is ' + spanFor(netDir, effect) + '.';
+  }
+
+  function renderSummary(macro, gTally, bTally) {
+    var textEl   = $('summaryText');
+    var gTallyEl = $('goldTallyLine');
+    var bTallyEl = $('btcTallyLine');
+    var gBiasEl  = $('goldBiasLabel');
+    var bBiasEl  = $('btcBiasLabel');
+
+    if (textEl) textEl.innerHTML = generateCauseEffect(macro);
+
+    if (gTallyEl) gTallyEl.innerHTML =
+      '<span class="tb">' + gTally.bull + 'B</span> · ' +
+      '<span class="tr">' + gTally.bear + 'R</span> · ' +
+      '<span class="tn">' + gTally.neut + 'N</span>';
+    if (bTallyEl) bTallyEl.innerHTML =
+      '<span class="tb">' + bTally.bull + 'B</span> · ' +
+      '<span class="tr">' + bTally.bear + 'R</span> · ' +
+      '<span class="tn">' + bTally.neut + 'N</span>';
+
+    if (gBiasEl) { gBiasEl.textContent = gTally.bias.text; gBiasEl.className = 'ss-bias ' + gTally.bias.cls; }
+    if (bBiasEl) { bBiasEl.textContent = bTally.bias.text; bBiasEl.className = 'ss-bias ' + bTally.bias.cls; }
+
+    flashEl($('summaryCard'));
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     EVENTS TABLE — Finnhub /api/calendar
+  ════════════════════════════════════════════════════════════════════════ */
+
+  // Map an event to BULLISH / BEARISH / NEUTRAL impact with Hawkish/Dovish tone descriptor.
+  //
+  // Rule book:
+  //   CPI/PCE/PPI higher than expected   → BEARISH (Hawkish)
+  //   CPI/PCE/PPI lower than expected    → BULLISH (Dovish)
+  //   FOMC rate hike / hawkish surprise  → BEARISH (Hawkish)
+  //   FOMC rate cut / dovish surprise    → BULLISH (Dovish)
+  //   NFP / payrolls strong              → BEARISH (Hawkish)
+  //   NFP / payrolls weak                → BULLISH (Dovish)
+  //   Jobless claims rising (weak labor) → BULLISH (Dovish)
+  //   Jobless claims falling (tight labor) → BEARISH (Hawkish)
+  //   GDP / retail / ISM stronger        → BEARISH (Risk-On)
+  //   GDP / retail / ISM weaker          → BULLISH (Risk-Off)
+  //   Missing data                       → NEUTRAL (Uncertain)
+  function eventBias(ev) {
+    var cat      = ev.category;
+    var actual   = ev.actual;
+    var estimate = ev.estimate;
+    var prev     = ev.prev;
+
+    var hasActual = Number.isFinite(actual);
+    var hasEst    = Number.isFinite(estimate);
+    var hasPrev   = Number.isFinite(prev);
+
+    // Surprise basis: actual vs estimate (released), or estimate vs prev (upcoming)
+    var surprise = null;
+    var basis    = null;
+    if      (hasActual && hasEst)  { surprise = actual   - estimate; basis = 'actual vs est'; }
+    else if (hasEst    && hasPrev) { surprise = estimate - prev;     basis = 'est vs prev';   }
+    else if (hasActual && hasPrev) { surprise = actual   - prev;     basis = 'actual vs prev';}
+
+    if (surprise === null) {
+      return { cls: 'neut', text: 'NEUTRAL', sub: '(Uncertain)' };
+    }
+
+    var threshold = 0.05;
+    var isHigher  = surprise >  threshold;
+    var isLower   = surprise < -threshold;
+
+    if (cat === 'inflation' || cat === 'policy') {
+      // CPI/PCE/PPI/FOMC: higher print = hawkish = bearish for gold/BTC
+      if (isHigher) return { cls: 'bear', text: 'BEARISH', sub: '(Hawkish)' };
+      if (isLower)  return { cls: 'bull', text: 'BULLISH', sub: '(Dovish)'  };
+      return { cls: 'neut', text: 'NEUTRAL', sub: '(In-line)' };
+    }
+
+    if (cat === 'employment') {
+      var name = (ev.event || '').toLowerCase();
+      if (name.indexOf('jobless') >= 0) {
+        // Jobless claims: higher = weak labor = dovish = bullish gold
+        if (isHigher) return { cls: 'bull', text: 'BULLISH', sub: '(Dovish)'  };
+        if (isLower)  return { cls: 'bear', text: 'BEARISH', sub: '(Hawkish)' };
+      } else {
+        // NFP / payrolls: higher = strong labor = hawkish = bearish gold
+        if (isHigher) return { cls: 'bear', text: 'BEARISH', sub: '(Hawkish)' };
+        if (isLower)  return { cls: 'bull', text: 'BULLISH', sub: '(Dovish)'  };
+      }
+      return { cls: 'neut', text: 'NEUTRAL', sub: '(In-line)' };
+    }
+
+    if (cat === 'growth' || cat === 'consumer' || cat === 'manufacturing') {
+      // GDP / Retail / ISM: stronger print = risk-on = mild bearish gold (yields up)
+      if (isHigher) return { cls: 'bear', text: 'BEARISH', sub: '(Risk-On)'  };
+      if (isLower)  return { cls: 'bull', text: 'BULLISH', sub: '(Risk-Off)' };
+      return { cls: 'neut', text: 'NEUTRAL', sub: '(In-line)' };
+    }
+
+    return { cls: 'neut', text: 'NEUTRAL', sub: '(Uncertain)' };
+  }
+
+  function fmtEventDate(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    var opts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+    try { return d.toLocaleString('en-US', opts); } catch (_) { return iso.slice(0, 16).replace('T', ' '); }
+  }
+
+  function fmtEventNum(n, unit) {
+    if (!Number.isFinite(n)) return '—';
+    var s = n.toFixed(n >= 100 ? 1 : 2);
+    return unit === '%' ? s + '%' : s;
+  }
+
+  function categoryLabel(cat) {
+    var map = {
+      inflation:     'CPI',
+      policy:        'FED',
+      employment:    'JOBS',
+      growth:        'GDP',
+      consumer:      'RETAIL',
+      manufacturing: 'MFG',
+      other:         'OTH',
+    };
+    return map[cat] || 'OTH';
+  }
+
+  function renderEvents(d) {
+    var tbody = $('eventsTableBody');
+    if (!tbody) return;
+
+    if (!d || !Array.isArray(d.events) || d.events.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="ev-empty">No upcoming events available.</td></tr>';
+      return;
+    }
+
+    var events = d.events.slice(0, 14);
+    tbody.innerHTML = events.map(function (ev) {
+      var bias = eventBias(ev);
+      return '<tr>' +
+        '<td><span class="ev-name">' + ev.event + '</span>' +
+        '<span class="ev-cat-pill">' + categoryLabel(ev.category) + '</span></td>' +
+        '<td><span class="ev-date">' + fmtEventDate(ev.time) + '</span></td>' +
+        '<td class="ev-num' + (Number.isFinite(ev.prev) ? '' : ' muted') + '">' + fmtEventNum(ev.prev, ev.unit) + '</td>' +
+        '<td class="ev-num' + (Number.isFinite(ev.estimate) ? '' : ' muted') + '">' + fmtEventNum(ev.estimate, ev.unit) + '</td>' +
+        '<td class="ev-num' + (Number.isFinite(ev.actual) ? '' : ' muted') + '">' + fmtEventNum(ev.actual, ev.unit) + '</td>' +
+        '<td class="ev-impact-cell"><span class="ev-bias">' +
+          '<span class="ev-bias-tag ' + bias.cls + '">' + bias.text + '</span>' +
+          '<span class="ev-bias-sub">' + bias.sub + '</span>' +
+        '</span></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     NEWS SENTIMENT — keyword scoring on Finnhub headlines
+  ════════════════════════════════════════════════════════════════════════ */
+
+  // HAWKISH = Fed tightening / inflation rising / rates up → BEARISH for Gold & BTC
+  var HAWKISH_KEYWORDS = [
+    'rate hike',       'tightening',        'strong economy',
+    'inflation rising','higher rates',      'hawkish',
+    'tighten',         'restrictive',       'overheating',
+    'hot inflation',   'sticky inflation',  'rate increase',
+    'raises rates',    'fed hikes',         'aggressive fed',
+    'jumbo hike',      'rates higher',      'inflation surge'
+  ];
+
+  // DOVISH = Fed easing / inflation cooling / rates down → BULLISH for Gold & BTC
+  var DOVISH_KEYWORDS = [
+    'rate cut',        'easing',            'stimulus',
+    'slowdown',        'inflation cooling', 'lower rates',
+    'dovish',          'pivot',             'recession',
+    'weak data',       'disinflation',      'rate decrease',
+    'fed cuts',        'soft landing',      'cooling inflation',
+    'softer',          'rate cuts',         'fed pivot'
+  ];
+
+  function countMatches(text, keywords) {
+    var total = 0;
+    for (var i = 0; i < keywords.length; i++) {
+      // Escape spaces are fine in regex; word-boundary doesn't apply for multi-word phrases
+      var kw = keywords[i];
+      var re = kw.indexOf(' ') >= 0
+        ? new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+        : new RegExp('\\b' + kw + '\\b', 'gi');
+      var m  = text.match(re);
+      if (m) total += m.length;
+    }
+    return total;
+  }
+
+  // Classify a single headline as hawk / dove / neut and map to impact
+  function classifyHeadline(item) {
+    var text = ((item.title || item.headline || '') + ' ' + (item.summary || '')).toLowerCase();
+    var hawk = countMatches(text, HAWKISH_KEYWORDS);
+    var dove = countMatches(text, DOVISH_KEYWORDS);
+
+    var tone, impact;
+    if (hawk > dove)      { tone = 'hawk'; impact = 'bear'; }
+    else if (dove > hawk) { tone = 'dove'; impact = 'bull'; }
+    else                  { tone = 'neut'; impact = 'neut'; }
+
+    return { tone: tone, impact: impact, hawkHits: hawk, doveHits: dove };
+  }
+
+  function toneLabel(tone) {
+    return tone === 'hawk' ? 'HAWKISH' : tone === 'dove' ? 'DOVISH' : 'NEUTRAL';
+  }
+  function impactLabel(impact) {
+    return impact === 'bull' ? 'BULLISH' : impact === 'bear' ? 'BEARISH' : 'NEUTRAL';
+  }
+
+  function analyzeNews(newsData) {
+    var items = (newsData && Array.isArray(newsData.news)) ? newsData.news : [];
+    if (items.length === 0) {
+      return {
+        dir: 'neut', scanned: 0,
+        bullCount: 0, bearCount: 0, neutCount: 0,
+        pctBull: 0, pctBear: 0, pctNeut: 0,
+        confidence: 0, classified: [],
+      };
+    }
+
+    var subset = items.slice(0, 10);
+    var classified = subset.map(function (it) {
+      var c = classifyHeadline(it);
+      return {
+        title:    it.title || it.headline || '',
+        summary:  it.summary || '',
+        source:   it.source || '',
+        url:      it.url    || '',
+        datetime: it.datetime || it.time || it.publishedAt || null,
+        tone:     c.tone,
+        impact:   c.impact,
+        hawkHits: c.hawkHits,
+        doveHits: c.doveHits,
+      };
+    });
+
+    var bullCount = classified.filter(function (c) { return c.impact === 'bull'; }).length;
+    var bearCount = classified.filter(function (c) { return c.impact === 'bear'; }).length;
+    var neutCount = classified.length - bullCount - bearCount;
+    var total     = classified.length;
+
+    var pctBull = total > 0 ? Math.round((bullCount / total) * 100) : 0;
+    var pctBear = total > 0 ? Math.round((bearCount / total) * 100) : 0;
+    var pctNeut = total > 0 ? 100 - pctBull - pctBear : 0;
+
+    var dir = 'neut';
+    if (pctBull > pctBear + 15)      dir = 'bull';
+    else if (pctBear > pctBull + 15) dir = 'bear';
+
+    // Confidence = share of headlines that had ANY keyword match
+    var classified_hits = classified.filter(function (c) {
+      return (c.hawkHits + c.doveHits) > 0;
+    }).length;
+    var confidence = total > 0 ? Math.round((classified_hits / total) * 100) : 0;
+
+    return {
+      dir: dir, scanned: total,
+      bullCount: bullCount, bearCount: bearCount, neutCount: neutCount,
+      pctBull: pctBull, pctBear: pctBear, pctNeut: pctNeut,
+      confidence: confidence, classified: classified,
+    };
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function fmtNewsTime(ts) {
+    if (!ts) return '';
+    var ms;
+    if (typeof ts === 'number') ms = ts < 1e12 ? ts * 1000 : ts;
+    else { var d = new Date(ts); ms = d.getTime(); }
+    if (!Number.isFinite(ms)) return '';
+    var s = Math.floor((Date.now() - ms) / 1000);
+    if (s < 60)   return s + 's ago';
+    var m = Math.floor(s / 60);
+    if (m < 60)   return m + 'm ago';
+    var h = Math.floor(m / 60);
+    if (h < 24)   return h + 'h ago';
+    return Math.floor(h / 24) + 'd ago';
+  }
+
+  function renderHeadlinesList(classified) {
+    var el = $('newsHeadlinesList');
+    if (!el) return;
+    if (!classified || classified.length === 0) {
+      el.innerHTML = '<li class="news-headlines-empty">No recent headlines available.</li>';
+      return;
+    }
+
+    el.innerHTML = classified.map(function (c) {
+      var title = escapeHtml(c.title) || '(no headline)';
+      var src   = escapeHtml(c.source);
+      var when  = fmtNewsTime(c.datetime);
+      var meta  = [];
+      if (src)  meta.push('<span class="news-h-source">' + src + '</span>');
+      if (when) meta.push('<span class="news-h-time">' + when + '</span>');
+      var textTag = c.url
+        ? '<a class="news-h-text" href="' + escapeHtml(c.url) + '" target="_blank" rel="noopener noreferrer">' + title + '</a>'
+        : '<span class="news-h-text">' + title + '</span>';
+
+      return '<li class="news-headline-item">' +
+        '<div class="news-h-main">' +
+          (meta.length ? '<div class="news-h-meta">' + meta.join('<span>·</span>') + '</div>' : '') +
+          textTag +
+        '</div>' +
+        '<div class="news-h-badges">' +
+          '<span class="news-h-tone '   + c.tone   + '">' + toneLabel(c.tone)     + '</span>' +
+          '<span class="news-h-impact ' + c.impact + '">' + impactLabel(c.impact) + '</span>' +
+        '</div>' +
+      '</li>';
+    }).join('');
+  }
+
+  function renderNewsSentiment(newsData) {
+    var r = analyzeNews(newsData);
+
+    var subEl    = $('newsSentSub');
+    var overallEl= $('newsSentOverall');
+    var pctBullEl= $('newsPctBull');
+    var pctBearEl= $('newsPctBear');
+    var pctNeutEl= $('newsPctNeut');
+    var fillEl   = $('newsConfFill');
+    var valEl    = $('newsConfVal');
+    var descEl   = $('newsSentDesc');
+
+    if (subEl)     subEl.textContent     = r.scanned + ' headlines classified';
+    if (pctBullEl) pctBullEl.textContent = r.pctBull + '%';
+    if (pctBearEl) pctBearEl.textContent = r.pctBear + '%';
+    if (pctNeutEl) pctNeutEl.textContent = r.pctNeut + '%';
+    if (fillEl)    fillEl.style.width    = r.confidence + '%';
+    if (valEl)     valEl.textContent     = r.confidence + '%';
+
+    var label = impactLabel(r.dir);
+    if (overallEl) {
+      overallEl.textContent = label;
+      overallEl.className   = 'news-sent-overall-badge ' + r.dir;
+    }
+
+    renderHeadlinesList(r.classified);
+
+    if (descEl) {
+      if (r.scanned === 0) {
+        descEl.textContent = 'No headlines available yet. Engine will classify each headline by hawkish vs dovish keyword balance once data loads.';
+      } else if (r.confidence === 0) {
+        descEl.textContent = 'No hawkish or dovish keywords detected in the last ' + r.scanned + ' headlines — all classified as Neutral.';
+      } else if (r.dir === 'bull') {
+        descEl.textContent = 'Dovish tone dominates: ' + r.bullCount + ' of ' + r.scanned + ' headlines lean toward easing / cooling inflation — bullish for Gold and BTC.';
+      } else if (r.dir === 'bear') {
+        descEl.textContent = 'Hawkish tone dominates: ' + r.bearCount + ' of ' + r.scanned + ' headlines reference tightening / higher rates — bearish for Gold and BTC.';
+      } else {
+        descEl.textContent = 'Headline tone is balanced (' + r.bullCount + ' dovish / ' + r.bearCount + ' hawkish / ' + r.neutCount + ' neutral) — no decisive directional read.';
+      }
+    }
+
+    flashEl($('newsSentCard'));
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     FIBONACCI TECHNICAL ENGINE
+  ════════════════════════════════════════════════════════════════════════ */
+  var FIB_LEVELS = [
+    { ratio: 1.000, name: '100%',  key: true  },
+    { ratio: 0.786, name: '78.6%', key: false },
+    { ratio: 0.618, name: '61.8%', key: true  },
+    { ratio: 0.500, name: '50.0%', key: false },
+    { ratio: 0.382, name: '38.2%', key: true  },
+    { ratio: 0.236, name: '23.6%', key: false },
+    { ratio: 0.000, name: '0%',    key: true  },
+  ];
+
+  function computeFib(high, low, price) {
+    if (!Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(price)) return null;
+    if (high <= low) return null;
+    var range = high - low;
+    var levels = FIB_LEVELS.map(function (lv) {
+      var lp = low + lv.ratio * range;
+      return { ratio: lv.ratio, name: lv.name, key: lv.key, price: lp, above: lp > price };
+    });
+    var nearRes = null, nearSup = null;
+    for (var i = 0; i < levels.length; i++) {
+      if (levels[i].above) {
+        if (nearRes === null || levels[i].price < nearRes.price) nearRes = levels[i];
+      } else {
+        if (nearSup === null || levels[i].price > nearSup.price) nearSup = levels[i];
+      }
+    }
+    return { levels: levels, nearRes: nearRes, nearSup: nearSup, price: price };
+  }
+
+  function renderFibTable(tableContainerId, fib, isGold) {
+    var el = $(tableContainerId);
+    if (!el) return;
+    if (!fib) { el.innerHTML = '<p class="fib-no-data">Price data unavailable — Fibonacci levels cannot be calculated.</p>'; return; }
+
+    var dec    = isGold ? 2 : 0;
+    var price  = fib.price;
+    var levels = fib.levels;
+    var nearRes = fib.nearRes;
+    var nearSup = fib.nearSup;
+
+    var html = '<table class="fib-table"><thead><tr>' +
+      '<th style="text-align:left">Level</th>' +
+      '<th style="text-align:right">Price</th>' +
+      '<th style="text-align:right">Zone</th>' +
+      '</tr></thead><tbody>';
+
+    var priceInserted = false;
+    for (var i = 0; i < levels.length; i++) {
+      var lv = levels[i];
+      if (!priceInserted && nearSup && lv.ratio === nearSup.ratio) {
+        html += '<tr class="fib-curr-row"><td colspan="3">' +
+          '<div class="fib-curr-banner">' +
+          '<span class="fib-curr-arrow">&#9658;</span>' +
+          '<span class="fib-curr-label">Current Price</span>' +
+          '<span class="fib-curr-price">' + fmtPrice(price, dec) + '</span>' +
+          '</div></td></tr>';
+        priceInserted = true;
+      }
+      var isNearRes = nearRes && lv.ratio === nearRes.ratio;
+      var isNearSup = nearSup && lv.ratio === nearSup.ratio;
+      var zoneClass, zoneText;
+      if (lv.above) {
+        zoneClass = isNearRes ? 'near-res' : 'res';
+        zoneText  = isNearRes ? 'NEAR RES' : 'RESISTANCE';
+      } else {
+        zoneClass = isNearSup ? 'near-sup' : 'sup';
+        zoneText  = isNearSup ? 'NEAR SUP' : 'SUPPORT';
+      }
+      html += '<tr>' +
+        '<td><span class="fib-level-name' + (lv.key ? ' key-level' : '') + '">' + lv.name + '</span></td>' +
+        '<td class="fib-price-val">' + fmtPrice(lv.price, dec) + '</td>' +
+        '<td><span class="fib-zone-tag ' + zoneClass + '">' + zoneText + '</span></td>' +
+        '</tr>';
+    }
+    if (!priceInserted) {
+      html += '<tr class="fib-curr-row"><td colspan="3">' +
+        '<div class="fib-curr-banner">' +
+        '<span class="fib-curr-arrow">&#9658;</span>' +
+        '<span class="fib-curr-label">Current Price</span>' +
+        '<span class="fib-curr-price">' + fmtPrice(price, dec) + '</span>' +
+        '</div></td></tr>';
+    }
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }
+
+  function renderFibCard(prefix, asset, isGold) {
+    var high  = asset && Number.isFinite(asset.high)  ? asset.high  : null;
+    var low   = asset && Number.isFinite(asset.low)   ? asset.low   : null;
+    var price = asset && Number.isFinite(asset.price) ? asset.price : null;
+    var dec   = isGold ? 2 : 0;
+
+    var highEl = $(prefix + 'FibHigh');
+    var lowEl  = $(prefix + 'FibLow');
+    var currEl = $(prefix + 'FibCurrent');
+    var sellEl = $(prefix + 'FibSell');
+    var buyEl  = $(prefix + 'FibBuy');
+
+    if (highEl) highEl.textContent = Number.isFinite(high)  ? fmtPrice(high, dec)  : '—';
+    if (lowEl)  lowEl.textContent  = Number.isFinite(low)   ? fmtPrice(low, dec)   : '—';
+    if (currEl) currEl.textContent = Number.isFinite(price) ? fmtPrice(price, dec) : '—';
+
+    var fib = computeFib(high, low, price);
+
+    if (sellEl) {
+      if (fib && fib.nearRes) {
+        sellEl.textContent = fib.nearRes.name + ' · ' + fmtPrice(fib.nearRes.price, dec);
+        sellEl.className   = 'fib-zone-val';
+      } else {
+        sellEl.textContent = '—';
+        sellEl.className   = 'fib-zone-val na';
+      }
+    }
+    if (buyEl) {
+      if (fib && fib.nearSup) {
+        buyEl.textContent = fib.nearSup.name + ' · ' + fmtPrice(fib.nearSup.price, dec);
+        buyEl.className   = 'fib-zone-val';
+      } else {
+        buyEl.textContent = '—';
+        buyEl.className   = 'fib-zone-val na';
+      }
+    }
+
+    renderFibTable(prefix + 'FibTable', fib, isGold);
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     MAIN RENDER
+  ════════════════════════════════════════════════════════════════════════ */
+  function renderMarket(d) {
+    if (!d) {
+      var st = $('statusText');
+      if (st && !state.market.lastOk) { st.textContent = 'Data unavailable'; st.className = 'rs-status-text is-err'; }
+      return;
+    }
+    var stEl = $('statusText');
+    if (stEl) { stEl.textContent = 'Connected'; stEl.className = 'rs-status-text'; }
+
+    var macro       = renderMacroLayer(d);
+    var goldSignals = computeGoldSignals(d);
+    var btcSignals  = computeBTCSignals(d);
+    renderSignalList('goldSignalList', goldSignals);
+    renderSignalList('btcSignalList',  btcSignals);
+    flashEl($('goldFundCard'));
+    flashEl($('btcFundCard'));
+
+    var gTally = renderTally('gold', goldSignals);
+    var bTally = renderTally('btc',  btcSignals);
+
+    renderSummary(macro, gTally, bTally);
+
+    renderFibCard('gold', d.gold || {}, true);
+    renderFibCard('btc',  d.btc  || {}, false);
+    flashEl($('goldFibCard'));
+    flashEl($('btcFibCard'));
+
+    renderSourceStatus();
+  }
+
+  /* ─── TICKS ───────────────────────────────────────────────────────────── */
+  function tickMarket() {
+    safeFetch('market', MARKET_URL).then(function (data) {
+      renderMarket(data || state.market.data);
+    });
+  }
+  function tickNews() {
+    safeFetch('news', NEWS_URL).then(function (data) {
+      renderNewsSentiment(data || state.news.data);
+    });
+  }
+  function tickCalendar() {
+    safeFetch('calendar', CALENDAR_URL).then(function (data) {
+      renderEvents(data || state.calendar.data);
+      renderSourceStatus();
+    });
+  }
+
+  /* ─── INIT ────────────────────────────────────────────────────────────── */
+  tickMarket();
+  tickNews();
+  tickCalendar();
+  setInterval(tickMarket,   MARKET_MS);
+  setInterval(tickNews,     NEWS_MS);
+  setInterval(tickCalendar, CALENDAR_MS);
+  setInterval(tickAge,      AGE_TICK_MS);
+
+  /* ─── MOBILE MENU ─────────────────────────────────────────────────────── */
+  window.toggleMenu = function () {
+    var m = $('mobileMenu');
+    if (m) m.classList.toggle('open');
+  };
+
+})();
+</script>
+
+</body>
+</html>

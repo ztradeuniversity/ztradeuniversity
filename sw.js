@@ -5,7 +5,7 @@
    ─────────────────────────────────────────────────────────────────────────── */
 'use strict';
 
-const CACHE_VERSION = 'ztu-shell-v1';
+const CACHE_VERSION = 'ztu-shell-v2';
 const SHELL_ASSETS  = [
   '/manifest.json',
   '/assets/ztu-logo.png'

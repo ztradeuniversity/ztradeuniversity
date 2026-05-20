@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Compare Exness, XM, Pepperstone, IC Markets and FBS. Educational guide to opening a forex trading account, understanding broker regulation, and avoiding common beginner mistakes. Not financial advice." />
@@ -63,13 +64,13 @@
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --navy:#0b1120;--purple:#5b1ac8;--purple2:#7c3aed;--purple3:#a78bfa;--purple4:#c4b5fd;
-      --lime:#acd400;--white:#fff;--text:#0d1526;--muted:#5a6580;--bg:#f7f8fc;
+      --navy:#1a1410;--purple:#c89c3f;--purple2:#d4ae5e;--purple3:#e6c987;--purple4:#f7e0a8;
+      --lime:#c89c3f;--white:#fff;--text:#2b2520;--muted:#756347;--bg:#f7f8fc;
       --gold:#d97706;--gold2:#f59e0b;--gold3:#fbbf24;
-      --cyan:#06b6d4;--cyan2:#22d3ee;
+      --cyan:#c89c3f;--cyan2:#d4ae5e;
       --bull:#10b981;--bull2:#34d399;
       --bear:#ef4444;--bear2:#f87171;
-      --card-bg:#0a0f1f;
+      --card-bg:#1a1410;
     }
     html{scroll-behavior:smooth}
     body{font-family:'Inter',sans-serif;background:var(--white);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.6}
@@ -85,14 +86,14 @@
     .logo{display:flex;align-items:center;gap:11px;text-decoration:none}
     .logo-mark{height:46px;width:auto;max-width:220px;object-fit:contain;flex-shrink:0}
     .nav-links{display:flex;align-items:center;gap:0;list-style:none}
-    .nav-links a{font-size:13.5px;font-weight:500;color:#3a3f52;text-decoration:none;padding:8px 14px;border-radius:8px;transition:color .18s,background .18s}
-    .nav-links a:hover{color:var(--purple);background:rgba(91,26,200,0.05)}
+    .nav-links a{font-size:13.5px;font-weight:500;color:#2b2520;text-decoration:none;padding:8px 14px;border-radius:8px;transition:color .18s,background .18s}
+    .nav-links a:hover{color:var(--purple);background:rgba(200,156,63,0.05)}
     .nav-links a.active{font-weight:700;color:var(--text)}
     .nav-right{display:flex;align-items:center;gap:10px}
     .nav-sentiment{display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:var(--white);font-size:12.5px;font-weight:700;padding:9px 18px;border-radius:100px;text-decoration:none;transition:background .22s}
     .nav-sentiment:hover{background:#1e2a4a}
     .ns-dot{width:6px;height:6px;border-radius:50%;background:var(--lime);flex-shrink:0;animation:nsPulse 2.4s ease-out infinite}
-    @keyframes nsPulse{0%{box-shadow:0 0 0 0 rgba(172,212,0,0.5)}70%{box-shadow:0 0 0 7px rgba(172,212,0,0)}100%{box-shadow:0 0 0 0 rgba(172,212,0,0)}}
+    @keyframes nsPulse{0%{box-shadow:0 0 0 0 rgba(200,156,63,0.5)}70%{box-shadow:0 0 0 7px rgba(200,156,63,0)}100%{box-shadow:0 0 0 0 rgba(200,156,63,0)}}
     .nav-join{display:inline-flex;align-items:center;background:linear-gradient(135deg,var(--purple2),var(--purple));color:var(--white);font-size:13.5px;font-weight:700;padding:11px 24px;border-radius:100px;text-decoration:none;transition:opacity .22s}
     .nav-join:hover{opacity:.88}
     .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
@@ -103,20 +104,20 @@
 
     /* HERO */
     .bb-hero{padding:120px 0 68px;background:linear-gradient(140deg,#04050d 0%,#0b0820 40%,#0e0a26 70%,#100632 100%);position:relative;overflow:hidden}
-    .bb-hero::before{content:'';position:absolute;top:-180px;right:-140px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.22) 0%,transparent 65%);pointer-events:none}
-    .bb-hero::after{content:'';position:absolute;bottom:-200px;left:-160px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.12) 0%,transparent 65%);pointer-events:none}
+    .bb-hero::before{content:'';position:absolute;top:-180px;right:-140px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(212,174,94,0.22) 0%,transparent 65%);pointer-events:none}
+    .bb-hero::after{content:'';position:absolute;bottom:-200px;left:-160px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(200,156,63,0.12) 0%,transparent 65%);pointer-events:none}
     .hero-inner{position:relative;z-index:1;max-width:780px}
-    .hero-pre{display:inline-flex;align-items:center;gap:10px;background:rgba(124,58,237,0.14);border:1px solid rgba(196,181,253,0.30);color:var(--purple4);font-size:11.5px;font-weight:700;padding:6px 14px 6px 10px;border-radius:100px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:22px}
+    .hero-pre{display:inline-flex;align-items:center;gap:10px;background:rgba(212,174,94,0.14);border:1px solid rgba(196,181,253,0.30);color:var(--purple4);font-size:11.5px;font-weight:700;padding:6px 14px 6px 10px;border-radius:100px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:22px}
     .hero-dot{width:8px;height:8px;border-radius:50%;background:var(--lime);flex-shrink:0;animation:heroPulse 2.2s ease-out infinite}
-    @keyframes heroPulse{0%{box-shadow:0 0 0 0 rgba(172,212,0,0.55)}70%{box-shadow:0 0 0 10px rgba(172,212,0,0)}100%{box-shadow:0 0 0 0 rgba(172,212,0,0)}}
+    @keyframes heroPulse{0%{box-shadow:0 0 0 0 rgba(200,156,63,0.55)}70%{box-shadow:0 0 0 10px rgba(200,156,63,0)}100%{box-shadow:0 0 0 0 rgba(200,156,63,0)}}
     .bb-hero h1{font-family:'Manrope','Inter',sans-serif;font-size:clamp(26px,4.2vw,50px);font-weight:900;color:var(--white);letter-spacing:-1.8px;line-height:1.06;margin-bottom:18px}
     .bb-hero h1 .hx{background:linear-gradient(110deg,var(--purple3) 0%,var(--cyan2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
     .bb-lead{font-size:17px;color:rgba(255,255,255,0.62);line-height:1.72;max-width:680px;margin-bottom:26px}
     .bb-trust{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:26px}
     .bt-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.70);font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;letter-spacing:.3px}
     .bb-cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:26px}
-    .cta-primary{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--purple2) 0%,#0a84ff 100%);color:var(--white);font-size:13.5px;font-weight:700;padding:13px 24px;border-radius:100px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(124,58,237,0.38)}
-    .cta-primary:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(124,58,237,0.50)}
+    .cta-primary{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--purple2) 0%,#0a84ff 100%);color:var(--white);font-size:13.5px;font-weight:700;padding:13px 24px;border-radius:100px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(212,174,94,0.38)}
+    .cta-primary:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(212,174,94,0.50)}
     .cta-ghost{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.88);font-size:13.5px;font-weight:700;padding:12px 22px;border-radius:100px;text-decoration:none;transition:background .2s}
     .cta-ghost:hover{background:rgba(255,255,255,0.11)}
     .hero-disc{font-size:11.5px;color:rgba(255,255,255,0.32);line-height:1.60;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;max-width:580px}
@@ -138,7 +139,7 @@
 
     /* SECTION 2 — WHAT */
     .bb-what{padding:56px 0 60px;background:var(--white)}
-    .def-box{background:linear-gradient(135deg,rgba(124,58,237,0.05),rgba(6,182,212,0.03));border:1px solid rgba(124,58,237,0.15);border-left:3px solid var(--purple2);border-radius:12px;padding:20px 22px;margin-bottom:28px}
+    .def-box{background:linear-gradient(135deg,rgba(212,174,94,0.05),rgba(200,156,63,0.03));border:1px solid rgba(212,174,94,0.15);border-left:3px solid var(--purple2);border-radius:12px;padding:20px 22px;margin-bottom:28px}
     .def-box p{font-size:15.5px;color:var(--text);line-height:1.72}
     .what-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
     .what-card{background:var(--bg);border:1px solid rgba(0,0,0,0.07);border-radius:14px;padding:18px 16px}
@@ -167,7 +168,7 @@
     .bct thead th{padding:11px 14px;text-align:left;font-size:9.5px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);background:var(--bg);border-bottom:1px solid rgba(0,0,0,0.07);white-space:nowrap}
     .bct thead th:first-child{color:var(--text)}
     .bct tbody tr{border-bottom:1px solid rgba(0,0,0,0.04);transition:background .15s}
-    .bct tbody tr:hover{background:rgba(124,58,237,0.025)}
+    .bct tbody tr:hover{background:rgba(212,174,94,0.025)}
     .bct tbody tr:last-child{border-bottom:none}
     .bct td{padding:10px 14px;vertical-align:middle;color:#374151;white-space:nowrap}
     .bct td:first-child{font-weight:700;color:var(--text);background:rgba(0,0,0,0.012)}
@@ -188,7 +189,7 @@
     .bk-name{font-family:'Manrope',sans-serif;font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.4px}
     .bk-rat{font-size:13px;font-weight:800;padding:4px 12px;border-radius:100px;background:rgba(16,185,129,0.10);border:1px solid rgba(52,211,153,0.25);color:var(--bull)}
     .bk-regs{display:flex;gap:7px;flex-wrap:wrap}
-    .bk-reg{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:100px;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.18);color:var(--purple2)}
+    .bk-reg{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:100px;background:rgba(212,174,94,0.07);border:1px solid rgba(212,174,94,0.18);color:var(--purple2)}
     .bk-body{padding:20px 26px 0}
     .bk-intro{font-size:15.5px;color:#2a3145;line-height:1.72;margin-bottom:20px}
     .bk-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
@@ -240,8 +241,8 @@
 
     /* SECTION 9 — FINAL CTA */
     .bb-final{padding:68px 0;background:linear-gradient(140deg,#04050d 0%,#0b0820 40%,#0e0a26 70%,#100632 100%);position:relative;overflow:hidden}
-    .bb-final::before{content:'';position:absolute;top:-160px;right:-140px;width:580px;height:580px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.20) 0%,transparent 65%);pointer-events:none}
-    .bb-final::after{content:'';position:absolute;bottom:-160px;left:-140px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.12) 0%,transparent 65%);pointer-events:none}
+    .bb-final::before{content:'';position:absolute;top:-160px;right:-140px;width:580px;height:580px;border-radius:50%;background:radial-gradient(circle,rgba(212,174,94,0.20) 0%,transparent 65%);pointer-events:none}
+    .bb-final::after{content:'';position:absolute;bottom:-160px;left:-140px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(200,156,63,0.12) 0%,transparent 65%);pointer-events:none}
     .fci{position:relative;z-index:1;text-align:center;max-width:700px;margin:0 auto}
     .fci-eye{font-size:11px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;color:var(--purple4);margin-bottom:16px}
     .fci-h{font-family:'Manrope',sans-serif;font-size:clamp(22px,3.4vw,34px);font-weight:900;color:var(--white);letter-spacing:-1.2px;line-height:1.08;margin-bottom:14px}
@@ -249,7 +250,7 @@
     .fci-btns{display:flex;gap:11px;flex-wrap:wrap;justify-content:center;margin-bottom:36px}
     .fci-disc{font-size:12px;color:rgba(255,255,255,0.28);line-height:1.66;padding:18px 22px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;text-align:left;max-width:700px;margin:0 auto}
     .fci-disc strong{color:rgba(255,255,255,0.44)}
-    .cta-tg{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--purple2) 0%,#0a84ff 100%);color:var(--white);font-size:13.5px;font-weight:700;padding:13px 24px;border-radius:100px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(124,58,237,0.38)}
+    .cta-tg{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--purple2) 0%,#0a84ff 100%);color:var(--white);font-size:13.5px;font-weight:700;padding:13px 24px;border-radius:100px;text-decoration:none;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(212,174,94,0.38)}
     .cta-tg:hover{transform:translateY(-2px)}
     .cta-gst{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.90);font-size:13.5px;font-weight:700;padding:12px 22px;border-radius:100px;text-decoration:none;transition:background .2s}
     .cta-gst:hover{background:rgba(255,255,255,0.11)}
@@ -271,7 +272,7 @@
     }
   </style>
 </head>
-<body>
+<body class="lux-themed">
 
 <div class="read-progress" id="readProgress"></div>
 
@@ -283,7 +284,6 @@
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="index.html">Home</a></li>
-      <li><a href="index.html#results">Results &amp; Analysis</a></li>
       <li><a href="index.html#articles" class="active">Articles</a></li>
       <li><a href="index.html#about">About</a></li>
     </ul>
@@ -598,9 +598,9 @@
           </div>
 
           <p class="bk-steps-lbl">How to Open an Exness Account</p>
-          <a href="IB_LINK_EXNESS" class="bk-btn" style="background:linear-gradient(135deg,#10b981,#059669)" target="_blank" rel="noopener noreferrer">Open Exness Account →</a>
+          <a href="https://one.exnessonelink.com/a/5dogk171n8?source=app&amp;platform=mobile&amp;pid=mobile_share" class="bk-btn" style="background:linear-gradient(135deg,#10b981,#059669)" target="_blank" rel="noopener noreferrer">Open Exness Account →</a>
           <ol class="bk-steps">
-            <li class="bk-step"><span class="bk-snum" aria-hidden="true">1</span><span class="bk-stxt">Click the <a href="IB_LINK_EXNESS" target="_blank" rel="noopener noreferrer">Open Exness Account</a> button above to access the official broker registration page through our partner access link.</span></li>
+            <li class="bk-step"><span class="bk-snum" aria-hidden="true">1</span><span class="bk-stxt">Click the <a href="https://one.exnessonelink.com/a/5dogk171n8?source=app&amp;platform=mobile&amp;pid=mobile_share" target="_blank" rel="noopener noreferrer">Open Exness Account</a> button above to access the official broker registration page through our partner access link.</span></li>
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">2</span><span class="bk-stxt">Select your account type — Standard, Standard Plus, or Raw Spread — based on your trading style.</span></li>
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">3</span><span class="bk-stxt">Enter your email address, country of residence, and create a secure password.</span></li>
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">4</span><span class="bk-stxt">Complete identity verification by uploading a government-issued ID and a proof-of-address document.</span></li>
@@ -615,7 +615,7 @@
 
       <!-- ── XM ── -->
       <article class="broker-card" aria-labelledby="xm-heading">
-        <div class="bk-bar" style="background:linear-gradient(90deg,#7c3aed,#a78bfa)" aria-hidden="true"></div>
+        <div class="bk-bar" style="background:linear-gradient(90deg,#d4ae5e,#e6c987)" aria-hidden="true"></div>
         <div class="bk-head">
           <div class="bk-title-row">
             <h2 class="bk-name" id="xm-heading">XM Global</h2>
@@ -672,7 +672,7 @@
           </div>
 
           <p class="bk-steps-lbl">How to Open an XM Account</p>
-          <a href="IB_LINK_XM" class="bk-btn" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)" target="_blank" rel="noopener noreferrer">Open XM Account →</a>
+          <a href="IB_LINK_XM" class="bk-btn" style="background:linear-gradient(135deg,#d4ae5e,#5b21b6)" target="_blank" rel="noopener noreferrer">Open XM Account →</a>
           <ol class="bk-steps">
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">1</span><span class="bk-stxt">Click the <a href="IB_LINK_XM" target="_blank" rel="noopener noreferrer">Open XM Account</a> button above to access the official broker registration page through our partner access link.</span></li>
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">2</span><span class="bk-stxt">Select your account type — Standard, Micro, XM Zero, or Ultra Low — and preferred platform (MT5 or MT4).</span></li>
@@ -689,7 +689,7 @@
 
       <!-- ── PEPPERSTONE ── -->
       <article class="broker-card" aria-labelledby="pp-heading">
-        <div class="bk-bar" style="background:linear-gradient(90deg,#06b6d4,#22d3ee)" aria-hidden="true"></div>
+        <div class="bk-bar" style="background:linear-gradient(90deg,#c89c3f,#d4ae5e)" aria-hidden="true"></div>
         <div class="bk-head">
           <div class="bk-title-row">
             <h2 class="bk-name" id="pp-heading">Pepperstone</h2>
@@ -747,7 +747,7 @@
           </div>
 
           <p class="bk-steps-lbl">How to Open a Pepperstone Account</p>
-          <a href="IB_LINK_PEPPERSTONE" class="bk-btn" style="background:linear-gradient(135deg,#06b6d4,#0891b2)" target="_blank" rel="noopener noreferrer">Open Pepperstone Account →</a>
+          <a href="IB_LINK_PEPPERSTONE" class="bk-btn" style="background:linear-gradient(135deg,#c89c3f,#8c6c1f)" target="_blank" rel="noopener noreferrer">Open Pepperstone Account →</a>
           <ol class="bk-steps">
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">1</span><span class="bk-stxt">Click the <a href="IB_LINK_PEPPERSTONE" target="_blank" rel="noopener noreferrer">Open Pepperstone Account</a> button above to access the official broker registration page through our partner access link.</span></li>
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">2</span><span class="bk-stxt">Enter your personal details, country of residence, and select your preferred account currency.</span></li>
@@ -763,7 +763,7 @@
 
       <!-- ── IC MARKETS ── -->
       <article class="broker-card" aria-labelledby="icm-heading">
-        <div class="bk-bar" style="background:linear-gradient(90deg,#3b82f6,#60a5fa)" aria-hidden="true"></div>
+        <div class="bk-bar" style="background:linear-gradient(90deg,#c89c3f,#60a5fa)" aria-hidden="true"></div>
         <div class="bk-head">
           <div class="bk-title-row">
             <h2 class="bk-name" id="icm-heading">IC Markets</h2>
@@ -821,7 +821,7 @@
           </div>
 
           <p class="bk-steps-lbl">How to Open an IC Markets Account</p>
-          <a href="IB_LINK_ICMARKETS" class="bk-btn" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)" target="_blank" rel="noopener noreferrer">Open IC Markets Account →</a>
+          <a href="IB_LINK_ICMARKETS" class="bk-btn" style="background:linear-gradient(135deg,#c89c3f,#3d2a08)" target="_blank" rel="noopener noreferrer">Open IC Markets Account →</a>
           <ol class="bk-steps">
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">1</span><span class="bk-stxt">Click the <a href="IB_LINK_ICMARKETS" target="_blank" rel="noopener noreferrer">Open IC Markets Account</a> button above to access the official broker registration page through our partner access link.</span></li>
             <li class="bk-step"><span class="bk-snum" aria-hidden="true">2</span><span class="bk-stxt">Choose your account type — Standard or Raw Spread — and your preferred platform (MT5 or cTrader).</span></li>

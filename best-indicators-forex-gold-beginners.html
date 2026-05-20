@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,13 +16,13 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:    #0b1120;
-      --purple:  #5b1ac8;
-      --purple2: #7c3aed;
-      --lime:    #acd400;
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --lime:    #c89c3f;
       --white:   #ffffff;
-      --text:    #0d1526;
-      --muted:   #5a6580;
+      --text:    #2b2520;
+      --muted:   #756347;
       --gold:    #d97706;
       --gold2:   #f59e0b;
       --ros:     #e11d48;
@@ -44,9 +45,9 @@
     .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
     .logo-shield {
       width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
-      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
       position: relative; overflow: hidden;
     }
     .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
@@ -55,8 +56,8 @@
     .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
     .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
     .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
-    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
-    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
     .nav-links a.active { font-weight: 700; color: var(--text); }
     .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
     .nav-join {
@@ -65,9 +66,9 @@
       font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
       text-decoration: none; border: 1.5px solid transparent;
       transition: background .22s, box-shadow .22s, transform .18s;
-      box-shadow: 0 2px 12px rgba(11,17,32,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
     }
-    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,26,200,0.35); }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
     .nav-join svg { transition: transform .2s; flex-shrink: 0; }
     .nav-join:hover svg { transform: translateX(3px); }
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
@@ -125,7 +126,7 @@
     .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
     .article-wrap p:last-child { margin-bottom: 0; }
     .article-wrap strong { font-weight: 700; color: var(--text); }
-    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(124,58,237,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
     .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
 
     .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
@@ -173,14 +174,14 @@
     .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
 
     .article-cta {
-      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #220d5a 100%);
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
       border-radius: 22px; padding: 40px 38px; margin: 48px 0;
       position: relative; overflow: hidden;
     }
     .article-cta::before {
       content: ''; position: absolute; top: -40px; right: -40px;
       width: 280px; height: 280px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(172,212,0,0.1) 0%, transparent 68%);
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
       pointer-events: none;
     }
     .article-cta-inner { position: relative; z-index: 1; }
@@ -239,15 +240,15 @@
     .back-link svg { flex-shrink: 0; transition: transform .18s; }
     .back-link:hover svg { transform: translateX(-3px); }
 
-    footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
     .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .footer-logo-mark {
       width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
-      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
       display: flex; align-items: center; justify-content: center;
       font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
-      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
     }
     .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
     .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
@@ -265,7 +266,7 @@
     }
     .mobile-menu.open { display: flex; }
     .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
-    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
     .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
 
     @media (max-width: 900px) {
@@ -280,7 +281,7 @@
     @media (max-width: 480px) { .container { padding: 0 20px; } .article-cta-btns { flex-direction: column; } .compare-box { padding: 18px 16px 14px; } }
   </style>
 </head>
-<body>
+<body class="lux-themed">
 
 <header>
   <nav class="container">
@@ -290,10 +291,9 @@
     </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="about.html">About</a></li>
-      <li><a href="index.html#results">Results &amp; Analysis</a></li>
       <li><a href="articles.html" class="active">Articles</a></li>
       <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
     </ul>
     <a href="index.html#join" class="nav-join">
       Join Now
@@ -306,10 +306,9 @@
 <div class="mobile-menu" id="mobileMenu">
   <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
   <a href="index.html" onclick="toggleMenu()">Home</a>
-  <a href="about.html" onclick="toggleMenu()">About</a>
-  <a href="index.html#results" onclick="toggleMenu()">Results &amp; Analysis</a>
   <a href="articles.html" onclick="toggleMenu()">Articles</a>
   <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
 </div>
 
 <section class="article-hero">

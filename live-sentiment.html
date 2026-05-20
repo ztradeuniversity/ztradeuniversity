@@ -1,6 +1,7 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +10,7 @@
   <title>Live Market Sentiment — Gold &amp; Bitcoin · Z Trade University</title>
   <link rel="canonical" href="https://ztradeuniversity.com/live-sentiment.html" />
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0b1120">
+  <meta name="theme-color" content="#1a1410" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -17,14 +18,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:      #0b1120;
-      --purple:    #5b1ac8;
-      --purple2:   #7c3aed;
-      --lime:      #acd400;
+      --navy:      #1a1410;
+      --purple:    #c89c3f;
+      --purple2:   #d4ae5e;
+      --lime:      #c89c3f;
       --white:     #ffffff;
-      --text:      #0d1526;
-      --muted:     #5a6580;
-      --bg:        #f0f2f7;
+      --text:      #2b2520;
+      --muted:     #756347;
+      --bg:        #fbf8f1;
       --gold:      #d97706;
       --gold2:     #f59e0b;
       --gold3:     #fbbf24;
@@ -40,8 +41,8 @@
       --neutral:   #78716c;
       --neutral2:  #a8a29e;
       --neutral3:  #d6d3d1;
-      --card-bg:   #0a0f1f;
-      --card-bg2:  #111a33;
+      --card-bg:   #1a1410;
+      --card-bg2:  #2b2520;
       --card-line: rgba(255,255,255,0.07);
       --surface:   #ffffff;
       --border:    rgba(0,0,0,0.07);
@@ -92,9 +93,9 @@
     .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
     .logo-shield {
       width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
-      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 16px rgba(91,26,200,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
       position: relative; overflow: hidden;
     }
     .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
@@ -103,8 +104,8 @@
     .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
     .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
     .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
-    .nav-links a { font-size: 13.5px; font-weight: 500; color: #3a3f52; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
-    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
     .nav-links a.active { font-weight: 700; color: var(--text); }
     .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
     .nav-join {
@@ -112,7 +113,7 @@
       background: var(--navy); color: var(--white);
       font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
       text-decoration: none; transition: background .22s, transform .18s;
-      box-shadow: 0 2px 12px rgba(11,17,32,0.22);
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22);
     }
     .nav-join:hover { background: var(--purple); transform: translateY(-1px); }
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
@@ -121,13 +122,13 @@
     /* ── HERO ── */
     .sent-hero {
       padding: 124px 0 60px;
-      background: linear-gradient(145deg, #04050d 0%, #0b0820 45%, #15052e 100%);
+      background: linear-gradient(145deg, #0d0902 0%, #0d0902 45%, #1a1410 100%);
       position: relative; overflow: hidden;
     }
     .sent-hero::before {
       content: ''; position: absolute; top: -120px; right: -120px;
       width: 580px; height: 580px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 65%);
+      background: radial-gradient(circle, rgba(212,174,94,0.18) 0%, transparent 65%);
       pointer-events: none;
     }
     .sent-hero::after {
@@ -147,8 +148,8 @@
     .hero-inner { position: relative; z-index: 1; max-width: 860px; }
     .hero-pre {
       display: inline-flex; align-items: center; gap: 10px;
-      background: rgba(124,58,237,0.14); border: 1px solid rgba(192,132,252,0.32);
-      color: #c4b5fd; font-size: 11.5px; font-weight: 700;
+      background: rgba(212,174,94,0.14); border: 1px solid rgba(192,132,252,0.32);
+      color: #f7e0a8; font-size: 11.5px; font-weight: 700;
       padding: 6px 14px 6px 10px; border-radius: 100px; letter-spacing: .8px;
       text-transform: uppercase; margin-bottom: 22px;
     }
@@ -215,7 +216,7 @@
     /* ── PRICE CARDS ── */
     .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .price-card {
-      background: linear-gradient(160deg, var(--card-bg) 0%, var(--card-bg2) 60%, #0c1226 100%);
+      background: linear-gradient(160deg, var(--card-bg) 0%, var(--card-bg2) 60%, #1a1410 100%);
       border: 1px solid var(--card-line); border-radius: 20px;
       padding: 26px; position: relative; overflow: hidden;
       transition: transform .2s, box-shadow .2s;
@@ -264,7 +265,7 @@
       display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
     }
     .sent-card {
-      background: linear-gradient(160deg, #0a0f1f 0%, #131a35 55%, #0c1226 100%);
+      background: linear-gradient(160deg, #1a1410 0%, #2b2520 55%, #1a1410 100%);
       border: 1px solid var(--card-line);
       border-radius: 22px;
       padding: 26px 28px 22px;
@@ -368,7 +369,7 @@
       display: flex; align-items: center; justify-content: space-between; gap: 6px;
     }
     .macro-note {
-      font-size: 8.5px; font-weight: 700; background: rgba(91,26,200,0.07);
+      font-size: 8.5px; font-weight: 700; background: rgba(200,156,63,0.07);
       color: var(--purple); padding: 2px 6px; border-radius: 4px;
       letter-spacing: .4px; white-space: nowrap; flex-shrink: 0;
     }
@@ -385,19 +386,19 @@
       border-radius: 18px; padding: 24px 26px;
     }
     .disclaimer-block h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px; color: #78350f; margin-bottom: 9px; display: flex; align-items: center; gap: 9px; letter-spacing: -.2px; }
-    .disclaimer-block p { font-size: 13px; color: #5c2e0a; line-height: 1.70; }
+    .disclaimer-block p { font-size: 13px; color: #3d2a08; line-height: 1.70; }
     .disclaimer-block strong { color: #451a03; font-weight: 700; }
 
     /* ── FOOTER ── */
-    footer.site-footer { background: #05090f; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    footer.site-footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
     .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .footer-logo-mark {
       width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
-      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
       display: flex; align-items: center; justify-content: center;
       font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
-      box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
     }
     .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
     .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); }
@@ -416,7 +417,7 @@
     }
     .mobile-menu.open { display: flex; }
     .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
-    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
     .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
 
     /* ── RESPONSIVE ── */
@@ -458,12 +459,11 @@
     </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="about.html">About</a></li>
-      <li><a href="index.html#results">Results &amp; Analysis</a></li>
       <li><a href="articles.html">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
       <li><a href="live-sentiment.html" class="active">Sentiment</a></li>
       <li><a href="fundamentals.html">Intelligence</a></li>
-      <li><a href="index.html#join">Join Now</a></li>
     </ul>
     <a href="index.html#join" class="nav-join">
       Join Now
@@ -477,12 +477,11 @@
 <div class="mobile-menu" id="mobileMenu">
   <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
   <a href="index.html"          onclick="toggleMenu()">Home</a>
-  <a href="about.html"          onclick="toggleMenu()">About</a>
-  <a href="index.html#results"  onclick="toggleMenu()">Results &amp; Analysis</a>
   <a href="articles.html"       onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"     onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"          onclick="toggleMenu()">About</a>
   <a href="live-sentiment.html" onclick="toggleMenu()">Sentiment</a>
   <a href="fundamentals.html"   onclick="toggleMenu()">Intelligence</a>
-  <a href="index.html#join"     onclick="toggleMenu()">Join Now</a>
 </div>
 
 <!-- ── HERO ── -->
@@ -677,7 +676,7 @@
               </g>
 
               <!-- Hub -->
-              <circle cx="150" cy="150" r="11" fill="#0a0f1f" stroke="#fff" stroke-width="2"/>
+              <circle cx="150" cy="150" r="11" fill="#1a1410" stroke="#fff" stroke-width="2"/>
               <circle cx="150" cy="150" r="4.5" fill="#fff"/>
             </svg>
 
@@ -759,7 +758,7 @@
                 <circle cx="150" cy="56" r="4" fill="#fff" stroke="rgba(0,0,0,0.25)" stroke-width="0.6"/>
               </g>
 
-              <circle cx="150" cy="150" r="11" fill="#0a0f1f" stroke="#fff" stroke-width="2"/>
+              <circle cx="150" cy="150" r="11" fill="#1a1410" stroke="#fff" stroke-width="2"/>
               <circle cx="150" cy="150" r="4.5" fill="#fff"/>
             </svg>
 
@@ -818,13 +817,13 @@
       .mi-section { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 26px 28px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
       .mi-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
       .mi-head h2 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 17px; color: var(--text); letter-spacing: -.25px; display: inline-flex; align-items: center; gap: 10px; }
-      .mi-engine-tag { font-size: 9.5px; font-weight: 800; letter-spacing: .8px; padding: 3px 8px; border-radius: 5px; background: linear-gradient(135deg, var(--purple) 0%, #7c3aed 100%); color: #fff; text-transform: uppercase; }
-      .mi-status-tag { font-size: 10px; font-weight: 700; letter-spacing: .8px; padding: 4px 10px; border-radius: 6px; background: rgba(91,26,200,0.07); color: var(--purple); }
+      .mi-engine-tag { font-size: 9.5px; font-weight: 800; letter-spacing: .8px; padding: 3px 8px; border-radius: 5px; background: linear-gradient(135deg, var(--purple) 0%, #d4ae5e 100%); color: #fff; text-transform: uppercase; }
+      .mi-status-tag { font-size: 10px; font-weight: 700; letter-spacing: .8px; padding: 4px 10px; border-radius: 6px; background: rgba(200,156,63,0.07); color: var(--purple); }
       .mi-block { margin-top: 18px; }
       .mi-block:first-of-type { margin-top: 0; }
       .mi-block-label { font-size: 10.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
       .mi-block-label::before { content: ''; width: 22px; height: 2px; background: var(--purple); border-radius: 2px; }
-      .mi-summary { background: rgba(91,26,200,0.04); border: 1px solid rgba(91,26,200,0.10); border-radius: 12px; padding: 16px 18px; }
+      .mi-summary { background: rgba(200,156,63,0.04); border: 1px solid rgba(200,156,63,0.10); border-radius: 12px; padding: 16px 18px; }
       .mi-summary-state { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 6px; letter-spacing: -.2px; line-height: 1.4; }
       .mi-state-pill { font-size: 9.5px; font-weight: 800; padding: 3px 8px; border-radius: 5px; margin-left: 8px; letter-spacing: .5px; vertical-align: middle; text-transform: uppercase; display: inline-block; }
       .mi-summary-why { list-style: none; margin: 10px 0 12px; padding: 0; }
@@ -835,7 +834,7 @@
       .mi-expected-pill b { font-weight: 800; }
       .mi-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 12px; }
       .mi-table { width: 100%; border-collapse: collapse; min-width: 480px; }
-      .mi-table th { font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--border); background: rgba(91,26,200,0.025); }
+      .mi-table th { font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--border); background: rgba(200,156,63,0.025); }
       .mi-table td { padding: 11px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; vertical-align: middle; color: var(--text); }
       .mi-table tr:last-child td { border-bottom: none; }
       .mi-table td.num { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
@@ -857,7 +856,7 @@
       .mi-bias-label.neut { color: var(--neutral); }
       .mi-bias-conf { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); font-weight: 700; }
       .mi-conf-bar { flex: 1; height: 5px; background: rgba(0,0,0,0.06); border-radius: 100px; overflow: hidden; }
-      .mi-conf-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), #7c3aed); border-radius: 100px; transition: width .5s; }
+      .mi-conf-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), #d4ae5e); border-radius: 100px; transition: width .5s; }
       .mi-conf-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text); }
       .mi-footnote { font-size: 11px; color: var(--muted); line-height: 1.5; margin-top: 14px; font-style: italic; text-align: center; }
       @media (max-width: 540px) { .mi-section { padding: 22px 18px; } }
