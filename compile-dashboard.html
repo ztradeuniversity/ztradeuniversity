@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="Internal compile workflow dashboard for the Z Trade University MT5 bot licensing pipeline." />
+  <title>Compile Workflow Dashboard — Admin | Z Trade University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS via CDN — same project as license-request.html / admin-upload-report.html.
+       This page initializes its own scoped client (`compileSupabase`) so it cannot collide
+       with the other pages' clients. Each static page has its own JS execution context. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --navy2:   #0d0902;
+      --gold:    #c89c3f;
+      --gold2:   #d4ae5e;
+      --gold3:   #8c6c1f;
+      --gold4:   #e6c987;
+      --cream:   #faf7f2;
+      --cream2:  #f0e8d8;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --success: #1f8a4d;
+      --warn:    #b8881a;
+      --danger:  #b13a3a;
+      --orange:  #d97706;
+      --border:  rgba(200,156,63,0.15);
+      --radius:  16px;
+      --radius2: 24px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.65; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    code, .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+
+    /* ═══════════════════════════════════════════════════
+       NAVBAR (matches admin page aesthetic)
+    ═══════════════════════════════════════════════════ */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--gold); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-link-mini {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12.5px; font-weight: 700; letter-spacing: .1px;
+      color: var(--text); text-decoration: none;
+      padding: 7px 14px; border-radius: 100px;
+      background: var(--white); border: 1px solid rgba(200,156,63,0.24);
+      transition: background .18s, border-color .18s, color .18s, transform .12s;
+    }
+    .nav-link-mini:hover { background: rgba(200,156,63,0.07); border-color: var(--gold); color: var(--gold3); transform: translateY(-1px); }
+    .nav-link-mini svg { color: var(--gold3); flex-shrink: 0; }
+    .nav-admin-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--gold3);
+      background: rgba(200,156,63,0.10);
+      border: 1px solid rgba(200,156,63,0.32);
+      padding: 7px 14px; border-radius: 100px;
+    }
+    .nav-admin-pill svg { color: var(--gold3); }
+
+    /* ═══════════════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════════════ */
+    .cmp-hero {
+      padding: 116px 0 56px;
+      background: linear-gradient(145deg, #0d0902 0%, #1a1008 40%, #2b1e04 80%, #3d2a08 100%);
+      position: relative; overflow: hidden;
+    }
+    .cmp-hero::before {
+      content: ''; position: absolute; top: -100px; right: -100px;
+      width: 560px; height: 560px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.14) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .cmp-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(200,156,63,0.04) 1px, transparent 1px);
+      background-size: 36px 36px; pointer-events: none;
+    }
+    .cmp-hero-inner { position: relative; z-index: 1; max-width: 920px; }
+    .cmp-hero .cmp-kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(200,156,63,0.18); border: 1px solid rgba(200,156,63,0.45);
+      color: #e6c987 !important; font-size: 11.5px; font-weight: 800;
+      padding: 6px 14px; border-radius: 100px; letter-spacing: 1.2px;
+      text-transform: uppercase; margin-bottom: 22px;
+    }
+    .cmp-hero .cmp-hero-inner h1,
+    .cmp-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: clamp(28px, 4.4vw, 48px) !important; font-weight: 900 !important;
+      color: #ffffff !important; letter-spacing: -1.4px !important;
+      line-height: 1.08 !important; margin-bottom: 20px !important;
+    }
+    .cmp-hero .cmp-hero-inner h1 em,
+    .cmp-hero h1 em { color: #d4ae5e !important; font-style: normal !important; }
+    .cmp-hero .cmp-hero-inner .cmp-tagline,
+    .cmp-hero .cmp-tagline {
+      font-size: 16.5px !important; color: #ede8e0 !important;
+      line-height: 1.7 !important; max-width: 740px !important; margin-bottom: 26px !important;
+    }
+    .cmp-badge-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cmp-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(200,156,63,0.24);
+      color: #d4ae5e !important; font-size: 12px; font-weight: 700;
+      padding: 8px 14px; border-radius: 100px;
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .cmp-badge .cmp-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #36b774; box-shadow: 0 0 0 3px rgba(54,183,116,0.18);
+    }
+    .cmp-badge.cmp-badge-gold .cmp-dot { background: var(--gold); box-shadow: 0 0 0 3px rgba(200,156,63,0.22); }
+
+    /* ═══════════════════════════════════════════════════
+       ADMIN WARNING STRIP
+    ═══════════════════════════════════════════════════ */
+    .cmp-warn-strip {
+      background: linear-gradient(135deg, #fdf6df 0%, #faecbf 100%);
+      border-top: 1px solid rgba(184,136,26,0.22);
+      border-bottom: 1px solid rgba(184,136,26,0.22);
+      padding: 13px 0;
+    }
+    .cmp-warn-inner {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      font-size: 13px; font-weight: 600; color: #6b4a09;
+    }
+    .cmp-warn-icon {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, #b8881a, #d4a955);
+      color: #fffaeb; display: flex; align-items: center; justify-content: center;
+    }
+    .cmp-warn-inner b { color: #4a3206; font-weight: 800; }
+
+    /* ═══════════════════════════════════════════════════
+       SECTIONS & CARDS
+    ═══════════════════════════════════════════════════ */
+    .cmp-section { padding: 40px 0 8px; }
+    .cmp-section.is-cream { background: var(--cream); }
+    .cmp-section-head { margin-bottom: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .cmp-section-head-left { flex: 1; min-width: 240px; }
+    .cmp-section-eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: var(--gold3); margin-bottom: 8px; }
+    .cmp-section-head h2 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: clamp(20px, 2.6vw, 28px) !important; font-weight: 900 !important;
+      color: var(--text) !important; letter-spacing: -.7px !important; line-height: 1.18 !important;
+    }
+    .cmp-section-head h2 em { color: var(--gold3) !important; font-style: normal !important; }
+    .cmp-section-head h2 .cmp-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: 'JetBrains Mono', monospace; font-size: 14px;
+      background: rgba(200,156,63,0.12); color: var(--gold3);
+      padding: 2px 12px; border-radius: 100px; margin-left: 10px;
+      min-width: 34px; vertical-align: middle;
+      border: 1px solid rgba(200,156,63,0.28);
+    }
+    .cmp-section-head p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-top: 6px; max-width: 720px; }
+    .cmp-section-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* ═══════════════════════════════════════════════════
+       TABLES
+    ═══════════════════════════════════════════════════ */
+    .cmp-table-wrap {
+      background: var(--white); border: 1px solid rgba(200,156,63,0.18);
+      border-radius: 16px; overflow: hidden; box-shadow: 0 4px 18px rgba(45,30,5,0.05);
+    }
+    .cmp-table-scroll { overflow-x: auto; }
+    table.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.cmp-table th {
+      text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--muted);
+      padding: 13px 18px; border-bottom: 1px solid rgba(200,156,63,0.14);
+      background: #fdfbf6; white-space: nowrap;
+    }
+    table.cmp-table td {
+      padding: 13px 18px; border-bottom: 1px solid rgba(200,156,63,0.08);
+      color: var(--text); vertical-align: middle;
+    }
+    table.cmp-table tr:last-child td { border-bottom: none; }
+    table.cmp-table tr:hover td { background: rgba(200,156,63,0.04); }
+    table.cmp-table .cmp-acct {
+      font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--gold3); font-size: 13px;
+    }
+    table.cmp-table .cmp-email { color: var(--text); font-weight: 500; }
+    table.cmp-table .cmp-filename {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      background: rgba(200,156,63,0.08); color: #3d2a08;
+      padding: 3px 10px; border-radius: 6px;
+      border: 1px solid rgba(200,156,63,0.18);
+      white-space: nowrap;
+    }
+    .cmp-table-empty {
+      padding: 36px 22px; text-align: center; color: var(--muted); font-size: 13.5px;
+    }
+    .cmp-table-empty b { color: var(--text); display: block; font-size: 14px; margin-bottom: 4px; font-weight: 800; }
+
+    /* ═══════════════════════════════════════════════════
+       STATUS PILLS — full lifecycle
+    ═══════════════════════════════════════════════════ */
+    .cmp-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 800; letter-spacing: .4px;
+      padding: 4px 11px; border-radius: 100px; white-space: nowrap;
+    }
+    .cmp-pill-pending   { background: rgba(184,136,26,0.12);  color: #7a5a0e;      border: 1px solid rgba(184,136,26,0.30); }
+    .cmp-pill-matched   { background: rgba(31,138,77,0.12);   color: #0f6b3a;      border: 1px solid rgba(31,138,77,0.30); }
+    .cmp-pill-ready     { background: rgba(212,174,94,0.18);  color: #7a5a0e;      border: 1px solid rgba(212,174,94,0.45); }
+    .cmp-pill-compiling { background: rgba(217,119,6,0.14);   color: #92400e;      border: 1px solid rgba(217,119,6,0.40); position: relative; }
+    .cmp-pill-compiling::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.22);
+      animation: cmpPulse 1.4s ease-in-out infinite;
+    }
+    .cmp-pill-compiled  { background: rgba(100,100,100,0.10); color: #4a4a4a;      border: 1px solid rgba(100,100,100,0.32); }
+    .cmp-pill-emailed   { background: rgba(15,107,58,0.16);   color: #0a4d27;      border: 1px solid rgba(15,107,58,0.42); }
+    .cmp-pill-rejected  { background: rgba(177,58,58,0.10);   color: #7a1f1f;      border: 1px solid rgba(177,58,58,0.32); }
+    @keyframes cmpPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+    /* ═══════════════════════════════════════════════════
+       ACTION BUTTONS
+    ═══════════════════════════════════════════════════ */
+    .cmp-row-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .cmp-row-action {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 800; letter-spacing: .1px;
+      padding: 6px 11px; border-radius: 100px; cursor: pointer;
+      border: 1px solid rgba(200,156,63,0.28);
+      background: var(--white); color: var(--gold3);
+      transition: background .15s, color .15s, border-color .15s, transform .12s;
+      white-space: nowrap;
+    }
+    .cmp-row-action:hover:not(:disabled) { background: rgba(200,156,63,0.10); border-color: var(--gold); }
+    .cmp-row-action:active { transform: scale(.96); }
+    .cmp-row-action:disabled { opacity: .55; cursor: not-allowed; }
+    .cmp-row-action svg { flex-shrink: 0; }
+
+    .cmp-row-action.cmp-row-primary {
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold2) 100%);
+      border-color: transparent; color: #0d0902;
+      box-shadow: 0 3px 10px rgba(200,156,63,0.32);
+    }
+    .cmp-row-action.cmp-row-primary:hover:not(:disabled) { background: linear-gradient(135deg, #6f5414, var(--gold) 50%, var(--gold2)); border-color: transparent; color: #0d0902; }
+
+    .cmp-row-action.cmp-row-compiled  { background: rgba(100,100,100,0.08);  border-color: rgba(100,100,100,0.30); color: #3a3a3a; }
+    .cmp-row-action.cmp-row-compiled:hover:not(:disabled)  { background: rgba(100,100,100,0.14);  border-color: rgba(100,100,100,0.45); }
+    .cmp-row-action.cmp-row-emailed   { background: rgba(15,107,58,0.10);    border-color: rgba(15,107,58,0.34);  color: #0a4d27; }
+    .cmp-row-action.cmp-row-emailed:hover:not(:disabled)   { background: rgba(15,107,58,0.18);    border-color: rgba(15,107,58,0.48); }
+    .cmp-row-action.cmp-row-reject    { background: rgba(177,58,58,0.06);    border-color: rgba(177,58,58,0.28);  color: #7a1f1f; }
+    .cmp-row-action.cmp-row-reject:hover:not(:disabled)    { background: rgba(177,58,58,0.13);    border-color: rgba(177,58,58,0.45); }
+    .cmp-row-action.cmp-row-ghost     { background: var(--white); }
+
+    /* ═══════════════════════════════════════════════════
+       EXPORT / TOOLBAR BUTTONS
+    ═══════════════════════════════════════════════════ */
+    .cmp-mini-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); border: 1px solid rgba(200,156,63,0.28);
+      color: var(--text); font-size: 12.5px; font-weight: 700;
+      padding: 9px 16px; border-radius: 100px; cursor: pointer;
+      transition: background .18s, border-color .18s, color .18s, transform .12s;
+    }
+    .cmp-mini-btn:hover { background: rgba(200,156,63,0.08); border-color: var(--gold); color: var(--gold3); }
+    .cmp-mini-btn:active { transform: scale(.97); }
+    .cmp-mini-btn svg { color: var(--gold3); flex-shrink: 0; }
+
+    .cmp-export-card {
+      background: linear-gradient(160deg, var(--navy2) 0%, var(--navy) 60%, #2b1e04 100%);
+      color: #ede8e0; border-radius: 18px; padding: 26px 28px;
+      display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: center;
+      position: relative; overflow: hidden;
+    }
+    .cmp-export-card::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .cmp-export-card h3 {
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900;
+      color: #ffffff; letter-spacing: -.3px; margin-bottom: 6px;
+      position: relative; z-index: 1;
+    }
+    .cmp-export-card p { font-size: 13px; color: #c4bdb5; line-height: 1.55; position: relative; z-index: 1; max-width: 540px; }
+    .cmp-export-btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold2) 100%);
+      color: #0d0902; font-size: 13.5px; font-weight: 800;
+      padding: 13px 22px; border-radius: 100px; border: none; cursor: pointer;
+      box-shadow: 0 6px 22px rgba(200,156,63,0.42), 0 1px 0 rgba(255,255,255,0.12) inset;
+      transition: transform .2s, box-shadow .2s, filter .2s;
+      position: relative; z-index: 1; flex-shrink: 0;
+    }
+    .cmp-export-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(200,156,63,0.55); filter: brightness(1.05); }
+    .cmp-export-meta {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--gold4); background: rgba(200,156,63,0.14);
+      border: 1px solid rgba(200,156,63,0.32);
+      padding: 3px 10px; border-radius: 100px; margin-top: 10px;
+      position: relative; z-index: 1;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       MODAL (compile / mark-compiled / send-email / reject preview)
+    ═══════════════════════════════════════════════════ */
+    .cmp-modal {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(13,9,2,0.72);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px; opacity: 0; transition: opacity .24s;
+    }
+    .cmp-modal.is-open { display: flex; opacity: 1; }
+    .cmp-modal-box {
+      width: 100%; max-width: 560px;
+      background: var(--white); border-radius: 22px;
+      padding: 0;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+      position: relative; overflow: hidden;
+      transform: translateY(12px) scale(.98);
+      transition: transform .28s cubic-bezier(.2,.8,.2,1);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+    }
+    .cmp-modal.is-open .cmp-modal-box { transform: translateY(0) scale(1); }
+    .cmp-modal-box::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+      z-index: 1;
+    }
+    .cmp-modal-head {
+      padding: 28px 30px 14px;
+      display: flex; align-items: flex-start; gap: 14px;
+      border-bottom: 1px solid rgba(200,156,63,0.14);
+    }
+    .cmp-modal-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(200,156,63,0.18), rgba(200,156,63,0.06));
+      border: 1px solid rgba(200,156,63,0.28);
+      color: var(--gold3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cmp-modal-icon.is-warn  { background: linear-gradient(135deg, #fdf6df, #faecbf); border-color: rgba(184,136,26,0.32); color: #b8881a; }
+    .cmp-modal-icon.is-ok    { background: linear-gradient(135deg, #d8f3e3, #f0fbf4); border-color: rgba(31,138,77,0.32);  color: var(--success); }
+    .cmp-modal-icon.is-orange{ background: linear-gradient(135deg, #fff3e6, #ffe2c0); border-color: rgba(217,119,6,0.32); color: #d97706; }
+    .cmp-modal-icon.is-red   { background: linear-gradient(135deg, #fbe3e3, #fff2f2); border-color: rgba(177,58,58,0.32);  color: var(--danger); }
+    .cmp-modal-titlewrap { flex: 1; min-width: 0; }
+    .cmp-modal-head h3 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: 19px !important; font-weight: 900 !important;
+      color: var(--text) !important; letter-spacing: -.3px !important; line-height: 1.25 !important;
+      margin-bottom: 4px !important;
+    }
+    .cmp-modal-head p {
+      font-size: 13px; color: var(--muted); line-height: 1.55; margin: 0;
+    }
+    .cmp-modal-close {
+      background: rgba(45,30,5,0.06); border: 1px solid rgba(200,156,63,0.18);
+      color: var(--muted); cursor: pointer;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .18s, color .18s; flex-shrink: 0;
+    }
+    .cmp-modal-close:hover { background: rgba(45,30,5,0.12); color: var(--text); }
+
+    .cmp-modal-body { padding: 22px 30px; overflow-y: auto; flex: 1; }
+    .cmp-kv-grid {
+      display: grid; grid-template-columns: max-content 1fr; gap: 10px 18px;
+      font-size: 13.5px;
+    }
+    .cmp-kv-grid dt { color: var(--muted); font-weight: 700; letter-spacing: .1px; }
+    .cmp-kv-grid dd { color: var(--text); font-weight: 600; }
+    .cmp-kv-grid dd code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: rgba(200,156,63,0.10); color: #3d2a08; padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(200,156,63,0.20); }
+
+    .cmp-modal-notes {
+      margin-top: 18px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #fdfbf6 0%, #faf5e8 100%);
+      border: 1px solid rgba(200,156,63,0.18);
+      border-radius: 12px;
+      font-size: 12.5px; color: var(--text); line-height: 1.55;
+    }
+    .cmp-modal-notes b { color: var(--gold3); font-weight: 800; }
+    .cmp-modal-notes ul { margin: 8px 0 0 18px; }
+    .cmp-modal-notes li { margin-bottom: 4px; }
+    .cmp-modal-notes code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(200,156,63,0.08); padding: 2px 7px; border-radius: 5px; color: #3d2a08; }
+
+    .cmp-attach-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .cmp-attach-list li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px;
+      background: #fdfbf6; border: 1px solid rgba(200,156,63,0.18); border-radius: 10px;
+      font-size: 13px;
+    }
+    .cmp-attach-icon {
+      width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(200,156,63,0.18), rgba(200,156,63,0.06));
+      border: 1px solid rgba(200,156,63,0.28); color: var(--gold3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cmp-attach-meta { flex: 1; min-width: 0; }
+    .cmp-attach-meta b { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
+    .cmp-attach-meta small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .cmp-attach-badge {
+      font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 100px;
+      background: rgba(200,156,63,0.10); color: var(--gold3);
+      border: 1px solid rgba(200,156,63,0.28);
+    }
+
+    .cmp-email-preview {
+      background: #fdfbf6; border: 1px solid rgba(200,156,63,0.18);
+      border-radius: 12px; padding: 16px 18px; font-size: 13px;
+      color: var(--text); line-height: 1.6;
+    }
+    .cmp-email-preview .cmp-email-sub {
+      font-weight: 800; color: var(--text); margin-bottom: 8px;
+      padding-bottom: 8px; border-bottom: 1px dashed rgba(200,156,63,0.30);
+    }
+    .cmp-email-preview p { margin-bottom: 8px; color: var(--text); }
+
+    .cmp-modal-foot {
+      padding: 16px 30px 22px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;
+      border-top: 1px solid rgba(200,156,63,0.14);
+      background: #fdfbf6;
+    }
+    .cmp-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13.5px; font-weight: 800; padding: 11px 20px;
+      border-radius: 100px; cursor: pointer; border: none;
+      transition: transform .18s, box-shadow .2s, background .2s, filter .2s;
+    }
+    .cmp-btn-primary {
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold2) 100%);
+      color: #0d0902;
+      box-shadow: 0 4px 14px rgba(200,156,63,0.34);
+    }
+    .cmp-btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(200,156,63,0.46); filter: brightness(1.04); }
+    .cmp-btn-primary:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+    .cmp-btn-ghost { background: var(--white); color: var(--text); border: 1px solid rgba(200,156,63,0.28); }
+    .cmp-btn-ghost:hover { background: rgba(45,30,5,0.05); border-color: var(--gold); color: var(--gold3); }
+    .cmp-btn .cmp-spinner {
+      width: 15px; height: 15px; border-radius: 50%;
+      border: 2.4px solid rgba(13,9,2,0.20); border-top-color: #0d0902;
+      animation: cmpSpin .8s linear infinite; flex-shrink: 0; display: none;
+    }
+    .cmp-btn.is-loading .cmp-spinner { display: inline-block; }
+    .cmp-btn.is-loading .cmp-btn-text { opacity: .6; }
+    @keyframes cmpSpin { to { transform: rotate(360deg); } }
+    @keyframes cmpFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ═══════════════════════════════════════════════════
+       TOAST (non-blocking)
+    ═══════════════════════════════════════════════════ */
+    .cmp-toast {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+      z-index: 1200;
+      background: var(--white);
+      border: 1px solid rgba(200,156,63,0.22);
+      border-radius: 14px;
+      padding: 12px 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+      display: flex; align-items: center; gap: 12px;
+      max-width: 92vw;
+      opacity: 0; pointer-events: none;
+      transition: opacity .22s, transform .26s cubic-bezier(.2,.8,.2,1);
+    }
+    .cmp-toast.is-open { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .cmp-toast-icon {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .cmp-toast.is-success .cmp-toast-icon { background: rgba(31,138,77,0.16);  color: var(--success); }
+    .cmp-toast.is-error   .cmp-toast-icon { background: rgba(177,58,58,0.14);  color: var(--danger);  }
+    .cmp-toast.is-info    .cmp-toast-icon { background: rgba(200,156,63,0.16); color: var(--gold3);   }
+    .cmp-toast-text { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.45; }
+    .cmp-toast-text small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 500; margin-top: 1px; }
+
+    /* ═══════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════ */
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; margin-top: 56px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 15px; font-weight: 900; color: var(--gold4);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.42); }
+    .footer-meta { font-size: 11.5px; color: rgba(230,201,135,0.45); font-family: 'JetBrains Mono', monospace; }
+
+    /* ═══════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════ */
+    @media (max-width: 920px) {
+      .cmp-export-card { grid-template-columns: 1fr; }
+      .cmp-export-card .cmp-export-btn { justify-self: start; }
+    }
+    @media (max-width: 720px) {
+      .nav-admin-pill { padding: 6px 10px; font-size: 10.5px; letter-spacing: 1px; }
+      .nav-link-mini  { padding: 6px 10px; font-size: 11.5px; }
+      .cmp-hero { padding: 100px 0 44px; }
+      .cmp-section-head { flex-direction: column; align-items: stretch; }
+      table.cmp-table th, table.cmp-table td { padding: 11px 14px; font-size: 12.5px; }
+      .cmp-modal-head { padding: 22px 22px 12px; }
+      .cmp-modal-body { padding: 18px 22px; }
+      .cmp-modal-foot { padding: 14px 22px 18px; }
+      .footer-inner { flex-wrap: wrap; gap: 14px; }
+      .footer-copy, .footer-meta { width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .cmp-hero .cmp-hero-inner h1, .cmp-hero h1 { letter-spacing: -.8px !important; }
+      .cmp-kv-grid { grid-template-columns: 1fr; gap: 4px 0; }
+      .cmp-kv-grid dt { margin-top: 8px; }
+    }
+  </style>
+</head>
+<body class="lux-themed">
+
+<!-- ═══════════════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════════════ -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>Compile Console</small></div>
+    </a>
+    <div class="nav-right">
+      <a href="admin-upload-report.html" class="nav-link-mini" title="Open the broker report admin">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Broker Report
+      </a>
+      <div class="nav-admin-pill">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        Admin Mode
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════ -->
+<section class="cmp-hero">
+  <div class="container">
+    <div class="cmp-hero-inner">
+      <div class="cmp-kicker">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Compile Workflow
+      </div>
+      <h1>Compile <em>Dashboard</em></h1>
+      <p class="cmp-tagline">
+        End-to-end lifecycle management for MT5 bot licenses. Move accounts through <code class="mono" style="color:#d4ae5e;background:rgba(200,156,63,0.14);padding:2px 8px;border-radius:5px;font-size:14px;">compile_ready → compiling → compiled → emailed</code>. Today the compile + email steps are manual; the architecture is ready for future VPS automation.
+      </p>
+      <div class="cmp-badge-row">
+        <div class="cmp-badge"><span class="cmp-dot"></span>Lifecycle Engine</div>
+        <div class="cmp-badge"><span class="cmp-dot"></span>Supabase Connected</div>
+        <div class="cmp-badge cmp-badge-gold"><span class="cmp-dot"></span>VPS-Ready Architecture</div>
+        <div class="cmp-badge cmp-badge-gold"><span class="cmp-dot"></span>Newsletter Export Ready</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     ADMIN WARNING STRIP
+═══════════════════════════════════════════════════ -->
+<div class="cmp-warn-strip">
+  <div class="container">
+    <div class="cmp-warn-inner">
+      <div class="cmp-warn-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L1 21h22L12 2z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>
+      </div>
+      <span><b>Internal use only.</b> Compile + email steps are still executed manually on your local PC. Lifecycle updates persist in Supabase so the future VPS automation can pick up the same workflow with zero changes here.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 1 — COMPILE READY QUEUE
+═══════════════════════════════════════════════════ -->
+<section class="cmp-section is-cream">
+  <div class="container">
+    <div class="cmp-section-head">
+      <div class="cmp-section-head-left">
+        <div class="cmp-section-eyebrow">Step 1 of 4</div>
+        <h2>Compile <em>Ready</em> Queue <span class="cmp-count" id="cmpCountReady">0</span></h2>
+        <p>Accounts verified against a broker report and ready to be compiled into per-user EX5 binaries. Filter: <code>status ∈ (compile_ready, matched, approved)</code>.</p>
+      </div>
+      <div class="cmp-section-head-actions">
+        <button type="button" class="cmp-mini-btn" id="cmpRefreshAll" title="Reload every lifecycle bucket from Supabase">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh all
+        </button>
+      </div>
+    </div>
+
+    <div class="cmp-table-wrap">
+      <div class="cmp-table-scroll">
+        <table class="cmp-table" id="cmpReadyTable">
+          <thead>
+            <tr>
+              <th>Account #</th>
+              <th>Broker</th>
+              <th>Email</th>
+              <th>Request Date</th>
+              <th>Status</th>
+              <th>Expected EX5 Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cmpReadyBody"></tbody>
+        </table>
+        <div class="cmp-table-empty" id="cmpReadyEmpty" style="display:none;">
+          <b>No accounts in the compile-ready queue.</b>
+          Upload a broker report on the admin page to move pending requests into this queue.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 2 — COMPILING (transient state)
+═══════════════════════════════════════════════════ -->
+<section class="cmp-section">
+  <div class="container">
+    <div class="cmp-section-head">
+      <div class="cmp-section-head-left">
+        <div class="cmp-section-eyebrow">Step 2 of 4</div>
+        <h2>Currently <em>Compiling</em> <span class="cmp-count" id="cmpCountCompiling">0</span></h2>
+        <p>Accounts you've marked as <b>in progress</b>. Once the EX5 is built and renamed on your PC, hit <b>Mark Compiled</b> on the row.</p>
+      </div>
+    </div>
+
+    <div class="cmp-table-wrap">
+      <div class="cmp-table-scroll">
+        <table class="cmp-table" id="cmpCompilingTable">
+          <thead>
+            <tr>
+              <th>Account #</th>
+              <th>Broker</th>
+              <th>Email</th>
+              <th>Request Date</th>
+              <th>Status</th>
+              <th>Expected EX5 Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cmpCompilingBody"></tbody>
+        </table>
+        <div class="cmp-table-empty" id="cmpCompilingEmpty" style="display:none;">
+          <b>Nothing compiling right now.</b>
+          Click <b>Compile</b> on any row above to start.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 3 — COMPILED (ready for delivery)
+═══════════════════════════════════════════════════ -->
+<section class="cmp-section is-cream">
+  <div class="container">
+    <div class="cmp-section-head">
+      <div class="cmp-section-head-left">
+        <div class="cmp-section-eyebrow">Step 3 of 4</div>
+        <h2><em>Compiled</em> &mdash; awaiting delivery <span class="cmp-count" id="cmpCountCompiled">0</span></h2>
+        <p>EX5 files are built and ready on your PC. Hit <b>Send Email</b> to preview the delivery bundle and mark the request as delivered.</p>
+      </div>
+    </div>
+
+    <div class="cmp-table-wrap">
+      <div class="cmp-table-scroll">
+        <table class="cmp-table" id="cmpCompiledTable">
+          <thead>
+            <tr>
+              <th>Account #</th>
+              <th>Broker</th>
+              <th>Email</th>
+              <th>Request Date</th>
+              <th>Status</th>
+              <th>Expected EX5 Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cmpCompiledBody"></tbody>
+        </table>
+        <div class="cmp-table-empty" id="cmpCompiledEmpty" style="display:none;">
+          <b>No compiled binaries awaiting delivery.</b>
+          Mark a row in the previous section as <b>Compiled</b> and it will land here.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 7 — REJECTED / UNMATCHED QUEUE
+═══════════════════════════════════════════════════ -->
+<section class="cmp-section">
+  <div class="container">
+    <div class="cmp-section-head">
+      <div class="cmp-section-head-left">
+        <div class="cmp-section-eyebrow">Rejected</div>
+        <h2>Rejected / <em>Unmatched</em> Requests <span class="cmp-count" id="cmpCountRejected">0</span></h2>
+        <p>License requests that were rejected or could not be matched against any broker report. Preview the rejection email before sending.</p>
+      </div>
+    </div>
+
+    <div class="cmp-table-wrap">
+      <div class="cmp-table-scroll">
+        <table class="cmp-table" id="cmpRejectedTable">
+          <thead>
+            <tr>
+              <th>Account #</th>
+              <th>Broker</th>
+              <th>Email</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Rejection Reason</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cmpRejectedBody"></tbody>
+        </table>
+        <div class="cmp-table-empty" id="cmpRejectedEmpty" style="display:none;">
+          <b>No rejected requests.</b>
+          Rows are only listed here once the broker-report admin explicitly rejects them.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 8 — CLIENT EXPORT
+═══════════════════════════════════════════════════ -->
+<section class="cmp-section is-cream">
+  <div class="container">
+    <div class="cmp-section-head">
+      <div class="cmp-section-head-left">
+        <div class="cmp-section-eyebrow">Client Export</div>
+        <h2><em>Newsletter</em> &amp; CRM Export</h2>
+        <p>Download every successfully-delivered client as a CSV file (account number, broker, email). Use it as the seed list for future newsletter blasts, CRM segmentation, or article-engagement campaigns.</p>
+      </div>
+    </div>
+
+    <div class="cmp-export-card">
+      <div>
+        <h3>Export delivered clients</h3>
+        <p>Snapshot of <code>status = emailed</code> rows. Includes <b>email, broker_name, account_number</b>, plus delivery timestamp. Safe for direct import into Mailchimp, Klaviyo, ConvertKit, or any spreadsheet-based CRM.</p>
+        <div class="cmp-export-meta" id="cmpExportMeta">0 delivered clients available</div>
+      </div>
+      <button type="button" class="cmp-export-btn" id="cmpExportBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download CSV
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 9 — COMPILE HISTORY
+═══════════════════════════════════════════════════ -->
+<section class="cmp-section">
+  <div class="container">
+    <div class="cmp-section-head">
+      <div class="cmp-section-head-left">
+        <div class="cmp-section-eyebrow">Archive</div>
+        <h2>Compile <em>History</em> <span class="cmp-count" id="cmpCountHistory">0</span></h2>
+        <p>Combined view of everything that has been compiled or delivered. Useful for support / audit trails / future analytics dashboards.</p>
+      </div>
+    </div>
+
+    <div class="cmp-table-wrap">
+      <div class="cmp-table-scroll">
+        <table class="cmp-table" id="cmpHistoryTable">
+          <thead>
+            <tr>
+              <th>Account #</th>
+              <th>Broker</th>
+              <th>Email</th>
+              <th>Request Date</th>
+              <th>Final Status</th>
+              <th>EX5 File</th>
+            </tr>
+          </thead>
+          <tbody id="cmpHistoryBody"></tbody>
+        </table>
+        <div class="cmp-table-empty" id="cmpHistoryEmpty" style="display:none;">
+          <b>No compiled or delivered records yet.</b>
+          Once you mark accounts as compiled or emailed, the audit trail will appear here.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     UNIVERSAL MODAL (compile / mark-compiled / send-email / rejection-preview / view-request)
+═══════════════════════════════════════════════════ -->
+<div class="cmp-modal" id="cmpModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="cmp-modal-box">
+    <div class="cmp-modal-head">
+      <div class="cmp-modal-icon" id="cmpModalIcon"></div>
+      <div class="cmp-modal-titlewrap">
+        <h3 id="cmpModalTitle">—</h3>
+        <p id="cmpModalSub">—</p>
+      </div>
+      <button type="button" class="cmp-modal-close" id="cmpModalClose" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="cmp-modal-body" id="cmpModalBody"></div>
+    <div class="cmp-modal-foot" id="cmpModalFoot"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TOAST
+═══════════════════════════════════════════════════ -->
+<div class="cmp-toast" id="cmpToast" role="status" aria-live="polite">
+  <div class="cmp-toast-icon" id="cmpToastIcon"></div>
+  <div class="cmp-toast-text" id="cmpToastText">—</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>Compile Console</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. Internal compile console.</div>
+      <div class="footer-meta" id="cmpFooterMeta">build · compile-dashboard</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SCRIPT — All logic scoped inside an IIFE.
+     Exposes ONLY `window.ztuCompile` (future-automation namespace).
+═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════════════
+     SUPABASE — same project as the other pages, scoped client.
+     ═══════════════════════════════════════════════════════════════ */
+  const SUPABASE_URL      = 'https://yivkkfplrkcncjaqifxb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQ5MjcsImV4cCI6MjA5NDkwMDkyN30._CC6KIPVOhzMyOnLDtTpLbtMwee8y-991YFpoC3eC5Q';
+
+  const TABLE_NAME = 'license_requests';
+
+  /* Full lifecycle vocabulary — kept in sync with admin-upload-report.html. */
+  const STATUS_PENDING       = 'pending';
+  const STATUS_MATCHED       = 'matched';
+  const STATUS_APPROVED      = 'approved';      /* legacy alias for matched */
+  const STATUS_COMPILE_READY = 'compile_ready';
+  const STATUS_COMPILING     = 'compiling';     /* NEW transient state introduced by this page */
+  const STATUS_COMPILED      = 'compiled';
+  const STATUS_EMAILED       = 'emailed';
+  const STATUS_REJECTED      = 'rejected';
+
+  /* States that the page treats as "ready to compile" in the Section-1 queue.
+     Matches the same set used by admin-upload-report.html so the two pages
+     stay coherent without sharing any code. */
+  const READY_STATUSES = [STATUS_COMPILE_READY, STATUS_MATCHED, STATUS_APPROVED];
+
+  /* Double-locked transition map. Every UPDATE filters `.in('status', allowed)`
+     so a row can never violate the lifecycle even if the UI somehow misfires. */
+  const ALLOWED_TRANSITIONS = {
+    /* compile_ready / matched / approved → compiling          */
+    compiling: READY_STATUSES.slice(),
+    /* compile_ready / compiling / matched / approved → compiled */
+    compiled:  READY_STATUSES.concat([STATUS_COMPILING]),
+    /* compiled → emailed                                       */
+    emailed:   [STATUS_COMPILED],
+    /* any non-final → rejected                                 */
+    rejected:  [STATUS_PENDING].concat(READY_STATUSES).concat([STATUS_COMPILING, STATUS_COMPILED])
+  };
+
+  /* Init scoped Supabase client. Never collides with `supabaseClient`
+     (license page) or `adminSupabase` (admin page) because each static
+     HTML page runs in its own JS context. */
+  let compileSupabase = null;
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      compileSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  } catch (e) {
+    console.warn('[compile] Supabase init error:', e);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCHEMA FALLBACK (broker_name column may not exist yet)
+     ═══════════════════════════════════════════════════════════════ */
+  const COLS_BASE = 'id, account_number, email, status, created_at, screenshot_url';
+  const COLS_FULL = COLS_BASE + ', broker_name';
+  let SELECT_COLS = COLS_FULL;
+  function looksLikeBrokerColumnMissing(err) {
+    if (!err) return false;
+    const m = String(err.message || '').toLowerCase();
+    const c = String(err.code || '');
+    return c === '42703' || c === 'PGRST204'
+        || m.indexOf('broker_name') !== -1
+        || (m.indexOf('column') !== -1 && m.indexOf('does not exist') !== -1);
+  }
+  async function selectWithFallback(buildQuery) {
+    let resp = await buildQuery(SELECT_COLS);
+    if (resp.error && SELECT_COLS === COLS_FULL && looksLikeBrokerColumnMissing(resp.error)) {
+      console.warn('[compile] broker_name column not in DB yet — falling back to legacy SELECT.');
+      SELECT_COLS = COLS_BASE;
+      resp = await buildQuery(SELECT_COLS);
+    }
+    return resp;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SUPABASE OPS
+     ─────────────────────────────────────────────────────────────── */
+  async function fetchByStatus(statuses) {
+    const arr = Array.isArray(statuses) ? statuses : [statuses];
+    const { data, error } = await selectWithFallback(function (cols) {
+      return compileSupabase
+        .from(TABLE_NAME)
+        .select(cols)
+        .in('status', arr)
+        .order('created_at', { ascending: false });
+    });
+    if (error) throw new Error('Failed to load ' + arr.join('/') + ' rows: ' + error.message);
+    return data || [];
+  }
+
+  /* Single-row transition with allowed-from lock. */
+  async function transitionStatus(id, toStatus) {
+    if (!id) throw new Error('Missing request id.');
+    const allowed = ALLOWED_TRANSITIONS[toStatus];
+    if (!allowed) throw new Error('Unsupported transition: → ' + toStatus);
+    const { data, error } = await compileSupabase
+      .from(TABLE_NAME)
+      .update({ status: toStatus })
+      .eq('id', id)
+      .in('status', allowed)
+      .select('id, status');
+    if (error) throw new Error('Supabase rejected the update: ' + error.message);
+    if (!data || !data.length) {
+      throw new Error('Status could not be changed to "' + toStatus + '". The row may have been modified by another admin, or its current status doesn\'t allow this transition.');
+    }
+    return data[0];
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     UTILITIES
+     ─────────────────────────────────────────────────────────────── */
+  function escapeHTML(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function formatDate(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })
+           + ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    } catch (_e) { return iso; }
+  }
+
+  /* Expected EX5 filename per spec: ZTU_[BROKER]_[ACCOUNTNUMBER].ex5
+     Falls back to "BROKER" if broker_name is missing so the visual placeholder
+     is still readable. */
+  function expectedEx5Name(row) {
+    const acct   = String((row && row.account_number) || '').replace(/[^0-9a-zA-Z]/g, '');
+    const broker = String((row && row.broker_name)   || 'BROKER').replace(/[^a-zA-Z0-9]/g, '') || 'BROKER';
+    return 'ZTU_' + broker + '_' + acct + '.ex5';
+  }
+
+  function lifecyclePill(status) {
+    switch (status) {
+      case STATUS_PENDING:       return '<span class="cmp-pill cmp-pill-pending">pending</span>';
+      case STATUS_MATCHED:
+      case STATUS_APPROVED:      return '<span class="cmp-pill cmp-pill-matched">matched</span>';
+      case STATUS_COMPILE_READY: return '<span class="cmp-pill cmp-pill-ready">compile_ready</span>';
+      case STATUS_COMPILING:     return '<span class="cmp-pill cmp-pill-compiling">compiling</span>';
+      case STATUS_COMPILED:      return '<span class="cmp-pill cmp-pill-compiled">compiled</span>';
+      case STATUS_EMAILED:       return '<span class="cmp-pill cmp-pill-emailed">emailed</span>';
+      case STATUS_REJECTED:      return '<span class="cmp-pill cmp-pill-rejected">rejected</span>';
+      default:                   return '<span class="cmp-pill cmp-pill-pending">' + escapeHTML(String(status || 'unknown')) + '</span>';
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DOM REFS
+     ─────────────────────────────────────────────────────────────── */
+  const refs = {
+    refreshAll:        document.getElementById('cmpRefreshAll'),
+
+    readyBody:         document.getElementById('cmpReadyBody'),
+    readyEmpty:        document.getElementById('cmpReadyEmpty'),
+    countReady:        document.getElementById('cmpCountReady'),
+
+    compilingBody:     document.getElementById('cmpCompilingBody'),
+    compilingEmpty:    document.getElementById('cmpCompilingEmpty'),
+    countCompiling:    document.getElementById('cmpCountCompiling'),
+
+    compiledBody:      document.getElementById('cmpCompiledBody'),
+    compiledEmpty:     document.getElementById('cmpCompiledEmpty'),
+    countCompiled:     document.getElementById('cmpCountCompiled'),
+
+    rejectedBody:      document.getElementById('cmpRejectedBody'),
+    rejectedEmpty:     document.getElementById('cmpRejectedEmpty'),
+    countRejected:     document.getElementById('cmpCountRejected'),
+
+    historyBody:       document.getElementById('cmpHistoryBody'),
+    historyEmpty:      document.getElementById('cmpHistoryEmpty'),
+    countHistory:      document.getElementById('cmpCountHistory'),
+
+    exportBtn:         document.getElementById('cmpExportBtn'),
+    exportMeta:        document.getElementById('cmpExportMeta'),
+
+    modal:             document.getElementById('cmpModal'),
+    modalIcon:         document.getElementById('cmpModalIcon'),
+    modalTitle:        document.getElementById('cmpModalTitle'),
+    modalSub:          document.getElementById('cmpModalSub'),
+    modalBody:         document.getElementById('cmpModalBody'),
+    modalFoot:         document.getElementById('cmpModalFoot'),
+    modalClose:        document.getElementById('cmpModalClose'),
+
+    toast:             document.getElementById('cmpToast'),
+    toastIcon:         document.getElementById('cmpToastIcon'),
+    toastText:         document.getElementById('cmpToastText'),
+
+    footerMeta:        document.getElementById('cmpFooterMeta')
+  };
+
+  /* In-memory state. Refreshed by refreshAll(). */
+  const state = {
+    ready:     [],
+    compiling: [],
+    compiled:  [],
+    emailed:   [],
+    rejected:  []
+  };
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOAST + MODAL HELPERS
+     ─────────────────────────────────────────────────────────────── */
+  const ICON_OK   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+  const ICON_BAD  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg>';
+  const ICON_INFO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16.01"/></svg>';
+  let toastTimer = null;
+  function showToast(kind, message, subline) {
+    refs.toast.classList.remove('is-success','is-error','is-info','is-open');
+    refs.toast.classList.add(kind === 'error' ? 'is-error' : kind === 'info' ? 'is-info' : 'is-success');
+    refs.toastIcon.innerHTML = kind === 'error' ? ICON_BAD : kind === 'info' ? ICON_INFO : ICON_OK;
+    refs.toastText.innerHTML = escapeHTML(message) + (subline ? '<small>' + escapeHTML(subline) + '</small>' : '');
+    /* Force reflow so the transition fires reliably even on rapid re-toasts. */
+    void refs.toast.offsetWidth;
+    refs.toast.classList.add('is-open');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { refs.toast.classList.remove('is-open'); }, 4200);
+  }
+
+  function closeModal() {
+    refs.modal.classList.remove('is-open');
+    refs.modal.setAttribute('aria-hidden', 'true');
+  }
+  refs.modalClose.addEventListener('click', closeModal);
+  refs.modal.addEventListener('click', function (e) { if (e.target === refs.modal) closeModal(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && refs.modal.classList.contains('is-open')) closeModal();
+  });
+
+  function openModal(opts) {
+    /* opts = { iconHTML, iconKind, title, sub, bodyHTML, primary: {label, onClick, danger}, ghost: {label} } */
+    refs.modalIcon.className = 'cmp-modal-icon' + (opts.iconKind ? ' is-' + opts.iconKind : '');
+    refs.modalIcon.innerHTML = opts.iconHTML || '';
+    refs.modalTitle.textContent = opts.title || '';
+    refs.modalSub.textContent   = opts.sub   || '';
+    refs.modalBody.innerHTML    = opts.bodyHTML || '';
+    refs.modalFoot.innerHTML    = '';
+
+    if (opts.ghost) {
+      const g = document.createElement('button');
+      g.type = 'button'; g.className = 'cmp-btn cmp-btn-ghost';
+      g.textContent = opts.ghost.label || 'Cancel';
+      g.addEventListener('click', closeModal);
+      refs.modalFoot.appendChild(g);
+    }
+    if (opts.primary) {
+      const p = document.createElement('button');
+      p.type = 'button'; p.className = 'cmp-btn cmp-btn-primary';
+      p.innerHTML = '<span class="cmp-btn-text">' + escapeHTML(opts.primary.label || 'Confirm') + '</span><span class="cmp-spinner" aria-hidden="true"></span>';
+      p.addEventListener('click', function () {
+        if (typeof opts.primary.onClick === 'function') opts.primary.onClick(p);
+      });
+      refs.modalFoot.appendChild(p);
+    }
+
+    refs.modal.classList.add('is-open');
+    refs.modal.setAttribute('aria-hidden', 'false');
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ACTION CELL BUILDERS (per lifecycle stage)
+     ─────────────────────────────────────────────────────────────── */
+  function actionsForReady(idSafe) {
+    return '<div class="cmp-row-actions">' +
+      '<button type="button" class="cmp-row-action cmp-row-primary" data-cmp-action="compile" data-cmp-id="' + idSafe + '">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
+        'Compile' +
+      '</button>' +
+      '<button type="button" class="cmp-row-action cmp-row-compiled" data-cmp-action="markCompiled" data-cmp-id="' + idSafe + '">Mark Compiled</button>' +
+      '<button type="button" class="cmp-row-action cmp-row-ghost" data-cmp-action="view" data-cmp-id="' + idSafe + '">View Request</button>' +
+    '</div>';
+  }
+  function actionsForCompiling(idSafe) {
+    return '<div class="cmp-row-actions">' +
+      '<button type="button" class="cmp-row-action cmp-row-compiled cmp-row-primary" data-cmp-action="markCompiled" data-cmp-id="' + idSafe + '">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
+        'Mark Compiled' +
+      '</button>' +
+      '<button type="button" class="cmp-row-action cmp-row-ghost" data-cmp-action="view" data-cmp-id="' + idSafe + '">View Request</button>' +
+    '</div>';
+  }
+  function actionsForCompiled(idSafe) {
+    return '<div class="cmp-row-actions">' +
+      '<button type="button" class="cmp-row-action cmp-row-emailed cmp-row-primary" data-cmp-action="sendEmail" data-cmp-id="' + idSafe + '">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>' +
+        'Send Email' +
+      '</button>' +
+      '<button type="button" class="cmp-row-action cmp-row-ghost" data-cmp-action="view" data-cmp-id="' + idSafe + '">View Request</button>' +
+    '</div>';
+  }
+  function actionsForRejected(idSafe) {
+    return '<div class="cmp-row-actions">' +
+      '<button type="button" class="cmp-row-action cmp-row-reject" data-cmp-action="previewRejection" data-cmp-id="' + idSafe + '">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>' +
+        'Preview Rejection Email' +
+      '</button>' +
+      '<button type="button" class="cmp-row-action cmp-row-ghost" data-cmp-action="view" data-cmp-id="' + idSafe + '">View Request</button>' +
+    '</div>';
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     RENDERERS
+     ─────────────────────────────────────────────────────────────── */
+  function renderTable(rows, body, empty, countEl, actionsBuilder, opts) {
+    body.innerHTML = '';
+    countEl.textContent = rows.length;
+    if (!rows.length) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+    opts = opts || {};
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const tr = document.createElement('tr');
+      const idSafe   = escapeHTML(String(r.id));
+      const broker   = r.broker_name || '—';
+      const filename = expectedEx5Name(r);
+      let extraCell = '';
+      if (opts.includeReason) {
+        extraCell = '<td>' + escapeHTML(opts.reasonText || 'Account not found in uploaded broker report.') + '</td>';
+      }
+      tr.innerHTML =
+        '<td><span class="cmp-acct">' + escapeHTML(r.account_number) + '</span></td>' +
+        '<td>' + escapeHTML(broker) + '</td>' +
+        '<td class="cmp-email">' + escapeHTML(r.email || '—') + '</td>' +
+        '<td>' + escapeHTML(formatDate(r.created_at)) + '</td>' +
+        '<td>' + lifecyclePill(r.status) + '</td>' +
+        (opts.skipFilenameCell ? '' : '<td><span class="cmp-filename">' + escapeHTML(filename) + '</span></td>') +
+        extraCell +
+        '<td>' + actionsBuilder(idSafe) + '</td>';
+      frag.appendChild(tr);
+    }
+    body.appendChild(frag);
+  }
+
+  function renderAll() {
+    renderTable(state.ready,     refs.readyBody,     refs.readyEmpty,     refs.countReady,     actionsForReady);
+    renderTable(state.compiling, refs.compilingBody, refs.compilingEmpty, refs.countCompiling, actionsForCompiling);
+    renderTable(state.compiled,  refs.compiledBody,  refs.compiledEmpty,  refs.countCompiled,  actionsForCompiled);
+    renderTable(state.rejected,  refs.rejectedBody,  refs.rejectedEmpty,  refs.countRejected,  actionsForRejected, {
+      includeReason: true,
+      reasonText:    'Account not found in uploaded broker report.',
+      skipFilenameCell: true   /* rejected table has its own Reason column instead */
+    });
+    renderHistory();
+    renderExportMeta();
+  }
+
+  /* History combines compiled + emailed for an audit view. */
+  function renderHistory() {
+    const merged = state.compiled.concat(state.emailed).sort(function (a, b) {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+    refs.historyBody.innerHTML = '';
+    refs.countHistory.textContent = merged.length;
+    if (!merged.length) { refs.historyEmpty.style.display = ''; return; }
+    refs.historyEmpty.style.display = 'none';
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < merged.length; i++) {
+      const r = merged[i];
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><span class="cmp-acct">' + escapeHTML(r.account_number) + '</span></td>' +
+        '<td>' + escapeHTML(r.broker_name || '—') + '</td>' +
+        '<td class="cmp-email">' + escapeHTML(r.email || '—') + '</td>' +
+        '<td>' + escapeHTML(formatDate(r.created_at)) + '</td>' +
+        '<td>' + lifecyclePill(r.status) + '</td>' +
+        '<td><span class="cmp-filename">' + escapeHTML(expectedEx5Name(r)) + '</span></td>';
+      frag.appendChild(tr);
+    }
+    refs.historyBody.appendChild(frag);
+  }
+
+  function renderExportMeta() {
+    const n = state.emailed.length;
+    refs.exportMeta.textContent = n + ' delivered client' + (n === 1 ? '' : 's') + ' available';
+    refs.exportBtn.disabled = (n === 0);
+    refs.exportBtn.style.opacity = (n === 0 ? '0.55' : '');
+    refs.exportBtn.style.cursor  = (n === 0 ? 'not-allowed' : '');
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     REFRESH — pulls every lifecycle bucket in parallel
+     ─────────────────────────────────────────────────────────────── */
+  async function refreshAll() {
+    if (!compileSupabase) {
+      showToast('error', 'Supabase not connected', 'Refresh the page to retry.');
+      return;
+    }
+    refs.refreshAll.disabled = true;
+    refs.refreshAll.style.opacity = '0.6';
+    try {
+      const [ready, compiling, compiled, emailed, rejected] = await Promise.all([
+        fetchByStatus(READY_STATUSES),
+        fetchByStatus(STATUS_COMPILING),
+        fetchByStatus(STATUS_COMPILED),
+        fetchByStatus(STATUS_EMAILED),
+        fetchByStatus(STATUS_REJECTED)
+      ]);
+      state.ready     = ready;
+      state.compiling = compiling;
+      state.compiled  = compiled;
+      state.emailed   = emailed;
+      state.rejected  = rejected;
+      renderAll();
+    } catch (err) {
+      console.error('[compile] refresh failed:', err);
+      showToast('error', 'Failed to refresh', (err && err.message) || 'Unknown error');
+    } finally {
+      refs.refreshAll.disabled = false;
+      refs.refreshAll.style.opacity = '';
+    }
+  }
+  refs.refreshAll.addEventListener('click', refreshAll);
+
+  /* ═══════════════════════════════════════════════════════════════
+     ROW LOOKUP — by id across all in-memory buckets
+     ─────────────────────────────────────────────────────────────── */
+  function findRowById(id) {
+    const buckets = [state.ready, state.compiling, state.compiled, state.emailed, state.rejected];
+    for (let i = 0; i < buckets.length; i++) {
+      for (let j = 0; j < buckets[i].length; j++) {
+        if (String(buckets[i][j].id) === String(id)) return buckets[i][j];
+      }
+    }
+    return null;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MODAL CONTENT BUILDERS
+     ─────────────────────────────────────────────────────────────── */
+  function buildRowSummaryHTML(row) {
+    const broker = row.broker_name || '—';
+    const file   = expectedEx5Name(row);
+    return '<dl class="cmp-kv-grid">' +
+      '<dt>Account number</dt><dd><code>' + escapeHTML(row.account_number) + '</code></dd>' +
+      '<dt>Broker</dt><dd>' + escapeHTML(broker) + '</dd>' +
+      '<dt>Email</dt><dd>' + escapeHTML(row.email || '—') + '</dd>' +
+      '<dt>Request date</dt><dd>' + escapeHTML(formatDate(row.created_at)) + '</dd>' +
+      '<dt>Current status</dt><dd>' + lifecyclePill(row.status) + '</dd>' +
+      '<dt>Expected EX5</dt><dd><code>' + escapeHTML(file) + '</code></dd>' +
+    '</dl>';
+  }
+
+  function openCompileModal(row) {
+    openModal({
+      iconKind: 'orange',
+      iconHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+      title:    'Compile MT5 bot',
+      sub:      'Mark this account as in-progress so it moves into the Compiling queue.',
+      bodyHTML: buildRowSummaryHTML(row) +
+        '<div class="cmp-modal-notes">' +
+          '<b>Manual compile checklist</b>' +
+          '<ul>' +
+            '<li>Open your MQ5 template and inject account number <code>' + escapeHTML(row.account_number) + '</code></li>' +
+            '<li>Compile to EX5 inside MetaEditor</li>' +
+            '<li>Rename the output to <code>' + escapeHTML(expectedEx5Name(row)) + '</code></li>' +
+            '<li>Move the file to your local delivery folder</li>' +
+          '</ul>' +
+          '<small style="display:block;margin-top:8px;color:var(--muted);">Future VPS automation will do all four steps via <code>window.ztuCompile.compileOne(row)</code>.</small>' +
+        '</div>',
+      ghost:   { label: 'Cancel' },
+      primary: {
+        label: 'Mark as compiling',
+        onClick: function (btn) {
+          btn.classList.add('is-loading');
+          btn.disabled = true;
+          transitionStatus(row.id, STATUS_COMPILING).then(function () {
+            showToast('success', 'Marked as compiling', 'Account ' + row.account_number + ' moved into the Compiling queue.');
+            closeModal();
+            return refreshAll();
+          }).catch(function (err) {
+            showToast('error', 'Could not start compile', (err && err.message) || 'Unknown error');
+          }).then(function () {
+            btn.classList.remove('is-loading');
+            btn.disabled = false;
+          });
+        }
+      }
+    });
+  }
+
+  function openMarkCompiledModal(row) {
+    openModal({
+      iconKind: 'ok',
+      iconHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+      title:    'Mark as compiled',
+      sub:      'Confirm that the EX5 has been built and renamed on your PC.',
+      bodyHTML: buildRowSummaryHTML(row) +
+        '<div class="cmp-modal-notes">' +
+          '<b>Confirmation</b>' +
+          '<ul>' +
+            '<li>EX5 has been compiled in MetaEditor</li>' +
+            '<li>File is named <code>' + escapeHTML(expectedEx5Name(row)) + '</code></li>' +
+            '<li>File is staged in your delivery folder, ready to email</li>' +
+          '</ul>' +
+        '</div>',
+      ghost:   { label: 'Cancel' },
+      primary: {
+        label: 'Yes, mark compiled',
+        onClick: function (btn) {
+          btn.classList.add('is-loading');
+          btn.disabled = true;
+          transitionStatus(row.id, STATUS_COMPILED).then(function () {
+            showToast('success', 'Marked as compiled', 'Account ' + row.account_number + ' moved into the Compiled queue.');
+            closeModal();
+            return refreshAll();
+          }).catch(function (err) {
+            showToast('error', 'Could not mark compiled', (err && err.message) || 'Unknown error');
+          }).then(function () {
+            btn.classList.remove('is-loading');
+            btn.disabled = false;
+          });
+        }
+      }
+    });
+  }
+
+  function openSendEmailModal(row) {
+    const filename = expectedEx5Name(row);
+    const attachmentHTML =
+      '<ul class="cmp-attach-list">' +
+        '<li>' +
+          '<div class="cmp-attach-icon">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+          '</div>' +
+          '<div class="cmp-attach-meta"><b>' + escapeHTML(filename) + '</b><small>Compiled MT5 EX5 binary, account-locked</small></div>' +
+          '<span class="cmp-attach-badge">EX5</span>' +
+        '</li>' +
+        '<li>' +
+          '<div class="cmp-attach-icon">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>' +
+          '</div>' +
+          '<div class="cmp-attach-meta"><b>ZTU-Activation-Guide.pdf</b><small>Step-by-step bot activation manual</small></div>' +
+          '<span class="cmp-attach-badge">PDF</span>' +
+        '</li>' +
+        '<li>' +
+          '<div class="cmp-attach-icon">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.6 2.8 12 2.8 12 2.8s-4.6 0-6.8.2c-.6 0-1.9.1-3 1.3C1.3 5 1 7 1 7S.7 9.2.7 11.5v2.1c0 2.3.3 4.5.3 4.5s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.5 22.2 12 22.2 12 22.2s4.6 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.2.3-4.5v-2.1C23.3 9.2 23 7 23 7zm-13.4 9V8.6l8.1 3.7-8.1 3.7z"/></svg>' +
+          '</div>' +
+          '<div class="cmp-attach-meta"><b>YouTube setup playlist</b><small>Visual walkthrough of MT5 installation &amp; activation</small></div>' +
+          '<span class="cmp-attach-badge">LINK</span>' +
+        '</li>' +
+        '<li>' +
+          '<div class="cmp-attach-icon">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12.1 0 5.5 0 .1 5.3.1 11.9c0 2.1.6 4.1 1.6 5.9L0 24l6.4-1.7c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.3 12-11.9 0-3.2-1.2-6.2-3.6-8.3zM12.1 21.6c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4c-1-1.6-1.5-3.4-1.5-5.2 0-5.5 4.5-9.9 9.9-9.9 2.6 0 5.1 1 7 2.9 1.9 1.9 2.9 4.3 2.9 7 0 5.5-4.5 9.8-10 9.8z"/></svg>' +
+          '</div>' +
+          '<div class="cmp-attach-meta"><b>WhatsApp support contact</b><small>Direct chat with the ZTU support desk</small></div>' +
+          '<span class="cmp-attach-badge">CHAT</span>' +
+        '</li>' +
+        '<li>' +
+          '<div class="cmp-attach-icon">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' +
+          '</div>' +
+          '<div class="cmp-attach-meta"><b>Free trader library bundle</b><small>5 books on Forex, gold &amp; crypto fundamentals</small></div>' +
+          '<span class="cmp-attach-badge">BOOKS</span>' +
+        '</li>' +
+      '</ul>';
+
+    openModal({
+      iconKind: 'ok',
+      iconHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>',
+      title:    'Preview delivery email',
+      sub:      'No real email is sent yet — future automation will dispatch this exact bundle.',
+      bodyHTML: buildRowSummaryHTML(row) +
+        '<div class="cmp-modal-notes" style="margin-bottom:14px;">' +
+          '<b>Email subject preview</b><br>' +
+          '<code>Your Z Trade University MT5 Bot License — ' + escapeHTML(row.account_number) + '</code>' +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:14px 0 8px;">Attachments &amp; links</div>' +
+        attachmentHTML +
+        '<div class="cmp-modal-notes" style="margin-top:14px;">' +
+          '<b>Future automation</b><br>' +
+          '<small style="color:var(--muted);">Once <code>window.ztuCompile.sendEmailOne(row)</code> is implemented, clicking the button below will trigger the actual mailer in addition to flipping the status.</small>' +
+        '</div>',
+      ghost:   { label: 'Cancel' },
+      primary: {
+        label: 'Mark as emailed',
+        onClick: function (btn) {
+          btn.classList.add('is-loading');
+          btn.disabled = true;
+          /* FUTURE HOOK — if a sender is wired up, call it first. */
+          const sender = window.ztuCompile && window.ztuCompile.sendEmailOne;
+          const senderPromise = (typeof sender === 'function' && !sender.__stub)
+            ? Promise.resolve(sender(row)).catch(function (e) { console.warn('[compile] sendEmailOne hook failed:', e); })
+            : Promise.resolve();
+          senderPromise.then(function () {
+            return transitionStatus(row.id, STATUS_EMAILED);
+          }).then(function () {
+            showToast('success', 'Marked as emailed', 'Account ' + row.account_number + ' moved into the Emailed history.');
+            closeModal();
+            return refreshAll();
+          }).catch(function (err) {
+            showToast('error', 'Could not mark emailed', (err && err.message) || 'Unknown error');
+          }).then(function () {
+            btn.classList.remove('is-loading');
+            btn.disabled = false;
+          });
+        }
+      }
+    });
+  }
+
+  function openRejectionPreviewModal(row) {
+    const subjectLine = 'Action required: please re-verify your MT5 account for your ZTU bot license';
+    openModal({
+      iconKind: 'red',
+      iconHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+      title:    'Rejection email preview',
+      sub:      'No email is dispatched. Use this preview when you reach out to the client manually.',
+      bodyHTML: buildRowSummaryHTML(row) +
+        '<div class="cmp-modal-notes" style="margin-bottom:14px;">' +
+          '<b>Subject</b><br>' +
+          '<code>' + escapeHTML(subjectLine) + '</code>' +
+        '</div>' +
+        '<div class="cmp-email-preview">' +
+          '<div class="cmp-email-sub">Hi ' + escapeHTML(row.email || 'there') + ',</div>' +
+          '<p>Thank you for requesting an MT5 bot license from Z Trade University.</p>' +
+          '<p>Unfortunately we couldn\'t verify your account number <code>' + escapeHTML(row.account_number) + '</code> against our latest broker partner report. The most common reasons are:</p>' +
+          '<ul style="margin:6px 0 8px 18px;">' +
+            '<li>The account was not opened through our official IB referral link.</li>' +
+            '<li>The broker report has not yet refreshed (sometimes takes 24 hours after account opening).</li>' +
+            '<li>The submitted account number contains a typo.</li>' +
+          '</ul>' +
+          '<p>Please double-check your account details and resubmit the license request through the official form. Our team is happy to help — just reply to this email.</p>' +
+          '<p style="margin-top:14px;font-weight:600;color:var(--gold3);">— The Z Trade University team</p>' +
+        '</div>',
+      ghost:   { label: 'Close' }
+    });
+  }
+
+  function openViewRequestModal(row) {
+    const screenshotHTML = row.screenshot_url
+      ? '<a href="' + escapeHTML(row.screenshot_url) + '" target="_blank" rel="noopener" style="display:block;margin-top:14px;">' +
+          '<img src="' + escapeHTML(row.screenshot_url) + '" alt="Verification screenshot" style="max-width:100%;border-radius:10px;border:1px solid rgba(200,156,63,0.22);"/>' +
+        '</a>'
+      : '<div class="cmp-modal-notes" style="margin-top:14px;"><b>No screenshot on file.</b><br><small style="color:var(--muted);">The client didn\'t upload an MT5 dashboard screenshot for this request.</small></div>';
+    openModal({
+      iconKind: 'warn',
+      iconHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+      title:    'Request details',
+      sub:      'Full submission record from the public license-request form.',
+      bodyHTML: buildRowSummaryHTML(row) + screenshotHTML,
+      ghost:   { label: 'Close' }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DELEGATED CLICK HANDLER — one listener for every row action
+     ─────────────────────────────────────────────────────────────── */
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-cmp-action]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-cmp-id');
+    const action = btn.getAttribute('data-cmp-action');
+    if (!id || !action) return;
+    const row = findRowById(id);
+    if (!row) {
+      showToast('error', 'Row not found', 'The list may be out of date — refreshing now.');
+      refreshAll();
+      return;
+    }
+    switch (action) {
+      case 'compile':           openCompileModal(row);           break;
+      case 'markCompiled':      openMarkCompiledModal(row);      break;
+      case 'sendEmail':         openSendEmailModal(row);         break;
+      case 'previewRejection':  openRejectionPreviewModal(row);  break;
+      case 'view':              openViewRequestModal(row);       break;
+    }
+  });
+
+  /* ═══════════════════════════════════════════════════════════════
+     CLIENT EXPORT — CSV of every status='emailed' row
+     ─────────────────────────────────────────────────────────────── */
+  function csvEscape(v) {
+    const s = String(v == null ? '' : v);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  refs.exportBtn.addEventListener('click', function () {
+    if (refs.exportBtn.disabled) return;
+    if (!state.emailed.length) {
+      showToast('info', 'No delivered clients to export', 'Mark accounts as emailed first.');
+      return;
+    }
+    const headers = ['email','broker','account_number','delivered_at','expected_filename'];
+    const lines   = [headers.join(',')];
+    for (let i = 0; i < state.emailed.length; i++) {
+      const r = state.emailed[i];
+      lines.push([
+        csvEscape(r.email),
+        csvEscape(r.broker_name || ''),
+        csvEscape(r.account_number),
+        csvEscape(r.created_at),
+        csvEscape(expectedEx5Name(r))
+      ].join(','));
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    a.href = url;
+    a.download = 'ztu-delivered-clients-' + stamp + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    showToast('success', state.emailed.length + ' client' + (state.emailed.length === 1 ? '' : 's') + ' exported', 'CSV downloaded.');
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     FUTURE-AUTOMATION HOOK NAMESPACE — `window.ztuCompile.*`
+     ─────────────────────────────────────────────────────────────────────
+     INTENTIONAL STUBS today. When the VPS / MT5 / mail-sender automations
+     come online, override these methods (or replace them entirely from a
+     follow-up script). All four stubs are flagged with `__stub = true` so
+     the UI knows to skip the real call until you wire it up.
+
+       • compileOne(row)            — VPS: build EX5 for one account
+       • compileAll(rows)           — VPS: bulk compile
+       • sendEmailOne(row)          — Mail: deliver the EX5 + bundle
+       • getCompileReadyQueue()     — pull current ready-to-compile rows
+       • markCompiledFromAutomation(id)   — friendly façade over the DB
+       • markEmailedFromAutomation(id)
+     ═══════════════════════════════════════════════════════════════════════ */
+  function stub(name) {
+    const fn = function () {
+      console.warn('[ztuCompile.' + name + '] STUB — local/VPS automation not yet implemented.');
+    };
+    fn.__stub = true;
+    return fn;
+  }
+  window.ztuCompile = {
+    lifecycle: {
+      STATUS_PENDING:       STATUS_PENDING,
+      STATUS_MATCHED:       STATUS_MATCHED,
+      STATUS_COMPILE_READY: STATUS_COMPILE_READY,
+      STATUS_COMPILING:     STATUS_COMPILING,
+      STATUS_COMPILED:      STATUS_COMPILED,
+      STATUS_EMAILED:       STATUS_EMAILED,
+      STATUS_REJECTED:      STATUS_REJECTED
+    },
+    /* Snapshot of the current compile-ready queue, shaped for the future
+       VPS automation script (MQ5 inject → EX5 build → rename → deliver → email). */
+    getCompileReadyQueue: function () {
+      return state.ready.map(function (r) {
+        return {
+          id:              r.id,
+          account_number:  r.account_number,
+          broker_name:     r.broker_name || '',
+          email:           r.email,
+          created_at:      r.created_at,
+          screenshot_url:  r.screenshot_url || '',
+          target_filename: expectedEx5Name(r),
+          status:          r.status
+        };
+      });
+    },
+    /* Stubs — replace with real implementations when ready. */
+    compileOne:    stub('compileOne'),
+    compileAll:    stub('compileAll'),
+    sendEmailOne:  stub('sendEmailOne'),
+    /* Friendly façades so future automations don't need to know about transitionStatus. */
+    markCompiledFromAutomation: function (id) { return transitionStatus(id, STATUS_COMPILED); },
+    markEmailedFromAutomation:  function (id) { return transitionStatus(id, STATUS_EMAILED); },
+    /* Manual refresh trigger so a follow-up script can rebuild the UI after writes. */
+    refresh: refreshAll
+  };
+
+  /* ═══════════════════════════════════════════════════════════════
+     BOOT
+     ─────────────────────────────────────────────────────────────── */
+  if (refs.footerMeta) {
+    refs.footerMeta.textContent = 'build · compile-dashboard · ' + (compileSupabase ? 'supabase✓' : 'supabase✗');
+  }
+  refreshAll();
+
+})();
+</script>
+</body>
+</html>
