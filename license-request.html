@@ -198,7 +198,8 @@
     }
     .lic-field label .lic-req { color: var(--gold3); font-weight: 800; }
     .lic-field input[type="text"],
-    .lic-field input[type="email"] {
+    .lic-field input[type="email"],
+    .lic-field select {
       width: 100%;
       font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
       color: var(--text);
@@ -208,13 +209,26 @@
       outline: none;
       transition: border-color .2s, box-shadow .2s, background .2s;
     }
+    /* EXTENSION — broker dropdown styling (matches existing input vibe) */
+    .lic-field select {
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238c6c1f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
+    }
+    .lic-field select:invalid { color: #b3a896; font-weight: 400; }
+    .lic-field select option { color: var(--text); font-weight: 500; }
     .lic-field input::placeholder { color: #b3a896; font-weight: 400; }
-    .lic-field input:focus {
+    .lic-field input:focus,
+    .lic-field select:focus {
       border-color: var(--gold);
       background: #ffffff;
       box-shadow: 0 0 0 4px rgba(200,156,63,0.13);
     }
-    .lic-field.lic-error input { border-color: var(--danger); background: #fff5f5; }
+    .lic-field.lic-error input,
+    .lic-field.lic-error select { border-color: var(--danger); background: #fff5f5; }
     .lic-field-msg {
       font-size: 12px; color: var(--danger); font-weight: 600;
       margin-top: 4px; display: none;
@@ -618,6 +632,20 @@
           <span class="lic-field-msg" id="msg-email">Please enter a valid email address.</span>
         </div>
 
+        <!-- EXTENSION — Broker Name (required dropdown) -->
+        <div class="lic-field" id="field-broker">
+          <label for="lic-broker">Broker Name <span class="lic-req">*</span></label>
+          <select id="lic-broker" name="broker_name" required>
+            <option value="" disabled selected hidden>Select your broker</option>
+            <option value="Exness">Exness</option>
+            <option value="HFM">HFM</option>
+            <option value="Pepperstone">Pepperstone</option>
+            <option value="IC Markets">IC Markets</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="lic-field-msg" id="msg-broker">Please choose the broker where you opened your MT5 account.</span>
+        </div>
+
         <!-- Screenshot Upload -->
         <div class="lic-field" id="field-file">
           <label for="lic-file">Verification Screenshot <span class="lic-req">*</span></label>
@@ -786,6 +814,7 @@ try {
 const form          = document.getElementById('licenseForm');
 const accountInput  = document.getElementById('lic-account');
 const emailInput    = document.getElementById('lic-email');
+const brokerInput   = document.getElementById('lic-broker');  /* EXTENSION — broker dropdown */
 const fileInput     = document.getElementById('lic-file');
 const drop          = document.getElementById('licDrop');
 const previewImg    = document.getElementById('licPreviewImg');
@@ -898,6 +927,10 @@ function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || ''
 [accountInput, emailInput].forEach(function (inp) {
   inp.addEventListener('input', function () { clearFieldError(inp === accountInput ? 'account' : 'email'); });
 });
+/* EXTENSION — broker dropdown clears its own error state on change */
+if (brokerInput) {
+  brokerInput.addEventListener('change', function () { clearFieldError('broker'); });
+}
 
 /* ── Submit handler ───────────────────────────────────── */
 form.addEventListener('submit', async function (e) {
@@ -906,12 +939,21 @@ form.addEventListener('submit', async function (e) {
   /* 1. Validate ---------------------------------------- */
   const account = accountInput.value.trim();
   const email   = emailInput.value.trim();
+  const broker  = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION */
   const file    = fileInput.files && fileInput.files[0];
+
+  /* Whitelist of valid broker values matches the dropdown <option>s — guards against
+     manually-tampered form values. */
+  const ALLOWED_BROKERS = ['Exness', 'HFM', 'Pepperstone', 'IC Markets', 'Other'];
 
   let ok = true;
   if (!account)         { markFieldError('account'); ok = false; }
   if (!email)           { markFieldError('email', 'Please enter your email address.'); ok = false; }
   else if (!validEmail(email)) { markFieldError('email', 'Please enter a valid email address.'); ok = false; }
+  if (!broker || ALLOWED_BROKERS.indexOf(broker) === -1) {
+    markFieldError('broker', 'Please choose your broker from the list.');
+    ok = false;
+  }
   if (!file)            { markFieldError('file');    ok = false; }
   if (!ok) return;
 
@@ -942,15 +984,37 @@ form.addEventListener('submit', async function (e) {
     const { data: pub } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(filename);
     const screenshotUrl = (pub && pub.publicUrl) || '';
 
-    /* 3c. Insert into license_requests ----------------- */
-    const { error: insertErr } = await supabaseClient
-      .from(TABLE_NAME)
-      .insert([{
-        account_number:  account,
-        email:           email,
-        screenshot_url:  screenshotUrl,
-        status:          'pending'
-      }]);
+    /* 3c. Insert into license_requests -----------------
+       EXTENSION — payload now carries broker_name. If the DB column doesn't
+       yet exist, Supabase returns a schema error (PGRST204 / column-not-found);
+       we detect that and retry without broker_name so submissions never break
+       during the rollout window before the column is added. */
+    const baseRow = {
+      account_number:  account,
+      email:           email,
+      screenshot_url:  screenshotUrl,
+      status:          'pending'
+    };
+    const rowWithBroker = Object.assign({}, baseRow, { broker_name: broker });
+
+    let insertResp = await supabaseClient.from(TABLE_NAME).insert([rowWithBroker]);
+    let insertErr  = insertResp.error;
+
+    if (insertErr) {
+      const m = String(insertErr.message || '').toLowerCase();
+      const code = String(insertErr.code || '');
+      const looksLikeColumnMissing =
+        m.indexOf('broker_name') !== -1 ||
+        m.indexOf("could not find the 'broker_name'") !== -1 ||
+        m.indexOf('column') !== -1 && m.indexOf('schema cache') !== -1 ||
+        code === 'PGRST204';
+      if (looksLikeColumnMissing) {
+        /* Column not added yet — fall back so the submission still succeeds. */
+        console.warn('[license-request] broker_name column missing in DB; falling back. Add the column to enable broker tracking.');
+        const fallback = await supabaseClient.from(TABLE_NAME).insert([baseRow]);
+        insertErr = fallback.error;
+      }
+    }
 
     if (insertErr) throw new Error('Database error: ' + (insertErr.message || insertErr));
 

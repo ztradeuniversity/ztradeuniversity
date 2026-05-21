@@ -313,7 +313,8 @@
        SUMMARY STATS GRID
     ═══════════════════════════════════════════════════ */
     .adm-stats-grid {
-      display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;
+      /* EXTENSION — auto-fit handles the new 6-tile grid (incl. "Already compiled") gracefully */
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px;
       animation: admFadeIn .35s cubic-bezier(.2,.8,.2,1);
     }
     .adm-stat {
@@ -398,11 +399,17 @@
     .adm-pill-waiting  { background: rgba(200,156,63,0.14);  color: var(--gold3); border: 1px solid rgba(200,156,63,0.32); }
     .adm-pill-ready    { background: rgba(31,138,77,0.12);   color: #0f6b3a;     border: 1px solid rgba(31,138,77,0.30); }
     .adm-pill-done     { background: rgba(31,138,77,0.18);   color: #0a4d27;     border: 1px solid rgba(31,138,77,0.45); }
-    /* EXTENSION — new lifecycle pill colors (compiled / emailed / rejected) */
-    .adm-pill-matched  { background: rgba(200,156,63,0.14);  color: var(--gold3); border: 1px solid rgba(200,156,63,0.36); }
-    .adm-pill-compiled { background: rgba(43,30,4,0.10);      color: #3d2a08;     border: 1px solid rgba(140,108,31,0.42); }
-    .adm-pill-emailed  { background: rgba(15,107,58,0.16);   color: #0a4d27;     border: 1px solid rgba(15,107,58,0.42); }
-    .adm-pill-rejected { background: rgba(177,58,58,0.10);   color: #7a1f1f;     border: 1px solid rgba(177,58,58,0.32); }
+    /* EXTENSION — lifecycle pill palette per the production spec:
+         green  = matched/approved (verified)        — adm-pill-approved (existing)
+         yellow = compile_ready / matched in queue   — adm-pill-matched / adm-pill-ready
+         gray   = compiled                            — adm-pill-compiled
+         dark-green = emailed                         — adm-pill-emailed
+         red    = rejected                            — adm-pill-rejected                 */
+    .adm-pill-matched  { background: rgba(212,174,94,0.18);   color: #7a5a0e;     border: 1px solid rgba(212,174,94,0.45); }
+    .adm-pill-ready    { background: rgba(212,174,94,0.18);   color: #7a5a0e;     border: 1px solid rgba(212,174,94,0.45); }
+    .adm-pill-compiled { background: rgba(100,100,100,0.10);  color: #4a4a4a;     border: 1px solid rgba(100,100,100,0.32); }
+    .adm-pill-emailed  { background: rgba(15,107,58,0.16);    color: #0a4d27;     border: 1px solid rgba(15,107,58,0.42); }
+    .adm-pill-rejected { background: rgba(177,58,58,0.10);    color: #7a1f1f;     border: 1px solid rgba(177,58,58,0.32); }
     /* Reject button — same shape as .adm-row-action but danger-tinted */
     .adm-row-action.adm-row-reject  { background: rgba(177,58,58,0.06);  border-color: rgba(177,58,58,0.28); color: #7a1f1f; }
     .adm-row-action.adm-row-reject:hover { background: rgba(177,58,58,0.13); border-color: rgba(177,58,58,0.45); }
@@ -882,6 +889,8 @@
       <p>Outcome of the most recent broker report against the current pending queue.</p>
     </div>
 
+    <!-- EXTENSION — summary grid extended with the "Already Compiled" tile
+         (duplicate-prevention indicator) to match the production-spec summary engine. -->
     <div class="adm-stats-grid">
       <div class="adm-stat">
         <div class="adm-stat-label">Report rows</div>
@@ -894,19 +903,24 @@
         <div class="adm-stat-foot">awaiting verification</div>
       </div>
       <div class="adm-stat adm-stat-ok">
-        <div class="adm-stat-label">Matched &amp; approved</div>
+        <div class="adm-stat-label">Matched</div>
         <div class="adm-stat-value" id="statMatched">0</div>
-        <div class="adm-stat-foot">status &rarr; approved</div>
+        <div class="adm-stat-foot">status &rarr; matched</div>
       </div>
       <div class="adm-stat adm-stat-warn">
-        <div class="adm-stat-label">Unmatched</div>
+        <div class="adm-stat-label">Rejected / Unmatched</div>
         <div class="adm-stat-value" id="statUnmatched">0</div>
-        <div class="adm-stat-foot">still pending</div>
+        <div class="adm-stat-foot">not in this report</div>
+      </div>
+      <div class="adm-stat">
+        <div class="adm-stat-label">Already compiled</div>
+        <div class="adm-stat-value" id="statAlreadyCompiled">0</div>
+        <div class="adm-stat-foot">duplicates skipped</div>
       </div>
       <div class="adm-stat adm-stat-gold">
-        <div class="adm-stat-label">Ready for compile</div>
+        <div class="adm-stat-label">New compile ready</div>
         <div class="adm-stat-value" id="statQueue">0</div>
-        <div class="adm-stat-foot">total approved</div>
+        <div class="adm-stat-foot">total ready to compile</div>
       </div>
     </div>
   </div>
@@ -956,6 +970,7 @@
             <thead>
               <tr>
                 <th>Account Number</th>
+                <th>Broker</th>
                 <th>Email</th>
                 <th>Request Date</th>
                 <th>Status</th>
@@ -987,11 +1002,12 @@
             <thead>
               <tr>
                 <th>Account Number</th>
+                <th>Broker</th>
                 <th>Email</th>
                 <th>Request Date</th>
                 <th>Status</th>
                 <th>Screenshot</th>
-                <th>Note</th>
+                <th>Rejection Reason</th>
               </tr>
             </thead>
             <tbody id="admUnmatchedBody"></tbody>
@@ -1063,13 +1079,14 @@
           </button>
         </div>
       </div>
-      <!-- EXTENSION — Lifecycle tab navigation (queue-scoped, separate from results tabs) -->
+      <!-- EXTENSION — Lifecycle tab navigation (queue-scoped, separate from results tabs).
+           Tab labels now follow the "Compile Ready (3)" production-spec format. -->
       <div class="adm-tabs" role="tablist" aria-label="Queue lifecycle" style="margin: 18px 22px 0;">
         <button type="button" class="adm-tab is-active" data-adm-qtab="matched"  role="tab" aria-selected="true">
-          New Matches <span class="adm-tab-count" id="admQTabCountMatched">0</span>
+          Compile Ready <span class="adm-tab-count" id="admQTabCountMatched">0</span>
         </button>
         <button type="button" class="adm-tab"            data-adm-qtab="compiled" role="tab" aria-selected="false">
-          Already Compiled <span class="adm-tab-count" id="admQTabCountCompiled">0</span>
+          Compiled <span class="adm-tab-count" id="admQTabCountCompiled">0</span>
         </button>
         <button type="button" class="adm-tab"            data-adm-qtab="emailed"  role="tab" aria-selected="false">
           Already Emailed <span class="adm-tab-count" id="admQTabCountEmailed">0</span>
@@ -1086,6 +1103,7 @@
             <thead>
               <tr>
                 <th>Account Number</th>
+                <th>Broker</th>
                 <th>Email</th>
                 <th>Approved At</th>
                 <th>Target File</th>
@@ -1109,6 +1127,7 @@
             <thead>
               <tr>
                 <th>Account Number</th>
+                <th>Broker</th>
                 <th>Email</th>
                 <th>Approved At</th>
                 <th>Target File</th>
@@ -1132,6 +1151,7 @@
             <thead>
               <tr>
                 <th>Account Number</th>
+                <th>Broker</th>
                 <th>Email</th>
                 <th>Approved At</th>
                 <th>Target File</th>
@@ -1155,6 +1175,7 @@
             <thead>
               <tr>
                 <th>Account Number</th>
+                <th>Broker</th>
                 <th>Email</th>
                 <th>Approved At</th>
                 <th>Target File</th>
@@ -1256,19 +1277,23 @@
   const STATUS_PENDING  = 'pending';
   const STATUS_APPROVED = 'approved';  /* LEGACY — kept as alias for backwards compatibility with rows already in the DB */
   /* EXTENSION — full request lifecycle (the matching engine now writes STATUS_MATCHED for new approvals) */
-  const STATUS_MATCHED  = 'matched';
-  const STATUS_COMPILED = 'compiled';
-  const STATUS_EMAILED  = 'emailed';
-  const STATUS_REJECTED = 'rejected';
-  /* Treated as equivalent "queue-ready" states everywhere. Old approved rows still surface
-     in the New Matches tab so no historical data is hidden after the lifecycle upgrade. */
-  const MATCHED_STATUSES = [STATUS_MATCHED, STATUS_APPROVED];
+  const STATUS_MATCHED       = 'matched';
+  const STATUS_COMPILE_READY = 'compile_ready'; /* EXTENSION — future-prep stage between matched and compiled */
+  const STATUS_COMPILED      = 'compiled';
+  const STATUS_EMAILED       = 'emailed';
+  const STATUS_REJECTED      = 'rejected';
+  /* Treated as equivalent "ready-to-compile" states everywhere. Old `approved` rows still
+     surface so no historical data is hidden after the lifecycle upgrade. `compile_ready`
+     is included so future automation can flag a subset of matched accounts as explicitly
+     queued for the one-click compile button without breaking this UI. */
+  const MATCHED_STATUSES = [STATUS_MATCHED, STATUS_APPROVED, STATUS_COMPILE_READY];
   /* Allowed transitions — every status update is double-locked against this list,
      so a row can never jump from e.g. 'emailed' back to 'pending'.                  */
   const ALLOWED_TRANSITIONS = {
-    compiled: MATCHED_STATUSES,                                  /* matched/approved → compiled        */
-    emailed:  [STATUS_COMPILED].concat(MATCHED_STATUSES),         /* compiled/matched/approved → emailed */
-    rejected: [STATUS_PENDING].concat(MATCHED_STATUSES).concat([STATUS_COMPILED])  /* any non-final → rejected */
+    compile_ready: [STATUS_MATCHED, STATUS_APPROVED],                                /* matched/approved → compile_ready  */
+    compiled: MATCHED_STATUSES,                                                       /* any compile-ready state → compiled */
+    emailed:  [STATUS_COMPILED].concat(MATCHED_STATUSES),                             /* compiled/matched → emailed         */
+    rejected: [STATUS_PENDING].concat(MATCHED_STATUSES).concat([STATUS_COMPILED])     /* any non-final → rejected           */
   };
 
   /* Initialize once. */
@@ -1419,28 +1444,59 @@
      a double-lock so already-approved rows can never be overwritten,
      regardless of RLS configuration.
      ═══════════════════════════════════════════════════════════════ */
+  /* EXTENSION — broker_name column fallback.
+     If the DB hasn't had the `broker_name` column added yet, Supabase returns a
+     column-not-found error on SELECT. We detect this on first attempt and flip
+     `SELECT_COLS` to the legacy column list for the rest of the session — so the
+     admin page keeps working until the schema is upgraded. */
+  const COLS_BASE = 'id, account_number, email, status, created_at, screenshot_url';
+  const COLS_FULL = COLS_BASE + ', broker_name';
+  let SELECT_COLS = COLS_FULL;
+  function looksLikeBrokerColumnMissing(err) {
+    if (!err) return false;
+    const m = String(err.message || '').toLowerCase();
+    const c = String(err.code || '');
+    return c === '42703' /* undefined_column */ || c === 'PGRST204'
+        || m.indexOf('broker_name') !== -1
+        || (m.indexOf('column') !== -1 && m.indexOf('does not exist') !== -1);
+  }
+  async function selectWithFallback(buildQuery) {
+    let resp = await buildQuery(SELECT_COLS);
+    if (resp.error && SELECT_COLS === COLS_FULL && looksLikeBrokerColumnMissing(resp.error)) {
+      console.warn('[admin] broker_name column not in DB yet — falling back to legacy SELECT.');
+      SELECT_COLS = COLS_BASE;
+      resp = await buildQuery(SELECT_COLS);
+    }
+    return resp;
+  }
+
   async function fetchPending() {
     /* SELECT only — never an UPDATE or DELETE.
        screenshot_url is added so the admin can preview the trader's MT5
-       dashboard inline without leaving this page. */
-    const { data, error } = await adminSupabase
-      .from(TABLE_NAME)
-      .select('id, account_number, email, status, created_at, screenshot_url')
-      .eq('status', STATUS_PENDING)
-      .order('created_at', { ascending: true });
+       dashboard inline without leaving this page.
+       broker_name added so the admin can see which broker each request belongs to. */
+    const { data, error } = await selectWithFallback(function (cols) {
+      return adminSupabase
+        .from(TABLE_NAME)
+        .select(cols)
+        .eq('status', STATUS_PENDING)
+        .order('created_at', { ascending: true });
+    });
     if (error) throw new Error('Failed to load pending requests: ' + error.message);
     return data || [];
   }
 
-  /* EXTENSION — was .eq('status','approved'); now fetches BOTH the new canonical
-     'matched' status AND the legacy 'approved' rows, so historical data continues
-     to surface in the New Matches tab. */
+  /* EXTENSION — was .eq('status','approved'); now fetches the new canonical
+     'matched' status, the legacy 'approved' rows, and the future 'compile_ready'
+     stage. Historical data continues to surface in the New Matches tab. */
   async function fetchApproved() {
-    const { data, error } = await adminSupabase
-      .from(TABLE_NAME)
-      .select('id, account_number, email, status, created_at, screenshot_url')
-      .in('status', MATCHED_STATUSES)
-      .order('created_at', { ascending: false });
+    const { data, error } = await selectWithFallback(function (cols) {
+      return adminSupabase
+        .from(TABLE_NAME)
+        .select(cols)
+        .in('status', MATCHED_STATUSES)
+        .order('created_at', { ascending: false });
+    });
     if (error) throw new Error('Failed to load matched queue: ' + error.message);
     return data || [];
   }
@@ -1489,11 +1545,13 @@
   /* EXTENSION — generic fetch by status (accepts string or array). */
   async function fetchByStatus(statuses) {
     const arr = Array.isArray(statuses) ? statuses : [statuses];
-    const { data, error } = await adminSupabase
-      .from(TABLE_NAME)
-      .select('id, account_number, email, status, created_at, screenshot_url')
-      .in('status', arr)
-      .order('created_at', { ascending: false });
+    const { data, error } = await selectWithFallback(function (cols) {
+      return adminSupabase
+        .from(TABLE_NAME)
+        .select(cols)
+        .in('status', arr)
+        .order('created_at', { ascending: false });
+    });
     if (error) throw new Error('Failed to load ' + arr.join('/') + ' requests: ' + error.message);
     return data || [];
   }
@@ -1516,6 +1574,7 @@
   const statMatched   = document.getElementById('statMatched');
   const statUnmatched = document.getElementById('statUnmatched');
   const statQueue     = document.getElementById('statQueue');
+  const statAlreadyCompiled = document.getElementById('statAlreadyCompiled'); /* EXTENSION */
 
   const resultsRange  = document.getElementById('admResultsRange');
   const resultsCopy   = document.getElementById('admResultsCopy');
@@ -1768,15 +1827,33 @@
         else                                                unmatched.push(row);
       }
 
+      /* 3b — EXTENSION duplicate-prevention summary.
+         Count how many accounts in the broker report were ALREADY compiled in a
+         prior run. These are intentionally skipped (matching engine only ever
+         touches status='pending'), but we surface the count so the admin can see
+         that the report contained duplicates that didn't need re-processing.   */
+      let alreadyCompiledCount = 0;
+      try {
+        const compiledRows = await fetchByStatus(STATUS_COMPILED);
+        const compiledSet  = new Set(compiledRows.map(function (r) { return normAccount(r.account_number); }));
+        for (let i = 0; i < parsed.accounts.length; i++) {
+          if (compiledSet.has(parsed.accounts[i])) alreadyCompiledCount++;
+        }
+      } catch (_e) {
+        /* Non-fatal — duplicate-count is informational. Keep processing. */
+        alreadyCompiledCount = 0;
+      }
+
       /* 4 — approve matched rows (chunked, safety-locked to status='pending') */
       showLoading('Approving matched accounts…', 'Updating Supabase. Already-approved rows are protected.');
       const approvedCount = await approveByIds(matched.map(function (r) { return r.id; }));
 
-      /* 5 — build categorized result data */
+      /* 5 — build categorized result data (broker_name passes through if column exists) */
       lastResults = []
         .concat(matched.map(function (r) {
           return {
             account: r.account_number, email: r.email,
+            broker_name: r.broker_name || '',
             request_date: r.created_at, screenshot_url: r.screenshot_url,
             prevStatus: STATUS_PENDING, newStatus: STATUS_MATCHED,
             result: 'matched', queueState: 'waiting'
@@ -1785,6 +1862,7 @@
         .concat(unmatched.map(function (r) {
           return {
             account: r.account_number, email: r.email,
+            broker_name: r.broker_name || '',
             request_date: r.created_at, screenshot_url: r.screenshot_url,
             prevStatus: STATUS_PENDING, newStatus: STATUS_PENDING,
             result: 'unmatched', queueState: '—'
@@ -1803,7 +1881,7 @@
         };
       });
 
-      renderResults(parsed.accountColumn, parsed.accounts.length, pending.length, matched.length, unmatched.length);
+      renderResults(parsed.accountColumn, parsed.accounts.length, pending.length, matched.length, unmatched.length, alreadyCompiledCount);
 
       /* 6 — refresh compilation queue */
       await refreshQueue();
@@ -1882,14 +1960,18 @@
     '</td>';
   }
 
-  /* MAIN RESULTS RENDERER — feeds the three categorized panels and tab counts. */
-  function renderResults(accountCol, reportRowCount, pendingCount, matchedCount, unmatchedCount) {
+  /* MAIN RESULTS RENDERER — feeds the categorized panels, tab counts, and stat tiles.
+     EXTENSION — accepts an optional `alreadyCompiledCount` argument so the
+     duplicate-prevention indicator can be surfaced; defaults to 0 if not passed
+     (keeps the signature backwards-compatible). */
+  function renderResults(accountCol, reportRowCount, pendingCount, matchedCount, unmatchedCount, alreadyCompiledCount) {
     summarySec.style.display = '';
     resultsSec.style.display = '';
     statReport.textContent    = reportRowCount;
     statPending.textContent   = pendingCount;
     statMatched.textContent   = matchedCount;
     statUnmatched.textContent = unmatchedCount;
+    if (statAlreadyCompiled) statAlreadyCompiled.textContent = (alreadyCompiledCount || 0);
     resultsRange.textContent  = 'detected column "' + accountCol + '" · ' + lastResults.length + ' pending row(s) evaluated';
 
     const matchedRows   = lastResults.filter(function (r) { return r.result === 'matched'; });
@@ -1914,6 +1996,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML =
         '<td><span class="adm-acct">' + escapeHTML(r.account) + '</span></td>' +
+        '<td>' + escapeHTML(r.broker_name || '—') + '</td>' +
         '<td class="adm-email">' + escapeHTML(r.email || '—') + '</td>' +
         '<td>' + escapeHTML(formatDate(r.request_date)) + '</td>' +
         '<td><span class="adm-pill adm-pill-matched">matched</span></td>' +
@@ -1923,6 +2006,9 @@
     }
     matchedBody.appendChild(frag);
   }
+
+  /* EXTENSION — canned rejection reason for unmatched rows per the production spec. */
+  const REJECTION_REASON_NOT_IN_REPORT = 'Account not found in uploaded broker report.';
 
   function renderUnmatched(rows) {
     unmatchedBody.innerHTML = '';
@@ -1934,11 +2020,12 @@
       const tr = document.createElement('tr');
       tr.innerHTML =
         '<td><span class="adm-acct">' + escapeHTML(r.account) + '</span></td>' +
+        '<td>' + escapeHTML(r.broker_name || '—') + '</td>' +
         '<td class="adm-email">' + escapeHTML(r.email || '—') + '</td>' +
         '<td>' + escapeHTML(formatDate(r.request_date)) + '</td>' +
         '<td><span class="adm-pill adm-pill-pending">pending</span></td>' +
         shotCellHTML(r.screenshot_url, r.account) +
-        '<td><span class="adm-pill adm-pill-unmatch">Not in broker report</span></td>';
+        '<td>' + escapeHTML(REJECTION_REASON_NOT_IN_REPORT) + '</td>';
       frag.appendChild(tr);
     }
     unmatchedBody.appendChild(frag);
@@ -2093,12 +2180,16 @@
     return '<td><div class="adm-row-actions">' + buttons + '</div></td>';
   }
 
-  /* Reusable row-builder for any of the four lifecycle tabs. */
+  /* Reusable row-builder for any of the four lifecycle tabs.
+     EXTENSION — now renders a Broker cell sourced from the broker_name column
+     (gracefully empty if the column hasn't been added to the DB yet). */
   function buildQueueRow(r, pillHTML) {
     const target = targetFilenameFor(r.account_number);
+    const broker = (r && r.broker_name) ? r.broker_name : '—';
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td><span class="adm-acct">' + escapeHTML(r.account_number) + '</span></td>' +
+      '<td>' + escapeHTML(broker) + '</td>' +
       '<td class="adm-email">' + escapeHTML(r.email || '—') + '</td>' +
       '<td>' + escapeHTML(formatDate(r.created_at)) + '</td>' +
       '<td><code class="mono">' + escapeHTML(target) + '</code></td>' +
@@ -2109,7 +2200,10 @@
 
   function renderQueue() {
     queueBody.innerHTML = '';
-    queueCount.textContent = currentQueue.length + ' new match' + (currentQueue.length === 1 ? '' : 'es');
+    /* EXTENSION — header now reads "X compile-ready account(s)" to match the
+       production-spec naming. Footer text on the queue title small-element is
+       refreshed on every render. */
+    queueCount.textContent = currentQueue.length + ' compile-ready account' + (currentQueue.length === 1 ? '' : 's');
     if (!currentQueue.length) { queueEmpty.style.display = ''; return; }
     queueEmpty.style.display = 'none';
 
@@ -2119,6 +2213,65 @@
     }
     queueBody.appendChild(frag);
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+     FUTURE COMPILE-AUTOMATION HOOK
+     ───────────────────────────────────────────────────────────────
+     This namespace is INTENTIONALLY a stub today. Once the local-PC
+     compile pipeline is wired up (MQ5 → EX5 build, file rename,
+     delivery folder move, email send), each step plugs into one of
+     these slots. The UI already has the data shape — each row in
+     `currentQueue` carries:
+       { id, account_number, broker_name, email, status,
+         created_at, screenshot_url, target_filename }
+     so the future automation can call ztuAdmin.compileOne(row) per
+     row and ztuAdmin.compileAll() from a single "Compile All" button.
+
+     IMPORTANT: actual compilation is NOT implemented here yet. The
+     stubs below only exist so future code can attach without any
+     architectural rework. They are deliberately no-ops + console
+     logs so accidental invocations never affect production state.
+     ═══════════════════════════════════════════════════════════════ */
+  window.ztuAdmin = window.ztuAdmin || {};
+  window.ztuAdmin.lifecycle = {
+    STATUS_PENDING: STATUS_PENDING,
+    STATUS_MATCHED: STATUS_MATCHED,
+    STATUS_COMPILE_READY: STATUS_COMPILE_READY,
+    STATUS_COMPILED: STATUS_COMPILED,
+    STATUS_EMAILED: STATUS_EMAILED,
+    STATUS_REJECTED: STATUS_REJECTED
+  };
+  /* Returns a snapshot of the current compile-ready queue, shaped for the
+     future local-PC automation script (MQ5 injection → EX5 build → rename →
+     delivery folder → email). */
+  window.ztuAdmin.getCompileReadyQueue = function () {
+    return currentQueue.map(function (r) {
+      return {
+        id:              r.id,
+        account_number:  r.account_number,
+        broker_name:     r.broker_name || '',
+        email:           r.email,
+        created_at:      r.created_at,
+        screenshot_url:  r.screenshot_url || '',
+        target_filename: targetFilenameFor(r.account_number),
+        status:          r.status
+      };
+    });
+  };
+  /* No-op stubs — the local-PC automation will replace these. */
+  window.ztuAdmin.compileOne = function (_row) {
+    console.warn('[ztuAdmin] compileOne() is a stub. Local-PC automation not yet implemented.');
+  };
+  window.ztuAdmin.compileAll = function () {
+    console.warn('[ztuAdmin] compileAll() is a stub. Local-PC automation not yet implemented.');
+  };
+  /* Once the local PC script finishes building+delivering, it will call this to
+     atomically promote a row matched → compiled. The DB transition logic already
+     exists in setRequestStatus() — this is just a friendlier façade for the local
+     automation to call. */
+  window.ztuAdmin.markCompiledFromAutomation = function (id) {
+    return setRequestStatus(id, STATUS_COMPILED);
+  };
 
   /* EXTENSION — render the three new lifecycle tabs (compiled / emailed / rejected). */
   function renderLifecycleTabs() {
