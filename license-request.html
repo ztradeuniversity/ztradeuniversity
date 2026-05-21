@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Request MT5 bot license activation through Z Trade University. Submit your MT5 account and verification screenshot for fast, secure approval." />
+  <meta name="keywords" content="mt5 bot license, mt5 license request, ztu bot activation, trading bot license, mt5 account verification" />
+  <title>Request MT5 Bot License | Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/license-request.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS via CDN (no framework, no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --navy2:   #0d0902;
+      --gold:    #c89c3f;
+      --gold2:   #d4ae5e;
+      --gold3:   #8c6c1f;
+      --gold4:   #e6c987;
+      --cream:   #faf7f2;
+      --cream2:  #f0e8d8;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --success: #1f8a4d;
+      --danger:  #b13a3a;
+      --border:  rgba(200,156,63,0.15);
+      --radius:  16px;
+      --radius2: 24px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── (matches site standard) */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--gold); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--gold); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--gold); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; flex-direction: column; align-items: flex-start;
+      position: fixed; inset: 0; z-index: 200; background: rgba(250,247,242,0.98);
+      padding: 32px 28px; gap: 4px; backdrop-filter: blur(12px);
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 0; border-radius: 14px; transition: color .18s; width: 100%; }
+    .mobile-menu a:hover { color: var(--gold); }
+    .mobile-close { align-self: flex-end; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text); margin-bottom: 20px; padding: 8px; }
+
+    /* ══════════════════════════════════════════
+       HERO — dark luxury, gold accents
+    ══════════════════════════════════════════ */
+    .lic-hero {
+      padding: 120px 0 80px;
+      background: linear-gradient(145deg, #0d0902 0%, #1a1008 40%, #2b1e04 80%, #3d2a08 100%);
+      position: relative; overflow: hidden;
+    }
+    .lic-hero::before {
+      content: ''; position: absolute; top: -120px; right: -120px;
+      width: 620px; height: 620px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.14) 0%, transparent 68%);
+      pointer-events: none;
+      animation: licOrb 14s ease-in-out infinite alternate;
+    }
+    .lic-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(200,156,63,0.05) 1px, transparent 1px);
+      background-size: 36px 36px; pointer-events: none;
+    }
+    @keyframes licOrb {
+      0%   { transform: translate(0, 0)   scale(1); }
+      100% { transform: translate(-40px, 30px) scale(1.08); }
+    }
+    .lic-hero-inner { position: relative; z-index: 1; max-width: 760px; }
+
+    /* Hero typography — high specificity to win cleanly against lux-global */
+    .lic-hero .lic-hero-inner .lic-eyebrow-pill,
+    .lic-hero .lic-eyebrow-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(200,156,63,0.18); border: 1px solid rgba(200,156,63,0.45);
+      color: #e6c987 !important; font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .9px;
+      text-transform: uppercase; margin-bottom: 22px;
+    }
+    .lic-hero .lic-hero-inner h1,
+    .lic-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: clamp(30px, 5vw, 54px) !important; font-weight: 900 !important;
+      color: #ffffff !important; letter-spacing: -1.8px !important;
+      line-height: 1.07 !important; margin-bottom: 22px !important;
+    }
+    .lic-hero .lic-hero-inner h1 em,
+    .lic-hero h1 em { color: #d4ae5e !important; font-style: normal !important; }
+
+    .lic-hero .lic-hero-inner .lic-subtitle,
+    .lic-hero .lic-subtitle {
+      font-size: 17px !important; color: #ede8e0 !important;
+      line-height: 1.74 !important; max-width: 640px !important; margin-bottom: 30px !important;
+    }
+
+    /* Trust badges row */
+    .lic-trust-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .lic-trust-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(200,156,63,0.22);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      color: #d4ae5e !important;
+      font-size: 12.5px; font-weight: 700;
+      padding: 9px 16px; border-radius: 100px;
+      letter-spacing: .2px;
+    }
+    .lic-trust-chip svg { flex-shrink: 0; color: #d4a955; }
+
+    /* ══════════════════════════════════════════
+       FORM SECTION
+    ══════════════════════════════════════════ */
+    .lic-form-section {
+      padding: 76px 0 96px; background: var(--cream);
+      position: relative; overflow: hidden;
+    }
+    .lic-form-section::before {
+      content: ''; position: absolute; top: -1px; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(200,156,63,0.45), transparent);
+    }
+
+    .lic-form-wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 36px; align-items: start; max-width: 1040px; margin: 0 auto; }
+
+    .lic-form-card {
+      background: var(--white); border: 1px solid rgba(200,156,63,0.22);
+      border-radius: 24px; padding: 44px 44px 36px;
+      box-shadow: 0 8px 32px rgba(45,30,5,0.07), 0 2px 0 rgba(255,255,255,0.6) inset;
+      position: relative; overflow: hidden;
+    }
+    .lic-form-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+    }
+    .lic-form-kicker { font-size: 11px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold3); margin-bottom: 10px; }
+    .lic-form-card h2 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: 24px !important; font-weight: 900 !important; color: var(--text) !important;
+      letter-spacing: -.6px !important; line-height: 1.18 !important; margin-bottom: 8px !important;
+    }
+    .lic-form-card .lic-form-intro { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 30px; }
+
+    /* Field group */
+    .lic-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+    .lic-field label {
+      font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: .3px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lic-field label .lic-req { color: var(--gold3); font-weight: 800; }
+    .lic-field input[type="text"],
+    .lic-field input[type="email"] {
+      width: 100%;
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
+      color: var(--text);
+      padding: 14px 16px; border-radius: 12px;
+      border: 1.5px solid rgba(200,156,63,0.22);
+      background: #fdfbf6;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .lic-field input::placeholder { color: #b3a896; font-weight: 400; }
+    .lic-field input:focus {
+      border-color: var(--gold);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(200,156,63,0.13);
+    }
+    .lic-field.lic-error input { border-color: var(--danger); background: #fff5f5; }
+    .lic-field-msg {
+      font-size: 12px; color: var(--danger); font-weight: 600;
+      margin-top: 4px; display: none;
+    }
+    .lic-field.lic-error .lic-field-msg { display: block; }
+
+    /* Upload field — drag & drop */
+    .lic-drop {
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; padding: 32px 22px; min-height: 168px;
+      border: 1.5px dashed rgba(200,156,63,0.42); border-radius: 14px;
+      background: linear-gradient(135deg, rgba(200,156,63,0.05) 0%, rgba(200,156,63,0.015) 100%);
+      cursor: pointer; transition: background .2s, border-color .2s, transform .12s;
+      text-align: center;
+    }
+    .lic-drop:hover { border-color: var(--gold); background: rgba(200,156,63,0.08); }
+    .lic-drop.is-dragging { border-color: var(--gold); background: rgba(200,156,63,0.13); transform: scale(1.005); }
+    .lic-drop.has-file { padding: 18px; align-items: stretch; min-height: 0; cursor: default; }
+    .lic-drop input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .lic-drop.has-file input[type="file"] { display: none; }
+    .lic-drop-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(200,156,63,0.18), rgba(200,156,63,0.08));
+      border: 1px solid rgba(200,156,63,0.28);
+      display: flex; align-items: center; justify-content: center; color: var(--gold3);
+    }
+    .lic-drop-title { font-size: 14.5px; font-weight: 700; color: var(--text); }
+    .lic-drop-title span { color: var(--gold3); text-decoration: underline; }
+    .lic-drop-hint { font-size: 12px; color: var(--muted); }
+    .lic-drop.lic-error { border-color: var(--danger); background: #fff5f5; }
+
+    /* File preview after upload */
+    .lic-preview { display: none; align-items: center; gap: 14px; }
+    .lic-drop.has-file .lic-preview { display: flex; }
+    .lic-drop.has-file .lic-drop-icon,
+    .lic-drop.has-file .lic-drop-title,
+    .lic-drop.has-file .lic-drop-hint { display: none; }
+    .lic-preview-img {
+      width: 88px; height: 88px; border-radius: 12px; object-fit: cover; flex-shrink: 0;
+      border: 1px solid rgba(200,156,63,0.28);
+      background: #fdfbf6;
+    }
+    .lic-preview-meta { flex: 1; min-width: 0; }
+    .lic-preview-name {
+      font-size: 13.5px; font-weight: 700; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      margin-bottom: 4px;
+    }
+    .lic-preview-size { font-size: 12px; color: var(--muted); }
+    .lic-preview-remove {
+      background: rgba(177,58,58,0.08); border: 1px solid rgba(177,58,58,0.22);
+      color: var(--danger); font-size: 12px; font-weight: 700;
+      padding: 6px 12px; border-radius: 100px; cursor: pointer;
+      transition: background .18s;
+    }
+    .lic-preview-remove:hover { background: rgba(177,58,58,0.16); }
+
+    /* Submit button */
+    .lic-submit {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold2) 100%);
+      color: #0d0902 !important; font-family: 'Inter', sans-serif;
+      font-size: 15.5px; font-weight: 800; letter-spacing: -.2px;
+      padding: 17px 28px; border-radius: 100px; border: none;
+      cursor: pointer; text-decoration: none;
+      box-shadow: 0 8px 28px rgba(200,156,63,0.42), 0 2px 0 rgba(255,255,255,0.12) inset;
+      transition: transform .22s, box-shadow .22s, filter .22s, opacity .18s;
+      margin-top: 6px;
+    }
+    .lic-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(200,156,63,0.55); filter: brightness(1.06); }
+    .lic-submit:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+    .lic-submit .lic-spinner { display: none; }
+    .lic-submit.is-loading .lic-submit-label { display: none; }
+    .lic-submit.is-loading .lic-spinner { display: inline-flex; }
+    .lic-spinner {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2.5px solid rgba(13,9,2,0.18); border-top-color: #0d0902;
+      animation: licSpin .8s linear infinite;
+    }
+    @keyframes licSpin { to { transform: rotate(360deg); } }
+
+    .lic-tos {
+      font-size: 11.5px; color: var(--muted); line-height: 1.55;
+      text-align: center; margin-top: 16px;
+    }
+    .lic-tos b { color: var(--text); font-weight: 700; }
+
+    /* ══════════════════════════════════════════
+       SIDE INFO CARD
+    ══════════════════════════════════════════ */
+    .lic-info {
+      background: linear-gradient(160deg, var(--navy2) 0%, var(--navy) 60%, #2b1e04 100%);
+      color: #ede8e0; border-radius: 24px; padding: 36px 32px;
+      box-shadow: 0 8px 32px rgba(13,9,2,0.18);
+      position: relative; overflow: hidden;
+    }
+    .lic-info::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.16) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    /* Renamed from .lic-info-eyebrow to .lic-info-tag — the original name ended in
+       "-eyebrow" and got caught by lux-global's [class$="-eyebrow"] rule, which forced
+       it to dark muddy gold. The new name breaks that substring match cleanly. */
+    .lic-info-tag {
+      display: inline-block; font-size: 10.5px; font-weight: 800;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: #f4d98a !important;
+      background: rgba(230,201,135,0.18); border: 1px solid rgba(230,201,135,0.45);
+      padding: 5px 12px; border-radius: 100px; margin-bottom: 16px;
+      position: relative; z-index: 1;
+    }
+    /* High-specificity selector beats lux-global's `body.lux-themed h3` rule cleanly. */
+    .lic-info h3,
+    body.lux-themed .lic-info h3 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: 22px !important; font-weight: 900 !important;
+      color: #ffffff !important;
+      letter-spacing: -.5px !important; line-height: 1.2 !important;
+      margin-bottom: 12px !important;
+      position: relative; z-index: 1;
+    }
+    .lic-info > p {
+      font-size: 14px; color: #c4bdb5; line-height: 1.66;
+      margin-bottom: 26px; position: relative; z-index: 1;
+    }
+    .lic-steps { list-style: none; display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 1; }
+    .lic-steps li { display: flex; align-items: flex-start; gap: 14px; }
+    .lic-step-num {
+      width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(135deg, #3d2a08, #8c6c1f);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 900;
+      color: var(--gold4); margin-top: 2px;
+    }
+    .lic-step-text b { color: #ffffff; font-size: 14px; font-weight: 700; display: block; margin-bottom: 2px; }
+    .lic-step-text small { color: #b0a89e; font-size: 12.5px; font-weight: 500; line-height: 1.55; }
+
+    .lic-info-foot {
+      margin-top: 28px; padding-top: 22px;
+      border-top: 1px solid rgba(200,156,63,0.18);
+      display: flex; align-items: center; gap: 12px;
+      position: relative; z-index: 1;
+    }
+    .lic-info-foot svg { color: var(--gold2); flex-shrink: 0; }
+    .lic-info-foot span { font-size: 12.5px; color: #c4bdb5; line-height: 1.5; }
+    .lic-info-foot span b { color: #ede8e0; font-weight: 700; }
+
+    /* ══════════════════════════════════════════
+       SUCCESS / ERROR TOAST OVERLAY
+    ══════════════════════════════════════════ */
+    .lic-toast-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(13,9,2,0.72);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+      opacity: 0; transition: opacity .25s;
+    }
+    .lic-toast-overlay.is-open { display: flex; opacity: 1; }
+    .lic-toast {
+      width: 100%; max-width: 480px;
+      background: var(--white); border-radius: 22px;
+      padding: 36px 32px 28px; text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+      position: relative; overflow: hidden;
+      transform: translateY(12px) scale(.98);
+      transition: transform .28s cubic-bezier(.2,.8,.2,1);
+    }
+    .lic-toast-overlay.is-open .lic-toast { transform: translateY(0) scale(1); }
+    .lic-toast::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+    }
+    .lic-toast.is-success::before { background: linear-gradient(90deg, #0f6b3a, #1f8a4d, #36b774); }
+    .lic-toast.is-error::before   { background: linear-gradient(90deg, #7a1f1f, #b13a3a, #d96a6a); }
+
+    .lic-toast-icon {
+      width: 64px; height: 64px; border-radius: 18px; margin: 4px auto 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lic-toast.is-success .lic-toast-icon { background: linear-gradient(135deg, #d8f3e3, #f0fbf4); color: var(--success); border: 1px solid rgba(31,138,77,0.2); }
+    .lic-toast.is-error   .lic-toast-icon { background: linear-gradient(135deg, #fbe3e3, #fff2f2); color: var(--danger);  border: 1px solid rgba(177,58,58,0.2); }
+    .lic-toast h3 {
+      font-family: 'Manrope','Inter',sans-serif; font-size: 22px; font-weight: 900;
+      color: var(--text); letter-spacing: -.4px; line-height: 1.2; margin-bottom: 10px;
+    }
+    .lic-toast > p { font-size: 14.5px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+    .lic-toast-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .lic-toast-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 100px;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: transform .18s, background .2s, box-shadow .2s;
+    }
+    .lic-toast-primary {
+      background: linear-gradient(135deg, var(--gold3), var(--gold), var(--gold2));
+      color: #0d0902;
+      box-shadow: 0 4px 14px rgba(200,156,63,0.32);
+    }
+    .lic-toast-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(200,156,63,0.45); }
+    .lic-toast-ghost {
+      background: rgba(45,30,5,0.06); color: var(--text);
+      border: 1px solid rgba(200,156,63,0.22);
+    }
+    .lic-toast-ghost:hover { background: rgba(45,30,5,0.10); }
+
+    /* ── FOOTER ── */
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 15px; font-weight: 900; color: var(--gold4);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.42); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════ */
+    @media (max-width: 920px) {
+      .lic-form-wrap { grid-template-columns: 1fr; gap: 26px; }
+      .lic-info { order: -1; }
+    }
+    @media (max-width: 680px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      .lic-hero { padding: 100px 0 64px; }
+      .lic-form-section { padding: 56px 0 72px; }
+      .lic-form-card { padding: 30px 24px 26px; }
+      .lic-info { padding: 28px 24px; }
+      .lic-trust-chip { padding: 8px 13px; font-size: 12px; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 420px) {
+      .lic-hero .lic-hero-inner h1,
+      .lic-hero h1 { letter-spacing: -1px !important; }
+      .lic-preview { flex-wrap: wrap; }
+      .lic-preview-img { width: 72px; height: 72px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy { order: 0; }
+    }
+  </style>
+</head>
+<body class="lux-themed">
+
+<!-- ══════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════ -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+  <a href="license-request.html" onclick="toggleMenu()">Request Bot License</a>
+</div>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="lic-hero">
+  <div class="container">
+    <div class="lic-hero-inner">
+      <div class="lic-eyebrow-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg>
+        Bot Activation
+      </div>
+      <h1>Request MT5 Bot <em>License</em></h1>
+      <p class="lic-subtitle">
+        Submit your MT5 account details and verification screenshot to receive bot activation approval from our team. Most license requests are reviewed within 24 hours.
+      </p>
+      <div class="lic-trust-row">
+        <div class="lic-trust-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          Secure Verification
+        </div>
+        <div class="lic-trust-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Fast Approval
+        </div>
+        <div class="lic-trust-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Protected Data
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FORM SECTION
+══════════════════════════════════════════ -->
+<section class="lic-form-section">
+  <div class="container">
+    <div class="lic-form-wrap">
+
+      <!-- ── Form Card ── -->
+      <form class="lic-form-card" id="licenseForm" novalidate>
+        <div class="lic-form-kicker">License Request</div>
+        <h2>Submit your verification details</h2>
+        <p class="lic-form-intro">Provide your MT5 account number, a contact email, and a screenshot showing your MT5 account dashboard. Our compliance team will verify and activate your bot license.</p>
+
+        <!-- MT5 Account Number -->
+        <div class="lic-field" id="field-account">
+          <label for="lic-account">MT5 Account Number <span class="lic-req">*</span></label>
+          <input id="lic-account" name="account_number" type="text" inputmode="numeric" autocomplete="off" placeholder="Enter your MT5 account number" required />
+          <span class="lic-field-msg" id="msg-account">Please enter your MT5 account number.</span>
+        </div>
+
+        <!-- Email -->
+        <div class="lic-field" id="field-email">
+          <label for="lic-email">Email Address <span class="lic-req">*</span></label>
+          <input id="lic-email" name="email" type="email" autocomplete="email" placeholder="Enter your email address" required />
+          <span class="lic-field-msg" id="msg-email">Please enter a valid email address.</span>
+        </div>
+
+        <!-- Screenshot Upload -->
+        <div class="lic-field" id="field-file">
+          <label for="lic-file">Verification Screenshot <span class="lic-req">*</span></label>
+          <div class="lic-drop" id="licDrop">
+            <input id="lic-file" name="screenshot" type="file" accept="image/*" required />
+
+            <!-- Empty state -->
+            <div class="lic-drop-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="lic-drop-title">Drop your screenshot here, or <span>browse</span></div>
+            <div class="lic-drop-hint">PNG, JPG, or WEBP &middot; up to 8&nbsp;MB</div>
+
+            <!-- Preview state -->
+            <div class="lic-preview">
+              <img class="lic-preview-img" id="licPreviewImg" alt="Screenshot preview" />
+              <div class="lic-preview-meta">
+                <div class="lic-preview-name" id="licPreviewName">filename.png</div>
+                <div class="lic-preview-size" id="licPreviewSize">—</div>
+              </div>
+              <button type="button" class="lic-preview-remove" id="licPreviewRemove">Remove</button>
+            </div>
+          </div>
+          <span class="lic-field-msg" id="msg-file">Please upload your verification screenshot (image file).</span>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="lic-submit" id="licSubmit">
+          <span class="lic-submit-label">
+            Submit License Request
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+          <span class="lic-spinner" aria-hidden="true"></span>
+        </button>
+
+        <p class="lic-tos">
+          By submitting this request you confirm the MT5 account information is <b>yours</b> and was opened under our IB. Submissions are encrypted in transit.
+        </p>
+      </form>
+
+      <!-- ── Side Info Card ── -->
+      <aside class="lic-info">
+        <span class="lic-info-tag">How it works</span>
+        <h3>Three steps to bot activation</h3>
+        <p>Once you've opened your MT5 account through our IB, follow these steps to receive your bot license.</p>
+
+        <ol class="lic-steps">
+          <li>
+            <div class="lic-step-num">1</div>
+            <div class="lic-step-text">
+              <b>Fill the form</b>
+              <small>Enter your MT5 account number and the email address you'd like us to contact you on.</small>
+            </div>
+          </li>
+          <li>
+            <div class="lic-step-num">2</div>
+            <div class="lic-step-text">
+              <b>Upload a clear screenshot</b>
+              <small>A screenshot of your MT5 dashboard showing your account number is sufficient.</small>
+            </div>
+          </li>
+          <li>
+            <div class="lic-step-num">3</div>
+            <div class="lic-step-text">
+              <b>Receive your activation</b>
+              <small>Our team verifies your account and sends approval &mdash; usually within 24 hours.</small>
+            </div>
+          </li>
+        </ol>
+
+        <div class="lic-info-foot">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span><b>Your data is private.</b> Screenshots are stored securely and used only for license verification.</span>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SUCCESS / ERROR TOAST
+══════════════════════════════════════════ -->
+<div class="lic-toast-overlay" id="licToast" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="lic-toast" id="licToastBox">
+    <div class="lic-toast-icon" id="licToastIcon"></div>
+    <h3 id="licToastTitle">Request submitted</h3>
+    <p id="licToastMsg">Your request has been submitted successfully. Our team will review and approve your MT5 bot license shortly.</p>
+    <div class="lic-toast-actions">
+      <a href="index.html" class="lic-toast-btn lic-toast-primary" id="licToastPrimary">
+        Back to Home
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <button type="button" class="lic-toast-btn lic-toast-ghost" id="licToastDismiss">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════ -->
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   LICENSE REQUEST — Supabase integration
+   ────────────────────────────────────────────────────────────────────
+   Replace the two placeholders below with your real Supabase project
+   credentials. Storage bucket: "screenshots". Database table:
+   "license_requests" (account_number, email, screenshot_url, status).
+   ════════════════════════════════════════════════════════════════════ */
+
+const SUPABASE_URL      = 'https://yivkkfplrkcncjaqifxb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQ5MjcsImV4cCI6MjA5NDkwMDkyN30._CC6KIPVOhzMyOnLDtTpLbtMwee8y-991YFpoC3eC5Q';
+
+const STORAGE_BUCKET = 'screenshots';
+const TABLE_NAME     = 'license_requests';
+const MAX_FILE_BYTES = 8 * 1024 * 1024; /* 8 MB */
+
+/* Initialize Supabase client (window.supabase comes from the CDN script tag). */
+let supabase = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  /* Client init failed — handled at submit-time so user sees a graceful error. */
+  console.warn('[license-request] Supabase init error:', e);
+}
+
+/* ── DOM refs ─────────────────────────────────────────── */
+const form          = document.getElementById('licenseForm');
+const accountInput  = document.getElementById('lic-account');
+const emailInput    = document.getElementById('lic-email');
+const fileInput     = document.getElementById('lic-file');
+const drop          = document.getElementById('licDrop');
+const previewImg    = document.getElementById('licPreviewImg');
+const previewName   = document.getElementById('licPreviewName');
+const previewSize   = document.getElementById('licPreviewSize');
+const previewRemove = document.getElementById('licPreviewRemove');
+const submitBtn     = document.getElementById('licSubmit');
+
+const toastOverlay  = document.getElementById('licToast');
+const toastBox      = document.getElementById('licToastBox');
+const toastIcon     = document.getElementById('licToastIcon');
+const toastTitle    = document.getElementById('licToastTitle');
+const toastMsg      = document.getElementById('licToastMsg');
+const toastPrimary  = document.getElementById('licToastPrimary');
+const toastDismiss  = document.getElementById('licToastDismiss');
+
+/* ── Toast helpers ────────────────────────────────────── */
+const ICON_SUCCESS = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const ICON_ERROR   = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg>';
+
+function showToast(kind, title, message) {
+  toastBox.classList.remove('is-success', 'is-error');
+  toastBox.classList.add(kind === 'success' ? 'is-success' : 'is-error');
+  toastIcon.innerHTML = kind === 'success' ? ICON_SUCCESS : ICON_ERROR;
+  toastTitle.textContent = title;
+  toastMsg.textContent = message;
+  toastOverlay.classList.add('is-open');
+  toastOverlay.setAttribute('aria-hidden', 'false');
+}
+function hideToast() {
+  toastOverlay.classList.remove('is-open');
+  toastOverlay.setAttribute('aria-hidden', 'true');
+}
+toastDismiss.addEventListener('click', hideToast);
+toastOverlay.addEventListener('click', function (e) { if (e.target === toastOverlay) hideToast(); });
+
+/* ── File upload UI ───────────────────────────────────── */
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function setSelectedFile(file) {
+  if (!file) return clearSelectedFile();
+
+  if (!file.type.startsWith('image/')) {
+    markFieldError('file', 'Please upload an image file (PNG, JPG, WEBP).');
+    return;
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    markFieldError('file', 'Image is larger than 8 MB. Please upload a smaller screenshot.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (ev) { previewImg.src = ev.target.result; };
+  reader.readAsDataURL(file);
+
+  previewName.textContent = file.name;
+  previewSize.textContent = formatBytes(file.size);
+  drop.classList.add('has-file');
+  clearFieldError('file');
+}
+function clearSelectedFile() {
+  fileInput.value = '';
+  previewImg.src = '';
+  drop.classList.remove('has-file');
+}
+
+/* Click-to-browse is handled by the invisible <input type="file"> overlay. */
+fileInput.addEventListener('change', function (e) {
+  const f = e.target.files && e.target.files[0];
+  setSelectedFile(f);
+});
+previewRemove.addEventListener('click', function (e) {
+  e.stopPropagation();
+  clearSelectedFile();
+});
+
+/* Drag & drop visual feedback + handling. */
+['dragenter', 'dragover'].forEach(function (evt) {
+  drop.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.add('is-dragging'); });
+});
+['dragleave', 'drop'].forEach(function (evt) {
+  drop.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.remove('is-dragging'); });
+});
+drop.addEventListener('drop', function (e) {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) setSelectedFile(f);
+});
+
+/* ── Field validation helpers ─────────────────────────── */
+function markFieldError(name, message) {
+  const field = document.getElementById('field-' + name);
+  const msg   = document.getElementById('msg-' + name);
+  if (!field) return;
+  field.classList.add('lic-error');
+  if (name === 'file') drop.classList.add('lic-error');
+  if (msg && message) msg.textContent = message;
+}
+function clearFieldError(name) {
+  const field = document.getElementById('field-' + name);
+  if (!field) return;
+  field.classList.remove('lic-error');
+  if (name === 'file') drop.classList.remove('lic-error');
+}
+function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim()); }
+
+[accountInput, emailInput].forEach(function (inp) {
+  inp.addEventListener('input', function () { clearFieldError(inp === accountInput ? 'account' : 'email'); });
+});
+
+/* ── Submit handler ───────────────────────────────────── */
+form.addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  /* 1. Validate ---------------------------------------- */
+  const account = accountInput.value.trim();
+  const email   = emailInput.value.trim();
+  const file    = fileInput.files && fileInput.files[0];
+
+  let ok = true;
+  if (!account)         { markFieldError('account'); ok = false; }
+  if (!email)           { markFieldError('email', 'Please enter your email address.'); ok = false; }
+  else if (!validEmail(email)) { markFieldError('email', 'Please enter a valid email address.'); ok = false; }
+  if (!file)            { markFieldError('file');    ok = false; }
+  if (!ok) return;
+
+  /* 2. Guard against missing Supabase config ----------- */
+  if (!supabase || SUPABASE_URL === 'SUPABASE_URL_HERE' || SUPABASE_ANON_KEY === 'SUPABASE_ANON_KEY_HERE') {
+    showToast('error', 'Configuration missing', 'The submission endpoint isn’t configured yet. Please contact support or try again shortly.');
+    return;
+  }
+
+  /* 3. Loading state ----------------------------------- */
+  submitBtn.disabled = true;
+  submitBtn.classList.add('is-loading');
+
+  try {
+    /* 3a. Upload screenshot to Storage ----------------- */
+    const ext       = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+    const safeAcct  = account.replace(/[^a-z0-9]/gi, '').slice(0, 24) || 'acct';
+    const filename  = safeAcct + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+
+    const { error: uploadErr } = await supabase
+      .storage
+      .from(STORAGE_BUCKET)
+      .upload(filename, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+
+    if (uploadErr) throw new Error('Upload failed: ' + (uploadErr.message || uploadErr));
+
+    /* 3b. Get the public URL --------------------------- */
+    const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filename);
+    const screenshotUrl = (pub && pub.publicUrl) || '';
+
+    /* 3c. Insert into license_requests ----------------- */
+    const { error: insertErr } = await supabase
+      .from(TABLE_NAME)
+      .insert([{
+        account_number:  account,
+        email:           email,
+        screenshot_url:  screenshotUrl,
+        status:          'pending'
+      }]);
+
+    if (insertErr) throw new Error('Database error: ' + (insertErr.message || insertErr));
+
+    /* 3d. Success -------------------------------------- */
+    showToast(
+      'success',
+      'Request submitted',
+      'Your request has been submitted successfully. Our team will review and approve your MT5 bot license shortly.'
+    );
+
+    /* Reset the form so the user sees a clean state if they close the toast. */
+    form.reset();
+    clearSelectedFile();
+  } catch (err) {
+    console.error('[license-request] submission failed:', err);
+    showToast(
+      'error',
+      'Submission failed',
+      (err && err.message) ? err.message : 'Something went wrong while submitting your request. Please try again.'
+    );
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('is-loading');
+  }
+});
+</script>
+</body>
+</html>

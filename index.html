@@ -1420,6 +1420,26 @@
     }
     @keyframes luxPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 
+    /* Temporary "Request Bot License" navbar button — mirrors lux-nav-live styling
+       so it slots into the navbar without redesigning anything. */
+    .lux-nav-license {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 100px;
+      background: linear-gradient(135deg, rgba(200,156,63,0.14), rgba(200,156,63,0.06));
+      border: 1px solid rgba(200,156,63,0.38);
+      color: #8c6c1f;
+      font-size: 13px; font-weight: 700;
+      text-decoration: none;
+      box-shadow: var(--lux-shadow-s);
+      transition: transform .18s, box-shadow .18s, background .2s, color .2s;
+    }
+    .lux-nav-license:hover {
+      transform: translateY(-1px); box-shadow: var(--lux-shadow-m);
+      background: linear-gradient(135deg, rgba(200,156,63,0.22), rgba(200,156,63,0.10));
+      color: #6f5414;
+    }
+    .lux-nav-license svg { flex-shrink: 0; }
+
     .lux-nav-join {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 10px 20px; border-radius: 100px;
@@ -1952,6 +1972,7 @@
       .lux-trusted-body { grid-template-columns: 1fr; }
       .lux-trusted-card, .lux-start-card { padding: 28px 22px; border-radius: 22px; }
       .lux-nav-live { display: none; }
+      .lux-nav-license { display: none; }
     }
     @media (max-width: 480px) {
       .lux-tools-grid { grid-template-columns: 1fr; }
@@ -2010,6 +2031,10 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg>
         </a>
       </div>
+      <a href="license-request.html" class="lux-nav-license">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg>
+        Request Bot License
+      </a>
       <a href="live-sentiment.html" class="lux-nav-live">
         <span class="lux-nav-live-dot"></span>Live Sentiment
       </a>
@@ -2035,6 +2060,7 @@
   <a href="fundamentals.html"              onclick="toggleMenu()">Fundamentals</a>
   <a href="weekly-report.html"             onclick="toggleMenu()">Weekly Report</a>
   <a href="investment-opportunities.html"  onclick="toggleMenu()">Investment Opportunities</a>
+  <a href="license-request.html"           onclick="toggleMenu()">Request Bot License</a>
 </div>
 
 <!-- ── HERO ── -->
