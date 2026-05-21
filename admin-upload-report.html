@@ -398,6 +398,19 @@
     .adm-pill-waiting  { background: rgba(200,156,63,0.14);  color: var(--gold3); border: 1px solid rgba(200,156,63,0.32); }
     .adm-pill-ready    { background: rgba(31,138,77,0.12);   color: #0f6b3a;     border: 1px solid rgba(31,138,77,0.30); }
     .adm-pill-done     { background: rgba(31,138,77,0.18);   color: #0a4d27;     border: 1px solid rgba(31,138,77,0.45); }
+    /* EXTENSION — new lifecycle pill colors (compiled / emailed / rejected) */
+    .adm-pill-matched  { background: rgba(200,156,63,0.14);  color: var(--gold3); border: 1px solid rgba(200,156,63,0.36); }
+    .adm-pill-compiled { background: rgba(43,30,4,0.10);      color: #3d2a08;     border: 1px solid rgba(140,108,31,0.42); }
+    .adm-pill-emailed  { background: rgba(15,107,58,0.16);   color: #0a4d27;     border: 1px solid rgba(15,107,58,0.42); }
+    .adm-pill-rejected { background: rgba(177,58,58,0.10);   color: #7a1f1f;     border: 1px solid rgba(177,58,58,0.32); }
+    /* Reject button — same shape as .adm-row-action but danger-tinted */
+    .adm-row-action.adm-row-reject  { background: rgba(177,58,58,0.06);  border-color: rgba(177,58,58,0.28); color: #7a1f1f; }
+    .adm-row-action.adm-row-reject:hover { background: rgba(177,58,58,0.13); border-color: rgba(177,58,58,0.45); }
+    /* Compiled/Emailed lifecycle action buttons — distinct tones from "ready" */
+    .adm-row-action.adm-row-compiled { background: rgba(140,108,31,0.10); border-color: rgba(140,108,31,0.35); color: #5b4612; }
+    .adm-row-action.adm-row-compiled:hover { background: rgba(140,108,31,0.18); border-color: rgba(140,108,31,0.5); }
+    .adm-row-action.adm-row-emailed  { background: rgba(15,107,58,0.10);   border-color: rgba(15,107,58,0.32); color: #0a4d27; }
+    .adm-row-action.adm-row-emailed:hover { background: rgba(15,107,58,0.18); border-color: rgba(15,107,58,0.45); }
     .adm-pill svg { flex-shrink: 0; }
 
     /* ═══════════════════════════════════════════════════
@@ -1050,23 +1063,111 @@
           </button>
         </div>
       </div>
-      <div class="adm-table-scroll">
-        <table class="adm-table" id="admQueueTable">
-          <thead>
-            <tr>
-              <th>Account Number</th>
-              <th>Email</th>
-              <th>Approved At</th>
-              <th>Target File</th>
-              <th>Compile Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="admQueueBody"></tbody>
-        </table>
-        <div class="adm-table-empty" id="admQueueEmpty">
-          <b>No approved accounts yet.</b>
-          Once you process a broker report, all matched accounts will appear here.
+      <!-- EXTENSION — Lifecycle tab navigation (queue-scoped, separate from results tabs) -->
+      <div class="adm-tabs" role="tablist" aria-label="Queue lifecycle" style="margin: 18px 22px 0;">
+        <button type="button" class="adm-tab is-active" data-adm-qtab="matched"  role="tab" aria-selected="true">
+          New Matches <span class="adm-tab-count" id="admQTabCountMatched">0</span>
+        </button>
+        <button type="button" class="adm-tab"            data-adm-qtab="compiled" role="tab" aria-selected="false">
+          Already Compiled <span class="adm-tab-count" id="admQTabCountCompiled">0</span>
+        </button>
+        <button type="button" class="adm-tab"            data-adm-qtab="emailed"  role="tab" aria-selected="false">
+          Already Emailed <span class="adm-tab-count" id="admQTabCountEmailed">0</span>
+        </button>
+        <button type="button" class="adm-tab"            data-adm-qtab="rejected" role="tab" aria-selected="false">
+          Rejected <span class="adm-tab-count" id="admQTabCountRejected">0</span>
+        </button>
+      </div>
+
+      <!-- TAB A: NEW MATCHES — status in [matched, approved] · all lifecycle actions enabled -->
+      <div class="adm-tab-panel is-active" id="admQPanelMatched" role="tabpanel">
+        <div class="adm-table-scroll">
+          <table class="adm-table" id="admQueueTable">
+            <thead>
+              <tr>
+                <th>Account Number</th>
+                <th>Email</th>
+                <th>Approved At</th>
+                <th>Target File</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admQueueBody"></tbody>
+          </table>
+          <div class="adm-table-empty" id="admQueueEmpty">
+            <b>No new matches yet.</b>
+            Once you process a broker report, newly approved accounts will appear here.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB B: ALREADY COMPILED — status = compiled · can Mark Emailed or Reject -->
+      <div class="adm-tab-panel" id="admQPanelCompiled" role="tabpanel">
+        <div class="adm-table-scroll">
+          <table class="adm-table" id="admQCompiledTable">
+            <thead>
+              <tr>
+                <th>Account Number</th>
+                <th>Email</th>
+                <th>Approved At</th>
+                <th>Target File</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admQCompiledBody"></tbody>
+          </table>
+          <div class="adm-result-empty" id="admQCompiledEmpty" style="display:none;">
+            <b>No compiled accounts yet.</b>
+            Click <b>Mark Compiled</b> on a matched account to move it here.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB C: ALREADY EMAILED — status = emailed · read-only history -->
+      <div class="adm-tab-panel" id="admQPanelEmailed" role="tabpanel">
+        <div class="adm-table-scroll">
+          <table class="adm-table" id="admQEmailedTable">
+            <thead>
+              <tr>
+                <th>Account Number</th>
+                <th>Email</th>
+                <th>Approved At</th>
+                <th>Target File</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admQEmailedBody"></tbody>
+          </table>
+          <div class="adm-result-empty" id="admQEmailedEmpty" style="display:none;">
+            <b>No delivered packages yet.</b>
+            Click <b>Mark Emailed</b> on a compiled account to move it here.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB D: REJECTED — status = rejected · purely informational -->
+      <div class="adm-tab-panel" id="admQPanelRejected" role="tabpanel">
+        <div class="adm-table-scroll">
+          <table class="adm-table" id="admQRejectedTable">
+            <thead>
+              <tr>
+                <th>Account Number</th>
+                <th>Email</th>
+                <th>Approved At</th>
+                <th>Target File</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admQRejectedBody"></tbody>
+          </table>
+          <div class="adm-result-empty" id="admQRejectedEmpty" style="display:none;">
+            <b>No rejected requests.</b>
+            Use <b>Reject Request</b> on a row to move it here.
+          </div>
         </div>
       </div>
     </div>
@@ -1153,7 +1254,22 @@
 
   const TABLE_NAME    = 'license_requests';
   const STATUS_PENDING  = 'pending';
-  const STATUS_APPROVED = 'approved';
+  const STATUS_APPROVED = 'approved';  /* LEGACY — kept as alias for backwards compatibility with rows already in the DB */
+  /* EXTENSION — full request lifecycle (the matching engine now writes STATUS_MATCHED for new approvals) */
+  const STATUS_MATCHED  = 'matched';
+  const STATUS_COMPILED = 'compiled';
+  const STATUS_EMAILED  = 'emailed';
+  const STATUS_REJECTED = 'rejected';
+  /* Treated as equivalent "queue-ready" states everywhere. Old approved rows still surface
+     in the New Matches tab so no historical data is hidden after the lifecycle upgrade. */
+  const MATCHED_STATUSES = [STATUS_MATCHED, STATUS_APPROVED];
+  /* Allowed transitions — every status update is double-locked against this list,
+     so a row can never jump from e.g. 'emailed' back to 'pending'.                  */
+  const ALLOWED_TRANSITIONS = {
+    compiled: MATCHED_STATUSES,                                  /* matched/approved → compiled        */
+    emailed:  [STATUS_COMPILED].concat(MATCHED_STATUSES),         /* compiled/matched/approved → emailed */
+    rejected: [STATUS_PENDING].concat(MATCHED_STATUSES).concat([STATUS_COMPILED])  /* any non-final → rejected */
+  };
 
   /* Initialize once. */
   let adminSupabase = null;
@@ -1316,17 +1432,23 @@
     return data || [];
   }
 
+  /* EXTENSION — was .eq('status','approved'); now fetches BOTH the new canonical
+     'matched' status AND the legacy 'approved' rows, so historical data continues
+     to surface in the New Matches tab. */
   async function fetchApproved() {
     const { data, error } = await adminSupabase
       .from(TABLE_NAME)
       .select('id, account_number, email, status, created_at, screenshot_url')
-      .eq('status', STATUS_APPROVED)
+      .in('status', MATCHED_STATUSES)
       .order('created_at', { ascending: false });
-    if (error) throw new Error('Failed to load approved queue: ' + error.message);
+    if (error) throw new Error('Failed to load matched queue: ' + error.message);
     return data || [];
   }
 
-  /* Bulk-update by primary-key list. Returns the number actually changed. */
+  /* Bulk-update by primary-key list. Returns the number actually changed.
+     EXTENSION: writes STATUS_MATCHED (was STATUS_APPROVED previously).
+     The safety filter still pins the source state to 'pending' — so already-matched,
+     already-compiled, already-emailed and already-rejected rows are never touched. */
   async function approveByIds(ids) {
     if (!ids || !ids.length) return 0;
     /* Chunk in batches of 200 to stay well below request size limits. */
@@ -1335,14 +1457,45 @@
       const slice = ids.slice(i, i + 200);
       const { data, error } = await adminSupabase
         .from(TABLE_NAME)
-        .update({ status: STATUS_APPROVED })
+        .update({ status: STATUS_MATCHED })
         .in('id', slice)
-        .eq('status', STATUS_PENDING)   /* hard safety: do not touch already-approved rows */
+        .eq('status', STATUS_PENDING)   /* hard safety: only pending rows can transition to matched */
         .select('id');
       if (error) throw new Error('Failed to approve matched accounts: ' + error.message);
       total += (data || []).length;
     }
     return total;
+  }
+
+  /* EXTENSION — single-row status transition with allowed-from-state safety lock.
+     Used by the Mark Compiled / Mark Emailed / Reject buttons. */
+  async function setRequestStatus(id, toStatus) {
+    if (!id) throw new Error('Missing request id.');
+    const allowedFrom = ALLOWED_TRANSITIONS[toStatus];
+    if (!allowedFrom) throw new Error('Unsupported transition: → ' + toStatus);
+    const { data, error } = await adminSupabase
+      .from(TABLE_NAME)
+      .update({ status: toStatus })
+      .eq('id', id)
+      .in('status', allowedFrom)
+      .select('id, status');
+    if (error) throw new Error('Status update rejected by Supabase: ' + error.message);
+    if (!data || !data.length) {
+      throw new Error('The row could not transition to "' + toStatus + '" — it may have already been changed by another admin.');
+    }
+    return data[0];
+  }
+
+  /* EXTENSION — generic fetch by status (accepts string or array). */
+  async function fetchByStatus(statuses) {
+    const arr = Array.isArray(statuses) ? statuses : [statuses];
+    const { data, error } = await adminSupabase
+      .from(TABLE_NAME)
+      .select('id, account_number, email, status, created_at, screenshot_url')
+      .in('status', arr)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error('Failed to load ' + arr.join('/') + ' requests: ' + error.message);
+    return data || [];
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -1394,6 +1547,18 @@
   const queueRefresh  = document.getElementById('admQueueRefresh');
   const queueExport   = document.getElementById('admQueueExport');
 
+  /* EXTENSION — lifecycle tab bodies + counts */
+  const qCompiledBody  = document.getElementById('admQCompiledBody');
+  const qCompiledEmpty = document.getElementById('admQCompiledEmpty');
+  const qEmailedBody   = document.getElementById('admQEmailedBody');
+  const qEmailedEmpty  = document.getElementById('admQEmailedEmpty');
+  const qRejectedBody  = document.getElementById('admQRejectedBody');
+  const qRejectedEmpty = document.getElementById('admQRejectedEmpty');
+  const qTabCountM     = document.getElementById('admQTabCountMatched');
+  const qTabCountC     = document.getElementById('admQTabCountCompiled');
+  const qTabCountE     = document.getElementById('admQTabCountEmailed');
+  const qTabCountR     = document.getElementById('admQTabCountRejected');
+
   const toast         = document.getElementById('admToast');
   const toastBox      = document.getElementById('admToastBox');
   const toastIcon     = document.getElementById('admToastIcon');
@@ -1406,7 +1571,10 @@
   let selectedFile    = null;
   let lastResults     = [];   /* [{account, email, prevStatus, newStatus, result, queueState, request_date, screenshot_url}] */
   let lastDuplicates  = [];   /* [{normalized, raw, occurrences, inLicenseRequests}] */
-  let currentQueue    = [];   /* [{account_number, email, created_at, screenshot_url, ...}] */
+  let currentQueue    = [];   /* "New Matches" tab — status in [matched, approved]   */
+  let compiledQueue   = [];   /* "Already Compiled" tab — status = compiled          */
+  let emailedQueue    = [];   /* "Already Emailed"  tab — status = emailed            */
+  let rejectedQueue   = [];   /* "Rejected"         tab — status = rejected           */
 
   /* localStorage-backed "Mark Ready" state — the admin can locally flag rows that
      have already been compiled on their PC. This is purely a UI helper; it has NO
@@ -1610,7 +1778,7 @@
           return {
             account: r.account_number, email: r.email,
             request_date: r.created_at, screenshot_url: r.screenshot_url,
-            prevStatus: STATUS_PENDING, newStatus: STATUS_APPROVED,
+            prevStatus: STATUS_PENDING, newStatus: STATUS_MATCHED,
             result: 'matched', queueState: 'waiting'
           };
         }))
@@ -1748,7 +1916,7 @@
         '<td><span class="adm-acct">' + escapeHTML(r.account) + '</span></td>' +
         '<td class="adm-email">' + escapeHTML(r.email || '—') + '</td>' +
         '<td>' + escapeHTML(formatDate(r.request_date)) + '</td>' +
-        '<td><span class="adm-pill adm-pill-approved">approved</span></td>' +
+        '<td><span class="adm-pill adm-pill-matched">matched</span></td>' +
         shotCellHTML(r.screenshot_url, r.account) +
         actionsCellHTML(r.account);
       frag.appendChild(tr);
@@ -1801,7 +1969,10 @@
   }
 
   function pillFor(status) {
-    if (status === STATUS_APPROVED) return '<span class="adm-pill adm-pill-approved">approved</span>';
+    if (status === STATUS_MATCHED || status === STATUS_APPROVED) return '<span class="adm-pill adm-pill-matched">matched</span>';
+    if (status === STATUS_COMPILED) return '<span class="adm-pill adm-pill-compiled">compiled</span>';
+    if (status === STATUS_EMAILED)  return '<span class="adm-pill adm-pill-emailed">emailed</span>';
+    if (status === STATUS_REJECTED) return '<span class="adm-pill adm-pill-rejected">rejected</span>';
     return '<span class="adm-pill adm-pill-pending">pending</span>';
   }
 
@@ -1840,39 +2011,150 @@
      ═══════════════════════════════════════════════════════════════ */
   async function refreshQueue() {
     try {
-      currentQueue = await fetchApproved();
+      /* EXTENSION — fetch all four lifecycle buckets in parallel.
+         Old behaviour (single 'approved' fetch) is preserved through
+         fetchApproved() which now returns matched+approved rows.       */
+      const [matched, compiled, emailed, rejected] = await Promise.all([
+        fetchApproved(),
+        fetchByStatus(STATUS_COMPILED),
+        fetchByStatus(STATUS_EMAILED),
+        fetchByStatus(STATUS_REJECTED)
+      ]);
+      currentQueue  = matched;
+      compiledQueue = compiled;
+      emailedQueue  = emailed;
+      rejectedQueue = rejected;
       renderQueue();
+      renderLifecycleTabs();
     } catch (err) {
       console.error('[admin] queue fetch failed:', err);
       queueEmpty.style.display = '';
       queueEmpty.innerHTML = '<b>Could not load the compilation queue.</b>' + escapeHTML((err && err.message) || '');
     }
   }
+  /* ───────────────────────────────────────────────────────────────
+     EXTENSION — lifecycle-aware status pill helper. Maps each DB
+     status to its visual badge inside any queue tab.
+     ─────────────────────────────────────────────────────────────── */
+  function lifecyclePill(status) {
+    if (status === STATUS_COMPILED) return '<span class="adm-pill adm-pill-compiled">compiled</span>';
+    if (status === STATUS_EMAILED)  return '<span class="adm-pill adm-pill-emailed">emailed</span>';
+    if (status === STATUS_REJECTED) return '<span class="adm-pill adm-pill-rejected">rejected</span>';
+    if (status === STATUS_MATCHED || status === STATUS_APPROVED) return '<span class="adm-pill adm-pill-matched">matched</span>';
+    return '<span class="adm-pill adm-pill-pending">' + escapeHTML(status || 'pending') + '</span>';
+  }
+
+  /* EXTENSION — per-row action buttons inside the LIFECYCLE QUEUE tabs.
+     Buttons surfaced depend on the current row status so the admin can
+     only trigger transitions that the DB safety lock will actually accept.
+       matched/approved → Copy Account, Copy Filename, Mark Compiled, Mark Emailed, Reject
+       compiled         → Copy Account, Copy Filename, Mark Emailed, Reject
+       emailed          → Copy Account (read-only history)
+       rejected         → Copy Account (informational)                          */
+  function queueActionsCellHTML(row) {
+    const acctSafe = escapeHTML(row.account_number);
+    const fname    = escapeHTML(targetFilenameFor(row.account_number));
+    const idSafe   = escapeHTML(String(row.id));
+    const s        = row.status;
+
+    const btnCopyAcct =
+      '<button type="button" class="adm-row-action" data-adm-copy="account" data-adm-acct="' + acctSafe + '" title="Copy account number">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+        'Account' +
+      '</button>';
+    const btnCopyFile =
+      '<button type="button" class="adm-row-action" data-adm-copy="filename" data-adm-filename="' + fname + '" title="Copy target EX5 filename">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+        'Filename' +
+      '</button>';
+    const btnMarkCompiled =
+      '<button type="button" class="adm-row-action adm-row-compiled" data-adm-life="compiled" data-adm-id="' + idSafe + '" data-adm-acct="' + acctSafe + '" title="Mark this EX5 as compiled">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
+        'Mark Compiled' +
+      '</button>';
+    const btnMarkEmailed =
+      '<button type="button" class="adm-row-action adm-row-emailed" data-adm-life="emailed" data-adm-id="' + idSafe + '" data-adm-acct="' + acctSafe + '" title="Mark final package as emailed">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>' +
+        'Mark Emailed' +
+      '</button>';
+    const btnReject =
+      '<button type="button" class="adm-row-action adm-row-reject" data-adm-life="rejected" data-adm-id="' + idSafe + '" data-adm-acct="' + acctSafe + '" title="Reject this license request">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+        'Reject' +
+      '</button>';
+
+    let buttons = btnCopyAcct;
+    if (s === STATUS_MATCHED || s === STATUS_APPROVED) {
+      buttons += btnCopyFile + btnMarkCompiled + btnMarkEmailed + btnReject;
+    } else if (s === STATUS_COMPILED) {
+      buttons += btnCopyFile + btnMarkEmailed + btnReject;
+    } /* emailed / rejected → copy-only (read-only history) */
+
+    return '<td><div class="adm-row-actions">' + buttons + '</div></td>';
+  }
+
+  /* Reusable row-builder for any of the four lifecycle tabs. */
+  function buildQueueRow(r, pillHTML) {
+    const target = targetFilenameFor(r.account_number);
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><span class="adm-acct">' + escapeHTML(r.account_number) + '</span></td>' +
+      '<td class="adm-email">' + escapeHTML(r.email || '—') + '</td>' +
+      '<td>' + escapeHTML(formatDate(r.created_at)) + '</td>' +
+      '<td><code class="mono">' + escapeHTML(target) + '</code></td>' +
+      '<td>' + pillHTML + '</td>' +
+      queueActionsCellHTML(r);
+    return tr;
+  }
+
   function renderQueue() {
     queueBody.innerHTML = '';
-    queueCount.textContent = currentQueue.length + ' account' + (currentQueue.length === 1 ? '' : 's') + ' approved';
+    queueCount.textContent = currentQueue.length + ' new match' + (currentQueue.length === 1 ? '' : 'es');
     if (!currentQueue.length) { queueEmpty.style.display = ''; return; }
     queueEmpty.style.display = 'none';
 
     const frag = document.createDocumentFragment();
     for (let i = 0; i < currentQueue.length; i++) {
-      const r = currentQueue[i];
-      const target = targetFilenameFor(r.account_number);
-      const isReady = readySet.has(normAccount(r.account_number));
-      const statusPill = isReady
-        ? '<span class="adm-pill adm-pill-done">✓ Ready / Compiled</span>'
-        : '<span class="adm-pill adm-pill-waiting">Waiting for compile</span>';
-      const tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td><span class="adm-acct">' + escapeHTML(r.account_number) + '</span></td>' +
-        '<td class="adm-email">' + escapeHTML(r.email || '—') + '</td>' +
-        '<td>' + escapeHTML(formatDate(r.created_at)) + '</td>' +
-        '<td><code class="mono">' + escapeHTML(target) + '</code></td>' +
-        '<td>' + statusPill + '</td>' +
-        actionsCellHTML(r.account_number);
-      frag.appendChild(tr);
+      frag.appendChild(buildQueueRow(currentQueue[i], lifecyclePill(currentQueue[i].status)));
     }
     queueBody.appendChild(frag);
+  }
+
+  /* EXTENSION — render the three new lifecycle tabs (compiled / emailed / rejected). */
+  function renderLifecycleTabs() {
+    /* Tab counts */
+    qTabCountM.textContent = currentQueue.length;
+    qTabCountC.textContent = compiledQueue.length;
+    qTabCountE.textContent = emailedQueue.length;
+    qTabCountR.textContent = rejectedQueue.length;
+
+    /* Compiled */
+    qCompiledBody.innerHTML = '';
+    if (!compiledQueue.length) { qCompiledEmpty.style.display = ''; }
+    else {
+      qCompiledEmpty.style.display = 'none';
+      const f1 = document.createDocumentFragment();
+      for (let i = 0; i < compiledQueue.length; i++) f1.appendChild(buildQueueRow(compiledQueue[i], lifecyclePill(STATUS_COMPILED)));
+      qCompiledBody.appendChild(f1);
+    }
+    /* Emailed */
+    qEmailedBody.innerHTML = '';
+    if (!emailedQueue.length) { qEmailedEmpty.style.display = ''; }
+    else {
+      qEmailedEmpty.style.display = 'none';
+      const f2 = document.createDocumentFragment();
+      for (let i = 0; i < emailedQueue.length; i++) f2.appendChild(buildQueueRow(emailedQueue[i], lifecyclePill(STATUS_EMAILED)));
+      qEmailedBody.appendChild(f2);
+    }
+    /* Rejected */
+    qRejectedBody.innerHTML = '';
+    if (!rejectedQueue.length) { qRejectedEmpty.style.display = ''; }
+    else {
+      qRejectedEmpty.style.display = 'none';
+      const f3 = document.createDocumentFragment();
+      for (let i = 0; i < rejectedQueue.length; i++) f3.appendChild(buildQueueRow(rejectedQueue[i], lifecyclePill(STATUS_REJECTED)));
+      qRejectedBody.appendChild(f3);
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -1921,7 +2203,80 @@
       showToast('success', 'Marked as ready', 'Account ' + acct + ' is now flagged as compiled & ready.');
       return;
     }
+
+    /* EXTENSION — lifecycle transitions (Mark Compiled / Mark Emailed / Reject).
+       Each writes a single Supabase UPDATE, double-locked against the allowed
+       source statuses so the transition can never violate the state machine. */
+    const lifeKind = btn.getAttribute('data-adm-life');
+    if (lifeKind === STATUS_COMPILED || lifeKind === STATUS_EMAILED || lifeKind === STATUS_REJECTED) {
+      const id   = btn.getAttribute('data-adm-id') || '';
+      const acct = btn.getAttribute('data-adm-acct') || '';
+      if (!id) { showToast('error', 'Missing id', 'This row is missing a database id and cannot be updated.'); return; }
+
+      /* Optional confirm only for rejection — the other two are reversible-by-rerun. */
+      if (lifeKind === STATUS_REJECTED && !window.confirm('Reject license request for account ' + acct + '? This moves it to the Rejected tab.')) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+
+      setRequestStatus(id, lifeKind).then(function () {
+        const niceTitle =
+          lifeKind === STATUS_COMPILED ? 'Marked as compiled' :
+          lifeKind === STATUS_EMAILED  ? 'Marked as emailed'  : 'Request rejected';
+        const niceMsg =
+          lifeKind === STATUS_COMPILED ? 'Account ' + acct + ' moved to the Already Compiled tab.'  :
+          lifeKind === STATUS_EMAILED  ? 'Account ' + acct + ' moved to the Already Emailed tab.'   :
+                                          'Account ' + acct + ' moved to the Rejected tab.';
+        showToast('success', niceTitle, niceMsg);
+        return refreshQueue();
+      }).catch(function (err) {
+        console.error('[admin] lifecycle transition failed:', err);
+        const raw = String((err && err.message) || err || '').toLowerCase();
+        let title   = 'Status update failed';
+        let message = (err && err.message) || 'Could not update the request status. Please try again.';
+        if (raw.indexOf('rls') !== -1 || raw.indexOf('permission') !== -1 || raw.indexOf('row-level') !== -1) {
+          title = 'Permission denied';
+          message = 'Supabase rejected the update. Confirm that UPDATE on license_requests is permitted for the anon role.';
+        } else if (raw.indexOf('failed to fetch') !== -1 || raw.indexOf('network') !== -1) {
+          title = 'Network issue';
+          message = 'We couldn’t reach Supabase. Check your connection and try again.';
+        }
+        showToast('error', title, message);
+      }).then(function () {
+        btn.disabled = false;
+        btn.style.opacity = '';
+      });
+      return;
+    }
   });
+
+  /* EXTENSION — queue lifecycle tab switching.
+     Scoped to [data-adm-qtab] so it never collides with the existing
+     [data-adm-tab] verification-results tab switcher.                */
+  (function () {
+    const qBtns   = document.querySelectorAll('.adm-tab[data-adm-qtab]');
+    const qPanels = {
+      matched:  document.getElementById('admQPanelMatched'),
+      compiled: document.getElementById('admQPanelCompiled'),
+      emailed:  document.getElementById('admQPanelEmailed'),
+      rejected: document.getElementById('admQPanelRejected')
+    };
+    qBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        const key = b.getAttribute('data-adm-qtab');
+        qBtns.forEach(function (x) {
+          const active = x === b;
+          x.classList.toggle('is-active', active);
+          x.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        Object.keys(qPanels).forEach(function (k) {
+          if (qPanels[k]) qPanels[k].classList.toggle('is-active', k === key);
+        });
+      });
+    });
+  })();
 
   /* Export queue as JSON for the future local-PC automation script. */
   function exportQueueJSON() {
