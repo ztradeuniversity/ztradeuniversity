@@ -455,6 +455,37 @@
       color: var(--text) !important; letter-spacing: -.4px !important; line-height: 1.25 !important; margin-bottom: 8px !important;
     }
     .adm-toast > p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+    /* EXTENSION — optional structured breakdown block shown inside the success toast
+       to give the admin a full processing summary (Matched / Rejected / Already Compiled
+       / New Compile Ready). Hidden by default; revealed when showToast() receives a
+       breakdown[] argument. */
+    .adm-toast-breakdown {
+      display: none;
+      max-width: 320px;
+      margin: 0 auto 20px;
+      text-align: left;
+    }
+    .adm-toast-breakdown.is-open { display: block; }
+    .adm-toast-breakdown-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 9px 14px; margin-bottom: 8px;
+      border: 1px solid rgba(200,156,63,0.18); border-radius: 10px;
+      background: #fdfbf6;
+    }
+    .adm-toast-breakdown-row:last-child { margin-bottom: 0; }
+    .adm-toast-breakdown-row .adm-bd-label { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .1px; }
+    .adm-toast-breakdown-row .adm-bd-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14.5px; font-weight: 800;
+      color: var(--text);
+      background: rgba(200,156,63,0.12);
+      padding: 3px 12px; border-radius: 100px;
+      min-width: 36px; text-align: center;
+    }
+    .adm-toast-breakdown-row.is-ok   .adm-bd-value { background: rgba(31,138,77,0.16);  color: #0a4d27; }
+    .adm-toast-breakdown-row.is-warn .adm-bd-value { background: rgba(184,136,26,0.18); color: #7a5a0e; }
+    .adm-toast-breakdown-row.is-gold .adm-bd-value { background: rgba(200,156,63,0.18); color: var(--gold3); }
+    .adm-toast-breakdown-row.is-gray .adm-bd-value { background: rgba(100,100,100,0.10); color: #4a4a4a; }
     .adm-toast-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .adm-toast-btn {
       display: inline-flex; align-items: center; gap: 8px;
@@ -1230,6 +1261,8 @@
     <div class="adm-toast-icon" id="admToastIcon"></div>
     <h3 id="admToastTitle">—</h3>
     <p id="admToastMsg">—</p>
+    <!-- EXTENSION — optional structured breakdown (hidden unless showToast receives a breakdown[]) -->
+    <div class="adm-toast-breakdown" id="admToastBreakdown" aria-live="polite"></div>
     <div class="adm-toast-actions">
       <button type="button" class="adm-toast-btn adm-toast-primary" id="admToastOk">Got it</button>
       <button type="button" class="adm-toast-btn adm-toast-ghost"   id="admToastDismiss">Dismiss</button>
@@ -1660,12 +1693,40 @@
      ═══════════════════════════════════════════════════════════════ */
   const ICON_SUCCESS = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
   const ICON_ERROR   = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg>';
-  function showToast(kind, title, message) {
+  /* EXTENSION — `breakdown` is an optional 4th argument:
+       [ { label: 'Matched', value: 1, kind: 'ok' }, ... ]
+     If provided, the toast renders a structured list of label/value rows
+     beneath the message. If omitted, behaviour is identical to before. */
+  function showToast(kind, title, message, breakdown) {
     toastBox.classList.remove('is-success','is-error');
     toastBox.classList.add(kind === 'success' ? 'is-success' : 'is-error');
     toastIcon.innerHTML = kind === 'success' ? ICON_SUCCESS : ICON_ERROR;
     toastTitle.textContent = title;
     toastMsg.textContent = message;
+
+    /* Render the optional breakdown block. Always clear first so a previous
+       breakdown can't bleed into a subsequent toast (e.g. error after success). */
+    const bd = document.getElementById('admToastBreakdown');
+    if (bd) {
+      bd.innerHTML = '';
+      if (breakdown && breakdown.length) {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < breakdown.length; i++) {
+          const item = breakdown[i] || {};
+          const row = document.createElement('div');
+          row.className = 'adm-toast-breakdown-row' + (item.kind ? ' is-' + item.kind : '');
+          row.innerHTML =
+            '<span class="adm-bd-label">' + escapeHTML(String(item.label == null ? '' : item.label)) + '</span>' +
+            '<span class="adm-bd-value">' + escapeHTML(String(item.value == null ? '0' : item.value)) + '</span>';
+          frag.appendChild(row);
+        }
+        bd.appendChild(frag);
+        bd.classList.add('is-open');
+      } else {
+        bd.classList.remove('is-open');
+      }
+    }
+
     toast.classList.add('is-open');
     toast.setAttribute('aria-hidden','false');
   }
@@ -1887,14 +1948,43 @@
       await refreshQueue();
       statQueue.textContent = currentQueue.length;
 
-      /* 7 — success toast */
-      showToast(
-        'success',
-        approvedCount > 0 ? approvedCount + ' account' + (approvedCount === 1 ? '' : 's') + ' approved' : 'Report processed',
-        approvedCount > 0
-          ? 'Matched accounts have been approved and added to the compilation queue.'
-          : 'No matching pending accounts were found in this report. Pending rows remain untouched.'
-      );
+      /* 7 — success toast
+         EXTENSION: surface the FULL processing summary inside the toast.
+         The four counts mirror the on-page stat tiles exactly, so the admin
+         always sees both the wins (matched) AND the misses (unmatched)
+         immediately after upload — even if they don't scroll the page. */
+      const breakdown = [
+        { label: 'Matched',              value: matched.length,         kind: matched.length   > 0 ? 'ok'   : '' },
+        { label: 'Rejected / Unmatched', value: unmatched.length,       kind: unmatched.length > 0 ? 'warn' : '' },
+        { label: 'Already Compiled',     value: alreadyCompiledCount,   kind: alreadyCompiledCount > 0 ? 'gray' : '' },
+        { label: 'New Compile Ready',    value: currentQueue.length,    kind: currentQueue.length  > 0 ? 'gold' : '' }
+      ];
+
+      let toastTitle = 'Report processed';
+      let toastMessage;
+      if (matched.length > 0 && unmatched.length > 0) {
+        toastTitle   = approvedCount + ' approved · ' + unmatched.length + ' unmatched';
+        toastMessage = 'Matched accounts were approved and added to the compile-ready queue. Unmatched pending requests remain pending and are listed in the Verification Results → Unmatched tab below.';
+      } else if (matched.length > 0) {
+        toastTitle   = approvedCount + ' account' + (approvedCount === 1 ? '' : 's') + ' approved';
+        toastMessage = 'Matched accounts have been approved and added to the compile-ready queue.';
+      } else if (unmatched.length > 0) {
+        toastTitle   = 'No matches — ' + unmatched.length + ' unmatched request' + (unmatched.length === 1 ? '' : 's');
+        toastMessage = 'None of your pending requests appear in this broker report. See the Verification Results → Unmatched tab for details.';
+      } else {
+        toastTitle   = 'Report processed';
+        toastMessage = 'No pending requests to evaluate. Existing approved/compiled/emailed rows remain untouched.';
+      }
+      showToast('success', toastTitle, toastMessage, breakdown);
+
+      /* EXTENSION — if there are no matches but there ARE unmatched requests,
+         auto-activate the Unmatched tab so the admin lands directly on the
+         relevant view. Only fires in the "0 matched, N unmatched" case to
+         avoid overriding admin intent when both groups have data. */
+      if (matched.length === 0 && unmatched.length > 0) {
+        const unmTab = document.querySelector('.adm-tab[data-adm-tab="unmatched"]');
+        if (unmTab) unmTab.click();
+      }
 
     } catch (err) {
       console.error('[admin] processing failed:', err);
