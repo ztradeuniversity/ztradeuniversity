@@ -232,7 +232,13 @@
     }
     .lic-drop:hover { border-color: var(--gold); background: rgba(200,156,63,0.08); }
     .lic-drop.is-dragging { border-color: var(--gold); background: rgba(200,156,63,0.13); transform: scale(1.005); }
-    .lic-drop.has-file { padding: 18px; align-items: stretch; min-height: 0; cursor: default; }
+    .lic-drop.has-file {
+      padding: 18px; align-items: stretch; min-height: 0; cursor: default;
+      border-style: solid;
+      border-color: rgba(31,138,77,0.32);
+      background: linear-gradient(135deg, rgba(31,138,77,0.05) 0%, rgba(200,156,63,0.04) 100%);
+    }
+    .lic-drop.has-file:hover { border-color: rgba(31,138,77,0.45); background: linear-gradient(135deg, rgba(31,138,77,0.07) 0%, rgba(200,156,63,0.05) 100%); }
     .lic-drop input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
     .lic-drop.has-file input[type="file"] { display: none; }
     .lic-drop-icon {
@@ -246,29 +252,74 @@
     .lic-drop-hint { font-size: 12px; color: var(--muted); }
     .lic-drop.lic-error { border-color: var(--danger); background: #fff5f5; }
 
-    /* File preview after upload */
-    .lic-preview { display: none; align-items: center; gap: 14px; }
+    /* File preview after upload — column layout with prominent image + success banner */
+    .lic-preview {
+      display: none; flex-direction: column; gap: 14px;
+      animation: licFadeIn .35s cubic-bezier(.2,.8,.2,1);
+    }
     .lic-drop.has-file .lic-preview { display: flex; }
     .lic-drop.has-file .lic-drop-icon,
     .lic-drop.has-file .lic-drop-title,
     .lic-drop.has-file .lic-drop-hint { display: none; }
+    @keyframes licFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Green "Image uploaded successfully" confirmation banner */
+    .lic-preview-success {
+      display: inline-flex; align-items: center; gap: 9px;
+      align-self: flex-start;
+      background: linear-gradient(135deg, rgba(31,138,77,0.12), rgba(31,138,77,0.04));
+      border: 1px solid rgba(31,138,77,0.32);
+      color: #0f6b3a;
+      font-size: 12.5px; font-weight: 700; letter-spacing: .1px;
+      padding: 7px 14px 7px 8px; border-radius: 100px;
+    }
+    .lic-preview-check {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: linear-gradient(135deg, #1f8a4d, #36b774);
+      color: #ffffff; display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(31,138,77,0.32);
+    }
+
+    /* Image preview frame — clean, prominent, contained */
+    .lic-preview-imgwrap {
+      position: relative; overflow: hidden;
+      background: #ffffff;
+      border: 1.5px solid rgba(31,138,77,0.22);
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow: 0 4px 18px rgba(31,138,77,0.08), 0 1px 0 rgba(255,255,255,0.6) inset;
+    }
     .lic-preview-img {
-      width: 88px; height: 88px; border-radius: 12px; object-fit: cover; flex-shrink: 0;
-      border: 1px solid rgba(200,156,63,0.28);
+      width: 100%; height: auto;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: 10px;
+      display: block;
       background: #fdfbf6;
+    }
+
+    /* Filename row */
+    .lic-preview-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 2px 4px 0;
     }
     .lic-preview-meta { flex: 1; min-width: 0; }
     .lic-preview-name {
       font-size: 13.5px; font-weight: 700; color: var(--text);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .lic-preview-size { font-size: 12px; color: var(--muted); }
     .lic-preview-remove {
       background: rgba(177,58,58,0.08); border: 1px solid rgba(177,58,58,0.22);
       color: var(--danger); font-size: 12px; font-weight: 700;
-      padding: 6px 12px; border-radius: 100px; cursor: pointer;
-      transition: background .18s;
+      padding: 7px 14px; border-radius: 100px; cursor: pointer;
+      transition: background .18s, color .18s;
+      flex-shrink: 0;
     }
     .lic-preview-remove:hover { background: rgba(177,58,58,0.16); }
 
@@ -286,14 +337,17 @@
       margin-top: 6px;
     }
     .lic-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(200,156,63,0.55); filter: brightness(1.06); }
-    .lic-submit:disabled { opacity: .65; cursor: not-allowed; transform: none; }
-    .lic-submit .lic-spinner { display: none; }
-    .lic-submit.is-loading .lic-submit-label { display: none; }
-    .lic-submit.is-loading .lic-spinner { display: inline-flex; }
+    .lic-submit:disabled { opacity: .78; cursor: not-allowed; transform: none; }
+    /* Submit button has TWO inner states: default label + loading (spinner + "Submitting Request...") */
+    .lic-submit .lic-submit-label   { display: inline-flex; align-items: center; gap: 10px; }
+    .lic-submit .lic-submit-loading { display: none;        align-items: center; gap: 10px; }
+    .lic-submit.is-loading .lic-submit-label   { display: none; }
+    .lic-submit.is-loading .lic-submit-loading { display: inline-flex; }
     .lic-spinner {
       width: 18px; height: 18px; border-radius: 50%;
-      border: 2.5px solid rgba(13,9,2,0.18); border-top-color: #0d0902;
+      border: 2.5px solid rgba(13,9,2,0.22); border-top-color: #0d0902;
       animation: licSpin .8s linear infinite;
+      flex-shrink: 0;
     }
     @keyframes licSpin { to { transform: rotate(360deg); } }
 
@@ -462,8 +516,10 @@
     @media (max-width: 420px) {
       .lic-hero .lic-hero-inner h1,
       .lic-hero h1 { letter-spacing: -1px !important; }
-      .lic-preview { flex-wrap: wrap; }
-      .lic-preview-img { width: 72px; height: 72px; }
+      /* Preview stays column-flex on all sizes; image fills width naturally. Only
+         tighten the max-height a bit on small screens so users don't have to scroll. */
+      .lic-preview-img { max-height: 220px; }
+      .lic-preview-row { flex-wrap: wrap; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
       .footer-copy { order: 0; }
     }
@@ -575,26 +631,39 @@
             <div class="lic-drop-title">Drop your screenshot here, or <span>browse</span></div>
             <div class="lic-drop-hint">PNG, JPG, or WEBP &middot; up to 8&nbsp;MB</div>
 
-            <!-- Preview state -->
+            <!-- Preview state — column layout: success banner, full image, filename + remove row -->
             <div class="lic-preview">
-              <img class="lic-preview-img" id="licPreviewImg" alt="Screenshot preview" />
-              <div class="lic-preview-meta">
-                <div class="lic-preview-name" id="licPreviewName">filename.png</div>
-                <div class="lic-preview-size" id="licPreviewSize">—</div>
+              <div class="lic-preview-success">
+                <span class="lic-preview-check" aria-hidden="true">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                </span>
+                <span>Image uploaded successfully</span>
               </div>
-              <button type="button" class="lic-preview-remove" id="licPreviewRemove">Remove</button>
+              <div class="lic-preview-imgwrap">
+                <img class="lic-preview-img" id="licPreviewImg" alt="Screenshot preview" />
+              </div>
+              <div class="lic-preview-row">
+                <div class="lic-preview-meta">
+                  <div class="lic-preview-name" id="licPreviewName">filename.png</div>
+                  <div class="lic-preview-size" id="licPreviewSize">—</div>
+                </div>
+                <button type="button" class="lic-preview-remove" id="licPreviewRemove">Remove</button>
+              </div>
             </div>
           </div>
           <span class="lic-field-msg" id="msg-file">Please upload your verification screenshot (image file).</span>
         </div>
 
-        <!-- Submit -->
+        <!-- Submit — toggles between default label and loading state with spinner + text -->
         <button type="submit" class="lic-submit" id="licSubmit">
           <span class="lic-submit-label">
             Submit License Request
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </span>
-          <span class="lic-spinner" aria-hidden="true"></span>
+          <span class="lic-submit-loading" aria-live="polite">
+            <span class="lic-spinner" aria-hidden="true"></span>
+            Submitting Request...
+          </span>
         </button>
 
         <p class="lic-tos">
@@ -701,11 +770,12 @@ const STORAGE_BUCKET = 'screenshots';
 const TABLE_NAME     = 'license_requests';
 const MAX_FILE_BYTES = 8 * 1024 * 1024; /* 8 MB */
 
-/* Initialize Supabase client (window.supabase comes from the CDN script tag). */
-let supabase = null;
+/* Initialize Supabase client (window.supabase is the SDK namespace from the CDN script tag;
+   we hold our project-scoped client in `supabaseClient` to avoid colliding with that global). */
+let supabaseClient = null;
 try {
   if (window.supabase && typeof window.supabase.createClient === 'function') {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 } catch (e) {
   /* Client init failed — handled at submit-time so user sees a graceful error. */
@@ -846,7 +916,7 @@ form.addEventListener('submit', async function (e) {
   if (!ok) return;
 
   /* 2. Guard against missing Supabase config ----------- */
-  if (!supabase || SUPABASE_URL === 'SUPABASE_URL_HERE' || SUPABASE_ANON_KEY === 'SUPABASE_ANON_KEY_HERE') {
+  if (!supabaseClient || SUPABASE_URL === 'SUPABASE_URL_HERE' || SUPABASE_ANON_KEY === 'SUPABASE_ANON_KEY_HERE') {
     showToast('error', 'Configuration missing', 'The submission endpoint isn’t configured yet. Please contact support or try again shortly.');
     return;
   }
@@ -861,7 +931,7 @@ form.addEventListener('submit', async function (e) {
     const safeAcct  = account.replace(/[^a-z0-9]/gi, '').slice(0, 24) || 'acct';
     const filename  = safeAcct + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
 
-    const { error: uploadErr } = await supabase
+    const { error: uploadErr } = await supabaseClient
       .storage
       .from(STORAGE_BUCKET)
       .upload(filename, file, { cacheControl: '3600', upsert: false, contentType: file.type });
@@ -869,11 +939,11 @@ form.addEventListener('submit', async function (e) {
     if (uploadErr) throw new Error('Upload failed: ' + (uploadErr.message || uploadErr));
 
     /* 3b. Get the public URL --------------------------- */
-    const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filename);
+    const { data: pub } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(filename);
     const screenshotUrl = (pub && pub.publicUrl) || '';
 
     /* 3c. Insert into license_requests ----------------- */
-    const { error: insertErr } = await supabase
+    const { error: insertErr } = await supabaseClient
       .from(TABLE_NAME)
       .insert([{
         account_number:  account,
@@ -887,8 +957,8 @@ form.addEventListener('submit', async function (e) {
     /* 3d. Success -------------------------------------- */
     showToast(
       'success',
-      'Request submitted',
-      'Your request has been submitted successfully. Our team will review and approve your MT5 bot license shortly.'
+      'Your license request has been submitted successfully.',
+      'Our verification team will review your request and respond within 24–48 hours.'
     );
 
     /* Reset the form so the user sees a clean state if they close the toast. */
@@ -896,11 +966,33 @@ form.addEventListener('submit', async function (e) {
     clearSelectedFile();
   } catch (err) {
     console.error('[license-request] submission failed:', err);
-    showToast(
-      'error',
-      'Submission failed',
-      (err && err.message) ? err.message : 'Something went wrong while submitting your request. Please try again.'
-    );
+
+    /* Translate raw Supabase / network errors into beginner-friendly messages. */
+    const raw = String((err && err.message) || err || '').toLowerCase();
+    let errTitle   = 'Submission failed';
+    let errMessage = 'Something went wrong while submitting your request. Please try again in a moment.';
+
+    if (raw.indexOf('failed to fetch') !== -1 || raw.indexOf('networkerror') !== -1 || raw.indexOf('network') !== -1) {
+      errTitle   = 'Network issue';
+      errMessage = 'We couldn’t reach our servers. Please check your internet connection and try submitting again.';
+    } else if (raw.indexOf('row-level security') !== -1 || raw.indexOf('rls') !== -1 || raw.indexOf('permission') !== -1 || raw.indexOf('not authorized') !== -1) {
+      errTitle   = 'Permission issue';
+      errMessage = 'Your request couldn’t be saved due to a permissions setting on our side. Please contact support so we can activate your license manually.';
+    } else if (raw.indexOf('upload failed') !== -1 || raw.indexOf('storage') !== -1 || raw.indexOf('bucket') !== -1 || raw.indexOf('object too large') !== -1) {
+      errTitle   = 'Upload failed';
+      errMessage = 'Your screenshot couldn’t be uploaded. Please try a different image (PNG, JPG, or WEBP, under 8 MB) and submit again.';
+    } else if (raw.indexOf('database error') !== -1 || raw.indexOf('insert') !== -1 || raw.indexOf('duplicate') !== -1) {
+      errTitle   = 'We couldn’t save your request';
+      errMessage = 'Your screenshot uploaded, but we couldn’t save your request details. Please try again in a moment — if the problem continues, contact support.';
+    } else if (raw.indexOf('invalid') !== -1 || raw.indexOf('mime') !== -1 || raw.indexOf('unsupported') !== -1) {
+      errTitle   = 'Invalid file';
+      errMessage = 'That file doesn’t look like a valid image. Please upload a PNG, JPG, or WEBP screenshot of your MT5 account.';
+    } else if (err && err.message) {
+      /* Surface the raw error as a last resort so users have something actionable. */
+      errMessage = 'Something went wrong while submitting your request: ' + err.message;
+    }
+
+    showToast('error', errTitle, errMessage);
   } finally {
     submitBtn.disabled = false;
     submitBtn.classList.remove('is-loading');
