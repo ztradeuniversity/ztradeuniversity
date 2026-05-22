@@ -1,0 +1,50 @@
+Z Trade University
+==================
+
+MT5 Bot Installation Guide
+--------------------------
+
+Step 1 — Open MetaTrader 5
+
+Step 2 — Click File -> Open Data Folder
+
+Step 3 — Open MQL5, then open the Experts folder
+
+Step 4 — Copy the .ex5 file from this bundle into the Experts folder
+
+Step 5 — Restart MetaTrader 5
+
+Step 6 — In the Navigator panel, expand "Expert Advisors"
+        You should see your bot listed there.
+
+Step 7 — Drag the bot from Navigator onto any chart
+
+Step 8 — In the dialog that appears, ensure "Allow Algo Trading" is
+        ticked, then click OK
+
+Step 9 — On the toolbar, click the "Algo Trading" button so it turns
+        green. The bot is now live.
+
+Bundle contents
+---------------
+
+This delivery contains exactly TWO files:
+
+   * One .ex5 binary  - your account-locked bot
+   * This install.txt - the file you're reading now
+
+No .mq5 source file is included. Z Trade University never distributes
+source code.
+
+Support
+-------
+
+If anything does not match the steps above, contact us:
+
+   Email:    {{SUPPORT_EMAIL}}
+   WhatsApp: {{WHATSAPP}}
+   Website:  {{WEBSITE}}
+   YouTube:  {{YOUTUBE_LINK}}
+   PDF guide:{{PDF_GUIDE}}
+
+Thank you for choosing Z Trade University.

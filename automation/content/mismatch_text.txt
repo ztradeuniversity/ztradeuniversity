@@ -1,0 +1,67 @@
+# =====================================================================
+# mismatch_text.txt
+# =====================================================================
+# Editable text for the mismatch / rejection email.
+# Same section format as success_text.txt.
+#
+# Runtime placeholders the engine will fill:
+#   {{ACCOUNT_NUMBER}}  -- the account the client submitted
+#   {{BROKER}}          -- broker they entered
+#   {{CLIENT_EMAIL}}    -- recipient
+#   {{REJECTION_REASON}}-- short machine reason (e.g., "Account not in broker report")
+#   {{REJECTION_DATE}}  -- ISO 8601 timestamp
+# =====================================================================
+
+--- EMAIL_SUBJECT ---
+Action required: we couldn't verify your MT5 account ({{ACCOUNT_NUMBER}})
+
+--- MISMATCH_HEADLINE ---
+We couldn't verify your account yet
+
+--- MISMATCH_INTRO ---
+Thank you for requesting a bot license from Z Trade University. Unfortunately we couldn't match the account number you submitted ({{ACCOUNT_NUMBER}} at {{BROKER}}) against our latest broker partner report — so we cannot issue the EX5 bot file at this time.
+
+--- POSSIBLE_REASONS_TITLE ---
+Most common reasons this happens
+
+--- POSSIBLE_REASONS ---
+1. The MT5 account was not opened through our official IB referral link
+2. The account was opened in the last 24 hours and hasn't appeared in the broker partner report yet
+3. There is a typo in the account number you submitted
+4. The broker name you selected does not match where the account actually lives
+
+--- RETRY_INSTRUCTIONS_TITLE ---
+How to fix this
+
+--- RETRY_INSTRUCTIONS ---
+A. Double-check the MT5 account number in your MetaTrader app
+B. Make sure the account was opened through our IB link (we can re-share it if needed)
+C. If the account is brand new, please wait 24 hours, then resubmit
+D. If everything looks correct, reply to this email with a fresh screenshot of your MT5 dashboard and we'll review it manually
+
+--- RETRY_CTA_LABEL ---
+Resubmit your request
+
+--- RETRY_CTA_URL ---
+https://ztradeuniversity.com/license-request.html
+
+--- CUSTOM_MESSAGE ---
+Our verification team reviews every manual reply within 24 hours. If your account was genuinely opened under our IB, you will not be charged anything and your bot license will be issued for free.
+
+--- FOOTER_LINE ---
+© Z Trade University — Verification team
+
+--- WEBSITE ---
+ZTradeUniversity.com
+
+--- SUPPORT_EMAIL ---
+support@ztradeuniversity.com
+
+--- WHATSAPP ---
++92-300-0000000
+
+--- YOUTUBE_LINK ---
+https://youtube.com/@ztradeuniversity
+
+--- PDF_GUIDE ---
+https://ztradeuniversity.com/ZTU-Activation-Guide.pdf

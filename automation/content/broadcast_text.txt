@@ -1,0 +1,60 @@
+# =====================================================================
+# broadcast_text.txt
+# =====================================================================
+# Editable text for the GENERIC broadcast email.
+# Used for future newsletters, article releases, signal updates, etc.
+# The orchestrator does NOT currently send broadcasts -- this is a
+# forward-compatibility scaffold so a future broadcast_engine.ps1
+# can plug in cleanly.
+#
+# Runtime placeholders:
+#   {{CLIENT_EMAIL}}    -- recipient
+#   {{CLIENT_NAME}}     -- optional, blank if unknown
+#   {{ACCOUNT_NUMBER}}  -- optional, blank for cold-list broadcasts
+# =====================================================================
+
+--- EMAIL_SUBJECT ---
+Z Trade University — Weekly Market Update
+
+--- BROADCAST_HEADLINE ---
+This week at Z Trade University
+
+--- BROADCAST_INTRO ---
+Here's what our research desk is watching this week. As always, this is education — not financial advice.
+
+--- BROADCAST_BODY ---
+Edit this section to write the content of your newsletter / broadcast / signal update. Paragraphs render as plain text. The HTML template wraps everything in branded styling automatically.
+
+You can include:
+* market commentary
+* article links
+* upcoming live sessions
+* free resources
+* promotions
+
+--- CTA_LABEL ---
+Read the full article
+
+--- CTA_URL ---
+https://ztradeuniversity.com/articles.html
+
+--- FOOTER_LINE ---
+© Z Trade University — Research desk
+
+--- WEBSITE ---
+ZTradeUniversity.com
+
+--- SUPPORT_EMAIL ---
+support@ztradeuniversity.com
+
+--- WHATSAPP ---
++92-300-0000000
+
+--- YOUTUBE_LINK ---
+https://youtube.com/@ztradeuniversity
+
+--- PDF_GUIDE ---
+https://ztradeuniversity.com/ZTU-Activation-Guide.pdf
+
+--- UNSUBSCRIBE_LINE ---
+You are receiving this because you opened an MT5 bot license with us. Reply with UNSUBSCRIBE to opt out of future updates.

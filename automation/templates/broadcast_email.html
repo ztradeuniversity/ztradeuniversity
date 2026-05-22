@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!--
+  ZTU broadcast email template.
+  Forward-compatibility scaffold for future newsletters / signals /
+  article releases. Structure-only. All copy lives in
+  content\broadcast_text.txt. The current master_engine.ps1 does NOT
+  send broadcasts; a future broadcast_engine.ps1 can render this
+  template using the same Format-Template / Read-ContentSections
+  helpers.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>{{EMAIL_SUBJECT}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f1ea;font-family:'Helvetica Neue',Arial,sans-serif;color:#2b2520;line-height:1.55;-webkit-font-smoothing:antialiased;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f4f1ea;padding:32px 14px;">
+  <tr><td align="center">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 22px rgba(45,30,5,0.08);">
+
+      <!-- Header -->
+      <tr><td style="background:linear-gradient(135deg,#0d0902 0%,#1a1410 50%,#3d2a08 100%);padding:30px 36px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="padding-right:14px;vertical-align:middle;">
+              <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(150deg,#3d2a08 0%,#8c6c1f 55%,#d4ae5e 100%);text-align:center;line-height:44px;color:#e6c987;font-weight:900;font-size:21px;font-family:'Helvetica Neue',Arial,sans-serif;">Z</div>
+            </td>
+            <td style="vertical-align:middle;">
+              <div style="color:#ffffff;font-size:15px;font-weight:800;letter-spacing:-0.3px;">Z Trade University</div>
+              <div style="color:#d4ae5e;font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;margin-top:3px;">Broadcast</div>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- Gold accent bar -->
+      <tr><td style="height:4px;background:linear-gradient(90deg,#8c6c1f,#c89c3f,#d4ae5e);font-size:0;line-height:0;">&nbsp;</td></tr>
+
+      <!-- Hero -->
+      <tr><td style="padding:36px 36px 14px;">
+        <h1 style="margin:0 0 8px;font-size:24px;line-height:1.22;color:#1a1410;font-weight:900;letter-spacing:-0.5px;">{{BROADCAST_HEADLINE}}</h1>
+        <p style="margin:0;font-size:14px;color:#756347;line-height:1.65;">{{BROADCAST_INTRO}}</p>
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td style="padding:14px 36px 18px;">
+        <div style="font-size:14px;color:#2b2520;line-height:1.7;white-space:pre-line;">{{BROADCAST_BODY}}</div>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td style="padding:6px 36px 26px;text-align:center;">
+        <a href="{{CTA_URL}}" style="display:inline-block;background:linear-gradient(135deg,#8c6c1f 0%,#c89c3f 50%,#d4ae5e 100%);color:#0d0902;text-decoration:none;font-size:14px;font-weight:800;padding:13px 30px;border-radius:100px;letter-spacing:.2px;box-shadow:0 6px 18px rgba(200,156,63,0.36);">{{CTA_LABEL}}</a>
+      </td></tr>
+
+      <!-- Resources -->
+      <tr><td style="padding:6px 36px 22px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#8c6c1f;margin-bottom:10px;">Stay in touch</div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr><td style="padding:5px 0;font-size:13px;color:#2b2520;"><b style="color:#3d2a08;font-weight:800;">YouTube:</b> <a href="{{YOUTUBE_LINK}}" style="color:#8c6c1f;text-decoration:none;">{{YOUTUBE_LINK}}</a></td></tr>
+          <tr><td style="padding:5px 0;font-size:13px;color:#2b2520;"><b style="color:#3d2a08;font-weight:800;">WhatsApp:</b> {{WHATSAPP}}</td></tr>
+          <tr><td style="padding:5px 0;font-size:13px;color:#2b2520;"><b style="color:#3d2a08;font-weight:800;">Email:</b> <a href="mailto:{{SUPPORT_EMAIL}}" style="color:#8c6c1f;text-decoration:none;">{{SUPPORT_EMAIL}}</a></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Unsubscribe note -->
+      <tr><td style="padding:0 36px 26px;">
+        <div style="font-size:11px;color:#a89c83;line-height:1.55;border-top:1px dashed rgba(200,156,63,0.22);padding-top:12px;">{{UNSUBSCRIBE_LINE}}</div>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="background:#0d0902;padding:22px 36px;text-align:center;">
+        <div style="color:rgba(255,255,255,0.6);font-size:11.5px;letter-spacing:.2px;">{{FOOTER_LINE}}</div>
+        <div style="color:rgba(230,201,135,0.55);font-size:10.5px;font-family:'Courier New',Consolas,monospace;margin-top:6px;letter-spacing:.5px;">{{WEBSITE}}</div>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
