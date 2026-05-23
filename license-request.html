@@ -492,6 +492,27 @@
     }
     .lic-toast-ghost:hover { background: rgba(45,30,5,0.10); }
 
+    /* ── Spam / junk folder reminder — visible on success only ── */
+    .lic-spam-note {
+      display: none;
+      font-size: 13px;
+      color: #6b5c3a;
+      background: rgba(200,156,63,0.09);
+      border: 1px solid rgba(200,156,63,0.28);
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 18px;
+      text-align: left;
+      line-height: 1.6;
+    }
+    .lic-toast.is-success .lic-spam-note {
+      display: block;
+    }
+    .lic-spam-note strong {
+      color: #5a3e10;
+      font-weight: 700;
+    }
+
     /* ── FOOTER ── */
     footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
@@ -536,6 +557,161 @@
       .lic-preview-row { flex-wrap: wrap; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
       .footer-copy { order: 0; }
+    }
+
+    /* ══════════════════════════════════════════
+       PHASE 13.6 — INTERNATIONAL PHONE INPUT
+       Two-part field: country code selector + local number input
+    ══════════════════════════════════════════ */
+
+    /* Outer wrapper — shared border + focus ring */
+    .lic-phone-row {
+      display: flex;
+      border: 1.5px solid rgba(200,156,63,0.22);
+      border-radius: 12px;
+      background: #fdfbf6;
+      overflow: visible;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .lic-phone-row:focus-within {
+      border-color: var(--gold);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(200,156,63,0.13);
+    }
+
+    /* Error state — only the wrapper turns red; children stay transparent */
+    .lic-field.lic-error .lic-phone-row  { border-color: var(--danger); background: #fff5f5; }
+    .lic-field.lic-error .lic-phone-local  { background: transparent; border-color: transparent; }
+    .lic-field.lic-error .lic-cc-btn      { background: transparent; }
+
+    /* Left side — custom searchable country picker */
+    .lic-phone-cc-wrap {
+      position: relative;
+      flex-shrink: 0;
+      border-right: 1.5px solid rgba(200,156,63,0.18);
+    }
+    /* No position:relative here — panel's containing block is .lic-phone-cc-wrap (position:relative)
+       so top:calc(100%+5px) resolves to the wrap's flex-determined height, not a 0-height child */
+    .lic-cc-picker { display: flex; align-items: stretch; height: 100%; }
+
+    /* Trigger button — shows "PK (+92)" compact label */
+    .lic-cc-btn {
+      display: flex; align-items: center; gap: 6px;
+      height: 100%; padding: 0 10px 0 14px;
+      border: none; background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: .01em;
+      color: var(--text);
+      cursor: pointer; white-space: nowrap; min-width: 112px;
+      outline: none;
+    }
+    .lic-cc-btn:focus-visible {
+      outline: 2px solid var(--gold); outline-offset: -3px; border-radius: 4px;
+    }
+    .lic-cc-caret {
+      width: 9px; height: 5px; flex-shrink: 0;
+      color: var(--muted); transition: transform .18s;
+    }
+    .lic-cc-picker.is-open .lic-cc-caret { transform: rotate(180deg); }
+
+    /* Dropdown panel */
+    .lic-cc-panel {
+      display: none;
+      position: absolute; top: calc(100% + 5px); left: 0; z-index: 9999;
+      width: 240px;
+      background: #fff;
+      border: 1.5px solid rgba(200,156,63,0.3);
+      border-radius: 10px;
+      box-shadow: 0 10px 32px rgba(0,0,0,.14);
+      overflow: hidden;
+    }
+    .lic-cc-picker.is-open .lic-cc-panel { display: block; }
+
+    /* Search input inside panel */
+    .lic-cc-search-wrap {
+      padding: 8px 8px 6px;
+      border-bottom: 1px solid rgba(200,156,63,0.12);
+    }
+    .lic-cc-search {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid rgba(200,156,63,0.2);
+      border-radius: 7px; background: #fdfbf6;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px; color: var(--text);
+      padding: 7px 10px; outline: none;
+      transition: border-color .15s;
+    }
+    .lic-cc-search:focus { border-color: var(--gold); background: #fff; }
+    .lic-cc-search::placeholder { color: #b3a896; }
+
+    /* Scrollable list */
+    .lic-cc-list {
+      list-style: none; margin: 0; padding: 4px 0;
+      max-height: 218px; overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .lic-cc-list::-webkit-scrollbar { width: 4px; }
+    .lic-cc-list::-webkit-scrollbar-thumb {
+      background: rgba(200,156,63,0.22); border-radius: 4px;
+    }
+    .lic-cc-grp-label {
+      padding: 6px 13px 3px;
+      font-size: 9px; font-weight: 700; letter-spacing: .08em;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .lic-cc-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px; color: var(--text);
+      transition: background .08s;
+    }
+    .lic-cc-item:hover,
+    .lic-cc-item.is-active  { background: rgba(200,156,63,0.09); }
+    .lic-cc-item.is-selected { background: rgba(200,156,63,0.06); }
+    .lic-cc-item-code { font-weight: 700; font-size: 12px; min-width: 26px; }
+    .lic-cc-item-name { flex: 1; font-size: 11.5px; color: var(--muted); }
+    .lic-cc-item-dial { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+    .lic-cc-no-results {
+      padding: 14px; font-size: 12px; color: var(--muted); text-align: center;
+    }
+
+    /* Right side — local number input */
+    .lic-phone-local {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 500;
+      color: var(--text);
+      padding: 14px 16px;
+      outline: none;
+      min-width: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .lic-phone-local::placeholder { color: #b3a896; font-weight: 400; }
+
+    /* Live guidance text below the field */
+    .lic-phone-hint {
+      display: block;
+      font-size: 11.5px; font-weight: 500;
+      color: var(--muted); line-height: 1.5;
+      margin-top: 5px; min-height: 1.4em;
+      transition: color .16s;
+    }
+    .lic-phone-hint.hint-warn { color: var(--danger); font-weight: 600; }
+    .lic-phone-hint.hint-ok   { color: var(--success); font-weight: 700; }
+
+    /* Mobile — stack selector above number input */
+    @media (max-width: 520px) {
+      .lic-phone-row { flex-wrap: wrap; }
+      .lic-phone-cc-wrap {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1.5px solid rgba(200,156,63,0.18);
+      }
+      .lic-cc-btn  { min-width: unset; width: 100%; }
+      .lic-cc-panel { width: calc(100vw - 48px); }
     }
   </style>
 </head>
@@ -646,6 +822,44 @@
           <span class="lic-field-msg" id="msg-broker">Please choose the broker where you opened your MT5 account.</span>
         </div>
 
+        <!-- Phase 13.6 — WhatsApp Number (country selector + local input) -->
+        <div class="lic-field" id="field-whatsapp">
+          <label for="lic-whatsapp-local">Give Your WhatsApp Number <span class="lic-req">*</span></label>
+          <div class="lic-phone-row" id="licPhoneRow">
+            <div class="lic-phone-cc-wrap" id="licCcWrap">
+              <!-- Hidden select — keeps getPhoneCountry() + change listeners intact -->
+              <select id="lic-whatsapp-cc" autocomplete="tel-country-code"
+                      style="display:none" tabindex="-1" aria-hidden="true"></select>
+              <!-- Custom searchable picker -->
+              <div class="lic-cc-picker" id="licCcPicker">
+                <button type="button" class="lic-cc-btn" id="licCcBtn"
+                        aria-haspopup="listbox" aria-expanded="false"
+                        aria-label="Country dialing code">
+                  <span id="licCcBtnText">PK (+92)</span>
+                  <svg class="lic-cc-caret" viewBox="0 0 9 5" fill="none" aria-hidden="true">
+                    <path d="M1 1l3.5 3L8 1" stroke="currentColor" stroke-width="1.7"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <div class="lic-cc-panel" id="licCcPanel"
+                     role="listbox" aria-label="Select country dialing code">
+                  <div class="lic-cc-search-wrap">
+                    <input type="text" class="lic-cc-search" id="licCcSearch"
+                           placeholder="Search country…"
+                           autocomplete="off" aria-label="Filter countries">
+                  </div>
+                  <ul class="lic-cc-list" id="licCcList"></ul>
+                </div>
+              </div>
+            </div>
+            <input id="lic-whatsapp-local" type="text" inputmode="tel"
+                   autocomplete="tel-local" class="lic-phone-local"
+                   placeholder="3001234567" maxlength="15" />
+          </div>
+          <span class="lic-field-msg" id="msg-whatsapp"></span>
+          <span class="lic-phone-hint" id="licPhoneHint" aria-live="polite"></span>
+        </div>
+
         <!-- Screenshot Upload -->
         <div class="lic-field" id="field-file">
           <label for="lic-file">Verification Screenshot <span class="lic-req">*</span></label>
@@ -747,6 +961,9 @@
     <div class="lic-toast-icon" id="licToastIcon"></div>
     <h3 id="licToastTitle">Request submitted</h3>
     <p id="licToastMsg">Your request has been submitted successfully. Our team will review and approve your MT5 bot license shortly.</p>
+    <div class="lic-spam-note" id="licSpamNote">
+      <strong>Check your Spam or Junk folder</strong> &mdash; Your activation email may take up to 48 hours to arrive and could land in your spam or junk folder. Please check there too.
+    </div>
     <div class="lic-toast-actions">
       <a href="index.html" class="lic-toast-btn lic-toast-primary" id="licToastPrimary">
         Back to Home
@@ -815,7 +1032,275 @@ const form          = document.getElementById('licenseForm');
 const accountInput  = document.getElementById('lic-account');
 const emailInput    = document.getElementById('lic-email');
 const brokerInput   = document.getElementById('lic-broker');  /* EXTENSION — broker dropdown */
-const fileInput     = document.getElementById('lic-file');
+/* Phase 13.6 — WhatsApp international phone input */
+const whatsappCcInput    = document.getElementById('lic-whatsapp-cc');
+const whatsappLocalInput = document.getElementById('lic-whatsapp-local');
+const licPhoneHint       = document.getElementById('licPhoneHint');
+const fileInput          = document.getElementById('lic-file');
+
+/* ── Phase 13.6 — Country dial-code directory ─────────────────────────────
+   id    — ISO 3166-1 alpha-2 (used as <option value>)
+   dial  — ITU E.164 prefix with leading +
+   flag  — Unicode flag emoji (renders on iOS/Android/macOS/Linux;
+           Windows shows 2-letter code pair — still fully functional)
+   name  — English country name
+   minL  — minimum local digit count (after country code, NO leading zero)
+   maxL  — maximum local digit count
+   example — placeholder showing the correct local number format
+   ─────────────────────────────────────────────────────────────────────── */
+const PHONE_COUNTRIES = [
+  /* ── Popular (shown first) ─────────────────────────────────────────── */
+  { id:'PK', dial:'+92',  flag:'🇵🇰', name:'Pakistan',       minL:10, maxL:10, example:'3001234567'  },
+  { id:'AE', dial:'+971', flag:'🇦🇪', name:'UAE',            minL:9,  maxL:9,  example:'501234567'   },
+  { id:'SA', dial:'+966', flag:'🇸🇦', name:'Saudi Arabia',   minL:9,  maxL:9,  example:'501234567'   },
+  { id:'GB', dial:'+44',  flag:'🇬🇧', name:'United Kingdom', minL:10, maxL:10, example:'7700900123'  },
+  { id:'US', dial:'+1',   flag:'🇺🇸', name:'United States',  minL:10, maxL:10, example:'2025550123'  },
+  { id:'CA', dial:'+1',   flag:'🇨🇦', name:'Canada',         minL:10, maxL:10, example:'4165550123'  },
+  /* ── A–Z ────────────────────────────────────────────────────────────── */
+  { id:'DZ', dial:'+213', flag:'🇩🇿', name:'Algeria',        minL:9,  maxL:9,  example:'551234567'   },
+  { id:'AR', dial:'+54',  flag:'🇦🇷', name:'Argentina',      minL:10, maxL:11, example:'91112345678' },
+  { id:'AU', dial:'+61',  flag:'🇦🇺', name:'Australia',      minL:9,  maxL:9,  example:'412345678'   },
+  { id:'BH', dial:'+973', flag:'🇧🇭', name:'Bahrain',        minL:8,  maxL:8,  example:'33456789'    },
+  { id:'BD', dial:'+880', flag:'🇧🇩', name:'Bangladesh',     minL:10, maxL:10, example:'1712345678'  },
+  { id:'BR', dial:'+55',  flag:'🇧🇷', name:'Brazil',         minL:10, maxL:11, example:'11912345678' },
+  { id:'CN', dial:'+86',  flag:'🇨🇳', name:'China',          minL:11, maxL:11, example:'13912345678' },
+  { id:'DK', dial:'+45',  flag:'🇩🇰', name:'Denmark',        minL:8,  maxL:8,  example:'20123456'    },
+  { id:'EG', dial:'+20',  flag:'🇪🇬', name:'Egypt',          minL:10, maxL:10, example:'1001234567'  },
+  { id:'ET', dial:'+251', flag:'🇪🇹', name:'Ethiopia',       minL:9,  maxL:9,  example:'911234567'   },
+  { id:'FR', dial:'+33',  flag:'🇫🇷', name:'France',         minL:9,  maxL:9,  example:'612345678'   },
+  { id:'DE', dial:'+49',  flag:'🇩🇪', name:'Germany',        minL:10, maxL:11, example:'15123456789' },
+  { id:'GH', dial:'+233', flag:'🇬🇭', name:'Ghana',          minL:9,  maxL:9,  example:'241234567'   },
+  { id:'IN', dial:'+91',  flag:'🇮🇳', name:'India',          minL:10, maxL:10, example:'9876543210'  },
+  { id:'ID', dial:'+62',  flag:'🇮🇩', name:'Indonesia',      minL:9,  maxL:12, example:'81234567890' },
+  { id:'IQ', dial:'+964', flag:'🇮🇶', name:'Iraq',           minL:10, maxL:10, example:'7701234567'  },
+  { id:'IT', dial:'+39',  flag:'🇮🇹', name:'Italy',          minL:9,  maxL:10, example:'3123456789'  },
+  { id:'JP', dial:'+81',  flag:'🇯🇵', name:'Japan',          minL:10, maxL:10, example:'9012345678'  },
+  { id:'JO', dial:'+962', flag:'🇯🇴', name:'Jordan',         minL:9,  maxL:9,  example:'791234567'   },
+  { id:'KE', dial:'+254', flag:'🇰🇪', name:'Kenya',          minL:9,  maxL:9,  example:'712345678'   },
+  { id:'KW', dial:'+965', flag:'🇰🇼', name:'Kuwait',         minL:8,  maxL:8,  example:'97654321'    },
+  { id:'KR', dial:'+82',  flag:'🇰🇷', name:'South Korea',   minL:9,  maxL:11, example:'1012345678'  },
+  { id:'LY', dial:'+218', flag:'🇱🇾', name:'Libya',          minL:9,  maxL:9,  example:'912345678'   },
+  { id:'MY', dial:'+60',  flag:'🇲🇾', name:'Malaysia',       minL:9,  maxL:10, example:'123456789'   },
+  { id:'MX', dial:'+52',  flag:'🇲🇽', name:'Mexico',         minL:10, maxL:10, example:'5512345678'  },
+  { id:'MA', dial:'+212', flag:'🇲🇦', name:'Morocco',        minL:9,  maxL:9,  example:'612345678'   },
+  { id:'MM', dial:'+95',  flag:'🇲🇲', name:'Myanmar',        minL:8,  maxL:10, example:'91234567'    },
+  { id:'NL', dial:'+31',  flag:'🇳🇱', name:'Netherlands',    minL:9,  maxL:9,  example:'612345678'   },
+  { id:'NZ', dial:'+64',  flag:'🇳🇿', name:'New Zealand',    minL:8,  maxL:10, example:'211234567'   },
+  { id:'NG', dial:'+234', flag:'🇳🇬', name:'Nigeria',        minL:10, maxL:10, example:'8012345678'  },
+  { id:'NO', dial:'+47',  flag:'🇳🇴', name:'Norway',         minL:8,  maxL:8,  example:'41234567'    },
+  { id:'OM', dial:'+968', flag:'🇴🇲', name:'Oman',           minL:8,  maxL:8,  example:'92345678'    },
+  { id:'PH', dial:'+63',  flag:'🇵🇭', name:'Philippines',    minL:10, maxL:10, example:'9171234567'  },
+  { id:'QA', dial:'+974', flag:'🇶🇦', name:'Qatar',          minL:8,  maxL:8,  example:'33456789'    },
+  { id:'SG', dial:'+65',  flag:'🇸🇬', name:'Singapore',      minL:8,  maxL:8,  example:'81234567'    },
+  { id:'ZA', dial:'+27',  flag:'🇿🇦', name:'South Africa',   minL:9,  maxL:9,  example:'821234567'   },
+  { id:'ES', dial:'+34',  flag:'🇪🇸', name:'Spain',          minL:9,  maxL:9,  example:'612345678'   },
+  { id:'LK', dial:'+94',  flag:'🇱🇰', name:'Sri Lanka',      minL:9,  maxL:9,  example:'771234567'   },
+  { id:'SD', dial:'+249', flag:'🇸🇩', name:'Sudan',          minL:9,  maxL:9,  example:'912345678'   },
+  { id:'SE', dial:'+46',  flag:'🇸🇪', name:'Sweden',         minL:9,  maxL:9,  example:'701234567'   },
+  { id:'TZ', dial:'+255', flag:'🇹🇿', name:'Tanzania',       minL:9,  maxL:9,  example:'712345678'   },
+  { id:'TH', dial:'+66',  flag:'🇹🇭', name:'Thailand',       minL:9,  maxL:9,  example:'812345678'   },
+  { id:'TN', dial:'+216', flag:'🇹🇳', name:'Tunisia',        minL:8,  maxL:8,  example:'21234567'    },
+  { id:'TR', dial:'+90',  flag:'🇹🇷', name:'Turkey',         minL:10, maxL:10, example:'5012345678'  },
+  { id:'UG', dial:'+256', flag:'🇺🇬', name:'Uganda',         minL:9,  maxL:9,  example:'712345678'   },
+  { id:'VN', dial:'+84',  flag:'🇻🇳', name:'Vietnam',        minL:9,  maxL:10, example:'901234567'   },
+  { id:'ZM', dial:'+260', flag:'🇿🇲', name:'Zambia',         minL:9,  maxL:9,  example:'971234567'   },
+  { id:'ZW', dial:'+263', flag:'🇿🇼', name:'Zimbabwe',       minL:9,  maxL:9,  example:'771234567'   },
+];
+
+/* ── Phase 13.6 — Searchable country picker ──────────────────────────────
+   Hidden <select id="lic-whatsapp-cc"> keeps getPhoneCountry() + all
+   existing change-event listeners intact — no downstream code changes.
+   The visible UI is a custom button + flyout panel with instant search.
+   ──────────────────────────────────────────────────────────────────────── */
+(function buildCcOptions() {
+  if (!whatsappCcInput) return;
+  var TOP_COUNT = 6;
+
+  var pickerEl = document.getElementById('licCcPicker');
+  var btnEl    = document.getElementById('licCcBtn');
+  var btnText  = document.getElementById('licCcBtnText');
+  var searchEl = document.getElementById('licCcSearch');
+  var listEl   = document.getElementById('licCcList');
+  if (!pickerEl || !btnEl || !searchEl || !listEl) return;
+
+  /* 1 — Populate hidden <select> so getPhoneCountry() works unchanged */
+  PHONE_COUNTRIES.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    whatsappCcInput.appendChild(opt);
+  });
+  whatsappCcInput.value = 'PK';
+
+  /* 2 — Build / rebuild visible list; pass '' for full list, query to filter */
+  function renderList(query) {
+    listEl.innerHTML = '';
+    var lower     = (query || '').toLowerCase().trim();
+    var lowerDigs = lower.replace(/\D/g, '');
+    var anyResult = false;
+    var shownPop  = false;
+    var shownAll  = false;
+
+    PHONE_COUNTRIES.forEach(function(c, i) {
+      /* Match on code, name, or dial digits */
+      var matched = !lower
+        || c.id.toLowerCase().includes(lower)
+        || c.name.toLowerCase().includes(lower)
+        || (lowerDigs && c.dial.replace(/\D/g,'').startsWith(lowerDigs));
+      if (!matched) return;
+      anyResult = true;
+
+      /* Group headings — only when showing full unfiltered list */
+      if (!lower) {
+        if (i === 0 && !shownPop) {
+          var hPop = document.createElement('li');
+          hPop.className = 'lic-cc-grp-label'; hPop.textContent = 'Popular';
+          listEl.appendChild(hPop); shownPop = true;
+        }
+        if (i === TOP_COUNT && !shownAll) {
+          var hAll = document.createElement('li');
+          hAll.className = 'lic-cc-grp-label'; hAll.textContent = 'All Countries';
+          listEl.appendChild(hAll); shownAll = true;
+        }
+      }
+
+      /* Row: [CODE]  [Country Name]  [+dial] */
+      var li = document.createElement('li');
+      li.className = 'lic-cc-item' + (c.id === whatsappCcInput.value ? ' is-selected' : '');
+      li.setAttribute('role', 'option');
+      li.setAttribute('data-cc', c.id);
+
+      var codeSpan = document.createElement('span');
+      codeSpan.className = 'lic-cc-item-code'; codeSpan.textContent = c.id;
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'lic-cc-item-name'; nameSpan.textContent = c.name;
+      var dialSpan = document.createElement('span');
+      dialSpan.className = 'lic-cc-item-dial'; dialSpan.textContent = c.dial;
+
+      li.appendChild(codeSpan); li.appendChild(nameSpan); li.appendChild(dialSpan);
+      li.addEventListener('mouseenter', function() {
+        listEl.querySelectorAll('.lic-cc-item.is-active').forEach(function(el) {
+          el.classList.remove('is-active');
+        });
+        li.classList.add('is-active');
+      });
+      li.addEventListener('click', function() { selectCountry(c.id); });
+      listEl.appendChild(li);
+    });
+
+    if (!anyResult) {
+      var noRes = document.createElement('li');
+      noRes.className = 'lic-cc-no-results'; noRes.textContent = 'No match';
+      listEl.appendChild(noRes);
+    }
+  }
+
+  /* 3 — Select a country: sync hidden select → fire change → update button */
+  function selectCountry(id) {
+    whatsappCcInput.value = id;
+    /* Existing listeners (clearFieldError + updatePhonePlaceholder) fire here */
+    whatsappCcInput.dispatchEvent(new Event('change'));
+    /* Update compact trigger label */
+    var c = getPhoneCountry();
+    if (btnText) btnText.textContent = c.id + ' (' + c.dial + ')';
+    closePanel();
+  }
+
+  /* 4 — Panel open / close */
+  function openPanel() {
+    pickerEl.classList.add('is-open');
+    btnEl.setAttribute('aria-expanded', 'true');
+    searchEl.value = '';
+    renderList('');
+    requestAnimationFrame(function() {
+      var sel = listEl.querySelector('.is-selected');
+      if (sel) sel.scrollIntoView({ block: 'nearest' });
+      searchEl.focus();
+    });
+  }
+  function closePanel() {
+    pickerEl.classList.remove('is-open');
+    btnEl.setAttribute('aria-expanded', 'false');
+  }
+
+  /* 5 — Wire events */
+  btnEl.addEventListener('click', function(e) {
+    e.stopPropagation();
+    pickerEl.classList.contains('is-open') ? closePanel() : openPanel();
+  });
+  searchEl.addEventListener('input', function() { renderList(searchEl.value); });
+  searchEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closePanel(); btnEl.focus(); }
+    if (e.key === 'Enter') {
+      /* Select first visible country item on Enter */
+      var first = listEl.querySelector('.lic-cc-item');
+      if (first) selectCountry(first.getAttribute('data-cc'));
+    }
+  });
+  /* Close when user clicks outside the picker */
+  document.addEventListener('click', function(e) {
+    if (!pickerEl.contains(e.target)) closePanel();
+  });
+
+  /* 6 — Initial state */
+  btnText.textContent = 'PK (+92)';
+}());
+
+/* Returns the currently selected PHONE_COUNTRIES entry. */
+function getPhoneCountry() {
+  var id = whatsappCcInput ? whatsappCcInput.value : 'PK';
+  for (var i = 0; i < PHONE_COUNTRIES.length; i++) {
+    if (PHONE_COUNTRIES[i].id === id) return PHONE_COUNTRIES[i];
+  }
+  return PHONE_COUNTRIES[0];
+}
+
+/* Update input placeholder to match the selected country's example. */
+function updatePhonePlaceholder() {
+  var c = getPhoneCountry();
+  if (whatsappLocalInput) whatsappLocalInput.placeholder = c.example;
+  updatePhoneHint();
+}
+
+/* Show live guidance below the phone row based on current input state. */
+function updatePhoneHint() {
+  if (!licPhoneHint || !whatsappLocalInput) return;
+  var c      = getPhoneCountry();
+  var local  = whatsappLocalInput.value.trim();
+  var digits = local.replace(/\D/g, '');
+
+  if (!local) {
+    /* Field empty — show example */
+    licPhoneHint.textContent = 'e.g. ' + c.example + '  →  stored as ' + c.dial + c.example;
+    licPhoneHint.className   = 'lic-phone-hint';
+    return;
+  }
+  if (local.charAt(0) === '0') {
+    /* Leading zero detected — Pakistan users often type 0300... */
+    licPhoneHint.textContent = 'Remove the leading 0 — enter ' + c.example + ', not 0' + c.example;
+    licPhoneHint.className   = 'lic-phone-hint hint-warn';
+    return;
+  }
+  if (digits.length > 0 && digits.length < c.minL) {
+    /* Digit count in progress */
+    licPhoneHint.textContent = digits.length + ' of ' + c.minL + ' digits entered';
+    licPhoneHint.className   = 'lic-phone-hint';
+    return;
+  }
+  if (digits.length > c.maxL) {
+    /* Too many digits */
+    licPhoneHint.textContent = 'Too long — ' + c.name + ' numbers need max ' + c.maxL + ' digits';
+    licPhoneHint.className   = 'lic-phone-hint hint-warn';
+    return;
+  }
+  if (digits.length >= c.minL) {
+    /* Valid — show the final saved format */
+    licPhoneHint.textContent = '✓ Will be saved as ' + c.dial + digits;
+    licPhoneHint.className   = 'lic-phone-hint hint-ok';
+    return;
+  }
+  licPhoneHint.textContent = '';
+  licPhoneHint.className   = 'lic-phone-hint';
+}
 const drop          = document.getElementById('licDrop');
 const previewImg    = document.getElementById('licPreviewImg');
 const previewName   = document.getElementById('licPreviewName');
@@ -931,16 +1416,33 @@ function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || ''
 if (brokerInput) {
   brokerInput.addEventListener('change', function () { clearFieldError('broker'); });
 }
+/* Phase 13.6 — Country selector: update placeholder + hint; clear any error */
+if (whatsappCcInput) {
+  whatsappCcInput.addEventListener('change', function () {
+    clearFieldError('whatsapp');
+    updatePhonePlaceholder();
+  });
+}
+/* Phase 13.6 — Local number input: live hint + error clearing */
+if (whatsappLocalInput) {
+  whatsappLocalInput.addEventListener('input', function () {
+    clearFieldError('whatsapp');
+    updatePhoneHint();
+  });
+}
+/* Initialise placeholder and hint text on page load */
+updatePhonePlaceholder();
 
 /* ── Submit handler ───────────────────────────────────── */
 form.addEventListener('submit', async function (e) {
   e.preventDefault();
 
   /* 1. Validate ---------------------------------------- */
-  const account = accountInput.value.trim();
-  const email   = emailInput.value.trim();
-  const broker  = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION */
-  const file    = fileInput.files && fileInput.files[0];
+  const account  = accountInput.value.trim();
+  const email    = emailInput.value.trim();
+  const broker   = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION */
+  let   whatsapp = '';   /* Phase 13.6 — combined from country + local in validation block */
+  const file     = fileInput.files && fileInput.files[0];
 
   /* Whitelist of valid broker values matches the dropdown <option>s — guards against
      manually-tampered form values. */
@@ -953,6 +1455,27 @@ form.addEventListener('submit', async function (e) {
   if (!broker || ALLOWED_BROKERS.indexOf(broker) === -1) {
     markFieldError('broker', 'Please choose your broker from the list.');
     ok = false;
+  }
+  /* Phase 13.6 — WhatsApp: build combined international number from selector + local input */
+  {
+    var pc         = getPhoneCountry();
+    var localRaw   = whatsappLocalInput ? whatsappLocalInput.value.trim() : '';
+    var localDigits = localRaw.replace(/\D/g, '');
+    if (!localRaw) {
+      markFieldError('whatsapp', 'Please enter your WhatsApp number.');
+      ok = false;
+    } else if (localRaw.charAt(0) === '0') {
+      markFieldError('whatsapp', 'Remove the leading 0 — enter ' + pc.example + ', not 0' + pc.example);
+      ok = false;
+    } else if (localDigits.length < pc.minL || localDigits.length > pc.maxL) {
+      var lenStr = pc.minL === pc.maxL
+        ? pc.minL + ' digits'
+        : pc.minL + '–' + pc.maxL + ' digits';
+      markFieldError('whatsapp', pc.name + ' numbers need ' + lenStr + ', e.g. ' + pc.example);
+      ok = false;
+    } else {
+      whatsapp = pc.dial + localDigits;   /* e.g. +923001234567 */
+    }
   }
   if (!file)            { markFieldError('file');    ok = false; }
   if (!ok) return;
@@ -995,22 +1518,42 @@ form.addEventListener('submit', async function (e) {
       screenshot_url:  screenshotUrl,
       status:          'pending'
     };
-    const rowWithBroker = Object.assign({}, baseRow, { broker_name: broker });
+    const rowWithBroker   = Object.assign({}, baseRow, { broker_name: broker });
+    const rowWithWhatsapp = Object.assign({}, rowWithBroker, { whatsapp_number: whatsapp }); /* Phase 13.5 */
 
-    let insertResp = await supabaseClient.from(TABLE_NAME).insert([rowWithBroker]);
+    /* Graceful cascade: try rowWithWhatsapp (full) → rowWithBroker → baseRow.
+       Each step only fires if the previous step failed due to a missing DB column.
+       This ensures submissions always succeed during any DB migration window.     */
+    let insertResp = await supabaseClient.from(TABLE_NAME).insert([rowWithWhatsapp]);
     let insertErr  = insertResp.error;
 
+    /* Phase 13.5 — whatsapp_number column not yet added to DB */
     if (insertErr) {
-      const m = String(insertErr.message || '').toLowerCase();
+      const m    = String(insertErr.message || '').toLowerCase();
       const code = String(insertErr.code || '');
-      const looksLikeColumnMissing =
+      const looksLikeWaMissing =
+        m.indexOf('whatsapp_number') !== -1 ||
+        m.indexOf("could not find the 'whatsapp_number'") !== -1 ||
+        (m.indexOf('column') !== -1 && m.indexOf('schema cache') !== -1) ||
+        code === 'PGRST204';
+      if (looksLikeWaMissing) {
+        console.warn('[license-request] whatsapp_number column missing; retrying without it. Add the column to enable WhatsApp tracking.');
+        insertResp = await supabaseClient.from(TABLE_NAME).insert([rowWithBroker]);
+        insertErr  = insertResp.error;
+      }
+    }
+
+    /* Existing broker_name fallback */
+    if (insertErr) {
+      const m    = String(insertErr.message || '').toLowerCase();
+      const code = String(insertErr.code || '');
+      const looksLikeBrokerMissing =
         m.indexOf('broker_name') !== -1 ||
         m.indexOf("could not find the 'broker_name'") !== -1 ||
-        m.indexOf('column') !== -1 && m.indexOf('schema cache') !== -1 ||
+        (m.indexOf('column') !== -1 && m.indexOf('schema cache') !== -1) ||
         code === 'PGRST204';
-      if (looksLikeColumnMissing) {
-        /* Column not added yet — fall back so the submission still succeeds. */
-        console.warn('[license-request] broker_name column missing in DB; falling back. Add the column to enable broker tracking.');
+      if (looksLikeBrokerMissing) {
+        console.warn('[license-request] broker_name column missing; falling back to base row. Add the column to enable broker tracking.');
         const fallback = await supabaseClient.from(TABLE_NAME).insert([baseRow]);
         insertErr = fallback.error;
       }
