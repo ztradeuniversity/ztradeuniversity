@@ -100,6 +100,7 @@ param(
     [switch]$DryRun,
     [switch]$ForceResend,
     [switch]$SkipMismatchEmails,
+    [switch]$SkipOutbox,                                     # Phase 15.5A: skip email_outbox drain
     [string]$AccountPlaceholder = '__ZTU_ACCOUNT__'
 )
 
@@ -247,6 +248,90 @@ function Update-RequestStatus {
         $path = $path + '&status=in.(' + ($AllowedFromStatuses -join ',') + ')'
     }
     return Invoke-SupabaseRequest -Path $path -Method PATCH -Body @{ status = $NewStatus }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Phase 15.5A — email_outbox helpers
+#  These poll/update the new outbox table the dashboard writes to. They
+#  reuse Invoke-SupabaseRequest above and the same anon-key Authorization.
+# ═══════════════════════════════════════════════════════════════════════════
+function Get-EmailOutboxPending([int]$Limit = 50) {
+    $cols = 'id,template_type,recipient_email,recipient_account,subject,body_html,body_text,request_id,created_at,retry_count'
+    $path = "/email_outbox?status=eq.pending&select=$cols&order=created_at.asc&limit=$Limit"
+    return @(Invoke-SupabaseRequest -Path $path)
+}
+
+function Update-EmailOutboxStatus {
+    # Phase 15.5C rewrite: dedicated outbox PATCH using Prefer: return=minimal +
+    # count=exact.  Avoids the (400) Bad Request triggered by PostgREST trying to
+    # re-SELECT the row under a freshly-created RLS policy.  Captures the full
+    # error response body on any non-2xx so failures are diagnosable.
+    #
+    # Returns hashtable: @{ ok=$true/$false; affected=<int>; statusCode=<int>;
+    #                       errorMessage=<string>; errorBody=<string> }
+    param(
+        [Parameter(Mandatory)] [string]$Id,
+        [Parameter(Mandatory)] [string]$NewStatus,
+        [string]$RequireCurrentStatus,
+        [hashtable]$ExtraFields
+    )
+    $path = "/email_outbox?id=eq.$Id"
+    if ($RequireCurrentStatus) { $path += "&status=eq.$RequireCurrentStatus" }
+
+    $body = @{ status = $NewStatus }
+    if ($ExtraFields) {
+        foreach ($k in $ExtraFields.Keys) { $body[$k] = $ExtraFields[$k] }
+    }
+
+    $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Content-Type'  = 'application/json'
+        'Prefer'        = 'return=minimal,count=exact'
+    }
+    $jsonBody = ($body | ConvertTo-Json -Depth 8 -Compress)
+
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method PATCH -Headers $headers `
+                  -Body $jsonBody -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        # PostgREST returns "Content-Range: 0-0/1" when one row matched, or
+        # "Content-Range: */0" when zero matched.  Parse to determine claim outcome.
+        $affected = 1
+        $cr = $null
+        if ($resp.Headers -and $resp.Headers['Content-Range']) {
+            $cr = [string]$resp.Headers['Content-Range']
+            if ($cr -match '/(\d+)\s*$') { $affected = [int]$Matches[1] }
+        }
+        return @{
+            ok           = $true
+            affected     = $affected
+            statusCode   = [int]$resp.StatusCode
+            contentRange = $cr
+            errorMessage = $null
+            errorBody    = $null
+        }
+    } catch {
+        # Capture PostgREST error body (contains JSON with code/details/hint/message).
+        $statusCode  = 0
+        $errorBody   = $null
+        if ($_.Exception.Response) {
+            try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
+            try {
+                $stream = $_.Exception.Response.GetResponseStream()
+                $stream.Position = 0
+                $reader = New-Object System.IO.StreamReader($stream)
+                $errorBody = $reader.ReadToEnd()
+            } catch {}
+        }
+        return @{
+            ok           = $false
+            affected     = 0
+            statusCode   = $statusCode
+            errorMessage = $_.Exception.Message
+            errorBody    = $errorBody
+        }
+    }
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -679,11 +764,15 @@ try {
     $smtpNetCred = $null
     if (-not $DryRun) { $smtpNetCred = $smtpCred.GetNetworkCredential() }
 
-    $stat_success      = 0
-    $stat_emailFailed  = 0
-    $stat_safetyAbort  = 0
-    $stat_rejectSent   = 0
-    $stat_rejectSkip   = 0
+    $stat_success           = 0
+    $stat_emailFailed       = 0
+    $stat_safetyAbort       = 0
+    $stat_rejectSent        = 0
+    $stat_rejectSkip        = 0
+    $stat_outboxSent        = 0   # Phase 15.5A — email_outbox sent count
+    $stat_outboxFailed      = 0   # Phase 15.5A — email_outbox failed count
+    $stat_outboxSkippedDry  = 0   # Phase 15.5A — outbox dry-run skips
+    $stat_outboxClaimSkip   = 0   # Phase 15.5A — already claimed by another instance
 
     foreach ($t in $deliveryTargets) {
         $r          = $t.Row
@@ -857,6 +946,98 @@ try {
         })
     }
 
+    # ── 8.5 Phase 15.5A: drain Supabase email_outbox ───────────────────────
+    # The dashboard inserts rows into email_outbox for matched/waiting/
+    # not_found approval messages.  Here we drain pending rows via the
+    # same Gmail SMTP path that just sent the delivery + mismatch emails.
+    # Safe to run alongside the legacy paths above — different templates,
+    # different recipients in most cases.
+    if (-not $SkipOutbox) {
+        Write-Step 'Draining email_outbox (pending -> sent/failed)...'
+        $outboxRows = @()
+        try {
+            $outboxRows = @(Get-EmailOutboxPending -Limit $MaxBatch)
+        } catch {
+            Write-Warn2 ("email_outbox query failed (table may not exist or RLS denial): {0}" -f $_.Exception.Message)
+            $outboxRows = @()
+        }
+        Write-Ok ("email_outbox pending rows fetched: {0}" -f $outboxRows.Count)
+
+        foreach ($row in $outboxRows) {
+            $rowId = [string]$row.id
+
+            # 1. Atomic claim — PATCH status='sending' only if still 'pending'.
+            #    Phase 15.5C: helper now returns @{ ok; affected; statusCode; errorBody }.
+            $claim = Update-EmailOutboxStatus -Id $rowId `
+                       -NewStatus 'sending' -RequireCurrentStatus 'pending'
+
+            if (-not $claim.ok) {
+                Write-Warn2 ("Claim failed for outbox #{0} (HTTP {1}): {2}" -f $rowId, $claim.statusCode, $claim.errorMessage)
+                if ($claim.errorBody) { Write-Warn2 ("  PostgREST body: " + $claim.errorBody) }
+                continue
+            }
+            if ($claim.affected -eq 0) {
+                Write-Info ("Outbox row #{0} already claimed (or RLS filtered) — skipping." -f $rowId)
+                $stat_outboxClaimSkip++
+                continue
+            }
+
+            # 2. DryRun: roll the claim back so a real run can pick it up.
+            if ($DryRun) {
+                Write-Info ("DRY-RUN: would send outbox #{0} ({1}) -> {2}" -f $rowId, $row.template_type, $row.recipient_email)
+                [void](Update-EmailOutboxStatus -Id $rowId -NewStatus 'pending' `
+                        -RequireCurrentStatus 'sending')
+                $stat_outboxSkippedDry++
+                continue
+            }
+
+            # 3. Real send via existing Send-HtmlEmail (no attachment for outbox)
+            $subject  = if ($row.subject)   { [string]$row.subject }   else { '(no subject)' }
+            $htmlBody = if ($row.body_html) { [string]$row.body_html } else { '' }
+            try {
+                Send-HtmlEmail -From $SenderEmail -FromName 'Z Trade University' `
+                               -NetCredential $smtpNetCred `
+                               -To $row.recipient_email `
+                               -Subject $subject `
+                               -HtmlBody $htmlBody
+
+                # 4. Mark sent — guarded by RequireCurrentStatus='sending'
+                $sentAtIso = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+                $markSent = Update-EmailOutboxStatus -Id $rowId -NewStatus 'sent' `
+                    -RequireCurrentStatus 'sending' `
+                    -ExtraFields @{
+                        sent_at         = $sentAtIso
+                        delivery_status = 'smtp_sent'
+                        error_message   = $null
+                    }
+                if ($markSent.ok) {
+                    Write-Ok ("Outbox sent: #{0} -> {1} ({2})" -f $rowId, $row.recipient_email, $row.template_type)
+                    $stat_outboxSent++
+                } else {
+                    # Email DID go out, but DB writeback failed — record loudly and continue.
+                    Write-Err2 ("Outbox #{0}: email sent but mark-sent failed (HTTP {1}): {2}" -f $rowId, $markSent.statusCode, $markSent.errorMessage)
+                    if ($markSent.errorBody) { Write-Err2 ("  PostgREST body: " + $markSent.errorBody) }
+                    $stat_outboxSent++   # email was actually sent; admin will see row stuck in 'sending'
+                }
+            } catch {
+                $errText = $_.Exception.Message
+                $markFailed = Update-EmailOutboxStatus -Id $rowId -NewStatus 'failed' `
+                    -RequireCurrentStatus 'sending' `
+                    -ExtraFields @{
+                        delivery_status = 'smtp_failed'
+                        error_message   = $errText
+                    }
+                if (-not $markFailed.ok) {
+                    Write-Warn2 ("Could not mark outbox failed for #{0} (HTTP {1}): {2}" -f $rowId, $markFailed.statusCode, $markFailed.errorMessage)
+                }
+                Write-Err2 ("Outbox send failed for {0}: {1}" -f $row.recipient_email, $errText)
+                $stat_outboxFailed++
+            }
+        }
+    } else {
+        Write-Info '-SkipOutbox specified — email_outbox drain bypassed.'
+    }
+
     # Clear SMTP credential reference.
     $smtpNetCred = $null
 
@@ -873,6 +1054,10 @@ try {
     Write-Host ('   Safety aborts             : {0}' -f $stat_safetyAbort) -ForegroundColor $(if ($stat_safetyAbort) {'Red'} else {'Green'})
     Write-Host ('   Mismatch emails sent      : {0}' -f $stat_rejectSent)
     Write-Host ('   Mismatch skipped (dedup)  : {0}' -f $stat_rejectSkip)
+    Write-Host ('   Outbox emails sent        : {0}' -f $stat_outboxSent)          -ForegroundColor Green
+    Write-Host ('   Outbox emails failed      : {0}' -f $stat_outboxFailed)        -ForegroundColor $(if ($stat_outboxFailed) {'Red'} else {'Green'})
+    Write-Host ('   Outbox claim-skipped      : {0}' -f $stat_outboxClaimSkip)
+    Write-Host ('   Outbox skipped (dry-run)  : {0}' -f $stat_outboxSkippedDry)
     Write-Host ('   Duration                  : {0:N1}s' -f ($finishedAt - $startedAt).TotalSeconds)
     Write-Host ''
 
@@ -892,6 +1077,10 @@ try {
         safety_aborts         = $stat_safetyAbort
         rejection_emails_sent = $stat_rejectSent
         rejection_skipped     = $stat_rejectSkip
+        outbox_sent           = $stat_outboxSent            # Phase 15.5A
+        outbox_failed         = $stat_outboxFailed          # Phase 15.5A
+        outbox_claim_skipped  = $stat_outboxClaimSkip       # Phase 15.5A
+        outbox_skipped_dry    = $stat_outboxSkippedDry      # Phase 15.5A
         dry_run               = [bool]$DryRun
         host                  = $env:COMPUTERNAME
         user                  = $env:USERNAME

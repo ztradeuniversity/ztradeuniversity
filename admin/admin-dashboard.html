@@ -441,15 +441,34 @@
              SECTION: Matched Accounts
         ──────────────────────────────────────── -->
         <section class="dash-section" id="section-matched">
-          <div class="section-placeholder">
-            <div class="placeholder-icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" opacity="0.35">
-                <circle cx="24" cy="24" r="18"/>
-                <path d="M15 25l6 6 13-13"/>
-              </svg>
+          <!-- Phase 15.6 — wired to fetchIntakeQueue().matched -->
+          <div class="section-intro">
+            <h2 class="section-heading">Matched Accounts</h2>
+            <p class="section-sub">Accounts confirmed against the broker IB report and queued for compile. Source: Supabase <code>license_requests</code> where status is <code>matched</code> / <code>approved</code> / <code>compile_ready</code>.</p>
+          </div>
+
+          <div class="intake-queue" id="matchedSectionWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Matched Queue</h3>
+              <span class="intake-queue-count" id="matchedSectionCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="matchedSectionRefresh" type="button" title="Reload from Supabase">↻ Refresh</button>
+              </div>
             </div>
-            <p class="placeholder-title">Matched Accounts</p>
-            <p class="placeholder-sub">Successfully matched accounts will appear here, ready to be queued for compile.</p>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="intake-queue-col-labels" aria-hidden="true">
+                <span>Account</span>
+                <span>Email</span>
+                <span>Broker</span>
+                <span>Date</span>
+                <span>Target File</span>
+                <span>Status</span>
+                <span>Actions</span>
+              </div>
+              <div class="intake-queue-rows" id="matchedSectionRows"></div>
+              <p class="intake-queue-empty" id="matchedSectionEmpty" hidden>No matched accounts yet. Upload a broker file in Broker File Intake to populate this list.</p>
+              <div class="iq-loading-bar" id="matchedSectionLoading" hidden><span>Loading…</span></div>
+            </div>
           </div>
         </section>
 
@@ -458,15 +477,34 @@
              SECTION: Compile Queue
         ──────────────────────────────────────── -->
         <section class="dash-section" id="section-compile">
-          <div class="section-placeholder">
-            <div class="placeholder-icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="48" height="48" opacity="0.35">
-                <circle cx="24" cy="24" r="6"/>
-                <path d="M24 6v6M24 36v6M6 24h6M36 24h6M10.5 10.5l4.5 4.5M33 33l4.5 4.5M37.5 10.5L33 15M15 33l-4.5 4.5"/>
-              </svg>
+          <!-- Phase 15.6 — wired to fetchIntakeQueue().matched + .compiled -->
+          <div class="section-intro">
+            <h2 class="section-heading">Compile Queue</h2>
+            <p class="section-sub">Accounts awaiting EX5 compilation (<code>matched</code>/<code>compile_ready</code>) and those already compiled (<code>compiled</code>). The local ZTU_AUTOMATION engine picks these up via Supabase.</p>
+          </div>
+
+          <div class="intake-queue" id="compileSectionWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Compile Queue</h3>
+              <span class="intake-queue-count" id="compileSectionCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="compileSectionRefresh" type="button" title="Reload from Supabase">↻ Refresh</button>
+              </div>
             </div>
-            <p class="placeholder-title">Compile Queue</p>
-            <p class="placeholder-sub">Accounts queued for EA file generation will appear here.</p>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="intake-queue-col-labels" aria-hidden="true">
+                <span>Account</span>
+                <span>Email</span>
+                <span>Broker</span>
+                <span>Date</span>
+                <span>Target File</span>
+                <span>Status</span>
+                <span>Actions</span>
+              </div>
+              <div class="intake-queue-rows" id="compileSectionRows"></div>
+              <p class="intake-queue-empty" id="compileSectionEmpty" hidden>No accounts awaiting compile. Process a broker file to populate.</p>
+              <div class="iq-loading-bar" id="compileSectionLoading" hidden><span>Loading…</span></div>
+            </div>
           </div>
         </section>
 
@@ -475,15 +513,34 @@
              SECTION: Delivered
         ──────────────────────────────────────── -->
         <section class="dash-section" id="section-delivered">
-          <div class="section-placeholder">
-            <div class="placeholder-icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" opacity="0.35">
-                <path d="M4 20l20-12 20 12v18a2 2 0 01-2 2H6a2 2 0 01-2-2V20z"/>
-                <path d="M18 42V30h12v12"/>
-              </svg>
+          <!-- Phase 15.6 — wired to fetchIntakeQueue().emailed -->
+          <div class="section-intro">
+            <h2 class="section-heading">Delivered</h2>
+            <p class="section-sub">Accounts where the delivery email was successfully sent (<code>license_requests.status = 'emailed'</code>). The local ZTU_AUTOMATION engine writes this status after Gmail SMTP confirms send.</p>
+          </div>
+
+          <div class="intake-queue" id="deliveredSectionWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Delivered Accounts</h3>
+              <span class="intake-queue-count" id="deliveredSectionCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="deliveredSectionRefresh" type="button" title="Reload from Supabase">↻ Refresh</button>
+              </div>
             </div>
-            <p class="placeholder-title">Delivered</p>
-            <p class="placeholder-sub">Delivery history and email confirmation logs will appear here.</p>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="intake-queue-col-labels" aria-hidden="true">
+                <span>Account</span>
+                <span>Email</span>
+                <span>Broker</span>
+                <span>Date</span>
+                <span>Target File</span>
+                <span>Status</span>
+                <span>Actions</span>
+              </div>
+              <div class="intake-queue-rows" id="deliveredSectionRows"></div>
+              <p class="intake-queue-empty" id="deliveredSectionEmpty" hidden>No delivered accounts yet. The engine flips status to <code>emailed</code> after successful Gmail SMTP send.</p>
+              <div class="iq-loading-bar" id="deliveredSectionLoading" hidden><span>Loading…</span></div>
+            </div>
           </div>
         </section>
 

@@ -632,6 +632,10 @@ const AdminDashboard = (() => {
     // Phase 11B — re-render pool sections with current data on navigation
     if (sectionId === 'pending') renderPendingRequests();
     if (sectionId === 'waiting') renderWaitingForMatch();
+    // Phase 15.6 — three sidebar pages wired to fetchIntakeQueue()
+    if (sectionId === 'matched')   renderMatchedAccountsSection();
+    if (sectionId === 'compile')   renderCompileQueueSection();
+    if (sectionId === 'delivered') renderDeliveredSection();
     // Phase 13 — CRM sections
     if (sectionId === 'crm-active')    renderCrmActive();
     if (sectionId === 'crm-inactive')  renderCrmInactive();
@@ -3999,6 +4003,179 @@ const AdminDashboard = (() => {
     showToast(`Exported ${payload.length} matched account${payload.length !== 1 ? 's' : ''}.`, 'success', 3000);
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     PHASE 15.6 — sidebar pages wired to fetchIntakeQueue()
+     ───────────────────────────────────────────────────────────
+     Three thin renderers — no new Supabase calls, no new schema,
+     no UI redesign.  Each renderer:
+       1. Shows a "Loading…" bar
+       2. Calls the existing fetchIntakeQueue() (single source of truth)
+       3. Hands the relevant slice to the existing renderIqPanel()
+       4. Updates the section's count badge
+     Called from activateSection() when the user opens these pages.
+  ══════════════════════════════════════════════════════════ */
+
+  /**
+   * Render Matched Accounts sidebar page using fetchIntakeQueue().matched.
+   * (matched + approved + compile_ready, per fetchIntakeQueue's MATCHED_STATUSES)
+   */
+  async function renderMatchedAccountsSection() {
+    const wrapEl   = document.getElementById('matchedSectionWrap');
+    const rowsEl   = document.getElementById('matchedSectionRows');
+    const emptyEl  = document.getElementById('matchedSectionEmpty');
+    const countEl  = document.getElementById('matchedSectionCount');
+    const loadEl   = document.getElementById('matchedSectionLoading');
+    if (!wrapEl || !rowsEl) return;
+
+    if (loadEl) loadEl.hidden = false;
+    try {
+      const data = await fetchIntakeQueue();
+      const rows = data.matched || [];
+      if (countEl) countEl.textContent = String(rows.length);
+
+      // Synthesize a panel-shaped wrapper so renderIqPanel can reuse its
+      // .intake-queue-rows / .intake-queue-empty lookups.
+      const fakePanel = {
+        querySelector: (sel) => {
+          if (sel === '.intake-queue-rows') return rowsEl;
+          if (sel === '.intake-queue-empty') return emptyEl;
+          return null;
+        },
+      };
+      // isTerminal=false → show Compiled / Emailed / Reject action buttons
+      renderIqPanel(fakePanel, rows, false);
+    } catch (e) {
+      console.error('[renderMatchedAccountsSection] Failed:', e);
+      if (rowsEl)  rowsEl.innerHTML = '';
+      if (emptyEl) emptyEl.hidden   = false;
+      if (countEl) countEl.textContent = '0';
+    } finally {
+      if (loadEl) loadEl.hidden = true;
+    }
+  }
+
+  /**
+   * Render Compile Queue sidebar page using fetchIntakeQueue().matched + .compiled.
+   * Combined list, newest first within each group (matched group on top).
+   */
+  async function renderCompileQueueSection() {
+    const wrapEl   = document.getElementById('compileSectionWrap');
+    const rowsEl   = document.getElementById('compileSectionRows');
+    const emptyEl  = document.getElementById('compileSectionEmpty');
+    const countEl  = document.getElementById('compileSectionCount');
+    const loadEl   = document.getElementById('compileSectionLoading');
+    if (!wrapEl || !rowsEl) return;
+
+    if (loadEl) loadEl.hidden = false;
+    try {
+      const data = await fetchIntakeQueue();
+      // Combined: matched (awaiting compile) on top, then compiled (done).
+      const rows = [].concat(data.matched || [], data.compiled || []);
+      if (countEl) countEl.textContent = String(rows.length);
+
+      const fakePanel = {
+        querySelector: (sel) => {
+          if (sel === '.intake-queue-rows') return rowsEl;
+          if (sel === '.intake-queue-empty') return emptyEl;
+          return null;
+        },
+      };
+      // isTerminal=false → keep action buttons (Compiled/Emailed/Reject)
+      renderIqPanel(fakePanel, rows, false);
+    } catch (e) {
+      console.error('[renderCompileQueueSection] Failed:', e);
+      if (rowsEl)  rowsEl.innerHTML = '';
+      if (emptyEl) emptyEl.hidden   = false;
+      if (countEl) countEl.textContent = '0';
+    } finally {
+      if (loadEl) loadEl.hidden = true;
+    }
+  }
+
+  /**
+   * Render Delivered sidebar page using fetchIntakeQueue().emailed.
+   * Terminal stage → no action buttons (matches the Emailed tab inside intake).
+   */
+  async function renderDeliveredSection() {
+    const wrapEl   = document.getElementById('deliveredSectionWrap');
+    const rowsEl   = document.getElementById('deliveredSectionRows');
+    const emptyEl  = document.getElementById('deliveredSectionEmpty');
+    const countEl  = document.getElementById('deliveredSectionCount');
+    const loadEl   = document.getElementById('deliveredSectionLoading');
+    if (!wrapEl || !rowsEl) return;
+
+    if (loadEl) loadEl.hidden = false;
+    try {
+      const data = await fetchIntakeQueue();
+      const rows = data.emailed || [];
+      if (countEl) countEl.textContent = String(rows.length);
+
+      const fakePanel = {
+        querySelector: (sel) => {
+          if (sel === '.intake-queue-rows') return rowsEl;
+          if (sel === '.intake-queue-empty') return emptyEl;
+          return null;
+        },
+      };
+      // isTerminal=true → no action buttons (delivered is final)
+      renderIqPanel(fakePanel, rows, true);
+    } catch (e) {
+      console.error('[renderDeliveredSection] Failed:', e);
+      if (rowsEl)  rowsEl.innerHTML = '';
+      if (emptyEl) emptyEl.hidden   = false;
+      if (countEl) countEl.textContent = '0';
+    } finally {
+      if (loadEl) loadEl.hidden = true;
+    }
+  }
+
+  /**
+   * Wire the three Refresh buttons + delegated action clicks (Compiled /
+   * Emailed / Reject) on the matched & compile sidebar pages.  Reuses the
+   * same intakeSetStatus() function the intake queue already uses.
+   */
+  function bindSidebarSectionPages() {
+    const matchedRefresh   = document.getElementById('matchedSectionRefresh');
+    const compileRefresh   = document.getElementById('compileSectionRefresh');
+    const deliveredRefresh = document.getElementById('deliveredSectionRefresh');
+    if (matchedRefresh)   matchedRefresh.addEventListener('click',   () => renderMatchedAccountsSection());
+    if (compileRefresh)   compileRefresh.addEventListener('click',   () => renderCompileQueueSection());
+    if (deliveredRefresh) deliveredRefresh.addEventListener('click', () => renderDeliveredSection());
+
+    // Action-button delegation — reuses same data-iq-action contract as the
+    // intake queue, so intakeSetStatus() does the actual write.
+    const matchedRows = document.getElementById('matchedSectionRows');
+    const compileRows = document.getElementById('compileSectionRows');
+    [matchedRows, compileRows].forEach(rowsEl => {
+      if (!rowsEl) return;
+      rowsEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-iq-action]');
+        if (!btn) return;
+        const action = btn.dataset.iqAction;
+        const id     = btn.dataset.iqId;
+        if (!action || !id) return;
+        btn.disabled = true;
+        try {
+          const ok = await intakeSetStatus(id, action);
+          if (ok) {
+            showToast(`Status updated to "${action}".`, 'success', 2500);
+            // Re-render whichever section the button was on
+            if (rowsEl.id === 'matchedSectionRows') renderMatchedAccountsSection();
+            if (rowsEl.id === 'compileSectionRows') renderCompileQueueSection();
+            renderDeliveredSection();   // Delivered may have gained a row
+          }
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     END PHASE 15.6
+  ══════════════════════════════════════════════════════════ */
+
+
   /* ─── bindIntakeQueue — wire all queue UI events ─────────── */
 
   function bindIntakeQueue() {
@@ -5413,6 +5590,27 @@ const AdminDashboard = (() => {
       return { inserted: [], error: new Error('No Supabase client') };
     }
 
+    // Phase 15.5C — pre-INSERT dedup: skip items where a pending row already
+    // exists for the same (recipient_email, template_type, recipient_account).
+    // Prevents duplicate accumulation across repeated Run Automation clicks.
+    try {
+      const { data: existing, error: dErr } = await supabaseClient
+        .from(OUTBOX.EMAIL_TABLE)
+        .select('recipient_email, template_type, recipient_account')
+        .eq('status', 'pending');
+      if (!dErr && Array.isArray(existing) && existing.length > 0) {
+        const key = (e, t, a) => `${e || ''}|${t || ''}|${a || ''}`;
+        const seen = new Set(existing.map(r => key(r.recipient_email, r.template_type, r.recipient_account)));
+        const before = items.length;
+        items = items.filter(i => !seen.has(key(i.email, i.type || 'waiting', i.account)));
+        const skipped = before - items.length;
+        if (skipped > 0) console.log(`[Phase15.5C] email_outbox: dedup skipped ${skipped} duplicate(s).`);
+        if (items.length === 0) return { inserted: [], error: null };
+      }
+    } catch (e) {
+      console.warn('[Phase15.5C] email_outbox dedup check failed (continuing without):', e);
+    }
+
     const rows = items.map(item => ({
       status:            'pending',
       template_type:     item.type || 'waiting',
@@ -5450,6 +5648,26 @@ const AdminDashboard = (() => {
     if (!supabaseClient) {
       console.warn('[Phase15.4] Supabase client not initialised — cannot insert wa_outbox');
       return { inserted: [], error: new Error('No Supabase client') };
+    }
+
+    // Phase 15.5C — pre-INSERT dedup: skip items where a pending row already
+    // exists for the same (recipient_phone, template_type, recipient_account).
+    try {
+      const { data: existing, error: dErr } = await supabaseClient
+        .from(OUTBOX.WA_TABLE)
+        .select('recipient_phone, template_type, recipient_account')
+        .eq('status', 'pending');
+      if (!dErr && Array.isArray(existing) && existing.length > 0) {
+        const key = (p, t, a) => `${p || ''}|${t || ''}|${a || ''}`;
+        const seen = new Set(existing.map(r => key(r.recipient_phone, r.template_type, r.recipient_account)));
+        const before = items.length;
+        items = items.filter(i => !seen.has(key(i.whatsapp, i.type || 'waiting', i.account)));
+        const skipped = before - items.length;
+        if (skipped > 0) console.log(`[Phase15.5C] wa_outbox: dedup skipped ${skipped} duplicate(s).`);
+        if (items.length === 0) return { inserted: [], error: null };
+      }
+    } catch (e) {
+      console.warn('[Phase15.5C] wa_outbox dedup check failed (continuing without):', e);
     }
 
     const rows = items.map(item => ({
@@ -5877,6 +6095,7 @@ const AdminDashboard = (() => {
     bindIntakeQueue();       // Phase 14B — compilation queue
     bindRunAutomation();     // Phase 15 — one click automation engine
     bindDeliveryPanels();    // Phase 15.1 — delivery layer (email + WA)
+    bindSidebarSectionPages(); // Phase 15.6 — Matched / Compile / Delivered sidebar pages
     bindCrm();               // Phase 13 — CRM intelligence engine
 
     // Initial data load — shows skeleton, fetches, renders
