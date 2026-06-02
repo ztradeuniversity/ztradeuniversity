@@ -436,6 +436,7 @@ export async function onRequest(context) {
   const userId      = typeof body?.userId === 'string' ? body.userId.slice(0, 80) : null;
   const bodyTz      = typeof body?.tz === 'string' ? body.tz.slice(0, 64) : null;          // browser timezone
   const bodyCountry = typeof body?.country === 'string' ? body.country.slice(0, 4).toUpperCase() : null;
+  const traderContext = (body?.traderContext && typeof body.traderContext === 'object') ? body.traderContext : null; // Memory V2
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return new Response(JSON.stringify({ error: '`messages` array is required' }), { status: 400, headers: JSON_HEADERS });
   }
@@ -514,7 +515,7 @@ export async function onRequest(context) {
   // ── NEWS + ECONOMIC CALENDAR (Priority 1: live Finnhub data via internal APIs)
   let calendarData = null;
   let newsData     = null;
-  if (cls.intent === 'events') {
+  if (cls.intent === 'events' || cls.intent === 'brief') {
     const [calRes, newsRes] = await Promise.allSettled([
       fetch(`${baseUrl}/api/calendar`, { signal: AbortSignal.timeout(4000) }),
       fetch(`${baseUrl}/api/news`,     { signal: AbortSignal.timeout(4000) }),
@@ -549,6 +550,7 @@ export async function onRequest(context) {
       calendarData,
       newsData,
       geo,
+      traderContext,
       isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
     });
   } catch (err) {

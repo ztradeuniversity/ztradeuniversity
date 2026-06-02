@@ -275,6 +275,14 @@ export function classifyIntent(text) {
     return { intent: 'knowledge', knowledgeTopic: 'glossary', broker };
   }
 
+  // AI Daily Brief™ — full market overview
+  if (has(s, ["today's market", 'todays market', 'today market', 'market today', 'daily brief',
+      'market brief', 'morning brief', 'market overview', 'market summary', 'daily market',
+      'how is the market', "how's the market", 'hows the market', "what's the market", 'brief me',
+      'give me a brief', 'market update'])) {
+    return { intent: 'brief', broker };
+  }
+
   // Events + News (answered from live internal Finnhub/calendar data)
   const isNewsy = has(s, ['news', 'calendar', 'economic event', 'upcoming event', 'today event',
       'todays event', "today's event", 'market event', 'high impact', 'high-impact', 'data release',
@@ -549,12 +557,159 @@ function buildEventsResponse({ calendarData, newsData, geo, lang, newsFocus }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  TRADER COACH MODE — personalized mentor lines from trader memory
+// ════════════════════════════════════════════════════════════════════════════
+
+const WEAKNESS_PHRASE = {
+  fomo:        'entering too early / chasing moves (FOMO)',
+  fear:        'managing fear and pulling the trigger',
+  revenge:     'revenge trading after losses',
+  hesitation:  'hesitation and second-guessing entries',
+  overtrading: 'overtrading — taking too many trades',
+};
+
+// A natural, human mentor observation woven in for the right moments.
+function buildCoachIntro(tc, intent) {
+  if (!tc) return '';
+  const n        = tc.conversations || 0;
+  const p        = tc.patterns || {};
+  const lines    = [];
+
+  if (intent === 'greeting' && n >= 3 && tc.topWeakness && WEAKNESS_PHRASE[tc.topWeakness]) {
+    lines.push(`Good to see you back. 👋 Across our last **${n} conversations**, the pattern I keep noticing is **${WEAKNESS_PHRASE[tc.topWeakness]}** — let's keep sharpening that today.`);
+  }
+
+  if (intent === 'whylosing' || intent === 'stuck') {
+    if ((p.revenge ?? 0) >= 2)
+      lines.push(`I've noticed you often ask about recovering losing trades — that usually points to **emotional pressure**, not a strategy gap. Let's anchor on risk control first.`);
+    else if ((p.fomo ?? 0) >= 2)
+      lines.push(`From our chats, **chasing entries (FOMO)** comes up a lot for you — that's the thread worth pulling on here.`);
+    else if ((p.hesitation ?? 0) >= 2)
+      lines.push(`You've mentioned **hesitation** before — losses there often come from missing the plan, not the market.`);
+  }
+
+  if (intent === 'assess' && (p.hesitation ?? 0) >= 2) {
+    lines.push(`Since hesitation has come up for you before — as we review this, notice whether the plan is clear enough to act on **without second-guessing**.`);
+  }
+
+  if ((intent === 'greeting' || intent === 'whylosing') && tc.improved && tc.improved.length) {
+    lines.push(`And one win worth naming: you've improved your **${tc.improved[0]}** lately. 👏 Keep it going.`);
+  }
+
+  return lines.length ? lines.join('\n\n') + '\n\n' : '';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  TRADER JOURNEY — adapt depth to Beginner / Intermediate / Advanced
+// ════════════════════════════════════════════════════════════════════════════
+
+function levelNote(tc, intent) {
+  if (!tc || !tc.level) return '';
+  if (tc.level === 'beginner' && ['gold', 'btc', 'macro', 'knowledge', 'brief'].includes(intent)) {
+    return `\n\n💡 _New to this? In plain terms: focus on understanding **why** price moves and protecting your capital — predicting the next candle comes much later._`;
+  }
+  if (tc.level === 'advanced' && ['gold', 'btc', 'macro'].includes(intent)) {
+    return `\n\n_(Pro view: watch the real-yield + DXY confluence and positioning into the next data print for the higher-timeframe bias.)_`;
+  }
+  return '';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  CONVERSION ENGINE — natural, non-spammy CTAs
+// ════════════════════════════════════════════════════════════════════════════
+
+function conversionCTA(intent) {
+  switch (intent) {
+    case 'brief':
+    case 'events':
+      return `\n\n📊 For the full live breakdown, see **[Live Market Sentiment](live-sentiment.html)** and the **[Weekly Report](weekly-report.html)**.`;
+    case 'whylosing':
+    case 'psychology':
+      return `\n\n🪞 To pinpoint your exact profile and roadmap, take the **[Trader Self-Assessment](trader-assessment.html)**.`;
+    case 'macro':
+      return `\n\n📈 Full macro dashboard: **[Fundamentals & Technical Intelligence](fundamentals.html)**.`;
+    default:
+      return '';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  AI DAILY BRIEF™
+// ════════════════════════════════════════════════════════════════════════════
+
+function buildDailyBrief({ marketData, calendarData, newsData, geo, lang }) {
+  const tz      = geo?.tz || 'UTC';
+  const tzLabel = geo?.name ? `${geo.name} time` : 'UTC';
+  let dateStr;
+  try { dateStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()); }
+  catch { dateStr = new Date().toUTCString().slice(0, 16); }
+
+  let out = `## 📋 AI Daily Brief™ — ${dateStr}\n`;
+
+  // Snapshot
+  const mb = marketBlock(marketData);
+  if (mb) out += `\n**Market snapshot:**\n${mb}\n`;
+
+  // Gold / BTC directional context (educational, no signal)
+  const g = marketData?.gold, b = marketData?.btc;
+  const dir = (pct) => pct == null ? 'flat' : pct > 0.3 ? 'firmer' : pct < -0.3 ? 'softer' : 'little changed';
+  out += `\n**Gold context:** trading **${dir(g?.changePct)}** so far${g?.changePct != null ? ` (${g.changePct > 0 ? '+' : ''}${g.changePct.toFixed(2)}%)` : ''} — driven by real yields, the dollar, and safe-haven flows.`;
+  out += `\n**BTC context:** **${dir(b?.changePct)}**${b?.changePct != null ? ` (${b.changePct > 0 ? '+' : ''}${b.changePct.toFixed(2)}%)` : ''} — moving with broad risk appetite and liquidity.`;
+
+  // Volatility level + risk rating from VIX
+  const vix = marketData?.vix?.value;
+  let vol = 'moderate', risk = '🟡 MEDIUM';
+  if (vix != null) {
+    if (vix >= 25)      { vol = 'high';     risk = '🔴 HIGH'; }
+    else if (vix >= 20) { vol = 'elevated'; risk = '🟡 MEDIUM'; }
+    else if (vix < 15)  { vol = 'low';      risk = '🟢 LOW'; }
+    else                { vol = 'moderate'; risk = '🟡 MEDIUM'; }
+  }
+  out += `\n\n**Volatility:** ${vol}${vix != null ? ` (VIX ${vix})` : ''}\n**Today's risk rating:** ${risk}`;
+
+  // Key events today (converted to user TZ)
+  const events = (calendarData?.events || []).filter(e => e.time);
+  const todays = events.filter(e => isSameDayInTz(e.time, tz));
+  const list   = (todays.length ? todays : events).slice(0, 4);
+  out += `\n\n**Key events ${todays.length ? `today (${tzLabel})` : 'ahead'}:**\n`;
+  if (list.length) {
+    for (const e of list) out += `- ${impactEmoji(e.impact)} ${fmtTime(e.time, tz) || ''} — ${e.event}\n`;
+  } else {
+    out += `- No major scheduled US releases detected on the radar right now.\n`;
+  }
+
+  // A headline if available
+  const top = (newsData?.articles || [])[0];
+  if (top) out += `\n**Top headline:** ${top.title} — _${top.source}_\n`;
+
+  // Today's focus (derived)
+  let focus;
+  const highToday = todays.some(e => (e.impact || '').toLowerCase() === 'high');
+  if (highToday)            focus = 'High-impact data is due — expect wider spreads and whipsaws. Patience and tighter risk are the priority today.';
+  else if (vol === 'high')  focus = 'Volatility is elevated — reduce size, widen stops only with structure, and avoid emotional entries.';
+  else if (vol === 'low')   focus = 'Quiet conditions — ranges may dominate. Wait for clean structure rather than forcing trades.';
+  else                      focus = 'A balanced session — trade your plan, respect your stop, and let A+ setups come to you.';
+  out += `\n🎯 **Today's focus:** ${focus}`;
+
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  RESPONSE GENERATION
 // ════════════════════════════════════════════════════════════════════════════
 
+// Thin public wrapper — decorates the raw answer with Coach Mode (personalized
+// mentor intro), Trader Journey (level adaptation), and the Conversion Engine.
 export function generateResponse(ctx) {
+  const coach = buildCoachIntro(ctx.traderContext, ctx.intent);
+  const body  = generateBody(ctx);
+  const extra = levelNote(ctx.traderContext, ctx.intent) + conversionCTA(ctx.intent);
+  return coach + body + extra;
+}
+
+function generateBody(ctx) {
   const { text, lang = 'en', intent, marketData, patternData, knowledgeEntries, broker,
-          calendarData, newsData, geo, newsFocus, isFirstMessage } = ctx;
+          calendarData, newsData, geo, newsFocus, traderContext, isFirstMessage } = ctx;
   const t = loc(lang);
   const disc = '\n\n' + t.disclaimer;
 
@@ -563,6 +718,10 @@ export function generateResponse(ctx) {
     // ── GREETING ──────────────────────────────────────────────────────────
     case 'greeting':
       return t.greet + disc;
+
+    // ── AI DAILY BRIEF™ ────────────────────────────────────────────────────
+    case 'brief':
+      return buildDailyBrief({ marketData, calendarData, newsData, geo, lang }) + disc;
 
     // ── SIGNAL REQUEST (guardrail) ─────────────────────────────────────────
     case 'signal':

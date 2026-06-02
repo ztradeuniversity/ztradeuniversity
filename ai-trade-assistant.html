@@ -273,6 +273,19 @@
     }
     .mirror-why:hover { background: rgba(239,68,68,0.18); }
     .mirror-note { font-size: 10px; color: var(--mut2); margin-top: 6px; line-height: 1.5; text-align: center; }
+    /* Memory V2 */
+    .trader-level {
+      float: right; font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 100px; background: rgba(200,156,63,0.16);
+      color: var(--gold3); border: 1px solid var(--brs);
+    }
+    .score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .score-lbl { font-size: 10px; font-weight: 700; color: var(--text); width: 72px; flex-shrink: 0; }
+    .mirror-insight {
+      font-size: 11px; line-height: 1.55; color: var(--gold3); margin: 10px 0 4px;
+      padding: 9px 11px; border-radius: 9px; background: rgba(200,156,63,0.07); border: 1px solid var(--brd);
+    }
+    .sc-subttl { font-size: 9px; font-weight: 800; color: var(--mut2); text-transform: uppercase; letter-spacing: 1px; margin: 10px 0 7px; }
 
     /* ── PHASE 4: PATTERN ALERT ──────────────────────────── */
     .pattern-alert {
@@ -473,6 +486,70 @@
       background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.26); color: #6ee7b7;
     }
     .access-badge.locked { background: rgba(200,156,63,0.10); border-color: var(--brs); color: var(--gold3); cursor: pointer; }
+
+    /* ── VOICE MODE V2 OVERLAY ───────────────────────────── */
+    .voice-ov {
+      display: none; position: fixed; inset: 0; z-index: 400;
+      background: rgba(8,6,2,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .voice-ov.open { display: flex; }
+    .voice-panel {
+      position: relative; width: 100%; max-width: 420px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+    }
+    .voice-x {
+      position: absolute; top: -8px; right: -4px; background: rgba(255,255,255,0.06);
+      border: 0; color: var(--muted); width: 34px; height: 34px; border-radius: 50%;
+      font-size: 16px; cursor: pointer; transition: background .15s, color .15s;
+    }
+    .voice-x:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    .voice-orb {
+      position: relative; width: 116px; height: 116px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      background: linear-gradient(135deg,#3d2a08 0%,#8c6c1f 55%,#d4ae5e 100%);
+      box-shadow: 0 12px 40px rgba(200,156,63,0.45);
+    }
+    .voice-orb .voice-ring {
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid rgba(212,174,94,0.5); opacity: 0;
+    }
+    .voice-orb.listening .voice-ring { animation: voiceRing 2.2s ease-out infinite; }
+    .voice-orb.listening .voice-ring:nth-child(2) { animation-delay: .7s; }
+    .voice-orb.listening .voice-ring:nth-child(3) { animation-delay: 1.4s; }
+    @keyframes voiceRing { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(1.9); opacity: 0; } }
+    .voice-orb.processing { background: linear-gradient(135deg,#1a1410,#2b2520); animation: voiceSpin 1s linear infinite; box-shadow: 0 12px 40px rgba(200,156,63,0.25); }
+    @keyframes voiceSpin { 0% { box-shadow: 0 0 0 0 rgba(212,174,94,0.4);} 50%{ box-shadow: 0 0 0 14px rgba(212,174,94,0);} 100%{ box-shadow: 0 0 0 0 rgba(212,174,94,0);} }
+    .voice-orb.error { background: linear-gradient(135deg,#3d1010,#5a1a1a); box-shadow: 0 12px 40px rgba(239,68,68,0.35); }
+
+    .voice-status { font-family: 'Manrope',sans-serif; font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.3px; }
+    .voice-lang-chip {
+      display: inline-block; padding: 5px 14px; border-radius: 100px; font-size: 12px; font-weight: 700;
+      background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.30); color: #6ee7b7;
+    }
+    .voice-transcript {
+      min-height: 48px; max-height: 160px; overflow-y: auto; width: 100%;
+      font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.04); border: 1px solid var(--brd);
+      border-radius: 14px; padding: 14px 16px;
+    }
+    .voice-actions { display: flex; gap: 10px; }
+    .voice-send {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg,#e6c987 0%,#c89c3f 50%,#8c6c1f 100%);
+      color: #fff; border: 0; border-radius: 100px; padding: 12px 24px;
+      font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 22px rgba(200,156,63,0.36);
+      transition: transform .15s, opacity .15s;
+    }
+    .voice-send:hover { transform: translateY(-1px); opacity: .92; }
+    .voice-cancel {
+      background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--brd);
+      border-radius: 100px; padding: 12px 20px; font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: color .15s, background .15s;
+    }
+    .voice-cancel:hover { color: #fff; background: rgba(255,255,255,0.10); }
+    .voice-hint { font-size: 11.5px; color: var(--mut2); line-height: 1.5; max-width: 320px; }
 
     /* ── CHAT AREA ───────────────────────────────────────── */
     .ai-chat {
@@ -931,9 +1008,32 @@
       </div>
     </div>
 
-    <!-- Phase 5: AI Trader Mirror™ -->
+    <!-- Phase 5: AI Trader Mirror™ (Memory V2) -->
     <div class="sc mirror-card" id="mirrorPanel">
-      <div class="sc-ttl">AI Trader Mirror™</div>
+      <div class="sc-ttl">AI Trader Mirror™
+        <span class="trader-level" id="mLevel">Beginner</span>
+      </div>
+
+      <!-- V2: behaviour scores -->
+      <div class="score-row">
+        <span class="score-lbl">Patience</span>
+        <div class="mirror-bar-wrap"><div class="mirror-bar" id="mPatience" style="width:50%;background:#34d399"></div></div>
+        <span class="mirror-val" id="mPatienceV" style="color:#34d399">5</span>
+      </div>
+      <div class="score-row">
+        <span class="score-lbl">Discipline</span>
+        <div class="mirror-bar-wrap"><div class="mirror-bar" id="mDiscipline" style="width:50%;background:#60a5fa"></div></div>
+        <span class="mirror-val" id="mDisciplineV" style="color:#60a5fa">5</span>
+      </div>
+      <div class="score-row">
+        <span class="score-lbl">Confidence</span>
+        <div class="mirror-bar-wrap"><div class="mirror-bar" id="mConfidence" style="width:60%;background:#e6c987"></div></div>
+        <span class="mirror-val" id="mConfidenceV" style="color:var(--gold3)">6</span>
+      </div>
+
+      <div class="mirror-insight" id="mInsight">Let's talk — I'll learn your trading patterns as we go.</div>
+
+      <div class="sc-subttl">Behaviour signals</div>
       <div id="mirrorBars">
         <div class="mirror-row">
           <span class="mirror-lbl">FOMO</span>
@@ -1041,6 +1141,7 @@
           <span class="lang-c">Tiếng Việt</span><span class="lang-c">ภาษาไทย</span><span class="lang-c">বাংলা</span>
         </div>
         <div class="w-chips" role="group" aria-label="Quick start topics">
+          <button class="chip" onclick="quickAsk('Today&#39;s market')">📋 AI Daily Brief™</button>
           <button class="chip" onclick="quickAsk('What is the current Gold market context and what macro factors are influencing it today?')">🏅 Gold market today</button>
           <button class="chip" onclick="quickAsk('What is the current Bitcoin (BTC) sentiment and market structure?')">₿ BTC sentiment</button>
           <button class="chip" onclick="quickAsk('Explain how the DXY (US Dollar Index) is currently affecting Gold and Bitcoin.')">📊 DXY impact</button>
@@ -1059,6 +1160,7 @@
 
     <!-- Conversation chips -->
     <div class="chips-bar hidden" id="chipsBar">
+      <button class="chip" onclick="quickAsk('Today&#39;s market')">📋 Daily Brief</button>
       <button class="chip" onclick="quickAsk('What is the current Gold market context?')">🏅 Gold</button>
       <button class="chip" onclick="quickAsk('What is the BTC sentiment right now?')">₿ BTC</button>
       <button class="chip" onclick="quickAsk('Assess a trade — I will share entry, SL, TP now.')">🔍 Assess trade</button>
@@ -1268,6 +1370,28 @@
   </div>
 </div>
 
+<!-- ════════ VOICE MODE V2 OVERLAY ════════ -->
+<div class="voice-ov" id="voiceOverlay">
+  <div class="voice-panel">
+    <button class="voice-x" onclick="cancelVoice()" aria-label="Close voice mode">✕</button>
+    <div class="voice-orb listening" id="voiceOrb" aria-hidden="true">
+      <span class="voice-ring"></span><span class="voice-ring"></span><span class="voice-ring"></span>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </div>
+    <div class="voice-status" id="voiceStatus">Listening…</div>
+    <div class="voice-lang-chip hidden" id="voiceLangChip">Language detected: —</div>
+    <div class="voice-transcript" id="voiceTranscript">…</div>
+    <div class="voice-actions">
+      <button class="voice-send" id="voiceStopBtn" onclick="finishVoice()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Stop &amp; Send
+      </button>
+      <button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
+    </div>
+    <div class="voice-hint">Speak naturally in any language — I'll detect it and reply in the same language.</div>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <footer>
   © 2025 Z Trade University &nbsp;·&nbsp;
@@ -1470,6 +1594,8 @@ async function sendMessage() {
 
   streaming = true; sendBtn.disabled = true; chatIn.disabled = true;
   renderMsg('user', text); pushMsg('user', text);
+  maybeLearnCountry(text);              // Country Intelligence: remember stated country
+  updateTraderV2(text);                 // Memory V2: update profile BEFORE the request
   chatIn.value = ''; resize(); updateCount();
 
   const think = renderThinking();
@@ -1487,7 +1613,13 @@ async function sendMessage() {
     const res = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: apiMsgs, userId: getOrCreateUserId() }),
+      body: JSON.stringify({
+        messages:      apiMsgs,
+        userId:        getOrCreateUserId(),
+        tz:            getBrowserTz(),
+        country:       getStoredCountry(),
+        traderContext: getTraderContext(),
+      }),
     });
 
     if (!res.ok) {
@@ -1577,14 +1709,32 @@ chatIn.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) sendMessage(); }
 });
 
-/* ─── VOICE ──────────────────────────────────────────────────── */
+/* ─── VOICE MODE V2 (ChatGPT-style, browser-native, free) ────── */
 const VLANG_KEY = 'ztu_ai_voicelang';
+let voiceFinal = '';      // accumulated final transcript
+let voiceCancelled = false;
+let voiceSupported = false;
+
+// Client-side language detector → returns a human label (mirrors the engine)
+function detectLanguageLabel(text) {
+  const t = text || '';
+  if (/[฀-๿]/.test(t)) return 'Thai';
+  if (/[ঀ-৿]/.test(t)) return 'Bengali';
+  if (/[؀-ۿ]/.test(t)) return /[ٹڈڑںھہےگچپژ]/.test(t) ? 'Urdu' : 'Arabic';
+  const lower = t.toLowerCase();
+  if (/[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(t)) return 'Vietnamese';
+  if (/\b(vàng|giá|thế nào|không|tôi|làm sao)\b/.test(lower)) return 'Vietnamese';
+  const ru = ['kya','kia','kaise','kaisa','hai','hain','mera','mujhe','batao','karun','nahi','kyun','acha','theek','chahiye','bata'];
+  if (ru.filter(w => new RegExp(`\\b${w}\\b`).test(lower)).length >= 2) return 'Roman Urdu';
+  if (/\b(macam mana|boleh|nak tahu|saya nak)\b/.test(lower)) return 'Malay';
+  if (/\b(bagaimana|apakah|saya|harga emas|sekarang|bisa)\b/.test(lower)) return 'Bahasa Indonesia';
+  return 'English';
+}
 
 function initVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const langSel = document.getElementById('voiceLang');
 
-  // Restore saved voice language preference
   if (langSel) {
     const saved = localStorage.getItem(VLANG_KEY);
     if (saved) langSel.value = saved;
@@ -1599,52 +1749,112 @@ function initVoice() {
     micBtn.title = 'Voice input is not supported in this browser. Try Chrome, Edge, or Safari.';
     return;
   }
+  voiceSupported = true;
 
   voiceRec = new SR();
-  voiceRec.continuous = false;
+  voiceRec.continuous     = true;   // keep listening until the user stops
   voiceRec.interimResults = true;
   voiceRec.maxAlternatives = 1;
   voiceRec.lang = (langSel && langSel.value) || 'en-US';
 
+  voiceRec.onstart = () => setVoiceStatus('listening', 'Listening…');
+
   voiceRec.onresult = e => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-    chatIn.value = transcript;
-    resize(); updateCount();
-  };
-  voiceRec.onend = () => {
-    isRec = false; micBtn.classList.remove('rec');
-    micBtn.setAttribute('aria-label', 'Start voice input');
-  };
-  voiceRec.onerror = (ev) => {
-    isRec = false; micBtn.classList.remove('rec');
-    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-      renderMsg('ai', '🎙️ Microphone access is blocked. Please allow microphone permission in your browser settings, then tap the mic again.');
-    } else if (ev.error === 'no-speech') {
-      renderMsg('ai', "🎙️ I didn't catch any speech. Tap the mic and try speaking again.");
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const chunk = e.results[i][0].transcript;
+      if (e.results[i].isFinal) voiceFinal += chunk + ' ';
+      else interim += chunk;
     }
+    const full = (voiceFinal + interim).trim();
+    const tEl = document.getElementById('voiceTranscript');
+    if (tEl) tEl.textContent = full || '…';
+    // Live language detection
+    if (full.length > 1) {
+      const chip = document.getElementById('voiceLangChip');
+      if (chip) { chip.textContent = 'Language detected: ' + detectLanguageLabel(full); chip.classList.remove('hidden'); }
+    }
+  };
+
+  voiceRec.onerror = (ev) => {
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+      setVoiceStatus('error', '🎙️ Microphone blocked — allow mic permission in your browser, then try again.');
+    } else if (ev.error === 'no-speech') {
+      setVoiceStatus('error', "Didn't catch that — try speaking again.");
+    } else {
+      setVoiceStatus('error', 'Voice error: ' + ev.error);
+    }
+  };
+
+  voiceRec.onend = () => {
+    isRec = false;
+    micBtn.classList.remove('rec');
+    const finalText = voiceFinal.trim();
+    if (voiceCancelled) { closeVoiceOverlay(); return; }
+    if (!finalText) { setVoiceStatus('error', "Didn't catch any speech — tap the mic to retry."); return; }
+    // Processing → detected → send
+    setVoiceStatus('processing', 'Processing…');
+    const label = detectLanguageLabel(finalText);
+    const chip = document.getElementById('voiceLangChip');
+    if (chip) { chip.textContent = 'Language detected: ' + label; chip.classList.remove('hidden'); }
+    setTimeout(() => {
+      closeVoiceOverlay();
+      chatIn.value = finalText; resize(); updateCount();
+      sendMessage();
+    }, 650);
   };
 }
 
-micBtn.addEventListener('click', () => {
-  if (micBtn.classList.contains('no-support')) {
-    renderMsg('ai', '🎙️ Voice input needs a supported browser (Chrome, Edge, or Safari) on an HTTPS connection. You can still type your question.');
+function setVoiceStatus(state, text) {
+  const orb = document.getElementById('voiceOrb');
+  const st  = document.getElementById('voiceStatus');
+  if (orb) orb.className = 'voice-orb ' + state;
+  if (st)  st.textContent = text;
+}
+
+function openVoiceOverlay() {
+  const ov = document.getElementById('voiceOverlay');
+  if (ov) ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeVoiceOverlay() {
+  const ov = document.getElementById('voiceOverlay');
+  if (ov) ov.classList.remove('open');
+  document.body.style.overflow = '';
+  const chip = document.getElementById('voiceLangChip');
+  if (chip) chip.classList.add('hidden');
+}
+
+function startVoiceMode() {
+  if (!voiceSupported || !voiceRec) {
+    renderMsg('ai', '🎙️ Voice mode needs a supported browser (Chrome, Edge, or Safari) on an HTTPS connection. You can still type your question.');
     return;
   }
-  if (!voiceRec) return;
-  if (isRec) {
-    voiceRec.stop();
-  } else {
-    // Sync language each time in case the user changed the selector
-    const langSel = document.getElementById('voiceLang');
-    voiceRec.lang = (langSel && langSel.value) || 'en-US';
-    try {
-      voiceRec.start();
-      isRec = true;
-      micBtn.classList.add('rec');
-      micBtn.setAttribute('aria-label', 'Stop recording');
-    } catch { /* start() throws if already started — ignore */ }
-  }
-});
+  if (isRec) return;
+  voiceFinal = ''; voiceCancelled = false;
+  const tEl = document.getElementById('voiceTranscript');
+  if (tEl) tEl.textContent = '…';
+  const langSel = document.getElementById('voiceLang');
+  voiceRec.lang = (langSel && langSel.value) || 'en-US';
+  openVoiceOverlay();
+  setVoiceStatus('listening', 'Listening…');
+  try { voiceRec.start(); isRec = true; micBtn.classList.add('rec'); }
+  catch { /* already started */ }
+}
+
+// Stop listening and send what was captured
+function finishVoice() {
+  if (voiceRec && isRec) { try { voiceRec.stop(); } catch {} }
+  else closeVoiceOverlay();
+}
+// Cancel without sending
+function cancelVoice() {
+  voiceCancelled = true;
+  if (voiceRec && isRec) { try { voiceRec.stop(); } catch {} }
+  closeVoiceOverlay();
+}
+
+micBtn.addEventListener('click', startVoiceMode);
 
 /* ─── MARKET DATA ────────────────────────────────────────────── */
 function fp(n, d=2) { return n==null ? '—' : '$'+n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
@@ -1758,6 +1968,49 @@ function getOrCreateUserId() {
   return id;
 }
 
+/* ─── COUNTRY INTELLIGENCE (client) ──────────────────────────── */
+const COUNTRY_KEY = 'ztu_ai_country';
+
+function getBrowserTz() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; }
+}
+function getStoredCountry() { return localStorage.getItem(COUNTRY_KEY) || ''; }
+function setStoredCountry(code) {
+  if (!code) return;
+  localStorage.setItem(COUNTRY_KEY, code);
+  // Persist to AI memory profile too (no-op if Supabase not configured)
+  try {
+    fetch('/api/ai-memory', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'upsert_profile', userId: getOrCreateUserId(), data: { country: code, timezone: getBrowserTz() } }),
+    }).catch(() => {});
+  } catch {}
+}
+
+// Detect an explicit country mention so we can remember it
+const CLIENT_COUNTRY_HINTS = [
+  [/\b(pak|pakistan|pakistani|karachi|lahore|islamabad)\b/i, 'PK'],
+  [/\b(india|indian|delhi|mumbai|kolkata)\b/i, 'IN'],
+  [/\b(bangladesh|dhaka)\b/i, 'BD'],
+  [/\b(indonesia|jakarta)\b/i, 'ID'],
+  [/\b(malaysia|kuala lumpur)\b/i, 'MY'],
+  [/\b(vietnam|hanoi|ho chi minh|saigon)\b/i, 'VN'],
+  [/\b(thailand|bangkok)\b/i, 'TH'],
+  [/\b(uae|dubai|emirates|abu dhabi)\b/i, 'AE'],
+  [/\b(saudi|riyadh|ksa|jeddah)\b/i, 'SA'],
+  [/\b(egypt|cairo)\b/i, 'EG'],
+];
+function maybeLearnCountry(text) {
+  const s = (text || '').toLowerCase();
+  // Only learn from explicit location statements or very short replies (avoid "pak time" inside a news query)
+  const locationPhrase = /\b(i am from|i'm from|im from|i trade from|trading from|my country|i live in|i am in|im in|based in|country is)\b/.test(s);
+  const shortReply = s.split(/\s+/).filter(Boolean).length <= 3 && !/\b(news|event|gold|btc|bitcoin|market|price|rate|signal|trade|session)\b/.test(s);
+  if (!locationPhrase && !shortReply) return;
+  for (const [re, code] of CLIENT_COUNTRY_HINTS) {
+    if (re.test(s)) { setStoredCountry(code); return; }
+  }
+}
+
 // Local psychology score store (mirrors Supabase counters locally)
 function getMirrorData() {
   try { return JSON.parse(localStorage.getItem(MIRROR_KEY) || '{}'); }
@@ -1809,11 +2062,131 @@ function renderMirror(d) {
   });
 }
 
+/* ─── TRADER MEMORY ENGINE V2 ────────────────────────────────── */
+const TRADER_KEY = 'ztu_ai_trader';
+function getTrader() { try { return JSON.parse(localStorage.getItem(TRADER_KEY) || '{}'); } catch { return {}; } }
+function saveTrader(t) { try { localStorage.setItem(TRADER_KEY, JSON.stringify(t)); } catch {} }
+
+const MISTAKE_RULES = [
+  [/(no stop ?loss|without (a )?stop|no sl\b|did ?n'?t (set|use) (a )?stop|forgot.*stop)/, 'trading without a stop loss'],
+  [/(moved my stop|moved the stop|widened (my|the) stop|shifted my stop)/,                 'moving stops away from price'],
+  [/(added to (a )?(losing|loser)|averaged? down|doubled down)/,                            'averaging into losing trades'],
+  [/(no plan|without a plan|did ?n'?t have a plan|no setup)/,                               'trading without a plan'],
+  [/(over ?leverage|too much leverage|huge lot|big lot|max lot)/,                           'overleveraging'],
+  [/\b(revenge)\b/,                                                                         'revenge trading'],
+  [/(closed (too )?early|cut my winner|exited early|took profit too early)/,                'closing winners too early'],
+];
+const LEVEL_BEGINNER = /(beginner|new to trading|just started|how do i start|what is a pip|what is leverage|do ?n'?t understand|noob|learning the basics)/;
+const LEVEL_ADVANCED = /(order block|liquidity sweep|fair value gap|\bfvg\b|\bsmc\b|imbalance|confluence|expectancy|r[- ]multiple|backtest|funding rate|institutional|sharpe)/;
+
+function tmClamp(n) { return Math.max(0, Math.min(10, Math.round(n))); }
+function thisMonthKey() { const d = new Date(); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0'); }
+
+function tmTopWeakness(mirror) {
+  const order = ['revenge', 'fomo', 'overtrading', 'hesitation', 'fear'];
+  let best = null, bestV = 1;
+  for (const k of order) if ((mirror[k] || 0) > bestV) { bestV = mirror[k]; best = k; }
+  return best;
+}
+
+function updateTraderV2(text) {
+  const s = (text || '').toLowerCase();
+
+  // 1) Psychology patterns → mirror store (drives the behaviour bars)
+  const flags  = detectLocalFlags(text);
+  const mirror = getMirrorData();
+  flags.forEach(f => { mirror[f] = Math.min((mirror[f] || 0) + 1, 10); });
+  saveMirrorData(mirror);
+
+  // 2) V2 counters
+  const t = getTrader();
+  t.conversations = (t.conversations || 0) + 1;
+  t.firstSeen = t.firstSeen || Date.now();
+  t.lastSeen  = Date.now();
+  t.mistakes  = t.mistakes || {};
+  t.strengths = t.strengths || [];
+  t.stopGood = t.stopGood || 0; t.stopViolations = t.stopViolations || 0; t.planMentions = t.planMentions || 0;
+
+  for (const [re, label] of MISTAKE_RULES) if (re.test(s)) t.mistakes[label] = (t.mistakes[label] || 0) + 1;
+  if (/(waited for (confirmation|the setup)|followed (my )?plan|stuck to (my )?(plan|stop)|respected my stop|cut my loss|journal)/.test(s)
+      && !t.strengths.includes('discipline & planning')) t.strengths.push('discipline & planning');
+  if (/(set (a |my )?stop|used a stop|respected my stop|stuck to my stop)/.test(s)) t.stopGood++;
+  if (/(no stop|moved my stop|widened (my|the) stop|without a stop)/.test(s))       t.stopViolations++;
+  if (/(my plan|trading plan|followed (my )?plan|waited for)/.test(s))              t.planMentions++;
+
+  // 3) Trader Journey level
+  if (LEVEL_ADVANCED.test(s)) t.levelHint = 'advanced';
+  else if (LEVEL_BEGINNER.test(s)) t.levelHint = 'beginner';
+  const conv = t.conversations;
+  let level = conv > 20 ? 'advanced' : conv < 6 ? 'beginner' : 'intermediate';
+  if (t.levelHint === 'advanced') level = 'advanced';
+  if (t.levelHint === 'beginner' && conv < 25) level = 'beginner';
+  t.level = level;
+
+  // 4) Behaviour scores
+  t.discipline = tmClamp(5 + t.stopGood * 0.7 - (mirror.revenge || 0) - (mirror.overtrading || 0) - t.stopViolations);
+  t.patience   = tmClamp(6 - (mirror.fomo || 0) - (mirror.overtrading || 0) + t.planMentions * 0.6);
+  t.confidence = tmClamp(6 - (mirror.hesitation || 0) - (mirror.fear || 0) + (conv > 10 ? 2 : 0) + (t.strengths.length ? 1 : 0));
+
+  // 5) Monthly snapshot + improvement detection
+  t.snapshots = t.snapshots || [];
+  const mk = thisMonthKey();
+  if (!t.snapshots.find(x => x.m === mk)) t.snapshots.push({ m: mk, discipline: t.discipline, patience: t.patience, confidence: t.confidence });
+  if (t.snapshots.length > 12) t.snapshots = t.snapshots.slice(-12);
+  t.improved = [];
+  if (t.snapshots.length >= 2) {
+    const base = t.snapshots[0];
+    if      (t.discipline - base.discipline >= 2) t.improved.push('stop-loss discipline');
+    else if (t.patience   - base.patience   >= 2) t.improved.push('patience');
+    else if (t.confidence - base.confidence >= 2) t.improved.push('confidence');
+  }
+
+  saveTrader(t);
+  renderMirror(mirror);
+  renderTraderV2(t, mirror);
+  renderRecommendations();
+}
+
+// Compact profile sent to the server engine for Coach Mode + Journey adaptation
+function getTraderContext() {
+  const t = getTrader(); const mirror = getMirrorData();
+  if (!t.conversations) return null;
+  return {
+    level:         t.level || 'beginner',
+    conversations: t.conversations || 0,
+    topWeakness:   tmTopWeakness(mirror),
+    patterns: {
+      fomo: mirror.fomo || 0, fear: mirror.fear || 0, revenge: mirror.revenge || 0,
+      hesitation: mirror.hesitation || 0, overtrading: mirror.overtrading || 0,
+    },
+    patience:   t.patience   ?? 5,
+    discipline: t.discipline ?? 5,
+    confidence: t.confidence ?? 6,
+    improved:   t.improved || [],
+  };
+}
+
+function renderTraderV2(t, mirror) {
+  t = t || getTrader(); mirror = mirror || getMirrorData();
+  const setBar = (id, vid, v) => { const b = document.getElementById(id), e = document.getElementById(vid); if (b) b.style.width = (v * 10) + '%'; if (e) e.textContent = v; };
+  setBar('mPatience',   'mPatienceV',   t.patience   ?? 5);
+  setBar('mDiscipline', 'mDisciplineV', t.discipline ?? 5);
+  setBar('mConfidence', 'mConfidenceV', t.confidence ?? 6);
+  const lvl = document.getElementById('mLevel');
+  if (lvl) lvl.textContent = (t.level || 'beginner').replace(/^./, c => c.toUpperCase());
+  const ins = document.getElementById('mInsight');
+  if (ins) {
+    const wk = tmTopWeakness(mirror);
+    const phrase = { fomo: 'entering too early (FOMO)', fear: 'managing fear', revenge: 'revenge trading', hesitation: 'hesitation', overtrading: 'overtrading' };
+    if ((t.improved || []).length)            ins.textContent = `📈 You've improved your ${t.improved[0]} recently — well done. Keep reinforcing it.`;
+    else if (wk && (t.conversations || 0) >= 3) ins.textContent = `🎯 Across ${t.conversations} chats, your main focus area is ${phrase[wk]}. Let's work on it together.`;
+    else                                       ins.textContent = `I'm learning your trading patterns as we talk — keep going.`;
+  }
+}
+
 // Save interaction to server (best-effort, non-blocking)
 async function saveInteraction(userMsg, aiMsg) {
   const userId = getOrCreateUserId();
-  const flags  = detectLocalFlags(userMsg);
-  bumpMirrorScores(flags);
   const activeSession = getActive();
   try {
     fetch('/api/ai-memory', {
@@ -2193,6 +2566,7 @@ async function submitVerification(e) {
 
   // Phase 5: restore mirror data from localStorage
   renderMirror(getMirrorData());
+  renderTraderV2();   // Memory V2: restore level, scores & insight
 
   // Market data (60s refresh)
   fetchMkt();
