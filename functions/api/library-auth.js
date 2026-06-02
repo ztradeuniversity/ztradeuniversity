@@ -261,18 +261,20 @@ async function lookupIbStars(acct, env) {
   // Resolve the email from whichever column actually holds it.
   let email = resolveEmail(row);
 
-  // Fallback: if this table/view has no email, look it up in license_requests
-  // (the table that captures email at Request-Bot-License time), keyed by account.
+  // Email source of truth: the broker/IB-Stars data carries NO email, so the
+  // admin dashboard enriches it from license_requests (first NON-EMPTY email per
+  // account). Mirror that exactly: filter out null emails and take the first hit.
   if (!email) {
     try {
       const fb = await fetch(
-        `${supabaseUrl}/rest/v1/license_requests?account_number=eq.${acctEncoded}&select=email&limit=1`,
+        `${supabaseUrl}/rest/v1/license_requests?account_number=eq.${acctEncoded}&email=not.is.null&select=email&limit=5`,
         { headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' } }
       );
       if (fb.ok) {
         const r2 = await fb.json();
-        if (Array.isArray(r2) && r2[0] && r2[0].email && String(r2[0].email).includes('@')) {
-          email = String(r2[0].email).trim();
+        if (Array.isArray(r2)) {
+          const hit = r2.find(x => x && x.email && String(x.email).includes('@'));
+          if (hit) email = String(hit.email).trim();
         }
       }
     } catch (e) {
