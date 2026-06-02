@@ -205,10 +205,10 @@ async function lookupIbStars(acct, env) {
   }
 
   const acctEncoded = encodeURIComponent(acct);
-  // Live broker_accounts schema carries: account_number, email, ib_star_status,
-  // last_trade_date. Active = traded within last 30 days (the SAME definition the
-  // admin "IB Stars Active" view uses); ib_star_status kept as a secondary signal.
-  const qs = `account_number=eq.${acctEncoded}&select=email,ib_star_status,last_trade_date&limit=1`;
+  // Select ALL columns: the email / last-trade / status column NAMES differ
+  // between the broker_accounts table and the ib_stars_active view, so we resolve
+  // them in code rather than hard-coding names (which silently returned null).
+  const qs = `account_number=eq.${acctEncoded}&select=*&limit=1`;
 
   let res;
   try {
@@ -238,26 +238,65 @@ async function lookupIbStars(acct, env) {
   }
 
   const row = rows[0];
+
   // Active = traded within the last 30 days (matches the admin "IB Stars Active"
-  // view, whose ACTIVE badge is derived from trade recency, not a literal status
-  // string). ib_star_status === 'active' is honoured as a secondary signal.
+  // view). Resolve the trade-date column under any of its known names.
+  const lastTrade = row.last_trade_date || row.client_account_last_trade ||
+                    row.last_trade || row.last_traded_at || null;
   let isActive = false;
-  if (row.last_trade_date) {
-    const days = (Date.now() - new Date(row.last_trade_date).getTime()) / 86400000;
+  if (lastTrade) {
+    const days = (Date.now() - new Date(lastTrade).getTime()) / 86400000;
     if (days <= 30) isActive = true;
   }
-  if (!isActive && typeof row.ib_star_status === 'string') {
-    isActive = row.ib_star_status.trim().toLowerCase() === 'active';
+  // Secondary signal: an explicit status column equal to 'active'.
+  const statusVal = row.ib_star_status || row.status || '';
+  if (!isActive && typeof statusVal === 'string') {
+    isActive = statusVal.trim().toLowerCase() === 'active';
   }
 
   if (!isActive) {
     return { found: true, active: false };
   }
 
-  // Active, but email may be missing — surface email:null so the caller can show
-  // the "no email registered" (Request Bot License) flow instead of inactive.
-  const email = (row.email && String(row.email).trim()) ? String(row.email).trim() : null;
-  return { found: true, active: true, email };
+  // Resolve the email from whichever column actually holds it.
+  let email = resolveEmail(row);
+
+  // Fallback: if this table/view has no email, look it up in license_requests
+  // (the table that captures email at Request-Bot-License time), keyed by account.
+  if (!email) {
+    try {
+      const fb = await fetch(
+        `${supabaseUrl}/rest/v1/license_requests?account_number=eq.${acctEncoded}&select=email&limit=1`,
+        { headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' } }
+      );
+      if (fb.ok) {
+        const r2 = await fb.json();
+        if (Array.isArray(r2) && r2[0] && r2[0].email && String(r2[0].email).includes('@')) {
+          email = String(r2[0].email).trim();
+        }
+      }
+    } catch (e) {
+      console.error('[library-auth] license_requests email fallback failed:', e?.message);
+    }
+  }
+
+  return { found: true, active: true, email: email || null };
+}
+
+// Resolve an email address from a row regardless of the exact column name.
+function resolveEmail(row) {
+  const keys = ['email', 'client_email', 'linked_email', 'email_address',
+                'client_email_address', 'user_email', 'contact_email'];
+  for (const k of keys) {
+    if (row[k] && String(row[k]).includes('@')) return String(row[k]).trim();
+  }
+  // Last resort: scan all string values for an email-looking token.
+  for (const v of Object.values(row)) {
+    if (typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) {
+      return v.trim();
+    }
+  }
+  return null;
 }
 
 // =============================================================================
