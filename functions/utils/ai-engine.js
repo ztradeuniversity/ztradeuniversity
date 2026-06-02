@@ -194,6 +194,19 @@ export function classifyIntent(text) {
     return { intent: 'greeting', broker: null };
   }
 
+  // SET COUNTRY (Country Intelligence Layer) — user states where they trade from
+  {
+    const countryCode   = parseCountryFromText(s);
+    const locationPhrase = has(s, ['i am from', "i'm from", 'im from', 'i trade from',
+      'trading from', 'my country', 'i live in', 'i am in', 'im in', 'based in', 'country is']);
+    const newsy = has(s, ['news', 'event', 'calendar', 'gold', 'btc', 'bitcoin', 'market',
+      'price', 'rate', 'signal', 'trade', 'session']);
+    const wordCount = s.split(/\s+/).filter(Boolean).length;
+    if (countryCode && (locationPhrase || (wordCount <= 3 && !newsy))) {
+      return { intent: 'setcountry', country: countryCode, broker: null };
+    }
+  }
+
   // SIGNAL REQUEST guardrail — asking us to tell them to buy/sell or give a signal/entry
   const askingSignal = has(s, [
     'should i buy', 'should i sell', 'buy or sell', 'sell or buy', 'give me a signal',
@@ -262,10 +275,16 @@ export function classifyIntent(text) {
     return { intent: 'knowledge', knowledgeTopic: 'glossary', broker };
   }
 
-  // Events
-  if (has(s, ['cpi', 'nfp', 'fomc', 'ppi', 'interest rate decision', 'economic event',
-      'news event', 'calendar', 'upcoming news', 'data release', 'jobs report'])) {
-    return { intent: 'events', broker };
+  // Events + News (answered from live internal Finnhub/calendar data)
+  const isNewsy = has(s, ['news', 'calendar', 'economic event', 'upcoming event', 'today event',
+      'todays event', "today's event", 'market event', 'high impact', 'high-impact', 'data release',
+      'jobs report', 'headlines', "what's happening", 'whats happening', 'upcoming news', 'news event'])
+    || has(s, ['cpi', 'nfp', 'fomc', 'ppi', 'interest rate decision']);
+  if (isNewsy) {
+    let newsFocus = 'all';
+    if (has(s, ['gold', 'xau']))                       newsFocus = 'gold';
+    else if (has(s, ['btc', 'bitcoin', 'crypto']))     newsFocus = 'btc';
+    return { intent: 'events', newsFocus, broker };
   }
 
   // Macro
@@ -351,11 +370,191 @@ function signalRouteBlock(lang) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  COUNTRY INTELLIGENCE & TIMEZONE LAYER
+// ════════════════════════════════════════════════════════════════════════════
+
+// Country → display name + IANA timezone
+export const COUNTRY_TZ = {
+  PK: { name: 'Pakistan',     tz: 'Asia/Karachi' },
+  IN: { name: 'India',        tz: 'Asia/Kolkata' },
+  BD: { name: 'Bangladesh',   tz: 'Asia/Dhaka' },
+  ID: { name: 'Indonesia',    tz: 'Asia/Jakarta' },
+  MY: { name: 'Malaysia',     tz: 'Asia/Kuala_Lumpur' },
+  VN: { name: 'Vietnam',      tz: 'Asia/Ho_Chi_Minh' },
+  TH: { name: 'Thailand',     tz: 'Asia/Bangkok' },
+  AE: { name: 'UAE',          tz: 'Asia/Dubai' },
+  SA: { name: 'Saudi Arabia', tz: 'Asia/Riyadh' },
+  EG: { name: 'Egypt',        tz: 'Africa/Cairo' },
+  GB: { name: 'UK',           tz: 'Europe/London' },
+  US: { name: 'United States',tz: 'America/New_York' },
+};
+
+// Language → most-likely country (with confidence)
+const LANG_COUNTRY = {
+  'ur':       { code: 'PK', confidence: 'high' },
+  'ur-roman': { code: 'PK', confidence: 'high' },
+  'bn':       { code: 'BD', confidence: 'high' },
+  'vi':       { code: 'VN', confidence: 'high' },
+  'th':       { code: 'TH', confidence: 'high' },
+  'id':       { code: 'ID', confidence: 'high' },
+  'ms':       { code: 'MY', confidence: 'high' },
+  'ar':       { code: 'AE', confidence: 'low'  }, // MENA is broad — confirm
+  'en':       { code: null, confidence: 'low'  },
+};
+
+// Explicit country mentions in the user's text (highest priority)
+const COUNTRY_HINTS = [
+  [/\b(pak|pakistan|pakistani|karachi|lahore|islamabad|pkt)\b/i, 'PK'],
+  [/\b(india|indian|delhi|mumbai|kolkata|ist time)\b/i,         'IN'],
+  [/\b(bangladesh|dhaka|bangladeshi)\b/i,                        'BD'],
+  [/\b(indonesia|jakarta|indonesian|wib)\b/i,                    'ID'],
+  [/\b(malaysia|malaysian|kuala lumpur|kl time)\b/i,             'MY'],
+  [/\b(vietnam|vietnamese|hanoi|ho chi minh|saigon)\b/i,         'VN'],
+  [/\b(thai|thailand|bangkok)\b/i,                               'TH'],
+  [/\b(uae|dubai|emirates|abu dhabi)\b/i,                        'AE'],
+  [/\b(saudi|riyadh|ksa|jeddah)\b/i,                             'SA'],
+  [/\b(egypt|cairo|egyptian)\b/i,                                'EG'],
+  [/\b(uk|u\.k\.|britain|british|london time|gmt)\b/i,           'GB'],
+  [/\b(usa|u\.s\.a|united states|new york|est time|american)\b/i,'US'],
+];
+
+export function parseCountryFromText(text) {
+  const s = (text || '').toLowerCase();
+  for (const [re, code] of COUNTRY_HINTS) if (re.test(s)) return code;
+  return null;
+}
+
+// Resolve the best geo for the user (priority: text > body country > profile > language)
+export function resolveGeo({ text, lang, bodyCountry, bodyTz, profileCountry }) {
+  // 1) Explicit mention in the message
+  const fromText = parseCountryFromText(text);
+  if (fromText && COUNTRY_TZ[fromText]) {
+    return { code: fromText, name: COUNTRY_TZ[fromText].name, tz: bodyTz || COUNTRY_TZ[fromText].tz, confidence: 'high', source: 'message' };
+  }
+  // 2) Country explicitly supplied by the client/profile
+  const known = (bodyCountry || profileCountry || '').toUpperCase();
+  if (known && COUNTRY_TZ[known]) {
+    return { code: known, name: COUNTRY_TZ[known].name, tz: bodyTz || COUNTRY_TZ[known].tz, confidence: 'high', source: 'stored' };
+  }
+  // 3) Language inference
+  const li = LANG_COUNTRY[lang] || LANG_COUNTRY.en;
+  if (li.code && COUNTRY_TZ[li.code]) {
+    return { code: li.code, name: COUNTRY_TZ[li.code].name, tz: bodyTz || COUNTRY_TZ[li.code].tz, confidence: li.confidence, source: 'language' };
+  }
+  // 4) Browser timezone only (no country label)
+  if (bodyTz) {
+    return { code: null, name: null, tz: bodyTz, confidence: 'low', source: 'browser-tz' };
+  }
+  // 5) Nothing — UTC
+  return { code: null, name: null, tz: 'UTC', confidence: 'none', source: 'utc' };
+}
+
+// Format an ISO (UTC) timestamp into the user's timezone
+function fmtTime(iso, tz) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: tz || 'UTC', weekday: 'short', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    }).format(d);
+  } catch { return null; }
+}
+
+// Same-calendar-day check in a given timezone
+function isSameDayInTz(iso, tz) {
+  try {
+    const fmt = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    return fmt(new Date(iso)) === fmt(new Date());
+  } catch { return false; }
+}
+
+function impactEmoji(impact) {
+  const i = (impact || '').toLowerCase();
+  if (i === 'high')   return '🔴';
+  if (i === 'medium') return '🟡';
+  return '⚪';
+}
+
+// ── EVENTS + NEWS RESPONSE (Priority 1: internal Finnhub/calendar data) ──────
+function buildEventsResponse({ calendarData, newsData, geo, lang, newsFocus }) {
+  const tz       = geo?.tz || 'UTC';
+  const tzLabel  = geo?.name ? `${geo.name} Time` : (tz === 'UTC' ? 'UTC' : 'your local time');
+  const t        = loc(lang);
+  const events   = (calendarData?.events || []).filter(e => e.time);
+  const articles = (newsData?.articles || []);
+
+  // Nothing internal available → graceful fallback (only then link the live calendar)
+  if (!events.length && !articles.length) {
+    return `## Market Events & News\n` +
+      `I couldn't load live event/news data right now (the data service may be busy). ` +
+      `Here's what typically drives the markets, and where to confirm the live schedule:\n\n` +
+      `- **CPI / PPI:** inflation prints — can move Gold, the USD, and risk assets.\n` +
+      `- **NFP / jobs:** labour data shifts Fed expectations.\n` +
+      `- **FOMC:** the Fed's rate decision and tone.\n\n` +
+      `Live calendar:\n${trustedSourceBlock(lang, 'calendar')}`;
+  }
+
+  let out = '';
+
+  // ── Economic events (converted to the user's timezone) ──
+  if (events.length) {
+    const todays   = events.filter(e => isSameDayInTz(e.time, tz));
+    const showList = (todays.length ? todays : events).slice(0, 6);
+    const heading  = todays.length ? `Today's Major Economic Events` : `Upcoming Major Economic Events`;
+    out += `## ${heading} — ${tzLabel}\n`;
+    if (!todays.length) out += `_No high-impact US releases scheduled for today in your timezone — here's what's next:_\n`;
+    out += '\n';
+    for (const e of showList) {
+      const when = fmtTime(e.time, tz) || e.time;
+      const est  = e.estimate != null ? ` · est **${e.estimate}${e.unit || ''}**` : '';
+      const prev = e.prev != null ? ` · prev ${e.prev}${e.unit || ''}` : '';
+      out += `- ${impactEmoji(e.impact)} **${when}** — ${e.event}${est}${prev}\n`;
+    }
+
+    // Risk level from high-impact events in the near window
+    const highCount = events.filter(e => (e.impact || '').toLowerCase() === 'high').length;
+    const medCount  = events.filter(e => (e.impact || '').toLowerCase() === 'medium').length;
+    const risk = highCount >= 1 ? '🔴 **HIGH**' : medCount >= 1 ? '🟡 **MEDIUM**' : '🟢 **LOW**';
+    out += `\n**News risk window:** ${risk} — ${highCount} high-impact and ${medCount} medium-impact US event(s) on the radar.\n`;
+
+    // Impact framing (awareness, never direction)
+    out += `\n**Possible market impact (awareness only — not a forecast):**\n` +
+      `- **Gold (XAU):** surprise inflation/Fed data can swing real yields and the dollar, which *may* drive Gold volatility.\n` +
+      `- **USD:** stronger-than-expected data tends to support the dollar; softer data the reverse.\n` +
+      `- **BTC:** as a risk asset, Bitcoin *may* react to shifts in risk appetite around these releases.\n` +
+      `\n⚠️ Around high-impact prints, spreads widen and whipsaws are common — many traders avoid the first minutes.`;
+  }
+
+  // ── Latest headlines (from Finnhub/GNews — internal) ──
+  if (articles.length) {
+    let pool = articles;
+    if (newsFocus === 'gold') pool = articles.filter(a => (a.assets || []).includes('gold'));
+    else if (newsFocus === 'btc') pool = articles.filter(a => (a.assets || []).some(x => x === 'btc' || x === 'bitcoin' || x === 'crypto'));
+    if (!pool.length) pool = articles;
+    const top = pool.slice(0, 4);
+    out += `${events.length ? '\n\n' : ''}## Latest Market Headlines\n`;
+    for (const a of top) {
+      const when = fmtTime(a.publishedAt, tz);
+      out += `- **${a.title}** — _${a.source}${when ? ` · ${when}` : ''}_\n`;
+    }
+  }
+
+  // ── Low-confidence country prompt ──
+  if (!geo || geo.confidence === 'low' || geo.confidence === 'none') {
+    out += `\n\n_🌍 I've shown times in **${tzLabel}**. **Which country are you trading from?** Tell me and I'll remember it and always convert event times to your local time._`;
+  }
+
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  RESPONSE GENERATION
 // ════════════════════════════════════════════════════════════════════════════
 
 export function generateResponse(ctx) {
-  const { text, lang = 'en', intent, marketData, patternData, knowledgeEntries, broker, isFirstMessage } = ctx;
+  const { text, lang = 'en', intent, marketData, patternData, knowledgeEntries, broker,
+          calendarData, newsData, geo, newsFocus, isFirstMessage } = ctx;
   const t = loc(lang);
   const disc = '\n\n' + t.disclaimer;
 
@@ -414,16 +613,19 @@ export function generateResponse(ctx) {
       return out + disc;
     }
 
-    // ── EVENTS ────────────────────────────────────────────────────────────
-    case 'events': {
-      let out = '## Economic Events — What They Mean\n' +
-        `- **CPI (inflation):** hotter-than-expected CPI can lift yields & the dollar → *possible* Gold pressure and risk-asset volatility. Softer CPI is often the reverse.\n` +
-        `- **NFP (jobs):** a strong labour market can support the dollar and shift Fed expectations; surprises drive sharp moves.\n` +
-        `- **FOMC (Fed decision):** rate decisions and the tone/dot-plot reset expectations across Gold, BTC, and the dollar.\n` +
-        `- **PPI:** an early inflation read that can foreshadow CPI direction.\n\n` +
-        `⚠️ Around these releases, spreads widen and whipsaws are common — many traders avoid the first minutes.\n\n` +
-        `**Check the live calendar (official/trusted):**\n${trustedSourceBlock(lang, 'calendar')}`;
-      return out + disc;
+    // ── EVENTS + NEWS (live internal data first) ───────────────────────────
+    case 'events':
+      return buildEventsResponse({ calendarData, newsData, geo, lang, newsFocus }) + disc;
+
+    // ── SET COUNTRY (store + confirm) ──────────────────────────────────────
+    case 'setcountry': {
+      const code = parseCountryFromText(text);
+      if (code && COUNTRY_TZ[code]) {
+        const c = COUNTRY_TZ[code];
+        return `✅ Got it — I'll remember you're trading from **${c.name}** and show all event, news, and session times in **${c.name} Time** (${c.tz}).\n\n` +
+          `Ask me *"today's news"* or *"upcoming events"* and I'll convert everything to your local time.` + disc;
+      }
+      return `Which country are you trading from? (e.g., Pakistan, India, Indonesia, UAE…) I'll remember it and convert all event & session times to your local timezone.`;
     }
 
     // ── TRADE ASSESSMENT ───────────────────────────────────────────────────

@@ -5464,32 +5464,64 @@ const AdminDashboard = (() => {
       map[field] = _pickBaColumn(columns, cands);
     }
 
-    // Build payload — skip rows without a valid account number.
-    // Aggregate duplicates inside the same file so onConflict has nothing
-    // to fight: keep the newest row by created_at, otherwise the last seen.
-    /* Phase 16.9 — classify ib_star_status inline so broker_accounts can
-       feed both the IB Stars Active page AND the Library OTP gate.
-       Rule (matches IbStars.updateFromBrokerRows + IB_CFG.ACTIVE_DAYS):
-         * last_trade_date within 30 days  → 'active'
-         * last_trade_date older than 30d  → 'inactive'
-         * last_trade_date null/unparseable → null  (unclassified) */
+    /* ╔══════════════════════════════════════════════════════════════════╗
+       ║  Phase 17A FINAL — IB STARS ACTIVE = TRADE ACTIVITY ONLY         ║
+       ║  ────────────────────────────────────────────────────────────────║
+       ║  Business rule (ONLY source of truth):                            ║
+       ║    ib_star_status = 'active'    IFF  last_trade_date is within    ║
+       ║                                      IB_CFG.ACTIVE_DAYS (30 d).   ║
+       ║    ib_star_status = 'inactive'  IFF  last_trade_date is older.    ║
+       ║    ib_star_status = NULL        IFF  no last_trade_date at all.   ║
+       ║                                                                   ║
+       ║  Email is NOT a classification input.  Delivery is NOT a          ║
+       ║  classification input.  Email enrichment from license_requests is ║
+       ║  still done so the Library OTP gate has a destination, but it     ║
+       ║  cannot change ib_star_status.                                    ║
+       ╚══════════════════════════════════════════════════════════════════╝ */
     const ACTIVE_WINDOW_MS = IB_CFG.ACTIVE_DAYS * 86_400_000;
-    function _ibStatusFromLastTradeIso(iso) {
-      if (!iso) return null;
-      const ms = new Date(iso).getTime();
+
+    function _ibStarStatusFromTrade(lastTradeIso) {
+      if (!lastTradeIso) return null;
+      const ms = new Date(lastTradeIso).getTime();
       if (isNaN(ms)) return null;
       return (Date.now() - ms) <= ACTIVE_WINDOW_MS ? 'active' : 'inactive';
     }
+
+    // Build an email/whatsapp lookup from license_requests purely for the
+    // Library OTP gate (broker reports usually omit the email column).
+    // This DOES NOT influence ib_star_status.
+    const _contactByAccount = new Map();
+    try {
+      const reqs = (typeof State !== 'undefined' && State && Array.isArray(State.requests))
+        ? State.requests : [];
+      for (const r of reqs) {
+        if (!r || !r.account) continue;
+        const key = normalizeAccountId(r.account);
+        if (!key) continue;
+        if (_contactByAccount.has(key)) continue;
+        const email = r.email ? String(r.email).trim() : null;
+        const wa    = r.whatsapp ? String(r.whatsapp).trim() : null;
+        if (email || wa) _contactByAccount.set(key, { email, whatsapp: wa });
+      }
+    } catch (_) { /* non-fatal */ }
 
     const byAccount = new Map();
     for (const row of rows) {
       const acct = normalizeAccountId(row[acctCol]);
       if (!acct) continue;
       const lastTradeIso = map.last_trade ? _isoDateOrNull(row[map.last_trade]) : null;
+
+      // Email + WhatsApp enrichment (display-only; does not gate ib_star_status)
+      const fileEmail = map.email    ? (row[map.email]    || null) : null;
+      const fileWa    = map.whatsapp ? (row[map.whatsapp] || null) : null;
+      const contact   = _contactByAccount.get(acct) || null;
+      const finalEmail = fileEmail || (contact ? contact.email    : null);
+      const finalWa    = fileWa    || (contact ? contact.whatsapp : null);
+
       const payload = {
         account_number:     acct,
-        email:              map.email        ? (row[map.email]        || null) : null,
-        whatsapp:           map.whatsapp     ? (row[map.whatsapp]     || null) : null,
+        email:              finalEmail,
+        whatsapp:           finalWa,
         broker:             map.broker       ? (row[map.broker]       || null) : null,
         partner_code:       map.partner_code ? (row[map.partner_code] || null) : null,
         last_trade_date:    lastTradeIso,
@@ -5500,7 +5532,7 @@ const AdminDashboard = (() => {
         revenue_total:      map.reward       ? _numOrNull(row[map.reward])      : null,
         volume_lots:        map.volume_lots  ? _numOrNull(row[map.volume_lots]) : null,
         volume_usd:         map.volume_usd   ? _numOrNull(row[map.volume_usd])  : null,
-        ib_star_status:     _ibStatusFromLastTradeIso(lastTradeIso),   // Phase 16.9
+        ib_star_status:     _ibStarStatusFromTrade(lastTradeIso),   // Phase 17A FINAL
         source_file:        sourceFileName || null,
         updated_at:         new Date().toISOString(),
       };
@@ -5606,7 +5638,10 @@ const AdminDashboard = (() => {
     },
 
     /* Update from broker file rows. Returns {newActive, newInactive,
-       transitionsToInactive[]} so the caller can enqueue notifications. */
+       transitionsToInactive[]} so the caller can enqueue notifications.
+       Phase 17A FINAL — classification is trade-activity ONLY (d ≤ 30 d).
+       Email is captured for display from State.requests when available, but
+       is never a classification input. */
     updateFromBrokerRows(rows, columns) {
       this.load();
       const data = this._data.accounts;
@@ -5616,6 +5651,18 @@ const AdminDashboard = (() => {
       const partCol  = columns[cols.indexOf(IB_CFG.PARTNER_CODE_COL)] || IB_CFG.PARTNER_CODE_COL;
       const now      = Date.now();
       const ACTIVE_MS = IB_CFG.ACTIVE_DAYS * 86_400_000;
+
+      // Optional email enrichment for display (not for classification).
+      const emailByAccount = {};
+      try {
+        const reqs = (typeof State !== 'undefined' && State && Array.isArray(State.requests))
+          ? State.requests : [];
+        for (const r of reqs) {
+          if (!r || !r.account || !r.email) continue;
+          const k = normalizeAccountId(r.account);
+          if (k && !emailByAccount[k]) emailByAccount[k] = String(r.email).trim();
+        }
+      } catch (_) { /* non-fatal */ }
 
       const transitionsToInactive = [];
       const transitionsToActive   = [];
@@ -5632,10 +5679,12 @@ const AdminDashboard = (() => {
 
         const lastTradeMs = lastTradeDate ? lastTradeDate.getTime() : (prev && prev.lastTradeMs) || null;
         const sinceLastTrade = lastTradeMs ? (now - lastTradeMs) : null;
+        // Phase 17A FINAL — pure trade-activity check.  Email NOT considered.
         const isActive = sinceLastTrade !== null && sinceLastTrade <= ACTIVE_MS;
 
         const updated = {
           account:         acct,
+          email:           emailByAccount[acct] || (prev && prev.email) || null,
           lastTradeMs,
           lastTradeISO:    lastTradeMs ? new Date(lastTradeMs).toISOString().slice(0, 10) : null,
           partnerCode,
@@ -6117,19 +6166,128 @@ const AdminDashboard = (() => {
     const empEl  = document.getElementById('ibStarsActiveEmpty');
     if (!bodyEl) return;
 
-    // Primary: Supabase
-    const dbRows = await _fetchBrokerAccountsByStatus('active', 2000);
-    let rows = dbRows.map(r => ({
-      account:      normalizeAccountId(r.account_number),
-      email:        r.email,
-      whatsapp:     r.whatsapp,
-      broker:       r.broker,
-      lastTradeISO: r.last_trade_date,
-      lastTradeMs:  r.last_trade_date ? new Date(r.last_trade_date).getTime() : null,
-      source:       'supabase',
-    }));
-    // Fallback: localStorage (Phase B legacy) — covers fresh dashboards
-    // before the SQL migration is run.
+    /* ╔══════════════════════════════════════════════════════════════════╗
+       ║  Phase 17A FINAL — SOURCE OF TRUTH = Active Clients ∩ d ≤ 30      ║
+       ║  ────────────────────────────────────────────────────────────────║
+       ║  Render is derived directly from CrmStore (the Active Clients     ║
+       ║  dataset).  No email filter.  No delivery filter.  No license     ║
+       ║  filter.  Accounts with blank email STILL appear and STILL show   ║
+       ║  ACTIVE status.                                                   ║
+       ║                                                                   ║
+       ║  Email is looked up from broker_accounts / State.requests for     ║
+       ║  display purposes only.  If unknown, the cell renders blank.      ║
+       ║                                                                   ║
+       ║  A fire-and-forget write-back patches broker_accounts.ib_star_    ║
+       ║  status = 'active' for every surfaced row so the Library OTP      ║
+       ║  gate sees the same set on the next request.                      ║
+       ╚══════════════════════════════════════════════════════════════════╝ */
+    const ACTIVE_DAY_CAP = IB_CFG.ACTIVE_DAYS;   // 30
+
+    // 1. Primary list = every CrmStore row whose daysSince(lastTrade) ≤ 30.
+    const crmRows = (typeof CrmStore !== 'undefined' && CrmStore && !CrmStore.isEmpty())
+      ? CrmStore.getActive() : [];
+    const crmRecent = crmRows
+      .map(r => ({
+        account:      normalizeAccountId(r.account),
+        accountRaw:   r.account,
+        email:        r.email || null,
+        whatsapp:     r.whatsapp || null,
+        broker:       r.broker || null,
+        lastTradeISO: r.lastTrade || null,
+        lastTradeMs:  r.lastTrade ? new Date(r.lastTrade).getTime() : null,
+        daysSince:    CrmStore.daysSince(r.lastTrade),
+        source:       'crm',
+      }))
+      .filter(r => r.daysSince !== null && r.daysSince <= ACTIVE_DAY_CAP);
+
+    // 2. Pull the existing Supabase rows so we can merge email/whatsapp/broker
+    //    when CrmStore doesn't carry them (broker file is the canonical contact
+    //    source for many tenants).
+    let dbRows = [];
+    try {
+      const cutoff = new Date(Date.now() - ACTIVE_DAY_CAP * 86_400_000)
+        .toISOString().slice(0, 10);
+      const { data, error } = await supabaseClient
+        .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+        .select('account_number, email, whatsapp, broker, last_trade_date, ib_star_status')
+        .or(`ib_star_status.eq.active,last_trade_date.gte.${cutoff}`)
+        .limit(5000);
+      if (!error) dbRows = data || [];
+    } catch (e) {
+      console.warn('[Phase17A FINAL] broker_accounts probe failed:', e);
+    }
+    const dbByAcct = new Map();
+    dbRows.forEach(r => dbByAcct.set(normalizeAccountId(r.account_number), r));
+
+    // 3. Also build State.requests email map for last-resort enrichment.
+    const reqEmailByAcct = new Map();
+    try {
+      const reqs = (typeof State !== 'undefined' && State && Array.isArray(State.requests))
+        ? State.requests : [];
+      for (const r of reqs) {
+        if (!r || !r.account || !r.email) continue;
+        const k = normalizeAccountId(r.account);
+        if (k && !reqEmailByAcct.has(k)) reqEmailByAcct.set(k, String(r.email).trim());
+      }
+    } catch (_) {}
+
+    // 4. Merge: every CrmStore recent row goes in, enriched with email/broker
+    //    from broker_accounts → State.requests when CrmStore was missing them.
+    const merged = new Map();
+    for (const r of crmRecent) {
+      const dbHit = dbByAcct.get(r.account);
+      const reqEmail = reqEmailByAcct.get(r.account) || null;
+      merged.set(r.account, {
+        account:      r.account,
+        email:        r.email || (dbHit && dbHit.email) || reqEmail || null,
+        whatsapp:     r.whatsapp || (dbHit && dbHit.whatsapp) || null,
+        broker:       r.broker || (dbHit && dbHit.broker) || null,
+        lastTradeISO: r.lastTradeISO || (dbHit && dbHit.last_trade_date) || null,
+        lastTradeMs:  r.lastTradeMs,
+        source:       'crm',
+      });
+    }
+    // 5. Also include any DB row already tagged active that the CrmStore
+    //    didn't carry — keeps the page resilient on fresh browsers where
+    //    the CrmStore localStorage is empty but the DB has data.
+    for (const r of dbRows) {
+      const acct = normalizeAccountId(r.account_number);
+      if (merged.has(acct)) continue;
+      if (r.ib_star_status !== 'active') continue;
+      merged.set(acct, {
+        account:      acct,
+        email:        r.email || reqEmailByAcct.get(acct) || null,
+        whatsapp:     r.whatsapp || null,
+        broker:       r.broker || null,
+        lastTradeISO: r.last_trade_date,
+        lastTradeMs:  r.last_trade_date ? new Date(r.last_trade_date).getTime() : null,
+        source:       'supabase',
+      });
+    }
+    let rows = Array.from(merged.values()).sort((a, b) => (b.lastTradeMs || 0) - (a.lastTradeMs || 0));
+
+    // 6. Fire-and-forget write-back so broker_accounts.ib_star_status reflects
+    //    the rendered set — the Library OTP gate will see the same accounts.
+    rows.forEach(r => {
+      const dbHit = dbByAcct.get(r.account);
+      // Only PATCH if the DB row is missing or its status is not already 'active'.
+      if (dbHit && dbHit.ib_star_status === 'active') return;
+      try {
+        const payload = { ib_star_status: 'active', last_trade_date: r.lastTradeISO };
+        if (r.email)    payload.email    = r.email;
+        if (r.whatsapp) payload.whatsapp = r.whatsapp;
+        supabaseClient
+          .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+          .upsert([{ account_number: r.account, ...payload }], { onConflict: 'account_number' })
+          .then(({ error }) => {
+            if (error) console.warn('[Phase17A FINAL] write-back failed for', r.account, error.message);
+          });
+      } catch (e) { console.warn('[Phase17A FINAL] write-back exception for', r.account, e); }
+    });
+
+    // 7. Last-resort fallback: localStorage IbStars (only when CrmStore AND
+    //    Supabase both came up empty — e.g. very fresh browser before any
+    //    intake has happened).
     if (rows.length === 0) {
       const local = IbStars.getActive();
       rows = local.map(r => ({ ...r, source: 'local' }));

@@ -8,7 +8,7 @@
 // knowledge base, broker dataset), then routes to trusted official sources.
 // ──────────────────────────────────────────────────────────────────────
 
-import { detectLanguage, classifyIntent, generateResponse } from '../utils/ai-engine.js';
+import { detectLanguage, classifyIntent, generateResponse, resolveGeo } from '../utils/ai-engine.js';
 import { getKnowledgeEntries } from './ai-knowledge.js';
 
 const SSE_HEADERS = {
@@ -434,6 +434,8 @@ export async function onRequest(context) {
 
   const rawMessages = body?.messages;
   const userId      = typeof body?.userId === 'string' ? body.userId.slice(0, 80) : null;
+  const bodyTz      = typeof body?.tz === 'string' ? body.tz.slice(0, 64) : null;          // browser timezone
+  const bodyCountry = typeof body?.country === 'string' ? body.country.slice(0, 4).toUpperCase() : null;
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return new Response(JSON.stringify({ error: '`messages` array is required' }), { status: 400, headers: JSON_HEADERS });
   }
@@ -509,6 +511,27 @@ export async function onRequest(context) {
     catch { knowledgeEntries = []; }
   }
 
+  // ── NEWS + ECONOMIC CALENDAR (Priority 1: live Finnhub data via internal APIs)
+  let calendarData = null;
+  let newsData     = null;
+  if (cls.intent === 'events') {
+    const [calRes, newsRes] = await Promise.allSettled([
+      fetch(`${baseUrl}/api/calendar`, { signal: AbortSignal.timeout(4000) }),
+      fetch(`${baseUrl}/api/news`,     { signal: AbortSignal.timeout(4000) }),
+    ]);
+    if (calRes.status === 'fulfilled' && calRes.value?.ok)  calendarData = await calRes.value.json().catch(() => null);
+    if (newsRes.status === 'fulfilled' && newsRes.value?.ok) newsData     = await newsRes.value.json().catch(() => null);
+  }
+
+  // ── COUNTRY INTELLIGENCE: resolve user geo + timezone ─────────────────────
+  const geo = resolveGeo({
+    text:          lastUserMsg,
+    lang,
+    bodyCountry,
+    bodyTz,
+    profileCountry: memoryData?.profile?.country || null,
+  });
+
   // ── GENERATE THE ANSWER FROM INTERNAL INTELLIGENCE (free engine) ──────────
   let answer;
   try {
@@ -518,10 +541,14 @@ export async function onRequest(context) {
       intent:      cls.intent,
       platform:    cls.platform,
       broker:      cls.broker,
+      newsFocus:   cls.newsFocus,
       marketData,
       patternData,
       memoryData,
       knowledgeEntries,
+      calendarData,
+      newsData,
+      geo,
       isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
     });
   } catch (err) {
