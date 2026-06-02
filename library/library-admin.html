@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Library Admin — Z Trade University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+/* =============================================================================
+   LIBRARY ADMIN DASHBOARD — Z TRADE UNIVERSITY
+   System B (Library Supabase) management only.
+   Visual language: dark navy + purple + lime — matches library.html.
+   This page is NOT linked from the public site.
+============================================================================= */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #060a14;
+  --surface:   #0d1220;
+  --surface2:  #121929;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e2e8f4;
+  --muted:     #64748b;
+  --muted2:    #94a3b8;
+  --purple:    #7c3aed;
+  --purple2:   #9f6ef5;
+  --lime:      #acd400;
+  --lime2:     #c6f000;
+  --navy:      #0b1120;
+  --red:       #ef4444;
+  --amber:     #f59e0b;
+  --green:     #22c55e;
+  --r:         12px;
+  --r-lg:      18px;
+  --sidebar-w: 220px;
+  --topbar-h:  58px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+/* ── PASSCODE GATE ─────────────────────────────────────── */
+#passGate {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.pass-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r-lg); padding: 40px 36px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.50);
+  text-align: center;
+}
+.pass-logo {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px; font-weight: 900; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--lime); margin-bottom: 24px;
+}
+.pass-title { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 900; color: var(--text); margin-bottom: 6px; }
+.pass-sub { font-size: 13px; color: var(--muted2); margin-bottom: 28px; }
+.pass-input {
+  width: 100%; padding: 12px 16px; text-align: center;
+  background: var(--bg); border: 1.5px solid var(--border2); border-radius: var(--r);
+  color: var(--text); font-size: 16px; font-family: 'Inter', sans-serif;
+  outline: none; letter-spacing: 4px; margin-bottom: 14px;
+  transition: border-color .18s, box-shadow .18s;
+}
+.pass-input:focus { border-color: var(--purple2); box-shadow: 0 0 0 3px rgba(124,58,237,0.14); }
+.pass-btn {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  color: #fff; border: none; border-radius: var(--r);
+  font-size: 14px; font-weight: 800; font-family: 'Inter', sans-serif;
+  cursor: pointer; transition: .2s;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.30);
+}
+.pass-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(124,58,237,0.42); }
+.pass-err { font-size: 12.5px; color: var(--red); margin-top: 10px; display: none; }
+.pass-err.show { display: block; }
+
+/* ── APP SHELL ──────────────────────────────────────────── */
+#appShell { display: none; height: 100vh; flex-direction: column; }
+#appShell.visible { display: flex; }
+
+/* ── TOP BAR ────────────────────────────────────────────── */
+.topbar {
+  height: var(--topbar-h); flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 14px;
+  position: relative; z-index: 50;
+}
+.topbar-logo {
+  font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 900;
+  letter-spacing: 2.5px; text-transform: uppercase; color: var(--lime);
+  white-space: nowrap;
+}
+.topbar-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+.topbar-title { font-size: 13px; font-weight: 700; color: var(--muted2); flex: 1; }
+.topbar-badge {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 100px;
+  background: rgba(124,58,237,0.18); border: 1px solid rgba(124,58,237,0.30);
+  color: var(--purple2); white-space: nowrap;
+}
+.topbar-lock {
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--muted2); font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border-radius: 8px; cursor: pointer; transition: .18s;
+}
+.topbar-lock:hover { background: rgba(239,68,68,0.14); color: #fca5a5; border-color: rgba(239,68,68,0.25); }
+
+/* ── BODY ROW ────────────────────────────────────────────── */
+.body-row { flex: 1; display: flex; overflow: hidden; }
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden;
+}
+.sidebar-section { padding: 8px; }
+.sidebar-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
+  color: var(--muted); padding: 10px 10px 6px;
+}
+.nav-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 9px 10px; border-radius: 9px;
+  background: none; border: none; cursor: pointer;
+  color: var(--muted2); font-size: 13px; font-weight: 500;
+  text-align: left; transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.nav-btn svg { flex-shrink: 0; opacity: .8; }
+.nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.nav-btn.active { background: rgba(124,58,237,0.16); color: var(--purple2); font-weight: 700; }
+.nav-btn.active svg { opacity: 1; }
+.nav-divider { height: 1px; background: var(--border); margin: 6px 10px; }
+.sidebar-count {
+  margin-left: auto; font-size: 10.5px; font-weight: 800;
+  padding: 2px 7px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); color: var(--muted2);
+}
+
+/* ── MAIN AREA ───────────────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── PAGE HEADER ─────────────────────────────────────────── */
+.page-head {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.page-head h1 { font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 900; color: var(--text); flex: 1; }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: var(--r); border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; font-family: 'Inter', sans-serif;
+  transition: .18s; white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  color: #fff; box-shadow: 0 3px 12px rgba(124,58,237,0.28);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124,58,237,0.42); }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+.btn-ghost { background: rgba(255,255,255,0.05); color: var(--muted2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+.btn-danger { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.22); }
+.btn-danger:hover { background: rgba(239,68,68,0.22); }
+.btn-success { background: rgba(34,197,94,0.12); color: #86efac; border: 1px solid rgba(34,197,94,0.22); }
+.btn-success:hover { background: rgba(34,197,94,0.20); }
+.btn-amber { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.22); }
+.btn-amber:hover { background: rgba(245,158,11,0.22); }
+
+/* ── FILTERS BAR ─────────────────────────────────────────── */
+.filters-bar {
+  padding: 12px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.search-box {
+  flex: 1; min-width: 180px; position: relative;
+}
+.search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search-box input {
+  width: 100%; padding: 8px 12px 8px 34px;
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 9px;
+  color: var(--text); font-size: 13px; font-family: 'Inter', sans-serif;
+  outline: none; transition: border-color .18s;
+}
+.search-box input:focus { border-color: var(--purple2); }
+.search-box input::placeholder { color: var(--muted); }
+.filter-select {
+  padding: 8px 30px 8px 10px; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 9px; color: var(--text); font-size: 13px; font-family: 'Inter', sans-serif;
+  cursor: pointer; outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 9px center;
+  transition: border-color .18s;
+}
+.filter-select:focus { border-color: var(--purple2); }
+
+/* ── CONTENT TABLE ───────────────────────────────────────── */
+.table-wrap { flex: 1; overflow-y: auto; padding: 16px 24px 24px; }
+.content-table { width: 100%; border-collapse: collapse; }
+.content-table th {
+  font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border);
+  text-align: left; white-space: nowrap;
+}
+.content-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.content-table tr:last-child td { border-bottom: none; }
+.content-table tr:hover td { background: rgba(255,255,255,0.025); }
+
+.cell-cover {
+  width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.cell-cover img { width: 100%; height: 100%; object-fit: cover; }
+.cell-title { font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.cell-meta { font-size: 11.5px; color: var(--muted2); }
+.lang-chip {
+  display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .8px;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 100px;
+  background: rgba(124,58,237,0.14); color: var(--purple2);
+  border: 1px solid rgba(124,58,237,0.22);
+}
+.status-dot {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600;
+}
+.status-dot::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.status-dot.pub { color: #86efac; }
+.status-dot.pub::before { background: var(--green); box-shadow: 0 0 0 2px rgba(34,197,94,0.25); }
+.status-dot.unpub { color: var(--muted2); }
+.status-dot.unpub::before { background: var(--muted); }
+.status-dot.feat { color: #fcd34d; }
+.status-dot.feat::before { background: var(--amber); }
+.actions-cell { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.empty-row td { text-align: center; padding: 48px; color: var(--muted2); font-size: 13px; }
+.loading-row td { text-align: center; padding: 40px; }
+
+/* ── MODAL OVERLAY ───────────────────────────────────────── */
+.modal-bg {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(4,7,15,0.85);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  align-items: flex-start; justify-content: center; padding: 24px 16px;
+  overflow-y: auto;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r-lg); width: 100%; max-width: 640px;
+  flex-shrink: 0; margin: auto;
+  box-shadow: 0 28px 70px rgba(0,0,0,0.60);
+  animation: mIn .24s cubic-bezier(.16,1,.3,1);
+}
+@keyframes mIn { from { opacity:0; transform:translateY(18px) scale(.96); } to { opacity:1; transform:none; } }
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-head h2 { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 900; color: var(--text); }
+.modal-x { background: none; border: none; cursor: pointer; color: var(--muted2); font-size: 20px; line-height: 1; transition: color .15s; }
+.modal-x:hover { color: var(--text); }
+.modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+.modal-foot { padding: 14px 22px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ── FORM ELEMENTS ───────────────────────────────────────── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 11.5px; font-weight: 700; letter-spacing: .5px; color: var(--muted2); text-transform: uppercase; }
+.form-label span { color: var(--red); margin-left: 2px; }
+.form-input, .form-select, .form-textarea {
+  padding: 10px 12px; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: var(--r); color: var(--text); font-size: 13px; font-family: 'Inter', sans-serif;
+  outline: none; transition: border-color .18s, box-shadow .18s; width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--purple2); box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+}
+.form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+.form-select { appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+}
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-hint { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border2); border-radius: var(--r); }
+.toggle-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.toggle-sub { font-size: 11.5px; color: var(--muted2); }
+.toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: rgba(255,255,255,0.12); border-radius: 22px;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%;
+  left: 3px; bottom: 3px; background: #fff;
+  transition: transform .2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--purple); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* ── UPLOAD FIELD ────────────────────────────────────────── */
+.upload-zone {
+  border: 1.5px dashed var(--border2); border-radius: var(--r);
+  padding: 18px 16px; text-align: center; cursor: pointer;
+  transition: border-color .18s, background .18s; position: relative;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--purple2); background: rgba(124,58,237,0.05); }
+.upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon { font-size: 26px; margin-bottom: 8px; }
+.upload-label { font-size: 13px; font-weight: 600; color: var(--muted2); }
+.upload-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.upload-preview {
+  display: none; align-items: center; gap: 10px;
+  padding: 10px 12px; background: rgba(124,58,237,0.08);
+  border: 1px solid rgba(124,58,237,0.20); border-radius: var(--r);
+  font-size: 12.5px; color: var(--purple2);
+}
+.upload-preview.show { display: flex; }
+.upload-preview-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-preview-remove { background: none; border: none; cursor: pointer; color: var(--muted2); font-size: 16px; padding: 0; line-height: 1; transition: color .15s; }
+.upload-preview-remove:hover { color: var(--red); }
+
+/* ── PROGRESS BAR ────────────────────────────────────────── */
+.upload-progress { display: none; margin-top: 8px; }
+.upload-progress.show { display: block; }
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--purple), var(--lime));
+  border-radius: 2px; width: 0%; transition: width .2s;
+}
+.progress-label { font-size: 11px; color: var(--muted2); margin-top: 4px; text-align: right; }
+
+/* ── TOAST ───────────────────────────────────────────────── */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 8px; }
+.toast-item {
+  padding: 12px 18px; border-radius: var(--r);
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  animation: tIn .25s cubic-bezier(.16,1,.3,1);
+  max-width: 340px;
+}
+@keyframes tIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+.toast-success { background: #14532d; color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+.toast-error   { background: #450a0a; color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+.toast-info    { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border); }
+
+/* ── SPINNER ─────────────────────────────────────────────── */
+.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: rot .6s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* ── STATS ROW ───────────────────────────────────────────── */
+.stats-row { display: flex; gap: 14px; padding: 16px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+.stat-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); font-size: 12.5px; font-weight: 600; color: var(--muted2);
+}
+.stat-chip b { color: var(--text); font-weight: 800; }
+.stat-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── SETUP PANEL ─────────────────────────────────────────── */
+.setup-panel { padding: 24px; overflow-y: auto; flex: 1; }
+.setup-section {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-lg); padding: 22px 24px; margin-bottom: 18px;
+}
+.setup-section h3 {
+  font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 900;
+  color: var(--text); margin-bottom: 5px;
+}
+.setup-section p { font-size: 12.5px; color: var(--muted2); line-height: 1.6; margin-bottom: 14px; }
+.setup-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.setup-row .form-group { flex: 1; min-width: 220px; }
+.key-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700; padding: 5px 12px;
+  border-radius: 100px; margin-bottom: 12px;
+}
+.key-status.ok  { background: rgba(34,197,94,0.12); color: #86efac; border: 1px solid rgba(34,197,94,0.22); }
+.key-status.bad { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.22); }
+.bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 10px; margin-top: 14px; }
+.bucket-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.bucket-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.bucket-meta { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.bucket-st {
+  font-size: 11px; font-weight: 800; padding: 3px 10px;
+  border-radius: 100px; white-space: nowrap; flex-shrink: 0;
+}
+.bucket-st.exists { background: rgba(34,197,94,0.12); color: #86efac; }
+.bucket-st.missing { background: rgba(239,68,68,0.12); color: #fca5a5; }
+.bucket-st.checking { background: rgba(255,255,255,0.05); color: var(--muted2); }
+.setup-code {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px;
+  font-size: 11.5px; font-family: 'JetBrains Mono', 'Courier New', monospace;
+  color: var(--muted2); line-height: 1.7; white-space: pre-wrap; word-break: break-all;
+  margin-top: 10px;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .form-row, .form-row.triple { grid-template-columns: 1fr; }
+  .page-head { flex-wrap: wrap; }
+  .filters-bar { flex-direction: column; align-items: stretch; }
+  .search-box { min-width: 0; }
+}
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     PASSCODE GATE
+════════════════════════════════════════════════════════ -->
+<div id="passGate">
+  <div class="pass-card">
+    <div class="pass-logo">Z Trade University</div>
+    <h1 class="pass-title">Library Admin</h1>
+    <p class="pass-sub">Enter the admin passcode to continue.</p>
+    <input type="password" class="pass-input" id="passInput" placeholder="••••••••" autocomplete="current-password" />
+    <button class="pass-btn" onclick="checkPass()">Enter Dashboard</button>
+    <div class="pass-err" id="passErr">Incorrect passcode.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════ -->
+<div id="appShell">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">ZTU Library</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-title">Content Management — System B (Library Supabase)</div>
+    <div class="topbar-badge">Admin</div>
+    <button class="topbar-lock" onclick="lockDashboard()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle;" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Lock
+    </button>
+  </div>
+
+  <div class="body-row">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Content</div>
+        <button class="nav-btn active" data-tab="books" onclick="switchTab('books',this)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Books &amp; PDFs
+          <span class="sidebar-count" id="countBooks">—</span>
+        </button>
+        <button class="nav-btn" data-tab="audio" onclick="switchTab('audio',this)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          Audio Sessions
+          <span class="sidebar-count" id="countAudio">—</span>
+        </button>
+        <button class="nav-btn" data-tab="videos" onclick="switchTab('videos',this)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Videos
+          <span class="sidebar-count" id="countVideos">—</span>
+        </button>
+        <div class="nav-divider"></div>
+        <button class="nav-btn" data-tab="settings" onclick="switchTab('settings',this)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Storage Setup
+          <span class="sidebar-count" id="setupBadge" style="background:rgba(245,158,11,0.18);color:#fcd34d;border:1px solid rgba(245,158,11,0.30);">!</span>
+        </button>
+        <div class="nav-divider"></div>
+        <button class="nav-btn" onclick="window.open('../library.html','_blank')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          View Library Page
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="mainArea">
+
+      <!-- PAGE HEADER -->
+      <div class="page-head">
+        <h1 id="pageTitle">Books &amp; PDFs</h1>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add New
+        </button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-chip"><span class="dot" style="background:var(--green)"></span>Published: <b id="statPub">—</b></div>
+        <div class="stat-chip"><span class="dot" style="background:var(--muted)"></span>Drafts: <b id="statDraft">—</b></div>
+        <div class="stat-chip"><span class="dot" style="background:var(--amber)"></span>Featured: <b id="statFeat">—</b></div>
+        <div class="stat-chip">Total: <b id="statTotal">—</b></div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="filterSearch" placeholder="Search titles…" oninput="filterTable()" autocomplete="off" />
+        </div>
+        <select class="filter-select" id="filterLang" onchange="filterTable()">
+          <option value="">All Languages</option>
+          <option value="english">English</option>
+          <option value="urdu">Urdu</option>
+          <option value="arabic">Arabic</option>
+          <option value="hindi">Hindi</option>
+          <option value="turkish">Turkish</option>
+          <option value="swahili">Swahili</option>
+          <option value="indonesian">Indonesian</option>
+          <option value="portuguese">Portuguese</option>
+          <option value="vietnamese">Vietnamese</option>
+        </select>
+        <select class="filter-select" id="filterStatus" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="featured">Featured</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadCurrentTab()" style="margin-left:auto;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap" id="tableWrap">
+        <table class="content-table" id="contentTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody">
+            <tr class="loading-row"><td colspan="8"><span class="spin"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- STORAGE SETUP PANEL (hidden until Settings tab selected) -->
+      <div class="setup-panel" id="setupPanel" style="display:none;">
+
+        <!-- Key Status Banner -->
+        <div class="setup-section">
+          <h3>Upload Key Status</h3>
+          <p>File uploads require a <strong>service role key</strong> — the anon key is blocked by Supabase's default storage policies. Enter your service role key below. It is stored in <code>sessionStorage</code> only (cleared when you close the tab).</p>
+          <div id="keyStatusBadge" class="key-status bad">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Using anon key — uploads will be blocked
+          </div>
+          <div class="setup-row">
+            <div class="form-group">
+              <label class="form-label">Service Role Key</label>
+              <input type="password" class="form-input" id="svcKeyInput" placeholder="eyJhbGciOi…  (from Supabase → Settings → API)" autocomplete="off" />
+              <div class="form-hint">Find it in: Supabase Dashboard → Project Settings → API → service_role (secret)</div>
+            </div>
+            <button class="btn btn-primary" onclick="applyServiceKey()" style="margin-bottom:0;flex-shrink:0;">
+              Apply Key
+            </button>
+            <button class="btn btn-ghost" onclick="clearServiceKey()" style="margin-bottom:0;flex-shrink:0;">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Bucket Initialization -->
+        <div class="setup-section">
+          <h3>Storage Buckets</h3>
+          <p>These four buckets must exist in your Library Supabase project. Click "Initialize Buckets" to create any that are missing (requires service role key above).</p>
+          <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="initStorageBuckets()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Initialize All Buckets
+            </button>
+            <button class="btn btn-ghost" onclick="checkBucketStatus()">
+              Check Status
+            </button>
+          </div>
+          <div class="bucket-grid" id="bucketGrid">
+            <div class="bucket-card"><div><div class="bucket-name">library-covers</div><div class="bucket-meta">Public · Cover images</div></div><span class="bucket-st checking" id="bs-library-covers">—</span></div>
+            <div class="bucket-card"><div><div class="bucket-name">library-books</div><div class="bucket-meta">Private · PDFs</div></div><span class="bucket-st checking" id="bs-library-books">—</span></div>
+            <div class="bucket-card"><div><div class="bucket-name">library-audio</div><div class="bucket-meta">Private · Audio files</div></div><span class="bucket-st checking" id="bs-library-audio">—</span></div>
+            <div class="bucket-card"><div><div class="bucket-name">library-videos</div><div class="bucket-meta">Private · Video files</div></div><span class="bucket-st checking" id="bs-library-videos">—</span></div>
+          </div>
+        </div>
+
+        <!-- Alternative: RLS Policy SQL -->
+        <div class="setup-section">
+          <h3>Alternative: Allow Uploads via Anon Key</h3>
+          <p>If you prefer not to use the service role key in the browser, run this SQL in the Supabase SQL Editor to allow the anon role to upload to each bucket.</p>
+          <pre class="setup-code">-- Run in Supabase SQL Editor for each bucket:
+CREATE POLICY "Admin anon uploads" ON storage.objects
+  FOR INSERT TO anon
+  WITH CHECK (bucket_id IN ('library-covers','library-books','library-audio','library-videos'));
+
+-- Also allow reading (required for public URL display):
+CREATE POLICY "Admin anon reads" ON storage.objects
+  FOR SELECT TO anon
+  USING (bucket_id IN ('library-covers','library-books','library-audio','library-videos'));
+
+-- Allow updates (x-upsert):
+CREATE POLICY "Admin anon updates" ON storage.objects
+  FOR UPDATE TO anon
+  USING (bucket_id IN ('library-covers','library-books','library-audio','library-videos'));</pre>
+        </div>
+
+      </div><!-- /setupPanel -->
+
+    </main>
+  </div><!-- body-row -->
+</div><!-- appShell -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     ADD / EDIT MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalBox">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add Book</h2>
+      <button class="modal-x" onclick="closeModal()" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Injected by JS per content type -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="saveItem()">
+        Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+
+<script>
+/* =============================================================================
+   LIBRARY ADMIN — JAVASCRIPT
+   Manages Library Supabase (System B) content only.
+   NEVER touches EA System A.
+============================================================================= */
+
+/* ── CONFIG ── */
+/* Change ADMIN_PASSCODE to your preferred passcode.
+   For production, consider using Supabase Auth instead. */
+const ADMIN_PASSCODE        = 'ztu-admin-2024';  /* TODO: change before going live */
+const LIBRARY_SUPABASE_URL  = 'https://dcgtmiduqxnmfjkimxeh.supabase.co';
+const LIBRARY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZ3RtaWR1cXhubWZqa2lteGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDU0OTcsImV4cCI6MjA5NTc4MTQ5N30.Sg64TwDYMoOCqkcJmhUTQ2i3IQZyTQIT5FIJVmwbkwg';
+/* LIBRARY_SERVICE_KEY — used for file uploads to Supabase Storage.
+   Two options:
+   A) Use the SERVICE ROLE KEY (Supabase → Settings → API → service_role).
+      This bypasses RLS and always works. Keep it private — admin-only page.
+   B) Use the anon key (already set below) — works ONLY if your Storage
+      bucket policies explicitly allow anonymous INSERT (not recommended).
+   Recommended: replace with your service role key. */
+const LIBRARY_SERVICE_KEY   = LIBRARY_SUPABASE_KEY; /* Fallback — override via Storage Setup panel */
+const PASS_SESSION_KEY      = 'ztu_lib_admin_pass';
+const SVC_KEY_SESSION       = 'ztu_lib_svc_key';
+
+/* Returns the best available upload key:
+   1. Service role key entered in the Setup panel (sessionStorage)
+   2. Hardcoded LIBRARY_SERVICE_KEY constant (falls back to anon key)       */
+function getUploadKey() {
+  return sessionStorage.getItem(SVC_KEY_SESSION) || LIBRARY_SERVICE_KEY;
+}
+
+function isUsingServiceKey() {
+  const k = getUploadKey();
+  return k !== LIBRARY_SUPABASE_KEY && k.length > 40;
+}
+
+/* ── LANGUAGES ── */
+const LANGS = ['english','urdu','arabic','hindi','turkish','swahili','indonesian','portuguese','vietnamese'];
+
+/* ── STATE ── */
+let currentTab  = 'books';
+let allItems    = [];
+let editingId   = null;
+
+/* =============================================================================
+   PASSCODE GATE
+============================================================================= */
+function checkPass() {
+  const val = document.getElementById('passInput').value;
+  if (val === ADMIN_PASSCODE) {
+    sessionStorage.setItem(PASS_SESSION_KEY, '1');
+    document.getElementById('passGate').style.display = 'none';
+    document.getElementById('appShell').classList.add('visible');
+    loadCurrentTab();
+  } else {
+    const err = document.getElementById('passErr');
+    err.classList.add('show');
+    document.getElementById('passInput').value = '';
+    document.getElementById('passInput').focus();
+    setTimeout(() => err.classList.remove('show'), 3000);
+  }
+}
+
+function lockDashboard() {
+  sessionStorage.removeItem(PASS_SESSION_KEY);
+  document.getElementById('passGate').style.display = 'flex';
+  document.getElementById('appShell').classList.remove('visible');
+  document.getElementById('passInput').value = '';
+}
+
+/* Auto-login if session stored */
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem(PASS_SESSION_KEY) === '1') {
+    document.getElementById('passGate').style.display = 'none';
+    document.getElementById('appShell').classList.add('visible');
+    loadCurrentTab();
+  }
+  document.getElementById('passInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPass();
+  });
+  document.getElementById('modalBg').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalBg')) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+});
+
+/* =============================================================================
+   SUPABASE HELPERS
+============================================================================= */
+async function sbGet(table, qs = '') {
+  const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+    headers: { 'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}` }
+  });
+  if (!r.ok) throw new Error(`GET ${table} failed: ${r.status}`);
+  return r.json();
+}
+
+async function sbInsert(table, data) {
+  const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(`INSERT ${table} failed: ${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+async function sbUpdate(table, id, data) {
+  const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(`UPDATE ${table} failed: ${r.status}`);
+  return r.json();
+}
+
+async function sbDelete(table, id) {
+  const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}` }
+  });
+  if (!r.ok) throw new Error(`DELETE ${table} failed: ${r.status}`);
+}
+
+/* Upload file to Supabase Storage, return public URL.
+   Supabase Storage REST API requires raw binary body + correct Content-Type.
+   Uses getUploadKey() which prefers a session-stored service role key.       */
+async function uploadFile(bucket, path, file, onProgress) {
+  const uploadKey = getUploadKey();
+
+  /* Warn if still on anon key — upload will likely be rejected */
+  if (uploadKey === LIBRARY_SUPABASE_KEY) {
+    console.warn('[upload] Using anon key — upload will fail unless bucket RLS allows anon INSERT. Go to Storage Setup to add a service role key.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `${LIBRARY_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+    xhr.open('POST', url);
+
+    /* Auth headers — use best available key */
+    xhr.setRequestHeader('apikey',        uploadKey);
+    xhr.setRequestHeader('Authorization', `Bearer ${uploadKey}`);
+
+    /* Raw binary upload: Content-Type must be the file's MIME type.
+       Using FormData / multipart here causes Supabase to return 400.        */
+    xhr.setRequestHeader('Content-Type',  file.type || 'application/octet-stream');
+
+    /* Allow overwriting existing files at the same path */
+    xhr.setRequestHeader('x-upsert', 'true');
+
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round(e.loaded / e.total * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const publicUrl = `${LIBRARY_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+        resolve(publicUrl);
+      } else {
+        /* Extract exact Supabase error message for actionable feedback */
+        let detail = xhr.responseText || '(empty response)';
+        try {
+          const parsed = JSON.parse(xhr.responseText);
+          detail = parsed.message || parsed.error || detail;
+        } catch {}
+        const fullMsg = `Upload failed (${xhr.status}): ${detail}`;
+        console.error(`[upload] ${bucket}/${path} →`, fullMsg);
+        reject(new Error(fullMsg));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Upload network error — possible CORS issue or no internet'));
+    };
+
+    /* Send raw file bytes — Supabase expects the binary body directly */
+    xhr.send(file);
+  });
+}
+
+/* =============================================================================
+   TAB NAVIGATION
+============================================================================= */
+const TAB_CONFIG = {
+  books:  { label: 'Books & PDFs',      table: 'library_books',  icon: '📖' },
+  audio:  { label: 'Audio Sessions',    table: 'library_audio',  icon: '🎵' },
+  videos: { label: 'Videos',            table: 'library_videos', icon: '🎬' }
+};
+
+function switchTab(tab, btnEl) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b === btnEl));
+
+  const isSettings = tab === 'settings';
+  document.getElementById('tableWrap').style.display   = isSettings ? 'none' : '';
+  document.getElementById('setupPanel').style.display  = isSettings ? 'block' : 'none';
+  document.getElementById('statsRow').style.display    = isSettings ? 'none' : '';
+  document.getElementById('filters-bar-el') && (document.getElementById('filters-bar-el').style.display = isSettings ? 'none' : '');
+
+  /* Hide Add New button and filters on settings tab */
+  const addBtn = document.querySelector('.page-head .btn-primary');
+  if (addBtn) addBtn.style.display = isSettings ? 'none' : '';
+  document.querySelector('.filters-bar').style.display = isSettings ? 'none' : '';
+
+  if (isSettings) {
+    document.getElementById('pageTitle').textContent = 'Storage Setup';
+    refreshKeyStatusUI();
+    checkBucketStatus();
+    return;
+  }
+
+  const labels = { books: 'Books &amp; PDFs', audio: 'Audio Sessions', videos: 'Videos' };
+  document.getElementById('pageTitle').innerHTML = labels[tab] || tab;
+  clearFilters();
+  loadCurrentTab();
+}
+
+async function loadCurrentTab() {
+  if (currentTab === 'settings') return;
+  const cfg = TAB_CONFIG[currentTab];
+  document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spin"></span></td></tr>';
+  renderTableHead();
+
+  try {
+    allItems = await sbGet(cfg.table, 'order=sort_order.asc,created_at.desc');
+    renderStats();
+    renderTableBody(allItems);
+    updateSidebarCounts();
+  } catch (e) {
+    document.getElementById('tableBody').innerHTML = `<tr class="empty-row"><td colspan="8">Failed to load: ${e.message}</td></tr>`;
+    toast(e.message, 'error');
+  }
+}
+
+async function updateSidebarCounts() {
+  try {
+    const [books, audio, videos] = await Promise.all([
+      sbGet('library_books',  'select=id'),
+      sbGet('library_audio',  'select=id'),
+      sbGet('library_videos', 'select=id')
+    ]);
+    document.getElementById('countBooks').textContent  = books.length;
+    document.getElementById('countAudio').textContent  = audio.length;
+    document.getElementById('countVideos').textContent = videos.length;
+  } catch {}
+}
+
+/* =============================================================================
+   TABLE RENDERING
+============================================================================= */
+function renderTableHead() {
+  const cols = {
+    books:  ['Cover','Title / Author','Language','Category','Status','Sort','Actions'],
+    audio:  ['Cover','Title','Language','Category','Status','Sort','Actions'],
+    videos: ['Thumb','Title','Language','Category','Source','Status','Sort','Actions']
+  };
+  document.getElementById('tableHead').innerHTML =
+    '<tr>' + (cols[currentTab] || []).map(c => `<th>${c}</th>`).join('') + '</tr>';
+}
+
+function renderStats() {
+  const pub   = allItems.filter(i => i.is_published).length;
+  const feat  = allItems.filter(i => i.is_featured).length;
+  document.getElementById('statPub').textContent   = pub;
+  document.getElementById('statDraft').textContent = allItems.length - pub;
+  document.getElementById('statFeat').textContent  = feat;
+  document.getElementById('statTotal').textContent = allItems.length;
+}
+
+function renderTableBody(items) {
+  const tbody = document.getElementById('tableBody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No items found. Click "Add New" to get started.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(item => buildRow(item)).join('');
+}
+
+function buildRow(item) {
+  const coverHtml = item.cover_url
+    ? `<div class="cell-cover"><img src="${esc(item.cover_url)}" alt="" loading="lazy" /></div>`
+    : `<div class="cell-cover">${TAB_CONFIG[currentTab].icon}</div>`;
+
+  const statusHtml = [
+    item.is_published ? '<span class="status-dot pub">Published</span>' : '<span class="status-dot unpub">Draft</span>',
+    item.is_featured  ? '<span class="status-dot feat" style="margin-left:6px;">Featured</span>' : ''
+  ].join('');
+
+  const actions = `
+    <div class="actions-cell">
+      <button class="btn btn-ghost btn-sm" onclick="openEditModal('${item.id}')" title="Edit">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </button>
+      <button class="btn btn-sm ${item.is_published ? 'btn-amber' : 'btn-success'}" onclick="togglePublish('${item.id}',${item.is_published})" title="${item.is_published ? 'Unpublish' : 'Publish'}">
+        ${item.is_published ? 'Unpublish' : 'Publish'}
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')" title="Delete">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        Delete
+      </button>
+    </div>`;
+
+  if (currentTab === 'books') {
+    return `<tr data-id="${item.id}">
+      <td>${coverHtml}</td>
+      <td><div class="cell-title">${esc(item.title)}</div>${item.author ? `<div class="cell-meta">${esc(item.author)}</div>` : ''}</td>
+      <td><span class="lang-chip">${esc(item.lang || '—')}</span></td>
+      <td><span class="cell-meta">${esc(item.category || '—')}</span></td>
+      <td>${statusHtml}</td>
+      <td><span class="cell-meta">${item.sort_order ?? 0}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }
+  if (currentTab === 'audio') {
+    return `<tr data-id="${item.id}">
+      <td>${coverHtml}</td>
+      <td><div class="cell-title">${esc(item.title)}</div>${item.duration ? `<div class="cell-meta">${esc(item.duration)}</div>` : ''}</td>
+      <td><span class="lang-chip">${esc(item.lang || '—')}</span></td>
+      <td><span class="cell-meta">${esc(item.category || '—')}</span></td>
+      <td>${statusHtml}</td>
+      <td><span class="cell-meta">${item.sort_order ?? 0}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }
+  if (currentTab === 'videos') {
+    const src = item.youtube_url ? 'YouTube' : item.file_url ? 'File' : '—';
+    return `<tr data-id="${item.id}">
+      <td>${coverHtml}</td>
+      <td><div class="cell-title">${esc(item.title)}</div>${item.duration ? `<div class="cell-meta">${esc(item.duration)}</div>` : ''}</td>
+      <td><span class="lang-chip">${esc(item.lang || '—')}</span></td>
+      <td><span class="cell-meta">${esc(item.category || '—')}</span></td>
+      <td><span class="cell-meta">${src}</span></td>
+      <td>${statusHtml}</td>
+      <td><span class="cell-meta">${item.sort_order ?? 0}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }
+  return '';
+}
+
+/* =============================================================================
+   FILTER
+============================================================================= */
+function filterTable() {
+  const q      = document.getElementById('filterSearch').value.trim().toLowerCase();
+  const lang   = document.getElementById('filterLang').value;
+  const status = document.getElementById('filterStatus').value;
+
+  const filtered = allItems.filter(item => {
+    const matchQ   = !q      || item.title?.toLowerCase().includes(q) || item.author?.toLowerCase().includes(q);
+    const matchL   = !lang   || item.lang === lang;
+    const matchS   = !status ||
+      (status === 'published' && item.is_published) ||
+      (status === 'draft'     && !item.is_published) ||
+      (status === 'featured'  && item.is_featured);
+    return matchQ && matchL && matchS;
+  });
+  renderTableBody(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterLang').value   = '';
+  document.getElementById('filterStatus').value = '';
+  renderTableBody(allItems);
+}
+
+/* =============================================================================
+   MODAL: ADD / EDIT
+============================================================================= */
+const LANG_OPTIONS = LANGS.map(l => `<option value="${l}">${l.charAt(0).toUpperCase()+l.slice(1)}</option>`).join('');
+
+function buildBookForm(item = {}) {
+  return `
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Title<span>*</span></label>
+    <input class="form-input" id="fTitle" value="${esc(item.title||'')}" placeholder="e.g. Trading in the Zone" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Author</label>
+    <input class="form-input" id="fAuthor" value="${esc(item.author||'')}" placeholder="e.g. ZTU Education Team" />
+  </div>
+</div>
+<div class="form-row full">
+  <div class="form-group">
+    <label class="form-label">Description</label>
+    <textarea class="form-textarea" id="fDesc" placeholder="Brief description…">${esc(item.description||'')}</textarea>
+  </div>
+</div>
+<div class="form-row triple">
+  <div class="form-group">
+    <label class="form-label">Language<span>*</span></label>
+    <select class="form-select" id="fLang"><option value="">Select…</option>${LANG_OPTIONS}</select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Category</label>
+    <input class="form-input" id="fCategory" value="${esc(item.category||'')}" placeholder="e.g. Forex, Psychology" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Sort Order</label>
+    <input class="form-input" id="fSort" type="number" value="${item.sort_order??0}" min="0" />
+  </div>
+</div>
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Cover Image</label>
+    <div class="upload-zone" id="coverZone">
+      <input type="file" id="fCoverFile" accept="image/*" onchange="previewUpload('fCoverFile','coverPreview','coverZone')" />
+      <div class="upload-icon">🖼️</div>
+      <div class="upload-label">Click or drag cover image</div>
+      <div class="upload-sub">PNG, JPG, WEBP — max 5MB</div>
+    </div>
+    <div class="upload-preview" id="coverPreview">
+      <span class="upload-preview-name" id="coverPreviewName"></span>
+      <button type="button" class="upload-preview-remove" onclick="clearUpload('fCoverFile','coverPreview','fCoverUrl')">&#10005;</button>
+    </div>
+    <div class="upload-progress" id="coverProgress"><div class="progress-bar"><div class="progress-fill" id="coverFill"></div></div><div class="progress-label" id="coverPct"></div></div>
+    <input class="form-input" id="fCoverUrl" value="${esc(item.cover_url||'')}" placeholder="Or paste cover image URL" style="margin-top:8px;" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">PDF File</label>
+    <div class="upload-zone" id="pdfZone">
+      <input type="file" id="fPdfFile" accept=".pdf" onchange="previewUpload('fPdfFile','pdfPreview','pdfZone')" />
+      <div class="upload-icon">📄</div>
+      <div class="upload-label">Click or drag PDF</div>
+      <div class="upload-sub">PDF only — max 50MB</div>
+    </div>
+    <div class="upload-preview" id="pdfPreview">
+      <span class="upload-preview-name" id="pdfPreviewName"></span>
+      <button type="button" class="upload-preview-remove" onclick="clearUpload('fPdfFile','pdfPreview','fPdfUrl')">&#10005;</button>
+    </div>
+    <div class="upload-progress" id="pdfProgress"><div class="progress-bar"><div class="progress-fill" id="pdfFill"></div></div><div class="progress-label" id="pdfPct"></div></div>
+    <input class="form-input" id="fPdfUrl" value="${esc(item.pdf_url||'')}" placeholder="Or paste external PDF URL" style="margin-top:8px;" />
+  </div>
+</div>
+<div class="form-row">
+  <div class="toggle-row">
+    <div><div class="toggle-label">Published</div><div class="toggle-sub">Visible to library users</div></div>
+    <label class="toggle"><input type="checkbox" id="fPublished" ${item.is_published?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div><div class="toggle-label">Featured</div><div class="toggle-sub">Show at top of section</div></div>
+    <label class="toggle"><input type="checkbox" id="fFeatured" ${item.is_featured?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+</div>`;
+}
+
+function buildAudioForm(item = {}) {
+  return `
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Title<span>*</span></label>
+    <input class="form-input" id="fTitle" value="${esc(item.title||'')}" placeholder="e.g. Market Psychology Masterclass" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Duration</label>
+    <input class="form-input" id="fDuration" value="${esc(item.duration||'')}" placeholder="e.g. 45:12" />
+  </div>
+</div>
+<div class="form-row full">
+  <div class="form-group">
+    <label class="form-label">Description</label>
+    <textarea class="form-textarea" id="fDesc" placeholder="Brief description…">${esc(item.description||'')}</textarea>
+  </div>
+</div>
+<div class="form-row triple">
+  <div class="form-group">
+    <label class="form-label">Language<span>*</span></label>
+    <select class="form-select" id="fLang"><option value="">Select…</option>${LANG_OPTIONS}</select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Category</label>
+    <input class="form-input" id="fCategory" value="${esc(item.category||'')}" placeholder="e.g. Psychology" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Sort Order</label>
+    <input class="form-input" id="fSort" type="number" value="${item.sort_order??0}" min="0" />
+  </div>
+</div>
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Cover Image</label>
+    <div class="upload-zone" id="coverZone">
+      <input type="file" id="fCoverFile" accept="image/*" onchange="previewUpload('fCoverFile','coverPreview','coverZone')" />
+      <div class="upload-icon">🖼️</div>
+      <div class="upload-label">Click or drag cover image</div>
+      <div class="upload-sub">PNG, JPG, WEBP — max 5MB</div>
+    </div>
+    <div class="upload-preview" id="coverPreview">
+      <span class="upload-preview-name" id="coverPreviewName"></span>
+      <button type="button" class="upload-preview-remove" onclick="clearUpload('fCoverFile','coverPreview','fCoverUrl')">&#10005;</button>
+    </div>
+    <div class="upload-progress" id="coverProgress"><div class="progress-bar"><div class="progress-fill" id="coverFill"></div></div><div class="progress-label" id="coverPct"></div></div>
+    <input class="form-input" id="fCoverUrl" value="${esc(item.cover_url||'')}" placeholder="Or paste cover image URL" style="margin-top:8px;" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Audio File (MP3)</label>
+    <div class="upload-zone" id="audioZone">
+      <input type="file" id="fAudioFile" accept="audio/*" onchange="previewUpload('fAudioFile','audioPreview','audioZone')" />
+      <div class="upload-icon">🎵</div>
+      <div class="upload-label">Click or drag MP3</div>
+      <div class="upload-sub">MP3, M4A, WAV — max 100MB</div>
+    </div>
+    <div class="upload-preview" id="audioPreview">
+      <span class="upload-preview-name" id="audioPreviewName"></span>
+      <button type="button" class="upload-preview-remove" onclick="clearUpload('fAudioFile','audioPreview','fAudioUrl')">&#10005;</button>
+    </div>
+    <div class="upload-progress" id="audioProgress"><div class="progress-bar"><div class="progress-fill" id="audioFill"></div></div><div class="progress-label" id="audioPct"></div></div>
+    <input class="form-input" id="fAudioUrl" value="${esc(item.audio_url||'')}" placeholder="Or paste external audio URL" style="margin-top:8px;" />
+  </div>
+</div>
+<div class="form-row">
+  <div class="toggle-row">
+    <div><div class="toggle-label">Published</div><div class="toggle-sub">Visible to library users</div></div>
+    <label class="toggle"><input type="checkbox" id="fPublished" ${item.is_published?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div><div class="toggle-label">Featured</div><div class="toggle-sub">Show at top of section</div></div>
+    <label class="toggle"><input type="checkbox" id="fFeatured" ${item.is_featured?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+</div>`;
+}
+
+function buildVideoForm(item = {}) {
+  return `
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Title<span>*</span></label>
+    <input class="form-input" id="fTitle" value="${esc(item.title||'')}" placeholder="e.g. Introduction to Forex Trading" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Duration</label>
+    <input class="form-input" id="fDuration" value="${esc(item.duration||'')}" placeholder="e.g. 18:42" />
+  </div>
+</div>
+<div class="form-row full">
+  <div class="form-group">
+    <label class="form-label">Description</label>
+    <textarea class="form-textarea" id="fDesc" placeholder="Brief description…">${esc(item.description||'')}</textarea>
+  </div>
+</div>
+<div class="form-row triple">
+  <div class="form-group">
+    <label class="form-label">Language<span>*</span></label>
+    <select class="form-select" id="fLang"><option value="">Select…</option>${LANG_OPTIONS}</select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Category</label>
+    <input class="form-input" id="fCategory" value="${esc(item.category||'')}" placeholder="e.g. Fundamentals" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Sort Order</label>
+    <input class="form-input" id="fSort" type="number" value="${item.sort_order??0}" min="0" />
+  </div>
+</div>
+<div class="form-row full">
+  <div class="form-group">
+    <label class="form-label">YouTube URL</label>
+    <input class="form-input" id="fYoutubeUrl" value="${esc(item.youtube_url||'')}" placeholder="https://www.youtube.com/watch?v=..." />
+    <div class="form-hint">If provided, clicking the video opens YouTube. Takes priority over file URL.</div>
+  </div>
+</div>
+<div class="form-row">
+  <div class="form-group">
+    <label class="form-label">Thumbnail Image</label>
+    <div class="upload-zone" id="coverZone">
+      <input type="file" id="fCoverFile" accept="image/*" onchange="previewUpload('fCoverFile','coverPreview','coverZone')" />
+      <div class="upload-icon">🖼️</div>
+      <div class="upload-label">Click or drag thumbnail</div>
+      <div class="upload-sub">PNG, JPG — max 5MB</div>
+    </div>
+    <div class="upload-preview" id="coverPreview">
+      <span class="upload-preview-name" id="coverPreviewName"></span>
+      <button type="button" class="upload-preview-remove" onclick="clearUpload('fCoverFile','coverPreview','fCoverUrl')">&#10005;</button>
+    </div>
+    <div class="upload-progress" id="coverProgress"><div class="progress-bar"><div class="progress-fill" id="coverFill"></div></div><div class="progress-label" id="coverPct"></div></div>
+    <input class="form-input" id="fCoverUrl" value="${esc(item.cover_url||item.thumbnail_url||'')}" placeholder="Or paste thumbnail URL" style="margin-top:8px;" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Video File (MP4)</label>
+    <div class="upload-zone" id="videoFileZone">
+      <input type="file" id="fVideoFile" accept="video/*" onchange="previewUpload('fVideoFile','videoFilePreview','videoFileZone')" />
+      <div class="upload-icon">🎬</div>
+      <div class="upload-label">Click or drag MP4</div>
+      <div class="upload-sub">MP4, WEBM — max 500MB</div>
+    </div>
+    <div class="upload-preview" id="videoFilePreview">
+      <span class="upload-preview-name" id="videoFilePreviewName"></span>
+      <button type="button" class="upload-preview-remove" onclick="clearUpload('fVideoFile','videoFilePreview','fFileUrl')">&#10005;</button>
+    </div>
+    <div class="upload-progress" id="videoFileProgress"><div class="progress-bar"><div class="progress-fill" id="videoFileFill"></div></div><div class="progress-label" id="videoFilePct"></div></div>
+    <input class="form-input" id="fFileUrl" value="${esc(item.file_url||'')}" placeholder="Or paste hosted video URL" style="margin-top:8px;" />
+  </div>
+</div>
+<div class="form-row">
+  <div class="toggle-row">
+    <div><div class="toggle-label">Published</div><div class="toggle-sub">Visible to library users</div></div>
+    <label class="toggle"><input type="checkbox" id="fPublished" ${item.is_published?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div><div class="toggle-label">Featured</div><div class="toggle-sub">Show at top of section</div></div>
+    <label class="toggle"><input type="checkbox" id="fFeatured" ${item.is_featured?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+</div>`;
+}
+
+function openAddModal() {
+  editingId = null;
+  const cfg = TAB_CONFIG[currentTab];
+  document.getElementById('modalTitle').textContent = `Add ${cfg.label.replace(' & PDFs','').replace('s','')}`;
+  if (currentTab === 'books')  document.getElementById('modalBody').innerHTML = buildBookForm();
+  if (currentTab === 'audio')  document.getElementById('modalBody').innerHTML = buildAudioForm();
+  if (currentTab === 'videos') document.getElementById('modalBody').innerHTML = buildVideoForm();
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function openEditModal(id) {
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = 'Edit Item';
+  if (currentTab === 'books')  document.getElementById('modalBody').innerHTML = buildBookForm(item);
+  if (currentTab === 'audio')  document.getElementById('modalBody').innerHTML = buildAudioForm(item);
+  if (currentTab === 'videos') document.getElementById('modalBody').innerHTML = buildVideoForm(item);
+  /* Restore language select */
+  const langEl = document.getElementById('fLang');
+  if (langEl && item.lang) langEl.value = item.lang;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+  editingId = null;
+}
+
+/* =============================================================================
+   SAVE ITEM
+============================================================================= */
+async function saveItem() {
+  const btn = document.getElementById('modalSaveBtn');
+  const title = document.getElementById('fTitle')?.value.trim();
+  const lang  = document.getElementById('fLang')?.value;
+
+  if (!title) { toast('Title is required.', 'error'); return; }
+  if (!lang)  { toast('Language is required.', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Saving…';
+
+  try {
+    /* Upload files first if selected */
+    let coverUrl  = document.getElementById('fCoverUrl')?.value.trim() || null;
+    let mediaUrl  = null;
+
+    const coverFile = document.getElementById('fCoverFile')?.files?.[0];
+    if (coverFile) {
+      const path = `covers/${Date.now()}_${coverFile.name.replace(/\s/g,'_')}`;
+      showProgressUI('cover', 0);
+      coverUrl = await uploadFile('library-covers', path, coverFile, p => showProgressUI('cover', p));
+      hideProgressUI('cover');
+    }
+
+    if (currentTab === 'books') {
+      const pdfFile = document.getElementById('fPdfFile')?.files?.[0];
+      if (pdfFile) {
+        const path = `books/${lang}/${Date.now()}_${pdfFile.name.replace(/\s/g,'_')}`;
+        showProgressUI('pdf', 0);
+        mediaUrl = await uploadFile('library-books', path, pdfFile, p => showProgressUI('pdf', p));
+        hideProgressUI('pdf');
+      } else {
+        mediaUrl = document.getElementById('fPdfUrl')?.value.trim() || null;
+      }
+    }
+    if (currentTab === 'audio') {
+      const audioFile = document.getElementById('fAudioFile')?.files?.[0];
+      if (audioFile) {
+        const path = `audio/${lang}/${Date.now()}_${audioFile.name.replace(/\s/g,'_')}`;
+        showProgressUI('audio', 0);
+        mediaUrl = await uploadFile('library-audio', path, audioFile, p => showProgressUI('audio', p));
+        hideProgressUI('audio');
+      } else {
+        mediaUrl = document.getElementById('fAudioUrl')?.value.trim() || null;
+      }
+    }
+    if (currentTab === 'videos') {
+      const videoFile = document.getElementById('fVideoFile')?.files?.[0];
+      if (videoFile) {
+        const path = `videos/${lang}/${Date.now()}_${videoFile.name.replace(/\s/g,'_')}`;
+        showProgressUI('videoFile', 0);
+        mediaUrl = await uploadFile('library-videos', path, videoFile, p => showProgressUI('videoFile', p));
+        hideProgressUI('videoFile');
+      } else {
+        mediaUrl = document.getElementById('fFileUrl')?.value.trim() || null;
+      }
+    }
+
+    /* Build data payload */
+    const base = {
+      title,
+      lang,
+      language:     lang,                                                /* maps dropdown → NOT NULL 'language' column */
+      description:  document.getElementById('fDesc')?.value.trim()     || null,
+      category:     document.getElementById('fCategory')?.value.trim() || null,
+      sort_order:   parseInt(document.getElementById('fSort')?.value)   || 0,
+      cover_url:    coverUrl,
+      is_published: document.getElementById('fPublished')?.checked ?? false,
+      is_featured:  document.getElementById('fFeatured')?.checked  ?? false
+    };
+
+    let payload = { ...base };
+    if (currentTab === 'books')  { payload.author  = document.getElementById('fAuthor')?.value.trim() || null; payload.pdf_url   = mediaUrl; }
+    if (currentTab === 'audio')  { payload.duration = document.getElementById('fDuration')?.value.trim() || null; payload.audio_url = mediaUrl; }
+    if (currentTab === 'videos') {
+      payload.duration    = document.getElementById('fDuration')?.value.trim()    || null;
+      payload.youtube_url = document.getElementById('fYoutubeUrl')?.value.trim() || null;
+      payload.file_url    = mediaUrl;
+      payload.thumbnail_url = coverUrl;
+    }
+
+    const table = TAB_CONFIG[currentTab].table;
+    if (editingId) {
+      payload.updated_at = new Date().toISOString();
+      await sbUpdate(table, editingId, payload);
+      toast('Item updated successfully.', 'success');
+    } else {
+      await sbInsert(table, payload);
+      toast('Item added successfully.', 'success');
+    }
+
+    closeModal();
+    loadCurrentTab();
+  } catch (e) {
+    toast(`Save failed: ${e.message}`, 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+}
+
+/* =============================================================================
+   QUICK ACTIONS
+============================================================================= */
+async function togglePublish(id, currentlyPublished) {
+  const table = TAB_CONFIG[currentTab].table;
+  try {
+    await sbUpdate(table, id, { is_published: !currentlyPublished, updated_at: new Date().toISOString() });
+    toast(`Item ${currentlyPublished ? 'unpublished' : 'published'}.`, 'success');
+    loadCurrentTab();
+  } catch (e) { toast(`Failed: ${e.message}`, 'error'); }
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this item permanently? This cannot be undone.')) return;
+  const table = TAB_CONFIG[currentTab].table;
+  try {
+    await sbDelete(table, id);
+    toast('Item deleted.', 'info');
+    loadCurrentTab();
+  } catch (e) { toast(`Failed: ${e.message}`, 'error'); }
+}
+
+/* =============================================================================
+   FILE UPLOAD HELPERS
+============================================================================= */
+function previewUpload(fileInputId, previewId, zoneId) {
+  const file = document.getElementById(fileInputId)?.files?.[0];
+  if (!file) return;
+  const preview  = document.getElementById(previewId);
+  const nameSpan = document.getElementById(previewId + 'Name');
+  if (nameSpan) nameSpan.textContent = file.name;
+  preview?.classList.add('show');
+  document.getElementById(zoneId)?.classList.add('drag');
+}
+
+function clearUpload(fileInputId, previewId, urlInputId) {
+  const fi = document.getElementById(fileInputId);
+  if (fi) fi.value = '';
+  document.getElementById(previewId)?.classList.remove('show');
+  const ui = document.getElementById(urlInputId);
+  if (ui) ui.value = '';
+}
+
+function showProgressUI(prefix, pct) {
+  const prog = document.getElementById(prefix + 'Progress');
+  const fill = document.getElementById(prefix + 'Fill');
+  const lbl  = document.getElementById(prefix + 'Pct');
+  if (prog) prog.classList.add('show');
+  if (fill) fill.style.width = pct + '%';
+  if (lbl)  lbl.textContent  = pct + '%';
+}
+
+function hideProgressUI(prefix) {
+  const prog = document.getElementById(prefix + 'Progress');
+  if (prog) { prog.classList.remove('show'); }
+}
+
+/* =============================================================================
+   TOAST
+============================================================================= */
+function toast(msg, type = 'info') {
+  const c  = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+/* =============================================================================
+   STORAGE SETUP — key management + bucket creation
+============================================================================= */
+
+function applyServiceKey() {
+  const val = document.getElementById('svcKeyInput')?.value.trim();
+  if (!val || val.length < 40) {
+    toast('Key looks too short — paste the full service_role JWT.', 'error');
+    return;
+  }
+  if (val === LIBRARY_SUPABASE_KEY) {
+    toast('That is the anon key, not the service role key.', 'error');
+    return;
+  }
+  sessionStorage.setItem(SVC_KEY_SESSION, val);
+  document.getElementById('svcKeyInput').value = '';
+  refreshKeyStatusUI();
+  toast('Service role key saved for this session. Uploads will now use it.', 'success');
+  /* Hide the warning badge on the sidebar */
+  const badge = document.getElementById('setupBadge');
+  if (badge) badge.style.display = 'none';
+  checkBucketStatus();
+}
+
+function clearServiceKey() {
+  sessionStorage.removeItem(SVC_KEY_SESSION);
+  refreshKeyStatusUI();
+  toast('Service key cleared — reverted to anon key.', 'info');
+  const badge = document.getElementById('setupBadge');
+  if (badge) badge.style.display = '';
+}
+
+function refreshKeyStatusUI() {
+  const badge = document.getElementById('keyStatusBadge');
+  if (!badge) return;
+  if (isUsingServiceKey()) {
+    badge.className = 'key-status ok';
+    badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Service role key active — uploads allowed';
+  } else {
+    badge.className = 'key-status bad';
+    badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Using anon key — uploads will be blocked by default';
+  }
+}
+
+/* Check whether each required bucket exists */
+async function checkBucketStatus() {
+  const key = getUploadKey();
+  const buckets = ['library-covers', 'library-books', 'library-audio', 'library-videos'];
+
+  for (const b of buckets) {
+    const el = document.getElementById(`bs-${b}`);
+    if (el) { el.className = 'bucket-st checking'; el.textContent = '…'; }
+  }
+
+  for (const b of buckets) {
+    const el = document.getElementById(`bs-${b}`);
+    try {
+      const r = await fetch(`${LIBRARY_SUPABASE_URL}/storage/v1/bucket/${b}`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+      });
+      if (r.ok) {
+        if (el) { el.className = 'bucket-st exists'; el.textContent = 'Exists ✓'; }
+      } else if (r.status === 400 || r.status === 404) {
+        if (el) { el.className = 'bucket-st missing'; el.textContent = 'Missing ✗'; }
+      } else {
+        if (el) { el.className = 'bucket-st checking'; el.textContent = `${r.status}`; }
+      }
+    } catch {
+      if (el) { el.className = 'bucket-st checking'; el.textContent = 'Error'; }
+    }
+  }
+}
+
+/* Create all four required buckets */
+async function initStorageBuckets() {
+  if (!isUsingServiceKey()) {
+    toast('Apply a service role key first — bucket creation requires it.', 'error');
+    return;
+  }
+  const key = getUploadKey();
+
+  const defs = [
+    { id: 'library-covers',  name: 'library-covers',  public: true,  fileSizeLimit: 5242880   },
+    { id: 'library-books',   name: 'library-books',   public: false, fileSizeLimit: 52428800  },
+    { id: 'library-audio',   name: 'library-audio',   public: false, fileSizeLimit: 104857600 },
+    { id: 'library-videos',  name: 'library-videos',  public: false, fileSizeLimit: 524288000 }
+  ];
+
+  for (const def of defs) {
+    try {
+      const r = await fetch(`${LIBRARY_SUPABASE_URL}/storage/v1/bucket`, {
+        method: 'POST',
+        headers: {
+          'apikey': key, 'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(def)
+      });
+
+      if (r.ok) {
+        toast(`Created: ${def.id}`, 'success');
+      } else {
+        const body = await r.json().catch(() => ({}));
+        const msg  = body.message || body.error || r.status;
+        if (String(msg).toLowerCase().includes('already exists') || String(msg).toLowerCase().includes('duplicate')) {
+          toast(`${def.id} already exists.`, 'info');
+        } else {
+          toast(`Failed to create ${def.id}: ${msg}`, 'error');
+        }
+      }
+    } catch (e) {
+      toast(`Error creating ${def.id}: ${e.message}`, 'error');
+    }
+  }
+
+  /* Refresh status after creation */
+  setTimeout(checkBucketStatus, 800);
+}
+
+/* Also refresh key status on page load */
+document.addEventListener('DOMContentLoaded', () => {
+  refreshKeyStatusUI();
+  /* Show/hide the ! badge based on whether service key is set */
+  const badge = document.getElementById('setupBadge');
+  if (badge && isUsingServiceKey()) badge.style.display = 'none';
+});
+
+/* =============================================================================
+   ESCAPE HELPER (XSS prevention)
+============================================================================= */
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

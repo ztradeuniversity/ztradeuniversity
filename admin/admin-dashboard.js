@@ -50,13 +50,14 @@ const AdminDashboard = (() => {
   ══════════════════════════════════════════════════════════ */
   const DB_SCHEMA = {
     TABLE:  'license_requests',
-    BUCKET: 'screenshots',
+    // Phase 16.8 — screenshot Storage bucket removed; no longer referenced.
 
     COLS: {
       id:               'id',
       account_number:   'account_number',
       email:            'email',
-      screenshot_url:   'screenshot_url',
+      // Phase 16.8 — screenshot_url column no longer written by license-request.html.
+      // Existing rows still have it; safe to leave the column in place in Supabase.
       status:           'status',
       created_at:       'created_at',
       broker_name:      'broker_name',      // nullable
@@ -90,7 +91,12 @@ const AdminDashboard = (() => {
       rejected:      ['unmatched'],             // unmatched canonical + rejected legacy
     },
 
-    // Safe anon-readable SELECT string
+    // Safe anon-readable SELECT string.
+    // NOTE: keep the base list strictly to columns that EXIST in user's
+    // license_requests schema. Optional Phase 16.4 columns (resend_count,
+    // last_resend_at, delivered_at, notes) are fetched separately by
+    // _fetchDeliveryAudit() and merged in at render time so a missing column
+    // never breaks the main intake queue with a 400.
     SELECT: 'id, account_number, email, status, created_at, broker_name, whatsapp_number',
   };
 
@@ -266,10 +272,16 @@ const AdminDashboard = (() => {
         status:      dashStatus,
         dbStatus:    rawStatus,       // preserved raw value — for tooltip / audit trail
         canonicalDb: canonicalDb,     // normalized canonical — used for transition validation
+        // Phase 16.4 Issue 2 — date + admin local time, e.g. "01 Jun 2026 · 12:27 PM"
         lastUpdate:  row.created_at
-          ? new Date(row.created_at).toLocaleDateString('en-GB', {
-              day: '2-digit', month: 'short', year: 'numeric',
-            })
+          ? (function (iso) {
+              try {
+                const d = new Date(iso);
+                const ds = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+                const ts = d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+                return ds + ' · ' + ts;
+              } catch (_) { return iso; }
+            })(row.created_at)
           : '—',
         attempts:   1,
         notes:      noteText,
@@ -426,9 +438,23 @@ const AdminDashboard = (() => {
      UTILITIES
   ══════════════════════════════════════════════════════════ */
   function today() {
-    return new Date().toLocaleDateString('en-GB', {
-      day: '2-digit', month: 'short', year: 'numeric',
-    });
+    // Phase 16.4 Issue 2 — include admin local time
+    const d = new Date();
+    const ds = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+    const ts = d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+    return ds + ' · ' + ts;
+  }
+
+  /* Phase 16.4 Issue 2 — global date+time formatter shared across tables */
+  function fmtDateTime(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso);
+      const ds = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+      const ts = d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+      return ds + ' · ' + ts;
+    } catch (_) { return String(iso); }
   }
 
   function timeLabel(iso) {
@@ -636,6 +662,11 @@ const AdminDashboard = (() => {
     if (sectionId === 'matched')   renderMatchedAccountsSection();
     if (sectionId === 'compile')   renderCompileQueueSection();
     if (sectionId === 'delivered') renderDeliveredSection();
+    // Phase 15.6 Phase B — IB Stars + IB Changed
+    if (sectionId === 'ib-stars-active')   _renderIbStarsActive();
+    if (sectionId === 'ib-stars-inactive') _renderIbStarsInactive();
+    if (sectionId === 'ib-changed')        _renderIbChangedList();
+    if (sectionId === 'blocked-clients')   _renderBlockedList();   // Phase 16.2 Issue 4
     // Phase 13 — CRM sections
     if (sectionId === 'crm-active')    renderCrmActive();
     if (sectionId === 'crm-inactive')  renderCrmInactive();
@@ -1770,6 +1801,63 @@ const AdminDashboard = (() => {
       return Math.floor((Date.now() - entry.firstMissedAt) / RETRY_POOL_DAY_MS);
     },
 
+    /* ── Phase 16.7 Issue 1 — milliseconds remaining until 48h
+     *    cutoff. Negative when already expired. */
+    getMsRemaining(entry) {
+      if (!entry || !entry.firstMissedAt) return 0;
+      const expiresAt = entry.firstMissedAt + RETRY_POOL_MAX_DAYS * RETRY_POOL_DAY_MS;
+      return expiresAt - Date.now();
+    },
+
+    /* ── Phase 16.7 Issue 1 — human-readable countdown string,
+     *    e.g. "47h 12m left", "14m left", "02h 41m left".
+     *    Returns "Expired" once past the 48h cutoff. */
+    formatCountdown(entry) {
+      const ms = this.getMsRemaining(entry);
+      if (ms <= 0) return 'Expired';
+      const totalMin = Math.floor(ms / 60000);
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      if (h <= 0) return m + 'm left';
+      const hStr = (h < 10 ? '0' + h : String(h));
+      const mStr = (m < 10 ? '0' + m : String(m));
+      return hStr + 'h ' + mStr + 'm left';
+    },
+
+    /* ── Phase 16.7 Issue 4 — auto-recovery.
+     *    Un-archives an entry and stamps recoveredAt so the dashboard
+     *    can flash a "Recovered Match" badge.  Keeps the entry in the
+     *    pool for ~24h so the badge stays visible, then it gets pruned
+     *    by pruneRecoveredEntries() once the grace window passes. */
+    recover(id) {
+      const pool = this._read();
+      if (!pool[id]) return null;
+      pool[id].archived          = false;
+      pool[id].recoveredAt       = Date.now();
+      pool[id].lastChecked       = Date.now();
+      this._write();
+      return pool[id];
+    },
+
+    /* ── Phase 16.7 Issue 5 — remove recovered entries older than 24h.
+     *    Once the badge has had time to be seen by the admin, drop the
+     *    row from the pool entirely so it doesn't keep re-rendering. */
+    pruneRecoveredEntries(maxAgeMs) {
+      const ttl = maxAgeMs || (24 * 60 * 60 * 1000);
+      const pool  = this._read();
+      let pruned = 0;
+      const now  = Date.now();
+      for (const id of Object.keys(pool)) {
+        const e = pool[id];
+        if (e && e.recoveredAt && (now - e.recoveredAt) > ttl) {
+          delete pool[id];
+          pruned++;
+        }
+      }
+      if (pruned > 0) this._write();
+      return pruned;
+    },
+
     /* ── Single entry lookup ─────────────────────────────── */
     getById(id) { return this._read()[id] || null; },
 
@@ -2870,15 +2958,35 @@ const AdminDashboard = (() => {
     if (tableWrap) tableWrap.hidden = false;
     if (emptyEl)   emptyEl.hidden   = true;
 
+    /* Phase 16.4 Issue 3 — 6-column layout: Status badge in its own cell, Actions in their own cell */
     bodyEl.innerHTML = pending.map(r => `
-      <div class="pool-row">
+      <div class="pool-row pool-row--pending6">
         <span class="pool-row-acct">${esc(r.account)}</span>
         <span class="pool-row-email">${esc(r.email || r.name)}</span>
         <span class="pool-row-broker">${esc(r.broker)}</span>
         <span class="pool-row-date">${esc(r.lastUpdate)}</span>
-        <span class="pool-row-status">Waiting for Broker Confirmation</span>
+        <span class="pool-row-status">Waiting</span>
+        <span class="pool-row-actions">
+          <button class="row-act-btn row-act-btn--edit" data-row-edit="${esc(r.account)}" title="Edit Client" type="button">✎ Edit</button>
+          <button class="row-act-btn row-act-btn--block" data-row-block="${esc(r.account)}" title="Block Client" type="button">⊘ Block</button>
+        </span>
       </div>`
     ).join('');
+    // Phase 16.2 — delegate Edit + Block on Pending Requests rows
+    bodyEl.querySelectorAll('[data-row-edit]').forEach(b =>
+      b.addEventListener('click', e => { e.stopPropagation(); _openEditClientModal(b.dataset.rowEdit); })
+    );
+    bodyEl.querySelectorAll('[data-row-block]').forEach(b =>
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        b.disabled = true;
+        const acct = b.dataset.rowBlock;
+        const req  = State.requests.find(r => normalizeAccountId(r.account) === normalizeAccountId(acct));
+        const res = await _blockClient(acct, req || {}, 'Admin block from Pending Requests');
+        if (res.ok) { showToast(`Client ${acct} blocked.`, 'success', 3000); renderPendingRequests(); }
+        else { b.disabled = false; showToast('Block failed: ' + (res.error || 'unknown'), 'error', 4000); }
+      })
+    );
   }
 
 
@@ -2895,6 +3003,72 @@ const AdminDashboard = (() => {
      past pending (matched, compile_ready, etc.) we remove it
      from the pool — it was matched successfully.
   ──────────────────────────────────────────────────────────── */
+  /*
+   * Phase 15.6 Task 1 — pool-row outbox status lookup.
+   * Builds an in-memory snapshot of email_outbox + wa_outbox row statuses,
+   * keyed by (recipient + template_type), so renderWaitingForMatch can
+   * stamp each pool row with the actual send state.  Refreshed on every
+   * navigation to the Waiting for Match page.
+   */
+  let _waitingStatusSnapshot = { email: {}, wa: {}, fetchedAt: 0 };
+
+  function _statusKey(recipient, type, account) {
+    return `${(recipient || '').toLowerCase()}|${type || ''}|${account || ''}`;
+  }
+
+  async function _fetchWaitingStatusSnapshot() {
+    if (!supabaseClient) return { email: {}, wa: {}, fetchedAt: Date.now() };
+    const email = {};
+    const wa    = {};
+    try {
+      const [eRes, wRes] = await Promise.all([
+        supabaseClient
+          .from(OUTBOX.EMAIL_TABLE)
+          .select('recipient_email, template_type, recipient_account, status, sent_at, error_message')
+          .in('template_type', ['waiting', 'not_found'])
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabaseClient
+          .from(OUTBOX.WA_TABLE)
+          .select('recipient_phone, template_type, recipient_account, status, sent_at, error_message')
+          .in('template_type', ['waiting', 'not_found'])
+          .order('created_at', { ascending: false })
+          .limit(500),
+      ]);
+      if (!eRes.error && Array.isArray(eRes.data)) {
+        eRes.data.forEach(r => {
+          // Newest-first ordering means first write wins — most recent state.
+          const k = _statusKey(r.recipient_email, r.template_type, r.recipient_account);
+          if (!email[k]) email[k] = r;
+        });
+      }
+      if (!wRes.error && Array.isArray(wRes.data)) {
+        wRes.data.forEach(r => {
+          const k = _statusKey(r.recipient_phone, r.template_type, r.recipient_account);
+          if (!wa[k]) wa[k] = r;
+        });
+      }
+    } catch (e) {
+      console.warn('[waitingStatusSnapshot] fetch failed (continuing without):', e);
+    }
+    return { email, wa, fetchedAt: Date.now() };
+  }
+
+  function _statusPillHtml(row) {
+    if (!row) {
+      return '<span class="pool-status-pill pool-status-pill--none" title="No outbox row found">—</span>';
+    }
+    const s = String(row.status || 'pending').toLowerCase();
+    const cls = ['sent','pending','sending','failed','skipped'].includes(s) ? s : 'pending';
+    const label = s.charAt(0).toUpperCase() + s.slice(1);
+    const tip = s === 'failed' && row.error_message
+      ? `Failed: ${String(row.error_message).slice(0, 220)}`
+      : s === 'sent' && row.sent_at
+        ? `Sent ${new Date(row.sent_at).toLocaleString()}`
+        : `Status: ${label}`;
+    return `<span class="pool-status-pill pool-status-pill--${cls}" title="${esc(tip)}">${esc(label)}</span>`;
+  }
+
   function renderWaitingForMatch() {
     const activeCardEl    = document.getElementById('waitingActiveCard');
     const activeBodyEl    = document.getElementById('waitingActiveBody');
@@ -2904,6 +3078,21 @@ const AdminDashboard = (() => {
     const archivedCountEl = document.getElementById('waitingArchivedCount');
     const emptyEl         = document.getElementById('waitingEmpty');
     if (!activeBodyEl) return;   // section not in DOM
+
+    // Phase 15.6 Task 1 — kick off outbox snapshot fetch in parallel.
+    // First render uses cached snapshot (or empty); when the fetch resolves
+    // we re-render with the freshly populated status pills.  Non-blocking.
+    const cacheAge = Date.now() - (_waitingStatusSnapshot.fetchedAt || 0);
+    if (cacheAge > 5000) {
+      _fetchWaitingStatusSnapshot().then(snap => {
+        _waitingStatusSnapshot = snap;
+        // Only re-render if the section is still active.
+        const stillVisible = document.getElementById('section-waiting');
+        if (stillVisible && stillVisible.classList.contains('active')) {
+          renderWaitingForMatch();
+        }
+      });
+    }
 
     // Auto-cleanup: if a pool account was matched/processed in DB, evict from pool
     RetryPool.getActive().forEach(entry => {
@@ -2930,27 +3119,59 @@ const AdminDashboard = (() => {
       );
     }
 
-    // ── Active retry pool ──────────────────────────────────────
+    // Resolve outbox status for an entry given the row's template_type.
+    // For Active pool entries, look up 'waiting'.  For Archived entries,
+    // look up 'not_found' (the final rejection template).
+    function _entryStatus(entry, templateType) {
+      const req = State.requests.find(r => r.id === entry.id);
+      const acct = entry.account || (req && req.account) || '';
+      const wapNumber = req && req.whatsapp;
+      const emailRow = _waitingStatusSnapshot.email[_statusKey(entry.email, templateType, acct)];
+      const waRow    = wapNumber
+        ? _waitingStatusSnapshot.wa[_statusKey(wapNumber, templateType, acct)]
+        : null;
+      return { emailRow, waRow, hasWa: !!wapNumber };
+    }
+
+    // ── SECTION A — Active retry pool (within 48h window).  Phase 16.7 Issue 1 + 5 ──
     if (activeCountEl) activeCountEl.textContent = active.length;
     if (active.length > 0) {
       activeBodyEl.innerHTML = active.map(entry => {
-        const days    = RetryPool.getDaysWaiting(entry);
-        const daysCls = days >= 6 ? 'pool-row-days--critical'
-                      : days >= 4 ? 'pool-row-days--warn' : '';
+        // Phase 16.7 Issue 1 — live countdown instead of `${days}d`.
+        const countdown = RetryPool.formatCountdown(entry);
+        const ms        = RetryPool.getMsRemaining(entry);
+        const cdCls     = ms <= 0                  ? 'pool-row-countdown--expired'
+                        : ms <  4  * 60 * 60 * 1000 ? 'pool-row-countdown--critical'
+                        : ms < 24  * 60 * 60 * 1000 ? 'pool-row-countdown--warn'
+                                                    : 'pool-row-countdown--ok';
         const checked = entry.lastChecked
           ? new Date(entry.lastChecked).toLocaleString([], {
               month: 'short', day: '2-digit',
               hour: '2-digit', minute: '2-digit',
             })
           : '—';
-        return `<div class="pool-row pool-row--7">
-          <span class="pool-row-acct">${esc(entry.account)}</span>
+        // Phase 15.6 Task 1 — outbox status pills (waiting template)
+        const st = _entryStatus(entry, 'waiting');
+        const emailPill = _statusPillHtml(st.emailRow);
+        const waPill    = st.hasWa
+          ? _statusPillHtml(st.waRow)
+          : '<span class="pool-status-pill pool-status-pill--none" title="No WhatsApp on file">N/A</span>';
+        // Phase 16.7 Issue 5 — Recovered Match badge (shown when an
+        // archived row was just auto-recovered into the active list).
+        const recoveredBadge = entry.recoveredAt
+          ? `<span class="pool-row-recovered-badge" title="Auto-recovered from Not Found pool">RECOVERED MATCH</span><span class="pool-row-recovered-time">${esc(fmtDateTime(new Date(entry.recoveredAt).toISOString()))}</span>`
+          : '';
+        return `<div class="pool-row pool-row--10">
+          <span class="pool-row-acct">${esc(entry.account)}${recoveredBadge}</span>
           <span class="pool-row-email">${esc(entry.email)}</span>
           <span class="pool-row-broker">${esc(entry.broker)}</span>
           <span class="pool-row-date">${esc(entry.requestDate)}</span>
-          <span class="pool-row-days ${daysCls}">${days}d</span>
+          <span class="pool-row-countdown ${cdCls}" data-retry-countdown="${entry.id}" data-first-missed="${entry.firstMissedAt}">${countdown}</span>
           <span class="pool-row-retries">Checked ${entry.retryCount}&times;</span>
           <span class="pool-row-checked">${checked}</span>
+          <span class="pool-row-status">${emailPill}</span>
+          <span class="pool-row-status">${waPill}</span>
+          <span class="pool-row-actions"><button class="iq-btn iq-btn--info" data-waiting-info="${entry.id}" data-waiting-acct="${esc(entry.account)}" type="button" title="Show full diagnostics for this row">ⓘ</button></span>
         </div>`;
       }).join('');
       if (activeCardEl) activeCardEl.hidden = false;
@@ -2958,13 +3179,11 @@ const AdminDashboard = (() => {
       if (activeCardEl) activeCardEl.hidden = true;
     }
 
-    // ── Archived (7-day window expired) ───────────────────────
+    // ── SECTION B — Not Found After 48 Hours.  Phase 16.7 Issue 1 + 2 + 3 ──
     if (archivedCountEl) archivedCountEl.textContent = archived.length;
     if (archived.length > 0) {
       archivedBodyEl.innerHTML = archived.map(entry => {
-        const days = RetryPool.getDaysWaiting(entry);
-
-        // Archive date: use stored archivedAt, or estimate from firstMissedAt + 7 days
+        // Archive date: use stored archivedAt, or estimate from firstMissedAt + 48h.
         const archiveMs = entry.archivedAt
           || (entry.firstMissedAt ? entry.firstMissedAt + RETRY_POOL_MAX_DAYS * RETRY_POOL_DAY_MS : null);
         const archivedStr = archiveMs
@@ -2974,14 +3193,24 @@ const AdminDashboard = (() => {
             })
           : '—';
 
-        return `<div class="pool-row pool-row--7 pool-row--archived">
+        // Phase 15.6 Task 1 — outbox status pills (not_found template)
+        const st = _entryStatus(entry, 'not_found');
+        const emailPill = _statusPillHtml(st.emailRow);
+        const waPill    = st.hasWa
+          ? _statusPillHtml(st.waRow)
+          : '<span class="pool-status-pill pool-status-pill--none" title="No WhatsApp on file">N/A</span>';
+
+        return `<div class="pool-row pool-row--10 pool-row--archived">
           <span class="pool-row-acct">${esc(entry.account)}</span>
           <span class="pool-row-email">${esc(entry.email)}</span>
           <span class="pool-row-broker">${esc(entry.broker)}</span>
           <span class="pool-row-date">${esc(entry.requestDate)}</span>
-          <span class="pool-row-days">${days}d+</span>
+          <span class="pool-row-countdown pool-row-countdown--expired">48h retry ended</span>
           <span class="pool-row-retries">${entry.retryCount} checks</span>
           <span class="pool-row-checked pool-row-checked--archived">${archivedStr}</span>
+          <span class="pool-row-status">${emailPill}</span>
+          <span class="pool-row-status">${waPill}</span>
+          <span class="pool-row-actions"><button class="iq-btn iq-btn--info" data-waiting-info="${entry.id}" data-waiting-acct="${esc(entry.account)}" type="button" title="Show full diagnostics for this row">ⓘ</button></span>
         </div>`;
       }).join('');
       if (archivedCardEl) archivedCardEl.hidden = false;
@@ -2989,8 +3218,72 @@ const AdminDashboard = (() => {
       if (archivedCardEl) archivedCardEl.hidden = true;
     }
 
+    // Phase 16.7 Issue 3 — wire the ⓘ buttons in BOTH sections to the diagnostic modal.
+    [activeBodyEl, archivedBodyEl].forEach(body => {
+      if (!body) return;
+      body.querySelectorAll('[data-waiting-info]').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const id = btn.getAttribute('data-waiting-info');
+          const acct = btn.getAttribute('data-waiting-acct');
+          if (typeof _openIqInfoModal === 'function') {
+            _openIqInfoModal(id, acct);
+          }
+        });
+      });
+    });
+
     // ── Empty state ────────────────────────────────────────────
     if (emptyEl) emptyEl.hidden = (active.length + archived.length) > 0;
+  }
+
+  /* Phase 16.7 Issue 1 — live countdown ticker.
+   * Updates every 60 seconds in place (no full re-render so the admin
+   * doesn't lose scroll position).  When any row crosses the 48h boundary
+   * it flips the class to --expired and triggers a full render so the row
+   * physically moves from Section A to Section B. */
+  let _waitingCountdownInterval = null;
+  function _startWaitingCountdownTicker() {
+    if (_waitingCountdownInterval) return;
+    _waitingCountdownInterval = setInterval(() => {
+      const nodes = document.querySelectorAll('[data-retry-countdown]');
+      if (nodes.length === 0) return;
+      let needsFullRerender = false;
+      nodes.forEach(node => {
+        const firstMissed = parseInt(node.getAttribute('data-first-missed'), 10);
+        if (!isFinite(firstMissed) || firstMissed <= 0) return;
+        const ms = (firstMissed + RETRY_POOL_MAX_DAYS * RETRY_POOL_DAY_MS) - Date.now();
+        if (ms <= 0) { needsFullRerender = true; return; }
+        const totalMin = Math.floor(ms / 60000);
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        let label;
+        if (h <= 0) label = m + 'm left';
+        else {
+          const hStr = (h < 10 ? '0' + h : String(h));
+          const mStr = (m < 10 ? '0' + m : String(m));
+          label = hStr + 'h ' + mStr + 'm left';
+        }
+        node.textContent = label;
+        node.classList.remove('pool-row-countdown--ok','pool-row-countdown--warn','pool-row-countdown--critical','pool-row-countdown--expired');
+        node.classList.add(
+          ms <  4  * 60 * 60 * 1000 ? 'pool-row-countdown--critical'
+          : ms < 24  * 60 * 60 * 1000 ? 'pool-row-countdown--warn'
+                                       : 'pool-row-countdown--ok'
+        );
+      });
+      if (needsFullRerender) {
+        try {
+          // Auto-archive expired entries then re-render so the row moves
+          // from Section A → Section B without admin intervention.
+          autoArchiveExpiredPool().then(() => renderWaitingForMatch());
+        } catch (_) { renderWaitingForMatch(); }
+      }
+    }, 60 * 1000);
+    // Fire one immediate update so the first minute isn't stale.
+    setTimeout(() => {
+      const evt = new Event('retry-tick'); document.dispatchEvent(evt);
+    }, 200);
   }
 
 
@@ -3013,14 +3306,36 @@ const AdminDashboard = (() => {
      Triggers its own re-render when any entries are archived.
   ──────────────────────────────────────────────────────────────── */
   async function autoArchiveExpiredPool() {
-    const toArchive = RetryPool.getAll().filter(
-      e => !e.archived && RetryPool.isExpired(e)
+    const allEntries = RetryPool.getAll();
+    const activeEntries = allEntries.filter(e => !e.archived);
+    const toArchive  = activeEntries.filter(e => RetryPool.isExpired(e));
+
+    // Phase 16 follow-up #2 — explicit gate diagnostics so the user can
+    // see exactly which condition is preventing writes.
+    console.log(
+      '[RetryPool] sweep — total entries: %d | active: %d | expired-and-not-archived: %d | window: %d days',
+      allEntries.length, activeEntries.length, toArchive.length, RETRY_POOL_MAX_DAYS
     );
-    if (toArchive.length === 0) return;
+    if (toArchive.length === 0) {
+      if (allEntries.length === 0) {
+        console.log('[RetryPool] Gate A closed — pool is empty. Process a broker file with unmatched accounts via Broker File Intake to populate.');
+      } else if (activeEntries.length === 0) {
+        console.log('[RetryPool] Gate A closed — every entry is already archived. Nothing more to process.');
+      } else {
+        const youngest = Math.min(...activeEntries.map(e => RetryPool.getDaysWaiting(e)));
+        const oldest   = Math.max(...activeEntries.map(e => RetryPool.getDaysWaiting(e)));
+        console.log(
+          `[RetryPool] Gate B closed — ${activeEntries.length} active entry(ies) but none yet ${RETRY_POOL_MAX_DAYS}+ days old. Range: ${youngest}d–${oldest}d. Wait or use window.__ZTU_DEBUG_forceArchive(account).`
+        );
+      }
+      return;
+    }
 
     console.group(`[RetryPool] Auto-archiving ${toArchive.length} expired entry/entries…`);
 
     let count = 0;
+    const notFoundEmailItems = [];
+
     for (const entry of toArchive) {
       if (WriteLock.has(entry.id)) {
         console.log(`[RetryPool] ${entry.account} — skipped (WriteLock active).`);
@@ -3031,21 +3346,70 @@ const AdminDashboard = (() => {
         const req              = State.requests.find(r => r.id === entry.id);
         const currentCanonical = req
           ? (req.canonicalDb || normalizeDbStatus(req.dbStatus || req.status || ''))
-          : 'pending';   // safe default — assume pending if not in current state
+          : 'pending';
 
+        let dbWritten = false;
         if (currentCanonical === 'pending') {
-          await writeUnmatched(entry.id);   // no-op in mock; RLS-gated in live
+          try {
+            const writeResult = await writeUnmatched(entry.id);
+            dbWritten = !!writeResult;
+            console.log(`[RetryPool] writeUnmatched OK — license_requests.id=${entry.id} → 'unmatched'`);
+          } catch (writeErr) {
+            console.warn(`[RetryPool] writeUnmatched FAILED for ${entry.account} (id=${entry.id}): ${writeErr.message}. Pool entry will still archive locally, but no email will be queued.`);
+          }
+        } else {
+          console.log(`[RetryPool] ${entry.account}: license_requests status is already '${currentCanonical}' (past pending). Skipping writeUnmatched + skipping not_found email — account was matched, no need to send rejection.`);
         }
+
         RetryPool.archive(entry.id);
         count++;
         console.log(
           `[RetryPool] Auto-archived ${entry.account}` +
           ` — ${RetryPool.getDaysWaiting(entry)}d elapsed, ${entry.retryCount} check(s) run.`
         );
+
+        // Phase 16 follow-up #2 BUG FIX — only queue the not_found final
+        // email when writeUnmatched actually succeeded (i.e. the account
+        // really is now 'unmatched' in DB).  Previously this fired for
+        // every archived entry regardless of canonical status, which would
+        // send rejection emails to already-matched customers.
+        if (dbWritten) {
+          const name = (req && (req.name || req.email)) || entry.email || 'there';
+          const tmpl = AUTO_MSG.not_found;
+          if (entry.email && tmpl) {
+            notFoundEmailItems.push({
+              id:         _autoId(),
+              type:       'not_found',
+              account:    entry.account,
+              email:      entry.email,
+              subject:    tmpl.subject,
+              body:       tmpl.body(name),
+              request_id: entry.id || null,
+              status:     'queued',
+              queued_at:  new Date().toISOString(),
+            });
+            console.log(`[RetryPool] queued not_found email for ${entry.account} → ${entry.email}`);
+          } else if (!entry.email) {
+            console.warn(`[RetryPool] ${entry.account}: writeUnmatched succeeded but pool entry has no email — cannot queue not_found message.`);
+          }
+        }
       } catch (err) {
         console.warn(`[RetryPool] Auto-archive failed for ${entry.account}:`, err.message);
       } finally {
         WriteLock.delete(entry.id);
+      }
+    }
+
+    // Push the queued not_found emails to Supabase email_outbox. The
+    // _insertEmailOutbox dedup guard (Phase 15.5C) prevents duplicate
+    // sends if this account already has a pending not_found row.
+    if (notFoundEmailItems.length > 0) {
+      try {
+        const res = await _insertEmailOutbox(notFoundEmailItems);
+        const ok  = res.inserted ? res.inserted.length : 0;
+        console.log(`[RetryPool] Queued ${ok} 'not_found' final email(s) into email_outbox.`);
+      } catch (e) {
+        console.warn('[RetryPool] not_found email enqueue failed (non-fatal):', e);
       }
     }
 
@@ -3056,6 +3420,258 @@ const AdminDashboard = (() => {
       renderWaitingForMatch();
       renderPendingRequests();
     }
+  }
+
+
+  /* ─── _sweepStalePendingViaSupabase — Phase 16 follow-up #3 ──
+   *
+   * Removes the RetryPool localStorage dependency.  Queries Supabase
+   * directly for pending license_requests older than the configured
+   * 48 h window, cross-references against broker_accounts, and for
+   * any account that is BOTH (older than 48h pending) AND (not in
+   * the latest broker file): flips license_requests.status to
+   * 'unmatched' + INSERTs a 'not_found' row into email_outbox.
+   *
+   * This guarantees the not_found pipeline fires regardless of
+   * whether the admin ever clicked Run Automation or whether the
+   * RetryPool localStorage has data.
+   *
+   * Runs on dashboard init AND every hour via setInterval.
+   * Idempotent — the email_outbox dedup guard (Phase 15.5C)
+   * prevents duplicate sends per (recipient, template_type, account).
+   */
+  /* ─── _autoMatchPendingViaBroker — Phase 16.4 Issue 1 ────────
+   *
+   * As soon as a new license_request is submitted, this checks it
+   * against the LATEST broker_accounts persisted in Supabase.  If
+   * the account exists in broker_accounts, the request is flipped
+   * from 'pending' → 'matched' immediately — no need to wait for
+   * the 15-min engine tick OR for the admin to re-upload the broker
+   * file.  The engine's STEP 2.5 still runs on its own schedule;
+   * this is purely an additive accelerator for the dashboard side.
+   *
+   * Returns: { scanned, matchedNow, errors }
+   */
+  async function _autoMatchPendingViaBroker() {
+    if (!supabaseClient || !DataLayer.isLive) {
+      return { scanned: 0, matchedNow: 0, errors: 0, skipped: 'not-live' };
+    }
+    let scanned = 0, matchedNow = 0, errors = 0;
+    try {
+      // 1) Pull all currently-pending license_requests
+      const { data: pendingRows, error: pendErr } = await supabaseClient
+        .from('license_requests')
+        .select('id, account_number, status, created_at')
+        .eq('status', 'pending');
+      if (pendErr) {
+        console.warn('[AutoMatch] pending fetch error:', pendErr);
+        return { scanned: 0, matchedNow: 0, errors: 1 };
+      }
+      if (!pendingRows || pendingRows.length === 0) {
+        return { scanned: 0, matchedNow: 0, errors: 0 };
+      }
+      scanned = pendingRows.length;
+      const acctList = pendingRows
+        .map(r => String(r.account_number || '').trim())
+        .filter(Boolean);
+      if (!acctList.length) return { scanned, matchedNow: 0, errors: 0 };
+
+      // 2) Look those accounts up in broker_accounts
+      const { data: brokerHits, error: brokErr } = await supabaseClient
+        .from('broker_accounts')
+        .select('client_account')
+        .in('client_account', acctList);
+      if (brokErr) {
+        console.warn('[AutoMatch] broker_accounts fetch error:', brokErr);
+        return { scanned, matchedNow: 0, errors: 1 };
+      }
+      const hitSet = new Set(
+        (brokerHits || []).map(b => String(b.client_account || '').trim())
+      );
+      if (hitSet.size === 0) {
+        return { scanned, matchedNow: 0, errors: 0 };
+      }
+
+      // Phase 16.5 PART C — pull IB Changed set so we never auto-match an
+      // account that was flagged as no-longer-under-ZTU-referral.
+      let ibChangedSet = new Set();
+      try {
+        await _ensureIbChangedSet();
+        if (_ibChangedSet && typeof _ibChangedSet.forEach === 'function') {
+          ibChangedSet = _ibChangedSet;
+        }
+      } catch (_) {}
+
+      // 3) Flip status for each pending row that exists in broker_accounts
+      //    AND is not flagged as IB Changed.
+      const nowIso = new Date().toISOString();
+      let ibBlocked = 0;
+      let recovered = 0;
+      for (const row of pendingRows) {
+        const acct  = String(row.account_number || '').trim();
+        const acctN = (typeof normalizeAccountId === 'function') ? normalizeAccountId(acct) : acct;
+        if (!hitSet.has(acct)) continue;
+        if (ibChangedSet.has && ibChangedSet.has(acctN)) {
+          ibBlocked++;
+          console.log('[AutoMatch] IB-CHANGED skip: ' + acct + ' is on ib_changed_accounts — not auto-matching.');
+          continue;
+        }
+        // Phase 16.7 Issue 4 — if this pending row also has a RetryPool
+        // entry (archived or active), mark it as recovered so the
+        // Waiting for Match page can flash the "Recovered Match" badge.
+        try {
+          const poolEntry = RetryPool.getById(row.id);
+          if (poolEntry && (poolEntry.archived || poolEntry.recoveredAt == null)) {
+            RetryPool.recover(row.id);
+            recovered++;
+            console.log('[AutoMatch] RECOVERED: ' + acct + ' was in not-found pool; un-archived + matched.');
+          }
+        } catch (e) { console.warn('[AutoMatch] recover hook failed:', e); }
+        try {
+          const { error: updErr } = await supabaseClient
+            .from('license_requests')
+            .update({ status: 'matched', updated_at: nowIso })
+            .eq('id', row.id);
+          if (updErr) {
+            errors++;
+            console.warn('[AutoMatch] update error for id=' + row.id + ':', updErr);
+          } else {
+            matchedNow++;
+          }
+        } catch (e) {
+          errors++;
+          console.warn('[AutoMatch] update exception for id=' + row.id + ':', e);
+        }
+      }
+      if (matchedNow > 0) {
+        console.log('[AutoMatch] flipped ' + matchedNow + ' of ' + scanned + ' pending → matched (broker_accounts hit).');
+      }
+      if (ibBlocked > 0) {
+        console.warn('[AutoMatch] ' + ibBlocked + ' pending request(s) NOT auto-matched — flagged IB Changed.');
+      }
+      if (recovered > 0) {
+        console.log('[AutoMatch] ' + recovered + ' archived not-found row(s) auto-recovered.');
+        try {
+          if (typeof renderWaitingForMatch === 'function') renderWaitingForMatch();
+          if (typeof showToast === 'function') showToast(recovered + ' Not Found account(s) auto-recovered into the matched pipeline.', 'success', 5000);
+        } catch (_) {}
+      }
+    } catch (e) {
+      errors++;
+      console.warn('[AutoMatch] outer exception:', e);
+    }
+    return { scanned, matchedNow, errors };
+  }
+
+  async function _sweepStalePendingViaSupabase() {
+    if (!supabaseClient || !DataLayer.isLive) {
+      console.log('[NotFoundSweep] Supabase not live — skipping sweep.');
+      return { staleFound: 0, marked: 0, emailed: 0 };
+    }
+
+    // Step 1 — fetch pending license_requests older than the 48h window
+    const cutoffMs  = Date.now() - RETRY_POOL_MAX_DAYS * RETRY_POOL_DAY_MS;
+    const cutoffIso = new Date(cutoffMs).toISOString();
+
+    let staleRows = [];
+    try {
+      const { data, error } = await supabaseClient
+        .from(DB_SCHEMA.TABLE)
+        .select(DB_SCHEMA.SELECT)
+        .eq('status', 'pending')
+        .lt('created_at', cutoffIso)
+        .order('created_at', { ascending: true })
+        .limit(500);
+      if (error) {
+        console.warn('[NotFoundSweep] license_requests stale-pending fetch failed:', error.message);
+        return { staleFound: 0, marked: 0, emailed: 0 };
+      }
+      staleRows = data || [];
+    } catch (e) {
+      console.warn('[NotFoundSweep] license_requests fetch exception:', e);
+      return { staleFound: 0, marked: 0, emailed: 0 };
+    }
+
+    console.log(`[NotFoundSweep] stale-pending scan — found ${staleRows.length} pending license_request(s) older than ${RETRY_POOL_MAX_DAYS}-day window.`);
+    if (staleRows.length === 0) return { staleFound: 0, marked: 0, emailed: 0 };
+
+    // Step 2 — fetch broker_accounts so we can exclude any account that
+    // IS still in the latest broker file (those remain match-candidates).
+    let brokerSet = new Set();
+    try {
+      const { data, error } = await supabaseClient
+        .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+        .select('account_number')
+        .limit(20000);
+      if (!error && Array.isArray(data)) {
+        brokerSet = new Set(data.map(r => normalizeAccountId(r.account_number)));
+      } else if (error) {
+        console.warn('[NotFoundSweep] broker_accounts fetch warning:', error.message);
+      }
+    } catch (e) {
+      console.warn('[NotFoundSweep] broker_accounts fetch exception:', e);
+    }
+    console.log(`[NotFoundSweep] broker_accounts known: ${brokerSet.size} account(s).`);
+
+    // Step 3 — for each stale pending account NOT in broker_accounts:
+    //   (a) flip license_requests.status='unmatched' via writeUnmatched
+    //   (b) build a not_found email_outbox payload
+    const emailItems = [];
+    let marked = 0;
+
+    for (const row of staleRows) {
+      const acct = normalizeAccountId(row.account_number);
+      if (!acct) continue;
+      // If account is still in broker_accounts, do NOT mark unmatched —
+      // the Phase 16 STEP 2.5 in master_engine.ps1 will auto-match it
+      // on its next 15-min tick.  Leave it for the engine to handle.
+      if (brokerSet.has(acct)) continue;
+
+      try {
+        await writeUnmatched(row.id);
+        marked++;
+        console.log(`[NotFoundSweep] license_requests.id=${row.id} account=${acct} → 'unmatched' (older than ${RETRY_POOL_MAX_DAYS}d, not in broker_accounts)`);
+      } catch (writeErr) {
+        console.warn(`[NotFoundSweep] writeUnmatched failed for id=${row.id}: ${writeErr.message}. Skipping email.`);
+        continue;
+      }
+
+      if (row.email && AUTO_MSG.not_found) {
+        const name = row.email || 'there';
+        emailItems.push({
+          id:         _autoId(),
+          type:       'not_found',
+          account:    acct,
+          email:      row.email,
+          subject:    AUTO_MSG.not_found.subject,
+          body:       AUTO_MSG.not_found.body(name),
+          request_id: row.id,
+          status:     'queued',
+          queued_at:  new Date().toISOString(),
+        });
+      }
+    }
+
+    // Step 4 — push the not_found emails to email_outbox
+    let emailedCount = 0;
+    if (emailItems.length > 0) {
+      try {
+        const res = await _insertEmailOutbox(emailItems);
+        emailedCount = res.inserted ? res.inserted.length : 0;
+        console.log(`[NotFoundSweep] email_outbox: inserted ${emailedCount} not_found row(s).`);
+      } catch (e) {
+        console.warn('[NotFoundSweep] email_outbox insert failed:', e);
+      }
+    }
+
+    if (marked > 0) {
+      // Refresh dashboard so the Delivered / Waiting / Matched pages
+      // reflect the new 'unmatched' status.
+      try { await loadData(); } catch (e) {}
+    }
+
+    console.log(`[NotFoundSweep] summary — stale found: ${staleRows.length}, marked unmatched: ${marked}, emailed: ${emailedCount}`);
+    return { staleFound: staleRows.length, marked, emailed: emailedCount };
   }
 
 
@@ -3165,14 +3781,19 @@ const AdminDashboard = (() => {
         <div class="crm-col-labels crm-col-labels--active">
           <span>Account</span><span>Email</span><span>Country</span><span>Type</span>
           <span>Platform</span><span>Last Trade</span><span>Days Ago</span>
-          <span>Commission</span><span>Volume (lots)</span>
+          <span>Commission</span><span>Volume (lots)</span><span>Actions</span>
         </div>
         <div class="crm-table-body">
           ${rows.length === 0
             ? `<div class="crm-no-results">No clients match this filter.</div>`
-            : rows.map(r => {
+            : rows.map(orig => {
+                const r = _applyOverride(orig); // Phase 16.2 — apply client_overrides
                 const d   = CrmStore.daysSince(r.lastTrade);
                 const cls = d === null ? '' : d <= 7 ? 'crm-days--fresh' : d <= 30 ? '' : d <= 90 ? 'crm-days--stale' : 'crm-days--old';
+                const isBlocked = _blockedSet && _blockedSet.has(normalizeAccountId(r.account));
+                const blkBtn = isBlocked
+                  ? `<button class="row-act-btn row-act-btn--edit" data-row-unblock="${esc(r.account)}" title="Unblock" type="button" style="color:#4ade80;border-color:rgba(34,197,94,0.45)">↺ Unblk</button>`
+                  : `<button class="row-act-btn row-act-btn--block" data-row-block="${esc(r.account)}" title="Block" type="button">⊘ Block</button>`;
                 return `<div class="crm-row crm-row--active">
                   <span class="crm-cell-acct">${esc(r.account)}</span>
                   <span class="crm-cell-email">${fmtContact(r)}</span>
@@ -3183,6 +3804,10 @@ const AdminDashboard = (() => {
                   <span class="crm-cell-days ${cls}">${d!==null?d+'d':'—'}</span>
                   <span class="crm-cell-money">${fmtMoney(r.reward)}</span>
                   <span class="crm-cell-lots">${fmtLots(r.volumeLots)}</span>
+                  <span class="crm-cell-actions">
+                    <button class="row-act-btn row-act-btn--edit" data-row-edit="${esc(r.account)}" title="Edit" type="button">✎</button>
+                    ${blkBtn}
+                  </span>
                 </div>`;
               }).join('')
           }
@@ -3242,13 +3867,18 @@ const AdminDashboard = (() => {
       <div class="crm-table-card">
         <div class="crm-col-labels crm-col-labels--inactive">
           <span>Account</span><span>Email</span><span>Country</span><span>Type</span>
-          <span>Platform</span><span>Joined</span><span>Last Trade</span><span>Commission</span>
+          <span>Platform</span><span>Joined</span><span>Last Trade</span><span>Commission</span><span>Actions</span>
         </div>
         <div class="crm-table-body">
           ${rows.length === 0
             ? `<div class="crm-no-results">No clients match this filter.</div>`
-            : rows.map(r =>
-                `<div class="crm-row crm-row--inactive">
+            : rows.map(orig => {
+                const r = _applyOverride(orig); // Phase 16.2 — apply client_overrides
+                const isBlocked = _blockedSet && _blockedSet.has(normalizeAccountId(r.account));
+                const blkBtn = isBlocked
+                  ? `<button class="row-act-btn row-act-btn--edit" data-row-unblock="${esc(r.account)}" type="button" style="color:#4ade80;border-color:rgba(34,197,94,0.45)">↺ Unblk</button>`
+                  : `<button class="row-act-btn row-act-btn--block" data-row-block="${esc(r.account)}" type="button">⊘ Block</button>`;
+                return `<div class="crm-row crm-row--inactive">
                   <span class="crm-cell-acct">${esc(r.account)}</span>
                   <span class="crm-cell-email">${fmtContact(r)}</span>
                   <span class="crm-cell-cc">${esc(r.country||'—')}</span>
@@ -3257,8 +3887,11 @@ const AdminDashboard = (() => {
                   <span class="crm-cell-date">${esc(r.createdAt||'—')}</span>
                   <span class="crm-cell-date">${r.lastTrade ? esc(r.lastTrade) : '<span class="crm-never">Never</span>'}</span>
                   <span class="crm-cell-money">${fmtMoney(r.reward)}</span>
-                </div>`
-              ).join('')
+                  <span class="crm-cell-actions">
+                    <button class="row-act-btn row-act-btn--edit" data-row-edit="${esc(r.account)}" type="button">✎</button>${blkBtn}
+                  </span>
+                </div>`;
+              }).join('')
           }
         </div>
       </div>`;
@@ -3300,13 +3933,18 @@ const AdminDashboard = (() => {
       <div class="crm-table-card">
         <div class="crm-col-labels crm-col-labels--hv">
           <span>#</span><span>Account</span><span>Email</span><span>Country</span>
-          <span>Type</span><span>Commission</span><span>Volume (lots)</span><span>Last Trade</span>
+          <span>Type</span><span>Commission</span><span>Volume (lots)</span><span>Last Trade</span><span>Actions</span>
         </div>
         <div class="crm-table-body">
           ${top.length === 0
             ? `<div class="crm-no-results">No commission data available. Upload a broker file with reward/commission data.</div>`
-            : top.map((r, i) =>
-                `<div class="crm-row crm-row--hv">
+            : top.map((orig, i) => {
+                const r = _applyOverride(orig); // Phase 16.2 — apply client_overrides
+                const isBlocked = _blockedSet && _blockedSet.has(normalizeAccountId(r.account));
+                const blkBtn = isBlocked
+                  ? `<button class="row-act-btn row-act-btn--edit" data-row-unblock="${esc(r.account)}" type="button" style="color:#4ade80;border-color:rgba(34,197,94,0.45)">↺ Unblk</button>`
+                  : `<button class="row-act-btn row-act-btn--block" data-row-block="${esc(r.account)}" type="button">⊘ Block</button>`;
+                return `<div class="crm-row crm-row--hv">
                   <span class="crm-cell-rank crm-rank-${i<3?i+1:'rest'}">#${i+1}</span>
                   <span class="crm-cell-acct">${esc(r.account)}</span>
                   <span class="crm-cell-email">${fmtContact(r)}</span>
@@ -3315,8 +3953,11 @@ const AdminDashboard = (() => {
                   <span class="crm-cell-money crm-money--hi">${fmtMoney(r.reward)}</span>
                   <span class="crm-cell-lots">${fmtLots(r.volumeLots)}</span>
                   <span class="crm-cell-date">${esc(r.lastTrade||'—')}</span>
-                </div>`
-              ).join('')
+                  <span class="crm-cell-actions">
+                    <button class="row-act-btn row-act-btn--edit" data-row-edit="${esc(r.account)}" type="button">✎</button>${blkBtn}
+                  </span>
+                </div>`;
+              }).join('')
           }
         </div>
       </div>`;
@@ -3426,9 +4067,30 @@ const AdminDashboard = (() => {
           return { account: acct, email: req ? req.email : '', whatsapp: waMap[acct] || '', source: 'manual' };
         });
       }
+      // Phase 16 follow-up — IB Changed audience for recovery campaigns.
+      // Read from the cached ib_changed_accounts rows. These clients have
+      // service access revoked BUT remain contactable from CRM.
+      case 'ib_changed': {
+        return (_ibChangedRowsCache || []).map(r => ({
+          account:  normalizeAccountId(r.account_number),
+          email:    r.email    || '',
+          whatsapp: r.whatsapp || '',
+          source:   'ib_changed',
+        }));
+      }
       default: return CrmStore.getActive().map(crmToC);
     }
   }
+
+  // Phase 16.2 Issue 4 — universal audience filter: exclude blocked accounts.
+  // Wraps the original getCampaignAudience so EVERY group automatically
+  // excludes blocked clients, including the new ib_changed audience.
+  const _originalGetCampaignAudience = getCampaignAudience;
+  getCampaignAudience = function (group, manualAccts) {
+    const list = _originalGetCampaignAudience(group, manualAccts);
+    if (!_blockedSet || _blockedSet.size === 0) return list;
+    return list.filter(c => !_blockedSet.has(normalizeAccountId(c.account)));
+  };
 
   /* WhatsApp lookup map from live State.requests — used for RetryPool contacts */
   function _cbWaLookup() {
@@ -3460,6 +4122,7 @@ const AdminDashboard = (() => {
       hv20:      CrmStore.getHighValue(20).length,
       hvall:     all.filter(r => r.reward > 0).length,
       all:       all.length + retryUniq.length,
+      ib_changed: (_ibChangedRowsCache || []).length,   // Phase 16 follow-up
     };
   }
 
@@ -3479,6 +4142,8 @@ const AdminDashboard = (() => {
       { group: 'hv20',      label: 'High Value — Top 20', count: counts.hv20      },
       { group: 'hvall',     label: 'All High Value',      count: counts.hvall     },
       { group: 'all',       label: 'All Clients',         count: counts.all       },
+      // Phase 16 follow-up — recovery audience (service-revoked, still contactable)
+      { group: 'ib_changed',label: 'IB Changed (Recovery)', count: counts.ib_changed },
       { group: 'manual',    label: 'Custom Selection',    count: null             },
     ];
     gridEl.innerHTML = OPTS.map(o =>
@@ -3537,12 +4202,17 @@ const AdminDashboard = (() => {
   }
 
   /* ── renderCampaignBuilder — section entry point ─────────────── */
-  function renderCampaignBuilder() {
+  async function renderCampaignBuilder() {
     const noDataEl  = document.getElementById('crmMsgNoData');
     const composeEl = document.getElementById('crmMsgCompose');
     if (!composeEl) return;
 
-    const hasData = !CrmStore.isEmpty() || RetryPool.getAll().length > 0;
+    // Phase 16 follow-up — refresh ib_changed_accounts cache so the
+    // audience grid shows accurate count for the new IB Changed audience.
+    _invalidateIbChangedCache();
+    try { await _ensureIbChangedSet(); } catch (e) {}
+
+    const hasData = !CrmStore.isEmpty() || RetryPool.getAll().length > 0 || (_ibChangedRowsCache || []).length > 0;
     if (!hasData) {
       if (noDataEl) { noDataEl.innerHTML = buildCrmNoData(); noDataEl.hidden = false; }
       composeEl.hidden = true;
@@ -3767,13 +4437,15 @@ const AdminDashboard = (() => {
     return `<span class="status-pill ${meta.cls}">${meta.label}</span>`;
   }
 
-  /** Format an ISO date string as "DD Mon YYYY". */
+  /** Format an ISO date string as "DD Mon YYYY · HH:MM AM/PM" (Phase 16.4 Issue 2). */
   function _iqFmtDate(iso) {
     if (!iso) return '—';
     try {
-      return new Date(iso).toLocaleDateString('en-GB', {
-        day: '2-digit', month: 'short', year: 'numeric',
-      });
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const ds = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+      const ts = d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+      return ds + ' · ' + ts;
     } catch (_e) { return iso; }
   }
 
@@ -3896,20 +4568,58 @@ const AdminDashboard = (() => {
       const file   = _iqFilename(r.account_number || r.account);
       const pill   = _iqPill(r.status || r.dbStatus || '');
 
+      // Phase 16.4 Issue 5 — explicit human-readable context per row state.
+      const sLower = String(r.status || r.dbStatus || '').toLowerCase();
+      let contextLabel = '';
+      if (sLower === 'matched' || sLower === 'approved') {
+        contextLabel = 'Awaiting Compile';
+      } else if (sLower === 'compile_ready') {
+        contextLabel = 'Ready to Compile';
+      } else if (sLower === 'compiled') {
+        contextLabel = 'Ready to Send';
+      } else if (sLower === 'emailed' || sLower === 'delivered') {
+        const sentWhen = _iqFmtDate(r.delivered_at || r.emailed_at || r.updated_at);
+        contextLabel = 'Delivered ' + sentWhen + (email !== '—' ? ' → ' + email : '');
+      } else if (sLower === 'rejected' || sLower === 'failed' || sLower === 'unmatched') {
+        const reason = r.notes || r.failure_reason || r.reject_reason || 'no reason captured';
+        contextLabel = 'Failed: ' + reason;
+      } else if (sLower) {
+        contextLabel = sLower;
+      }
+
+      // Phase 16.4 Issue 7 — delivery-history fields (graceful when columns missing)
+      const resendCount  = (r.resend_count != null) ? r.resend_count : 0;
+      const lastResendAt = r.last_resend_at ? _iqFmtDate(r.last_resend_at) : null;
+      let historyLine = '';
+      if (sLower === 'emailed' || sLower === 'delivered') {
+        historyLine =
+          'Resends: ' + resendCount +
+          (lastResendAt ? ' · Last: ' + lastResendAt : '');
+      }
+
       let actions = '';
       if (!isTerminal) {
-        const s = String(r.status || r.dbStatus || '').toLowerCase();
-        if (['matched', 'approved', 'compile_ready'].includes(s)) {
+        if (['matched', 'approved', 'compile_ready'].includes(sLower)) {
           actions = `
             <button class="iq-btn iq-btn--action" data-iq-action="compiled" data-iq-id="${r.id}" type="button" title="Mark as Compiled">Compiled</button>
             <button class="iq-btn iq-btn--action" data-iq-action="emailed"  data-iq-id="${r.id}" type="button" title="Mark as Emailed">Emailed</button>
             <button class="iq-btn iq-btn--danger" data-iq-action="rejected" data-iq-id="${r.id}" type="button" title="Reject">Reject</button>`;
-        } else if (s === 'compiled') {
+        } else if (sLower === 'compiled') {
           actions = `
             <button class="iq-btn iq-btn--action" data-iq-action="emailed"  data-iq-id="${r.id}" type="button" title="Mark as Emailed">Emailed</button>
+            <button class="iq-btn iq-btn--action" data-iq-action="resend"   data-iq-id="${r.id}" data-iq-acct="${acct}" data-iq-email="${email}" type="button" title="Resend delivery email">RESEND</button>
             <button class="iq-btn iq-btn--danger" data-iq-action="rejected" data-iq-id="${r.id}" type="button" title="Reject">Reject</button>`;
         }
+      } else {
+        // Phase 16.4 Issue 6 — RESEND on Delivered rows
+        if (sLower === 'emailed' || sLower === 'delivered') {
+          actions = `<button class="iq-btn iq-btn--action" data-iq-action="resend" data-iq-id="${r.id}" data-iq-acct="${acct}" data-iq-email="${email}" type="button" title="Resend delivery email">RESEND</button>`;
+        }
       }
+      // Phase 16.6 — universal "ⓘ" info button on EVERY row, regardless of status.
+      // Opens the diagnostic modal with full reason + history + Remove-from-Queue.
+      const infoBtn = `<button class="iq-btn iq-btn--info" data-iq-action="info" data-iq-id="${r.id}" data-iq-acct="${acct}" type="button" title="Show full diagnostics for this row">ⓘ</button>`;
+      actions = infoBtn + (actions ? ' ' + actions : '');
 
       return `<div class="intake-queue-row" data-iq-row-id="${r.id}">
         <span class="iq-cell iq-acct" title="${acct}">${acct}</span>
@@ -3917,7 +4627,11 @@ const AdminDashboard = (() => {
         <span class="iq-cell iq-broker" title="${broker}">${broker}</span>
         <span class="iq-cell iq-date">${date}</span>
         <span class="iq-cell iq-file" title="${file}">${file}</span>
-        <span class="iq-cell iq-status">${pill}</span>
+        <span class="iq-cell iq-status">
+          ${pill}
+          ${contextLabel ? `<div class="iq-context-label" title="${contextLabel.replace(/"/g,'&quot;')}">${contextLabel}</div>` : ''}
+          ${historyLine ? `<div class="iq-history-line">${historyLine}</div>` : ''}
+        </span>
         <span class="iq-cell iq-actions">${actions}</span>
       </div>`;
     }).join('');
@@ -4030,7 +4744,15 @@ const AdminDashboard = (() => {
     if (loadEl) loadEl.hidden = false;
     try {
       const data = await fetchIntakeQueue();
-      const rows = data.matched || [];
+      // Phase 15.6 refinement (Task 5): clean status separation.
+      // Matched Accounts now shows ONLY 'matched' / 'approved' — these are
+      // the brief pre-compile states.  As soon as the engine flips a row to
+      // 'compile_ready', it leaves this page and shows in Compile Queue.
+      // This prevents the same account appearing in two sidebar pages.
+      const rows = (data.matched || []).filter(r => {
+        const s = String(r.status || '').toLowerCase();
+        return s === 'matched' || s === 'approved';
+      });
       if (countEl) countEl.textContent = String(rows.length);
 
       // Synthesize a panel-shaped wrapper so renderIqPanel can reuse its
@@ -4055,8 +4777,10 @@ const AdminDashboard = (() => {
   }
 
   /**
-   * Render Compile Queue sidebar page using fetchIntakeQueue().matched + .compiled.
-   * Combined list, newest first within each group (matched group on top).
+   * Render Compile Queue sidebar page.
+   * Phase 15.6 refinement (Task 5): shows only 'compile_ready' + 'compiled'
+   * — the active compile pipeline.  Excludes brief pre-compile 'matched'
+   * (those appear in Matched Accounts).  No overlap between sidebar pages.
    */
   async function renderCompileQueueSection() {
     const wrapEl   = document.getElementById('compileSectionWrap');
@@ -4069,8 +4793,13 @@ const AdminDashboard = (() => {
     if (loadEl) loadEl.hidden = false;
     try {
       const data = await fetchIntakeQueue();
-      // Combined: matched (awaiting compile) on top, then compiled (done).
-      const rows = [].concat(data.matched || [], data.compiled || []);
+      // Pull compile_ready rows from the 'matched' slice (which still
+      // includes them per fetchIntakeQueue's MATCHED_STATUSES contract),
+      // then concat with rows already past compile.
+      const compileReady = (data.matched || []).filter(r => {
+        return String(r.status || '').toLowerCase() === 'compile_ready';
+      });
+      const rows = compileReady.concat(data.compiled || []);
       if (countEl) countEl.textContent = String(rows.length);
 
       const fakePanel = {
@@ -4142,11 +4871,18 @@ const AdminDashboard = (() => {
     if (compileRefresh)   compileRefresh.addEventListener('click',   () => renderCompileQueueSection());
     if (deliveredRefresh) deliveredRefresh.addEventListener('click', () => renderDeliveredSection());
 
+    // Phase 16.6 — bind the diagnostic modal close/resend/remove handlers once.
+    if (typeof _bindIqInfoModal === 'function') _bindIqInfoModal();
+
+    // Phase 16.7 Issue 1 — kick off the per-minute countdown ticker.
+    if (typeof _startWaitingCountdownTicker === 'function') _startWaitingCountdownTicker();
+
     // Action-button delegation — reuses same data-iq-action contract as the
     // intake queue, so intakeSetStatus() does the actual write.
-    const matchedRows = document.getElementById('matchedSectionRows');
-    const compileRows = document.getElementById('compileSectionRows');
-    [matchedRows, compileRows].forEach(rowsEl => {
+    const matchedRows   = document.getElementById('matchedSectionRows');
+    const compileRows   = document.getElementById('compileSectionRows');
+    const deliveredRows = document.getElementById('deliveredSectionRows');
+    [matchedRows, compileRows, deliveredRows].forEach(rowsEl => {
       if (!rowsEl) return;
       rowsEl.addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-iq-action]');
@@ -4156,6 +4892,25 @@ const AdminDashboard = (() => {
         if (!action || !id) return;
         btn.disabled = true;
         try {
+          /* Phase 16.4 Issue 6 — RESEND is NOT a status transition; route to its own handler */
+          if (action === 'resend') {
+            const acct  = btn.dataset.iqAcct  || '';
+            const email = btn.dataset.iqEmail || '';
+            const ok = await _requestResend(id, acct, email);
+            if (ok) {
+              showToast('Resend queued for ' + acct + ' → ' + email + '. Engine will pick it up on the next tick.', 'success', 5000);
+              // Refresh Delivered + Compile so the resend counter shows
+              if (rowsEl.id === 'compileSectionRows') renderCompileQueueSection();
+              renderDeliveredSection();
+            }
+            return;
+          }
+          /* Phase 16.6 — INFO button opens the diagnostic modal (no status change). */
+          if (action === 'info') {
+            const acct = btn.dataset.iqAcct || '';
+            await _openIqInfoModal(id, acct);
+            return;
+          }
           const ok = await intakeSetStatus(id, action);
           if (ok) {
             showToast(`Status updated to "${action}".`, 'success', 2500);
@@ -4170,6 +4925,1762 @@ const AdminDashboard = (() => {
       });
     });
   }
+
+  /* ─── _requestResend — Phase 16.4 Issue 6 ─────────────────────
+   *
+   * Inserts a row into `resend_requests` (Supabase) and bumps
+   * `license_requests.resend_count` + `last_resend_at`.  The PowerShell
+   * engine STEP 2.6 (added in master_engine.ps1 patch) picks up any
+   * resend_requests rows with status='pending' and re-runs the EX5
+   * package + Gmail SMTP send for each, then PATCHes status='consumed'.
+   *
+   * REQUIRED Supabase SQL (run once in SQL editor):
+   *   CREATE TABLE IF NOT EXISTS resend_requests (
+   *     id              BIGSERIAL PRIMARY KEY,
+   *     license_request_id UUID,
+   *     account_number  TEXT NOT NULL,
+   *     recipient_email TEXT,
+   *     requested_by    TEXT,
+   *     status          TEXT NOT NULL DEFAULT 'pending',
+   *     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+   *     consumed_at     TIMESTAMPTZ
+   *   );
+   *   ALTER TABLE license_requests
+   *     ADD COLUMN IF NOT EXISTS resend_count   INTEGER NOT NULL DEFAULT 0,
+   *     ADD COLUMN IF NOT EXISTS last_resend_at TIMESTAMPTZ;
+   *
+   * Returns true on success, false on failure (toast already shown).
+   */
+  async function _requestResend(licenseRequestId, accountNumber, recipientEmail) {
+    if (!supabaseClient || !DataLayer.isLive) {
+      showToast('Resend unavailable — Supabase is not live.', 'error', 4000);
+      return false;
+    }
+    try {
+      // 1) Insert into resend_requests audit table
+      const insResp = await supabaseClient
+        .from('resend_requests')
+        .insert([{
+          license_request_id: licenseRequestId,
+          account_number:     String(accountNumber || ''),
+          recipient_email:    String(recipientEmail || ''),
+          requested_by:       'dashboard',
+          status:             'pending',
+        }])
+        .select('id, created_at');
+      if (insResp.error) {
+        const code = insResp.error.code ? ' [' + insResp.error.code + ']' : '';
+        const msg  = insResp.error.message || 'unknown error';
+        console.error('[Resend] resend_requests insert failed:', insResp.error);
+        if (insResp.error.code === 'PGRST205' || /relation .* does not exist/i.test(msg)) {
+          showToast('Resend table missing — run the SQL in _requestResend() comment. See console.', 'error', 9000);
+        } else {
+          showToast('Resend insert failed: ' + msg + code, 'error', 7000);
+        }
+        return false;
+      }
+      // 2) Bump resend_count + last_resend_at on the license_requests row.
+      //    Read current count first, then write count+1 (Supabase JS has no atomic increment).
+      try {
+        const { data: cur } = await supabaseClient
+          .from('license_requests')
+          .select('resend_count')
+          .eq('id', licenseRequestId)
+          .limit(1);
+        const currentCount = (cur && cur[0] && typeof cur[0].resend_count === 'number')
+          ? cur[0].resend_count : 0;
+        await supabaseClient
+          .from('license_requests')
+          .update({
+            resend_count:   currentCount + 1,
+            last_resend_at: new Date().toISOString(),
+          })
+          .eq('id', licenseRequestId);
+      } catch (e) {
+        console.warn('[Resend] resend_count bump failed (non-fatal — audit row was created):', e);
+      }
+      // 3) Trigger the engine so the resend goes out at the next tick.
+      try {
+        await supabaseClient
+          .from('engine_triggers')
+          .insert([{ status: 'pending', requested_by: 'resend:' + accountNumber }]);
+      } catch (e) {
+        console.warn('[Resend] engine_triggers nudge failed (non-fatal):', e);
+      }
+      return true;
+    } catch (e) {
+      console.error('[Resend] exception:', e);
+      showToast('Resend exception: ' + (e.message || e), 'error', 5000);
+      return false;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     Phase 16.6 — Compile Queue row diagnostic modal
+     ───────────────────────────────────────────────────────────
+     Universal "ⓘ" button on every Matched / Compile / Delivered
+     row opens this modal.  The modal answers, for one specific
+     license_requests id:
+
+       1. Why is this row stuck here?  (current status + reason)
+       2. Has the SAME account already been delivered through a
+          prior request_id?  (cross-account duplicate check)
+       3. Full delivery history (delivered_at, resend_count,
+          last_resend_at, recipient)
+       4. Compile / delivery failure reason if status='rejected'
+          or notes carry a failure marker
+       5. Resend action (same as inline RESEND, for convenience)
+       6. Remove from Queue — flips status to 'rejected' so the
+          engine + dashboard both drop it from active pipelines.
+                                                                     */
+
+  let _iqInfoActive = null;   // holds { id, acct } while the modal is open
+
+  async function _openIqInfoModal(licenseRequestId, account) {
+    const overlay = document.getElementById('iqInfoOverlay');
+    if (!overlay) {
+      console.warn('[iqInfo] modal overlay missing');
+      return;
+    }
+    _iqInfoActive = { id: licenseRequestId, acct: account };
+    overlay.hidden = false;
+
+    const $ = (id) => document.getElementById(id);
+    $('iqInfoLoading').hidden = false;
+    $('iqInfoBody').hidden    = true;
+    $('iqInfoError').hidden   = true;
+    $('iqInfoDuplicateSection').hidden = true;
+    $('iqInfoFailureSection').hidden   = true;
+    $('iqInfoResendBtn').hidden        = true;
+    $('iqInfoRemoveBtn').disabled      = false;
+    // Phase 16.7 Issue 3 — hide retry-pool sections by default; populated below if applicable
+    if ($('iqInfoRetrySection'))    $('iqInfoRetrySection').hidden    = true;
+    if ($('iqInfoAttemptsSection')) $('iqInfoAttemptsSection').hidden = true;
+    if ($('iqInfoRecoverySection')) $('iqInfoRecoverySection').hidden = true;
+
+    try {
+      // 1) Fetch the row itself.  We only pull base columns so this never
+      //    400s on tenants whose schema is missing optional resend/delivery cols.
+      let row = null;
+      if (supabaseClient && DataLayer.isLive) {
+        try {
+          const baseSel = await supabaseClient
+            .from('license_requests')
+            .select('id, account_number, email, status, broker_name, created_at')
+            .eq('id', licenseRequestId)
+            .limit(1);
+          if (!baseSel.error && baseSel.data && baseSel.data[0]) row = baseSel.data[0];
+        } catch (e) {
+          console.warn('[iqInfo] base select failed:', e);
+        }
+        // Try optional columns separately; ignore failures.
+        if (row) {
+          try {
+            const optSel = await supabaseClient
+              .from('license_requests')
+              .select('resend_count, last_resend_at, delivered_at, notes')
+              .eq('id', licenseRequestId)
+              .limit(1);
+            if (!optSel.error && optSel.data && optSel.data[0]) Object.assign(row, optSel.data[0]);
+          } catch (_) { /* optional columns may not exist */ }
+        }
+      }
+      if (!row) {
+        // Fall back to in-memory CrmStore / State.requests
+        const inMem = (Array.isArray(State.requests) ? State.requests : [])
+          .find(x => String(x.id) === String(licenseRequestId));
+        if (inMem) {
+          row = {
+            id:             inMem.id,
+            account_number: inMem.account,
+            email:          inMem.email,
+            status:         inMem.dbStatus || inMem.status,
+            broker_name:    inMem.broker,
+            created_at:     inMem.createdAt || null,
+          };
+        }
+      }
+      if (!row) {
+        $('iqInfoLoading').hidden = true;
+        $('iqInfoError').hidden   = false;
+        $('iqInfoError').textContent = 'Row not found. It may have been deleted.';
+        return;
+      }
+
+      // 2) Identity + current state
+      $('iqInfoAcct').textContent      = row.account_number || account || '—';
+      $('iqInfoEmail').textContent     = row.email || '—';
+      $('iqInfoBroker').textContent    = row.broker_name || '—';
+      $('iqInfoId').textContent        = row.id || '—';
+      $('iqInfoSubmitted').textContent = row.created_at ? fmtDateTime(row.created_at) : '—';
+      $('iqInfoStatus').textContent    = row.status || '—';
+
+      // 3) Reason text — same vocabulary the inline labels use, plus extras
+      const s = String(row.status || '').toLowerCase();
+      let reason;
+      if (s === 'pending')        reason = 'Waiting for the next broker file to match this account.';
+      else if (s === 'matched' || s === 'approved')
+                                  reason = 'Awaiting Compile — engine STEP 6 will pick it up on the next 15-minute tick (or click Run Now).';
+      else if (s === 'compile_ready') reason = 'Ready to Compile — engine STEP 5/6 will stage + compile the MQ5 on the next tick.';
+      else if (s === 'compiling')     reason = 'Compile in progress — engine has staged the MQ5; wait for next tick to complete.';
+      else if (s === 'compiled')      reason = 'Ready to Send — EX5 is built; engine STEP 7 will email it on the next tick. You can also click RESEND.';
+      else if (s === 'emailed' || s === 'delivered') {
+        reason = 'Successfully delivered. Use RESEND only if the client did not receive the email.';
+      } else if (s === 'rejected') reason = 'Rejected by admin or engine. See Failure section below for the captured reason.';
+      else if (s === 'unmatched')  reason = 'Account was absent from the last broker file beyond the retry window. Final not_found email sent.';
+      else if (s === 'ib_changed') reason = 'Account is in ib_changed_accounts — delivery blocked. The client is no longer under our IB referral.';
+      else                         reason = 'Unknown status — check engine logs.';
+      $('iqInfoReason').textContent = reason;
+
+      // 4) Delivery history
+      $('iqInfoDeliveredAt').textContent = row.delivered_at ? fmtDateTime(row.delivered_at)
+                                          : (s === 'emailed' || s === 'delivered') ? fmtDateTime(row.created_at) + ' (approx — delivered_at column not populated)'
+                                          : 'Not delivered yet';
+      $('iqInfoRecipient').textContent    = row.email || '—';
+      $('iqInfoResendCount').textContent  = (row.resend_count != null) ? String(row.resend_count) : '0';
+      $('iqInfoLastResend').textContent   = row.last_resend_at ? fmtDateTime(row.last_resend_at) : 'Never resent';
+
+      // 5) Cross-account duplicate check.  If the row's account_number has
+      //    EVER been delivered through a different license_requests id, surface
+      //    that fact so the admin knows the file already went out.
+      if (supabaseClient && DataLayer.isLive && row.account_number) {
+        try {
+          const dupResp = await supabaseClient
+            .from('license_requests')
+            .select('id, status, email, created_at')
+            .eq('account_number', row.account_number)
+            .in('status', ['emailed', 'delivered'])
+            .order('created_at', { ascending: false })
+            .limit(3);
+          if (!dupResp.error && dupResp.data && dupResp.data.length > 0) {
+            const others = dupResp.data.filter(x => String(x.id) !== String(row.id));
+            if (others.length > 0) {
+              const first = others[0];
+              const noteHtml =
+                'This account already has <strong>' + others.length + '</strong> earlier ' +
+                (others.length === 1 ? 'delivery' : 'deliveries') + ' on record. Most recent: ' +
+                '<strong>' + fmtDateTime(first.created_at) + '</strong>' +
+                (first.email ? ' → <code>' + esc(first.email) + '</code>' : '') +
+                '. If this is a duplicate submission, use <strong>Remove from Queue</strong> below.';
+              $('iqInfoDuplicateNote').innerHTML = noteHtml;
+              $('iqInfoDuplicateSection').hidden = false;
+            }
+          }
+        } catch (e) {
+          console.warn('[iqInfo] duplicate check failed (non-fatal):', e);
+        }
+      }
+
+      // 6) Failure reason if any
+      const failureText = row.notes || row.failure_reason || row.reject_reason;
+      if (s === 'rejected' || s === 'unmatched' || s === 'ib_changed' || failureText) {
+        $('iqInfoFailureNote').textContent = failureText || (
+          s === 'ib_changed' ? 'Account moved away from ZTU referral network.' :
+          s === 'unmatched'  ? 'Account never appeared in any broker file within the 48-hour retry window.' :
+          'No failure reason captured. Check engine logs (logs\\master_engine_*.log) for stack traces.'
+        );
+        $('iqInfoFailureSection').hidden = false;
+      }
+
+      // 7) Actions — Resend visible only on compiled / emailed / delivered
+      if (['compiled', 'emailed', 'delivered'].includes(s)) {
+        $('iqInfoResendBtn').hidden = false;
+      }
+
+      // 8) Phase 16.7 Issue 3 — if a RetryPool entry exists for this id,
+      //    populate the Request Timeline / Match Attempts / Recovery Status
+      //    sections so the admin sees the full lifecycle of the retry.
+      try {
+        const poolEntry = (typeof RetryPool !== 'undefined' && RetryPool)
+          ? RetryPool.getById(licenseRequestId)
+          : null;
+        if (poolEntry) {
+          const submittedIso = poolEntry.firstMissedAt ? new Date(poolEntry.firstMissedAt).toISOString() : null;
+          const expiresMs    = poolEntry.firstMissedAt + RETRY_POOL_MAX_DAYS * RETRY_POOL_DAY_MS;
+          const archivedMs   = poolEntry.archivedAt || (poolEntry.archived ? expiresMs : null);
+          const isExpired    = RetryPool.isExpired(poolEntry);
+
+          $('iqInfoRetrySubmitted').textContent = row.created_at ? fmtDateTime(row.created_at) : (submittedIso ? fmtDateTime(submittedIso) : '—');
+          $('iqInfoRetryStarted').textContent   = submittedIso ? fmtDateTime(submittedIso) : '—';
+          $('iqInfoRetryExpires').textContent   = expiresMs ? fmtDateTime(new Date(expiresMs).toISOString()) : '—';
+          if (poolEntry.recoveredAt) {
+            $('iqInfoRetryWindow').textContent = 'Recovered (un-archived ' + fmtDateTime(new Date(poolEntry.recoveredAt).toISOString()) + ')';
+          } else if (isExpired || poolEntry.archived) {
+            $('iqInfoRetryWindow').textContent = 'Expired — 48h retry window ended ' + (archivedMs ? fmtDateTime(new Date(archivedMs).toISOString()) : '');
+          } else {
+            $('iqInfoRetryWindow').textContent = RetryPool.formatCountdown(poolEntry);
+          }
+          $('iqInfoRetrySection').hidden = false;
+
+          $('iqInfoAttemptsCount').textContent = String(poolEntry.retryCount || 0);
+          $('iqInfoAttemptsLast').textContent  = poolEntry.lastChecked ? fmtDateTime(new Date(poolEntry.lastChecked).toISOString()) : 'Never';
+          $('iqInfoAttemptsFiles').textContent = 'Cross-checked against every broker file uploaded since submission (' + (poolEntry.retryCount || 0) + ' file scan(s) performed).';
+          $('iqInfoAttemptsSection').hidden = false;
+
+          if (poolEntry.recoveredAt) {
+            $('iqInfoRecoveryNote').innerHTML =
+              '<strong>Recovered Match Found Later.</strong> This account was previously in the Not Found pool and was auto-recovered into the matched pipeline on ' +
+              '<strong>' + fmtDateTime(new Date(poolEntry.recoveredAt).toISOString()) + '</strong>.';
+            $('iqInfoRecoverySection').hidden = false;
+          }
+
+          // Override the generic "Why stuck" line with a more specific
+          // failure-reason taxonomy for archived (not-found) rows.
+          if ((isExpired || poolEntry.archived) && !poolEntry.recoveredAt) {
+            $('iqInfoReason').textContent = 'Account not found in any broker report uploaded during the 48-hour retry window. Likely causes: (1) account not opened via our IB referral link, (2) wrong broker selected at submission, (3) registration not completed, (4) account exists but under a different IB, (5) typo in account number.';
+          }
+        }
+      } catch (e) {
+        console.warn('[iqInfo] retry-pool section population failed (non-fatal):', e);
+      }
+
+      $('iqInfoLoading').hidden = true;
+      $('iqInfoBody').hidden    = false;
+    } catch (e) {
+      console.error('[iqInfo] open failed:', e);
+      $('iqInfoLoading').hidden = true;
+      $('iqInfoError').hidden   = false;
+      $('iqInfoError').textContent = 'Failed to load row diagnostics: ' + (e.message || e);
+    }
+  }
+
+  function _closeIqInfoModal() {
+    const overlay = document.getElementById('iqInfoOverlay');
+    if (overlay) overlay.hidden = true;
+    _iqInfoActive = null;
+  }
+
+  /* Remove from Queue — flip status to 'rejected' so engine + dashboard
+   * both drop it from active pipelines.  Audit trail is preserved: the row
+   * stays in license_requests with status='rejected' and shows on the
+   * Rejected tab.  Reversible via the standard intake actions. */
+  async function _removeFromQueue(licenseRequestId, account) {
+    if (!supabaseClient || !DataLayer.isLive) {
+      showToast('Cannot remove — Supabase not live.', 'error', 4000);
+      return false;
+    }
+    try {
+      const upd = await supabaseClient
+        .from('license_requests')
+        .update({ status: 'rejected' })
+        .eq('id', licenseRequestId);
+      if (upd.error) {
+        console.error('[iqInfo] remove failed:', upd.error);
+        showToast('Remove failed: ' + (upd.error.message || 'unknown'), 'error', 5000);
+        return false;
+      }
+      showToast('Removed from queue (status → rejected) for ' + (account || licenseRequestId), 'success', 4000);
+      return true;
+    } catch (e) {
+      console.error('[iqInfo] remove exception:', e);
+      showToast('Remove exception: ' + (e.message || e), 'error', 5000);
+      return false;
+    }
+  }
+
+  /* Bind the modal's own buttons (close / resend / remove) ONCE on init.
+   * Called from the existing bindSidebarSectionPages() wiring. */
+  function _bindIqInfoModal() {
+    const overlay = document.getElementById('iqInfoOverlay');
+    if (!overlay || overlay.dataset.bound === '1') return;
+    overlay.dataset.bound = '1';
+
+    document.getElementById('iqInfoClose')   ?.addEventListener('click', _closeIqInfoModal);
+    document.getElementById('iqInfoCloseBtn')?.addEventListener('click', _closeIqInfoModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) _closeIqInfoModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay.hidden) _closeIqInfoModal();
+    });
+
+    document.getElementById('iqInfoResendBtn')?.addEventListener('click', async () => {
+      if (!_iqInfoActive) return;
+      const btn = document.getElementById('iqInfoResendBtn');
+      const email = document.getElementById('iqInfoEmail').textContent || '';
+      btn.disabled = true;
+      try {
+        const ok = await _requestResend(_iqInfoActive.id, _iqInfoActive.acct, email);
+        if (ok) {
+          showToast('Resend queued from diagnostics modal.', 'success', 4000);
+          _closeIqInfoModal();
+          if (typeof renderCompileQueueSection === 'function') renderCompileQueueSection();
+          if (typeof renderDeliveredSection    === 'function') renderDeliveredSection();
+        }
+      } finally { btn.disabled = false; }
+    });
+
+    document.getElementById('iqInfoRemoveBtn')?.addEventListener('click', async () => {
+      if (!_iqInfoActive) return;
+      const confirmed = window.confirm(
+        'Remove this row from the queue?\n\n' +
+        'Account: ' + _iqInfoActive.acct + '\n' +
+        'Request ID: ' + _iqInfoActive.id + '\n\n' +
+        'Status will be set to "rejected". The row remains visible on the Rejected tab and can be re-opened from there.'
+      );
+      if (!confirmed) return;
+      const btn = document.getElementById('iqInfoRemoveBtn');
+      btn.disabled = true;
+      const ok = await _removeFromQueue(_iqInfoActive.id, _iqInfoActive.acct);
+      btn.disabled = false;
+      if (ok) {
+        _closeIqInfoModal();
+        if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+        if (typeof renderCompileQueueSection    === 'function') renderCompileQueueSection();
+        if (typeof renderDeliveredSection       === 'function') renderDeliveredSection();
+      }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     PHASE 15.6 — PHASE B (Tasks 3 + 6)
+     ───────────────────────────────────────────────────────────
+     IB Stars Engine (Active / Inactive activity tracking)
+     IB Changed Accounts (access revocation + auto-detect)
+
+     Broker file mappings (confirmed by user):
+       account column        : 'client_account'
+       activity date column  : 'client_account_last_trade'
+       partner code column   : 'partner_code'
+       OUR VALID PARTNER CODE: '5dogk171n8'
+
+     ╔════════════════════════════════════════════════════════════╗
+     ║  REQUIRED SUPABASE MIGRATION — run once in SQL editor      ║
+     ╠════════════════════════════════════════════════════════════╣
+     CREATE TABLE IF NOT EXISTS ib_changed_accounts (
+       id                 BIGSERIAL PRIMARY KEY,
+       account_number     TEXT NOT NULL UNIQUE,
+       email              TEXT,
+       whatsapp           TEXT,
+       broker             TEXT,
+       join_date          DATE,
+       ib_changed_date    TIMESTAMPTZ NOT NULL DEFAULT now(),
+       last_active_date   DATE,
+       revenue_total      NUMERIC,
+       engagement_days    INTEGER,
+       detection_source   TEXT CHECK (detection_source IN ('manual','broker_file_auto')),
+       partner_code_seen  TEXT,
+       notes              TEXT,
+       created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+     );
+     CREATE INDEX IF NOT EXISTS ib_changed_lookup
+       ON ib_changed_accounts (account_number, email);
+
+     ALTER TABLE ib_changed_accounts ENABLE ROW LEVEL SECURITY;
+     CREATE POLICY ib_changed_anon_read   ON ib_changed_accounts
+       FOR SELECT TO anon USING (true);
+     CREATE POLICY ib_changed_anon_insert ON ib_changed_accounts
+       FOR INSERT TO anon WITH CHECK (true);
+     CREATE POLICY ib_changed_anon_update ON ib_changed_accounts
+       FOR UPDATE TO anon USING (true) WITH CHECK (true);
+     ╚════════════════════════════════════════════════════════════╝
+  ══════════════════════════════════════════════════════════ */
+
+  const IB_CFG = {
+    OUR_PARTNER_CODE:  '5dogk171n8',
+    ACCOUNT_COL:       'client_account',
+    LAST_TRADE_COL:    'client_account_last_trade',
+    PARTNER_CODE_COL:  'partner_code',
+    ACTIVE_DAYS:       30,
+    STORE_KEY:         'ZTU_IB_STARS_ACTIVITY_V1',
+    IB_CHANGED_TABLE:  'ib_changed_accounts',
+    // Phase 16
+    BROKER_ACCOUNTS_TABLE: 'broker_accounts',
+    BROKER_ACCOUNTS_BATCH: 500,
+  };
+
+  /* ─── Phase 16 — column candidates for broker file → broker_accounts ─ */
+  const BA_COL_CANDIDATES = {
+    email:         ['client_email', 'email'],
+    whatsapp:      ['client_phone', 'whatsapp', 'phone'],
+    broker:        ['broker', 'broker_name'],
+    partner_code:  ['partner_code'],
+    last_trade:    ['client_account_last_trade', 'last_trade', 'last_trade_date'],
+    created_at:    ['client_account_creation_date', 'account_created_at', 'creation_date'],
+    account_type:  ['client_account_type', 'account_type', 'type'],
+    country:       ['client_country', 'country'],
+    platform:      ['client_account_platform', 'platform'],
+    reward:        ['client_reward_usd', 'commission', 'reward'],
+    volume_lots:   ['client_volume_lots', 'volume_lots', 'lots'],
+    volume_usd:    ['client_volume_usd', 'volume_usd'],
+  };
+
+  function _pickBaColumn(columns, candidates) {
+    const lower = columns.map(c => String(c).toLowerCase().trim());
+    for (const cand of candidates) {
+      const idx = lower.indexOf(cand.toLowerCase());
+      if (idx !== -1) return columns[idx];
+    }
+    return null;
+  }
+
+  function _isoDateOrNull(raw) {
+    const d = _parseLastTrade(raw);
+    return d ? d.toISOString().slice(0, 10) : null;
+  }
+
+  function _numOrNull(raw) {
+    if (raw === null || raw === undefined || raw === '') return null;
+    const n = parseFloat(String(raw).replace(/,/g, ''));
+    return isNaN(n) ? null : n;
+  }
+
+  /* ─── _persistBrokerAccounts — Phase 16 upsert into Supabase ──── */
+  /*
+   * Mirrors the broker file rows to the Supabase `broker_accounts` table.
+   * Idempotent — uses ON CONFLICT(account_number) so re-running the same
+   * broker file simply refreshes the row's values.  CrmStore localStorage
+   * write continues to happen alongside this (preserved as fast cache).
+   * Chunks rows into batches of BROKER_ACCOUNTS_BATCH to keep payloads safe.
+   *
+   * Returns: { upserted: number, errors: number }
+   */
+  async function _persistBrokerAccounts(rows, columns, sourceFileName) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return { upserted: 0, errors: 0 };
+    }
+    if (!supabaseClient) {
+      console.warn('[Phase16] Supabase client not initialised — broker_accounts upsert skipped');
+      return { upserted: 0, errors: 0 };
+    }
+
+    // Resolve column names once.
+    const acctCol = IB_CFG.ACCOUNT_COL;
+    const map = {};
+    for (const [field, cands] of Object.entries(BA_COL_CANDIDATES)) {
+      map[field] = _pickBaColumn(columns, cands);
+    }
+
+    // Build payload — skip rows without a valid account number.
+    // Aggregate duplicates inside the same file so onConflict has nothing
+    // to fight: keep the newest row by created_at, otherwise the last seen.
+    const byAccount = new Map();
+    for (const row of rows) {
+      const acct = normalizeAccountId(row[acctCol]);
+      if (!acct) continue;
+      const payload = {
+        account_number:     acct,
+        email:              map.email        ? (row[map.email]        || null) : null,
+        whatsapp:           map.whatsapp     ? (row[map.whatsapp]     || null) : null,
+        broker:             map.broker       ? (row[map.broker]       || null) : null,
+        partner_code:       map.partner_code ? (row[map.partner_code] || null) : null,
+        last_trade_date:    map.last_trade   ? _isoDateOrNull(row[map.last_trade])   : null,
+        account_created_at: map.created_at   ? _isoDateOrNull(row[map.created_at])   : null,
+        account_type:       map.account_type ? (row[map.account_type] || null) : null,
+        country:            map.country      ? (row[map.country]      || null) : null,
+        platform:           map.platform     ? (row[map.platform]     || null) : null,
+        revenue_total:      map.reward       ? _numOrNull(row[map.reward])      : null,
+        volume_lots:        map.volume_lots  ? _numOrNull(row[map.volume_lots]) : null,
+        volume_usd:         map.volume_usd   ? _numOrNull(row[map.volume_usd])  : null,
+        source_file:        sourceFileName || null,
+        updated_at:         new Date().toISOString(),
+      };
+      // Last write wins inside the same file (broker reports occasionally
+      // contain multiple rows per account at different timestamps).
+      byAccount.set(acct, payload);
+    }
+    const allPayloads = Array.from(byAccount.values());
+    if (allPayloads.length === 0) return { upserted: 0, errors: 0 };
+
+    let upserted = 0;
+    let errors   = 0;
+    for (let i = 0; i < allPayloads.length; i += IB_CFG.BROKER_ACCOUNTS_BATCH) {
+      const chunk = allPayloads.slice(i, i + IB_CFG.BROKER_ACCOUNTS_BATCH);
+      try {
+        const { data, error } = await supabaseClient
+          .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+          .upsert(chunk, { onConflict: 'account_number' })
+          .select('account_number');
+        if (error) {
+          errors++;
+          console.error('[Phase16] broker_accounts upsert chunk failed:', {
+            code: error.code, message: error.message, details: error.details, hint: error.hint,
+          });
+        } else {
+          upserted += (data || []).length;
+        }
+      } catch (e) {
+        errors++;
+        console.error('[Phase16] broker_accounts upsert exception:', e);
+      }
+    }
+    console.log(`[Phase16] broker_accounts: upserted ${upserted} / ${allPayloads.length} row(s) | errors: ${errors}`);
+    return { upserted, errors };
+  }
+
+  /* ─── _fetchBrokerAccountsByStatus — Phase 16 IB Stars Supabase query ── */
+  async function _fetchBrokerAccountsByStatus(statusFilter, limit) {
+    if (!supabaseClient) return [];
+    const max = limit || 2000;
+    try {
+      const { data, error } = await supabaseClient
+        .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+        .select('account_number, email, whatsapp, broker, partner_code, last_trade_date, ib_star_status, updated_at')
+        .eq('ib_star_status', statusFilter)
+        .order('last_trade_date', { ascending: false })
+        .limit(max);
+      if (error) {
+        console.warn(`[Phase16] broker_accounts fetch (${statusFilter}) failed:`, error.message);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.warn(`[Phase16] broker_accounts fetch (${statusFilter}) exception:`, e);
+      return [];
+    }
+  }
+
+  // In-memory cache of currently-IB-changed account numbers.  Populated
+  // on first read; refreshed on insert + on intake hook.
+  let _ibChangedSet     = null;
+  let _ibChangedRowsCache = [];
+
+  /* ─── _parseLastTrade — robust date parsing for broker files ── */
+  function _parseLastTrade(raw) {
+    if (raw === null || raw === undefined || raw === '') return null;
+    // SheetJS gives JS Date sometimes, strings other times.
+    if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+    const s = String(raw).trim();
+    if (!s) return null;
+    // Accept ISO + common shapes (YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY).
+    const tryNative = new Date(s);
+    if (!isNaN(tryNative.getTime())) return tryNative;
+    const m = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+    if (m) {
+      const d = new Date(+m[3], +m[2] - 1, +m[1]);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     IB STARS — activity store + render
+  ══════════════════════════════════════════════════════════ */
+  const IbStars = {
+    _data: null,
+
+    load() {
+      if (this._data) return this._data;
+      try {
+        const raw = window.localStorage.getItem(IB_CFG.STORE_KEY);
+        this._data = raw ? JSON.parse(raw) : { version: 1, accounts: {} };
+      } catch (e) {
+        this._data = { version: 1, accounts: {} };
+      }
+      if (!this._data.accounts) this._data.accounts = {};
+      return this._data;
+    },
+
+    save() {
+      try { window.localStorage.setItem(IB_CFG.STORE_KEY, JSON.stringify(this._data)); }
+      catch (e) { console.warn('[IbStars] save failed:', e); }
+    },
+
+    /* Update from broker file rows. Returns {newActive, newInactive,
+       transitionsToInactive[]} so the caller can enqueue notifications. */
+    updateFromBrokerRows(rows, columns) {
+      this.load();
+      const data = this._data.accounts;
+      const cols = (columns || []).map(c => String(c).toLowerCase());
+      const acctCol  = columns[cols.indexOf(IB_CFG.ACCOUNT_COL)]      || IB_CFG.ACCOUNT_COL;
+      const lastCol  = columns[cols.indexOf(IB_CFG.LAST_TRADE_COL)]   || IB_CFG.LAST_TRADE_COL;
+      const partCol  = columns[cols.indexOf(IB_CFG.PARTNER_CODE_COL)] || IB_CFG.PARTNER_CODE_COL;
+      const now      = Date.now();
+      const ACTIVE_MS = IB_CFG.ACTIVE_DAYS * 86_400_000;
+
+      const transitionsToInactive = [];
+      const transitionsToActive   = [];
+      let touched = 0;
+
+      (rows || []).forEach(row => {
+        const acct = normalizeAccountId(row[acctCol]);
+        if (!acct) return;
+        const lastTradeDate = _parseLastTrade(row[lastCol]);
+        const partnerCode   = row[partCol] ? String(row[partCol]).trim() : '';
+
+        const prev   = data[acct] || null;
+        const wasActive = prev ? prev.classification === 'active' : null;
+
+        const lastTradeMs = lastTradeDate ? lastTradeDate.getTime() : (prev && prev.lastTradeMs) || null;
+        const sinceLastTrade = lastTradeMs ? (now - lastTradeMs) : null;
+        const isActive = sinceLastTrade !== null && sinceLastTrade <= ACTIVE_MS;
+
+        const updated = {
+          account:         acct,
+          lastTradeMs,
+          lastTradeISO:    lastTradeMs ? new Date(lastTradeMs).toISOString().slice(0, 10) : null,
+          partnerCode,
+          firstSeenAt:     prev ? prev.firstSeenAt : now,
+          lastSeenAt:      now,
+          classification:  isActive ? 'active' : 'inactive',
+          notifiedInactiveAt: prev ? prev.notifiedInactiveAt : null,
+        };
+        data[acct] = updated;
+        touched++;
+
+        // Detect Active -> Inactive transition (notify once per transition)
+        if (wasActive === true && !isActive && !prev.notifiedInactiveAt) {
+          transitionsToInactive.push(updated);
+        }
+        // Detect Inactive -> Active transition (clear notifiedInactiveAt so
+        // a future inactive transition can re-notify)
+        if (wasActive === false && isActive) {
+          updated.notifiedInactiveAt = null;
+          transitionsToActive.push(updated);
+        }
+      });
+
+      this.save();
+      console.log(`[IbStars] updated ${touched} account(s) | A→I: ${transitionsToInactive.length} | I→A: ${transitionsToActive.length}`);
+      return { transitionsToInactive, transitionsToActive };
+    },
+
+    getActive() {
+      this.load();
+      return Object.values(this._data.accounts).filter(a => a.classification === 'active');
+    },
+
+    getInactive() {
+      this.load();
+      return Object.values(this._data.accounts).filter(a => a.classification === 'inactive');
+    },
+
+    /* Mark inactive-transition notification as sent (idempotency guard). */
+    markNotified(account) {
+      this.load();
+      if (this._data.accounts[account]) {
+        this._data.accounts[account].notifiedInactiveAt = Date.now();
+        this.save();
+      }
+    },
+
+    /* Clear all activity data — used by Clear Cache. */
+    clearAll() {
+      this._data = { version: 1, accounts: {} };
+      this.save();
+    },
+  };
+
+  /* ─── Notification: queue ib_inactive email + WA for transitions ─ */
+  async function _enqueueIbInactiveNotifications(transitions) {
+    if (!transitions || transitions.length === 0) return { email: 0, wa: 0 };
+    // Look up email/whatsapp from State.requests by account number.
+    const emailItems = [];
+    const waItems    = [];
+    transitions.forEach(t => {
+      const req = State.requests.find(r => normalizeAccountId(r.account) === t.account);
+      if (!req) return;
+      const name = req.name || req.email || 'there';
+      if (req.email) {
+        emailItems.push({
+          id: _autoId(),
+          type: 'ib_inactive',
+          account: t.account,
+          email: req.email,
+          subject: 'Your ZTU Access Has Been Paused (Inactivity)',
+          body:
+            `Hi ${name},\n\n` +
+            `You have been inactive for 30+ days on your trading account ${t.account}.\n\n` +
+            `Your ZTU access has been paused.\n` +
+            `Once active again, access will automatically restore.\n\n` +
+            `Resume trading on the same account to reactivate.\n\n` +
+            `— ZTU Team`,
+          request_id: req.id || null,
+          status: 'queued',
+          queued_at: new Date().toISOString(),
+        });
+      }
+      if (req.whatsapp) {
+        waItems.push({
+          id: _autoId(),
+          type: 'ib_inactive',
+          account: t.account,
+          email: req.email,
+          whatsapp: req.whatsapp,
+          message:
+            `⏸ *ZTU Access Paused*\n\nHi ${name}, you've been inactive for 30+ days on account *${t.account}*. ` +
+            `Your access is paused — resume trading on the same account and access will automatically restore.`,
+          request_id: req.id || null,
+          status: 'pending',
+          queued_at: new Date().toISOString(),
+        });
+      }
+    });
+
+    let emailInserted = 0;
+    let waInserted    = 0;
+    if (emailItems.length > 0) {
+      const r = await _insertEmailOutbox(emailItems);
+      emailInserted = r.inserted ? r.inserted.length : 0;
+    }
+    if (waItems.length > 0) {
+      const r = await _insertWaOutbox(waItems);
+      waInserted = r.inserted ? r.inserted.length : 0;
+    }
+    transitions.forEach(t => IbStars.markNotified(t.account));
+    console.log(`[IbStars] enqueued ${emailInserted} email + ${waInserted} WA inactive-notifications`);
+    return { email: emailInserted, wa: waInserted };
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     IB CHANGED — Supabase helpers + access-control set
+  ══════════════════════════════════════════════════════════ */
+
+  async function _ensureIbChangedSet() {
+    if (_ibChangedSet) return _ibChangedSet;
+    if (!supabaseClient) {
+      _ibChangedSet = new Set();
+      return _ibChangedSet;
+    }
+    try {
+      const { data, error } = await supabaseClient
+        .from(IB_CFG.IB_CHANGED_TABLE)
+        .select('account_number, email, whatsapp, broker, ib_changed_date, last_active_date, detection_source, partner_code_seen, notes')
+        .order('ib_changed_date', { ascending: false })
+        .limit(2000);
+      if (error) {
+        console.warn('[IbChanged] fetch failed (table missing? run migration):', error.message);
+        _ibChangedSet = new Set();
+        _ibChangedRowsCache = [];
+        return _ibChangedSet;
+      }
+      _ibChangedRowsCache = data || [];
+      _ibChangedSet = new Set(_ibChangedRowsCache.map(r => normalizeAccountId(r.account_number)));
+    } catch (e) {
+      console.warn('[IbChanged] fetch exception:', e);
+      _ibChangedSet = new Set();
+      _ibChangedRowsCache = [];
+    }
+    return _ibChangedSet;
+  }
+
+  function _invalidateIbChangedCache() {
+    _ibChangedSet = null;
+    _ibChangedRowsCache = [];
+  }
+
+  async function _isAccountIbChanged(accountId) {
+    const set = await _ensureIbChangedSet();
+    return set.has(normalizeAccountId(accountId));
+  }
+
+  async function _insertIbChangedRow(payload) {
+    if (!supabaseClient) return { ok: false, error: new Error('no supabase client') };
+    try {
+      const { data, error } = await supabaseClient
+        .from(IB_CFG.IB_CHANGED_TABLE)
+        .upsert([payload], { onConflict: 'account_number' })
+        .select();
+      if (error) return { ok: false, error };
+      _invalidateIbChangedCache();
+      return { ok: true, data };
+    } catch (e) {
+      return { ok: false, error: e };
+    }
+  }
+
+  /* ─── Auto-detect via broker_accounts (Supabase) ─────────────
+   * Phase 16 follow-up #2 — runs WITHOUT requiring a fresh broker file
+   * upload.  Drives detection from the persistent `broker_accounts`
+   * table (last upload's partner_code per account is already stored
+   * there).  Called automatically every time IB Changed page opens,
+   * AND from inside runBrokerAutomation's existing STEP 4.6.
+   *
+   * Rules (any one triggers IB Changed insert):
+   *   - Serviced license_request whose account_number is NOT in
+   *     broker_accounts at all
+   *   - Serviced license_request whose broker_accounts row has
+   *     partner_code = '' / NULL
+   *   - Serviced license_request whose broker_accounts row has
+   *     partner_code != our valid IB code
+   *
+   * 'Serviced' means any post-match status, including 'emailed'.
+   * Already-flagged accounts (in _ibChangedSet) are skipped.
+   */
+  async function _autoDetectFromBrokerAccounts() {
+    if (!supabaseClient) return { inserted: 0, scanned: 0, reason: 'no supabase' };
+    let brokerRows = [];
+    try {
+      const { data, error } = await supabaseClient
+        .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+        .select('account_number, partner_code')
+        .limit(20000);
+      if (error) {
+        console.warn('[IbChanged Supabase scan] broker_accounts fetch failed:', error.message);
+        return { inserted: 0, scanned: 0, reason: error.message };
+      }
+      brokerRows = data || [];
+    } catch (e) {
+      console.warn('[IbChanged Supabase scan] exception:', e);
+      return { inserted: 0, scanned: 0, reason: String(e) };
+    }
+
+    // Build account → partner_code lookup
+    const codeByAcct = {};
+    for (const r of brokerRows) {
+      const a = normalizeAccountId(r.account_number);
+      if (a) codeByAcct[a] = (r.partner_code == null) ? '' : String(r.partner_code).trim();
+    }
+
+    await _ensureIbChangedSet();
+    const SERVICED = new Set(['matched','approved','compile_ready','compiled','emailed','delivered']);
+    let inserted = 0, scanned = 0, missing = 0, blank = 0, wrong = 0;
+
+    for (const req of State.requests) {
+      const status = String(req.status || '').toLowerCase();
+      if (!SERVICED.has(status)) continue;
+      scanned++;
+      const acct = normalizeAccountId(req.account);
+      if (!acct) continue;
+      if (_ibChangedSet.has(acct)) continue;
+
+      let reason = null;
+      let seenCode = null;
+      const hasBrokerRow = Object.prototype.hasOwnProperty.call(codeByAcct, acct);
+
+      if (!hasBrokerRow) {
+        reason = 'absent from broker_accounts (no historical broker file contained this account)';
+        missing++;
+      } else {
+        const code = codeByAcct[acct];
+        if (!code) {
+          reason = 'partner_code blank in broker_accounts (broker report shows no IB code)';
+          seenCode = null;
+          blank++;
+        } else if (code !== IB_CFG.OUR_PARTNER_CODE) {
+          reason = `partner_code in broker_accounts = "${code}" (expected "${IB_CFG.OUR_PARTNER_CODE}")`;
+          seenCode = code;
+          wrong++;
+        }
+      }
+      if (!reason) continue;
+
+      const activity = IbStars.load().accounts[acct];
+      const payload = {
+        account_number:    acct,
+        email:             req.email      || null,
+        whatsapp:          req.whatsapp   || null,
+        broker:            req.broker     || null,
+        join_date:         req.created_at ? String(req.created_at).slice(0, 10) : null,
+        last_active_date:  activity && activity.lastTradeISO ? activity.lastTradeISO : null,
+        detection_source:  'broker_file_auto',
+        partner_code_seen: seenCode,
+        notes:             'Auto-detected via broker_accounts scan: ' + reason,
+      };
+      const res = await _insertIbChangedRow(payload);
+      if (res.ok) {
+        inserted++;
+        _ibChangedSet.add(acct);
+        console.log(`[IbChanged Supabase scan] flagged: ${acct} (${reason})`);
+      } else {
+        console.warn(`[IbChanged Supabase scan] insert failed for ${acct}:`, res.error && res.error.message);
+      }
+    }
+    console.log(`[IbChanged Supabase scan] summary — scanned: ${scanned}, missing: ${missing}, partner_code blank: ${blank}, partner_code wrong: ${wrong}, inserted: ${inserted}`);
+    return { inserted, scanned, missing, blank, wrong };
+  }
+
+
+  /* ─── Auto-detect: scan delivered accounts for IB-changed ───
+   * Phase 16 follow-up — corrected detection logic.
+   *
+   * Old rule (broken for real data): iterate broker file rows, flag rows
+   * where partner_code is blank or wrong.  Diagnostic on actual broker
+   * file (679 rows): 621 of 622 partner_code cells = our valid code,
+   * zero rows have blank/wrong code.  Rule could never trigger.
+   *
+   * Why: clients who move IB *disappear* from your broker report — they
+   * stop being listed at all.  They don't show up with a different code.
+   *
+   * New rule:
+   *   PRIMARY  : iterate State.requests (license_requests we've serviced).
+   *              For each delivered/serviced account, if it is NOT present
+   *              in the latest broker file → flag as IB Changed (absence).
+   *   EDGE     : also flag if account IS present but partner_code blank
+   *              or != our valid code (rare in practice but still valid).
+   *   GUARD    : require ≥ ACCOUNT_PRESENT_THRESHOLD rows in the current
+   *              broker file to avoid false flags from a tiny/partial
+   *              upload mistakenly classifying everyone as missing.
+   */
+  async function _autoDetectIbChanges(rows, columns) {
+    if (!Array.isArray(rows) || rows.length === 0) return { inserted: 0, skipped: 0, missing: 0, mismatch: 0 };
+    const cols = (columns || []).map(c => String(c).toLowerCase());
+    const acctCol = columns[cols.indexOf(IB_CFG.ACCOUNT_COL)]      || IB_CFG.ACCOUNT_COL;
+    const partCol = columns[cols.indexOf(IB_CFG.PARTNER_CODE_COL)] || IB_CFG.PARTNER_CODE_COL;
+
+    // Build presence index from the current broker file.
+    const ACCOUNT_PRESENT_THRESHOLD = 50;
+    const presentInFile = new Set();
+    const partnerCodeByAcct = {};
+    for (const row of rows) {
+      const acct = normalizeAccountId(row[acctCol]);
+      if (!acct) continue;
+      presentInFile.add(acct);
+      partnerCodeByAcct[acct] = row[partCol] ? String(row[partCol]).trim() : '';
+    }
+    if (presentInFile.size < ACCOUNT_PRESENT_THRESHOLD) {
+      console.warn(`[IbChanged] broker file too small (${presentInFile.size} accounts < ${ACCOUNT_PRESENT_THRESHOLD}) — skipping auto-detect to avoid false flags.`);
+      return { inserted: 0, skipped: 0, missing: 0, mismatch: 0 };
+    }
+
+    await _ensureIbChangedSet();
+    const SERVICED = new Set(['matched','approved','compile_ready','compiled','emailed','delivered']);
+    let inserted = 0, skipped = 0, missingCount = 0, mismatchCount = 0;
+
+    // Iterate license_requests we've serviced — these are the candidates.
+    for (const req of State.requests) {
+      const status = String(req.status || '').toLowerCase();
+      if (!SERVICED.has(status)) continue;
+      const acct = normalizeAccountId(req.account);
+      if (!acct) continue;
+      if (_ibChangedSet.has(acct)) { skipped++; continue; }   // already flagged
+
+      let reason = null;
+      let seenCode = null;
+      if (!presentInFile.has(acct)) {
+        // Primary: account disappeared from broker report → moved IB.
+        reason = 'absent from latest broker report';
+        seenCode = null;
+        missingCount++;
+      } else {
+        const code = partnerCodeByAcct[acct];
+        if (!code || code !== IB_CFG.OUR_PARTNER_CODE) {
+          // Edge: still in file but partner_code drift.
+          reason = code
+            ? `partner_code in latest broker file = "${code}" (expected "${IB_CFG.OUR_PARTNER_CODE}")`
+            : 'partner_code blank in latest broker file';
+          seenCode = code || null;
+          mismatchCount++;
+        }
+      }
+      if (!reason) continue;   // still ours
+
+      const activity = IbStars.load().accounts[acct];
+      const payload = {
+        account_number:    acct,
+        email:             req.email      || null,
+        whatsapp:          req.whatsapp   || null,
+        broker:            req.broker     || null,
+        join_date:         req.created_at ? String(req.created_at).slice(0, 10) : null,
+        last_active_date:  activity && activity.lastTradeISO ? activity.lastTradeISO : null,
+        detection_source:  'broker_file_auto',
+        partner_code_seen: seenCode,
+        notes:             'Auto-detected during broker intake: ' + reason,
+      };
+      const res = await _insertIbChangedRow(payload);
+      if (res.ok) {
+        inserted++;
+        console.log(`[IbChanged] auto-flagged: ${acct} (${reason})`);
+      } else {
+        console.warn(`[IbChanged] auto-flag insert failed for ${acct}:`, res.error && res.error.message);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Phase 16 follow-up — sweep historical "blocked / access-revoked"
+    // signals so any client previously flagged as moved-away-from-our-IB
+    // also surfaces in IB Changed Accounts.
+    //
+    //   Signal 1: license_requests.status = 'unmatched'  (DB-level rejection
+    //             — final blocked state after retry window exhausted)
+    //   Signal 2: RetryPool.getArchived()                (browser-side mirror
+    //             of the same signal — 48h window expired with no match)
+    //
+    // Both indicate the client could not be matched against our IB report
+    // over the full retry window — strongest proxy we have for "moved away
+    // from our IB / access denied".  Already-flagged accounts are skipped.
+    // ─────────────────────────────────────────────────────────────
+    let historicalRevoked = 0;
+    const FINAL_BLOCKED_STATUSES = new Set(['unmatched', 'rejected']);
+
+    // Signal 1 — license_requests in DB-final-blocked status
+    for (const req of State.requests) {
+      const status = String(req.status || '').toLowerCase();
+      if (!FINAL_BLOCKED_STATUSES.has(status)) continue;
+      const acct = normalizeAccountId(req.account);
+      if (!acct) continue;
+      if (_ibChangedSet.has(acct)) { skipped++; continue; }
+
+      const reason = `historical access-revoked signal — license_requests.status='${status}'`;
+      const activity = IbStars.load().accounts[acct];
+      const payload = {
+        account_number:    acct,
+        email:             req.email      || null,
+        whatsapp:          req.whatsapp   || null,
+        broker:            req.broker     || null,
+        join_date:         req.created_at ? String(req.created_at).slice(0, 10) : null,
+        last_active_date:  activity && activity.lastTradeISO ? activity.lastTradeISO : null,
+        detection_source:  'broker_file_auto',
+        partner_code_seen: null,
+        notes:             'Auto-detected during broker intake: ' + reason,
+      };
+      const res = await _insertIbChangedRow(payload);
+      if (res.ok) {
+        inserted++;
+        historicalRevoked++;
+        // Update local cache so Signal 2 dedups correctly within this run.
+        _ibChangedSet.add(acct);
+        console.log(`[IbChanged] auto-flagged (historical-revoked): ${acct} (${reason})`);
+      } else {
+        console.warn(`[IbChanged] historical-revoked insert failed for ${acct}:`, res.error && res.error.message);
+      }
+    }
+
+    // Signal 2 — RetryPool archived (48h-expired entries that may or may
+    // not have a matching license_requests row in DB after migration).
+    try {
+      const archived = RetryPool.getArchived();
+      for (const entry of archived) {
+        const acct = normalizeAccountId(entry.account);
+        if (!acct) continue;
+        if (_ibChangedSet.has(acct)) { skipped++; continue; }
+
+        const reason = 'historical access-revoked signal — RetryPool archived (48h match window exhausted)';
+        const matchingReq = State.requests.find(r => normalizeAccountId(r.account) === acct);
+        const payload = {
+          account_number:    acct,
+          email:             entry.email   || (matchingReq && matchingReq.email)    || null,
+          whatsapp:          (matchingReq && matchingReq.whatsapp) || null,
+          broker:            entry.broker  || (matchingReq && matchingReq.broker)   || null,
+          join_date:         entry.requestDate || null,
+          last_active_date:  null,
+          detection_source:  'broker_file_auto',
+          partner_code_seen: null,
+          notes:             'Auto-detected during broker intake: ' + reason,
+        };
+        const res = await _insertIbChangedRow(payload);
+        if (res.ok) {
+          inserted++;
+          historicalRevoked++;
+          _ibChangedSet.add(acct);
+          console.log(`[IbChanged] auto-flagged (retry-pool-archived): ${acct}`);
+        } else {
+          console.warn(`[IbChanged] retry-pool-archived insert failed for ${acct}:`, res.error && res.error.message);
+        }
+      }
+    } catch (e) {
+      console.warn('[IbChanged] RetryPool archived sweep failed (non-fatal):', e);
+    }
+
+    console.log(`[IbChanged] auto-detect summary — absent-from-file: ${missingCount}, partner_code mismatch: ${mismatchCount}, historical-revoked: ${historicalRevoked}, already-flagged: ${skipped}, total inserted: ${inserted}`);
+    return { inserted, skipped, missing: missingCount, mismatch: mismatchCount, historicalRevoked };
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     RENDERERS — IB Stars Active / Inactive / IB Changed list
+  ══════════════════════════════════════════════════════════ */
+
+  /* Phase 16 — Supabase-backed IB Stars renderers.
+   *
+   * Data flow:
+   *   1. PRIMARY  : query broker_accounts WHERE ib_star_status = 'active'/'inactive'
+   *   2. FALLBACK : if Supabase returns 0 rows AND localStorage has data,
+   *                 fall back to the in-browser store so the page is never
+   *                 silently empty when the migration hasn't been run yet.
+   *
+   * The localStorage IbStars store is still updated on every intake — it
+   * remains the source of truth for "notified inactive at" transition
+   * timestamps (Supabase doesn't track per-account notification state).
+   */
+  async function _renderIbStarsActive() {
+    const bodyEl = document.getElementById('ibStarsActiveBody');
+    const cntEl  = document.getElementById('ibStarsActiveCount');
+    const empEl  = document.getElementById('ibStarsActiveEmpty');
+    if (!bodyEl) return;
+
+    // Primary: Supabase
+    const dbRows = await _fetchBrokerAccountsByStatus('active', 2000);
+    let rows = dbRows.map(r => ({
+      account:      normalizeAccountId(r.account_number),
+      email:        r.email,
+      whatsapp:     r.whatsapp,
+      broker:       r.broker,
+      lastTradeISO: r.last_trade_date,
+      lastTradeMs:  r.last_trade_date ? new Date(r.last_trade_date).getTime() : null,
+      source:       'supabase',
+    }));
+    // Fallback: localStorage (Phase B legacy) — covers fresh dashboards
+    // before the SQL migration is run.
+    if (rows.length === 0) {
+      const local = IbStars.getActive();
+      rows = local.map(r => ({ ...r, source: 'local' }));
+    }
+
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (rows.length === 0) {
+      bodyEl.innerHTML = '';
+      if (empEl) empEl.hidden = false;
+      return;
+    }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const req = State.requests.find(rq => normalizeAccountId(rq.account) === r.account);
+      const email  = r.email  || (req ? req.email  : '') || '—';
+      const broker = r.broker || (req ? req.broker : '') || '—';
+      const days   = r.lastTradeMs ? Math.floor((Date.now() - r.lastTradeMs) / 86_400_000) : null;
+      const daysCls = days === null ? 'ib-stars-days--warn'
+                    : days <= 7 ? 'ib-stars-days--ok'
+                    : days <= 20 ? 'ib-stars-days--warn'
+                    : 'ib-stars-days--alert';
+      return `<div class="ib-stars-row">
+        <span class="ib-stars-acct">${esc(r.account)}</span>
+        <span>${esc(email)}</span>
+        <span>${esc(broker)}</span>
+        <span>${esc(r.lastTradeISO || '—')}</span>
+        <span class="${daysCls}">${days !== null ? days + 'd' : '—'}</span>
+        <span><span class="ib-stars-pill ib-stars-pill--active">Active</span></span>
+      </div>`;
+    }).join('');
+  }
+
+  async function _renderIbStarsInactive() {
+    const bodyEl = document.getElementById('ibStarsInactiveBody');
+    const cntEl  = document.getElementById('ibStarsInactiveCount');
+    const empEl  = document.getElementById('ibStarsInactiveEmpty');
+    if (!bodyEl) return;
+
+    // Primary: Supabase
+    const dbRows = await _fetchBrokerAccountsByStatus('inactive', 2000);
+    // Read local store for notifiedInactiveAt overlay.
+    const localData = IbStars.load().accounts;
+    let rows = dbRows.map(r => {
+      const acct = normalizeAccountId(r.account_number);
+      const localEntry = localData[acct];
+      return {
+        account:            acct,
+        email:              r.email,
+        whatsapp:           r.whatsapp,
+        broker:             r.broker,
+        lastTradeISO:       r.last_trade_date,
+        lastTradeMs:        r.last_trade_date ? new Date(r.last_trade_date).getTime() : null,
+        notifiedInactiveAt: localEntry ? localEntry.notifiedInactiveAt : null,
+        source:             'supabase',
+      };
+    });
+    // Fallback to localStorage if Supabase is empty (migration not run yet).
+    if (rows.length === 0) {
+      const local = IbStars.getInactive();
+      rows = local.map(r => ({ ...r, source: 'local' }));
+    }
+
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (rows.length === 0) {
+      bodyEl.innerHTML = '';
+      if (empEl) empEl.hidden = false;
+      return;
+    }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const req = State.requests.find(rq => normalizeAccountId(rq.account) === r.account);
+      const email  = r.email  || (req ? req.email  : '') || '—';
+      const broker = r.broker || (req ? req.broker : '') || '—';
+      const days   = r.lastTradeMs ? Math.floor((Date.now() - r.lastTradeMs) / 86_400_000) : null;
+      const notifiedPill = r.notifiedInactiveAt
+        ? `<span class="ib-stars-pill ib-stars-pill--notified" title="Notified ${new Date(r.notifiedInactiveAt).toLocaleString()}">Sent</span>`
+        : `<span class="ib-stars-pill ib-stars-pill--pending">Pending</span>`;
+      return `<div class="ib-stars-row">
+        <span class="ib-stars-acct">${esc(r.account)}</span>
+        <span>${esc(email)}</span>
+        <span>${esc(broker)}</span>
+        <span>${esc(r.lastTradeISO || '—')}</span>
+        <span class="ib-stars-days--alert">${days !== null ? days + 'd' : '—'}</span>
+        <span>${notifiedPill}</span>
+        <span><span class="ib-stars-pill ib-stars-pill--inactive">Inactive</span></span>
+      </div>`;
+    }).join('');
+  }
+
+  async function _renderIbChangedList() {
+    const bodyEl = document.getElementById('ibChangedListBody');
+    const cntEl  = document.getElementById('ibChangedListCount');
+    const empEl  = document.getElementById('ibChangedListEmpty');
+    const navEl  = document.getElementById('ibChangedNavCount');
+    if (!bodyEl) return;
+
+    // Phase 16 follow-up #2 — auto-detect on every page open using
+    // broker_accounts (Supabase persistent store).  Runs without requiring
+    // admin to upload + Run Automation again.  Errors are non-fatal: the
+    // page still renders existing ib_changed_accounts rows on failure.
+    try { await _autoDetectFromBrokerAccounts(); }
+    catch (e) { console.warn('[IbChanged] auto-detect on render failed (non-fatal):', e); }
+
+    _invalidateIbChangedCache();
+    await _ensureIbChangedSet();
+    const rows = _ibChangedRowsCache;
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (navEl) {
+      if (rows.length > 0) { navEl.textContent = String(rows.length); navEl.hidden = false; }
+      else { navEl.hidden = true; }
+    }
+    if (rows.length === 0) {
+      bodyEl.innerHTML = '';
+      if (empEl) empEl.hidden = false;
+      return;
+    }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const dateStr = r.ib_changed_date
+        ? new Date(r.ib_changed_date).toLocaleString([], { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '—';
+      const srcCls = r.detection_source === 'broker_file_auto' ? 'ib-changed-detection--auto' : 'ib-changed-detection--manual';
+      const srcLabel = r.detection_source === 'broker_file_auto' ? 'Auto' : 'Manual';
+      return `<div class="ib-changed-row">
+        <span class="ib-changed-acct">${esc(r.account_number)}</span>
+        <span>${esc(r.email || '—')}</span>
+        <span>${esc(r.whatsapp || '—')}</span>
+        <span>${esc(r.broker || '—')}</span>
+        <span>${esc(dateStr)}</span>
+        <span><span class="ib-changed-detection ${srcCls}">${srcLabel}</span></span>
+      </div>`;
+    }).join('');
+  }
+
+  /* ─── Admin search panel (Task 6) ────────────────────────────── */
+
+  function _renderIbChangedSearchResult(req, alreadyChanged, activity) {
+    const resEl = document.getElementById('ibChangedSearchResult');
+    if (!resEl) return;
+    if (!req) {
+      resEl.innerHTML = `<div class="ib-changed-banner ib-changed-banner--miss">No account found with that number in our system.</div>`;
+      resEl.hidden = false;
+      return;
+    }
+    const lastTrade = activity && activity.lastTradeISO ? activity.lastTradeISO : '—';
+    const joinDate  = req.created_at ? String(req.created_at).slice(0, 10) : '—';
+    const statusPretty = String(req.status || '—').replace(/_/g, ' ');
+    const banner = alreadyChanged
+      ? `<div class="ib-changed-banner ib-changed-banner--already">⚠ Already marked as IB Changed — access already revoked.</div>`
+      : '';
+    resEl.innerHTML =
+      banner +
+      `<div class="ib-changed-result-grid">
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">Account</span><span class="ib-changed-result-value ib-changed-acct">${esc(req.account)}</span></div>
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">Email</span><span class="ib-changed-result-value">${esc(req.email || '—')}</span></div>
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">WhatsApp</span><span class="ib-changed-result-value">${esc(req.whatsapp || '—')}</span></div>
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">Broker</span><span class="ib-changed-result-value">${esc(req.broker || '—')}</span></div>
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">Join Date</span><span class="ib-changed-result-value">${esc(joinDate)}</span></div>
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">Current Status</span><span class="ib-changed-result-value">${esc(statusPretty)}</span></div>
+        <div class="ib-changed-result-field"><span class="ib-changed-result-label">Last Active</span><span class="ib-changed-result-value">${esc(lastTrade)}</span></div>
+      </div>
+      <div class="ib-changed-result-actions">
+        <button class="btn-mark-ib-changed" id="btnMarkIbChanged" type="button" ${alreadyChanged ? 'disabled' : ''}>${alreadyChanged ? 'Already IB Changed' : 'Mark as IB Changed'}</button>
+      </div>`;
+    resEl.hidden = false;
+
+    if (!alreadyChanged) {
+      const btn = document.getElementById('btnMarkIbChanged');
+      if (btn) btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        const payload = {
+          account_number:    normalizeAccountId(req.account),
+          email:             req.email      || null,
+          whatsapp:          req.whatsapp   || null,
+          broker:            req.broker     || null,
+          join_date:         req.created_at ? String(req.created_at).slice(0, 10) : null,
+          last_active_date:  activity && activity.lastTradeISO ? activity.lastTradeISO : null,
+          detection_source:  'manual',
+          partner_code_seen: null,
+          notes:             'Manually flagged by admin via IB Changed search panel.',
+        };
+        const res = await _insertIbChangedRow(payload);
+        if (res.ok) {
+          showToast('Account flagged as IB Changed. Premium access revoked.', 'success', 4000);
+          await _renderIbChangedList();
+          _renderIbChangedSearchResult(req, true, activity);
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Mark as IB Changed';
+          showToast('Failed to mark account: ' + ((res.error && res.error.message) || 'unknown'), 'error', 5000);
+        }
+      });
+    }
+  }
+
+  async function _handleIbChangedSearch() {
+    const input = document.getElementById('ibChangedSearchInput');
+    if (!input) return;
+    const raw = (input.value || '').trim();
+    if (!raw) { showToast('Enter an account number to search.', 'warn', 2500); return; }
+    const acct = normalizeAccountId(raw);
+    const req = State.requests.find(r => normalizeAccountId(r.account) === acct);
+    const already = await _isAccountIbChanged(acct);
+    const activity = IbStars.load().accounts[acct] || null;
+    _renderIbChangedSearchResult(req || null, already, activity);
+  }
+
+  function bindIbStarsAndChanged() {
+    // Refresh buttons
+    const a = document.getElementById('ibStarsActiveRefresh');
+    const i = document.getElementById('ibStarsInactiveRefresh');
+    const c = document.getElementById('ibChangedListRefresh');
+    if (a) a.addEventListener('click', _renderIbStarsActive);
+    if (i) i.addEventListener('click', _renderIbStarsInactive);
+    if (c) c.addEventListener('click', _renderIbChangedList);
+
+    // Search panel
+    const sBtn = document.getElementById('ibChangedSearchBtn');
+    const sIn  = document.getElementById('ibChangedSearchInput');
+    if (sBtn) sBtn.addEventListener('click', _handleIbChangedSearch);
+    if (sIn)  sIn.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); _handleIbChangedSearch(); }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     PHASE 16.2 — Edit Client + Block/Unblock System
+  ══════════════════════════════════════════════════════════ */
+
+  const BLOCKED_TABLE = 'blocked_clients';
+  let _blockedSet     = null;
+  let _blockedRows    = [];
+
+  /* ─── Phase 16.2 — client_overrides read layer ──────────────
+   * After a Save in the Edit modal, the WRITE path goes to
+   * client_overrides successfully but Active/Inactive/HighValue
+   * tables kept showing stale values because they read directly
+   * from CrmStore (broker-file cache) without consulting overrides.
+   *
+   * Fix: build a per-account latest-override map at init / after
+   * save, and merge it on top of every rendered row.  Priority:
+   *   override.email    || original.email
+   *   override.whatsapp || original.whatsapp
+   *   override.broker   || original.broker
+   */
+  let _clientOverridesMap = {};
+
+  async function _refreshClientOverrides() {
+    if (!supabaseClient) { _clientOverridesMap = {}; return _clientOverridesMap; }
+    try {
+      const { data, error } = await supabaseClient
+        .from('client_overrides')
+        .select('account_number, email, whatsapp, broker, updated_by, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5000);
+      if (error) {
+        console.warn('[Overrides] fetch failed (continuing without):', error.message);
+        _clientOverridesMap = {};
+        return _clientOverridesMap;
+      }
+      // Latest per account — first hit wins because we order DESC.
+      const map = {};
+      (data || []).forEach(row => {
+        const k = normalizeAccountId(row.account_number);
+        if (k && !map[k]) map[k] = row;
+      });
+      _clientOverridesMap = map;
+      console.log('[Overrides] cache refreshed —', Object.keys(map).length, 'account(s) with overrides.');
+      return _clientOverridesMap;
+    } catch (e) {
+      console.warn('[Overrides] fetch exception:', e);
+      _clientOverridesMap = {};
+      return _clientOverridesMap;
+    }
+  }
+
+  function _applyOverride(row) {
+    if (!row) return row;
+    const acct = normalizeAccountId(row.account);
+    const ov = _clientOverridesMap[acct];
+    if (!ov) return row;
+    // Non-mutating merge so the source object stays clean for other callers.
+    return Object.assign({}, row, {
+      email:    ov.email    || row.email,
+      whatsapp: ov.whatsapp || row.whatsapp,
+      broker:   ov.broker   || row.broker,
+    });
+  }
+
+  async function _ensureBlockedSet() {
+    if (_blockedSet) return _blockedSet;
+    if (!supabaseClient) { _blockedSet = new Set(); return _blockedSet; }
+    try {
+      const { data, error } = await supabaseClient
+        .from(BLOCKED_TABLE).select('*').eq('active', true)
+        .order('blocked_at', { ascending: false }).limit(2000);
+      if (error) {
+        console.warn('[Blocked] fetch failed (table missing? run Phase 16.2 SQL):', error.message);
+        _blockedSet = new Set(); _blockedRows = []; return _blockedSet;
+      }
+      _blockedRows = data || [];
+      _blockedSet  = new Set(_blockedRows.map(r => normalizeAccountId(r.account_number)));
+    } catch (e) { _blockedSet = new Set(); _blockedRows = []; }
+    return _blockedSet;
+  }
+  function _invalidateBlockedCache() { _blockedSet = null; _blockedRows = []; }
+  async function _isBlocked(account) {
+    const set = await _ensureBlockedSet();
+    return set.has(normalizeAccountId(account));
+  }
+
+  async function _blockClient(account, ctx, reason) {
+    if (!supabaseClient) return { ok: false, error: 'no supabase' };
+    const acct = normalizeAccountId(account);
+    if (!acct) return { ok: false, error: 'no account' };
+    const payload = {
+      account_number: acct,
+      email:    ctx && ctx.email    || null,
+      whatsapp: ctx && ctx.whatsapp || null,
+      broker:   ctx && ctx.broker   || null,
+      reason:   reason || 'Admin block',
+      blocked_by: 'admin',
+      active:   true,
+    };
+    try {
+      const { error } = await supabaseClient.from(BLOCKED_TABLE)
+        .upsert([payload], { onConflict: 'account_number' });
+      if (error) return { ok: false, error: error.message };
+      _invalidateBlockedCache();
+      return { ok: true };
+    } catch (e) { return { ok: false, error: String(e) }; }
+  }
+
+  async function _unblockClient(account) {
+    const acct = normalizeAccountId(account);
+    if (!acct || !supabaseClient) return { ok: false };
+    try {
+      const { error } = await supabaseClient.from(BLOCKED_TABLE)
+        .update({ active: false, unblocked_at: new Date().toISOString() })
+        .eq('account_number', acct);
+      if (error) return { ok: false, error: error.message };
+      _invalidateBlockedCache();
+      return { ok: true };
+    } catch (e) { return { ok: false, error: String(e) }; }
+  }
+
+  async function _renderBlockedList() {
+    const bodyEl = document.getElementById('blockedListBody');
+    const cntEl  = document.getElementById('blockedListCount');
+    const empEl  = document.getElementById('blockedListEmpty');
+    const navEl  = document.getElementById('blockedClientsNavCount');
+    if (!bodyEl) return;
+    _invalidateBlockedCache();
+    await _ensureBlockedSet();
+    const rows = _blockedRows;
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (navEl) { if (rows.length > 0) { navEl.textContent = String(rows.length); navEl.hidden = false; } else navEl.hidden = true; }
+    if (rows.length === 0) { bodyEl.innerHTML = ''; if (empEl) empEl.hidden = false; return; }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const dt = r.blocked_at ? new Date(r.blocked_at).toLocaleString() : '—';
+      return `<div class="ib-changed-row">
+        <span class="ib-changed-acct">${esc(r.account_number)}</span>
+        <span>${esc(r.email || '—')}</span>
+        <span>${esc(r.whatsapp || '—')}</span>
+        <span>${esc(r.broker || '—')}</span>
+        <span>${esc(dt)}</span>
+        <span><button class="iq-btn iq-btn--action" data-unblock="${esc(r.account_number)}" type="button" style="background:rgba(34,197,94,0.16);border-color:rgba(34,197,94,0.45);color:#22c55e">Unblock</button></span>
+      </div>`;
+    }).join('');
+    bodyEl.querySelectorAll('[data-unblock]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const res = await _unblockClient(btn.dataset.unblock);
+        if (res.ok) { showToast('Client unblocked.', 'success', 3000); _renderBlockedList(); }
+        else { btn.disabled = false; showToast('Unblock failed: ' + (res.error || 'unknown'), 'error', 4000); }
+      });
+    });
+  }
+
+  /* ── Edit Client modal ─────────────────────────────────── */
+  let _editClientState = { account: null, currentRow: null };
+  async function _openEditClientModal(account) {
+    const acct = normalizeAccountId(account);
+    if (!acct) return;
+    const req = State.requests.find(r => normalizeAccountId(r.account) === acct);
+    _editClientState.account = acct;
+    _editClientState.currentRow = req || null;
+    const ov = document.getElementById('editClientOverlay');
+    document.getElementById('editClientAcct').textContent = acct;
+    document.getElementById('editClientEmail').value    = req ? req.email    : '';
+    document.getElementById('editClientWhatsapp').value = req ? req.whatsapp : '';
+    document.getElementById('editClientBroker').value   = req ? req.broker   : '';
+    const errEl = document.getElementById('editClientError');
+    if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+    if (ov) ov.hidden = false;
+  }
+  function _closeEditClientModal() { const ov = document.getElementById('editClientOverlay'); if (ov) ov.hidden = true; }
+
+  async function _saveEditClient() {
+    const errEl = document.getElementById('editClientError');
+    if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+    const acct = _editClientState.account;
+    if (!acct) return;
+    const newEmail = document.getElementById('editClientEmail').value.trim();
+    const newWa    = document.getElementById('editClientWhatsapp').value.trim();
+    const newBrk   = document.getElementById('editClientBroker').value.trim();
+    const cur = _editClientState.currentRow || {};
+    if (!supabaseClient) {
+      if (errEl) { errEl.textContent = 'No live Supabase client.'; errEl.hidden = false; }
+      showToast('Cannot save — Supabase not initialised.', 'error', 5000);
+      return;
+    }
+
+    const changes = {};
+    if (newEmail !== (cur.email || ''))   changes.email           = newEmail || null;
+    if (newWa    !== (cur.whatsapp || ''))changes.whatsapp_number = newWa    || null;
+    if (newBrk   !== (cur.broker || ''))  changes.broker_name     = newBrk   || null;
+    if (Object.keys(changes).length === 0) { _closeEditClientModal(); showToast('No changes to save.', 'info', 2500); return; }
+
+    // ── 1. UPDATE license_requests (only if we have an id) ─────────
+    //    Honest reporting: show RED toast with exact error if it fails;
+    //    do NOT proceed to audit log or success message.
+    let licenseUpdated = false;
+    if (cur.id) {
+      try {
+        const resp = await supabaseClient.from(DB_SCHEMA.TABLE)
+          .update(changes).eq('id', cur.id)
+          .select('id, email, whatsapp_number, broker_name');
+        console.log('[EditClient] license_requests UPDATE response:', resp);
+        if (resp.error) {
+          const msg = 'license_requests UPDATE failed — [' + (resp.error.code || '?') + '] ' + resp.error.message;
+          if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+          showToast(msg, 'error', 8000);
+          return;
+        }
+        if (!resp.data || resp.data.length === 0) {
+          const msg = 'license_requests UPDATE returned 0 rows — RLS may be denying SELECT return, or id mismatch.';
+          if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+          showToast(msg, 'warn', 7000);
+          return;
+        }
+        licenseUpdated = true;
+      } catch (e) {
+        const msg = 'license_requests UPDATE exception: ' + (e.message || e);
+        if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+        showToast(msg, 'error', 7000);
+        console.error('[EditClient] license_requests UPDATE exception:', e);
+        return;
+      }
+    }
+
+    // ── 2. Write override snapshot to client_overrides ──────────────
+    //    User's live schema: (account_number, email, whatsapp, broker, updated_by, created_at).
+    //    Previous payload was using a changelog shape (field/old_value/new_value)
+    //    which caused 400 Bad Request because those columns do not exist.
+    //    Now sending the actual snapshot columns.  Plain INSERT (no upsert)
+    //    so each save is its own audit row, with created_at preserved.
+    let overrideSaved = false;
+    try {
+      const overridePayload = {
+        account_number: normalizeAccountId(acct),
+        email:          newEmail || null,
+        whatsapp:       newWa    || null,
+        broker:         newBrk   || null,
+        updated_by:     'admin',
+      };
+      const ovResp = await supabaseClient.from('client_overrides')
+        .insert([overridePayload])
+        .select('id, account_number, email, whatsapp, broker, updated_by, created_at');
+      console.log('[EditClient] client_overrides INSERT response:', ovResp);
+      if (ovResp.error) {
+        const msg = 'client_overrides write failed — [' + (ovResp.error.code || '?') + '] ' + ovResp.error.message + (ovResp.error.details ? ' | ' + ovResp.error.details : '');
+        console.error('[EditClient] client_overrides INSERT FAILED:', ovResp.error);
+        // license_requests UPDATE already succeeded; surface the audit failure
+        // but do NOT claim full success.
+        if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+        showToast('Saved license_requests row but client_overrides audit FAILED: ' + ovResp.error.message + (ovResp.error.code ? ' [' + ovResp.error.code + ']' : ''), 'error', 9000);
+      } else if (!ovResp.data || ovResp.data.length === 0) {
+        showToast('client_overrides INSERT returned 0 rows — RLS may be denying SELECT return on the inserted row.', 'warn', 7000);
+      } else {
+        overrideSaved = true;
+        console.log('[EditClient] client_overrides INSERT OK — id=' + ovResp.data[0].id);
+      }
+    } catch (e) {
+      console.error('[EditClient] client_overrides exception:', e);
+      showToast('client_overrides exception: ' + (e.message || e), 'error', 8000);
+    }
+
+    // ── 3. Refresh overrides cache + visible tables so the new values
+    //       appear immediately on Active/Inactive/HighValue without reload.
+    try {
+      await _refreshClientOverrides();   // Phase 16.2 — pull latest snapshot
+      await loadData();
+      if (typeof renderPendingRequests       === 'function') renderPendingRequests();
+      if (typeof renderMatchedAccountsSection=== 'function') renderMatchedAccountsSection();
+      if (typeof renderCrmActive             === 'function') renderCrmActive();
+      if (typeof renderCrmInactive           === 'function') renderCrmInactive();
+      if (typeof renderCrmHighValue          === 'function') renderCrmHighValue();
+    } catch (e) {}
+
+    // ── 4. Final outcome — only claim success when both writes succeeded ─
+    if (licenseUpdated && overrideSaved) {
+      _closeEditClientModal();
+      showToast('✓ Client updated — license_requests + client_overrides both saved.', 'success', 4000);
+    } else if (licenseUpdated && !overrideSaved) {
+      // Modal stays open; error is already in the inline error banner
+      console.warn('[EditClient] partial: license_requests saved, override FAILED');
+    }
+    return;
+  }
+
+  function bindEditAndBlock() {
+    const ec = document.getElementById('editClientClose');
+    const ecCancel = document.getElementById('editClientCancel');
+    const ecSave = document.getElementById('editClientSave');
+    if (ec) ec.addEventListener('click', _closeEditClientModal);
+    if (ecCancel) ecCancel.addEventListener('click', _closeEditClientModal);
+    if (ecSave) ecSave.addEventListener('click', _saveEditClient);
+
+    // Blocked-Clients search + refresh
+    const bsBtn = document.getElementById('blockedSearchBtn');
+    const bsIn  = document.getElementById('blockedSearchInput');
+    const bsRef = document.getElementById('blockedListRefresh');
+    if (bsRef) bsRef.addEventListener('click', _renderBlockedList);
+    const doBlockLookup = async () => {
+      const raw = (bsIn ? bsIn.value : '').trim();
+      const acct = normalizeAccountId(raw);
+      const resEl = document.getElementById('blockedSearchResult');
+      if (!acct) { showToast('Enter an account number.', 'warn', 2500); return; }
+      const req = State.requests.find(r => normalizeAccountId(r.account) === acct);
+      const blocked = await _isBlocked(acct);
+      if (!resEl) return;
+      if (!req && !blocked) {
+        resEl.innerHTML = '<div class="ib-changed-banner ib-changed-banner--miss">No account ' + esc(acct) + ' in license_requests.</div>';
+        resEl.hidden = false; return;
+      }
+      const banner = blocked
+        ? '<div class="ib-changed-banner ib-changed-banner--already">⚠ Already blocked.</div>'
+        : '';
+      resEl.innerHTML = banner +
+        '<div class="ib-changed-result-grid">' +
+          '<div class="ib-changed-result-field"><span class="ib-changed-result-label">Account</span><span class="ib-changed-result-value ib-changed-acct">' + esc(acct) + '</span></div>' +
+          '<div class="ib-changed-result-field"><span class="ib-changed-result-label">Email</span><span class="ib-changed-result-value">' + esc((req && req.email) || '—') + '</span></div>' +
+          '<div class="ib-changed-result-field"><span class="ib-changed-result-label">WhatsApp</span><span class="ib-changed-result-value">' + esc((req && req.whatsapp) || '—') + '</span></div>' +
+          '<div class="ib-changed-result-field"><span class="ib-changed-result-label">Broker</span><span class="ib-changed-result-value">' + esc((req && req.broker) || '—') + '</span></div>' +
+        '</div>' +
+        '<div class="ib-changed-result-actions" style="gap:10px">' +
+          (req ? '<button class="iq-btn iq-btn--action" id="blockedEditBtn" type="button" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#c7d2fe">Edit Client</button>' : '') +
+          (!blocked ? '<button class="btn-mark-ib-changed" id="blockedNowBtn" type="button">Block Client</button>' : '<button class="iq-btn iq-btn--action" id="blockedUnblockBtn" type="button" style="background:rgba(34,197,94,0.16);border-color:rgba(34,197,94,0.45);color:#22c55e">Unblock</button>') +
+        '</div>';
+      resEl.hidden = false;
+      const editBtn = document.getElementById('blockedEditBtn');
+      if (editBtn) editBtn.addEventListener('click', () => _openEditClientModal(acct));
+      const blkBtn = document.getElementById('blockedNowBtn');
+      if (blkBtn) blkBtn.addEventListener('click', async () => {
+        blkBtn.disabled = true;
+        const res = await _blockClient(acct, req || {}, 'Admin manual block');
+        if (res.ok) { showToast('Client blocked.', 'success', 3000); doBlockLookup(); _renderBlockedList(); }
+        else { blkBtn.disabled = false; showToast('Block failed: ' + (res.error || 'unknown'), 'error', 4000); }
+      });
+      const unbBtn = document.getElementById('blockedUnblockBtn');
+      if (unbBtn) unbBtn.addEventListener('click', async () => {
+        unbBtn.disabled = true;
+        const res = await _unblockClient(acct);
+        if (res.ok) { showToast('Unblocked.', 'success', 3000); doBlockLookup(); _renderBlockedList(); }
+        else { unbBtn.disabled = false; showToast('Unblock failed: ' + (res.error || 'unknown'), 'error', 4000); }
+      });
+    };
+    if (bsBtn) bsBtn.addEventListener('click', doBlockLookup);
+    if (bsIn)  bsIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doBlockLookup(); } });
+  }
+
+  // Expose as global for inline button clicks if needed
+  window._ZTU_openEditClient = (acct) => _openEditClientModal(acct);
+  window._ZTU_blockClient    = (acct) => {
+    const req = State.requests.find(r => normalizeAccountId(r.account) === normalizeAccountId(acct));
+    return _blockClient(acct, req || {}, 'Admin block');
+  };
 
   /* ═══════════════════════════════════════════════════════════
      END PHASE 15.6
@@ -4280,53 +6791,69 @@ const AdminDashboard = (() => {
   const AUTO_WA_KEY    = 'ZTU_WA_QUEUE_V1';
   const AUTO_WA_BATCH  = 10;   // contacts per WhatsApp batch
 
-  /* ── Message templates ─────────────────────────────────── */
+  /* ── Phase 16.1 — simplified message templates (Issues 3 + 4)
+     ──────────────────────────────────────────────────────────────
+     Only TWO customer email types now exist:
+       A. matched  → ONE email, sent by master_engine.ps1 STEP 7 with
+                     EX5 attachment.  Dashboard pre-delivery copy below
+                     is unused for live customers (kept for WhatsApp
+                     templates the admin sends manually).
+       B. waiting / not_found → single 48-hour notification.
+                     Both pull from this same simplified copy.  The
+                     dedup guard at _insertEmailOutbox ensures each
+                     account receives it at most ONCE.
+  */
   const AUTO_MSG = {
     matched: {
-      subject: 'Your ZTU Bot Account Has Been Approved ✓',
+      subject: 'Your ZTU Bot — Account Matched & Delivered',
       body: (name) =>
         `Hi ${name || 'there'},\n\n` +
-        `Great news — your trading account has been matched to our IB referral and approved.\n` +
-        `Your EA bot file is now being compiled and will be delivered to you shortly.\n\n` +
-        `What happens next:\n` +
-        `• Your personalised EA file will be emailed to you within 24 hours.\n` +
-        `• Install it on your MT5 platform as directed in our setup guide.\n` +
-        `• The bot will activate automatically on your confirmed broker account.\n\n` +
+        `Congratulations — your trading account has been matched and your personalised EA file is attached to this email.\n\n` +
+        `Install it on your MT5 platform as directed in our setup guide. The bot will activate automatically on your confirmed broker account.\n\n` +
         `Thank you for registering with ZTU.\n\nBest regards,\nZTU Support Team`,
       wa: (name, acct) =>
-        `✅ *ZTU Bot Approved*\n\nHi ${name || 'there'}, your account *${acct}* has been matched and approved. ` +
-        `Your EA file is being compiled and will be delivered shortly. Watch your email! 🎉`,
+        `✅ *ZTU Bot Delivered*\n\nHi ${name || 'there'}, your account *${acct}* has been matched and your EA file has been emailed to you. Check your inbox.`,
     },
     waiting: {
-      subject: 'Your ZTU Bot Account — Match Pending',
+      subject: 'Your ZTU Bot Account — Not Matched Yet (48-hour re-check)',
       body: (name) =>
         `Hi ${name || 'there'},\n\n` +
-        `We checked the latest broker report but were unable to find your trading account in our IB data yet.\n\n` +
-        `Your account was not found in the current broker data.\n` +
-        `Please wait while we continue checking new broker reports for 24–48 hours.\n` +
-        `You will be notified automatically if matched.\n\n` +
-        `Why this can happen:\n` +
-        `• The broker report may not have updated yet (can take 1–3 business days).\n` +
-        `• Your account may have been created before our referral link was used.\n\n` +
-        `No action is needed from you right now. We will keep checking.\n\nBest regards,\nZTU Support Team`,
+        `Your account has not matched yet.\n\n` +
+        `The system will automatically re-check for up to 48 hours after submission.\n` +
+        `• If matched during this period → your file will be delivered automatically.\n` +
+        `• If still not matched after 48 hours, the likely cause is one of:\n` +
+        `   - referral / IB code missing on registration\n` +
+        `   - broker account not created through our referral link\n` +
+        `   - existing broker account used instead of a new account\n` +
+        `   - registration did not complete fully\n\n` +
+        `If still unresolved after 48 hours, please contact support.\n\nBest regards,\nZTU Support Team`,
       wa: (name, acct) =>
-        `⏳ *ZTU Bot — Match Pending*\n\nHi ${name || 'there'}, account *${acct}* was not found in today's broker data. ` +
-        `We'll keep checking for 24–48 hours. You'll be notified automatically when matched.`,
+        `⏳ *ZTU Bot — Not Matched Yet*\n\nHi ${name || 'there'}, account *${acct}* hasn't matched yet. We'll keep checking for up to 48 hours. If matched, delivery is automatic.`,
     },
     not_found: {
-      subject: 'Your ZTU Bot Account — Match Not Found',
+      subject: 'Your ZTU Bot Account — Not Matched After 48 Hours',
       body: (name) =>
         `Hi ${name || 'there'},\n\n` +
-        `Your account was still not found after repeated checks over 24–48 hours.\n\n` +
-        `Unfortunately we were unable to confirm your trading account under our IB referral after multiple checks.\n\n` +
-        `Next steps:\n` +
-        `• Please create a new broker account using our official referral link with a new email address.\n` +
-        `• Visit our website and click the broker registration link directly before signing up.\n` +
-        `• Contact us if you need help — we're happy to guide you through the process.\n\n` +
-        `We're sorry for the inconvenience.\n\nBest regards,\nZTU Support Team`,
+        `Your account has not matched after the 48-hour review window.\n\n` +
+        `Likely cause:\n` +
+        `• referral / IB code missing on registration\n` +
+        `• broker account not created through our referral link\n` +
+        `• existing broker account used instead of a new account\n` +
+        `• registration did not complete fully\n\n` +
+        `Please re-check the steps above, or contact support and we'll help.\n\nBest regards,\nZTU Support Team`,
       wa: (name, acct) =>
-        `❌ *ZTU Bot — Match Not Found*\n\nHi ${name || 'there'}, after 24–48 hours of checks, account *${acct}* could not be confirmed under our IB referral. ` +
-        `Please register a new account using our official link. Contact us for help.`,
+        `❌ *ZTU Bot — Not Matched*\n\nHi ${name || 'there'}, after 48 hours of checks, account *${acct}* could not be confirmed under our IB referral. Please re-register using our official link or contact support.`,
+    },
+    // Phase 16.1 — Issue 2 + 6 new template: once-only "already processed".
+    already_processed: {
+      subject: 'Your ZTU Bot — Account Already Delivered',
+      body: (name) =>
+        `Hi ${name || 'there'},\n\n` +
+        `Your account was already created and your EA file was previously delivered successfully.\n\n` +
+        `Please check your email inbox including the spam/junk folder.\n` +
+        `If not found, contact support.\n\nBest regards,\nZTU Support Team`,
+      wa: (name, acct) =>
+        `ℹ️ *ZTU Bot — Already Delivered*\n\nHi ${name || 'there'}, account *${acct}* was already delivered previously. Please check your email inbox and spam folder.`,
     },
   };
 
@@ -4551,11 +7078,84 @@ const AdminDashboard = (() => {
     const errors     = [];
 
     // ─────────────────────────────────────────────────────────
+    // STEP 0 — Phase 16.5 PART C: SYNCHRONOUS IB Change intake enforcement
+    // ─────────────────────────────────────────────────────────
+    // Detect IB-changed accounts BEFORE STEP 1 so the access-control filter
+    // below sees the freshest flags.  Old order ran detection in STEP 4.6
+    // (post-STEP 1), letting newly-blank-partner-code accounts slip through
+    // the matching gate on the same upload they were flagged in.
+    try {
+      _autoSetStep('autoStep1', 'running');   // re-using the step indicator; we re-set below
+      // Mirror broker rows to Supabase broker_accounts FIRST so the Supabase
+      // scan can see the just-uploaded partner_code values.
+      try {
+        await _persistBrokerAccounts(
+          IntakeState.parsedRows || [],
+          IntakeState.columns    || [],
+          IntakeState.file ? IntakeState.file.name : null
+        );
+      } catch (e) {
+        console.warn('[Phase16.5 PART C] early broker_accounts persist failed (non-fatal):', e);
+      }
+
+      // In-file pass: flags any serviced account absent from latest broker
+      // file OR present with blank / wrong partner_code.
+      try {
+        await _autoDetectIbChanges(
+          IntakeState.parsedRows || [],
+          IntakeState.columns    || []
+        );
+      } catch (e) {
+        console.warn('[Phase16.5 PART C] in-file IB Changed scan failed (non-fatal):', e);
+      }
+
+      // Supabase-backed pass: walks broker_accounts looking for blank/wrong
+      // partner_code — catches accounts the in-file pass missed.
+      try {
+        await _autoDetectFromBrokerAccounts();
+      } catch (e) {
+        console.warn('[Phase16.5 PART C] Supabase IB Changed scan failed (non-fatal):', e);
+      }
+
+      // Force a fresh read of ib_changed_accounts so the STEP 1 filter below
+      // sees the rows we just inserted.
+      _invalidateIbChangedCache();
+    } catch (e) {
+      console.warn('[Phase16.5 PART C] pre-STEP-1 IB Changed enforcement failed (non-fatal):', e);
+    }
+
+    // ─────────────────────────────────────────────────────────
     // STEP 1 — Matched accounts → compile_ready (Supabase writes)
     // ─────────────────────────────────────────────────────────
     _autoSetStep('autoStep1', 'running');
 
+    // Phase 15.6 Task 6c + Phase 16.2 — access-control pre-filter.
+    // Skip any matched account that has been flagged as IB Changed OR Blocked.
+    let ibChangedSkipped = 0;
+    let blockedSkipped   = 0;
+    await _ensureIbChangedSet();
+    await _ensureBlockedSet();
+    const queuedAllowed = [];
     for (const req of queued) {
+      const acctN = normalizeAccountId(req.account);
+      if (_blockedSet.has(acctN)) {
+        console.log(`[Phase16.2/Blocked] skipping compile for ${req.account} — admin blocked`);
+        blockedSkipped++;
+        continue;
+      }
+      if (_ibChangedSet.has(acctN)) {
+        console.log(`[Phase15.6/IBChanged] skipping compile for ${req.account} — flagged as IB Changed`);
+        ibChangedSkipped++;
+        continue;
+      }
+      queuedAllowed.push(req);
+    }
+    if (ibChangedSkipped > 0) {
+      errors.push(`${ibChangedSkipped} IB-changed account(s) skipped from compile.`);
+    }
+
+    let recoveredFromNotFound = 0;
+    for (const req of queuedAllowed) {
       if (WriteLock.has(req.id)) continue;
       WriteLock.add(req.id);
       try {
@@ -4566,8 +7166,19 @@ const AdminDashboard = (() => {
         } else if (c === 'matched') {
           await DataLayer.updateStatus(req.id, 'compile_ready',  'matched');
         }
-        // Delayed match — remove from RetryPool if it was waiting
-        RetryPool.remove(req.id);
+        // Phase 16.7 Issue 4 — if this account was in the archived
+        // (Not Found After 48h) pool, mark it as recovered BEFORE we
+        // remove it so the dashboard can flash the "Recovered Match"
+        // badge for the standard 24h grace window.
+        const poolEntry = RetryPool.getById(req.id);
+        if (poolEntry && poolEntry.archived) {
+          RetryPool.recover(req.id);
+          recoveredFromNotFound++;
+          console.log('[Phase16.7] RECOVERED ' + req.account + ' — un-archived from Not Found, status → compile_ready');
+        } else {
+          // Delayed match — remove from RetryPool if it was waiting (and not archived).
+          RetryPool.remove(req.id);
+        }
         successCount++;
       } catch (e) {
         failCount++;
@@ -4576,6 +7187,9 @@ const AdminDashboard = (() => {
       } finally {
         WriteLock.delete(req.id);
       }
+    }
+    if (recoveredFromNotFound > 0) {
+      errors.push(`✓ ${recoveredFromNotFound} previously Not Found account(s) recovered into matched pipeline.`);
     }
 
     _autoSetStep('autoStep1', failCount > successCount ? 'error' : 'done');
@@ -4623,7 +7237,11 @@ const AdminDashboard = (() => {
     const emailItems = [];
 
     // Matched → approval email
-    matched.forEach(r => emailItems.push(_buildEmailItem(r, 'matched')));
+    // Phase 16 follow-up #4 — Issue 2 (Simplify email automation).
+    // Removed the pre-delivery "matched" announcement email — the customer
+    // now receives ONE email only: the delivery email with EX5 attached,
+    // sent by master_engine.ps1 STEP 7 after compile completes.
+    // Original line (disabled): matched.forEach(r => emailItems.push(_buildEmailItem(r, 'matched')));
 
     // Unmatched within 7-day window → waiting email
     const waitingThisRun = unmatched.filter(r => {
@@ -4748,6 +7366,36 @@ const AdminDashboard = (() => {
     );
 
     // ─────────────────────────────────────────────────────────
+    // STEP 4.6 — Phase 15.6: IB Stars activity + IB Changed auto-detect
+    // Hooks read directly from IntakeState.parsedRows / .columns.
+    // Both run AFTER STEP 1 (license_requests now reflect new statuses)
+    // and BEFORE STEP 5 refresh (so renders pick up the new state).
+    // ─────────────────────────────────────────────────────────
+    let ibStarsTransitions = { transitionsToInactive: [], transitionsToActive: [] };
+    let ibChangedDetected  = { inserted: 0, skipped: 0 };
+    let baPersisted        = { upserted: 0, errors: 0 };
+    try {
+      // Refresh license_requests cache so auto-detect sees the just-updated statuses.
+      // (We just did Supabase UPDATEs in STEP 1; State.requests is stale until loadData runs.)
+      await loadData();
+
+      // Phase 16.5 PART C — broker_accounts persist + IB Changed detection
+      // already ran synchronously in STEP 0 above.  Skipping them here avoids
+      // duplicate Supabase round-trips.  IbStars still needs to run since the
+      // pre-STEP-1 block didn't touch it.
+      ibStarsTransitions = IbStars.updateFromBrokerRows(
+        IntakeState.parsedRows || [],
+        IntakeState.columns    || []
+      );
+
+      if (ibStarsTransitions.transitionsToInactive.length > 0) {
+        await _enqueueIbInactiveNotifications(ibStarsTransitions.transitionsToInactive);
+      }
+    } catch (e) {
+      console.warn('[Phase15.6] IB Stars / IB Changed / broker_accounts hook failed (non-fatal):', e);
+    }
+
+    // ─────────────────────────────────────────────────────────
     // STEP 5 — Finalize: refresh all dashboard sections
     // ─────────────────────────────────────────────────────────
     _autoSetStep('autoStep5', 'running');
@@ -4756,6 +7404,8 @@ const AdminDashboard = (() => {
     renderWaitingForMatch();
     renderPendingRequests();
     refreshIntakeQueue();
+    // Phase 15.6 — keep IB sidebar pages in sync if they're already mounted.
+    try { _renderIbStarsActive(); _renderIbStarsInactive(); _renderIbChangedList(); } catch (e) {}
 
     _autoSetStep('autoStep5', 'done');
 
@@ -5928,6 +8578,205 @@ const AdminDashboard = (() => {
 
 
   /* ═══════════════════════════════════════════════════════════
+     PHASE 15.6 TASK 4 — CLEAR CACHE ADMIN UTILITY
+     ───────────────────────────────────────────────────────────
+     Safe localStorage clearing of derived/dashboard caches only.
+     NEVER touches:
+       - delivered accounts (Supabase license_requests.status='emailed')
+       - sent email log     (Supabase email_outbox.status='sent')
+       - retry pool         (localStorage.ZTU_ADMIN_RETRY_POOL_V1)
+     Each cache key maps to a clearer that wipes only its own data.
+  ══════════════════════════════════════════════════════════ */
+
+  const _CLEAR_CACHE_MAP = {
+    // Phase 16 follow-up — expanded coverage. Every entry can target
+    // BOTH localStorage AND sessionStorage. NEVER touches protected
+    // records (delivered, sent email log, ib_changed_accounts Supabase,
+    // RetryPool *archived* entries — those have customer history).
+    // Phase 16 follow-up #4 — REAL key fix.
+    // Active/Inactive/HighValue are computed VIEWS of the CRM store
+    // (CRM_STORE_KEY = 'ZTU_CRM_DATA_V1'). The previous map referenced
+    // non-existent keys (ZTU_CACHE_ACTIVE_V1 etc.) and called
+    // CrmStore.clearActive() which doesn't exist — silent no-op.
+    // Now all three groups properly clear the underlying ZTU_CRM_DATA_V1
+    // AND reset the in-memory CrmStore._data cache.
+    // Phase 16.1 — full coverage map. Each group resets in-memory caches
+    // AND clears the underlying localStorage key.  All groups force a
+    // window.location.reload() after clear via _performClearCache.
+    'matched-cache':   { keys: ['ZTU_CRM_DATA_V1'], reset: () => { if (typeof CrmStore !== 'undefined') CrmStore._data = null; } },
+    'active-cache':    { keys: ['ZTU_CRM_DATA_V1'], reset: () => { if (typeof CrmStore !== 'undefined') CrmStore._data = null; } },
+    'inactive-cache':  { keys: ['ZTU_CRM_DATA_V1'], reset: () => { if (typeof CrmStore !== 'undefined') CrmStore._data = null; } },
+    'highvalue-cache': { keys: ['ZTU_CRM_DATA_V1'], reset: () => { if (typeof CrmStore !== 'undefined') CrmStore._data = null; } },
+    'pending-requests':{ keys: [], reset: () => { if (typeof State !== 'undefined') State.requests = []; } },
+    'waiting-match':   { keys: ['ZTU_ADMIN_RETRY_POOL_V1'], reset: () => {
+      // Phase 16.3 — drop ACTIVE retry pool entries, preserve archived
+      // (Match Not Found history). Rebuild localStorage in correct map
+      // shape { <id>: entry } so RetryPool._read() returns valid data.
+      if (typeof RetryPool !== 'undefined' && RetryPool) {
+        const archived = RetryPool.getArchived();
+        const map = {};
+        archived.forEach(e => { map[e.id] = e; });
+        try { window.localStorage.setItem('ZTU_ADMIN_RETRY_POOL_V1', JSON.stringify(map)); } catch (e) {}
+        RetryPool._data = null;   // force re-hydrate from localStorage on next read
+      }
+    } },
+    'compile-queue':   { keys: [], reset: () => { /* No separate cache; fetchIntakeQueue() is uncached */ } },
+    'delivered-cache': { keys: [], reset: () => { /* No separate cache; fetchIntakeQueue() is uncached */ } },
+    'email-queue':     { keys: ['ZTU_EMAIL_QUEUE_V1', 'ZTU_WA_QUEUE_V1'], reset: null },
+    'campaign-cache':  { keys: ['ZTU_CACHE_CAMPAIGN_V1', 'ZTU_CAMPAIGN_DRAFT_V1'], reset: () => {
+      if (typeof CampaignBuilder !== 'undefined' && CampaignBuilder) {
+        CampaignBuilder.manualAccts = [];
+        CampaignBuilder.group = 'active';
+      }
+    }},
+    'ib-stars-cache':  { keys: [IB_CFG.STORE_KEY], reset: () => {
+      if (typeof IbStars !== 'undefined' && IbStars) IbStars.clearAll();
+    }},
+    'intake-cache':    { keys: ['ZTU_CACHE_INTAKE_PARSED_V1', 'ZTU_EMAIL_QUEUE_V1', 'ZTU_WA_QUEUE_V1'], reset: () => {
+      if (typeof IntakeState !== 'undefined' && IntakeState) {
+        IntakeState.file = null;
+        IntakeState.parsedRows = [];
+        IntakeState.columns = [];
+        IntakeState.accountCol = null;
+        IntakeState.brokerAccounts = null;
+        IntakeState.matchResult = null;
+      }
+    }},
+    // Phase 16 follow-up — additional groups
+    'retry-pool-active': { keys: [], reset: () => {
+      // Clear ACTIVE retry pool entries only (NEVER archived ones).
+      if (typeof RetryPool !== 'undefined' && RetryPool) {
+        const archived = RetryPool.getArchived();
+        try {
+          window.localStorage.setItem('ZTU_ADMIN_RETRY_POOL_V1', JSON.stringify({
+            version: 1, entries: archived,
+          }));
+        } catch (e) {}
+        RetryPool._data = null;
+      }
+    }},
+    'search-cache':     { keys: [], reset: () => {
+      // Clear in-memory CRM search state
+      ['crmSearchInput', 'globalSearchInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    }},
+    'session-storage':   { keys: [], reset: () => {
+      // Clear sessionStorage entirely (admin auth session also clears
+      // → will log out the admin, which is intentional and safe).
+      try { sessionStorage.clear(); } catch (e) {}
+    }},
+    'dashboard-counters': { keys: ['adc_state_v3'], reset: () => {
+      // Force the cached in-memory State to drop counters & re-fetch.
+      if (typeof State !== 'undefined' && State) {
+        State.requests = [];
+        State.lastSync = null;
+        State.runCount = 0;
+      }
+    }},
+  };
+
+  function _openClearCacheModal() {
+    const ov = document.getElementById('clearCacheOverlay');
+    if (!ov) return;
+    ov.hidden = false;
+    // Reset all checkboxes on open
+    ov.querySelectorAll('input[type="checkbox"][data-cache-key]').forEach(cb => cb.checked = false);
+  }
+  function _closeClearCacheModal() {
+    const ov = document.getElementById('clearCacheOverlay');
+    if (ov) ov.hidden = true;
+  }
+  function _performClearCache() {
+    const ov = document.getElementById('clearCacheOverlay');
+    if (!ov) return;
+    const boxes = ov.querySelectorAll('input[type="checkbox"][data-cache-key]:checked');
+    if (boxes.length === 0) {
+      showToast('Select at least one cache to clear.', 'warn', 2500);
+      return;
+    }
+    // Phase 16.2 audit fix — count all three reset paths separately so the
+    // toast reports REAL totals, not just localStorage removeItem hits.
+    // Several groups (pending-requests/compile-queue/delivered-cache/etc.)
+    // have keys: [] by design — they're memory- or Supabase-backed — so the
+    // old counter understated their effect as "0 key(s) removed".
+    let lsRemoved = 0;
+    let lsMissed  = 0;   // keys requested but not present in localStorage
+    let memReset  = 0;
+    let ssBefore  = 0, ssAfter = 0;
+    try { ssBefore = sessionStorage.length; } catch (e) {}
+    const cleared = [];
+
+    boxes.forEach(cb => {
+      const groupKey = cb.dataset.cacheKey;
+      const entry = _CLEAR_CACHE_MAP[groupKey];
+      if (!entry) return;
+      entry.keys.forEach(k => {
+        try {
+          const existed = window.localStorage.getItem(k) !== null;
+          window.localStorage.removeItem(k);
+          if (existed) lsRemoved++; else lsMissed++;
+        } catch (e) {}
+      });
+      if (typeof entry.reset === 'function') {
+        try { entry.reset(); memReset++; }
+        catch (e) { console.warn('[clearCache] reset failed for', groupKey, e); }
+      }
+      cleared.push(cb.parentElement.querySelector('span').textContent.trim());
+    });
+    try { ssAfter = sessionStorage.length; } catch (e) {}
+    const ssRemoved = Math.max(0, ssBefore - ssAfter);
+
+    _closeClearCacheModal();
+    const parts = [`${cleared.length} group(s)`];
+    if (lsRemoved > 0)  parts.push(`${lsRemoved} localStorage key(s)`);
+    if (ssRemoved > 0)  parts.push(`${ssRemoved} sessionStorage key(s)`);
+    if (memReset  > 0)  parts.push(`${memReset} memory reset(s)`);
+    if (lsMissed  > 0)  parts.push(`${lsMissed} key(s) not present (no-op)`);
+    const summary = parts.join(' · ');
+    showToast(`Cleared ${summary}. Reloading…`, 'success', 4500);
+    console.log('[clearCache] cleared groups:', cleared, '| lsRemoved=', lsRemoved, '| lsMissed=', lsMissed, '| ssRemoved=', ssRemoved, '| memReset=', memReset);
+
+    // Phase 16.2 — same banner flag (now carrying the honest counters)
+    try {
+      sessionStorage.setItem('ZTU_CACHE_CLEARED_AT', JSON.stringify({
+        at: new Date().toISOString(),
+        groups: cleared,
+        lsRemoved, ssRemoved, memReset, lsMissed,
+      }));
+    } catch (e) {}
+    setTimeout(() => window.location.reload(), 1200);
+  }
+  function bindClearCache() {
+    const openBtn   = document.getElementById('btnOpenClearCache');
+    const closeBtn  = document.getElementById('clearCacheClose');
+    const cancelBtn = document.getElementById('clearCacheCancel');
+    const okBtn     = document.getElementById('clearCacheConfirm');
+    const selectAll = document.getElementById('clearCacheSelectAll');
+    const overlay   = document.getElementById('clearCacheOverlay');
+
+    if (openBtn)   openBtn.addEventListener('click', _openClearCacheModal);
+    if (closeBtn)  closeBtn.addEventListener('click', _closeClearCacheModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', _closeClearCacheModal);
+    if (okBtn)     okBtn.addEventListener('click', _performClearCache);
+    if (selectAll) selectAll.addEventListener('click', () => {
+      if (!overlay) return;
+      const boxes = overlay.querySelectorAll('input[type="checkbox"][data-cache-key]');
+      const allChecked = Array.from(boxes).every(cb => cb.checked);
+      boxes.forEach(cb => cb.checked = !allChecked);
+      selectAll.textContent = allChecked ? 'Select All' : 'Deselect All';
+    });
+    if (overlay) overlay.addEventListener('click', e => {
+      if (e.target === overlay) _closeClearCacheModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && overlay && !overlay.hidden) _closeClearCacheModal();
+    });
+  }
+
+
+  /* ═══════════════════════════════════════════════════════════
      DATA LOADING
      Single async entry point for all data population.
      State.isFetching guards against concurrent calls.
@@ -6063,7 +8912,137 @@ const AdminDashboard = (() => {
   /* ═══════════════════════════════════════════════════════════
      INIT
   ══════════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════
+     PHASE 16 follow-up — ADMIN PASSWORD GATE
+     ───────────────────────────────────────────────────────────
+     Single-source-of-truth configuration: change ADMIN_CONFIG.password
+     to rotate the password.  Session is sessionStorage-based with an
+     idle-timeout (resets on any user interaction).  Gate blocks ALL
+     dashboard rendering until authenticated.
+  ══════════════════════════════════════════════════════════ */
+  const ADMIN_CONFIG = {
+    password:        'ZTU-Admin-2026',   // CHANGE THIS to rotate admin password
+    sessionMinutes:  30,                  // idle timeout in minutes
+    storageKey:      'ZTU_ADMIN_SESSION_V1',
+  };
+
+  const AdminAuth = {
+    _idleTimer: null,
+
+    _isValid() {
+      try {
+        const raw = sessionStorage.getItem(ADMIN_CONFIG.storageKey);
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        return s && s.expiresAt && Date.now() < s.expiresAt;
+      } catch (e) { return false; }
+    },
+
+    _refresh() {
+      const expiresAt = Date.now() + ADMIN_CONFIG.sessionMinutes * 60_000;
+      sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify({ expiresAt }));
+    },
+
+    _scheduleIdleCheck() {
+      if (this._idleTimer) clearInterval(this._idleTimer);
+      this._idleTimer = setInterval(() => {
+        if (!this._isValid()) this.logout(true /* sessionExpired */);
+      }, 60_000);
+      // Activity refreshes session
+      const refresh = () => { if (this._isValid()) this._refresh(); };
+      ['click', 'keydown', 'mousemove'].forEach(ev =>
+        document.addEventListener(ev, refresh, { passive: true, capture: true })
+      );
+    },
+
+    showGate(errMsg) {
+      const ov = document.getElementById('adminGateOverlay');
+      const er = document.getElementById('adminGateError');
+      const ip = document.getElementById('adminGateInput');
+      const sm = document.getElementById('adminGateSessMin');
+      const sh = document.querySelector('.app-shell');
+      if (ov) ov.hidden = false;
+      if (sh) sh.style.display = 'none';
+      if (sm) sm.textContent = String(ADMIN_CONFIG.sessionMinutes);
+      if (er) {
+        if (errMsg) { er.textContent = errMsg; er.hidden = false; }
+        else { er.hidden = true; er.textContent = ''; }
+      }
+      if (ip) { ip.value = ''; setTimeout(() => ip.focus(), 50); }
+    },
+
+    hideGate() {
+      const ov = document.getElementById('adminGateOverlay');
+      const sh = document.querySelector('.app-shell');
+      if (ov) ov.hidden = true;
+      if (sh) sh.style.display = '';
+    },
+
+    tryLogin(pwd) {
+      if (pwd === ADMIN_CONFIG.password) {
+        this._refresh();
+        this.hideGate();
+        this._scheduleIdleCheck();
+        console.log('[AdminAuth] login OK — session valid for ' + ADMIN_CONFIG.sessionMinutes + ' min idle');
+        return true;
+      }
+      return false;
+    },
+
+    logout(sessionExpired) {
+      sessionStorage.removeItem(ADMIN_CONFIG.storageKey);
+      if (this._idleTimer) { clearInterval(this._idleTimer); this._idleTimer = null; }
+      this.showGate(sessionExpired ? 'Session expired — please re-enter password.' : null);
+      console.log('[AdminAuth] logged out' + (sessionExpired ? ' (idle timeout)' : ''));
+    },
+
+    bindGate() {
+      const form = document.getElementById('adminGateForm');
+      const btnLogout = document.getElementById('btnAdminLogout');
+      if (form) {
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const ip = document.getElementById('adminGateInput');
+          const pwd = ip ? ip.value : '';
+          if (!this.tryLogin(pwd)) {
+            const er = document.getElementById('adminGateError');
+            if (er) { er.textContent = 'Incorrect password.'; er.hidden = false; }
+            if (ip) { ip.value = ''; ip.focus(); }
+          }
+        });
+      }
+      if (btnLogout) btnLogout.addEventListener('click', () => this.logout(false));
+    },
+
+    /* Entry point — call before any dashboard rendering.  Returns true
+       if authenticated, false if gate is shown and dashboard should pause. */
+    enforce() {
+      this.bindGate();
+      if (this._isValid()) {
+        this.hideGate();
+        this._refresh();
+        this._scheduleIdleCheck();
+        return true;
+      }
+      this.showGate();
+      // Poll: when user authenticates, re-trigger init.
+      const checker = setInterval(() => {
+        if (this._isValid()) {
+          clearInterval(checker);
+          // Resume init by reloading — simplest way to bootstrap full dashboard
+          window.location.reload();
+        }
+      }, 500);
+      return false;
+    },
+  };
+
   async function init() {
+    // Phase 16 follow-up — auth gate FIRST. Block all dashboard init if not authed.
+    if (!AdminAuth.enforce()) {
+      console.log('[AdminDashboard] auth required — dashboard render paused');
+      return;
+    }
     console.log('[AdminDashboard] Phase 14A — Campaign Builder loaded.');
 
     cacheEls();
@@ -6096,6 +9075,406 @@ const AdminDashboard = (() => {
     bindRunAutomation();     // Phase 15 — one click automation engine
     bindDeliveryPanels();    // Phase 15.1 — delivery layer (email + WA)
     bindSidebarSectionPages(); // Phase 15.6 — Matched / Compile / Delivered sidebar pages
+    bindClearCache();          // Phase 15.6 Task 4 — Clear Cache admin utility
+    bindIbStarsAndChanged();   // Phase 15.6 Phase B — IB Stars + IB Changed (Tasks 3 + 6)
+    bindEditAndBlock();        // Phase 16.2 — Edit Client modal + Block/Unblock
+    _ensureBlockedSet();       // populate blocked cache early so audience filters work
+    _refreshClientOverrides(); // Phase 16.2 — populate overrides map so CRM tables show latest values
+    // Phase 16.2 — universal delegated handler for inline row buttons across
+    // every table (Active/Inactive/HighValue/Pending/etc.). Single listener.
+    document.addEventListener('click', async (ev) => {
+      const editBtn = ev.target.closest('[data-row-edit]');
+      if (editBtn) {
+        ev.preventDefault(); ev.stopPropagation();
+        _openEditClientModal(editBtn.dataset.rowEdit);
+        return;
+      }
+      const blockBtn = ev.target.closest('[data-row-block]');
+      if (blockBtn) {
+        ev.preventDefault(); ev.stopPropagation();
+        blockBtn.disabled = true;
+        const acct = blockBtn.dataset.rowBlock;
+        const req  = State.requests.find(r => normalizeAccountId(r.account) === normalizeAccountId(acct));
+        const ctx  = req || (CrmStore.getAll().find(c => c.account === acct) || {});
+        const res = await _blockClient(acct, { email: ctx.email, whatsapp: ctx.whatsapp, broker: ctx.broker || ctx.broker_name }, 'Admin row block');
+        if (res.ok) {
+          showToast('Blocked ' + acct + '.', 'success', 3000);
+          if (typeof renderCrmActive   === 'function') renderCrmActive();
+          if (typeof renderCrmInactive === 'function') renderCrmInactive();
+          if (typeof renderCrmHighValue=== 'function') renderCrmHighValue();
+          if (typeof renderPendingRequests === 'function') renderPendingRequests();
+          if (typeof _renderBlockedList === 'function') _renderBlockedList();
+        } else {
+          blockBtn.disabled = false;
+          showToast('Block failed: ' + (res.error || 'unknown'), 'error', 5000);
+        }
+        return;
+      }
+      const unblockBtn = ev.target.closest('[data-row-unblock]');
+      if (unblockBtn) {
+        ev.preventDefault(); ev.stopPropagation();
+        unblockBtn.disabled = true;
+        const res = await _unblockClient(unblockBtn.dataset.rowUnblock);
+        if (res.ok) {
+          showToast('Unblocked ' + unblockBtn.dataset.rowUnblock + '.', 'success', 3000);
+          if (typeof renderCrmActive   === 'function') renderCrmActive();
+          if (typeof renderCrmInactive === 'function') renderCrmInactive();
+          if (typeof renderCrmHighValue=== 'function') renderCrmHighValue();
+          if (typeof renderPendingRequests === 'function') renderPendingRequests();
+          if (typeof _renderBlockedList === 'function') _renderBlockedList();
+        } else {
+          unblockBtn.disabled = false;
+          showToast('Unblock failed: ' + (res.error || 'unknown'), 'error', 5000);
+        }
+        return;
+      }
+    });
+
+    // Phase 16 follow-up — periodic Not Found sweep.
+    // Runs autoArchiveExpiredPool() every hour while the dashboard tab
+    // is open.  Guarantees the final 'not_found' email goes out within
+    // ~1 hour of the 48h window expiry, regardless of broker file uploads.
+    const NOT_FOUND_SWEEP_MS = 60 * 60 * 1000;   // 1 hour
+    setInterval(() => {
+      try { autoArchiveExpiredPool(); }
+      catch (e) { console.warn('[NotFoundSweep] interval failed:', e); }
+      try { _sweepStalePendingViaSupabase(); }
+      catch (e) { console.warn('[NotFoundSweep] Supabase sweep failed:', e); }
+    }, NOT_FOUND_SWEEP_MS);
+    console.log('[NotFoundSweep] periodic sweep enabled — runs every', NOT_FOUND_SWEEP_MS/60000, 'min');
+    // Also fire once at init so the first sweep runs immediately rather than
+    // waiting an hour.  Both helpers are no-ops if nothing is eligible.
+    setTimeout(() => {
+      try { _sweepStalePendingViaSupabase(); } catch (e) {}
+    }, 3000);
+
+    /* Phase 16.4 Issue 1 — periodic auto-match against latest broker_accounts.
+     * Runs once at init (3 s after boot) and then every 2 minutes so a freshly
+     * submitted license_request whose account already lives in broker_accounts
+     * is promoted to 'matched' without waiting for the engine's 15-min tick. */
+    const AUTO_MATCH_MS = 2 * 60 * 1000;
+    setInterval(() => {
+      _autoMatchPendingViaBroker().then(res => {
+        if (res && res.matchedNow > 0) {
+          try {
+            if (typeof renderPendingRequests === 'function') renderPendingRequests();
+            if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+          } catch (_) {}
+        }
+      }).catch(e => console.warn('[AutoMatch] interval failed:', e));
+    }, AUTO_MATCH_MS);
+    setTimeout(() => {
+      _autoMatchPendingViaBroker().then(res => {
+        if (res && res.matchedNow > 0) {
+          console.log('[AutoMatch] boot pass flipped ' + res.matchedNow + ' row(s).');
+          try {
+            if (typeof renderPendingRequests === 'function') renderPendingRequests();
+            if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+          } catch (_) {}
+        }
+      }).catch(()=>{});
+    }, 3500);
+
+    // Phase 16 follow-up #4 — engine countdown timer.
+    // ZTU_MasterEngine scheduled task runs every 15 minutes on the
+    // local PC.  Cannot be triggered from browser (file:// can't spawn
+    // PowerShell).  This badge is informational ONLY — shows mm:ss to
+    // next expected tick based on a 15-min cycle anchored to :00/:15/:30/:45.
+    const ENGINE_TICK_MIN = 15;
+    function _updateEngineCountdown() {
+      const valEl = document.getElementById('engineCountdownVal');
+      if (!valEl) return;
+      const now = new Date();
+      const cur = now.getMinutes();
+      const next = Math.ceil((cur + 0.001) / ENGINE_TICK_MIN) * ENGINE_TICK_MIN;
+      const tgt = new Date(now);
+      tgt.setMinutes(next, 0, 0);
+      if (tgt <= now) tgt.setMinutes(tgt.getMinutes() + ENGINE_TICK_MIN);
+      const diffMs = tgt - now;
+      const m = Math.floor(diffMs / 60000);
+      const s = Math.floor((diffMs % 60000) / 1000);
+      valEl.textContent = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    }
+    _updateEngineCountdown();
+    setInterval(_updateEngineCountdown, 1000);
+
+    // Phase 16.2 — Cache cleared banner (visible confirmation after reload)
+    try {
+      const flag = sessionStorage.getItem('ZTU_CACHE_CLEARED_AT');
+      if (flag) {
+        sessionStorage.removeItem('ZTU_CACHE_CLEARED_AT');
+        const meta = JSON.parse(flag);
+        // Phase 16.2 audit fix — render the same honest breakdown the
+        // pre-reload toast used (ls / ss / memory / missed).
+        const parts = [`${meta.groups.length} group(s)`];
+        if (meta.lsRemoved > 0) parts.push(`${meta.lsRemoved} localStorage`);
+        if (meta.ssRemoved > 0) parts.push(`${meta.ssRemoved} sessionStorage`);
+        if (meta.memReset  > 0) parts.push(`${meta.memReset} memory reset(s)`);
+        if (meta.lsMissed  > 0) parts.push(`${meta.lsMissed} no-op (key absent)`);
+        // Legacy banner fallback if old code wrote `keys` field
+        if (parts.length === 1 && typeof meta.keys === 'number') {
+          parts.push(`${meta.keys} key(s) removed`);
+        }
+        setTimeout(() => {
+          showToast(`✓ Cache cleared at ${new Date(meta.at).toLocaleTimeString()} — ${parts.join(' · ')}. Dashboard reloaded from Supabase.`, 'success', 7000);
+        }, 500);
+      }
+    } catch (e) {}
+
+    // Phase 16.1 — Issue 5 — Run Now button.
+    // Triggers ALL dashboard-side sweeps that mirror what the engine does
+    // when it runs.  Cannot compile new EX5 (that's strictly PowerShell-side
+    // on DESKTOP-H7MOLKJ) but executes every dashboard responsibility:
+    //   1. _sweepStalePendingViaSupabase     → flips 48h-stale to unmatched + queues not_found email
+    //   2. autoArchiveExpiredPool             → archives expired RetryPool entries
+    //   3. _autoDetectFromBrokerAccounts      → marks IB Changed accounts
+    //   4. loadData                           → refreshes all Supabase reads
+    //   5. re-renders every visible sidebar page
+    const btnRunNow = document.getElementById('btnEngineRunNow');
+    if (btnRunNow) {
+      btnRunNow.addEventListener('click', async () => {
+        btnRunNow.disabled = true;
+        const originalLabel = btnRunNow.textContent;
+        btnRunNow.textContent = 'Running…';
+        console.group('[RunNow] manual dashboard-side engine cycle starting');
+        try {
+          // Phase 16.2 — REAL engine trigger.  INSERT into engine_triggers;
+          // master_engine.ps1 STEP 0.0 consumes pending rows on its next tick
+          // and marks them 'consumed' with timestamp.  Admin sees real DB
+          // evidence the trigger was acted on.
+          let triggerId = null;
+          let triggerInsertErr = null;
+          try {
+            console.log('[RunNow] supabaseClient present?', !!supabaseClient, 'DataLayer.isLive?', DataLayer.isLive);
+            const insertResp = await supabaseClient
+              .from('engine_triggers')
+              // Phase 16.4 Issue 4 — removed `notes` column (not in user's engine_triggers schema; caused PGRST204)
+              .insert([{ status: 'pending', requested_by: 'dashboard' }])
+              .select('id, status, created_at');
+            console.log('[RunNow] insert response:', insertResp);
+            if (insertResp.error) {
+              triggerInsertErr = insertResp.error;
+              console.error('[RunNow] INSERT FAILED — code:', insertResp.error.code, '| message:', insertResp.error.message, '| details:', insertResp.error.details, '| hint:', insertResp.error.hint);
+              showToast('Run Now FAILED — engine_triggers insert error: ' + (insertResp.error.message || 'unknown') + (insertResp.error.code ? ' [' + insertResp.error.code + ']' : ''), 'error', 9000);
+            } else if (insertResp.data && insertResp.data.length > 0) {
+              triggerId = insertResp.data[0].id;
+              console.log('[RunNow] engine_triggers row inserted: id=' + triggerId);
+            } else {
+              triggerInsertErr = { message: 'insert returned no rows (RLS may be denying SELECT return)' };
+              console.warn('[RunNow] insert returned empty data; cannot confirm row was written. Check RLS SELECT policy.');
+              showToast('Run Now: insert returned no data — RLS may be denying read. Check Supabase policies.', 'warn', 7000);
+            }
+          } catch (e) {
+            triggerInsertErr = e;
+            console.error('[RunNow] insert exception:', e);
+            showToast('Run Now exception: ' + (e.message || e), 'error', 7000);
+          }
+          // Phase 16.4 Issue 1 — auto-match new pending requests against broker_accounts
+          // BEFORE the stale sweep so we don't kick a fresh request into 'unmatched'.
+          try {
+            const amRes = await _autoMatchPendingViaBroker();
+            if (amRes && amRes.matchedNow > 0) {
+              showToast('Auto-matched ' + amRes.matchedNow + ' pending request(s) against broker_accounts.', 'success', 4000);
+            }
+          } catch (e) { console.warn('[RunNow] _autoMatchPendingViaBroker failed:', e); }
+          await _sweepStalePendingViaSupabase();
+          await autoArchiveExpiredPool();
+          await _autoDetectFromBrokerAccounts();
+          await loadData();
+          if (typeof renderPendingRequests       === 'function') renderPendingRequests();
+          if (typeof renderWaitingForMatch       === 'function') renderWaitingForMatch();
+          if (typeof renderMatchedAccountsSection=== 'function') renderMatchedAccountsSection();
+          if (typeof renderCompileQueueSection   === 'function') renderCompileQueueSection();
+          if (typeof renderDeliveredSection      === 'function') renderDeliveredSection();
+          if (typeof refreshIntakeQueue          === 'function') refreshIntakeQueue();
+          if (typeof renderDeliveryPanels        === 'function') renderDeliveryPanels();
+          // Poll engine_triggers for ~90s to see if engine consumed our row
+          if (triggerId) {
+            (async () => {
+              const start = Date.now();
+              while (Date.now() - start < 90000) {
+                try {
+                  const { data } = await supabaseClient
+                    .from('engine_triggers')
+                    .select('status, consumed_at')
+                    .eq('id', triggerId)
+                    .limit(1);
+                  if (data && data[0] && data[0].status === 'consumed') {
+                    showToast('Engine ACK: Run Now trigger #' + triggerId + ' was consumed at ' + new Date(data[0].consumed_at).toLocaleTimeString() + '. Compile + delivery now running on the engine host.', 'success', 7000);
+                    return;
+                  }
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, 5000));
+              }
+            })();
+          }
+          if (triggerId) {
+            showToast('Run Now: trigger row queued in engine_triggers (id=' + triggerId + '). Dashboard sweeps done. PowerShell engine will consume the trigger on its next 15-min tick.', 'success', 8000);
+          } else if (triggerInsertErr) {
+            // Already showed error toast above. No fake success.
+          } else {
+            showToast('Run Now: dashboard sweeps done. Engine trigger NOT inserted — see console.', 'warn', 6000);
+          }
+        } catch (e) {
+          console.error('[RunNow] failed:', e);
+          showToast('Run Now error — see console.', 'error', 4000);
+        } finally {
+          console.groupEnd();
+          btnRunNow.textContent = originalLabel;
+          btnRunNow.disabled = false;
+        }
+      });
+    }
+
+    // Phase 16 follow-up #2 — admin-only debug helpers exposed on window
+    // so the user can inspect pool state and test the Not Found pipeline
+    // WITHOUT waiting 2 days.  These are no-ops in production traffic.
+    window.__ZTU_DEBUG_RetryPool = function () {
+      const entries = RetryPool.getAll();
+      console.group('[ZTU DEBUG] RetryPool snapshot');
+      console.log('Total entries:', entries.length);
+      console.log('Active (not archived):', entries.filter(e => !e.archived).length);
+      console.log('Archived:', entries.filter(e => e.archived).length);
+      console.log('Expiry window:', RETRY_POOL_MAX_DAYS, 'days');
+      console.table(entries.map(e => ({
+        account: e.account,
+        email:   e.email,
+        days_elapsed: RetryPool.getDaysWaiting(e),
+        is_expired:   RetryPool.isExpired(e),
+        archived:     !!e.archived,
+        id:           e.id,
+      })));
+      console.groupEnd();
+      return entries;
+    };
+
+    window.__ZTU_DEBUG_forceArchive = async function (accountNumber) {
+      const entries = RetryPool.getAll();
+      const entry = entries.find(e => String(e.account) === String(accountNumber));
+      if (!entry) { console.error('[ZTU DEBUG] No pool entry for account:', accountNumber); return; }
+      if (entry.archived) { console.warn('[ZTU DEBUG] Entry already archived. Use __ZTU_DEBUG_unarchive(acct) first.'); return; }
+      // Force expiry by rewriting firstMissedAt to 3 days ago.
+      const pool = RetryPool._read();
+      pool[entry.id].firstMissedAt = Date.now() - (RETRY_POOL_MAX_DAYS + 1) * 86_400_000;
+      RetryPool._write();
+      console.log('[ZTU DEBUG] firstMissedAt rewound to ' + (RETRY_POOL_MAX_DAYS + 1) + ' days ago for account ' + accountNumber + '. Triggering autoArchiveExpiredPool now...');
+      await autoArchiveExpiredPool();
+      console.log('[ZTU DEBUG] Sweep complete. Check Supabase license_requests + email_outbox.');
+    };
+
+    window.__ZTU_DEBUG_unarchive = function (accountNumber) {
+      const entries = RetryPool.getAll();
+      const entry = entries.find(e => String(e.account) === String(accountNumber));
+      if (!entry) { console.error('No entry for', accountNumber); return; }
+      const pool = RetryPool._read();
+      pool[entry.id].archived = false;
+      pool[entry.id].archivedAt = null;
+      RetryPool._write();
+      console.log('[ZTU DEBUG] Unarchived', accountNumber);
+    };
+
+    console.log('[ZTU DEBUG] Pool helpers ready:');
+    console.log('  window.__ZTU_DEBUG_RetryPool()                  — dump pool state');
+    console.log('  window.__ZTU_DEBUG_forceArchive("ACCOUNT_NUM")  — force expire + archive one entry to test pipeline');
+    console.log('  window.__ZTU_DEBUG_unarchive("ACCOUNT_NUM")     — undo archive (for re-testing)');
+
+    /* ═══════════════════════════════════════════════════════════
+       Developer-only debug — Force-Expire Pending
+       ───────────────────────────────────────────────────────────
+       Simulates an instant 48h expiry for ONE pending license_request
+       and runs it through the exact same production helpers used by
+       _sweepStalePendingViaSupabase (writeUnmatched + _insertEmailOutbox).
+       Zero impact on production logic — this is a window-attached
+       helper only invocable from the DevTools console.
+    ══════════════════════════════════════════════════════════ */
+    window._ZTU_DEBUG_ForceExpirePending = async function (accountNumber) {
+      console.log('[ForceExpire] starting — account:', accountNumber);
+      if (!accountNumber) {
+        console.error('[ForceExpire] missing account number');
+        return { ok: false, reason: 'no account' };
+      }
+      if (!supabaseClient || !DataLayer.isLive) {
+        console.error('[ForceExpire] Supabase not live — cannot proceed');
+        return { ok: false, reason: 'no supabase' };
+      }
+      const normAcct = normalizeAccountId(accountNumber);
+
+      // 1. Locate the pending license_request for this account.
+      let row = null;
+      try {
+        const { data, error } = await supabaseClient
+          .from(DB_SCHEMA.TABLE)
+          .select(DB_SCHEMA.SELECT)
+          .eq('account_number', normAcct)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (error) {
+          console.error('[ForceExpire] fetch failed:', error.message);
+          return { ok: false, reason: 'fetch error' };
+        }
+        if (!data || data.length === 0) {
+          console.warn('[ForceExpire] no pending license_request found for account ' + normAcct);
+          return { ok: false, reason: 'no pending row' };
+        }
+        row = data[0];
+      } catch (e) {
+        console.error('[ForceExpire] fetch exception:', e);
+        return { ok: false, reason: 'fetch exception' };
+      }
+      console.log('[ForceExpire] located license_requests.id=' + row.id + ' email=' + row.email + ' status=' + row.status);
+
+      // 2. Flip status to 'unmatched' (same path the sweep uses).
+      try {
+        await writeUnmatched(row.id);
+        console.log('[ForceExpire] unmatched queued — license_requests.id=' + row.id + " → 'unmatched'");
+      } catch (e) {
+        console.error('[ForceExpire] writeUnmatched failed:', e.message);
+        return { ok: false, reason: 'writeUnmatched failed', error: e.message };
+      }
+
+      // 3. Build and enqueue not_found email_outbox row.
+      let emailedCount = 0;
+      if (row.email && AUTO_MSG.not_found) {
+        const name = row.email || 'there';
+        const item = {
+          id:         _autoId(),
+          type:       'not_found',
+          account:    normAcct,
+          email:      row.email,
+          subject:    AUTO_MSG.not_found.subject,
+          body:       AUTO_MSG.not_found.body(name),
+          request_id: row.id,
+          status:     'queued',
+          queued_at:  new Date().toISOString(),
+        };
+        try {
+          const res = await _insertEmailOutbox([item]);
+          emailedCount = res.inserted ? res.inserted.length : 0;
+          console.log('[ForceExpire] not_found email queued — email_outbox inserts: ' + emailedCount);
+        } catch (e) {
+          console.error('[ForceExpire] email_outbox insert failed:', e);
+        }
+      } else {
+        console.warn('[ForceExpire] row has no email OR AUTO_MSG.not_found missing — email step skipped.');
+      }
+
+      // 4. Refresh UI surfaces that read from RetryPool / license_requests.
+      try {
+        await loadData();
+        renderWaitingForMatch();
+        renderPendingRequests();
+        if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+        if (typeof renderDeliveredSection === 'function')       renderDeliveredSection();
+        console.log('[ForceExpire] refresh complete');
+      } catch (e) {
+        console.warn('[ForceExpire] refresh failed (non-fatal):', e);
+      }
+
+      console.log('[ForceExpire] done — account ' + normAcct + ' is now `unmatched` in license_requests, ' + emailedCount + ' not_found row inserted to email_outbox.');
+      return { ok: true, account: normAcct, license_request_id: row.id, emailed: emailedCount };
+    };
+    console.log('  window._ZTU_DEBUG_ForceExpirePending("ACCOUNT_NUM") — DEV: instantly simulate 48h expiry + fire full not_found pipeline');
     bindCrm();               // Phase 13 — CRM intelligence engine
 
     // Initial data load — shows skeleton, fetches, renders

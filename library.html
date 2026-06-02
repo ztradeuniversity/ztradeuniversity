@@ -1,0 +1,2327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library – Z Trade University</title>
+  <meta name="description" content="Z Trade University exclusive Videos, Audio & Books Library — access premium trading education content." />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       LIBRARY PAGE — Z TRADE UNIVERSITY
+       Isolated from EA licensing system. No shared state.
+    ═══════════════════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:     #0b1120;
+      --navy2:    #111827;
+      --purple:   #5b1ac8;
+      --purple2:  #7c3aed;
+      --purple3:  #9f6ef5;
+      --lime:     #acd400;
+      --lime2:    #c6f000;
+      --white:    #ffffff;
+      --bg:       #f5f6fc;
+      --bg2:      #eef0f8;
+      --text:     #0d1526;
+      --muted:    #5a6580;
+      --border:   rgba(0,0,0,0.08);
+      --r:        16px;
+      --r-lg:     24px;
+      --r-pill:   100px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ─────────────────────────────────────────── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+
+    .nav-bar {
+      display: flex; align-items: center;
+      justify-content: space-between; height: 72px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-img {
+      height: 44px; width: auto; object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(11,17,32,0.10));
+      transition: filter .22s, transform .22s;
+    }
+    .logo:hover .logo-img {
+      filter: drop-shadow(0 4px 14px rgba(91,26,200,0.18));
+      transform: translateY(-1px);
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a {
+      font-size: 13.5px; font-weight: 500; color: #3a3f52;
+      text-decoration: none; padding: 8px 15px; border-radius: 8px;
+      transition: color .18s, background .18s; position: relative;
+    }
+    .nav-links a:hover { color: var(--purple); background: rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after {
+      content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px;
+      height: 2px; border-radius: 2px; background: var(--navy);
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700;
+      padding: 11px 22px; border-radius: var(--r-pill);
+      text-decoration: none; letter-spacing: -.1px;
+      border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(11,17,32,0.22);
+    }
+    .nav-join:hover {
+      background: var(--purple); transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(91,26,200,0.35);
+    }
+
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 6px; border: none; background: none;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--text); border-radius: 2px; transition: .25s;
+    }
+
+    /* ── MOBILE MENU ─────────────────────────────────────── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0; z-index: 199;
+      background: rgba(255,255,255,0.98);
+      flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-size: 20px; font-weight: 700; color: var(--text);
+      text-decoration: none; padding: 13px 40px; border-radius: 14px;
+      transition: background .18s, color .18s;
+    }
+    .mobile-menu a:hover { background: rgba(91,26,200,0.08); color: var(--purple); }
+    .mobile-close {
+      position: absolute; top: 20px; right: 22px;
+      font-size: 26px; background: none; border: none;
+      cursor: pointer; color: var(--text); line-height: 1;
+    }
+
+    /* ── HERO ────────────────────────────────────────────── */
+    .lib-hero {
+      padding: 138px 0 92px;
+      background: linear-gradient(145deg, #060a14 0%, #0b1120 40%, #130832 70%, #1a0b44 100%);
+      position: relative; overflow: hidden; text-align: center;
+    }
+    .h-blob {
+      position: absolute; border-radius: 50%; pointer-events: none;
+    }
+    .hb1 {
+      top: -120px; left: -100px; width: 540px; height: 540px;
+      background: radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 68%);
+    }
+    .hb2 {
+      bottom: -80px; right: -80px; width: 440px; height: 440px;
+      background: radial-gradient(circle, rgba(172,212,0,0.10) 0%, transparent 68%);
+    }
+    .hb3 {
+      top: 25%; right: 12%; width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(91,26,200,0.14) 0%, transparent 70%);
+    }
+    .hero-dots {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 2; }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 11px;
+      font-size: 11.5px; font-weight: 700; color: var(--lime);
+      letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: ''; width: 24px; height: 1.5px;
+      background: var(--lime); border-radius: 1px; flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: clamp(40px, 5.8vw, 68px);
+      font-weight: 900; color: #fff;
+      letter-spacing: -2px; line-height: 1.06; margin-bottom: 14px;
+    }
+    .hero-title .hl { color: var(--lime); }
+
+    .hero-sub {
+      font-size: 18px; color: rgba(255,255,255,0.50);
+      font-weight: 400; margin-bottom: 38px; letter-spacing: .2px;
+    }
+
+    .hero-stats {
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    }
+    .hero-stat {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 10px 20px; border-radius: var(--r-pill);
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.70);
+      backdrop-filter: blur(6px); white-space: nowrap;
+    }
+    .hero-stat b { color: var(--lime); font-weight: 800; }
+
+    /* ── FILTER BAR ──────────────────────────────────────── */
+    .filter-section {
+      background: var(--white);
+      padding: 20px 0 18px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 72px; z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .filter-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+
+    .search-wrap { flex: 1; min-width: 220px; position: relative; }
+    .search-wrap .s-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; flex-shrink: 0;
+    }
+    .search-input {
+      width: 100%; padding: 11px 16px 11px 42px;
+      border: 1.5px solid var(--border); border-radius: var(--r-pill);
+      font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text);
+      background: var(--white); outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .search-input:focus {
+      border-color: var(--purple2);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.10);
+    }
+    .search-input::placeholder { color: var(--muted); }
+
+    .lang-select {
+      padding: 11px 38px 11px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--r-pill);
+      font-size: 14px; font-family: 'Inter', sans-serif;
+      font-weight: 600; color: var(--text); background: var(--white);
+      cursor: pointer; outline: none;
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6580' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 13px center;
+      min-width: 200px;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .lang-select:focus {
+      border-color: var(--purple2);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.10);
+    }
+
+    .clear-btn {
+      display: none; align-items: center; gap: 6px;
+      padding: 9px 16px; border-radius: var(--r-pill);
+      background: rgba(91,26,200,0.07);
+      border: 1px solid rgba(91,26,200,0.15);
+      font-size: 12.5px; font-weight: 700; color: var(--purple);
+      cursor: pointer; white-space: nowrap; transition: background .18s;
+    }
+    .clear-btn:hover { background: rgba(91,26,200,0.13); }
+    .clear-btn.show { display: inline-flex; }
+
+    /* ── SECTION LAYOUT ──────────────────────────────────── */
+    .lib-section { padding: 72px 0 80px; }
+    .lib-section.alt { background: var(--bg); }
+
+    .section-head { margin-bottom: 38px; }
+    .sec-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 800; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--purple);
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: clamp(24px, 2.8vw, 34px);
+      font-weight: 900; color: var(--text);
+      letter-spacing: -1px; margin-bottom: 8px;
+    }
+    .section-desc { font-size: 15px; color: var(--muted); }
+    .sec-rule {
+      width: 40px; height: 3px; border-radius: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--lime));
+      margin-top: 14px;
+    }
+
+    .empty-msg {
+      text-align: center; padding: 56px 20px;
+      color: var(--muted); font-size: 15px;
+    }
+    .empty-msg svg { margin: 0 auto 14px; display: block; opacity: .30; }
+
+    /* ── VIDEO GRID ──────────────────────────────────────── */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 24px;
+    }
+
+    .video-card {
+      border-radius: var(--r); overflow: hidden;
+      background: var(--white); border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      cursor: pointer; display: flex; flex-direction: column;
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+    .video-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.12);
+    }
+
+    .v-thumb {
+      position: relative; padding-top: 56.25%; overflow: hidden;
+    }
+    .v-thumb-bg {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+    }
+    .v-thumb-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.26);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .22s;
+    }
+    .video-card:hover .v-thumb-overlay { background: rgba(0,0,0,0.14); }
+    .play-circle {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: rgba(255,255,255,0.94);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.28);
+      transition: transform .22s, background .22s;
+    }
+    .video-card:hover .play-circle { transform: scale(1.12); background: #fff; }
+    .play-circle svg { color: var(--purple); transform: translateX(2px); }
+
+    .v-info {
+      padding: 16px 18px 18px; flex: 1;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .v-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .v-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+    /* ── AUDIO GRID ──────────────────────────────────────── */
+    .audio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+      gap: 24px;
+    }
+
+    .audio-card {
+      border-radius: var(--r); overflow: hidden;
+      background: var(--white); border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column;
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+    .audio-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.12);
+    }
+
+    .a-cover {
+      position: relative; padding-top: 72%; overflow: hidden;
+    }
+    .a-cover-bg {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 6px;
+    }
+    .a-cover-bg img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .a-cover-icon { font-size: 46px; opacity: .85; position: relative; z-index: 1; }
+
+    .a-body {
+      padding: 16px 18px 18px; flex: 1;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .a-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.4; }
+
+    .a-controls { display: flex; align-items: center; gap: 10px; }
+    .pp-btn {
+      width: 38px; height: 38px; border-radius: 50%; border: none;
+      cursor: pointer; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--purple), var(--purple2));
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(91,26,200,0.30);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .pp-btn:hover { transform: scale(1.08); box-shadow: 0 6px 18px rgba(91,26,200,0.42); }
+
+    .a-seek {
+      flex: 1; height: 4px; border-radius: 2px;
+      -webkit-appearance: none; appearance: none;
+      outline: none; border: none; cursor: pointer;
+      background: linear-gradient(to right, var(--purple) 0%, var(--purple) var(--pct,0%), rgba(0,0,0,0.10) var(--pct,0%), rgba(0,0,0,0.10) 100%);
+    }
+    .a-seek::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--purple); cursor: pointer;
+      box-shadow: 0 2px 6px rgba(91,26,200,0.42);
+    }
+    .a-seek::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--purple); cursor: pointer; border: none;
+      box-shadow: 0 2px 6px rgba(91,26,200,0.42);
+    }
+    .a-time {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      white-space: nowrap; min-width: 76px; text-align: right;
+    }
+
+    /* ── BOOKS GRID ──────────────────────────────────────── */
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+      gap: 22px;
+    }
+
+    .book-card {
+      border-radius: var(--r); overflow: hidden;
+      background: var(--white); border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column;
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+    .book-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.12);
+    }
+
+    .b-cover {
+      position: relative; padding-top: 136%; overflow: hidden;
+    }
+    .b-cover-bg {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 10px; padding: 16px;
+    }
+    .b-cover-bg img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .b-cover-icon { font-size: 38px; opacity: .80; position: relative; z-index: 1; }
+    .b-cover-abbr {
+      position: relative; z-index: 1;
+      font-family: 'Manrope', sans-serif;
+      font-size: 12px; font-weight: 900; color: rgba(255,255,255,0.55);
+      letter-spacing: .5px; text-align: center; line-height: 1.3;
+      max-width: 140px;
+    }
+
+    .b-body {
+      padding: 14px 15px 15px; flex: 1;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .b-title {
+      font-size: 13.5px; font-weight: 700; color: var(--text);
+      line-height: 1.4;
+    }
+    .b-author { font-size: 11.5px; color: var(--muted); }
+
+    .b-actions { display: flex; gap: 7px; margin-top: auto; padding-top: 6px; }
+    .b-btn {
+      flex: 1; display: inline-flex; align-items: center;
+      justify-content: center; gap: 5px;
+      padding: 8px 6px; border-radius: 10px;
+      font-size: 11.5px; font-weight: 700; cursor: pointer;
+      border: 1.5px solid transparent; transition: .18s;
+      white-space: nowrap;
+    }
+    .b-read {
+      background: rgba(91,26,200,0.07); color: var(--purple);
+      border-color: rgba(91,26,200,0.14);
+    }
+    .b-read:hover { background: rgba(91,26,200,0.14); border-color: rgba(91,26,200,0.28); }
+    .b-dl {
+      background: rgba(172,212,0,0.09); color: #4a6200;
+      border-color: rgba(172,212,0,0.22);
+    }
+    .b-dl:hover { background: rgba(172,212,0,0.18); border-color: rgba(172,212,0,0.38); }
+
+    /* ── SHARED LOCK OVERLAY ─────────────────────────────── */
+    .lock-veil {
+      position: absolute; inset: 0; z-index: 5;
+      background: rgba(6,9,18,0.72);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      transition: opacity .22s;
+    }
+    .lock-veil.off { display: none; }
+    .lock-ring {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,0.10);
+      border: 1.5px solid rgba(255,255,255,0.20);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lock-label {
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.68); letter-spacing: .8px;
+      text-transform: uppercase;
+    }
+
+    /* ── BOOK CARD: title-visible lock overlay ─────────────
+       Overrides the full dark veil on book covers so users
+       can read the title before they unlock. Cover art shows
+       through the top; a gradient darkens toward the bottom
+       to keep the title text legible.
+    ─────────────────────────────────────────────────────── */
+    .book-card .lock-veil {
+      background: linear-gradient(
+        to bottom,
+        rgba(6,9,18,0.04)  0%,
+        rgba(6,9,18,0.12) 38%,
+        rgba(6,9,18,0.72) 68%,
+        rgba(6,9,18,0.90) 100%
+      );
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      justify-content: flex-end;
+      align-items: flex-start;
+      padding: 12px;
+      gap: 0;
+    }
+    .book-lock-info { display: flex; flex-direction: column; gap: 7px; width: 100%; }
+    .book-lock-ttl {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: 12px; font-weight: 900; line-height: 1.3;
+      color: rgba(255,255,255,0.94);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.80), 0 0 24px rgba(0,0,0,0.60);
+      word-break: break-word;
+    }
+    .book-lock-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 4px 9px; border-radius: 100px;
+      font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.62);
+      width: fit-content;
+    }
+
+    /* ── LANG + CATEGORY PILLS ───────────────────────────── */
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase; padding: 4px 10px; border-radius: var(--r-pill);
+    }
+    .pill-lang {
+      background: rgba(91,26,200,0.08); color: var(--purple);
+      border: 1px solid rgba(91,26,200,0.14);
+    }
+    .pill-cat {
+      background: rgba(0,0,0,0.05); color: var(--muted);
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .dur-tag {
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      margin-left: auto;
+    }
+
+    /* ── ACCESS GATE MODAL ───────────────────────────────── */
+    .gate-bg {
+      display: none; position: fixed; inset: 0; z-index: 900;
+      background: rgba(6,9,18,0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .gate-bg.on { display: flex; }
+
+    .gate-card {
+      background: var(--white); border-radius: var(--r-lg);
+      padding: 42px 38px 38px; width: 100%; max-width: 428px;
+      position: relative;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.42);
+      animation: gIn .28s cubic-bezier(.16,1,.3,1);
+    }
+    @keyframes gIn {
+      from { opacity: 0; transform: scale(.90) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .gate-x {
+      position: absolute; top: 16px; right: 18px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 22px; line-height: 1;
+      transition: color .18s; padding: 4px;
+    }
+    .gate-x:hover { color: var(--text); }
+
+    .gate-ico {
+      width: 58px; height: 58px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(91,26,200,0.10), rgba(124,58,237,0.18));
+      border: 1.5px solid rgba(91,26,200,0.15);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 22px;
+    }
+
+    .gate-h { font-family: 'Manrope', sans-serif; font-size: 23px; font-weight: 900; color: var(--text); text-align: center; margin-bottom: 7px; }
+    .gate-p { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 26px; line-height: 1.5; }
+
+    .gate-field {
+      width: 100%; padding: 14px 18px;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      font-size: 15px; font-family: 'Inter', sans-serif; color: var(--text);
+      outline: none; margin-bottom: 12px;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .gate-field:focus { border-color: var(--purple2); box-shadow: 0 0 0 3px rgba(124,58,237,0.10); }
+    .gate-field::placeholder { color: var(--muted); }
+
+    .gate-go {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple2) 100%);
+      color: #fff; border: none; border-radius: var(--r);
+      font-size: 15px; font-weight: 800; font-family: 'Inter', sans-serif;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px;
+      box-shadow: 0 6px 20px rgba(91,26,200,0.32);
+      transition: transform .22s, box-shadow .22s;
+    }
+    .gate-go:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(91,26,200,0.44); }
+    .gate-go:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+
+    .gate-err {
+      display: none; margin-top: 12px;
+      padding: 12px 16px; border-radius: 12px;
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.18);
+      font-size: 13.5px; color: #b91c1c; line-height: 1.5;
+    }
+    .gate-err.on { display: block; }
+
+    .gate-div {
+      display: flex; align-items: center; gap: 12px;
+      margin: 22px 0; font-size: 12px; color: var(--muted);
+    }
+    .gate-div::before, .gate-div::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .gate-ib {
+      width: 100%; padding: 13px;
+      background: transparent;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      font-size: 14px; font-weight: 700; font-family: 'Inter', sans-serif;
+      color: var(--text); cursor: pointer; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: border-color .18s, background .18s;
+    }
+    .gate-ib:hover { border-color: var(--lime); background: rgba(172,212,0,0.06); }
+
+    /* ── PDF READER MODAL ────────────────────────────────── */
+    .pdf-bg {
+      display: none; position: fixed; inset: 0; z-index: 950;
+      background: rgba(4,7,15,0.96);
+      flex-direction: column;
+    }
+    .pdf-bg.on { display: flex; }
+
+    .pdf-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 22px; gap: 16px;
+      background: rgba(0,0,0,0.50);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+    .pdf-bar-title { font-size: 14.5px; font-weight: 700; color: #fff; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .pdf-bar-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .pdf-dl {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: var(--r-pill);
+      background: rgba(172,212,0,0.14);
+      border: 1px solid rgba(172,212,0,0.28);
+      color: var(--lime); font-size: 13px; font-weight: 700;
+      cursor: pointer; text-decoration: none; transition: background .18s;
+    }
+    .pdf-dl:hover { background: rgba(172,212,0,0.24); }
+    .pdf-x {
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.65);
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .18s, color .18s;
+    }
+    .pdf-x:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .pdf-frame { flex: 1; width: 100%; border: none; }
+
+    /* ── ACCESS BANNER (bottom right) ───────────────────── */
+    .acc-banner {
+      display: none; position: fixed;
+      bottom: 22px; right: 22px; z-index: 500;
+      background: var(--navy);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 13px 18px; border-radius: var(--r);
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.88);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.30);
+      align-items: center; gap: 10px;
+      animation: bUp .3s cubic-bezier(.16,1,.3,1);
+    }
+    @keyframes bUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .acc-banner.on { display: flex; }
+    .acc-acct { color: var(--lime); font-weight: 800; }
+    .acc-out {
+      background: rgba(255,255,255,0.07); border: none; cursor: pointer;
+      color: rgba(255,255,255,0.50); font-size: 11px; font-weight: 700;
+      padding: 5px 10px; border-radius: 6px; transition: .18s;
+    }
+    .acc-out:hover { background: rgba(239,68,68,0.20); color: #fca5a5; }
+
+    /* ── TOAST ───────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 22px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      padding: 12px 22px; border-radius: var(--r-pill);
+      font-size: 13.5px; font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.24);
+      z-index: 1000; white-space: nowrap; max-width: 90vw;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s, transform .3s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── SPINNER ─────────────────────────────────────────── */
+    .spin {
+      display: inline-block; width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff; border-radius: 50%;
+      animation: rotate .65s linear infinite;
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      background: #05090f;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 26px 0 28px;
+    }
+    .ft-inner {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    }
+    .ft-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .ft-mark {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(150deg, #180f50 0%, #3d18a8 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 900;
+      color: var(--lime); box-shadow: 0 3px 12px rgba(91,26,200,0.35);
+    }
+    .ft-brand b    { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); display: block; letter-spacing: -.2px; }
+    .ft-brand small{ font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.30); letter-spacing: 2px; text-transform: uppercase; }
+    .ft-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .ft-links { display: flex; align-items: center; gap: 6px; }
+    .ft-links a { font-size: 12px; color: rgba(255,255,255,0.30); text-decoration: none; transition: color .18s; }
+    .ft-links a:hover { color: var(--lime); }
+    .ft-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+    .ft-soc { display: flex; gap: 8px; }
+    .soc-a {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.50); text-decoration: none; transition: .2s;
+    }
+    .soc-a:hover { background: rgba(172,212,0,0.14); border-color: rgba(172,212,0,0.38); color: var(--lime); }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 960px) {
+      .nav-links, .nav-join { display: none; }
+      .hamburger { display: flex; }
+      .books-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .container { padding: 0 18px; }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .lang-select { min-width: 0; width: 100%; }
+      .search-wrap { min-width: 0; }
+      .video-grid, .audio-grid { grid-template-columns: 1fr; }
+      .books-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .gate-card { padding: 32px 22px 28px; }
+      .lib-section { padding: 52px 0 60px; }
+      .acc-banner { bottom: 14px; right: 14px; left: 14px; }
+      .ft-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .ft-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 420px) {
+      .books-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .hero-title { font-size: 36px; }
+      .hero-stat { font-size: 12px; padding: 8px 14px; }
+    }
+
+    /* ── GATE STEP PANELS (2-step OTP flow) ──────────────── */
+    .gate-step { display: none; }
+    .gate-step.active { display: block; }
+
+    .gate-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: none; cursor: pointer;
+      font-size: 12.5px; font-weight: 700; color: var(--muted);
+      padding: 0; margin-bottom: 20px;
+      transition: color .18s;
+    }
+    .gate-back:hover { color: var(--purple); }
+
+    .gate-ico-email {
+      background: linear-gradient(135deg, rgba(91,26,200,0.08), rgba(124,58,237,0.14));
+    }
+    .gate-ico-block {
+      background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.15));
+      border-color: rgba(239,68,68,0.18);
+    }
+    .gate-ico-pause {
+      background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.15));
+      border-color: rgba(245,158,11,0.20);
+    }
+    /* Outline variant for "Create IB Account" button */
+    .gate-go-outline {
+      background: transparent;
+      border: 1.5px solid rgba(91,26,200,0.30);
+      color: var(--purple);
+      box-shadow: none;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+    }
+    .gate-go-outline:hover {
+      background: rgba(91,26,200,0.07);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(91,26,200,0.15);
+    }
+    /* Amber variant for "Reactivation Guide" button */
+    .gate-go-amber {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      box-shadow: 0 6px 20px rgba(245,158,11,0.30);
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+    }
+    .gate-go-amber:hover { box-shadow: 0 10px 28px rgba(245,158,11,0.42); }
+
+    /* OTP digit input — large, centered, spaced */
+    .otp-input {
+      text-align: center;
+      letter-spacing: 18px;
+      font-size: 30px;
+      font-weight: 900;
+      font-family: 'Manrope', 'Inter', monospace;
+      padding: 15px 8px 15px 26px; /* left offset compensates letter-spacing */
+      border: 2px solid rgba(91,26,200,0.18);
+      color: var(--text);
+    }
+    .otp-input:focus {
+      border-color: var(--purple2);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    }
+    .otp-input::placeholder { letter-spacing: 14px; font-size: 22px; padding-left: 14px; color: rgba(90,101,128,0.35); }
+
+    /* Email hint (masked address) */
+    .otp-email-hint {
+      display: inline-block; margin-top: 4px;
+      font-size: 14.5px; font-weight: 700; color: var(--purple);
+      word-break: break-all;
+    }
+
+    /* Expiry + resend row */
+    .otp-footer { margin-top: 18px; }
+    .otp-expiry {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-align: center; margin-bottom: 14px;
+      transition: color .3s;
+    }
+    .otp-expiry.urgent { color: #dc2626; }
+    .otp-resend-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; flex-wrap: wrap;
+    }
+    .otp-resend-label { font-size: 12.5px; color: var(--muted); }
+    .resend-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 12.5px; font-weight: 800; color: var(--purple);
+      padding: 0; transition: color .18s, opacity .18s;
+    }
+    .resend-btn:hover:not(:disabled) { color: var(--purple2); text-decoration: underline; }
+    .resend-btn:disabled { opacity: .45; cursor: not-allowed; color: var(--muted); }
+    .resend-cd {
+      display: none; font-size: 12px; font-weight: 700;
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════════════ -->
+<header>
+  <div class="container">
+    <nav class="nav-bar" aria-label="Main navigation">
+      <a href="index.html" class="logo" aria-label="Z Trade University home">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" class="logo-img" />
+      </a>
+
+      <ul class="nav-links" role="list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="articles.html">Articles</a></li>
+        <li><a href="library.html" class="active" aria-current="page">Library</a></li>
+        <li><a href="live-sentiment.html">Sentiment</a></li>
+        <li><a href="about.html">About</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <a href="license-request.html" class="nav-join">
+          Request License
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <button class="hamburger" onclick="toggleMenu()" aria-label="Open menu" aria-expanded="false" id="hamburgerBtn">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Mobile navigation">
+  <button class="mobile-close" onclick="toggleMenu()" aria-label="Close menu">&#10005;</button>
+  <a href="index.html"           onclick="toggleMenu()">Home</a>
+  <a href="articles.html"        onclick="toggleMenu()">Articles</a>
+  <a href="library.html"         onclick="toggleMenu()">Library</a>
+  <a href="live-sentiment.html"  onclick="toggleMenu()">Live Sentiment</a>
+  <a href="fundamentals.html"    onclick="toggleMenu()">Fundamentals</a>
+  <a href="about.html"           onclick="toggleMenu()">About</a>
+  <a href="license-request.html" onclick="toggleMenu()">Request License</a>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════════ -->
+<section class="lib-hero" aria-labelledby="heroTitle">
+  <div class="h-blob hb1" aria-hidden="true"></div>
+  <div class="h-blob hb2" aria-hidden="true"></div>
+  <div class="h-blob hb3" aria-hidden="true"></div>
+  <div class="hero-dots" aria-hidden="true"></div>
+
+  <div class="container hero-inner">
+    <div class="hero-eyebrow" aria-hidden="true">Members Library</div>
+    <h1 class="hero-title" id="heroTitle">
+      Z Trade <span class="hl">University</span>
+    </h1>
+    <p class="hero-sub">Videos, Audio &amp; Books Library</p>
+    <div class="hero-stats" role="list">
+      <div class="hero-stat" role="listitem"><b id="statV">4</b>&nbsp;Video Lessons</div>
+      <div class="hero-stat" role="listitem"><b id="statA">4</b>&nbsp;Audio Sessions</div>
+      <div class="hero-stat" role="listitem"><b id="statB">8</b>&nbsp;Books &amp; Guides</div>
+      <div class="hero-stat" role="listitem"><b>8</b>&nbsp;Languages</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     FILTER BAR
+════════════════════════════════════════════════════════ -->
+<div class="filter-section" id="filterBar">
+  <div class="container">
+    <div class="filter-bar" role="search" aria-label="Filter library content">
+
+      <div class="search-wrap">
+        <svg class="s-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          type="search"
+          class="search-input"
+          id="searchInput"
+          placeholder="Search videos, audio, books…"
+          autocomplete="off"
+          aria-label="Search library content"
+        />
+      </div>
+
+      <select class="lang-select" id="langSelect" aria-label="Filter by language">
+        <option value="">🌐 Select Your Language</option>
+        <option value="english">🇬🇧 English</option>
+        <option value="urdu">🇵🇰 Urdu</option>
+        <option value="arabic">🇸🇦 Arabic</option>
+        <option value="hindi">🇮🇳 Hindi</option>
+        <option value="turkish">🇹🇷 Turkish</option>
+        <option value="swahili">🌍 Swahili</option>
+        <option value="indonesian">🇮🇩 Indonesian</option>
+        <option value="portuguese">🇧🇷 Portuguese</option>
+        <option value="vietnamese">🇻🇳 Vietnamese</option>
+      </select>
+
+      <button class="clear-btn" id="clearBtn" onclick="clearFilters()" aria-label="Clear all filters">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear filters
+      </button>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     VIDEO LIBRARY
+════════════════════════════════════════════════════════ -->
+<section class="lib-section" id="secVideos" aria-labelledby="vidTitle">
+  <div class="container">
+    <div class="section-head">
+      <div class="sec-eyebrow" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Video Lessons
+      </div>
+      <h2 class="section-title" id="vidTitle">Trading Video Library</h2>
+      <p class="section-desc">Step-by-step video lessons to sharpen your trading edge.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="video-grid" id="videoGrid" aria-label="Video lessons"></div>
+    <div class="empty-msg" id="videoEmpty" style="display:none;" aria-live="polite">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      No videos match your current filter.
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     AUDIO LIBRARY
+════════════════════════════════════════════════════════ -->
+<section class="lib-section alt" id="secAudio" aria-labelledby="audTitle">
+  <div class="container">
+    <div class="section-head">
+      <div class="sec-eyebrow" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Audio Sessions
+      </div>
+      <h2 class="section-title" id="audTitle">Audio Learning Hub</h2>
+      <p class="section-desc">Stream expert trading sessions anywhere, anytime.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="audio-grid" id="audioGrid" aria-label="Audio sessions"></div>
+    <div class="empty-msg" id="audioEmpty" style="display:none;" aria-live="polite">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      No audio matches your current filter.
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     BOOKS LIBRARY
+════════════════════════════════════════════════════════ -->
+<section class="lib-section" id="secBooks" aria-labelledby="bkTitle">
+  <div class="container">
+    <div class="section-head">
+      <div class="sec-eyebrow" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Books &amp; Guides
+      </div>
+      <h2 class="section-title" id="bkTitle">Trading Books Library</h2>
+      <p class="section-desc">Read online or download — your complete trading education toolkit.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="books-grid" id="booksGrid" aria-label="Books and guides"></div>
+    <div class="empty-msg" id="booksEmpty" style="display:none;" aria-live="polite">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      No books match your current filter.
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     ACCESS GATE MODAL — 2-STEP: ACCOUNT NUMBER + EMAIL OTP
+════════════════════════════════════════════════════════ -->
+<div class="gate-bg" id="gateBg" role="dialog" aria-modal="true" aria-labelledby="gateHeading">
+  <div class="gate-card">
+    <button class="gate-x" onclick="closeGate()" aria-label="Close">&#10005;</button>
+
+    <!-- ─── STEP 1: Account Number ─────────────────────── -->
+    <div class="gate-step" id="gateStep1">
+      <div class="gate-ico" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2 class="gate-h" id="gateHeading">Members Only</h2>
+      <p class="gate-p">Enter your account number. A verification code will be sent to your registered email.</p>
+
+      <input
+        type="text"
+        class="gate-field"
+        id="gateField"
+        placeholder="Enter your account number"
+        autocomplete="off"
+        aria-label="Account number"
+      />
+
+      <button class="gate-go" id="gateGoBtn" onclick="requestOtp()">
+        Continue
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+
+      <div class="gate-err" id="gateErr" role="alert"></div>
+
+      <div class="gate-div">or</div>
+
+      <a href="#" class="gate-ib" id="gateIbLink" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Create IB Account / View Guide
+      </a>
+    </div>
+
+    <!-- ─── PANEL: Access Not Available ──────────────────── -->
+    <div class="gate-step" id="gateStepNotFound">
+      <div class="gate-ico gate-ico-block" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      </div>
+      <h2 class="gate-h">Access Not Available</h2>
+      <p class="gate-p" style="margin-bottom:8px;">Your account is not currently eligible for library access.</p>
+      <p class="gate-p" style="margin-bottom:8px;font-size:13px;">To unlock access, create an account through our IB.</p>
+      <p class="gate-p" style="margin-bottom:22px;font-size:12.5px;color:var(--muted);">If you already joined our IB but have been inactive for 30+ days, library access remains disabled until reactivation. Once your trading account becomes active again, access will automatically be restored.</p>
+      <a href="#" class="gate-go gate-go-outline" id="gateIbLinkNF" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        How to Create Account
+      </a>
+      <button class="gate-back" onclick="goBackToStep1()" style="display:flex;margin:18px auto 0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Try a different account number
+      </button>
+    </div>
+
+    <!-- ─── PANEL: Account Inactive ───────────────────────── -->
+    <div class="gate-step" id="gateStepInactive">
+      <div class="gate-ico gate-ico-pause" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+      </div>
+      <h2 class="gate-h">Account Currently Inactive</h2>
+      <p class="gate-p" style="margin-bottom:10px;">Your library access is temporarily paused because your IB account has not been active in the last 30 days.</p>
+      <p class="gate-p" style="margin-bottom:22px;font-size:13px;">As soon as your account becomes active again, your library access will automatically be restored. No support request required.</p>
+      <a href="#" class="gate-go gate-go-amber" id="gateReactivateLink" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        View Reactivation Guide
+      </a>
+      <button class="gate-back" onclick="goBackToStep1()" style="display:flex;margin:18px auto 0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Try a different account number
+      </button>
+    </div>
+
+    <!-- ─── STEP 2: Email OTP ───────────────────────────── -->
+    <div class="gate-step" id="gateStep2">
+      <button class="gate-back" onclick="goBackToStep1()" aria-label="Go back to account number">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back
+      </button>
+
+      <div class="gate-ico gate-ico-email" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+
+      <h2 class="gate-h">Check Your Email</h2>
+      <p class="gate-p">
+        We sent a 6-digit code to<br>
+        <strong class="otp-email-hint" id="otpEmailHint">—</strong>
+      </p>
+
+      <input
+        type="text"
+        class="gate-field otp-input"
+        id="otpInput"
+        placeholder="——————"
+        maxlength="6"
+        autocomplete="one-time-code"
+        inputmode="numeric"
+        pattern="\d{6}"
+        aria-label="6-digit verification code"
+        aria-describedby="otpExpiry"
+      />
+
+      <button class="gate-go" id="otpVerifyBtn" onclick="verifyOtp()">
+        Verify Code
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </button>
+
+      <div class="gate-err" id="otpErr" role="alert"></div>
+
+      <div class="otp-footer">
+        <div class="otp-expiry" id="otpExpiry" aria-live="polite">Code expires in 10:00</div>
+        <div class="otp-resend-row">
+          <span class="otp-resend-label">Didn't receive it?</span>
+          <button class="resend-btn" id="resendBtn" onclick="resendOtp()" disabled aria-label="Resend verification code">Resend Code</button>
+          <span class="resend-cd" id="resendCd" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     PDF READER MODAL
+════════════════════════════════════════════════════════ -->
+<div class="pdf-bg" id="pdfBg" role="dialog" aria-modal="true" aria-label="PDF reader">
+  <div class="pdf-bar">
+    <div class="pdf-bar-title" id="pdfBarTitle">—</div>
+    <div class="pdf-bar-actions">
+      <a href="#" class="pdf-dl" id="pdfDlLink" download>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </a>
+      <button class="pdf-x" onclick="closePdf()" aria-label="Close PDF reader">&#10005;</button>
+    </div>
+  </div>
+  <iframe class="pdf-frame" id="pdfFrame" title="PDF Reader" src="" loading="lazy"></iframe>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     ACCESS BANNER
+════════════════════════════════════════════════════════ -->
+<div class="acc-banner" id="accBanner" role="status" aria-live="polite">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#acd400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  Signed in as <span class="acc-acct" id="bannerAcct"></span>
+  <button class="acc-out" onclick="revokeAccess()">Sign out</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" aria-live="assertive" aria-atomic="true"></div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="ft-inner">
+
+      <a href="index.html" class="ft-logo" aria-label="Z Trade University home">
+        <div class="ft-mark" aria-hidden="true">Z</div>
+        <div class="ft-brand">
+          <b>Z Trade University</b>
+          <small>Trading Education</small>
+        </div>
+      </a>
+
+      <div class="ft-copy">&copy; 2024 Z Trade University. All rights reserved.</div>
+
+      <div class="ft-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <span class="ft-sep" aria-hidden="true">|</span>
+        <a href="#">Terms of Service</a>
+      </div>
+
+      <div class="ft-soc" aria-label="Social links">
+        <a href="https://x.com/Ztradeuni" class="soc-a" target="_blank" rel="noopener" aria-label="X / Twitter">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.5 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+        </a>
+        <a href="https://youtube.com/@ztradeuniversity" class="soc-a" target="_blank" rel="noopener" aria-label="YouTube">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.45a2.78 2.78 0 0 0 1.95-1.97A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+        </a>
+        <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" class="soc-a" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="https://t.me/ztradeuniversity" class="soc-a" target="_blank" rel="noopener" aria-label="Telegram">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</footer>
+
+
+<!-- ════════════════════════════════════════════════════════
+     JAVASCRIPT — FULLY ISOLATED LIBRARY SYSTEM
+     No shared code, keys, or state with EA licensing system.
+════════════════════════════════════════════════════════ -->
+<script>
+/* ──────────────────────────────────────────────────────────
+   CONFIG — Replace with your Library Supabase project values.
+   This is a SEPARATE project from the EA licensing Supabase.
+────────────────────────────────────────────────────────── */
+/* ── Library content database (System B — videos, audio, books) ── */
+const LIBRARY_SUPABASE_URL  = 'https://dcgtmiduqxnmfjkimxeh.supabase.co';
+const LIBRARY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZ3RtaWR1cXhubWZqa2lteGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDU0OTcsImV4cCI6MjA5NTc4MTQ5N30.Sg64TwDYMoOCqkcJmhUTQ2i3IQZyTQIT5FIJVmwbkwg';
+
+/* ── Access gate settings ── */
+const IB_ACCOUNT_URL        = '#';                    /* TODO: IB account guide URL    */
+const SESSION_STORE_KEY     = 'ztu_lib_v2';           /* v2 = OTP-verified sessions    */
+const SESSION_TTL_MS        = 24 * 60 * 60 * 1000;   /* 24 hours                      */
+const RESEND_COOLDOWN_MS    = 60  * 1000;             /* 60 s between resend requests  */
+const OTP_TTL_CLIENT_MS     = 10  * 60 * 1000;        /* 10 min client-side countdown  */
+const AUTH_ENDPOINT         = '/api/library-auth';    /* Cloudflare Pages Function     */
+
+/* true once Library Supabase keys are pasted in (for content loading only) */
+const SB_READY = LIBRARY_SUPABASE_URL !== 'YOUR_LIBRARY_SUPABASE_URL';
+
+/* ──────────────────────────────────────────────────────────
+   DEMO DATA
+   Replace / augment with live Supabase data once connected.
+   Each item: id, title, lang (lowercase), color [from,to].
+────────────────────────────────────────────────────────── */
+const DEMO_VIDEOS = [
+  {
+    id: 'dv1', title: 'Introduction to Forex Trading',
+    lang: 'english', youtube_url: 'https://www.youtube.com/watch?v=placeholder',
+    youtube_id: '', duration: '18:42', category: 'Fundamentals',
+    color: ['#3b0d8c','#6d28d9']
+  },
+  {
+    id: 'dv2', title: 'تداول الذهب للمبتدئين — Gold Trading Basics',
+    lang: 'arabic', youtube_url: 'https://www.youtube.com/watch?v=placeholder',
+    youtube_id: '', duration: '22:15', category: 'Gold Trading',
+    color: ['#92400e','#d97706']
+  },
+  {
+    id: 'dv3', title: 'فارکس ٹریڈنگ کی بنیادی باتیں',
+    lang: 'urdu', youtube_url: 'https://www.youtube.com/watch?v=placeholder',
+    youtube_id: '', duration: '31:08', category: 'Fundamentals',
+    color: ['#064e3b','#059669']
+  },
+  {
+    id: 'dv4', title: 'Advanced Risk Management Strategies',
+    lang: 'english', youtube_url: 'https://www.youtube.com/watch?v=placeholder',
+    youtube_id: '', duration: '27:55', category: 'Risk Management',
+    color: ['#0c4a6e','#0369a1']
+  }
+];
+
+const DEMO_AUDIO = [
+  {
+    id: 'da1', title: 'Market Psychology Masterclass',
+    lang: 'english', audio_url: '', duration: '45:12',
+    category: 'Psychology', icon: '🎙️', color: ['#4c1d95','#7c3aed']
+  },
+  {
+    id: 'da2', title: 'اردو ٹریڈنگ فنڈامینٹلز — Urdu Trading Fundamentals',
+    lang: 'urdu', audio_url: '', duration: '38:30',
+    category: 'Fundamentals', icon: '🎧', color: ['#7c2d12','#c2410c']
+  },
+  {
+    id: 'da3', title: 'Strategi Trading Pemula — Indonesian Edition',
+    lang: 'indonesian', audio_url: '', duration: '29:44',
+    category: 'Strategy', icon: '🎵', color: ['#164e63','#0e7490']
+  },
+  {
+    id: 'da4', title: 'Technical Analysis Deep Dive',
+    lang: 'english', audio_url: '', duration: '52:18',
+    category: 'Technical Analysis', icon: '📻', color: ['#1e1b4b','#4338ca']
+  }
+];
+
+const DEMO_BOOKS = [
+  {
+    id: 'db1', title: 'The Complete Forex Trading Guide', author: 'ZTU Education Team',
+    lang: 'english', pdf_url: '', category: 'Forex',
+    icon: '📘', color: ['#1e1b4b','#3730a3']
+  },
+  {
+    id: 'db2', title: 'Trading Psychology & Discipline', author: 'ZTU Education Team',
+    lang: 'english', pdf_url: '', category: 'Psychology',
+    icon: '🧠', color: ['#0f172a','#1e3a5f']
+  },
+  {
+    id: 'db3', title: 'فارکس ٹریڈنگ گائیڈ — Urdu Edition', author: 'ZTU Education Team',
+    lang: 'urdu', pdf_url: '', category: 'Forex',
+    icon: '📙', color: ['#44200a','#92400e']
+  },
+  {
+    id: 'db4', title: 'دليل المبتدئين في الفوركس — Arabic', author: 'ZTU Education Team',
+    lang: 'arabic', pdf_url: '', category: 'Forex',
+    icon: '📗', color: ['#14532d','#15803d']
+  },
+  {
+    id: 'db5', title: 'Risk Management Handbook', author: 'ZTU Education Team',
+    lang: 'english', pdf_url: '', category: 'Risk Management',
+    icon: '🛡️', color: ['#4a0606','#991b1b']
+  },
+  {
+    id: 'db6', title: 'Panduan Trading Forex — Indonesian', author: 'ZTU Education Team',
+    lang: 'indonesian', pdf_url: '', category: 'Forex',
+    icon: '📕', color: ['#0c4a6e','#075985']
+  },
+  {
+    id: 'db7', title: 'Gold & XAUUSD Trading Bible', author: 'ZTU Education Team',
+    lang: 'english', pdf_url: '', category: 'Gold Trading',
+    icon: '🪙', color: ['#78350f','#b45309']
+  },
+  {
+    id: 'db8', title: 'Smart Money Concepts Explained', author: 'ZTU Education Team',
+    lang: 'english', pdf_url: '', category: 'Smart Money',
+    icon: '💡', color: ['#312e81','#4338ca']
+  }
+];
+
+/* ──────────────────────────────────────────────────────────
+   PAGE STATE
+────────────────────────────────────────────────────────── */
+const LIB = {
+  session:         null,   /* { account: string, verifiedAt: number } */
+  activeAudio:     null,   /* { id: string, el: HTMLAudioElement }    */
+  pendingCb:       null,   /* callback to fire after gate approval    */
+  gateAttempts:    0,
+  otpToken:        null,   /* current HMAC-signed token from /api/library-auth */
+  resendTimer:     null,   /* setInterval ref — resend cooldown countdown      */
+  expiryTimer:     null,   /* setInterval ref — OTP expiry countdown           */
+  allVideos:       [...DEMO_VIDEOS],
+  allAudio:        [...DEMO_AUDIO],
+  allBooks:        [...DEMO_BOOKS]
+};
+
+/* ──────────────────────────────────────────────────────────
+   SUPABASE REST HELPERS  (zero external SDK required)
+────────────────────────────────────────────────────────── */
+async function sbRPC(fnName, params) {
+  if (!SB_READY) return null;
+  try {
+    const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+      method: 'POST',
+      headers: {
+        'apikey': LIBRARY_SUPABASE_KEY,
+        'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function sbSelect(table, qs = '') {
+  if (!SB_READY) return null;
+  try {
+    const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+      headers: {
+        'apikey': LIBRARY_SUPABASE_KEY,
+        'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}`
+      }
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+/* ──────────────────────────────────────────────────────────
+   AUTH ENDPOINT HELPER
+   All access-gate operations go through /api/library-auth
+   (Cloudflare Pages Function). EA credentials never touch
+   this file — they live in server-side environment variables.
+────────────────────────────────────────────────────────── */
+async function callAuth(body) {
+  const res = await fetch(AUTH_ENDPOINT, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`auth-endpoint HTTP ${res.status}`);
+  return res.json();
+}
+
+/* ──────────────────────────────────────────────────────────
+   SESSION MANAGEMENT
+   Always re-verifies with Supabase on page load —
+   never trusts localStorage alone.
+────────────────────────────────────────────────────────── */
+function saveSession(acct) {
+  const s = { account: acct.trim(), verifiedAt: Date.now() };
+  try { localStorage.setItem(SESSION_STORE_KEY, JSON.stringify(s)); } catch {}
+  LIB.session = s;
+}
+
+function clearSessionData() {
+  try { localStorage.removeItem(SESSION_STORE_KEY); } catch {}
+  LIB.session = null;
+}
+
+function readStoredSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_STORE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || !s.account || !s.verifiedAt) return null;
+    if (Date.now() - s.verifiedAt > SESSION_TTL_MS) { clearSessionData(); return null; }
+    return s;
+  } catch { return null; }
+}
+
+/* ── SESSION HYDRATION ─────────────────────────────────────
+   Called on every page load.
+   Always re-verifies stored account against EA database via
+   the CF Worker — never trusts localStorage alone.
+   If the account was unmatched after the last visit, access
+   is revoked immediately without requiring a new OTP.
+────────────────────────────────────────────────────────── */
+async function hydrateSession() {
+  const stored = readStoredSession();
+  if (!stored) { updateAccessUI(false); return; }
+
+  let valid = false;
+  try {
+    const res = await callAuth({ action: 'verify-session', account: stored.account });
+    valid = res.valid === true;
+  } catch {
+    /* Network error on page load (e.g. offline, CF Worker not yet deployed).
+       Graceful degradation: honour the localStorage session rather than
+       locking out users due to a transient connectivity issue.
+       On the next successful load, the session will be properly verified. */
+    console.warn('[library] Session re-verification failed — using cached session');
+    valid = true;
+  }
+
+  if (!valid) { clearSessionData(); updateAccessUI(false); return; }
+  saveSession(stored.account); /* refresh timestamp */
+  updateAccessUI(true);
+}
+
+/* ──────────────────────────────────────────────────────────
+   ACCESS UI — locks / unlocks all card overlays
+────────────────────────────────────────────────────────── */
+function updateAccessUI(granted) {
+  document.querySelectorAll('.lock-veil').forEach(el => {
+    el.classList.toggle('off', granted);
+  });
+  const banner = document.getElementById('accBanner');
+  if (granted && LIB.session) {
+    document.getElementById('bannerAcct').textContent = LIB.session.account;
+    banner.classList.add('on');
+  } else {
+    banner.classList.remove('on');
+  }
+}
+
+function revokeAccess() {
+  if (LIB.activeAudio) { LIB.activeAudio.el.pause(); LIB.activeAudio = null; }
+  clearSessionData();
+  updateAccessUI(false);
+  toast('Signed out — content locked.', '#ef4444');
+}
+
+/* ══════════════════════════════════════════════════════════
+   ACCESS GATE — 2-STEP: ACCOUNT NUMBER + EMAIL OTP
+   Step 1: enter account number → CF Worker checks EA DB
+   Step 2: enter OTP sent to registered email → CF Worker verifies
+══════════════════════════════════════════════════════════ */
+
+/* ── Step helpers ── */
+/* Accepts a string ID: 'gateStep1' | 'gateStep2' | 'gateStepNotFound' | 'gateStepInactive' */
+function showStep(id) {
+  document.querySelectorAll('.gate-step').forEach(el => {
+    el.classList.toggle('active', el.id === id);
+  });
+}
+
+function stopTimers() {
+  clearInterval(LIB.resendTimer); LIB.resendTimer = null;
+  clearInterval(LIB.expiryTimer); LIB.expiryTimer = null;
+}
+
+/* ── Open / close gate ── */
+function openGate(cb) {
+  LIB.pendingCb    = cb;
+  LIB.gateAttempts = 0;
+  LIB.otpToken     = null;
+  stopTimers();
+  document.getElementById('gateField').value = '';
+  document.getElementById('gateErr').classList.remove('on');
+  resetStep1Btn();
+  document.getElementById('gateIbLink').href     = IB_ACCOUNT_URL;
+  document.getElementById('gateIbLinkNF').href   = IB_ACCOUNT_URL;
+  document.getElementById('gateReactivateLink').href = '#'; /* TODO: reactivation guide URL */
+  showStep('gateStep1');
+  document.getElementById('gateBg').classList.add('on');
+  setTimeout(() => document.getElementById('gateField').focus(), 80);
+}
+
+function closeGate() {
+  document.getElementById('gateBg').classList.remove('on');
+  LIB.pendingCb = null;
+  LIB.otpToken  = null;
+  stopTimers();
+}
+
+/* ── Guard helper — called on every content click ── */
+function withAccess(fn) {
+  if (LIB.session) { fn(); } else { openGate(fn); }
+}
+
+/* ── Reset button states ── */
+function resetStep1Btn() {
+  const b = document.getElementById('gateGoBtn');
+  b.disabled = false;
+  b.innerHTML = 'Continue <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+}
+
+function resetVerifyBtn() {
+  const b = document.getElementById('otpVerifyBtn');
+  b.disabled = false;
+  b.innerHTML = 'Verify Code <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+}
+
+/* ── STEP 1: request OTP ── */
+async function requestOtp() {
+  const field = document.getElementById('gateField');
+  const btn   = document.getElementById('gateGoBtn');
+  const errEl = document.getElementById('gateErr');
+  const acct  = field.value.trim();
+
+  if (!acct) { field.focus(); return; }
+
+  /* Client-side attempt guard (5 max before hard lockout) */
+  LIB.gateAttempts++;
+  if (LIB.gateAttempts > 5) {
+    gateErr(errEl, 'Too many attempts. Please refresh the page and try again.');
+    btn.disabled = true;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>&nbsp;Checking…';
+  errEl.classList.remove('on');
+
+  let res;
+  try {
+    res = await callAuth({ action: 'request-otp', account: acct });
+  } catch (err) {
+    resetStep1Btn();
+    /* Distinguish "endpoint not reachable" (running from file:// or a static
+       server that doesn't execute the /api/library-auth Cloudflare Function)
+       from a genuine server-side error, so local testing isn't confusing. */
+    if (location.protocol === 'file:') {
+      gateErr(errEl, 'The access service can’t run from a local file. Run <b>npx wrangler pages dev .</b> and open the printed http:// URL, or use the deployed site.');
+    } else {
+      gateErr(errEl, 'Service unavailable. Please try again in a moment.');
+    }
+    console.error('[library] request-otp call failed:', err);
+    return;
+  }
+
+  if (!res.ok) {
+    resetStep1Btn();
+    if (res.reason === 'not_found') {
+      /* Not in ib_stars_active at all */
+      showStep('gateStepNotFound');
+      return;
+    }
+    if (res.reason === 'inactive') {
+      /* In ib_stars_active but currently inactive */
+      showStep('gateStepInactive');
+      return;
+    }
+    if (res.reason === 'email_failed') {
+      gateErr(errEl, 'Could not send verification email. Please try again in a moment.');
+    } else {
+      gateErr(errEl, 'Something went wrong. Please try again.');
+    }
+    field.focus(); field.select();
+    return;
+  }
+
+  /* Account is active — move to OTP step */
+  LIB.otpToken = res.token;
+  moveToOtpStep(res.email_mask);
+}
+
+/* ── Transition to step 2 ── */
+function moveToOtpStep(emailMask) {
+  document.getElementById('otpEmailHint').textContent = emailMask || '—';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('otpErr').classList.remove('on');
+  resetVerifyBtn();
+  showStep('gateStep2');
+  setTimeout(() => document.getElementById('otpInput').focus(), 80);
+  startResendCooldown(RESEND_COOLDOWN_MS);
+  startExpiryCountdown(OTP_TTL_CLIENT_MS);
+}
+
+/* ── STEP 2: verify OTP ── */
+async function verifyOtp() {
+  const input  = document.getElementById('otpInput');
+  const btn    = document.getElementById('otpVerifyBtn');
+  const errEl  = document.getElementById('otpErr');
+  const code   = input.value.trim();
+
+  /* Client-side format guard */
+  if (!code || !/^\d{6}$/.test(code)) {
+    gateErr(errEl, 'Please enter the 6-digit code from your email.');
+    input.focus();
+    return;
+  }
+
+  if (!LIB.otpToken) {
+    gateErr(errEl, 'Session lost. Please go back and try again.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>&nbsp;Verifying…';
+  errEl.classList.remove('on');
+
+  let res;
+  try {
+    res = await callAuth({ action: 'verify-otp', token: LIB.otpToken, code });
+  } catch {
+    resetVerifyBtn();
+    gateErr(errEl, 'Network error. Please try again.');
+    return;
+  }
+
+  if (res.ok) {
+    /* ✓ Success */
+    stopTimers();
+    saveSession(res.account);
+    updateAccessUI(true);
+    closeGate();
+    const cb = LIB.pendingCb;
+    LIB.pendingCb = null;
+    if (cb) cb();
+    toast(`Access granted — ${res.account}`, '#acd400');
+    return;
+  }
+
+  /* ✗ Failure — update token (attempts decremented server-side) */
+  if (res.token) LIB.otpToken = res.token;
+  resetVerifyBtn();
+
+  switch (res.reason) {
+    case 'expired':
+      stopTimers();
+      LIB.otpToken = null;
+      gateErr(errEl, 'Code expired. Please go back and request a new one.');
+      break;
+    case 'no_attempts':
+      stopTimers();
+      LIB.otpToken = null;
+      gateErr(errEl, 'Too many incorrect attempts. Please go back and request a new code.');
+      break;
+    case 'wrong_code': {
+      const att = typeof res.att === 'number' ? res.att : 0;
+      if (att <= 0) {
+        stopTimers(); LIB.otpToken = null;
+        gateErr(errEl, 'Too many incorrect attempts. Please go back and request a new code.');
+      } else {
+        gateErr(errEl, `Invalid verification code. ${att} attempt${att !== 1 ? 's' : ''} remaining.`);
+      }
+      break;
+    }
+    case 'invalid_token':
+      stopTimers(); LIB.otpToken = null;
+      gateErr(errEl, 'Session invalid. Please go back and start again.');
+      break;
+    default:
+      gateErr(errEl, 'Verification failed. Please try again.');
+  }
+
+  input.focus(); input.select();
+}
+
+/* ── Resend OTP ── */
+async function resendOtp() {
+  if (!LIB.otpToken) { goBackToStep1(); return; }
+
+  const resendBtn = document.getElementById('resendBtn');
+  resendBtn.disabled = true;
+  resendBtn.textContent = 'Sending…';
+
+  let res;
+  try {
+    res = await callAuth({ action: 'resend-otp', token: LIB.otpToken });
+  } catch {
+    resendBtn.disabled = false;
+    resendBtn.textContent = 'Resend Code';
+    toast('Could not resend. Please try again.', '#ef4444');
+    return;
+  }
+
+  if (res.ok) {
+    LIB.otpToken = res.token;
+    document.getElementById('otpEmailHint').textContent = res.email_mask || '—';
+    document.getElementById('otpInput').value = '';
+    document.getElementById('otpErr').classList.remove('on');
+    toast('New code sent — check your email.', '#7c3aed');
+    startResendCooldown(RESEND_COOLDOWN_MS);
+    startExpiryCountdown(OTP_TTL_CLIENT_MS);
+    resendBtn.textContent = 'Resend Code';
+  } else if (res.reason === 'cooldown') {
+    /* Server says cooldown still active — start client timer from server's value */
+    startResendCooldown(res.wait_ms || RESEND_COOLDOWN_MS);
+    resendBtn.textContent = 'Resend Code';
+  } else if (res.reason === 'expired') {
+    stopTimers(); LIB.otpToken = null;
+    toast('Session expired. Please start again.', '#ef4444');
+    goBackToStep1();
+  } else {
+    toast('Could not resend. Please start over.', '#ef4444');
+    goBackToStep1();
+  }
+}
+
+/* ── Back to step 1 ── */
+function goBackToStep1() {
+  stopTimers();
+  LIB.otpToken = null;
+  document.getElementById('gateField').value = '';
+  document.getElementById('gateErr').classList.remove('on');
+  resetStep1Btn();
+  showStep('gateStep1');
+  setTimeout(() => document.getElementById('gateField').focus(), 80);
+}
+
+/* ── Countdown timers ── */
+function startResendCooldown(waitMs) {
+  clearInterval(LIB.resendTimer);
+  const resendBtn = document.getElementById('resendBtn');
+  const cdEl      = document.getElementById('resendCd');
+  const end       = Date.now() + waitMs;
+  resendBtn.disabled = true;
+  cdEl.style.display = 'inline';
+
+  LIB.resendTimer = setInterval(() => {
+    const rem = Math.ceil((end - Date.now()) / 1000);
+    if (rem <= 0) {
+      clearInterval(LIB.resendTimer); LIB.resendTimer = null;
+      cdEl.style.display  = 'none';
+      cdEl.textContent    = '';
+      resendBtn.disabled  = false;
+      resendBtn.textContent = 'Resend Code';
+    } else {
+      cdEl.textContent = `(${rem}s)`;
+    }
+  }, 500);
+}
+
+function startExpiryCountdown(ttlMs) {
+  clearInterval(LIB.expiryTimer);
+  const expEl = document.getElementById('otpExpiry');
+  const end   = Date.now() + ttlMs;
+  expEl.classList.remove('urgent');
+
+  LIB.expiryTimer = setInterval(() => {
+    const rem = end - Date.now();
+    if (rem <= 0) {
+      clearInterval(LIB.expiryTimer); LIB.expiryTimer = null;
+      expEl.textContent = 'Code expired — request a new one.';
+      expEl.classList.add('urgent');
+      LIB.otpToken = null;
+    } else {
+      const m = Math.floor(rem / 60000);
+      const s = Math.floor((rem % 60000) / 1000);
+      expEl.textContent = `Code expires in ${m}:${String(s).padStart(2, '0')}`;
+      if (rem < 2 * 60 * 1000) expEl.classList.add('urgent'); /* red at 2 min */
+    }
+  }, 1000);
+}
+
+/* ── Inline error helper ── */
+function gateErr(el, msg) {
+  el.innerHTML = msg;
+  el.classList.add('on');
+}
+
+/* ──────────────────────────────────────────────────────────
+   AUDIO PLAYER
+   One shared Audio element. Swap src on track change.
+────────────────────────────────────────────────────────── */
+const SHARED_AUDIO = new Audio();
+SHARED_AUDIO.preload = 'none';
+
+function playIcon()  { return '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5v14l12-7z"/></svg>'; }
+function pauseIcon() { return '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; }
+
+function fmtSecs(s) {
+  if (!isFinite(s) || isNaN(s)) return '0:00';
+  return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+}
+
+function getPPBtn(id)   { return document.getElementById(`ppb-${id}`); }
+function getSeek(id)    { return document.getElementById(`sk-${id}`); }
+function getTimeEl(id)  { return document.getElementById(`tm-${id}`); }
+
+function resetCardUI(id, dur) {
+  const b = getPPBtn(id); if (b) b.innerHTML = playIcon();
+  const s = getSeek(id);  if (s) { s.value = 0; s.style.setProperty('--pct','0%'); }
+  const t = getTimeEl(id);if (t) t.textContent = `0:00 / ${dur||'0:00'}`;
+}
+
+function handleAudioToggle(id, url, dur) {
+  withAccess(() => {
+    const isActive = LIB.activeAudio && LIB.activeAudio.id === id;
+
+    /* Pause if currently playing */
+    if (isActive && !SHARED_AUDIO.paused) {
+      SHARED_AUDIO.pause();
+      const b = getPPBtn(id); if (b) b.innerHTML = playIcon();
+      return;
+    }
+
+    /* Resume same track if paused */
+    if (isActive && SHARED_AUDIO.paused && SHARED_AUDIO.src) {
+      SHARED_AUDIO.play().catch(() => {});
+      const b = getPPBtn(id); if (b) b.innerHTML = pauseIcon();
+      return;
+    }
+
+    /* Switching to new track — reset previous */
+    if (LIB.activeAudio) resetCardUI(LIB.activeAudio.id, LIB.activeAudio.dur);
+
+    /* No URL = demo */
+    if (!url) {
+      LIB.activeAudio = null;
+      toast('Demo audio — no file attached yet.', '#f59e0b');
+      return;
+    }
+
+    SHARED_AUDIO.src = url;
+    SHARED_AUDIO.currentTime = 0;
+    LIB.activeAudio = { id, dur };
+
+    SHARED_AUDIO.play().catch(() => {
+      toast('Unable to play audio. Check file URL.', '#ef4444');
+      LIB.activeAudio = null;
+    });
+
+    const b = getPPBtn(id); if (b) b.innerHTML = pauseIcon();
+
+    SHARED_AUDIO.ontimeupdate = () => {
+      if (!LIB.activeAudio || LIB.activeAudio.id !== id) return;
+      const cur = SHARED_AUDIO.currentTime;
+      const tot = SHARED_AUDIO.duration || 0;
+      const pct = tot ? (cur/tot*100) : 0;
+      const sk  = getSeek(id);
+      const tm  = getTimeEl(id);
+      if (sk) { sk.value = pct; sk.style.setProperty('--pct', pct+'%'); }
+      if (tm) tm.textContent = `${fmtSecs(cur)} / ${fmtSecs(tot)}`;
+    };
+
+    SHARED_AUDIO.onended = () => {
+      const b2 = getPPBtn(id); if (b2) b2.innerHTML = playIcon();
+      const sk = getSeek(id);  if (sk) { sk.value=0; sk.style.setProperty('--pct','0%'); }
+      LIB.activeAudio = null;
+    };
+  });
+}
+
+function seekTrack(id, pct) {
+  if (!LIB.activeAudio || LIB.activeAudio.id !== id) return;
+  const dur = SHARED_AUDIO.duration || 0;
+  SHARED_AUDIO.currentTime = (pct/100) * dur;
+}
+
+/* ──────────────────────────────────────────────────────────
+   PDF READER
+────────────────────────────────────────────────────────── */
+function openPdf(url, title) {
+  withAccess(() => {
+    if (!url) { toast('Demo book — PDF not attached yet.', '#f59e0b'); return; }
+    document.getElementById('pdfBarTitle').textContent = title;
+    document.getElementById('pdfFrame').src = url;
+    const dl = document.getElementById('pdfDlLink');
+    dl.href = url; dl.download = title + '.pdf';
+    document.getElementById('pdfBg').classList.add('on');
+  });
+}
+
+function closePdf() {
+  document.getElementById('pdfBg').classList.remove('on');
+  /* Delay clearing src to avoid flash */
+  setTimeout(() => { document.getElementById('pdfFrame').src = ''; }, 300);
+}
+
+function downloadPdf(url, title) {
+  withAccess(() => {
+    if (!url) { toast('Demo book — PDF not attached yet.', '#f59e0b'); return; }
+    const a = Object.assign(document.createElement('a'), { href: url, download: title+'.pdf', target: '_blank' });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
+   RENDERERS
+────────────────────────────────────────────────────────── */
+const LOCK_HTML = `
+  <div class="lock-veil">
+    <div class="lock-ring">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="lock-label">Members Only</div>
+  </div>`;
+
+function pillLang(l) {
+  return `<span class="pill pill-lang">${l}</span>`;
+}
+
+/* ── VIDEOS ── */
+function renderVideos(items) {
+  const grid = document.getElementById('videoGrid');
+  const emp  = document.getElementById('videoEmpty');
+  if (!items.length) { grid.innerHTML = ''; emp.style.display = 'block'; return; }
+  emp.style.display = 'none';
+
+  const locked = !LIB.session;
+  grid.innerHTML = items.map(v => {
+    /* Build thumbnail: real YT thumb if youtube_id present, else gradient */
+    const isRealId = v.youtube_id && v.youtube_id.length > 4;
+    const thumbStyle = v.thumbnail_url
+      ? `background-image:url('${escHtml(v.thumbnail_url)}');background-size:cover;background-position:center;`
+      : isRealId
+        ? `background-image:url('https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg');background-size:cover;background-position:center;`
+        : `background:linear-gradient(135deg,${v.color[0]},${v.color[1]});`;
+
+    return `
+<article class="video-card" onclick="handleVideoClick('${escAttr(v.youtube_url)}')" tabindex="0" role="button" aria-label="Play ${escHtml(v.title)}" onkeydown="if(event.key==='Enter')handleVideoClick('${escAttr(v.youtube_url)}')">
+  <div class="v-thumb">
+    <div class="v-thumb-bg" style="${thumbStyle}"></div>
+    <div class="v-thumb-overlay">
+      <div class="play-circle" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+      </div>
+    </div>
+    ${locked ? LOCK_HTML : ''}
+  </div>
+  <div class="v-info">
+    <div class="v-title">${escHtml(v.title)}</div>
+    <div class="v-meta">
+      ${pillLang(v.lang)}
+      ${v.category ? `<span class="pill pill-cat">${escHtml(v.category)}</span>` : ''}
+      ${v.duration  ? `<span class="dur-tag">${escHtml(v.duration)}</span>` : ''}
+    </div>
+  </div>
+</article>`;
+  }).join('');
+}
+
+function handleVideoClick(url) {
+  withAccess(() => {
+    if (!url || url.includes('placeholder')) {
+      toast('Demo video — YouTube URL not attached yet.', '#f59e0b');
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
+  });
+}
+
+/* ── AUDIO ── */
+function renderAudio(items) {
+  const grid = document.getElementById('audioGrid');
+  const emp  = document.getElementById('audioEmpty');
+  if (!items.length) { grid.innerHTML = ''; emp.style.display = 'block'; return; }
+  emp.style.display = 'none';
+
+  const locked = !LIB.session;
+  grid.innerHTML = items.map(a => {
+    const coverInner = a.cover_url
+      ? `<img src="${escAttr(a.cover_url)}" alt="${escAttr(a.title)}" loading="lazy" />`
+      : `<span class="a-cover-icon" aria-hidden="true">${a.icon||'🎵'}</span>`;
+
+    return `
+<article class="audio-card" data-aid="${a.id}">
+  <div class="a-cover">
+    <div class="a-cover-bg" style="background:linear-gradient(135deg,${a.color[0]},${a.color[1]});">
+      ${coverInner}
+    </div>
+    ${locked ? LOCK_HTML : ''}
+  </div>
+  <div class="a-body">
+    <div class="a-title">${escHtml(a.title)}</div>
+    ${pillLang(a.lang)}
+    <div>
+      <div class="a-controls">
+        <button class="pp-btn" id="ppb-${a.id}"
+          onclick="handleAudioToggle('${a.id}','${escAttr(a.audio_url||'')}','${escAttr(a.duration||'0:00')}')"
+          aria-label="Play / pause ${escHtml(a.title)}">
+          ${playIcon()}
+        </button>
+        <input type="range" class="a-seek" id="sk-${a.id}"
+          min="0" max="100" value="0" step="0.2"
+          oninput="seekTrack('${a.id}',+this.value)"
+          aria-label="Seek in ${escHtml(a.title)}" />
+        <span class="a-time" id="tm-${a.id}" aria-live="off">0:00 / ${escHtml(a.duration||'0:00')}</span>
+      </div>
+    </div>
+  </div>
+</article>`;
+  }).join('');
+}
+
+/* ── BOOKS ── */
+function renderBooks(items) {
+  const grid = document.getElementById('booksGrid');
+  const emp  = document.getElementById('booksEmpty');
+  if (!items.length) { grid.innerHTML = ''; emp.style.display = 'block'; return; }
+  emp.style.display = 'none';
+
+  const locked = !LIB.session;
+  grid.innerHTML = items.map(b => {
+    const coverInner = b.cover_url
+      ? `<img src="${escAttr(b.cover_url)}" alt="${escAttr(b.title)}" loading="lazy" />`
+      : `<span class="b-cover-icon" aria-hidden="true">${b.icon||'📖'}</span>
+         <span class="b-cover-abbr">${escHtml(b.title.slice(0,30))}</span>`;
+
+    /* Safe inline-onclick strings */
+    const safeTitle = b.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeUrl   = (b.pdf_url||'').replace(/'/g,"\\'");
+
+    /* Book-specific lock overlay: cover stays visible, title shows at bottom
+       in a gradient scrim. LOCK_HTML (full dark veil) is used for
+       video/audio; books get their own title-bearing overlay instead.     */
+    const bookLockHtml = `
+  <div class="lock-veil" aria-label="Members only — unlock to read">
+    <div class="book-lock-info">
+      <div class="book-lock-ttl">${escHtml(b.title)}</div>
+      <div class="book-lock-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Members Only
+      </div>
+    </div>
+  </div>`;
+
+    return `
+<article class="book-card">
+  <div class="b-cover">
+    <div class="b-cover-bg" style="background:linear-gradient(160deg,${b.color[0]},${b.color[1]});">
+      ${coverInner}
+    </div>
+    ${locked ? bookLockHtml : ''}
+  </div>
+  <div class="b-body">
+    <div class="b-title">${escHtml(b.title)}</div>
+    ${b.author ? `<div class="b-author">${escHtml(b.author)}</div>` : ''}
+    ${pillLang(b.lang)}
+    <div class="b-actions">
+      <button class="b-btn b-read" onclick="openPdf('${safeUrl}','${safeTitle}')" aria-label="Read ${escHtml(b.title)} online">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Read
+      </button>
+      <button class="b-btn b-dl" onclick="downloadPdf('${safeUrl}','${safeTitle}')" aria-label="Download ${escHtml(b.title)}">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+    </div>
+  </div>
+</article>`;
+  }).join('');
+}
+
+/* ──────────────────────────────────────────────────────────
+   SEARCH & LANGUAGE FILTER
+────────────────────────────────────────────────────────── */
+function applyFilters() {
+  const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+  const lang = document.getElementById('langSelect').value.toLowerCase();
+  const btn  = document.getElementById('clearBtn');
+
+  const active = q.length > 0 || lang.length > 0;
+  btn.classList.toggle('show', active);
+
+  const match = items => items.filter(item => {
+    const okLang = !lang || item.lang === lang;
+    const okQ    = !q    || item.title.toLowerCase().includes(q);
+    return okLang && okQ;
+  });
+
+  renderVideos(match(LIB.allVideos));
+  renderAudio(match(LIB.allAudio));
+  renderBooks(match(LIB.allBooks));
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('langSelect').value  = '';
+  applyFilters();
+}
+
+/* ──────────────────────────────────────────────────────────
+   LIVE SUPABASE DATA FETCH (activated once keys are set)
+────────────────────────────────────────────────────────── */
+async function loadLiveData() {
+  if (!SB_READY) return;
+
+  const [videos, audio, books] = await Promise.all([
+    sbSelect('library_videos', 'is_published=eq.true&order=sort_order.asc'),
+    sbSelect('library_audio',  'is_published=eq.true&order=sort_order.asc'),
+    sbSelect('library_books',  'is_published=eq.true&order=sort_order.asc')
+  ]);
+
+  if (Array.isArray(videos) && videos.length) {
+    LIB.allVideos = videos.map(v => ({
+      ...v, color: v.color || ['#5b1ac8','#7c3aed']
+    }));
+    document.getElementById('statV').textContent = videos.length;
+  }
+  if (Array.isArray(audio) && audio.length) {
+    LIB.allAudio = audio.map(a => ({
+      ...a, icon: a.icon || '🎵', color: a.color || ['#5b1ac8','#9f6ef5']
+    }));
+    document.getElementById('statA').textContent = audio.length;
+  }
+  if (Array.isArray(books) && books.length) {
+    LIB.allBooks = books.map(b => ({
+      ...b, icon: b.icon || '📖', color: b.color || ['#1e1b4b','#4c1d95']
+    }));
+    document.getElementById('statB').textContent = books.length;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   TOAST HELPER
+────────────────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg, bg = '#acd400') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = bg;
+  el.style.color = (bg === '#acd400') ? '#0a1018' : '#fff';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
+}
+
+/* ──────────────────────────────────────────────────────────
+   ESCAPE HELPERS  (XSS prevention)
+────────────────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(s) { return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
+/* ──────────────────────────────────────────────────────────
+   MOBILE MENU TOGGLE
+────────────────────────────────────────────────────────── */
+function toggleMenu() {
+  const m = document.getElementById('mobileMenu');
+  const b = document.getElementById('hamburgerBtn');
+  const open = m.classList.toggle('open');
+  b.setAttribute('aria-expanded', open);
+}
+
+/* ──────────────────────────────────────────────────────────
+   KEYBOARD & OVERLAY DISMISS WIRING
+────────────────────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeGate();
+    closePdf();
+    document.getElementById('mobileMenu').classList.remove('open');
+  }
+});
+
+/* Gate keyboard + input wiring */
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* Step 1 — Enter submits account number */
+  document.getElementById('gateField').addEventListener('keydown', e => {
+    if (e.key === 'Enter') requestOtp();
+  });
+
+  /* Step 2 — Enter submits OTP; auto-submit on 6th digit */
+  const otpInput = document.getElementById('otpInput');
+  otpInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') verifyOtp();
+  });
+  otpInput.addEventListener('input', e => {
+    /* Strip non-digits, cap at 6 */
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    /* Auto-submit when user finishes typing all 6 digits */
+    if (e.target.value.length === 6) verifyOtp();
+  });
+
+  /* Backdrop click closes gate */
+  document.getElementById('gateBg').addEventListener('click', e => {
+    if (e.target === document.getElementById('gateBg')) closeGate();
+  });
+});
+
+/* ──────────────────────────────────────────────────────────
+   INIT
+────────────────────────────────────────────────────────── */
+async function init() {
+  /* 1 — Immediate first paint with demo data */
+  renderVideos(LIB.allVideos);
+  renderAudio(LIB.allAudio);
+  renderBooks(LIB.allBooks);
+
+  /* 2 — Re-verify session (always pings Supabase if configured) */
+  await hydrateSession();
+
+  /* 3 — Fetch live Supabase data if keys are set */
+  await loadLiveData();
+
+  /* 4 — Re-render with latest data + correct locked/unlocked state */
+  renderVideos(LIB.allVideos);
+  renderAudio(LIB.allAudio);
+  renderBooks(LIB.allBooks);
+  if (LIB.session) updateAccessUI(true);
+
+  /* 5 — Wire search & filter */
+  document.getElementById('searchInput').addEventListener('input',  applyFilters);
+  document.getElementById('langSelect').addEventListener('change', applyFilters);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+/* ──────────────────────────────────────────────────────────
+   ADMIN EXTENSION POINT
+   Future admin dashboard: /library/library-admin.html
+   Bulk + single upload targets:
+     POST /rest/v1/library_videos   (service role key only)
+     POST /rest/v1/library_audio    (service role key only)
+     POST /rest/v1/library_books    (service role key only)
+   Storage:
+     library-audio   → private bucket  (signed URLs for playback)
+     library-books   → private bucket  (signed URLs for read/download)
+     library-covers  → public bucket   (cover images, audio + books)
+     library-thumbs  → public bucket   (video thumbnail overrides)
+   All admin logic is intentionally kept out of this file.
+────────────────────────────────────────────────────────── */
+</script>
+
+</body>
+</html>

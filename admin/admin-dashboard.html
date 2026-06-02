@@ -9,6 +9,29 @@
 </head>
 <body>
 
+  <!-- Phase 16 follow-up — Admin Password Gate -->
+  <div class="admin-gate-overlay" id="adminGateOverlay">
+    <div class="admin-gate-card">
+      <div class="admin-gate-brand">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="36" height="36" aria-hidden="true">
+          <path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7l11-4z"/>
+          <path d="M11 16l3 3 7-7"/>
+        </svg>
+        <div class="admin-gate-title">Command Center</div>
+        <div class="admin-gate-sub">Authentication required</div>
+      </div>
+      <form class="admin-gate-form" id="adminGateForm" autocomplete="off">
+        <label class="admin-gate-label" for="adminGateInput">Password</label>
+        <input class="admin-gate-input" id="adminGateInput" type="password" autocomplete="current-password" autofocus />
+        <p class="admin-gate-error" id="adminGateError" hidden></p>
+        <button type="submit" class="admin-gate-submit" id="adminGateSubmit">Unlock</button>
+      </form>
+      <p class="admin-gate-footer">
+        Session expires after <span id="adminGateSessMin">30</span> minutes of inactivity.
+      </p>
+    </div>
+  </div>
+
   <div class="app-shell">
 
     <!-- ═══════════════════════════════════════════
@@ -88,6 +111,16 @@
 
         <div class="nav-section-label">CRM Intelligence</div>
 
+        <!-- Phase 15.6 Task 2: Campaign Builder promoted to top + primary visual weight -->
+        <a href="#" class="nav-item nav-item--primary" data-section="crm-message" data-label="Campaign Builder">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 11l14-7-3 16-4-7-7-2z"/>
+            <path d="M10 13l4 4"/>
+          </svg>
+          Campaign Builder
+          <span class="nav-item-badge nav-item-badge--primary">SEND</span>
+        </a>
+
         <a href="#" class="nav-item" data-section="crm-active" data-label="Active Clients">
           <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="10" cy="7" r="4"/>
@@ -121,13 +154,41 @@
           Global Search
         </a>
 
-        <a href="#" class="nav-item" data-section="crm-message" data-label="Campaign Builder">
+        <!-- Phase 15.6 Task 3 — IB Stars (activity-based CRM) -->
+        <div class="nav-section-label">IB Network</div>
+
+        <a href="#" class="nav-item" data-section="ib-stars-active" data-label="IB Stars Active">
           <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="4" width="16" height="12" rx="1.5"/>
-            <path d="M2 6l8 6 8-6"/>
-            <path d="M12 11h4M12 14h2"/>
+            <path d="M10 2l2.4 5.4 5.6.6-4.3 4 1.2 5.6L10 14.7 5.1 17.6l1.2-5.6L2 8l5.6-.6z"/>
           </svg>
-          Campaign Builder
+          IB Stars Active
+        </a>
+
+        <a href="#" class="nav-item" data-section="ib-stars-inactive" data-label="IB Stars Inactive">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.65">
+            <path d="M10 2l2.4 5.4 5.6.6-4.3 4 1.2 5.6L10 14.7 5.1 17.6l1.2-5.6L2 8l5.6-.6z"/>
+          </svg>
+          IB Stars Inactive
+        </a>
+
+        <!-- Phase 16.2 Issue 4 — Blocked Clients (admin-managed block list) -->
+        <a href="#" class="nav-item nav-item--danger" data-section="blocked-clients" data-label="Blocked Clients">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="7.5"/>
+            <path d="M4.5 4.5l11 11"/>
+          </svg>
+          Blocked Clients
+          <span class="nav-item-badge nav-item-badge--danger" id="blockedClientsNavCount" hidden>0</span>
+        </a>
+
+        <!-- Phase 15.6 Task 6 — IB Changed (access-revoked) -->
+        <a href="#" class="nav-item nav-item--danger" data-section="ib-changed" data-label="IB Changed Accounts">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="7.5"/>
+            <path d="M5 5l10 10"/>
+          </svg>
+          IB Changed
+          <span class="nav-item-badge nav-item-badge--danger" id="ibChangedNavCount" hidden>0</span>
         </a>
 
         <div class="nav-divider"></div>
@@ -160,6 +221,12 @@
 
       <div class="sidebar-footer">
         <span class="sidebar-version">Phase 14A &mdash; Campaign Builder</span>
+        <button class="sidebar-logout" id="btnAdminLogout" type="button" title="Lock dashboard + clear session">
+          <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+            <path d="M11 13l4-4-4-4M15 9H6M9 16H4a1 1 0 01-1-1V3a1 1 0 011-1h5"/>
+          </svg>
+          Logout
+        </button>
       </div>
 
     </aside><!-- /sidebar -->
@@ -183,6 +250,24 @@
             <span class="sys-dot sys-dot--ok"></span>
             <span class="sys-label">System Online</span>
           </div>
+          <!-- Phase 16 follow-up #4 — engine countdown + Run Now -->
+          <div class="engine-countdown" id="engineCountdown" title="When the next ZTU_AUTOMATION scheduled task is expected to run">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true">
+              <circle cx="7" cy="7" r="5.5"/><path d="M7 4v3.2L9 9"/>
+            </svg>
+            <span class="engine-countdown-label">Next engine run:</span>
+            <span class="engine-countdown-val" id="engineCountdownVal">—</span>
+            <button class="engine-run-now" id="btnEngineRunNow" type="button" title="Run all dashboard-side sweeps now: auto-match, retry pool, not_found, IB Changed, refresh">
+              ▶ Run Now
+            </button>
+          </div>
+          <!-- Phase 15.6 Task 4 — admin cache management -->
+          <button class="btn-clear-cache" id="btnOpenClearCache" title="Clear dashboard caches (delivery history is preserved)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+              <path d="M2 4h10M5 4V2h4v2M4 4l1 9h4l1-9"/>
+            </svg>
+            Clear Cache
+          </button>
           <!-- Phase 15.4: relabeled — was a duplicate "Run Automation". -->
           <!-- Real automation lives in the intake section. This is a navigation shortcut. -->
           <button class="btn-run" id="btnRunAutomation" title="Open Broker File Intake to run automation">
@@ -355,12 +440,14 @@
               <span class="pool-card-title">Waiting for Broker Confirmation</span>
               <span class="pool-card-count" id="pendingCount">0</span>
             </div>
-            <div class="pool-col-labels">
+            <!-- Phase 16.4 Issue 3 — widened to 6 cols so Status badge + Edit + Block no longer overlap -->
+            <div class="pool-col-labels pool-col-labels--pending6">
               <span>Account</span>
               <span>Email</span>
               <span>Broker</span>
               <span>Date Submitted</span>
               <span>Status</span>
+              <span>Actions</span>
             </div>
             <div class="pool-table-body" id="pendingTableBody"></div>
           </div>
@@ -384,42 +471,51 @@
 
           <div class="section-intro">
             <h2 class="section-heading">Waiting for Broker Confirmation</h2>
-            <p class="section-sub">Accounts not found in the most recent broker file. The system automatically re-checks these with every new broker file upload. After <strong>7 days</strong> without a match the account is archived as <strong>Match Not Found</strong>. All records and email addresses are always preserved.</p>
+            <p class="section-sub"><strong>Your account has not matched yet.</strong> The system automatically re-checks for up to <strong>48 hours</strong> after submission. If matched during this period, your file will be delivered automatically. If not matched within 48 hours, likely cause: referral/IB code missing, broker account not created via our link, existing account used, or registration didn't complete. Records and emails are always preserved.</p>
           </div>
 
-          <!-- Active retry pool — populated by renderWaitingForMatch() -->
+          <!-- SECTION A — Active retry pool (within 48h window).  Phase 16.7 Issue 2 -->
           <div class="pool-card" id="waitingActiveCard" hidden>
             <div class="pool-card-header">
               <span class="pool-card-title">Retrying with New Broker Reports</span>
               <span class="pool-card-count pool-card-count--amber" id="waitingActiveCount">0</span>
             </div>
-            <div class="pool-col-labels pool-col-labels--7">
+            <p class="pool-archived-note">Accounts still inside the 48-hour retry window. The system re-checks each one against every new broker file upload. <strong>Time remaining</strong> ticks down per row; once it hits zero the row moves to <em>Not Found After 48 Hours</em> automatically — no manual action needed.</p>
+            <!-- Phase 16.7 — added Actions column (ⓘ) → 10 cols total -->
+            <div class="pool-col-labels pool-col-labels--10">
               <span>Account</span>
               <span>Email</span>
               <span>Broker</span>
               <span>Submitted</span>
-              <span>Days Waiting</span>
-              <span>Checks Run</span>
+              <span>Time Remaining</span>
+              <span>Checks</span>
               <span>Last Checked</span>
+              <span>Email Status</span>
+              <span>WhatsApp</span>
+              <span>Info</span>
             </div>
             <div class="pool-table-body" id="waitingActiveBody"></div>
           </div>
 
-          <!-- Archived accounts (7-day window expired) -->
+          <!-- SECTION B — Not Found After 48 Hours.  Phase 16.7 Issue 2 -->
           <div class="pool-card pool-card--muted" id="waitingArchivedCard" hidden>
             <div class="pool-card-header">
-              <span class="pool-card-title">Moved to Match Not Found</span>
+              <span class="pool-card-title">Not Found After 48 Hours</span>
               <span class="pool-card-count pool-card-count--muted" id="waitingArchivedCount">0</span>
             </div>
-            <p class="pool-archived-note">These accounts exceeded the 7-Day Review Window. Records and email addresses are fully preserved for CRM and future outreach — nothing is deleted.</p>
-            <div class="pool-col-labels pool-col-labels--7">
+            <p class="pool-archived-note">Accounts that exhausted the full 48-hour retry window without a match. The not_found email has been sent. Records and email addresses are fully preserved. If the same account appears in a later broker file, the system <strong>auto-recovers</strong> it and resumes the matching pipeline — the row gets a "Recovered Match" badge with the recovery timestamp.</p>
+            <!-- Phase 16.7 — added Actions column (ⓘ) → 10 cols total -->
+            <div class="pool-col-labels pool-col-labels--10">
               <span>Account</span>
               <span>Email</span>
               <span>Broker</span>
               <span>Submitted</span>
-              <span>Days Waited</span>
-              <span>Total Checks</span>
-              <span>Archived</span>
+              <span>Status</span>
+              <span>Checks</span>
+              <span>Expired</span>
+              <span>Email Status</span>
+              <span>WhatsApp</span>
+              <span>Info</span>
             </div>
             <div class="pool-table-body" id="waitingArchivedBody"></div>
           </div>
@@ -431,7 +527,7 @@
               <path d="M40 40l-8-8"/>
             </svg>
             <p class="pool-empty-title">No Accounts in Retry Pool</p>
-            <p class="pool-empty-sub">Accounts not found during broker file processing will appear here for the 7-Day Review Window. Upload a broker file in <strong>Broker File Intake</strong> to begin matching.</p>
+            <p class="pool-empty-sub">Accounts not found during broker file processing will appear here for the 48-Hour Review Window. Upload a broker file in <strong>Broker File Intake</strong> to begin matching.</p>
           </div>
 
         </section>
@@ -991,6 +1087,285 @@
 
 
         </section><!-- /section-intake -->
+
+
+        <!-- ═══════════════════════════════════════════════════════
+             Phase 15.6 Task 3 — IB Stars Active
+        ═══════════════════════════════════════════════════════════ -->
+        <section class="dash-section" id="section-ib-stars-active">
+          <div class="section-intro">
+            <h2 class="section-heading">IB Stars Active</h2>
+            <p class="section-sub">Delivered clients who have traded within the last 30 days. Activity source: <code>client_account_last_trade</code> column from broker file. Each new broker file upload auto-refreshes this list.</p>
+          </div>
+
+          <div class="intake-queue" id="ibStarsActiveWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Active IB Stars</h3>
+              <span class="intake-queue-count" id="ibStarsActiveCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="ibStarsActiveRefresh" type="button">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="ib-stars-col-labels" aria-hidden="true">
+                <span>Account</span>
+                <span>Email</span>
+                <span>Broker</span>
+                <span>Last Trade</span>
+                <span>Days Since</span>
+                <span>Status</span>
+              </div>
+              <div class="ib-stars-rows" id="ibStarsActiveBody"></div>
+              <p class="intake-queue-empty" id="ibStarsActiveEmpty" hidden>No active IB Stars yet. Upload a broker file to populate activity data.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ═══════════════════════════════════════════════════════
+             Phase 15.6 Task 3 — IB Stars Inactive
+        ═══════════════════════════════════════════════════════════ -->
+        <section class="dash-section" id="section-ib-stars-inactive">
+          <div class="section-intro">
+            <h2 class="section-heading">IB Stars Inactive</h2>
+            <p class="section-sub">Delivered clients with no trade in the last 30+ days. When a client returns to activity (next broker file upload), they automatically move back to <strong>IB Stars Active</strong>. Pause notification was sent on inactive transition.</p>
+          </div>
+
+          <div class="intake-queue" id="ibStarsInactiveWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Inactive IB Stars</h3>
+              <span class="intake-queue-count" id="ibStarsInactiveCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="ibStarsInactiveRefresh" type="button">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="ib-stars-col-labels ib-stars-col-labels--inactive" aria-hidden="true">
+                <span>Account</span>
+                <span>Email</span>
+                <span>Broker</span>
+                <span>Last Trade</span>
+                <span>Days Inactive</span>
+                <span>Notified</span>
+                <span>Status</span>
+              </div>
+              <div class="ib-stars-rows ib-stars-rows--inactive" id="ibStarsInactiveBody"></div>
+              <p class="intake-queue-empty" id="ibStarsInactiveEmpty" hidden>No inactive IB Stars yet.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ═══════════════════════════════════════════════════════
+             Phase 15.6 Task 6 — IB Changed Accounts
+        ═══════════════════════════════════════════════════════════ -->
+        <!-- Phase 16.2 Issue 4 — Blocked Clients section -->
+        <section class="dash-section" id="section-blocked-clients">
+          <div class="section-intro">
+            <h2 class="section-heading">Blocked Clients</h2>
+            <p class="section-sub">Admin-managed block list. Blocked clients are excluded from EA delivery, automated emails, WhatsApp, and ALL campaign audiences. Block + Unblock are reversible. Records preserved.</p>
+          </div>
+
+          <div class="ib-changed-search">
+            <div class="ib-changed-search-hdr">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+                <circle cx="9" cy="9" r="5.5"/><path d="M16.5 16.5l-3-3"/>
+              </svg>
+              <span>Block Account by Number</span>
+            </div>
+            <div class="ib-changed-search-row">
+              <input type="text" id="blockedSearchInput" placeholder="account number to look up + block" class="ib-changed-search-input" autocomplete="off" />
+              <button class="ib-changed-search-btn" id="blockedSearchBtn" type="button">Look Up</button>
+            </div>
+            <div class="ib-changed-search-result" id="blockedSearchResult" hidden></div>
+          </div>
+
+          <div class="intake-queue" id="blockedListWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Blocked Clients</h3>
+              <span class="intake-queue-count intake-queue-count--danger" id="blockedListCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="blockedListRefresh" type="button">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="ib-changed-col-labels" aria-hidden="true">
+                <span>Account</span><span>Email</span><span>WhatsApp</span><span>Broker</span><span>Blocked Date</span><span>Action</span>
+              </div>
+              <div class="ib-changed-rows" id="blockedListBody"></div>
+              <p class="intake-queue-empty" id="blockedListEmpty" hidden>No blocked clients.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Phase 16.2 Issue 3 — universal Edit Client modal -->
+        <div class="clear-cache-overlay" id="editClientOverlay" hidden role="dialog" aria-modal="true">
+          <div class="clear-cache-modal">
+            <div class="clear-cache-hdr">
+              <h3 class="clear-cache-title" style="color:#c7d2fe">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M4 13.5V16h2.5L14.8 7.7l-2.5-2.5z"/><path d="M11.5 6.5l2 2"/></svg>
+                Edit Client
+              </h3>
+              <button class="clear-cache-close" id="editClientClose" aria-label="Close">×</button>
+            </div>
+            <div class="clear-cache-body">
+              <p class="clear-cache-note" style="margin-bottom:14px">Edit verified contact details. Changes are saved to <code>license_requests</code> and audit-logged to <code>client_overrides</code>.</p>
+              <div class="ib-changed-result-field"><span class="ib-changed-result-label">Account</span><span class="ib-changed-result-value ib-changed-acct" id="editClientAcct">—</span></div>
+              <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Email
+                  <input type="email" id="editClientEmail" class="ib-changed-search-input" style="margin-top:4px" />
+                </label>
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">WhatsApp / phone
+                  <input type="tel" id="editClientWhatsapp" class="ib-changed-search-input" style="margin-top:4px" />
+                </label>
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Broker
+                  <input type="text" id="editClientBroker" class="ib-changed-search-input" style="margin-top:4px" />
+                </label>
+              </div>
+              <p class="clear-cache-error" id="editClientError" hidden></p>
+              <div class="clear-cache-actions">
+                <button class="btn-ghost" id="editClientCancel" type="button">Cancel</button>
+                <span class="clear-cache-spacer"></span>
+                <button class="btn-clear-confirm" id="editClientSave" type="button" style="background:#6366f1">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 16.6 — Compile Queue row diagnostic modal.
+             Opened by clicking the ⓘ button on any row in Matched / Compile / Delivered.
+             Shows full reason text, delivery history, duplicate-delivery check,
+             Resend + Remove-from-Queue actions. -->
+        <div class="clear-cache-overlay" id="iqInfoOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="iqInfoTitle">
+          <div class="clear-cache-modal" style="max-width:560px">
+            <div class="clear-cache-hdr">
+              <h3 class="clear-cache-title" id="iqInfoTitle" style="color:#c7d2fe">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="10" cy="10" r="8"/><path d="M10 9v5"/><circle cx="10" cy="6.4" r="0.6" fill="currentColor"/></svg>
+                Row Diagnostics
+              </h3>
+              <button class="clear-cache-close" id="iqInfoClose" aria-label="Close" type="button">×</button>
+            </div>
+            <div class="clear-cache-body">
+              <div id="iqInfoLoading" class="clear-cache-note">Loading row details…</div>
+              <div id="iqInfoBody" hidden>
+                <!-- Identity block -->
+                <div class="iq-info-section">
+                  <div class="iq-info-label">Identity</div>
+                  <div class="iq-info-grid">
+                    <span class="iq-info-k">Account</span><span class="iq-info-v" id="iqInfoAcct">—</span>
+                    <span class="iq-info-k">Email</span><span class="iq-info-v" id="iqInfoEmail">—</span>
+                    <span class="iq-info-k">Broker</span><span class="iq-info-v" id="iqInfoBroker">—</span>
+                    <span class="iq-info-k">Request ID</span><span class="iq-info-v iq-info-mono" id="iqInfoId">—</span>
+                    <span class="iq-info-k">Submitted</span><span class="iq-info-v" id="iqInfoSubmitted">—</span>
+                  </div>
+                </div>
+                <!-- Current state block -->
+                <div class="iq-info-section">
+                  <div class="iq-info-label">Current State</div>
+                  <div class="iq-info-grid">
+                    <span class="iq-info-k">DB status</span><span class="iq-info-v iq-info-mono" id="iqInfoStatus">—</span>
+                    <span class="iq-info-k">Why stuck</span><span class="iq-info-v" id="iqInfoReason">—</span>
+                  </div>
+                </div>
+                <!-- Delivery history block -->
+                <div class="iq-info-section" id="iqInfoDeliverySection">
+                  <div class="iq-info-label">Delivery History</div>
+                  <div class="iq-info-grid">
+                    <span class="iq-info-k">Delivered at</span><span class="iq-info-v" id="iqInfoDeliveredAt">—</span>
+                    <span class="iq-info-k">Recipient</span><span class="iq-info-v" id="iqInfoRecipient">—</span>
+                    <span class="iq-info-k">Resends</span><span class="iq-info-v" id="iqInfoResendCount">0</span>
+                    <span class="iq-info-k">Last resend</span><span class="iq-info-v" id="iqInfoLastResend">—</span>
+                  </div>
+                </div>
+                <!-- Phase 16.7 Issue 3 — Retry Timeline + Match Attempts (Waiting for Match rows) -->
+                <div class="iq-info-section" id="iqInfoRetrySection" hidden>
+                  <div class="iq-info-label">Request Timeline</div>
+                  <div class="iq-info-grid">
+                    <span class="iq-info-k">Submitted</span><span class="iq-info-v" id="iqInfoRetrySubmitted">—</span>
+                    <span class="iq-info-k">Retry started</span><span class="iq-info-v" id="iqInfoRetryStarted">—</span>
+                    <span class="iq-info-k">Retry expires</span><span class="iq-info-v" id="iqInfoRetryExpires">—</span>
+                    <span class="iq-info-k">Window state</span><span class="iq-info-v" id="iqInfoRetryWindow">—</span>
+                  </div>
+                </div>
+                <div class="iq-info-section" id="iqInfoAttemptsSection" hidden>
+                  <div class="iq-info-label">Match Attempts</div>
+                  <div class="iq-info-grid">
+                    <span class="iq-info-k">Total checks</span><span class="iq-info-v" id="iqInfoAttemptsCount">0</span>
+                    <span class="iq-info-k">Last checked</span><span class="iq-info-v" id="iqInfoAttemptsLast">—</span>
+                    <span class="iq-info-k">Files checked</span><span class="iq-info-v" id="iqInfoAttemptsFiles">—</span>
+                  </div>
+                </div>
+                <div class="iq-info-section" id="iqInfoRecoverySection" hidden>
+                  <div class="iq-info-label" style="color:#22c55e">Recovery Status</div>
+                  <div id="iqInfoRecoveryNote" style="font-size:12.5px;color:#22c55e;background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.30);border-radius:4px;padding:8px 10px;line-height:1.45">—</div>
+                </div>
+                <!-- Duplicate detection block -->
+                <div class="iq-info-section" id="iqInfoDuplicateSection" hidden>
+                  <div class="iq-info-label" style="color:#fca5a5">Duplicate Detection</div>
+                  <div id="iqInfoDuplicateNote" class="iq-info-warning">—</div>
+                </div>
+                <!-- Compile failure block -->
+                <div class="iq-info-section" id="iqInfoFailureSection" hidden>
+                  <div class="iq-info-label" style="color:#fca5a5">Compile / Delivery Failure</div>
+                  <div id="iqInfoFailureNote" class="iq-info-warning">—</div>
+                </div>
+              </div>
+              <p class="clear-cache-error" id="iqInfoError" hidden></p>
+              <div class="clear-cache-actions" style="margin-top:18px;flex-wrap:wrap;gap:8px">
+                <button class="btn-ghost" id="iqInfoCloseBtn" type="button">Close</button>
+                <span class="clear-cache-spacer"></span>
+                <button class="iq-btn iq-btn--action" id="iqInfoResendBtn" type="button" hidden title="Re-send delivery email">RESEND</button>
+                <button class="iq-btn iq-btn--danger" id="iqInfoRemoveBtn" type="button" title="Remove this row from the queue (status -> rejected)">Remove from Queue</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="dash-section" id="section-ib-changed">
+          <div class="section-intro">
+            <h2 class="section-heading">IB Changed Accounts</h2>
+            <p class="section-sub">Clients who moved away from our IB referral network. Access is automatically revoked — they cannot receive future EA delivery, automated emails, or WhatsApp messages. <strong>All CRM history is preserved</strong> for recovery outreach. Detection: <code>partner_code</code> empty or ≠ <code>5dogk171n8</code> in broker file.</p>
+          </div>
+
+          <!-- Admin search panel -->
+          <div class="ib-changed-search">
+            <div class="ib-changed-search-hdr">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+                <circle cx="9" cy="9" r="5.5"/><path d="M16.5 16.5l-3-3"/>
+              </svg>
+              <span>Search Account by Number</span>
+            </div>
+            <div class="ib-changed-search-row">
+              <input type="text" id="ibChangedSearchInput" placeholder="e.g. 227694217" class="ib-changed-search-input" autocomplete="off" />
+              <button class="ib-changed-search-btn" id="ibChangedSearchBtn" type="button">Search Account</button>
+            </div>
+            <div class="ib-changed-search-result" id="ibChangedSearchResult" hidden>
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div class="intake-queue" id="ibChangedListWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">IB Changed Accounts</h3>
+              <span class="intake-queue-count intake-queue-count--danger" id="ibChangedListCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="ibChangedListRefresh" type="button">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="ib-changed-col-labels" aria-hidden="true">
+                <span>Account</span>
+                <span>Email</span>
+                <span>WhatsApp</span>
+                <span>Broker</span>
+                <span>IB Changed Date</span>
+                <span>Detection</span>
+              </div>
+              <div class="ib-changed-rows" id="ibChangedListBody"></div>
+              <p class="intake-queue-empty" id="ibChangedListEmpty" hidden>No IB-changed accounts yet. Auto-detection runs on every broker file upload.</p>
+            </div>
+          </div>
+        </section>
 
 
         <!-- ─────────────────────────────────────
@@ -1554,6 +1929,54 @@
 
   <!-- Mobile sidebar overlay -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Phase 15.6 Task 4 — Clear Cache modal -->
+  <div class="clear-cache-overlay" id="clearCacheOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="clearCacheTitle">
+    <div class="clear-cache-modal">
+      <div class="clear-cache-hdr">
+        <h3 class="clear-cache-title" id="clearCacheTitle">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+            <path d="M3 5h14M7 5V3h6v2M5 5l1 12h8l1-12M9 9v6M11 9v6"/>
+          </svg>
+          Clear Dashboard Cache
+        </h3>
+        <button class="clear-cache-close" id="clearCacheClose" aria-label="Close">×</button>
+      </div>
+      <div class="clear-cache-body">
+        <p class="clear-cache-note">
+          Choose which cached lists to rebuild from latest data.
+          <strong>Delivered accounts, sent email history, and the retry pool are never affected</strong> — those records always stay safe.
+        </p>
+        <ul class="clear-cache-list">
+          <li><label><input type="checkbox" data-cache-key="dashboard-counters"/> <span>Dashboard counters</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="pending-requests"/> <span>Pending Requests cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="waiting-match"   /> <span>Waiting for Match cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="matched-cache"   /> <span>Matched Accounts cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="compile-queue"   /> <span>Compile Queue cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="delivered-cache" /> <span>Delivered list cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="intake-cache"    /> <span>Broker File Intake parsed cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="email-queue"     /> <span>Email Queue + WA queue cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="active-cache"    /> <span>CRM — Active Clients</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="inactive-cache"  /> <span>CRM — Inactive Clients</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="highvalue-cache" /> <span>CRM — High Value</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="campaign-cache"  /> <span>Campaign Builder cache + draft</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="retry-pool-active"/> <span>Retry Pool — ACTIVE only (archived preserved)</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="ib-stars-cache"  /> <span>IB Stars activity cache</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="search-cache"    /> <span>Search input state</span></label></li>
+          <li><label><input type="checkbox" data-cache-key="session-storage" /> <span>Session storage (logs out admin)</span></label></li>
+        </ul>
+        <div class="clear-cache-actions">
+          <button class="clear-cache-select-all" id="clearCacheSelectAll" type="button">Select All</button>
+          <span class="clear-cache-spacer"></span>
+          <button class="btn-ghost" id="clearCacheCancel" type="button">Cancel</button>
+          <button class="btn-clear-confirm" id="clearCacheConfirm" type="button">Clear Selected</button>
+        </div>
+        <p class="clear-cache-safe" id="clearCacheSafeNote">
+          ✓ Delivered &nbsp; ✓ Sent Email Log &nbsp; ✓ Retry Pool &nbsp; — these will NOT be cleared
+        </p>
+      </div>
+    </div>
+  </div>
 
   <!-- Supabase JS SDK v2 — anon key only, RLS enforced -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

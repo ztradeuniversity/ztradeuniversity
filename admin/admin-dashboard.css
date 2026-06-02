@@ -167,6 +167,392 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ─── Phase 15.6 Task 2 — Campaign Builder primary nav item ─────
+   Visually elevated above the rest of the CRM list.  Brighter accent,
+   subtle background, badge on the right.  Highlight stays even when
+   active so the operator's eye is drawn here first. */
+.nav-item--primary {
+  background: linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(167,139,250,0.10) 100%);
+  border: 1px solid rgba(99,102,241,0.32);
+  color: #c7d2fe;
+  font-weight: 600;
+  margin: 4px 0 6px;
+  position: relative;
+}
+.nav-item--primary:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.28) 0%, rgba(167,139,250,0.16) 100%);
+  color: #e0e7ff;
+}
+.nav-item--primary.active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.36) 0%, rgba(167,139,250,0.20) 100%);
+  color: #ffffff;
+  border-color: rgba(99,102,241,0.55);
+}
+.nav-item--primary .nav-icon { opacity: 1; }
+
+.nav-item-badge {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+.nav-item-badge--primary {
+  background: rgba(255,255,255,0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+/* CRM section — slightly more breathing room around items so the list
+   feels less cramped after the layout reorder. */
+.nav-section-label + .nav-item,
+.nav-item + .nav-item {
+  margin-top: 2px;
+}
+
+/* Phase 15.6 Task 6 — IB Changed nav item gets a subtle danger tint */
+.nav-item--danger {
+  color: #fca5a5;
+}
+.nav-item--danger:hover {
+  background: rgba(239,68,68,0.10);
+  color: #fee2e2;
+}
+.nav-item--danger.active {
+  background: rgba(239,68,68,0.18);
+  color: #fef2f2;
+}
+.nav-item-badge--danger {
+  background: rgba(239,68,68,0.30);
+  color: #fef2f2;
+  border: 1px solid rgba(239,68,68,0.50);
+}
+
+/* ─── Phase 15.6 Task 3 — IB Stars layout (Active + Inactive) ── */
+.ib-stars-col-labels,
+.ib-stars-col-labels--inactive {
+  display: grid;
+  grid-template-columns: 130px 1fr 110px 130px 100px 90px;
+  gap: 0 12px;
+  padding: 11px 20px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-bright);
+}
+.ib-stars-col-labels--inactive {
+  grid-template-columns: 130px 1fr 110px 130px 100px 80px 90px;
+}
+.ib-stars-rows {
+  display: flex;
+  flex-direction: column;
+}
+.ib-stars-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 110px 130px 100px 90px;
+  gap: 0 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid rgba(42,45,58,0.6);
+  align-items: center;
+  font-size: 13px;
+}
+.ib-stars-row:last-child { border-bottom: none; }
+.ib-stars-row:hover { background: rgba(255,255,255,0.025); }
+.ib-stars-rows--inactive .ib-stars-row {
+  grid-template-columns: 130px 1fr 110px 130px 100px 80px 90px;
+  opacity: 0.85;
+}
+.ib-stars-acct { font-family: 'Courier New', monospace; font-size: 12px; color: var(--color-text); }
+.ib-stars-days--ok    { color: #4ade80; font-weight: 600; }
+.ib-stars-days--warn  { color: #f59e0b; font-weight: 600; }
+.ib-stars-days--alert { color: #ef4444; font-weight: 600; }
+.ib-stars-pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+.ib-stars-pill--active   { background: rgba(34,197,94,0.14);  border-color: rgba(34,197,94,0.45);  color: #22c55e; }
+.ib-stars-pill--inactive { background: rgba(245,158,11,0.14); border-color: rgba(245,158,11,0.45); color: #f59e0b; }
+.ib-stars-pill--notified { background: rgba(99,102,241,0.16); border-color: rgba(99,102,241,0.45); color: #818cf8; font-size: 9.5px; }
+.ib-stars-pill--pending  { background: rgba(148,163,184,0.16);border-color: rgba(148,163,184,0.45);color: var(--color-muted); font-size: 9.5px; }
+
+/* ─── Phase 15.6 Task 6 — IB Changed layout ────────────────── */
+.ib-changed-search {
+  background: var(--color-bg-card, #161927);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.ib-changed-search-hdr {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted-bright);
+  margin-bottom: 10px;
+}
+.ib-changed-search-row {
+  display: flex;
+  gap: 10px;
+}
+.ib-changed-search-input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+}
+.ib-changed-search-input:focus { outline: none; border-color: var(--color-accent); }
+.ib-changed-search-btn {
+  padding: 9px 16px;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ib-changed-search-btn:hover  { background: #5254d8; }
+.ib-changed-search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ib-changed-search-result {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: rgba(255,255,255,0.02);
+}
+.ib-changed-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 18px;
+  margin-bottom: 14px;
+}
+.ib-changed-result-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ib-changed-result-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+.ib-changed-result-value {
+  font-size: 13px;
+  color: var(--color-text);
+  word-break: break-word;
+}
+.ib-changed-result-actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+.btn-mark-ib-changed {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.btn-mark-ib-changed:hover  { background: #dc2626; }
+.btn-mark-ib-changed:disabled { opacity: 0.5; cursor: not-allowed; }
+.ib-changed-banner {
+  margin: 10px 0 6px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ib-changed-banner--already { background: rgba(239,68,68,0.10); color: #fca5a5; border: 1px solid rgba(239,68,68,0.30); }
+.ib-changed-banner--ok      { background: rgba(34,197,94,0.10); color: #4ade80; border: 1px solid rgba(34,197,94,0.30); }
+.ib-changed-banner--miss    { background: rgba(245,158,11,0.10); color: #fbbf24; border: 1px solid rgba(245,158,11,0.30); }
+
+.intake-queue-count--danger {
+  background: rgba(239,68,68,0.18);
+  color: #fca5a5;
+  border-color: rgba(239,68,68,0.45);
+}
+
+.ib-changed-col-labels {
+  display: grid;
+  grid-template-columns: 120px 1fr 130px 100px 150px 110px;
+  gap: 0 12px;
+  padding: 11px 20px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-bright);
+}
+.ib-changed-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 130px 100px 150px 110px;
+  gap: 0 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid rgba(42,45,58,0.6);
+  align-items: center;
+  font-size: 12.5px;
+}
+.ib-changed-row:last-child { border-bottom: none; }
+.ib-changed-row:hover { background: rgba(255,255,255,0.025); }
+.ib-changed-acct { font-family: 'Courier New', monospace; font-size: 12px; color: var(--color-text); }
+.ib-changed-detection {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+.ib-changed-detection--manual { background: rgba(99,102,241,0.16); border-color: rgba(99,102,241,0.45); color: #818cf8; }
+.ib-changed-detection--auto   { background: rgba(239,68,68,0.16);  border-color: rgba(239,68,68,0.5);   color: #ef4444; }
+
+/* ─── Phase 16 follow-up — Admin Password Gate ───────────────── */
+.admin-gate-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #1a1530 0%, #0a0814 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+.admin-gate-overlay[hidden] { display: none !important; }
+.admin-gate-card {
+  background: #161927;
+  border: 1px solid #2a2d3a;
+  border-radius: 14px;
+  padding: 38px 36px 30px;
+  width: min(380px, 92vw);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(167,139,250,0.10);
+}
+.admin-gate-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.admin-gate-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e0e7ff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.admin-gate-sub {
+  font-size: 12px;
+  color: #6b7280;
+  letter-spacing: 0.02em;
+}
+.admin-gate-form { display: flex; flex-direction: column; gap: 10px; }
+.admin-gate-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.admin-gate-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #0d0f1a;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
+  color: #e0e7ff;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.04em;
+}
+.admin-gate-input:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.18);
+}
+.admin-gate-error {
+  margin: 0;
+  font-size: 12px;
+  color: #fca5a5;
+  padding: 6px 10px;
+  background: rgba(239,68,68,0.10);
+  border: 1px solid rgba(239,68,68,0.30);
+  border-radius: 6px;
+}
+.admin-gate-submit {
+  padding: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  margin-top: 4px;
+}
+.admin-gate-submit:hover  { opacity: 0.92; }
+.admin-gate-submit:active { transform: translateY(1px); }
+.admin-gate-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.admin-gate-footer {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Sidebar logout button */
+.sidebar-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid rgba(239,68,68,0.30);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.sidebar-logout:hover {
+  background: rgba(239,68,68,0.10);
+  color: #fee2e2;
+  border-color: rgba(239,68,68,0.55);
+}
+
 /* Footer */
 .sidebar-footer {
   padding: 11px 14px;
@@ -298,6 +684,212 @@ html, body {
 }
 .btn-run:hover  { background: #5254d8; }
 .btn-run:active { background: #4547c4; }
+
+/* ─── Phase 16 follow-up — Engine countdown badge ──────────────── */
+.engine-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+  padding: 6px 11px;
+  border: 1px solid rgba(99,102,241,0.32);
+  border-radius: var(--radius-md);
+  background: rgba(99,102,241,0.06);
+  color: #c7d2fe;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.engine-countdown-label { color: #6b7280; font-weight: 500; }
+.engine-countdown-val { font-family: 'Courier New', monospace; color: #e0e7ff; font-weight: 700; min-width: 50px; text-align: right; }
+.engine-run-now {
+  margin-left: 6px;
+  padding: 4px 9px;
+  background: rgba(34,197,94,0.14);
+  border: 1px solid rgba(34,197,94,0.45);
+  border-radius: 6px;
+  color: #4ade80;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.engine-run-now:hover  { background: rgba(34,197,94,0.24); color: #d1fae5; }
+.engine-run-now:active { background: rgba(34,197,94,0.34); }
+.engine-run-now:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Phase 16.2 — inline row action buttons (Edit / Block) */
+.row-act-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.row-act-btn--edit { color: #c7d2fe; border-color: rgba(99,102,241,0.45); }
+.row-act-btn--edit:hover { background: rgba(99,102,241,0.18); color: #e0e7ff; }
+.row-act-btn--block { color: #fca5a5; border-color: rgba(239,68,68,0.45); }
+.row-act-btn--block:hover { background: rgba(239,68,68,0.16); color: #fee2e2; }
+.row-act-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Phase 15.6 Task 4 — Clear Cache button + modal ───────────── */
+.btn-clear-cache {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239,68,68,0.10);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.35);
+  border-radius: var(--radius-md);
+  padding: 7px 13px;
+  margin-right: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-clear-cache:hover  { background: rgba(239,68,68,0.20); color: #fee2e2; border-color: rgba(239,68,68,0.55); }
+.btn-clear-cache:active { background: rgba(239,68,68,0.30); }
+
+.clear-cache-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+.clear-cache-overlay[hidden] { display: none !important; }
+
+.clear-cache-modal {
+  background: var(--color-bg-card, #161927);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  width: min(480px, 92vw);
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+}
+.clear-cache-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(239,68,68,0.06);
+}
+.clear-cache-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fca5a5;
+  margin: 0;
+}
+.clear-cache-close {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+.clear-cache-close:hover { color: var(--color-text); }
+
+.clear-cache-body { padding: 16px 18px 18px; overflow-y: auto; }
+.clear-cache-note {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  color: var(--color-muted-bright);
+  line-height: 1.5;
+}
+.clear-cache-note strong { color: #4ade80; }
+
+.clear-cache-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.clear-cache-list li label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text);
+  background: rgba(255,255,255,0.02);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.clear-cache-list li label:hover { background: rgba(255,255,255,0.05); border-color: rgba(99,102,241,0.4); }
+.clear-cache-list input[type="checkbox"] { accent-color: #ef4444; transform: scale(1.15); cursor: pointer; }
+
+.clear-cache-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.clear-cache-spacer { flex: 1; }
+.clear-cache-select-all {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted-bright);
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.clear-cache-select-all:hover { color: var(--color-text); border-color: var(--color-accent); }
+
+.btn-clear-confirm {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.btn-clear-confirm:hover  { background: #dc2626; }
+.btn-clear-confirm:active { background: #b91c1c; }
+.btn-clear-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.clear-cache-safe {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: #4ade80;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-weight: 600;
+}
 
 
 /* ════════════════════════════════════════════════════════════════
@@ -1959,6 +2551,18 @@ html, body {
 .pool-col-labels--7 {
   grid-template-columns: 110px 1fr 90px 90px 80px 80px 130px;
 }
+/* Phase 15.6 Task 1 — 9-column layout with Email Status + WhatsApp pills */
+.pool-col-labels--9 {
+  grid-template-columns: 105px 1fr 90px 85px 70px 60px 120px 90px 90px;
+}
+/* Phase 16.4 Issue 3 — Pending Requests 6-col layout (Account / Email / Broker / Date+Time / Status / Actions) */
+.pool-col-labels--pending6 {
+  grid-template-columns: 105px 1fr 90px 200px 90px 170px;
+}
+/* Phase 16.7 — 10-column layout for Waiting for Match (added Info column) */
+.pool-col-labels--10 {
+  grid-template-columns: 100px 1fr 85px 85px 110px 60px 105px 85px 85px 44px;
+}
 
 /* ─── Data rows ──────────────────────────────────────────── */
 .pool-row {
@@ -1974,7 +2578,42 @@ html, body {
 .pool-row:last-child  { border-bottom: none; }
 .pool-row:hover       { background: rgba(255,255,255,0.025); }
 .pool-row--7          { grid-template-columns: 110px 1fr 90px 90px 80px 80px 130px; }
+.pool-row--9          { grid-template-columns: 105px 1fr 90px 85px 70px 60px 120px 90px 90px; }
+/* Phase 16.4 Issue 3 — Pending Requests 6-col data row matching label row */
+.pool-row--pending6   { grid-template-columns: 105px 1fr 90px 200px 90px 170px; }
+/* Phase 16.7 — 10-column data row matching the new label row */
+.pool-row--10         { grid-template-columns: 100px 1fr 85px 85px 110px 60px 105px 85px 85px 44px; }
+.pool-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  white-space: nowrap;
+}
+.pool-row-actions .row-act-btn { margin-left: 0; }
 .pool-row--archived   { opacity: 0.6; }
+
+/* ─── Phase 15.6 Task 1 — outbox status pills inside pool rows ── */
+.pool-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  cursor: default;
+  max-width: fit-content;
+}
+.pool-status-pill--sent     { background: rgba(34,197,94,0.14);  border-color: rgba(34,197,94,0.45);  color: #22c55e; }
+.pool-status-pill--pending  { background: rgba(245,158,11,0.14); border-color: rgba(245,158,11,0.45); color: #f59e0b; }
+.pool-status-pill--sending  { background: rgba(99,102,241,0.16); border-color: rgba(99,102,241,0.45); color: #818cf8; }
+.pool-status-pill--failed   { background: rgba(239,68,68,0.16);  border-color: rgba(239,68,68,0.5);   color: #ef4444; }
+.pool-status-pill--skipped  { background: rgba(148,163,184,0.16);border-color: rgba(148,163,184,0.45);color: var(--color-muted); }
+.pool-status-pill--none     { background: rgba(148,163,184,0.10);border-color: rgba(148,163,184,0.30);color: var(--color-muted); font-style: italic; }
 
 /* ─── Row cells ──────────────────────────────────────────── */
 .pool-row-acct {
@@ -2010,6 +2649,43 @@ html, body {
 }
 .pool-row-days--warn     { color: var(--color-warning); }
 .pool-row-days--critical { color: var(--color-danger);  }
+/* Phase 16.7 Issue 1 — countdown styling: green > 24h, amber 4–24h, red < 4h, gray expired */
+.pool-row-countdown {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.pool-row-countdown--ok       { color: var(--color-success); }
+.pool-row-countdown--warn     { color: var(--color-warning); }
+.pool-row-countdown--critical { color: var(--color-danger);  }
+.pool-row-countdown--expired  { color: var(--color-muted); font-weight: 600; font-style: italic; }
+/* Phase 16.7 Issue 5 — Recovered Match badge */
+.pool-row-recovered-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(34,197,94,0.14);
+  border: 1px solid rgba(34,197,94,0.45);
+  color: #22c55e;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.pool-row-recovered-time {
+  display: block;
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
 .pool-row-retries { font-size: 11px; color: var(--color-muted-bright); }
 .pool-row-checked { font-size: 11px; color: var(--color-muted-bright); }
 .pool-row-checked--archived {
@@ -3164,6 +3840,99 @@ html, body {
   gap: 5px;
   overflow: visible;
 }
+/* Phase 16.4 Issues 5 + 7 — multi-line Status cell: pill + context + delivery history */
+.iq-status {
+  white-space: normal;
+  overflow: visible;
+}
+.iq-context-label {
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--color-muted-bright);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.iq-history-line {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Phase 16.6 — per-row info ⓘ button + diagnostic modal */
+.iq-btn--info {
+  background: rgba(99,102,241,0.12);
+  border-color: rgba(99,102,241,0.35);
+  color: #c7d2fe;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 50%;
+  justify-content: center;
+}
+.iq-btn--info:hover:not(:disabled) {
+  background: rgba(99,102,241,0.24);
+  border-color: rgba(99,102,241,0.55);
+}
+.iq-info-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.iq-info-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.iq-info-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+}
+.iq-info-grid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 6px 12px;
+  font-size: 12.5px;
+}
+.iq-info-k {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-muted);
+  align-self: start;
+}
+.iq-info-v {
+  color: var(--color-text);
+  word-break: break-word;
+}
+.iq-info-mono {
+  font-family: 'Courier New', monospace;
+  font-size: 11.5px;
+  color: var(--color-text-strong);
+}
+.iq-info-warning {
+  font-size: 12px;
+  color: #fca5a5;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.28);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  line-height: 1.45;
+}
 
 /* Empty state */
 .intake-queue-empty {
@@ -3363,23 +4132,20 @@ html, body {
   color: var(--color-muted-bright);
 }
 
-/* Active: Account | Email | Country | Type | Platform | LastTrade | DaysAgo | Commission | Lots */
+/* Phase 16.2 — +Actions column on every CRM table */
 .crm-col-labels--active,
 .crm-row--active {
-  grid-template-columns: 110px 1fr 52px 120px 52px 90px 68px 100px 90px;
+  grid-template-columns: 110px 1fr 52px 120px 52px 90px 68px 100px 90px 120px;
 }
-
-/* Inactive: Account | Email | Country | Type | Platform | Joined | LastTrade | Commission */
 .crm-col-labels--inactive,
 .crm-row--inactive {
-  grid-template-columns: 110px 1fr 52px 120px 52px 90px 90px 100px;
+  grid-template-columns: 110px 1fr 52px 120px 52px 90px 90px 100px 120px;
 }
-
-/* High Value: # | Account | Email | Country | Type | Commission | Lots | LastTrade */
 .crm-col-labels--hv,
 .crm-row--hv {
-  grid-template-columns: 36px 110px 1fr 52px 120px 110px 90px 90px;
+  grid-template-columns: 36px 110px 1fr 52px 120px 110px 90px 90px 120px;
 }
+.crm-cell-actions { display: inline-flex; gap: 4px; }
 
 /* Search: Account | Email | Country | Type | Platform | LastTrade | Commission | Status */
 .crm-col-labels--search,

@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Request MT5 bot license activation through Z Trade University. Submit your MT5 account and verification screenshot for fast, secure approval." />
+  <meta name="description" content="Request MT5 bot license activation through Z Trade University. Submit your MT5 account, email, and WhatsApp number for fast, secure approval." />
   <meta name="keywords" content="mt5 bot license, mt5 license request, ztu bot activation, trading bot license, mt5 account verification" />
   <title>Request MT5 Bot License | Z Trade University</title>
   <link rel="canonical" href="https://ztradeuniversity.com/license-request.html" />
@@ -235,107 +235,8 @@
     }
     .lic-field.lic-error .lic-field-msg { display: block; }
 
-    /* Upload field — drag & drop */
-    .lic-drop {
-      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 10px; padding: 32px 22px; min-height: 168px;
-      border: 1.5px dashed rgba(200,156,63,0.42); border-radius: 14px;
-      background: linear-gradient(135deg, rgba(200,156,63,0.05) 0%, rgba(200,156,63,0.015) 100%);
-      cursor: pointer; transition: background .2s, border-color .2s, transform .12s;
-      text-align: center;
-    }
-    .lic-drop:hover { border-color: var(--gold); background: rgba(200,156,63,0.08); }
-    .lic-drop.is-dragging { border-color: var(--gold); background: rgba(200,156,63,0.13); transform: scale(1.005); }
-    .lic-drop.has-file {
-      padding: 18px; align-items: stretch; min-height: 0; cursor: default;
-      border-style: solid;
-      border-color: rgba(31,138,77,0.32);
-      background: linear-gradient(135deg, rgba(31,138,77,0.05) 0%, rgba(200,156,63,0.04) 100%);
-    }
-    .lic-drop.has-file:hover { border-color: rgba(31,138,77,0.45); background: linear-gradient(135deg, rgba(31,138,77,0.07) 0%, rgba(200,156,63,0.05) 100%); }
-    .lic-drop input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    .lic-drop.has-file input[type="file"] { display: none; }
-    .lic-drop-icon {
-      width: 52px; height: 52px; border-radius: 14px;
-      background: linear-gradient(135deg, rgba(200,156,63,0.18), rgba(200,156,63,0.08));
-      border: 1px solid rgba(200,156,63,0.28);
-      display: flex; align-items: center; justify-content: center; color: var(--gold3);
-    }
-    .lic-drop-title { font-size: 14.5px; font-weight: 700; color: var(--text); }
-    .lic-drop-title span { color: var(--gold3); text-decoration: underline; }
-    .lic-drop-hint { font-size: 12px; color: var(--muted); }
-    .lic-drop.lic-error { border-color: var(--danger); background: #fff5f5; }
-
-    /* File preview after upload — column layout with prominent image + success banner */
-    .lic-preview {
-      display: none; flex-direction: column; gap: 14px;
-      animation: licFadeIn .35s cubic-bezier(.2,.8,.2,1);
-    }
-    .lic-drop.has-file .lic-preview { display: flex; }
-    .lic-drop.has-file .lic-drop-icon,
-    .lic-drop.has-file .lic-drop-title,
-    .lic-drop.has-file .lic-drop-hint { display: none; }
-    @keyframes licFadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Green "Image uploaded successfully" confirmation banner */
-    .lic-preview-success {
-      display: inline-flex; align-items: center; gap: 9px;
-      align-self: flex-start;
-      background: linear-gradient(135deg, rgba(31,138,77,0.12), rgba(31,138,77,0.04));
-      border: 1px solid rgba(31,138,77,0.32);
-      color: #0f6b3a;
-      font-size: 12.5px; font-weight: 700; letter-spacing: .1px;
-      padding: 7px 14px 7px 8px; border-radius: 100px;
-    }
-    .lic-preview-check {
-      width: 20px; height: 20px; border-radius: 50%;
-      background: linear-gradient(135deg, #1f8a4d, #36b774);
-      color: #ffffff; display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(31,138,77,0.32);
-    }
-
-    /* Image preview frame — clean, prominent, contained */
-    .lic-preview-imgwrap {
-      position: relative; overflow: hidden;
-      background: #ffffff;
-      border: 1.5px solid rgba(31,138,77,0.22);
-      border-radius: 14px;
-      padding: 6px;
-      box-shadow: 0 4px 18px rgba(31,138,77,0.08), 0 1px 0 rgba(255,255,255,0.6) inset;
-    }
-    .lic-preview-img {
-      width: 100%; height: auto;
-      max-height: 280px;
-      object-fit: contain;
-      border-radius: 10px;
-      display: block;
-      background: #fdfbf6;
-    }
-
-    /* Filename row */
-    .lic-preview-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 2px 4px 0;
-    }
-    .lic-preview-meta { flex: 1; min-width: 0; }
-    .lic-preview-name {
-      font-size: 13.5px; font-weight: 700; color: var(--text);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      margin-bottom: 3px;
-    }
-    .lic-preview-size { font-size: 12px; color: var(--muted); }
-    .lic-preview-remove {
-      background: rgba(177,58,58,0.08); border: 1px solid rgba(177,58,58,0.22);
-      color: var(--danger); font-size: 12px; font-weight: 700;
-      padding: 7px 14px; border-radius: 100px; cursor: pointer;
-      transition: background .18s, color .18s;
-      flex-shrink: 0;
-    }
-    .lic-preview-remove:hover { background: rgba(177,58,58,0.16); }
+    /* Phase 16.8 — Screenshot upload CSS removed.
+       .lic-drop*, .lic-preview*, @keyframes licFadeIn no longer needed. */
 
     /* Submit button */
     .lic-submit {
@@ -492,25 +393,36 @@
     }
     .lic-toast-ghost:hover { background: rgba(45,30,5,0.10); }
 
-    /* ── Spam / junk folder reminder — visible on success only ── */
+    /* ── Phase 16.8 — Prominent spam-folder notice on success ──
+       Bold, centered, high-contrast, mobile-responsive.
+       Visible only inside a success toast. */
     .lic-spam-note {
       display: none;
-      font-size: 13px;
-      color: #6b5c3a;
-      background: rgba(200,156,63,0.09);
-      border: 1px solid rgba(200,156,63,0.28);
-      border-radius: 12px;
-      padding: 12px 15px;
-      margin-bottom: 18px;
-      text-align: left;
-      line-height: 1.6;
-    }
-    .lic-toast.is-success .lic-spam-note {
-      display: block;
-    }
-    .lic-spam-note strong {
+      font-size: 17px;
+      font-weight: 800;
       color: #5a3e10;
-      font-weight: 700;
+      background: linear-gradient(135deg, rgba(200,156,63,0.18), rgba(200,156,63,0.08));
+      border: 2px solid rgba(200,156,63,0.55);
+      border-radius: 14px;
+      padding: 18px 18px;
+      margin: 6px 0 22px;
+      text-align: center;
+      line-height: 1.45;
+      letter-spacing: .2px;
+      box-shadow: 0 6px 22px rgba(200,156,63,0.18), 0 1px 0 rgba(255,255,255,0.4) inset;
+      text-transform: none;
+    }
+    .lic-toast.is-success .lic-spam-note { display: block; }
+    .lic-spam-note strong {
+      color: #4a2f06;
+      font-weight: 900;
+    }
+    @media (max-width: 480px) {
+      .lic-spam-note {
+        font-size: 15.5px;
+        padding: 14px 14px;
+        border-radius: 12px;
+      }
     }
 
     /* ── FOOTER ── */
@@ -537,24 +449,36 @@
     ══════════════════════════════════════════ */
     @media (max-width: 920px) {
       .lic-form-wrap { grid-template-columns: 1fr; gap: 26px; }
-      .lic-info { order: -1; }
+      /* Phase 16.8 mobile UX — form FIRST, info card BELOW.
+         Previously the info card was forced above the form via order:-1, which
+         pushed the Submit button well below the fold on phones. */
+      .lic-form-card { order: 0; }
+      .lic-info      { order: 1; }
     }
     @media (max-width: 680px) {
       .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
-      .lic-hero { padding: 100px 0 64px; }
-      .lic-form-section { padding: 56px 0 72px; }
-      .lic-form-card { padding: 30px 24px 26px; }
+      /* Phase 16.8 — tighter hero so the form sits closer to viewport top */
+      .lic-hero { padding: 84px 0 40px; }
+      .lic-form-section { padding: 36px 0 56px; }
+      .lic-form-card { padding: 26px 20px 22px; }
       .lic-info { padding: 28px 24px; }
       .lic-trust-chip { padding: 8px 13px; font-size: 12px; }
+      /* Phase 16.8 — guarantee the Submit button is a comfortable thumb target
+         and never crushes against the ToS footer line. */
+      .lic-submit {
+        min-height: 52px;
+        padding: 16px 22px;
+        font-size: 15px;
+      }
+      .lic-tos { margin-top: 12px; }
       .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
     }
     @media (max-width: 420px) {
       .lic-hero .lic-hero-inner h1,
       .lic-hero h1 { letter-spacing: -1px !important; }
-      /* Preview stays column-flex on all sizes; image fills width naturally. Only
-         tighten the max-height a bit on small screens so users don't have to scroll. */
-      .lic-preview-img { max-height: 220px; }
-      .lic-preview-row { flex-wrap: wrap; }
+      /* Phase 16.8 — minor tighten so form-card title + Submit fit one phone screen */
+      .lic-form-card h2 { font-size: 22px; }
+      .lic-form-intro { font-size: 13.5px; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
       .footer-copy { order: 0; }
     }
@@ -761,7 +685,7 @@
       </div>
       <h1>Request MT5 Bot <em>License</em></h1>
       <p class="lic-subtitle">
-        Submit your MT5 account details and verification screenshot to receive bot activation approval from our team. Most license requests are reviewed within 24 hours.
+        Submit your MT5 account details to receive bot activation approval from our team. Most license requests are reviewed within 24 hours.
       </p>
       <div class="lic-trust-row">
         <div class="lic-trust-chip">
@@ -792,7 +716,7 @@
       <form class="lic-form-card" id="licenseForm" novalidate>
         <div class="lic-form-kicker">License Request</div>
         <h2>Submit your verification details</h2>
-        <p class="lic-form-intro">Provide your MT5 account number, a contact email, and a screenshot showing your MT5 account dashboard. Our compliance team will verify and activate your bot license.</p>
+        <p class="lic-form-intro">Provide your MT5 account number, a contact email, and your WhatsApp number. Our compliance team will verify your account through the broker and activate your bot license.</p>
 
         <!-- MT5 Account Number -->
         <div class="lic-field" id="field-account">
@@ -860,41 +784,9 @@
           <span class="lic-phone-hint" id="licPhoneHint" aria-live="polite"></span>
         </div>
 
-        <!-- Screenshot Upload -->
-        <div class="lic-field" id="field-file">
-          <label for="lic-file">Verification Screenshot <span class="lic-req">*</span></label>
-          <div class="lic-drop" id="licDrop">
-            <input id="lic-file" name="screenshot" type="file" accept="image/*" required />
-
-            <!-- Empty state -->
-            <div class="lic-drop-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            </div>
-            <div class="lic-drop-title">Drop your screenshot here, or <span>browse</span></div>
-            <div class="lic-drop-hint">PNG, JPG, or WEBP &middot; up to 8&nbsp;MB</div>
-
-            <!-- Preview state — column layout: success banner, full image, filename + remove row -->
-            <div class="lic-preview">
-              <div class="lic-preview-success">
-                <span class="lic-preview-check" aria-hidden="true">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                </span>
-                <span>Image uploaded successfully</span>
-              </div>
-              <div class="lic-preview-imgwrap">
-                <img class="lic-preview-img" id="licPreviewImg" alt="Screenshot preview" />
-              </div>
-              <div class="lic-preview-row">
-                <div class="lic-preview-meta">
-                  <div class="lic-preview-name" id="licPreviewName">filename.png</div>
-                  <div class="lic-preview-size" id="licPreviewSize">—</div>
-                </div>
-                <button type="button" class="lic-preview-remove" id="licPreviewRemove">Remove</button>
-              </div>
-            </div>
-          </div>
-          <span class="lic-field-msg" id="msg-file">Please upload your verification screenshot (image file).</span>
-        </div>
+        <!-- Phase 16.8 — Screenshot upload removed.
+             Verification now happens automatically via the broker partner
+             report; no manual proof-of-account upload is required. -->
 
         <!-- Submit — toggles between default label and loading state with spinner + text -->
         <button type="submit" class="lic-submit" id="licSubmit">
@@ -930,8 +822,8 @@
           <li>
             <div class="lic-step-num">2</div>
             <div class="lic-step-text">
-              <b>Upload a clear screenshot</b>
-              <small>A screenshot of your MT5 dashboard showing your account number is sufficient.</small>
+              <b>Add your WhatsApp number</b>
+              <small>So we can reach you quickly if there's an issue verifying your MT5 account with the broker.</small>
             </div>
           </li>
           <li>
@@ -945,7 +837,7 @@
 
         <div class="lic-info-foot">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span><b>Your data is private.</b> Screenshots are stored securely and used only for license verification.</span>
+          <span><b>Your data is private.</b> Submissions are encrypted in transit and used only for license verification.</span>
         </div>
       </aside>
 
@@ -961,8 +853,9 @@
     <div class="lic-toast-icon" id="licToastIcon"></div>
     <h3 id="licToastTitle">Request submitted</h3>
     <p id="licToastMsg">Your request has been submitted successfully. Our team will review and approve your MT5 bot license shortly.</p>
+    <!-- Phase 16.8 — prominent spam-folder reminder on success -->
     <div class="lic-spam-note" id="licSpamNote">
-      <strong>Check your Spam or Junk folder</strong> &mdash; Your activation email may take up to 48 hours to arrive and could land in your spam or junk folder. Please check there too.
+      <strong>Please check your Spam folder email within 48 hours.</strong>
     </div>
     <div class="lic-toast-actions">
       <a href="index.html" class="lic-toast-btn lic-toast-primary" id="licToastPrimary">
@@ -1003,17 +896,15 @@
 /* ════════════════════════════════════════════════════════════════════
    LICENSE REQUEST — Supabase integration
    ────────────────────────────────────────────────────────────────────
-   Replace the two placeholders below with your real Supabase project
-   credentials. Storage bucket: "screenshots". Database table:
-   "license_requests" (account_number, email, screenshot_url, status).
+   Database table:  "license_requests"
+   Fields written:  account_number, email, broker_name, whatsapp_number, status
+   Phase 16.8 — Screenshot upload removed. No Storage bucket is touched.
    ════════════════════════════════════════════════════════════════════ */
 
 const SUPABASE_URL      = 'https://yivkkfplrkcncjaqifxb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQ5MjcsImV4cCI6MjA5NDkwMDkyN30._CC6KIPVOhzMyOnLDtTpLbtMwee8y-991YFpoC3eC5Q';
 
-const STORAGE_BUCKET = 'screenshots';
-const TABLE_NAME     = 'license_requests';
-const MAX_FILE_BYTES = 8 * 1024 * 1024; /* 8 MB */
+const TABLE_NAME = 'license_requests';
 
 /* Initialize Supabase client (window.supabase is the SDK namespace from the CDN script tag;
    we hold our project-scoped client in `supabaseClient` to avoid colliding with that global). */
@@ -1036,7 +927,6 @@ const brokerInput   = document.getElementById('lic-broker');  /* EXTENSION — b
 const whatsappCcInput    = document.getElementById('lic-whatsapp-cc');
 const whatsappLocalInput = document.getElementById('lic-whatsapp-local');
 const licPhoneHint       = document.getElementById('licPhoneHint');
-const fileInput          = document.getElementById('lic-file');
 
 /* ── Phase 13.6 — Country dial-code directory ─────────────────────────────
    id    — ISO 3166-1 alpha-2 (used as <option value>)
@@ -1301,11 +1191,7 @@ function updatePhoneHint() {
   licPhoneHint.textContent = '';
   licPhoneHint.className   = 'lic-phone-hint';
 }
-const drop          = document.getElementById('licDrop');
-const previewImg    = document.getElementById('licPreviewImg');
-const previewName   = document.getElementById('licPreviewName');
-const previewSize   = document.getElementById('licPreviewSize');
-const previewRemove = document.getElementById('licPreviewRemove');
+/* Phase 16.8 — Screenshot drop / preview DOM refs removed. */
 const submitBtn     = document.getElementById('licSubmit');
 
 const toastOverlay  = document.getElementById('licToast');
@@ -1336,61 +1222,9 @@ function hideToast() {
 toastDismiss.addEventListener('click', hideToast);
 toastOverlay.addEventListener('click', function (e) { if (e.target === toastOverlay) hideToast(); });
 
-/* ── File upload UI ───────────────────────────────────── */
-function formatBytes(b) {
-  if (b < 1024) return b + ' B';
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-  return (b / (1024 * 1024)).toFixed(2) + ' MB';
-}
-
-function setSelectedFile(file) {
-  if (!file) return clearSelectedFile();
-
-  if (!file.type.startsWith('image/')) {
-    markFieldError('file', 'Please upload an image file (PNG, JPG, WEBP).');
-    return;
-  }
-  if (file.size > MAX_FILE_BYTES) {
-    markFieldError('file', 'Image is larger than 8 MB. Please upload a smaller screenshot.');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function (ev) { previewImg.src = ev.target.result; };
-  reader.readAsDataURL(file);
-
-  previewName.textContent = file.name;
-  previewSize.textContent = formatBytes(file.size);
-  drop.classList.add('has-file');
-  clearFieldError('file');
-}
-function clearSelectedFile() {
-  fileInput.value = '';
-  previewImg.src = '';
-  drop.classList.remove('has-file');
-}
-
-/* Click-to-browse is handled by the invisible <input type="file"> overlay. */
-fileInput.addEventListener('change', function (e) {
-  const f = e.target.files && e.target.files[0];
-  setSelectedFile(f);
-});
-previewRemove.addEventListener('click', function (e) {
-  e.stopPropagation();
-  clearSelectedFile();
-});
-
-/* Drag & drop visual feedback + handling. */
-['dragenter', 'dragover'].forEach(function (evt) {
-  drop.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.add('is-dragging'); });
-});
-['dragleave', 'drop'].forEach(function (evt) {
-  drop.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.remove('is-dragging'); });
-});
-drop.addEventListener('drop', function (e) {
-  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-  if (f) setSelectedFile(f);
-});
+/* Phase 16.8 — Screenshot upload UI removed:
+   formatBytes / setSelectedFile / clearSelectedFile / drag-drop / FileReader / preview render
+   no longer needed. submit handler below also strips file validation + storage upload. */
 
 /* ── Field validation helpers ─────────────────────────── */
 function markFieldError(name, message) {
@@ -1442,7 +1276,7 @@ form.addEventListener('submit', async function (e) {
   const email    = emailInput.value.trim();
   const broker   = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION */
   let   whatsapp = '';   /* Phase 13.6 — combined from country + local in validation block */
-  const file     = fileInput.files && fileInput.files[0];
+  /* Phase 16.8 — Screenshot file requirement removed. */
 
   /* Whitelist of valid broker values matches the dropdown <option>s — guards against
      manually-tampered form values. */
@@ -1477,7 +1311,7 @@ form.addEventListener('submit', async function (e) {
       whatsapp = pc.dial + localDigits;   /* e.g. +923001234567 */
     }
   }
-  if (!file)            { markFieldError('file');    ok = false; }
+  /* Phase 16.8 — Screenshot file validation removed. */
   if (!ok) return;
 
   /* 2. Guard against missing Supabase config ----------- */
@@ -1491,31 +1325,92 @@ form.addEventListener('submit', async function (e) {
   submitBtn.classList.add('is-loading');
 
   try {
-    /* 3a. Upload screenshot to Storage ----------------- */
-    const ext       = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
-    const safeAcct  = account.replace(/[^a-z0-9]/gi, '').slice(0, 24) || 'acct';
-    const filename  = safeAcct + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    /* Phase 16.5 PART C — IB Changed gate.
+       BEFORE the duplicate-delivery check, see whether this account is
+       already in ib_changed_accounts.  If so the client is no longer
+       under ZTU referral and MUST NOT enter the pipeline — show the
+       contact-support message and bail.  Soft-fail if the table doesn't
+       exist (older deploys) so submissions don't break. */
+    try {
+      const ibResp = await supabaseClient
+        .from('ib_changed_accounts')
+        .select('id, account_number')
+        .eq('account_number', account)
+        .limit(1);
+      if (!ibResp.error && Array.isArray(ibResp.data) && ibResp.data.length > 0) {
+        showToast(
+          'info',
+          'Account no longer under ZTU referral',
+          'Your trading account is no longer under Z Trade University referral. Please contact support for assistance.'
+        );
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+        return;   // STOP — do not upload, do not insert, do not deliver.
+      }
+    } catch (e) {
+      console.warn('[Submit] IB Changed gate check failed (continuing as non-fatal):', e);
+    }
 
-    const { error: uploadErr } = await supabaseClient
-      .storage
-      .from(STORAGE_BUCKET)
-      .upload(filename, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+    /* Phase 16.1 — Issue 2 + 6: duplicate-account guard.
+       BEFORE inserting any row, check whether this account_number was
+       already DELIVERED.  We only consider it a true duplicate if the
+       prior license_request reached terminal 'emailed' status
+       (Issue 6 — verified delivery, not pending). */
+    try {
+      const dupResp = await supabaseClient
+        .from(TABLE_NAME)
+        .select('id, status, email, created_at')
+        .eq('account_number', account)
+        .in('status', ['emailed', 'delivered'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (!dupResp.error && Array.isArray(dupResp.data) && dupResp.data.length > 0) {
+        const prior = dupResp.data[0];
+        showToast(
+          'info',
+          'Account already processed',
+          'Your account was already created and previously delivered (' + (prior.email || 'on file') + '). Please check your email inbox including the spam/junk folder. If not found, contact support.'
+        );
+        // Best-effort queue ONE "already_processed" notification — but only
+        // if not already pending. Soft-fail; does NOT block UI message.
+        try {
+          const existing = await supabaseClient
+            .from('email_outbox')
+            .select('id')
+            .eq('recipient_email', email)
+            .eq('template_type', 'already_processed')
+            .eq('status', 'pending')
+            .limit(1);
+          if (!existing.error && (!existing.data || existing.data.length === 0)) {
+            await supabaseClient.from('email_outbox').insert([{
+              status: 'pending',
+              template_type: 'already_processed',
+              recipient_email: email,
+              recipient_account: account,
+              subject: 'Your ZTU Bot — Account Already Delivered',
+              body_html: '<p>Hi ' + (email || 'there') + ',</p><p>Your account was already created and your EA file was previously delivered successfully.</p><p>Please check your email inbox including the spam/junk folder.</p><p>If not found, contact support.</p><p>Best regards,<br>ZTU Support Team</p>',
+              body_text: 'Your account was already created and your EA file was previously delivered. Please check your inbox/spam folder.',
+            }]);
+          }
+        } catch (e) { /* non-fatal */ }
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+        return;   // STOP — do not insert duplicate license_request
+      }
+    } catch (e) {
+      console.warn('[Submit] duplicate check failed, continuing:', e);
+    }
 
-    if (uploadErr) throw new Error('Upload failed: ' + (uploadErr.message || uploadErr));
-
-    /* 3b. Get the public URL --------------------------- */
-    const { data: pub } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(filename);
-    const screenshotUrl = (pub && pub.publicUrl) || '';
+    /* Phase 16.8 — Screenshot upload + Storage step removed.
+       Verification now runs entirely through the broker partner report.
+       The license_requests row no longer carries screenshot_url. */
 
     /* 3c. Insert into license_requests -----------------
-       EXTENSION — payload now carries broker_name. If the DB column doesn't
-       yet exist, Supabase returns a schema error (PGRST204 / column-not-found);
-       we detect that and retry without broker_name so submissions never break
-       during the rollout window before the column is added. */
+       EXTENSION — payload carries broker_name + whatsapp_number with graceful
+       cascade if the column is missing in the live schema. */
     const baseRow = {
       account_number:  account,
       email:           email,
-      screenshot_url:  screenshotUrl,
       status:          'pending'
     };
     const rowWithBroker   = Object.assign({}, baseRow, { broker_name: broker });
@@ -1570,7 +1465,6 @@ form.addEventListener('submit', async function (e) {
 
     /* Reset the form so the user sees a clean state if they close the toast. */
     form.reset();
-    clearSelectedFile();
   } catch (err) {
     console.error('[license-request] submission failed:', err);
 
@@ -1585,15 +1479,9 @@ form.addEventListener('submit', async function (e) {
     } else if (raw.indexOf('row-level security') !== -1 || raw.indexOf('rls') !== -1 || raw.indexOf('permission') !== -1 || raw.indexOf('not authorized') !== -1) {
       errTitle   = 'Permission issue';
       errMessage = 'Your request couldn’t be saved due to a permissions setting on our side. Please contact support so we can activate your license manually.';
-    } else if (raw.indexOf('upload failed') !== -1 || raw.indexOf('storage') !== -1 || raw.indexOf('bucket') !== -1 || raw.indexOf('object too large') !== -1) {
-      errTitle   = 'Upload failed';
-      errMessage = 'Your screenshot couldn’t be uploaded. Please try a different image (PNG, JPG, or WEBP, under 8 MB) and submit again.';
     } else if (raw.indexOf('database error') !== -1 || raw.indexOf('insert') !== -1 || raw.indexOf('duplicate') !== -1) {
       errTitle   = 'We couldn’t save your request';
-      errMessage = 'Your screenshot uploaded, but we couldn’t save your request details. Please try again in a moment — if the problem continues, contact support.';
-    } else if (raw.indexOf('invalid') !== -1 || raw.indexOf('mime') !== -1 || raw.indexOf('unsupported') !== -1) {
-      errTitle   = 'Invalid file';
-      errMessage = 'That file doesn’t look like a valid image. Please upload a PNG, JPG, or WEBP screenshot of your MT5 account.';
+      errMessage = 'We couldn’t save your request details. Please try again in a moment — if the problem continues, contact support.';
     } else if (err && err.message) {
       /* Surface the raw error as a last resort so users have something actionable. */
       errMessage = 'Something went wrong while submitting your request: ' + err.message;
