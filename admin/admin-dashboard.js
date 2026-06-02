@@ -3980,6 +3980,101 @@ const AdminDashboard = (() => {
   /* ─── Global Search ──────────────────────────────────────── */
   let _crmSearchTimer = null;
 
+  /* Phase 17B — Global search now spans EVERY client-bearing list:
+       1. CrmStore        (Active / Inactive / High Value / IB Stars / IB Changed)
+       2. State.requests  (Pending / Waiting / Matched / Compile / Delivered)
+       3. RetryPool       (Waiting-for-Match active + archived)
+       4. _blockedSet     (Blocked Clients)
+       5. _ibChangedSet   (IB Changed Accounts)
+     Each result row carries a source badge and an inline Edit button. */
+  function _globalSearchAggregate(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const seen = new Map();   // account -> merged row (first source wins for badge)
+    const push = (acct, row, source) => {
+      const key = normalizeAccountId(acct);
+      if (!key) return;
+      if (!seen.has(key)) {
+        seen.set(key, { ...row, account: key, _sources: new Set([source]) });
+      } else {
+        const existing = seen.get(key);
+        // enrich missing fields without overwriting
+        if (!existing.email    && row.email)    existing.email    = row.email;
+        if (!existing.whatsapp && row.whatsapp) existing.whatsapp = row.whatsapp;
+        if (!existing.broker   && row.broker)   existing.broker   = row.broker;
+        if (!existing.lastTrade && row.lastTrade) existing.lastTrade = row.lastTrade;
+        if (!existing.country  && row.country)  existing.country  = row.country;
+        if (!existing.accountType && row.accountType) existing.accountType = row.accountType;
+        if (!existing.platform && row.platform) existing.platform = row.platform;
+        existing._sources.add(source);
+      }
+    };
+    // 1. CrmStore
+    try {
+      (CrmStore.getAll() || []).forEach(r => push(r.account, r, 'crm'));
+    } catch (_) {}
+    // 2. State.requests (pending / matched / compiled / emailed / delivered / unmatched / rejected / ib_changed)
+    try {
+      (State.requests || []).forEach(r => push(r.account, {
+        email: r.email, whatsapp: r.whatsapp, broker: r.broker,
+        country: '', accountType: r.status || '', platform: '',
+        lastTrade: r.lastUpdate || '',
+      }, 'request'));
+    } catch (_) {}
+    // 3. RetryPool (Waiting for Match)
+    try {
+      if (typeof RetryPool !== 'undefined' && RetryPool) {
+        (RetryPool.getAll() || []).forEach(e => push(e.account, {
+          email: e.email, whatsapp: '', broker: e.broker,
+          country: '', accountType: e.archived ? 'archived' : 'retrying',
+          platform: '', lastTrade: e.requestDate || '',
+        }, 'retry'));
+      }
+    } catch (_) {}
+    // 4. Blocked
+    try {
+      if (typeof _blockedSet !== 'undefined' && _blockedSet && _blockedSet.size) {
+        _blockedSet.forEach(acct => push(acct, {
+          email: '', whatsapp: '', broker: '', country: '',
+          accountType: 'blocked', platform: '', lastTrade: '',
+        }, 'blocked'));
+      }
+    } catch (_) {}
+    // 5. IB Changed
+    try {
+      if (typeof _ibChangedRowsCache !== 'undefined' && Array.isArray(_ibChangedRowsCache)) {
+        _ibChangedRowsCache.forEach(row => push(row.account_number, {
+          email: row.email, whatsapp: row.whatsapp, broker: row.broker,
+          country: '', accountType: 'ib_changed', platform: '',
+          lastTrade: row.last_active_date || '',
+        }, 'ibch'));
+      }
+    } catch (_) {}
+
+    let arr = Array.from(seen.values());
+    if (q) {
+      arr = arr.filter(r =>
+        (r.account    && String(r.account).toLowerCase().includes(q))    ||
+        (r.email      && String(r.email).toLowerCase().includes(q))      ||
+        (r.whatsapp   && String(r.whatsapp).toLowerCase().includes(q))   ||
+        (r.broker     && String(r.broker).toLowerCase().includes(q))     ||
+        (r.country    && String(r.country).toLowerCase().includes(q))    ||
+        (r.accountType&& String(r.accountType).toLowerCase().includes(q))||
+        (r.platform   && String(r.platform).toLowerCase().includes(q))
+      );
+    }
+    return arr;
+  }
+
+  function _badgeForSource(srcSet) {
+    // Priority: blocked > ibch > request > retry > crm
+    if (srcSet.has('blocked')) return '<span class="crm-source-badge crm-source-badge--blocked">Blocked</span>';
+    if (srcSet.has('ibch'))    return '<span class="crm-source-badge crm-source-badge--ibch">IB Changed</span>';
+    if (srcSet.has('request')) return '<span class="crm-source-badge crm-source-badge--request">Request</span>';
+    if (srcSet.has('retry'))   return '<span class="crm-source-badge crm-source-badge--retry">Waiting</span>';
+    if (srcSet.has('crm'))     return '<span class="crm-source-badge crm-source-badge--crm">Client</span>';
+    return '';
+  }
+
   function renderCrmSearch(q) {
     const resultsEl = document.getElementById('crmSearchResults');
     const countEl   = document.getElementById('crmSearchCount');
@@ -3988,7 +4083,13 @@ const AdminDashboard = (() => {
 
     if (!resultsEl) return;
 
-    if (CrmStore.isEmpty()) {
+    /* Phase 17B — aggregate across all stores instead of CrmStore-only.
+       Show the no-data state only if EVERY store is empty. */
+    const allEmpty =
+      (typeof CrmStore !== 'undefined' && CrmStore.isEmpty ? CrmStore.isEmpty() : true) &&
+      (!State.requests || State.requests.length === 0) &&
+      (typeof RetryPool !== 'undefined' && RetryPool && RetryPool.getAll && RetryPool.getAll().length === 0);
+    if (allEmpty) {
       if (tableCard)  tableCard.hidden  = true;
       if (noDataEl) { noDataEl.innerHTML = buildCrmNoData(); noDataEl.hidden = false; }
       if (countEl)    countEl.textContent = '—';
@@ -3999,31 +4100,46 @@ const AdminDashboard = (() => {
     if (noDataEl)   noDataEl.hidden   = true;
 
     const query   = (q || '').trim();
-    const results = CrmStore.search(query);
+    const results = _globalSearchAggregate(query);
 
     if (countEl) {
       countEl.textContent = query
         ? `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"`
-        : `${results.length} total client${results.length !== 1 ? 's' : ''}`;
+        : `${results.length} total record${results.length !== 1 ? 's' : ''}`;
     }
 
     if (results.length === 0) {
-      resultsEl.innerHTML = `<div class="crm-no-results">No clients match "${esc(query)}".</div>`;
+      resultsEl.innerHTML = `<div class="crm-no-results">No accounts match "${esc(query)}".</div>`;
       return;
     }
 
-    resultsEl.innerHTML = results.map(r =>
-      `<div class="crm-row crm-row--search">
-        <span class="crm-cell-acct">${esc(r.account)}</span>
-        <span class="crm-cell-email">${fmtContact(r)}</span>
+    resultsEl.innerHTML = results.map(r => {
+      const contactCell = (r.email || r.whatsapp)
+        ? esc((r.email || '') + (r.whatsapp ? '  ·  ' + r.whatsapp : ''))
+        : '<span class="crm-never">No contact on file</span>';
+      const badge = _badgeForSource(r._sources || new Set());
+      const isActive = !!r.lastTrade && !(r._sources && r._sources.has('blocked')) && !(r._sources && r._sources.has('ibch'));
+      return `<div class="crm-row crm-row--search">
+        <span class="crm-cell-acct">${esc(r.account)} ${badge}</span>
+        <span class="crm-cell-email">${contactCell}</span>
         <span class="crm-cell-cc">${esc(r.country||'—')}</span>
         <span class="crm-cell-type">${esc(r.accountType||'—')}</span>
         <span class="crm-cell-plat">${esc(r.platform||'—')}</span>
         <span class="crm-cell-date">${r.lastTrade ? esc(r.lastTrade) : '<span class="crm-never">Never</span>'}</span>
-        <span class="crm-cell-money">${fmtMoney(r.reward)}</span>
-        <span class="crm-badge ${r.lastTrade?'crm-badge--active':'crm-badge--inactive'}">${r.lastTrade?'Active':'Inactive'}</span>
-      </div>`
-    ).join('');
+        <span class="crm-cell-money">${fmtMoney(r.reward || 0)}</span>
+        <span class="crm-badge ${isActive?'crm-badge--active':'crm-badge--inactive'}">${isActive?'Active':'Inactive'}</span>
+        <span><button class="crm-row-edit-btn" data-global-edit="${esc(r.account)}" type="button" title="Edit this client">✎ Edit</button></span>
+      </div>`;
+    }).join('');
+
+    // Wire the Edit buttons — Phase 17B Issue 3
+    resultsEl.querySelectorAll('[data-global-edit]').forEach(b => {
+      b.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const acct = b.dataset.globalEdit;
+        if (typeof _openEditClientModal === 'function') _openEditClientModal(acct);
+      });
+    });
   }
 
 
@@ -6674,17 +6790,72 @@ const AdminDashboard = (() => {
   async function _openEditClientModal(account) {
     const acct = normalizeAccountId(account);
     if (!acct) return;
-    const req = State.requests.find(r => normalizeAccountId(r.account) === acct);
+    /* Phase 17B — populate from EVERY known source in priority order so the
+       admin always sees existing values even when the account isn't in
+       license_requests (e.g. pure broker-file accounts).
+         1. license_requests row (State.requests) — most trusted (carries id)
+         2. CrmStore localStorage — broker-intake mirror
+         3. broker_accounts Supabase — canonical broker mirror
+         4. client_overrides latest — most recent admin edit
+       Each source can fill missing fields without overwriting earlier ones. */
+    const req      = State.requests.find(r => normalizeAccountId(r.account) === acct) || null;
+    let pre = {
+      email:    (req && req.email)    || '',
+      whatsapp: (req && req.whatsapp) || '',
+      broker:   (req && req.broker)   || '',
+    };
+    try {
+      if (typeof CrmStore !== 'undefined' && CrmStore) {
+        const crm = CrmStore.getAll().find(r => normalizeAccountId(r.account) === acct);
+        if (crm) {
+          if (!pre.email)    pre.email    = crm.email    || '';
+          if (!pre.whatsapp) pre.whatsapp = crm.whatsapp || '';
+          if (!pre.broker)   pre.broker   = crm.broker   || crm.broker_name || '';
+        }
+      }
+    } catch (_) {}
+    if (supabaseClient && DataLayer && DataLayer.isLive) {
+      try {
+        const { data } = await supabaseClient
+          .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+          .select('email, whatsapp, broker')
+          .eq('account_number', acct)
+          .limit(1);
+        if (data && data[0]) {
+          if (!pre.email)    pre.email    = data[0].email    || '';
+          if (!pre.whatsapp) pre.whatsapp = data[0].whatsapp || '';
+          if (!pre.broker)   pre.broker   = data[0].broker   || '';
+        }
+      } catch (_) {}
+      try {
+        const { data: ovRows } = await supabaseClient
+          .from('client_overrides')
+          .select('email, whatsapp, broker, created_at')
+          .eq('account_number', acct)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (ovRows && ovRows[0]) {
+          if (ovRows[0].email)    pre.email    = ovRows[0].email;
+          if (ovRows[0].whatsapp) pre.whatsapp = ovRows[0].whatsapp;
+          if (ovRows[0].broker)   pre.broker   = ovRows[0].broker;
+        }
+      } catch (_) {}
+    }
     _editClientState.account = acct;
-    _editClientState.currentRow = req || null;
+    _editClientState.currentRow = req || { account: acct, email: pre.email, whatsapp: pre.whatsapp, broker: pre.broker };
     const ov = document.getElementById('editClientOverlay');
     document.getElementById('editClientAcct').textContent = acct;
-    document.getElementById('editClientEmail').value    = req ? req.email    : '';
-    document.getElementById('editClientWhatsapp').value = req ? req.whatsapp : '';
-    document.getElementById('editClientBroker').value   = req ? req.broker   : '';
+    document.getElementById('editClientEmail').value    = pre.email    || '';
+    document.getElementById('editClientWhatsapp').value = pre.whatsapp || '';
+    document.getElementById('editClientBroker').value   = pre.broker   || '';
     const errEl = document.getElementById('editClientError');
     if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
     if (ov) ov.hidden = false;
+    // Move focus into email so the admin can immediately edit.
+    setTimeout(() => {
+      const f = document.getElementById('editClientEmail');
+      if (f) try { f.focus(); } catch (_) {}
+    }, 60);
   }
   function _closeEditClientModal() { const ov = document.getElementById('editClientOverlay'); if (ov) ov.hidden = true; }
 
@@ -6778,17 +6949,74 @@ const AdminDashboard = (() => {
       showToast('client_overrides exception: ' + (e.message || e), 'error', 8000);
     }
 
-    // ── 3. Refresh overrides cache + visible tables so the new values
-    //       appear immediately on Active/Inactive/HighValue without reload.
+    // ── 3. Phase 17B — propagate edit to EVERY downstream store so the new
+    //       values appear on every section page without a reload.
     try {
-      await _refreshClientOverrides();   // Phase 16.2 — pull latest snapshot
+      // 3a. Update CrmStore localStorage (Active/Inactive/HighValue/Global Search).
+      if (typeof CrmStore !== 'undefined' && CrmStore && typeof CrmStore._read === 'function') {
+        const store = CrmStore._read();
+        const k = String(acct).trim();
+        if (store[k]) {
+          if (newEmail) store[k].email    = newEmail;
+          if (newWa)    store[k].whatsapp = newWa;
+          if (newBrk)   store[k].broker   = newBrk;
+          CrmStore._write && CrmStore._write();
+        } else {
+          // Account exists in license_requests but not yet in CrmStore — add a stub
+          store[k] = {
+            account: k, email: newEmail || '', whatsapp: newWa || '',
+            broker: newBrk || '', lastTrade: '', createdAt: '', reward: 0,
+            volumeLots: 0, volumeUsd: 0, accountType: '', country: '',
+            platform: '', uid: '', importedAt: Date.now(),
+          };
+          CrmStore._write && CrmStore._write();
+        }
+      }
+      // 3b. Update broker_accounts in Supabase (feeds IB Stars Active/Inactive + Library OTP).
+      if (supabaseClient && DataLayer && DataLayer.isLive) {
+        try {
+          const baPatch = {};
+          if (newEmail) baPatch.email    = newEmail;
+          if (newWa)    baPatch.whatsapp = newWa;
+          if (newBrk)   baPatch.broker   = newBrk;
+          if (Object.keys(baPatch).length > 0) {
+            await supabaseClient
+              .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
+              .upsert([{ account_number: acct, ...baPatch }], { onConflict: 'account_number' });
+          }
+        } catch (e) { console.warn('[EditClient] broker_accounts propagate failed (non-fatal):', e); }
+      }
+      // 3c. Update State.requests in memory (Pending/Waiting/Matched/Compile/Delivered rows).
+      if (Array.isArray(State.requests)) {
+        State.requests.forEach(r => {
+          if (normalizeAccountId(r.account) === acct) {
+            if (newEmail) r.email    = newEmail;
+            if (newWa)    r.whatsapp = newWa;
+            if (newBrk)   r.broker   = newBrk;
+          }
+        });
+      }
+      // 3d. Pull latest client_overrides snapshot and re-fetch live data.
+      await _refreshClientOverrides();
       await loadData();
-      if (typeof renderPendingRequests       === 'function') renderPendingRequests();
-      if (typeof renderMatchedAccountsSection=== 'function') renderMatchedAccountsSection();
-      if (typeof renderCrmActive             === 'function') renderCrmActive();
-      if (typeof renderCrmInactive           === 'function') renderCrmInactive();
-      if (typeof renderCrmHighValue          === 'function') renderCrmHighValue();
-    } catch (e) {}
+      // 3e. Re-render every client-facing section.
+      if (typeof renderPendingRequests        === 'function') renderPendingRequests();
+      if (typeof renderWaitingForMatch        === 'function') renderWaitingForMatch();
+      if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+      if (typeof renderCompileQueueSection    === 'function') renderCompileQueueSection();
+      if (typeof renderDeliveredSection       === 'function') renderDeliveredSection();
+      if (typeof renderCrmActive              === 'function') renderCrmActive();
+      if (typeof renderCrmInactive            === 'function') renderCrmInactive();
+      if (typeof renderCrmHighValue           === 'function') renderCrmHighValue();
+      if (typeof _renderIbStarsActive         === 'function') _renderIbStarsActive();
+      if (typeof _renderIbStarsInactive       === 'function') _renderIbStarsInactive();
+      if (typeof _renderIbChangedList         === 'function') _renderIbChangedList();
+      if (typeof _renderBlockedList           === 'function') _renderBlockedList();
+      if (typeof renderCrmSearch              === 'function') {
+        const q = document.getElementById('crmSearchInput');
+        renderCrmSearch(q ? q.value : '');
+      }
+    } catch (e) { console.warn('[EditClient] propagate/render pass failed:', e); }
 
     // ── 4. Final outcome — only claim success when both writes succeeded ─
     if (licenseUpdated && overrideSaved) {
@@ -6801,6 +7029,269 @@ const AdminDashboard = (() => {
     return;
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     Phase 17C — Admin-side License Request submission
+     ───────────────────────────────────────────────────────────
+     Mirrors license-request.html submitForm() exactly so the
+     resulting row is processed by the existing automation as if
+     a customer had filled in the public form themselves.
+
+     Audit metadata (when the columns exist in the live schema):
+       created_by       = 'admin'
+       created_by_user  = ADMIN_CONFIG.username || 'admin'
+       admin_note       = optional free text
+
+     The graceful cascade pattern from license-request.html is
+     re-used: if any optional column is missing in the live
+     license_requests schema, the INSERT is retried with that
+     column dropped, so the submission never fails for schema
+     drift reasons.
+  ══════════════════════════════════════════════════════════ */
+  let _createLicenseState = { lastDupe: null, force: false };
+
+  function _openCreateLicenseModal() {
+    const ov = document.getElementById('createLicenseOverlay');
+    if (!ov) return;
+    _createLicenseState = { lastDupe: null, force: false };
+    document.getElementById('createLicenseAcct').value     = '';
+    document.getElementById('createLicenseEmail').value    = '';
+    document.getElementById('createLicenseWhatsapp').value = '';
+    document.getElementById('createLicenseBroker').value   = '';
+    document.getElementById('createLicenseNote').value     = '';
+    const err = document.getElementById('createLicenseError');
+    if (err) { err.hidden = true; err.textContent = ''; }
+    const dup = document.getElementById('createLicenseDupeWarning');
+    if (dup) dup.style.display = 'none';
+    ov.hidden = false;
+    setTimeout(() => {
+      const f = document.getElementById('createLicenseAcct');
+      if (f) try { f.focus(); } catch (_) {}
+    }, 60);
+  }
+  function _closeCreateLicenseModal() {
+    const ov = document.getElementById('createLicenseOverlay');
+    if (ov) ov.hidden = true;
+  }
+
+  async function _submitAdminLicenseRequest() {
+    const errEl = document.getElementById('createLicenseError');
+    const dupEl = document.getElementById('createLicenseDupeWarning');
+    const dupText = document.getElementById('createLicenseDupeText');
+    const setErr = (msg) => { if (errEl) { errEl.textContent = msg; errEl.hidden = false; } };
+    const clearErr = () => { if (errEl) { errEl.textContent = ''; errEl.hidden = true; } };
+    clearErr();
+
+    const account  = (document.getElementById('createLicenseAcct').value || '').trim();
+    const email    = (document.getElementById('createLicenseEmail').value || '').trim();
+    const whatsapp = (document.getElementById('createLicenseWhatsapp').value || '').trim();
+    const broker   = (document.getElementById('createLicenseBroker').value || '').trim();
+    const note     = (document.getElementById('createLicenseNote').value || '').trim();
+
+    // 1. Validate required fields
+    if (!account)             { setErr('Account number is required.'); return; }
+    if (!/^\d{2,}$/.test(account.replace(/\D/g,''))) { setErr('Account number should be numeric.'); return; }
+    if (!email)               { setErr('Email is required.'); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setErr('Email looks invalid.'); return; }
+    if (!whatsapp)            { setErr('WhatsApp number is required.'); return; }
+    if (!/^\+?\d{6,}$/.test(whatsapp.replace(/\s|-/g,''))) { setErr('WhatsApp number should be digits, with optional leading +.'); return; }
+    if (!broker)              { setErr('Broker is required.'); return; }
+
+    if (!supabaseClient || !DataLayer || !DataLayer.isLive) {
+      setErr('Supabase is not live — cannot submit.');
+      return;
+    }
+
+    const normAcct = normalizeAccountId(account);
+
+    // 2. IB Changed gate — same check the public form runs
+    try {
+      const ibResp = await supabaseClient
+        .from('ib_changed_accounts')
+        .select('id, account_number')
+        .eq('account_number', normAcct)
+        .limit(1);
+      if (!ibResp.error && ibResp.data && ibResp.data.length > 0) {
+        setErr('Account is flagged as IB Changed (no longer under our referral). Submission blocked.');
+        return;
+      }
+    } catch (e) {
+      console.warn('[CreateLicense] IB Changed gate check failed (continuing):', e);
+    }
+
+    // 3. Duplicate guard — unless admin already clicked Continue Anyway
+    if (!_createLicenseState.force) {
+      try {
+        const dResp = await supabaseClient
+          .from(DB_SCHEMA.TABLE)
+          .select('id, status, email, created_at')
+          .eq('account_number', normAcct)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (!dResp.error && dResp.data && dResp.data.length > 0) {
+          const prior = dResp.data[0];
+          _createLicenseState.lastDupe = prior;
+          if (dupEl && dupText) {
+            const when = prior.created_at ? fmtDateTime(prior.created_at) : '—';
+            dupText.innerHTML =
+              'Account <strong>' + esc(normAcct) + '</strong> already has a request — status <strong>' +
+              esc(String(prior.status || 'unknown')) + '</strong> from ' + esc(when) +
+              (prior.email ? ' for <code>' + esc(prior.email) + '</code>' : '') + '.';
+            dupEl.style.display = 'block';
+          }
+          return; // wait for admin to click View Existing or Continue Anyway
+        }
+      } catch (e) {
+        console.warn('[CreateLicense] duplicate check failed (continuing):', e);
+      }
+    }
+
+    // 4. Build payload — same shape as license-request.html
+    //    + Phase 17C audit metadata.
+    const adminUser = (typeof ADMIN_CONFIG !== 'undefined' && ADMIN_CONFIG && ADMIN_CONFIG.username) || 'admin';
+    const baseRow = {
+      account_number: normAcct,
+      email:          email,
+      status:         'pending',
+    };
+    const withAudit = Object.assign({}, baseRow, {
+      created_by:      'admin',
+      created_by_user: adminUser,
+      admin_note:      note || null,
+    });
+    const withBroker   = Object.assign({}, withAudit,    { broker_name:     broker });
+    const withWhatsapp = Object.assign({}, withBroker,   { whatsapp_number: whatsapp });
+
+    // 5. Insert with graceful cascade — drop optional columns one by one
+    //    if PostgREST reports the column is missing.
+    const cascade = [
+      { row: withWhatsapp, drop: null },
+      { row: withBroker,   drop: 'whatsapp_number' },
+      { row: withAudit,    drop: 'broker_name' },
+      { row: baseRow,      drop: 'audit metadata' },
+    ];
+
+    const isMissingColErr = (err) => {
+      if (!err) return false;
+      const m = String(err.message || '').toLowerCase();
+      const code = String(err.code || '');
+      return code === 'PGRST204' ||
+             m.indexOf('schema cache') !== -1 ||
+             m.indexOf('could not find') !== -1 ||
+             m.indexOf('column') !== -1;
+    };
+
+    let insertedId = null;
+    let lastErr = null;
+    for (const step of cascade) {
+      try {
+        const resp = await supabaseClient.from(DB_SCHEMA.TABLE)
+          .insert([step.row])
+          .select('id, account_number, status, created_at');
+        if (resp.error) {
+          lastErr = resp.error;
+          if (isMissingColErr(resp.error)) {
+            console.warn('[CreateLicense] missing column detected — retrying without:', step.drop || '(initial)');
+            continue;
+          }
+          // Hard error — stop the cascade
+          setErr('Database error [' + (resp.error.code || '?') + ']: ' + resp.error.message);
+          return;
+        }
+        if (resp.data && resp.data[0]) {
+          insertedId = resp.data[0].id;
+          break;
+        }
+      } catch (e) {
+        lastErr = e;
+        console.warn('[CreateLicense] insert exception:', e);
+      }
+    }
+
+    if (!insertedId) {
+      setErr('Could not save the request: ' + (lastErr && lastErr.message ? lastErr.message : 'unknown error'));
+      return;
+    }
+
+    showToast('✓ License request submitted on behalf of customer — id=' + insertedId + '. Entering the standard pipeline.', 'success', 6000);
+    _closeCreateLicenseModal();
+
+    // 6. Pull the fresh row into State.requests + propagate, then fire the
+    //    SAME post-submission sweeps the public form benefits from on the
+    //    next dashboard tick: auto-match against broker_accounts (Phase 16.4
+    //    Issue 1), pending sweep, and full re-render.
+    try {
+      await loadData();
+      try { if (typeof _autoMatchPendingViaBroker === 'function') await _autoMatchPendingViaBroker(); } catch (_) {}
+      try { if (typeof _sweepStalePendingViaSupabase === 'function') await _sweepStalePendingViaSupabase(); } catch (_) {}
+      if (typeof renderPendingRequests        === 'function') renderPendingRequests();
+      if (typeof renderWaitingForMatch        === 'function') renderWaitingForMatch();
+      if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+      if (typeof renderCompileQueueSection    === 'function') renderCompileQueueSection();
+      if (typeof renderDeliveredSection       === 'function') renderDeliveredSection();
+      if (typeof renderCrmActive              === 'function') renderCrmActive();
+      if (typeof renderCrmSearch              === 'function') {
+        const q = document.getElementById('crmSearchInput');
+        renderCrmSearch(q ? q.value : '');
+      }
+    } catch (e) { console.warn('[CreateLicense] post-submit refresh failed:', e); }
+  }
+
+  function _bindCreateLicense() {
+    const openBtn   = document.getElementById('btnOpenCreateLicense');
+    const closeBtn  = document.getElementById('createLicenseClose');
+    const cancelBtn = document.getElementById('createLicenseCancel');
+    const submitBtn = document.getElementById('createLicenseSubmit');
+    const ov        = document.getElementById('createLicenseOverlay');
+    if (openBtn   && !openBtn.dataset.bound)   { openBtn.addEventListener('click', _openCreateLicenseModal);  openBtn.dataset.bound   = '1'; }
+    if (closeBtn  && !closeBtn.dataset.bound)  { closeBtn.addEventListener('click', _closeCreateLicenseModal); closeBtn.dataset.bound  = '1'; }
+    if (cancelBtn && !cancelBtn.dataset.bound) { cancelBtn.addEventListener('click', _closeCreateLicenseModal); cancelBtn.dataset.bound = '1'; }
+    if (submitBtn && !submitBtn.dataset.bound) {
+      submitBtn.addEventListener('click', async () => {
+        submitBtn.disabled = true;
+        const orig = submitBtn.textContent;
+        submitBtn.textContent = 'Submitting…';
+        try { await _submitAdminLicenseRequest(); }
+        finally { submitBtn.textContent = orig; submitBtn.disabled = false; }
+      });
+      submitBtn.dataset.bound = '1';
+    }
+    // Backdrop click + Esc close
+    if (ov && !ov.dataset.boundBackdrop) {
+      ov.addEventListener('click', (e) => { if (e.target === ov) _closeCreateLicenseModal(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && ov && !ov.hidden) _closeCreateLicenseModal();
+      });
+      ov.dataset.boundBackdrop = '1';
+    }
+    // Duplicate-warning buttons
+    const dvBtn = document.getElementById('createLicenseDupeView');
+    const dcBtn = document.getElementById('createLicenseDupeContinue');
+    if (dvBtn && !dvBtn.dataset.bound) {
+      dvBtn.addEventListener('click', () => {
+        const acct = (document.getElementById('createLicenseAcct').value || '').trim();
+        _closeCreateLicenseModal();
+        // Open the diagnostic modal if available; else just jump to pending.
+        if (_createLicenseState.lastDupe && typeof _openIqInfoModal === 'function') {
+          _openIqInfoModal(_createLicenseState.lastDupe.id, normalizeAccountId(acct));
+        } else {
+          // Navigate to Pending Requests section
+          const target = document.querySelector('[data-section="pending"]');
+          if (target) target.click();
+        }
+      });
+      dvBtn.dataset.bound = '1';
+    }
+    if (dcBtn && !dcBtn.dataset.bound) {
+      dcBtn.addEventListener('click', () => {
+        _createLicenseState.force = true;
+        const dup = document.getElementById('createLicenseDupeWarning');
+        if (dup) dup.style.display = 'none';
+        _submitAdminLicenseRequest();
+      });
+      dcBtn.dataset.bound = '1';
+    }
+  }
+
   function bindEditAndBlock() {
     const ec = document.getElementById('editClientClose');
     const ecCancel = document.getElementById('editClientCancel');
@@ -6808,6 +7299,8 @@ const AdminDashboard = (() => {
     if (ec) ec.addEventListener('click', _closeEditClientModal);
     if (ecCancel) ecCancel.addEventListener('click', _closeEditClientModal);
     if (ecSave) ecSave.addEventListener('click', _saveEditClient);
+    // Phase 17C — wire Create License Request button + modal
+    _bindCreateLicense();
 
     // Blocked-Clients search + refresh
     const bsBtn = document.getElementById('blockedSearchBtn');

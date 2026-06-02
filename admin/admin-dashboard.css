@@ -320,6 +320,144 @@ html, body {
   font-family: 'Courier New', monospace;
 }
 .ib-changed-search-input:focus { outline: none; border-color: var(--color-accent); }
+
+/* ════════════════════════════════════════════════════════════════
+   Phase 17B — Edit Client modal bulletproof input contrast
+   Forces clear text + caret + placeholder visibility across themes
+   and browser dark-mode overrides.
+═════════════════════════════════════════════════════════════════ */
+#editClientOverlay .ib-changed-search-input {
+  background: #1e2230 !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255,255,255,0.22) !important;
+  font-family: 'Inter','Segoe UI',system-ui,sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  caret-color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+#editClientOverlay .ib-changed-search-input::placeholder {
+  color: rgba(255,255,255,0.45) !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+}
+#editClientOverlay .ib-changed-search-input:focus {
+  outline: none !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.32) !important;
+  background: #232838 !important;
+}
+#editClientOverlay .ib-changed-search-input:-webkit-autofill,
+#editClientOverlay .ib-changed-search-input:-webkit-autofill:focus,
+#editClientOverlay .ib-changed-search-input:-webkit-autofill:hover {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #1e2230 inset !important;
+  caret-color: #ffffff !important;
+}
+#editClientOverlay label {
+  color: rgba(255,255,255,0.78) !important;
+}
+#editClientOverlay .ib-changed-result-value {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+/* Phase 17B — search-result Edit button (compact, clear contrast) */
+.crm-row-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 4px;
+  border: 1px solid rgba(99,102,241,0.45);
+  background: rgba(99,102,241,0.12);
+  color: #c7d2fe;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.crm-row-edit-btn:hover {
+  background: rgba(99,102,241,0.24);
+  color: #e0e7ff;
+}
+/* Phase 17B — global-search badge for the result source */
+.crm-source-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+}
+.crm-source-badge--crm      { background: rgba(34,197,94,0.16);  color: #4ade80; }
+.crm-source-badge--request  { background: rgba(245,158,11,0.16); color: #fbbf24; }
+.crm-source-badge--retry    { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.crm-source-badge--blocked  { background: rgba(239,68,68,0.16);  color: #fca5a5; }
+.crm-source-badge--ibch     { background: rgba(217,70,239,0.16); color: #f0abfc; }
+
+/* Phase 17C — Create License Request button + modal inputs */
+.btn-create-license {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99,102,241,0.14);
+  color: #c7d2fe;
+  border: 1px solid rgba(99,102,241,0.45);
+  border-radius: var(--radius-md);
+  padding: 7px 13px;
+  margin-right: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-create-license:hover {
+  background: rgba(99,102,241,0.26);
+  color: #e0e7ff;
+  border-color: rgba(99,102,241,0.7);
+}
+/* Reuse the bulletproof Phase 17B input contrast inside the create-license modal */
+#createLicenseOverlay .ib-changed-search-input {
+  background: #1e2230 !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255,255,255,0.22) !important;
+  font-family: 'Inter','Segoe UI',system-ui,sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  caret-color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+#createLicenseOverlay .ib-changed-search-input::placeholder {
+  color: rgba(255,255,255,0.45) !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+}
+#createLicenseOverlay .ib-changed-search-input:focus {
+  outline: none !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.32) !important;
+  background: #232838 !important;
+}
+#createLicenseOverlay .ib-changed-search-input:-webkit-autofill,
+#createLicenseOverlay .ib-changed-search-input:-webkit-autofill:focus,
+#createLicenseOverlay .ib-changed-search-input:-webkit-autofill:hover {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #1e2230 inset !important;
+  caret-color: #ffffff !important;
+}
+#createLicenseOverlay label {
+  color: rgba(255,255,255,0.78) !important;
+}
+#createLicenseOverlay select.ib-changed-search-input option {
+  background: #1e2230;
+  color: #ffffff;
+}
 .ib-changed-search-btn {
   padding: 9px 16px;
   background: var(--color-accent);
@@ -4147,10 +4285,11 @@ html, body {
 }
 .crm-cell-actions { display: inline-flex; gap: 4px; }
 
-/* Search: Account | Email | Country | Type | Platform | LastTrade | Commission | Status */
+/* Search: Account | Email | Country | Type | Platform | LastTrade | Commission | Status | Edit
+   Phase 17B — added 9th column for the inline Edit button (Global Search). */
 .crm-col-labels--search,
 .crm-row--search {
-  grid-template-columns: 110px 1fr 52px 120px 52px 90px 100px 72px;
+  grid-template-columns: 140px 1fr 52px 110px 52px 90px 90px 72px 70px;
 }
 
 
@@ -4523,7 +4662,7 @@ html, body {
   .crm-col-labels--hv,
   .crm-row--hv { grid-template-columns: 32px 100px 1fr 48px 100px 100px 80px 80px; }
   .crm-col-labels--search,
-  .crm-row--search { grid-template-columns: 100px 1fr 48px 100px 48px 80px 90px 66px; }
+  .crm-row--search { grid-template-columns: 120px 1fr 48px 100px 48px 80px 80px 66px 60px; }
 }
 
 @media (max-width: 900px) {
@@ -4551,9 +4690,9 @@ html, body {
   .crm-row--hv         > span:nth-child(n+4) { display: none; }
   /* Search: Account | Email | Status */
   .crm-col-labels--search,
-  .crm-row--search { grid-template-columns: 90px 1fr 66px; }
-  .crm-col-labels--search > span:nth-child(n+3):not(:nth-last-child(1)),
-  .crm-row--search         > span:nth-child(n+3):not(:nth-last-child(1)) { display: none; }
+  .crm-row--search { grid-template-columns: 110px 1fr 66px 56px; }
+  .crm-col-labels--search > span:nth-child(n+3):not(:nth-last-child(2)):not(:nth-last-child(1)),
+  .crm-row--search         > span:nth-child(n+3):not(:nth-last-child(2)):not(:nth-last-child(1)) { display: none; }
 }
 
 

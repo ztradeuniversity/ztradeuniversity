@@ -261,6 +261,13 @@
               ▶ Run Now
             </button>
           </div>
+          <!-- Phase 17C — Admin-side License Request (acts as a customer on the same pipeline) -->
+          <button class="btn-create-license" id="btnOpenCreateLicense" title="Submit a license request on behalf of a customer who can't access the public form">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+              <path d="M7 2v10M2 7h10"/>
+            </svg>
+            Create License Request
+          </button>
           <!-- Phase 15.6 Task 4 — admin cache management -->
           <button class="btn-clear-cache" id="btnOpenClearCache" title="Clear dashboard caches (delivery history is preserved)">
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
@@ -1232,6 +1239,82 @@
           </div>
         </div>
 
+        <!-- ════════════════════════════════════════════════════════════════
+             Phase 17C — Create License Request modal
+             Mirrors the public license-request.html submit exactly:
+               1. IB Changed gate (block if account ∈ ib_changed_accounts)
+               2. Duplicate-account guard (warn if prior emailed/delivered row)
+               3. INSERT into license_requests with status='pending'
+                  + audit columns (created_by='admin', created_by_user, admin_note)
+                  + graceful cascade if any column is missing in live schema.
+             The new row is INDISTINGUISHABLE from a public submission for the
+             engine, matching, compile queue, delivery, email automation, IB
+             Stars, and Library Access systems.
+        ═════════════════════════════════════════════════════════════════ -->
+        <div class="clear-cache-overlay" id="createLicenseOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="createLicenseTitle">
+          <div class="clear-cache-modal" style="max-width:520px">
+            <div class="clear-cache-hdr">
+              <h3 class="clear-cache-title" id="createLicenseTitle" style="color:#c7d2fe">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M10 4v12M4 10h12"/></svg>
+                Create License Request (on behalf of customer)
+              </h3>
+              <button class="clear-cache-close" id="createLicenseClose" aria-label="Close" type="button">×</button>
+            </div>
+            <div class="clear-cache-body">
+              <p class="clear-cache-note" style="margin-bottom:14px">
+                This submits the exact same record a customer would create from the public License Request page. It enters the normal pipeline: Pending → Matching → Waiting / Matched → Compile → Delivery → Email Automation. <strong>Audit fields</strong> (<code>created_by='admin'</code>, <code>admin_note</code>) are added for traceability only — they do not change processing.
+              </p>
+
+              <!-- Duplicate warning banner (shown by JS after duplicate check) -->
+              <div id="createLicenseDupeWarning" class="iq-info-warning" style="margin-bottom:14px;display:none">
+                <strong>Existing request found.</strong>
+                <div id="createLicenseDupeText" style="margin-top:6px;font-weight:500"></div>
+                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button type="button" class="iq-btn iq-btn--action" id="createLicenseDupeView">View Existing Request</button>
+                  <button type="button" class="iq-btn iq-btn--danger" id="createLicenseDupeContinue">Continue Anyway</button>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
+                  Account Number <span style="color:#fca5a5">*</span>
+                  <input type="text" id="createLicenseAcct" class="ib-changed-search-input" style="margin-top:4px" inputmode="numeric" autocomplete="off" placeholder="e.g. 171929726" />
+                </label>
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
+                  Email <span style="color:#fca5a5">*</span>
+                  <input type="email" id="createLicenseEmail" class="ib-changed-search-input" style="margin-top:4px" autocomplete="off" placeholder="customer@example.com" />
+                </label>
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
+                  WhatsApp Number <span style="color:#fca5a5">*</span>
+                  <input type="tel" id="createLicenseWhatsapp" class="ib-changed-search-input" style="margin-top:4px" autocomplete="off" placeholder="+923001234567 (full international format)" />
+                </label>
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
+                  Broker <span style="color:#fca5a5">*</span>
+                  <select id="createLicenseBroker" class="ib-changed-search-input" style="margin-top:4px">
+                    <option value="">— select broker —</option>
+                    <option value="Exness">Exness</option>
+                    <option value="HFM">HFM</option>
+                    <option value="Pepperstone">Pepperstone</option>
+                    <option value="IC Markets">IC Markets</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
+                  Admin Notes (optional)
+                  <textarea id="createLicenseNote" class="ib-changed-search-input" style="margin-top:4px;min-height:68px;resize:vertical;font-family:'Inter',sans-serif" placeholder="e.g. customer phoned support, couldn't access form, broker confirmed verbally"></textarea>
+                </label>
+              </div>
+
+              <p class="clear-cache-error" id="createLicenseError" hidden></p>
+              <div class="clear-cache-actions" style="margin-top:18px">
+                <button class="btn-ghost" id="createLicenseCancel" type="button">Cancel</button>
+                <span class="clear-cache-spacer"></span>
+                <button class="btn-clear-confirm" id="createLicenseSubmit" type="button" style="background:#6366f1">Submit License Request</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Phase 16.6 — Compile Queue row diagnostic modal.
              Opened by clicking the ⓘ button on any row in Matched / Compile / Delivered.
              Shows full reason text, delivery history, duplicate-delivery check,
@@ -1645,7 +1728,7 @@
 
           <div class="section-intro">
             <h2 class="section-heading">Global Search</h2>
-            <p class="section-sub">Search all CRM client records by account number, email address, country, account type, or platform. Results update as you type.</p>
+            <p class="section-sub">Phase 17B — search every account across every list: Pending Requests, Waiting for Match, Matched, Compile Queue, Delivered, Active / Inactive Clients, High Value, IB Stars Active / Inactive, Blocked Clients, and IB Changed. Match by account number, email, WhatsApp, broker, country, or platform. Click <strong>✎ Edit</strong> on any row to update contact details — changes propagate to every list instantly.</p>
           </div>
 
           <!-- Search bar (static) -->
@@ -1670,15 +1753,17 @@
 
           <!-- Results table (dynamic column labels + rows) -->
           <div class="crm-table-card" id="crmSearchTableCard" hidden>
+            <!-- Phase 17B — added Edit column -->
             <div class="crm-col-labels crm-col-labels--search">
               <span>Account</span>
-              <span>Email</span>
+              <span>Contact (email · phone)</span>
               <span>Country</span>
-              <span>Type</span>
+              <span>Type / Status</span>
               <span>Platform</span>
               <span>Last Trade</span>
               <span>Commission</span>
               <span>Status</span>
+              <span>Edit</span>
             </div>
             <div class="crm-table-body" id="crmSearchResults">
               <div class="crm-no-results">Type to search clients&hellip;</div>
