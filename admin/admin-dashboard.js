@@ -2354,6 +2354,19 @@ const AdminDashboard = (() => {
     // Phase 13 — populate CRM store from all broker file rows
     CrmStore.importFromRows(IntakeState.parsedRows, IntakeState.accountCol);
 
+    /* Phase 16.9 — also populate IbStars classification immediately during
+       parse so the IB Stars Active / Inactive sidebar pages refresh on
+       upload (previously they only filled when admin clicked Run Automation).
+       Wrapped in try/catch so a malformed last-trade column cannot break
+       the rest of the intake flow. */
+    try {
+      if (typeof IbStars !== 'undefined' && IbStars && typeof IbStars.updateFromBrokerRows === 'function') {
+        IbStars.updateFromBrokerRows(IntakeState.parsedRows, IntakeState.columns || []);
+      }
+    } catch (e) {
+      console.warn('[Phase16.9] IbStars.updateFromBrokerRows during parse failed (non-fatal):', e);
+    }
+
     const result = runMatchEngine(accounts);
     IntakeState.matchResult = result;
 
@@ -5454,17 +5467,32 @@ const AdminDashboard = (() => {
     // Build payload — skip rows without a valid account number.
     // Aggregate duplicates inside the same file so onConflict has nothing
     // to fight: keep the newest row by created_at, otherwise the last seen.
+    /* Phase 16.9 — classify ib_star_status inline so broker_accounts can
+       feed both the IB Stars Active page AND the Library OTP gate.
+       Rule (matches IbStars.updateFromBrokerRows + IB_CFG.ACTIVE_DAYS):
+         * last_trade_date within 30 days  → 'active'
+         * last_trade_date older than 30d  → 'inactive'
+         * last_trade_date null/unparseable → null  (unclassified) */
+    const ACTIVE_WINDOW_MS = IB_CFG.ACTIVE_DAYS * 86_400_000;
+    function _ibStatusFromLastTradeIso(iso) {
+      if (!iso) return null;
+      const ms = new Date(iso).getTime();
+      if (isNaN(ms)) return null;
+      return (Date.now() - ms) <= ACTIVE_WINDOW_MS ? 'active' : 'inactive';
+    }
+
     const byAccount = new Map();
     for (const row of rows) {
       const acct = normalizeAccountId(row[acctCol]);
       if (!acct) continue;
+      const lastTradeIso = map.last_trade ? _isoDateOrNull(row[map.last_trade]) : null;
       const payload = {
         account_number:     acct,
         email:              map.email        ? (row[map.email]        || null) : null,
         whatsapp:           map.whatsapp     ? (row[map.whatsapp]     || null) : null,
         broker:             map.broker       ? (row[map.broker]       || null) : null,
         partner_code:       map.partner_code ? (row[map.partner_code] || null) : null,
-        last_trade_date:    map.last_trade   ? _isoDateOrNull(row[map.last_trade])   : null,
+        last_trade_date:    lastTradeIso,
         account_created_at: map.created_at   ? _isoDateOrNull(row[map.created_at])   : null,
         account_type:       map.account_type ? (row[map.account_type] || null) : null,
         country:            map.country      ? (row[map.country]      || null) : null,
@@ -5472,6 +5500,7 @@ const AdminDashboard = (() => {
         revenue_total:      map.reward       ? _numOrNull(row[map.reward])      : null,
         volume_lots:        map.volume_lots  ? _numOrNull(row[map.volume_lots]) : null,
         volume_usd:         map.volume_usd   ? _numOrNull(row[map.volume_usd])  : null,
+        ib_star_status:     _ibStatusFromLastTradeIso(lastTradeIso),   // Phase 16.9
         source_file:        sourceFileName || null,
         updated_at:         new Date().toISOString(),
       };

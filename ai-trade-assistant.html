@@ -635,12 +635,22 @@
     .send-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
     .send-btn:disabled { opacity: .38; cursor: not-allowed; transform: none; }
 
-    .in-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 1px; }
-    .in-disc { font-size: 10.5px; color: var(--mut2); line-height: 1.5; }
+    .in-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 1px; gap: 8px; }
+    .in-disc { font-size: 10.5px; color: var(--mut2); line-height: 1.5; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; }
     .in-disc a { color: var(--muted); text-decoration: none; }
     .in-disc a:hover { color: var(--gold2); }
     .in-count { font-size: 10.5px; color: var(--mut2); }
     .in-count.warn { color: var(--amber); }
+    .voice-lang-wrap { display: inline-flex; align-items: center; gap: 4px; color: var(--gold2); }
+    .voice-lang {
+      background: var(--bg4) !important; color: var(--gold2) !important;
+      border: 1px solid var(--brd) !important; border-radius: 7px;
+      font-size: 10.5px; font-weight: 600; padding: 2px 4px; cursor: pointer;
+      font-family: 'Inter', sans-serif; outline: none; max-width: 130px;
+    }
+    .voice-lang:focus { border-color: var(--brs) !important; }
+    .in-disc-text { color: var(--mut2); }
+    @media (max-width: 480px) { .in-disc-text { display: none; } }
 
     /* ── MOBILE DRAWER ───────────────────────────────────── */
     .drawer-ov {
@@ -1081,8 +1091,20 @@
       </div>
       <div class="in-meta">
         <span class="in-disc">
-          Educational market context only — not financial advice. ·
-          <a href="https://t.me/ztradeuniversity" target="_blank" rel="noopener">Signals → Telegram</a>
+          <span class="voice-lang-wrap" title="Language for voice input">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            <select id="voiceLang" class="voice-lang" aria-label="Voice input language">
+              <option value="en-US">English</option>
+              <option value="ur-PK">اردو (Urdu)</option>
+              <option value="ar-SA">العربية (Arabic)</option>
+              <option value="id-ID">Bahasa Indonesia</option>
+              <option value="ms-MY">Bahasa Melayu</option>
+              <option value="vi-VN">Tiếng Việt</option>
+              <option value="bn-BD">বাংলা (Bengali)</option>
+              <option value="th-TH">ภาษาไทย (Thai)</option>
+            </select>
+          </span>
+          <span class="in-disc-text"> · Educational only — not financial advice.</span>
         </span>
         <span class="in-count hidden" id="inCount"></span>
       </div>
@@ -1526,10 +1548,7 @@ async function sendMessage() {
 
   } catch (err) {
     think?.remove();
-    const msg = err.message?.includes('ANTHROPIC_API_KEY')
-      ? 'The AI service needs configuration — add ANTHROPIC_API_KEY to your Cloudflare Pages environment variables.'
-      : `Something went wrong: ${err.message}. Please try again.`;
-    renderMsg('ai', msg);
+    renderMsg('ai', `Something went wrong reaching the assistant: ${err.message}. Please try again in a moment.`);
   } finally {
     streaming = false; sendBtn.disabled = false;
     chatIn.disabled = false; chatIn.focus();
@@ -1559,22 +1578,72 @@ chatIn.addEventListener('keydown', e => {
 });
 
 /* ─── VOICE ──────────────────────────────────────────────────── */
+const VLANG_KEY = 'ztu_ai_voicelang';
+
 function initVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { micBtn.classList.add('no-support'); micBtn.title = 'Voice input not supported in this browser'; return; }
+  const langSel = document.getElementById('voiceLang');
+
+  // Restore saved voice language preference
+  if (langSel) {
+    const saved = localStorage.getItem(VLANG_KEY);
+    if (saved) langSel.value = saved;
+    langSel.addEventListener('change', () => {
+      localStorage.setItem(VLANG_KEY, langSel.value);
+      if (voiceRec) voiceRec.lang = langSel.value;
+    });
+  }
+
+  if (!SR) {
+    micBtn.classList.add('no-support');
+    micBtn.title = 'Voice input is not supported in this browser. Try Chrome, Edge, or Safari.';
+    return;
+  }
+
   voiceRec = new SR();
-  voiceRec.continuous = false; voiceRec.interimResults = true; voiceRec.maxAlternatives = 1;
+  voiceRec.continuous = false;
+  voiceRec.interimResults = true;
+  voiceRec.maxAlternatives = 1;
+  voiceRec.lang = (langSel && langSel.value) || 'en-US';
+
   voiceRec.onresult = e => {
-    chatIn.value = Array.from(e.results).map(r => r[0].transcript).join('');
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    chatIn.value = transcript;
     resize(); updateCount();
   };
-  voiceRec.onend = () => { isRec = false; micBtn.classList.remove('rec'); micBtn.setAttribute('aria-label','Start voice input'); };
-  voiceRec.onerror = () => { isRec = false; micBtn.classList.remove('rec'); };
+  voiceRec.onend = () => {
+    isRec = false; micBtn.classList.remove('rec');
+    micBtn.setAttribute('aria-label', 'Start voice input');
+  };
+  voiceRec.onerror = (ev) => {
+    isRec = false; micBtn.classList.remove('rec');
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+      renderMsg('ai', '🎙️ Microphone access is blocked. Please allow microphone permission in your browser settings, then tap the mic again.');
+    } else if (ev.error === 'no-speech') {
+      renderMsg('ai', "🎙️ I didn't catch any speech. Tap the mic and try speaking again.");
+    }
+  };
 }
+
 micBtn.addEventListener('click', () => {
+  if (micBtn.classList.contains('no-support')) {
+    renderMsg('ai', '🎙️ Voice input needs a supported browser (Chrome, Edge, or Safari) on an HTTPS connection. You can still type your question.');
+    return;
+  }
   if (!voiceRec) return;
-  if (isRec) { voiceRec.stop(); }
-  else { voiceRec.start(); isRec = true; micBtn.classList.add('rec'); micBtn.setAttribute('aria-label','Stop recording'); }
+  if (isRec) {
+    voiceRec.stop();
+  } else {
+    // Sync language each time in case the user changed the selector
+    const langSel = document.getElementById('voiceLang');
+    voiceRec.lang = (langSel && langSel.value) || 'en-US';
+    try {
+      voiceRec.start();
+      isRec = true;
+      micBtn.classList.add('rec');
+      micBtn.setAttribute('aria-label', 'Stop recording');
+    } catch { /* start() throws if already started — ignore */ }
+  }
 });
 
 /* ─── MARKET DATA ────────────────────────────────────────────── */

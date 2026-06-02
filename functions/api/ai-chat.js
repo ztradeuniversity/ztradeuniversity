@@ -1,8 +1,15 @@
 // functions/api/ai-chat.js
 // ──────────────────────────────────────────────────────────────────────
 // POST /api/ai-chat
-// ZTU AI Trading Assistant — Anthropic Claude, Server-Sent Events stream
+// ZTU AI Trading Assistant — FREE self-hosted engine, Server-Sent Events stream.
+//
+// ★ NO PAID LLM API. No ANTHROPIC_API_KEY. No external AI cost. ★
+// Answers from internal intelligence first (live market data, patterns, memory,
+// knowledge base, broker dataset), then routes to trusted official sources.
 // ──────────────────────────────────────────────────────────────────────
+
+import { detectLanguage, classifyIntent, generateResponse } from '../utils/ai-engine.js';
+import { getKnowledgeEntries } from './ai-knowledge.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -420,13 +427,6 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: JSON_HEADERS });
   }
 
-  const apiKey = env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({
-      error: 'AI service unavailable. ANTHROPIC_API_KEY not configured in Cloudflare Pages environment variables.',
-    }), { status: 503, headers: JSON_HEADERS });
-  }
-
   // Parse body
   let body;
   try   { body = await request.json(); }
@@ -474,20 +474,10 @@ export async function onRequest(context) {
     patternData = await patternRes.value.json().catch(() => null);
   }
 
-  // Detect knowledge intent from last user message for Phase 6 context
-  const lastUserMsg  = messages[messages.length - 1]?.content ?? '';
-  const knowledgeTags = detectKnowledgeIntent(lastUserMsg);
-  let knowledgeContext = '';
-  if (knowledgeTags.length) {
-    try {
-      const kbUrl = `${baseUrl}/api/ai-knowledge?topic=${knowledgeTags[0]}&limit=2`;
-      const kRes  = await fetch(kbUrl, { signal: AbortSignal.timeout(2000) });
-      if (kRes.ok) {
-        const kData = await kRes.json();
-        knowledgeContext = kData.knowledgeContext ?? '';
-      }
-    } catch { /* non-blocking */ }
-  }
+  // ── FREE ENGINE: detect language + classify intent (no paid API) ──────────
+  const lastUserMsg = messages[messages.length - 1]?.content ?? '';
+  const lang        = detectLanguage(lastUserMsg);
+  const cls         = classifyIntent(lastUserMsg);
 
   // ── PHASE 9: ACCESS GATING ────────────────────────────────────────────────
   // Gating is ONLY active when the AI Supabase project is configured (memoryData.configured).
@@ -512,85 +502,57 @@ export async function onRequest(context) {
     }
   }
 
-  // Build enriched system prompt with all available context
-  let systemPrompt = buildSystemWithMarket(marketData);
-  systemPrompt += buildPatternContext(patternData);
-  systemPrompt += buildMemoryContext(memoryData);
-  if (knowledgeContext) systemPrompt += `\n\n${knowledgeContext}`;
+  // ── KNOWLEDGE RETRIEVAL (in-process, Priority 1) ──────────────────────────
+  let knowledgeEntries = [];
+  if (cls.knowledgeTopic) {
+    try { knowledgeEntries = getKnowledgeEntries({ topic: cls.knowledgeTopic, limit: 2 }) || []; }
+    catch { knowledgeEntries = []; }
+  }
 
-  // Call Anthropic Messages API — streaming enabled
-  let anthropicRes;
+  // ── GENERATE THE ANSWER FROM INTERNAL INTELLIGENCE (free engine) ──────────
+  let answer;
   try {
-    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type':      'application/json',
-      },
-      body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        stream:     true,
-        system:     systemPrompt,
-        messages,
-      }),
+    answer = generateResponse({
+      text:        lastUserMsg,
+      lang,
+      intent:      cls.intent,
+      platform:    cls.platform,
+      broker:      cls.broker,
+      marketData,
+      patternData,
+      memoryData,
+      knowledgeEntries,
+      isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'Failed to reach AI upstream', detail: err.message }), {
-      status: 502, headers: JSON_HEADERS,
-    });
+    answer = (env.DEBUG === 'true')
+      ? `Engine error: ${err.message}`
+      : 'Sorry, I had trouble composing that answer. Please rephrase, or ask about Gold/BTC context, a trade assessment, brokers, or trading psychology.';
   }
 
-  if (!anthropicRes.ok) {
-    const txt = await anthropicRes.text().catch(() => '');
-    return new Response(JSON.stringify({
-      error:  `AI upstream error (HTTP ${anthropicRes.status})`,
-      detail: txt.slice(0, 400),
-    }), { status: 502, headers: JSON_HEADERS });
-  }
-
-  // Pipe Anthropic SSE → our simplified SSE (text delta events only)
-  const encoder                  = new TextEncoder();
-  const { readable, writable }   = new TransformStream();
-  const writer                   = writable.getWriter();
+  // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
+  const encoder = new TextEncoder();
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
 
   (async () => {
-    const reader  = anthropicRes.body.getReader();
-    const decoder = new TextDecoder();
-    let   buf     = '';
-
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const raw = line.slice(6).trim();
-          if (!raw) continue;
-
-          if (raw === '[DONE]') {
-            await writer.write(encoder.encode('data: [DONE]\n\n'));
-            continue;
-          }
-
-          try {
-            const ev = JSON.parse(raw);
-            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta' && ev.delta.text) {
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ t: ev.delta.text })}\n\n`));
-            } else if (ev.type === 'message_stop') {
-              await writer.write(encoder.encode('data: [DONE]\n\n'));
-            } else if (ev.type === 'error') {
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ error: ev.error?.message ?? 'Upstream error' })}\n\n`));
-            }
-          } catch { /* skip malformed line */ }
+      // Chunk by words so the frontend renders progressively (same {t} protocol)
+      const tokens = String(answer).match(/\S+\s*/g) || [String(answer)];
+      let batch = '';
+      let i = 0;
+      for (const tok of tokens) {
+        batch += tok;
+        i++;
+        // flush every ~3 tokens for a smooth, fast typing feel
+        if (i % 3 === 0) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ t: batch })}\n\n`));
+          batch = '';
+          await new Promise(r => setTimeout(r, 10));
         }
       }
+      if (batch) await writer.write(encoder.encode(`data: ${JSON.stringify({ t: batch })}\n\n`));
+      await writer.write(encoder.encode('data: [DONE]\n\n'));
     } catch {
       try { await writer.write(encoder.encode(`data: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`)); } catch {}
     } finally {

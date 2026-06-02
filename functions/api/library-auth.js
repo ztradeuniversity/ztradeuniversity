@@ -10,9 +10,13 @@
 // Required Cloudflare Pages environment variables:
 //   EA_SUPABASE_URL          - EA Supabase project URL (System A, read-only)
 //   EA_SUPABASE_SERVICE_KEY  - Service role key (server-side only; bypasses RLS)
-//   EA_IB_STARS_TABLE        - IB active members table (default: ib_stars_active)
+//   EA_IB_STARS_TABLE        - IB active members table (default: broker_accounts)
 //                              Required columns: account_number, email, ib_star_status
 //                              (active when ib_star_status === 'active', case-insensitive)
+//                              Phase 16.9 — default changed from 'ib_stars_active' to
+//                              'broker_accounts' so the Library OTP gate reads from the
+//                              SAME table the admin dashboard writes via _persistBrokerAccounts.
+//                              No data sync between two tables is required.
 //   LIBRARY_OTP_SECRET       - >= 32 char random secret for HMAC token signing
 //   RESEND_API_KEY           - Resend.com API key for email delivery
 //   EMAIL_FROM               - Sender address e.g. noreply@ztradeuniversity.com
@@ -183,7 +187,10 @@ async function handleVerifySession({ account }, env) {
 async function lookupIbStars(acct, env) {
   const supabaseUrl = env.EA_SUPABASE_URL;
   const serviceKey  = env.EA_SUPABASE_SERVICE_KEY;
-  const table       = env.EA_IB_STARS_TABLE || 'ib_stars_active';
+  // Phase 16.9 — default points at broker_accounts (the table the admin
+  // dashboard writes via _persistBrokerAccounts).  Override with
+  // EA_IB_STARS_TABLE env var if you keep a separate view/table.
+  const table       = env.EA_IB_STARS_TABLE || 'broker_accounts';
 
   // DEMO MODE - env vars not yet configured
   if (!supabaseUrl || !serviceKey) {
@@ -193,7 +200,9 @@ async function lookupIbStars(acct, env) {
   }
 
   const acctEncoded = encodeURIComponent(acct);
-  // Live ib_stars_active schema: account_number, email, ib_star_status
+  // Live broker_accounts schema carries: account_number, email, ib_star_status.
+  // Phase 16.9 — same query works for the legacy 'ib_stars_active' name too;
+  // those tenants set EA_IB_STARS_TABLE explicitly.
   const qs = `account_number=eq.${acctEncoded}&select=email,ib_star_status&limit=1`;
 
   let res;

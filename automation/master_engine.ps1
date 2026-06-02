@@ -251,14 +251,299 @@ function Update-RequestStatus {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  Phase 16 — broker_accounts auto-match helpers
+#  Same per-row-emit pattern as Get-EmailOutboxPending to defeat the
+#  PS 5.1 row-flatten quirk on multi-row JSON arrays.
+# ═══════════════════════════════════════════════════════════════════════════
+
+function Normalize-AccountId([string]$raw) {
+    if ([string]::IsNullOrWhiteSpace($raw)) { return '' }
+    $s = $raw.Trim() -replace ',', '' -replace '\s+', ''
+    if ($s -match '\.0+$') { $s = $s -replace '\.0+$', '' }
+    return $s
+}
+
+function Get-BrokerAccountNumbers([int]$Limit = 10000) {
+    # Returns each broker_accounts.account_number as a separate string on
+    # the pipeline.  Caller collects with @(Get-BrokerAccountNumbers).
+    $path = "/broker_accounts?select=account_number&limit=$Limit"
+    $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $jss.MaxJsonLength = [Int32]::MaxValue
+        $parsed = $jss.DeserializeObject($json)
+        foreach ($r in $parsed) {
+            if ($r -and $r.ContainsKey('account_number')) {
+                Write-Output ([string]$r['account_number'])
+            }
+        }
+    } catch {
+        Write-Warn2 "Get-BrokerAccountNumbers failed: $($_.Exception.Message)"
+    }
+}
+
+function Get-LicenseRequestById([string]$Id) {
+    # Phase 16.5 PART A — fetch a single license_requests row by id so STEP 2.6
+    # can re-send delivery (account_number, email, broker_name).  Returns $null on
+    # any failure so the caller can degrade gracefully.
+    if ([string]::IsNullOrWhiteSpace($Id)) { return $null }
+    $path = "/$script:Table" + "?id=eq.$Id&select=id,account_number,email,status,broker_name,whatsapp_number,created_at&limit=1"
+    $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return $null }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $jss.MaxJsonLength = [Int32]::MaxValue
+        $parsed = $jss.DeserializeObject($json)
+        if (-not $parsed -or $parsed.Count -eq 0) { return $null }
+        $r = $parsed[0]
+        $row = New-Object PSObject
+        foreach ($k in $r.Keys) {
+            Add-Member -InputObject $row -MemberType NoteProperty -Name $k -Value $r[$k]
+        }
+        return $row
+    } catch {
+        Write-Warn2 "Get-LicenseRequestById($Id) failed: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Phase 16.5 PART A — resend_requests helpers (dashboard RESEND button queue)
+# ═══════════════════════════════════════════════════════════════════════════
+function Get-PendingResendRequests([int]$Limit = 100) {
+    # Per-row emit (PS 5.1 row-flatten safe).  Returns id, license_request_id,
+    # account_number, recipient_email, requested_by for each resend_requests
+    # row with status='pending'.
+    $path = "/resend_requests?status=eq.pending&select=id,license_request_id,account_number,recipient_email,requested_by,created_at&order=created_at.asc&limit=$Limit"
+    $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $jss.MaxJsonLength = [Int32]::MaxValue
+        $parsed = $jss.DeserializeObject($json)
+        foreach ($r in $parsed) {
+            $row = New-Object PSObject
+            foreach ($key in $r.Keys) {
+                Add-Member -InputObject $row -MemberType NoteProperty -Name $key -Value $r[$key]
+            }
+            Write-Output $row
+        }
+    } catch {
+        Write-Warn2 "Get-PendingResendRequests failed (table may not exist): $($_.Exception.Message)"
+    }
+}
+
+function Update-ResendRequestStatus {
+    # PATCH resend_requests row. Optionally requires current status (for atomic claim).
+    # Sets consumed_at automatically when NewStatus == 'consumed'.
+    param(
+        [Parameter(Mandatory)] [string]$Id,
+        [Parameter(Mandatory)] [string]$NewStatus,
+        [string]$RequireCurrentStatus
+    )
+    $path = "/resend_requests?id=eq.$Id"
+    if (-not [string]::IsNullOrWhiteSpace($RequireCurrentStatus)) {
+        $path = $path + '&status=eq.' + $RequireCurrentStatus
+    }
+    $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Content-Type'  = 'application/json'
+        'Prefer'        = 'return=minimal'
+    }
+    $bodyMap = @{ status = $NewStatus }
+    if ($NewStatus -eq 'consumed') {
+        $bodyMap['consumed_at'] = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+    }
+    $body = ($bodyMap | ConvertTo-Json -Compress)
+    try {
+        [void](Invoke-WebRequest -Uri $uri -Method PATCH -Headers $headers `
+                 -Body $body -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop)
+        return $true
+    } catch {
+        Write-Warn2 "Update-ResendRequestStatus($Id -> $NewStatus) failed: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Get-LicenseRequestResendCount([string]$Id) {
+    if ([string]::IsNullOrWhiteSpace($Id)) { return 0 }
+    $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/' + $script:Table + '?id=eq.' + $Id + '&select=resend_count&limit=1'
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return 0 }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $parsed = $jss.DeserializeObject($json)
+        if (-not $parsed -or $parsed.Count -eq 0) { return 0 }
+        $v = $parsed[0]['resend_count']
+        if ($null -eq $v) { return 0 }
+        return [int]$v
+    } catch { return 0 }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Phase 16.5 PART C — ib_changed_accounts helper (delivery block gate)
+# ═══════════════════════════════════════════════════════════════════════════
+function Get-IbChangedAccountSet([int]$Limit = 5000) {
+    # Returns a hashtable<accountNumberString,$true> for fast O(1) exclusion
+    # check in STEP 4.  Engine rule: any license_request whose account_number
+    # is in ib_changed_accounts MUST NOT compile or deliver — auto-flip to
+    # status='ib_changed' instead so the dashboard can show the block reason.
+    $result = @{}
+    $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/ib_changed_accounts?select=account_number&limit=' + $Limit
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return $result }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $jss.MaxJsonLength = [Int32]::MaxValue
+        $parsed = $jss.DeserializeObject($json)
+        foreach ($r in $parsed) {
+            if ($r -and $r.ContainsKey('account_number')) {
+                $a = Normalize-AccountId ([string]$r['account_number'])
+                if ($a) { $result[$a] = $true }
+            }
+        }
+    } catch {
+        Write-Warn2 "Get-IbChangedAccountSet failed (table may not exist; gate becomes no-op): $($_.Exception.Message)"
+    }
+    return $result
+}
+
+function Get-PendingLicenseRequests([int]$Limit = 500) {
+    # Per-row emit. Returns id + account_number for each pending license_request.
+    $path = "/$script:Table" + "?status=eq.pending&select=id,account_number&order=created_at.asc&limit=$Limit"
+    $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $jss.MaxJsonLength = [Int32]::MaxValue
+        $parsed = $jss.DeserializeObject($json)
+        foreach ($r in $parsed) {
+            $row = New-Object PSObject
+            foreach ($key in $r.Keys) {
+                Add-Member -InputObject $row -MemberType NoteProperty -Name $key -Value $r[$key]
+            }
+            Write-Output $row
+        }
+    } catch {
+        Write-Warn2 "Get-PendingLicenseRequests failed: $($_.Exception.Message)"
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  Phase 15.5A — email_outbox helpers
 #  These poll/update the new outbox table the dashboard writes to. They
 #  reuse Invoke-SupabaseRequest above and the same anon-key Authorization.
 # ═══════════════════════════════════════════════════════════════════════════
 function Get-EmailOutboxPending([int]$Limit = 50) {
+    # Phase 15.5D — defeats the PS 5.1 quirk that was collapsing N pending
+    # rows into a single PSCustomObject with array-valued properties
+    # (causing PostgreSQL 22P02 invalid_text_representation for type uuid
+    # when STEP 8.5 PATCHed id=eq.<space-joined-UUIDs>).
+    #
+    # Verified-working pattern: emit each row INDIVIDUALLY via Write-Output
+    # to the pipeline.  The caller's @(Get-EmailOutboxPending) wrapper
+    # collects them into a proper Object[] of N PSObjects.
+    #
+    # Isolated to this one function — STEP 8.5 logic and every other
+    # engine function are untouched.  Returns nothing when empty or on
+    # error (caller's @() yields Object[0]).
     $cols = 'id,template_type,recipient_email,recipient_account,subject,body_html,body_text,request_id,created_at,retry_count'
     $path = "/email_outbox?status=eq.pending&select=$cols&order=created_at.asc&limit=$Limit"
-    return @(Invoke-SupabaseRequest -Path $path)
+    $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
+    $headers = @{
+        'apikey'        = $script:SupabaseAnonKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'Accept'        = 'application/json'
+    }
+    try {
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') {
+            return   # emit nothing — caller sees Object[0]
+        }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $jss.MaxJsonLength = [Int32]::MaxValue
+        $parsed = $jss.DeserializeObject($json)
+        # $parsed is Object[] of Dictionary<string,object> — one per DB row.
+        # Emit one PSObject per row to the pipeline (no Add to a list).
+        foreach ($r in $parsed) {
+            $row = New-Object PSObject
+            foreach ($key in $r.Keys) {
+                Add-Member -InputObject $row -MemberType NoteProperty -Name $key -Value $r[$key]
+            }
+            Write-Output $row
+        }
+    } catch {
+        $errMsg = $_.Exception.Message
+        $errBody = $null
+        if ($_.Exception.Response) {
+            try {
+                $stream = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object System.IO.StreamReader($stream)
+                $errBody = $reader.ReadToEnd()
+            } catch {}
+        }
+        Write-Warn2 "Get-EmailOutboxPending failed: $errMsg"
+        if ($errBody) { Write-Warn2 "  PostgREST body: $errBody" }
+        return   # emit nothing
+    }
 }
 
 function Update-EmailOutboxStatus {
@@ -637,6 +922,97 @@ try {
     $mismatchContent  = Read-ContentSections $paths.MismatchContent
     Write-Ok ('Loaded success template ({0} keys), mismatch template ({1} keys).' -f $successContent.Count, $mismatchContent.Count)
 
+    # ── 0.0 Phase 16.2: Consume pending engine_triggers (Run Now button) ────
+    # Dashboard "Run Now" inserts a row into engine_triggers status='pending'.
+    # The engine acknowledges those rows by flipping them to 'consumed' so the
+    # admin can see in the dashboard that the trigger was honored on this tick.
+    # The engine cycle runs the same logic regardless — this is purely an
+    # audit trail so manual click + auto-tick both leave evidence.
+    $stat_triggersConsumed = 0
+    try {
+        $pendingTriggers = @()
+        try {
+            $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/engine_triggers?status=eq.pending&select=id,requested_at,requested_by&order=requested_at.asc&limit=50'
+            $headers = @{ 'apikey'=$script:SupabaseAnonKey; 'Authorization'='Bearer '+$script:SupabaseAnonKey; 'Accept'='application/json' }
+            $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
+            $json = [string]$resp.Content
+            if (-not [string]::IsNullOrWhiteSpace($json) -and $json -ne '[]') {
+                Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+                $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+                $jss.MaxJsonLength = [Int32]::MaxValue
+                $pendingTriggers = @($jss.DeserializeObject($json))
+            }
+        } catch {
+            Write-Warn2 ("engine_triggers fetch failed (table missing? non-fatal): {0}" -f $_.Exception.Message)
+        }
+        if ($pendingTriggers.Count -gt 0) {
+            Write-Step ("Phase 16.2 — found {0} pending Run Now trigger(s) — consuming..." -f $pendingTriggers.Count)
+            foreach ($t in $pendingTriggers) {
+                try {
+                    $consumedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+                    $patchUri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/engine_triggers?id=eq.' + [string]$t.id
+                    $patchHeaders = @{
+                        'apikey'=$script:SupabaseAnonKey; 'Authorization'='Bearer '+$script:SupabaseAnonKey
+                        'Content-Type'='application/json'; 'Prefer'='return=minimal'
+                    }
+                    $body = (@{ status='consumed'; consumed_at=$consumedAt } | ConvertTo-Json -Compress)
+                    [void](Invoke-WebRequest -Uri $patchUri -Method PATCH -Headers $patchHeaders -Body $body -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop)
+                    $stat_triggersConsumed++
+                    Write-Ok ("Trigger #{0} consumed (requested {1})" -f $t.id, $t.requested_at)
+                } catch {
+                    Write-Warn2 ("Trigger #{0} PATCH failed: {1}" -f $t.id, $_.Exception.Message)
+                }
+            }
+        }
+    } catch {
+        Write-Warn2 ("Phase 16.2 trigger step failed (non-fatal): {0}" -f $_.Exception.Message)
+    }
+
+    # ── 2.5 Phase 16: Auto-match pending license_requests vs broker_accounts ─
+    # Runs BEFORE the main Supabase query so any rows flipped from pending
+    # to matched are immediately picked up by STEP 3's compile_ready/matched
+    # filter and processed in this same run.  Skips silently if either
+    # table is empty or broker_accounts doesn't exist (migration not run).
+    $stat_autoMatched = 0
+    try {
+        Write-Step 'Phase 16 — auto-matching pending license_requests vs broker_accounts...'
+        $brokerSet = @{}
+        $brokerCount = 0
+        foreach ($acct in (Get-BrokerAccountNumbers -Limit 10000)) {
+            $norm = Normalize-AccountId $acct
+            if ($norm) { $brokerSet[$norm] = $true; $brokerCount++ }
+        }
+        Write-Info "broker_accounts loaded: $brokerCount unique account number(s)"
+
+        if ($brokerCount -gt 0) {
+            $pendingCount = 0
+            $matched      = 0
+            foreach ($req in (Get-PendingLicenseRequests -Limit 500)) {
+                $pendingCount++
+                $reqAcct = Normalize-AccountId ([string]$req.account_number)
+                if (-not $reqAcct) { continue }
+                if ($brokerSet.ContainsKey($reqAcct)) {
+                    try {
+                        $upd = Update-RequestStatus -Id ([string]$req.id) -NewStatus 'matched' `
+                                 -AllowedFromStatuses @('pending')
+                        if ($upd) {
+                            $matched++
+                            $stat_autoMatched++
+                            Write-Ok ("Auto-matched: license_requests.id={0} | account={1} -> 'matched'" -f $req.id, $reqAcct)
+                        }
+                    } catch {
+                        Write-Warn2 ("Auto-match PATCH failed for id={0}: {1}" -f $req.id, $_.Exception.Message)
+                    }
+                }
+            }
+            Write-Ok ("Phase 16 auto-match: scanned {0} pending request(s), matched {1}." -f $pendingCount, $matched)
+        } else {
+            Write-Info 'broker_accounts empty (migration may not be run yet) — auto-match skipped.'
+        }
+    } catch {
+        Write-Warn2 ("Phase 16 auto-match step failed (non-fatal): {0}" -f $_.Exception.Message)
+    }
+
     # ── 3. Pull rows from Supabase ─────────────────────────────────────────
     Write-Step 'Querying Supabase for actionable rows...'
     $compileReadyRows = @()
@@ -655,9 +1031,32 @@ try {
     Write-Ok ("compile_ready/matched: {0}  |  compiled retry: {1}  |  rejected: {2}" -f $compileReadyRows.Count, $compiledRetryRows.Count, $rejectedRows.Count)
 
     # ── 4. Apply batch cap + idempotency filter on compile_ready ──────────
+    # Phase 16.5 PART C — IB Changed delivery block.
+    # Build the ib_changed_accounts set ONCE; any compile_ready / matched /
+    # approved / compiled row whose account_number is in this set is removed
+    # from the pipeline and its license_requests.status is flipped to
+    # 'ib_changed' so the dashboard can show the block reason.  No EX5 is
+    # compiled, no email is sent.  If the table doesn't exist, the helper
+    # returns an empty hashtable -> gate becomes a no-op.
+    $stat_ibChangedBlocked = 0
+    $ibChangedSet = Get-IbChangedAccountSet -Limit 5000
+    Write-Info ("ib_changed_accounts loaded: {0} account(s) on delivery block list" -f $ibChangedSet.Count)
+
     $batchTargets = New-Object System.Collections.Generic.List[psobject]
     foreach ($r in $compileReadyRows) {
         if ($batchTargets.Count -ge $MaxBatch) { break }
+        $rNorm = Normalize-AccountId ([string]$r.account_number)
+        if ($rNorm -and $ibChangedSet.ContainsKey($rNorm)) {
+            Write-Warn2 ("IB-CHANGED BLOCK: account {0} is on ib_changed_accounts list -> flipping status to 'ib_changed' (no compile, no email)." -f $rNorm)
+            try {
+                [void](Update-RequestStatus -Id ([string]$r.id) -NewStatus 'ib_changed' `
+                         -AllowedFromStatuses @($STATUS_COMPILE_READY,$STATUS_MATCHED,$STATUS_APPROVED,$STATUS_COMPILED,$STATUS_COMPILING))
+                $stat_ibChangedBlocked++
+            } catch {
+                Write-Warn2 ("IB-Changed status flip failed for id={0}: {1}" -f $r.id, $_.Exception.Message)
+            }
+            continue
+        }
         if (-not $ForceResend) {
             if (Test-AlreadyApproved -ApprovedCsv $paths.ApprovedCsv -Account $r.account_number -Broker $r.broker_name) {
                 Write-Info "Skipping already-approved row: $($r.account_number) / $($r.broker_name)"
@@ -670,13 +1069,24 @@ try {
     $emailRetryTargets = New-Object System.Collections.Generic.List[psobject]
     foreach ($r in $compiledRetryRows) {
         if ($emailRetryTargets.Count + $batchTargets.Count -ge $MaxBatch) { break }
+        # Phase 16.5 PART C — also block IB-Changed accounts in the email-retry path.
+        $rNorm = Normalize-AccountId ([string]$r.account_number)
+        if ($rNorm -and $ibChangedSet.ContainsKey($rNorm)) {
+            Write-Warn2 ("IB-CHANGED BLOCK (retry path): account {0} -> flipping to 'ib_changed' (no email)." -f $rNorm)
+            try {
+                [void](Update-RequestStatus -Id ([string]$r.id) -NewStatus 'ib_changed' `
+                         -AllowedFromStatuses @($STATUS_COMPILED,$STATUS_COMPILE_READY,$STATUS_MATCHED,$STATUS_APPROVED,$STATUS_COMPILING))
+                $stat_ibChangedBlocked++
+            } catch { Write-Warn2 ("IB-Changed status flip (retry) failed for id={0}: {1}" -f $r.id, $_.Exception.Message) }
+            continue
+        }
         $bundleName = Get-BundleBaseName $r.broker_name $r.account_number
         $zip        = Join-Path $paths.ReadyDir ($bundleName + '.zip')
         if (Test-Path -LiteralPath $zip -PathType Leaf) {
             [void]$emailRetryTargets.Add($r)
         }
     }
-    Write-Ok ("After dedup + batch cap: full pipeline = {0}, email-only retry = {1}" -f $batchTargets.Count, $emailRetryTargets.Count)
+    Write-Ok ("After dedup + IB-Changed block + batch cap: full pipeline = {0}, email-only retry = {1}, ib_changed blocked = {2}" -f $batchTargets.Count, $emailRetryTargets.Count, $stat_ibChangedBlocked)
 
     # ── 5. STAGE + INJECT for each batch target ────────────────────────────
     $stagedSummary = New-Object System.Collections.Generic.List[psobject]
@@ -946,6 +1356,147 @@ try {
         })
     }
 
+    # ── 2.6 Phase 16.5 PART A — Consume pending resend_requests ────────────
+    # Dashboard RESEND button writes to resend_requests.  Here we re-send the
+    # delivery email using the same success template + EX5 bundle that the
+    # primary path uses.  Does NOT remove the original approved_clients.csv
+    # row.  Bumps license_requests.resend_count + last_resend_at on success.
+    # Numbered 2.6 historically (queue is consumed late so $smtpNetCred is
+    # already resolved); placement here keeps the rest of the engine flow
+    # untouched.
+    $stat_resendSent    = 0
+    $stat_resendFailed  = 0
+    $stat_resendSkipped = 0
+    try {
+        Write-Step 'Phase 16.5 — draining resend_requests (pending -> consumed/failed)...'
+        $resendRows = @(Get-PendingResendRequests -Limit 100)
+        Write-Ok ("resend_requests pending rows fetched: {0}" -f $resendRows.Count)
+
+        foreach ($rr in $resendRows) {
+            $rrId      = [string]$rr.id
+            $licId     = [string]$rr.license_request_id
+            $rrAccount = [string]$rr.account_number
+            $rrEmail   = [string]$rr.recipient_email
+
+            # Atomic claim — PATCH status='processing' only if still 'pending'.
+            $claim = Update-ResendRequestStatus -Id $rrId -NewStatus 'processing' -RequireCurrentStatus 'pending'
+            if (-not $claim) {
+                Write-Warn2 ("Resend #{0} claim failed (already taken?); skipping" -f $rrId)
+                $stat_resendSkipped++
+                continue
+            }
+
+            # Fetch the underlying license_request row for full context.
+            $licRow = $null
+            if ($licId) { $licRow = Get-LicenseRequestById -Id $licId }
+            if (-not $licRow) {
+                Write-Warn2 ("Resend #{0}: license_requests row not found (id={1}); marking failed" -f $rrId, $licId)
+                [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'failed')
+                $stat_resendFailed++
+                continue
+            }
+
+            $broker = if ([string]::IsNullOrWhiteSpace([string]$licRow.broker_name)) { 'UNKNOWNBROKER' } else { [string]$licRow.broker_name }
+            $bundleBase = Get-BundleBaseName $broker $licRow.account_number
+
+            if ($DryRun) {
+                Write-Info ("DRY-RUN resend: would re-deliver {0}.ex5 to {1}" -f $bundleBase, $rrEmail)
+                [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'consumed')
+                $stat_resendSkipped++
+                continue
+            }
+
+            # Build fresh delivery ZIP (re-compile if necessary).
+            $ex5 = Join-Path $paths.CompiledDir ($bundleBase + '.ex5')
+            if (-not (Test-Path -LiteralPath $ex5 -PathType Leaf)) {
+                Write-Warn2 ("Resend #{0}: EX5 missing at {1} — needs a fresh compile cycle; marking failed." -f $rrId, $ex5)
+                [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'failed')
+                $stat_resendFailed++
+                continue
+            }
+
+            $bnd = Invoke-CreateDeliveryBundle -ScriptPath $paths.CreateBundleScript -AccountNumber $licRow.account_number -Broker $broker -Root $Root
+            if ($bnd.ExitCode -ne 0) {
+                Write-Err2 ("Resend #{0}: create_delivery_bundle failed (exit {1})." -f $rrId, $bnd.ExitCode)
+                [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'failed')
+                $stat_resendFailed++
+                continue
+            }
+            $zip = Join-Path $paths.ReadyDir ($bundleBase + '.zip')
+
+            $check = Test-ZipSafeForDelivery -ZipPath $zip
+            if (-not $check.Ok) {
+                Write-Err2 ("Resend #{0}: SAFETY ABORT — {1}" -f $rrId, $check.Reason)
+                [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'failed')
+                $stat_resendFailed++
+                continue
+            }
+
+            $hash = ''
+            $manifestPath = Join-Path $paths.ManifestsDir ($bundleBase + '.json')
+            if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+                try {
+                    $m = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+                    if ($m -and $m.sha256) { $hash = $m.sha256 }
+                } catch {}
+            }
+
+            $map = @{}
+            foreach ($k in $successContent.Keys) { $map[$k] = $successContent[$k] }
+            $map['ACCOUNT_NUMBER'] = [string]$licRow.account_number
+            $map['BROKER']         = [string]$licRow.broker_name
+            $map['EX5_FILENAME']   = ($bundleBase + '.ex5')
+            $map['CLIENT_EMAIL']   = if ($rrEmail) { $rrEmail } else { [string]$licRow.email }
+            $map['DELIVERY_DATE']  = (Get-Date).ToString('yyyy-MM-dd HH:mm')
+            $map['COMPILE_HASH']   = $(if ($hash) { $hash } else { 'n/a' })
+
+            $renderedHtml    = Format-Template -Html $successHtml -Map $map
+            $renderedSubject = Format-Template -Html $map['EMAIL_SUBJECT'] -Map $map
+
+            $finalRecipient = if ($rrEmail) { $rrEmail } else { [string]$licRow.email }
+
+            try {
+                Send-HtmlEmail -From $SenderEmail -FromName 'Z Trade University' `
+                               -NetCredential $smtpNetCred `
+                               -To $finalRecipient -Subject $renderedSubject `
+                               -HtmlBody $renderedHtml -AttachmentPath $zip
+                Write-Host ("[RESEND] account {0} resent successfully -> {1}" -f $rrAccount, $finalRecipient) -ForegroundColor Cyan
+                $stat_resendSent++
+            } catch {
+                Write-Err2 ("[RESEND] account {0} FAILED -> {1}: {2}" -f $rrAccount, $finalRecipient, $_.Exception.Message)
+                [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'failed')
+                $stat_resendFailed++
+                continue
+            }
+
+            # Move ZIP -> DELIVERED\YYYY-MM-DD\ as a resend artifact (don't clobber original).
+            $dateBucket = Join-Path $paths.DeliveredDir (Get-Date -Format 'yyyy-MM-dd')
+            if (-not (Test-Path -LiteralPath $dateBucket)) { New-Item -ItemType Directory -Path $dateBucket -Force -ErrorAction Stop | Out-Null }
+            $delivered = Join-Path $dateBucket ($bundleBase + '__resend_' + (Get-Date -Format 'HH-mm-ss') + '.zip')
+            try { Move-Item -LiteralPath $zip -Destination $delivered -ErrorAction Stop } catch {}
+
+            # Mark resend_requests row consumed.
+            [void](Update-ResendRequestStatus -Id $rrId -NewStatus 'consumed')
+
+            # Bump license_requests.resend_count + last_resend_at (best-effort).
+            try {
+                $cur = Get-LicenseRequestResendCount -Id $licId
+                $newCount = ($cur + 1)
+                $patchUri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/' + $script:Table + '?id=eq.' + $licId
+                $hdrs = @{
+                    'apikey'=$script:SupabaseAnonKey; 'Authorization'='Bearer '+$script:SupabaseAnonKey
+                    'Content-Type'='application/json'; 'Prefer'='return=minimal'
+                }
+                $body = (@{ resend_count = $newCount; last_resend_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') } | ConvertTo-Json -Compress)
+                [void](Invoke-WebRequest -Uri $patchUri -Method PATCH -Headers $hdrs -Body $body -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop)
+            } catch {
+                Write-Warn2 ("Resend #{0}: counter bump failed (non-fatal): {1}" -f $rrId, $_.Exception.Message)
+            }
+        }
+    } catch {
+        Write-Warn2 ("Phase 16.5 PART A resend step failed (non-fatal): {0}" -f $_.Exception.Message)
+    }
+
     # ── 8.5 Phase 15.5A: drain Supabase email_outbox ───────────────────────
     # The dashboard inserts rows into email_outbox for matched/waiting/
     # not_found approval messages.  Here we drain pending rows via the
@@ -1054,6 +1605,11 @@ try {
     Write-Host ('   Safety aborts             : {0}' -f $stat_safetyAbort) -ForegroundColor $(if ($stat_safetyAbort) {'Red'} else {'Green'})
     Write-Host ('   Mismatch emails sent      : {0}' -f $stat_rejectSent)
     Write-Host ('   Mismatch skipped (dedup)  : {0}' -f $stat_rejectSkip)
+    Write-Host ('   Phase 16 auto-matched     : {0}' -f $stat_autoMatched)         -ForegroundColor Cyan
+    Write-Host ('   IB-Changed blocked        : {0}' -f $stat_ibChangedBlocked)    -ForegroundColor $(if ($stat_ibChangedBlocked) {'Yellow'} else {'Gray'})
+    Write-Host ('   Resends sent              : {0}' -f $stat_resendSent)          -ForegroundColor Cyan
+    Write-Host ('   Resends failed            : {0}' -f $stat_resendFailed)        -ForegroundColor $(if ($stat_resendFailed) {'Red'} else {'Green'})
+    Write-Host ('   Resends skipped/dry-run   : {0}' -f $stat_resendSkipped)
     Write-Host ('   Outbox emails sent        : {0}' -f $stat_outboxSent)          -ForegroundColor Green
     Write-Host ('   Outbox emails failed      : {0}' -f $stat_outboxFailed)        -ForegroundColor $(if ($stat_outboxFailed) {'Red'} else {'Green'})
     Write-Host ('   Outbox claim-skipped      : {0}' -f $stat_outboxClaimSkip)
@@ -1077,6 +1633,11 @@ try {
         safety_aborts         = $stat_safetyAbort
         rejection_emails_sent = $stat_rejectSent
         rejection_skipped     = $stat_rejectSkip
+        auto_matched          = $stat_autoMatched            # Phase 16
+        ib_changed_blocked    = $stat_ibChangedBlocked      # Phase 16.5 PART C
+        resend_sent           = $stat_resendSent            # Phase 16.5 PART A
+        resend_failed         = $stat_resendFailed          # Phase 16.5 PART A
+        resend_skipped        = $stat_resendSkipped         # Phase 16.5 PART A
         outbox_sent           = $stat_outboxSent            # Phase 15.5A
         outbox_failed         = $stat_outboxFailed          # Phase 15.5A
         outbox_claim_skipped  = $stat_outboxClaimSkip       # Phase 15.5A

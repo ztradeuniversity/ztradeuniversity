@@ -383,6 +383,11 @@ Fear & Greed Index, social media sentiment, and prevailing narratives (store of 
 
 // ── SEARCH FUNCTION ────────────────────────────────────────────────────────
 
+// Direct (non-HTTP) accessor so the AI engine can read the static KB in-process.
+export function getKnowledgeEntries(opts = {}) {
+  return staticSearch(opts);
+}
+
 function staticSearch({ topic, q, level, limit = 5 }) {
   let results = [...STATIC_KB];
 

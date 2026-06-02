@@ -2539,167 +2539,206 @@
   </div>
 </section>
 
-<!-- ── TRUSTED BY TRADERS ── -->
-<section class="lux-trusted" id="results">
-  <div class="lux-trusted-card" id="signals">
+<!-- ── ZTU LIBRARY SHOWCASE ── -->
+<section class="ztu-library" id="results" aria-label="ZTU Library">
+  <style>
+    /* === ZTU LIBRARY SHOWCASE — scoped; reuses global --lux-* brand tokens === */
+    .ztu-library { padding: 24px 0 52px; background: var(--lux-cream); }
+    .ztu-lib-card {
+      position: relative; overflow: hidden;
+      max-width: 1280px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1.05fr; gap: 36px; align-items: center;
+      background:
+        radial-gradient(120% 150% at 90% 6%, rgba(200,156,63,0.10) 0%, transparent 52%),
+        linear-gradient(180deg, var(--lux-paper) 0%, var(--lux-cream2) 100%);
+      border: 1px solid var(--lux-line);
+      border-radius: 26px; padding: 36px 46px;
+      box-shadow: var(--lux-shadow-m);
+      text-decoration: none; color: inherit;
+      transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, border-color .3s;
+    }
+    .ztu-lib-card:hover { transform: translateY(-4px); box-shadow: var(--lux-shadow-l); border-color: var(--lux-line-strong); }
+    .ztu-lib-card:focus-visible {
+      outline: none; transform: translateY(-4px);
+      box-shadow: var(--lux-shadow-l), 0 0 0 3px rgba(200,156,63,0.50);
+      border-color: var(--lux-line-strong);
+    }
 
-    <div class="lux-king-visual" aria-hidden="true">
-      <svg viewBox="0 0 280 320" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="luxKingGrad" x1="0.18" y1="0" x2="0.56" y2="1">
-            <stop offset="0%"   stop-color="#fff7dc"/>
-            <stop offset="14%"  stop-color="#fbe5a8"/>
-            <stop offset="40%"  stop-color="#d4a850"/>
-            <stop offset="68%"  stop-color="#8c6c1f"/>
-            <stop offset="88%"  stop-color="#3d2a08"/>
-            <stop offset="100%" stop-color="#1a1004"/>
-          </linearGradient>
-          <linearGradient id="luxKingBase" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="#fff5d0"/>
-            <stop offset="30%"  stop-color="#f0e6cb"/>
-            <stop offset="80%"  stop-color="#a17a23"/>
-            <stop offset="100%" stop-color="#3d2a08"/>
-          </linearGradient>
-          <filter id="luxKingShadow" x="-70%" y="-70%" width="240%" height="240%">
-            <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#3d2a08" flood-opacity="0.50"/>
-            <feDropShadow dx="0" dy="8"  stdDeviation="10" flood-color="#2a1c08" flood-opacity="0.32"/>
-            <feDropShadow dx="0" dy="2"  stdDeviation="3"  flood-color="#1a1004" flood-opacity="0.22"/>
-          </filter>
-        </defs>
+    /* subtle financial-market backdrop (light; books stay the focus) */
+    .ztu-lib-chart { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.30; z-index: 0; }
 
-        <ellipse cx="140" cy="200" rx="110" ry="110" fill="url(#luxKingGrad)" opacity="0.10"/>
+    /* LEFT — branding */
+    .ztu-lib-left { position: relative; z-index: 1; }
+    .ztu-lib-logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 54px; height: 54px; border-radius: 15px;
+      background: var(--lux-grad-gold);
+      box-shadow: 0 10px 24px rgba(200,156,63,0.35);
+      margin-bottom: 18px;
+    }
+    .ztu-lib-title {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(32px, 4.2vw, 50px); font-weight: 900;
+      line-height: 0.96; letter-spacing: -1.5px; color: var(--lux-ink); margin: 0;
+    }
+    .ztu-lib-title span {
+      display: block;
+      background: var(--lux-grad-gold);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+    }
+    .ztu-lib-rule { display: flex; align-items: center; gap: 10px; margin: 14px 0 12px; }
+    .ztu-lib-rule::before { content: ''; height: 2px; width: 50px; background: var(--lux-grad-gold); border-radius: 2px; }
+    .ztu-lib-rule::after  { content: '◆'; color: var(--lux-gold2); font-size: 10px; }
+    .ztu-lib-kicker {
+      font-size: 12.5px; font-weight: 800; letter-spacing: 2.6px; text-transform: uppercase;
+      color: var(--lux-muted); margin-bottom: 14px;
+    }
+    .ztu-lib-desc { font-size: 15px; line-height: 1.6; color: var(--lux-text); max-width: 340px; margin-bottom: 24px; }
+    .ztu-lib-cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--lux-grad-gold); color: #fff;
+      font-size: 15px; font-weight: 800; letter-spacing: .2px;
+      padding: 13px 28px; border-radius: 100px;
+      box-shadow: 0 12px 26px rgba(200,156,63,0.40);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .ztu-lib-card:hover .ztu-lib-cta { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(200,156,63,0.52); }
+    .ztu-lib-cta svg { transition: transform .2s; }
+    .ztu-lib-card:hover .ztu-lib-cta svg { transform: translateX(4px); }
 
-        <g transform="translate(40 60)" opacity="0.32">
-          <rect x="0"   y="40" width="9" height="50" fill="#d4ae5e"/>
-          <rect x="14"  y="20" width="9" height="70" fill="#d4ae5e"/>
-          <rect x="28"  y="10" width="9" height="80" fill="#d4ae5e"/>
-          <rect x="170" y="60" width="9" height="40" fill="#d4ae5e"/>
-          <rect x="184" y="40" width="9" height="60" fill="#d4ae5e"/>
-          <rect x="198" y="20" width="9" height="80" fill="#d4ae5e"/>
-        </g>
+    /* RIGHT — standing book collection (no shelf, no wooden background) */
+    .ztu-lib-collection {
+      position: relative; z-index: 1;
+      display: flex; align-items: flex-end; justify-content: center; gap: 4px;
+      padding-bottom: 24px;
+    }
+    .ztu-lib-collection::after { /* soft ground shadow under the collection */
+      content: ''; position: absolute; left: 6%; right: 6%; bottom: 10px; height: 24px;
+      background: radial-gradient(ellipse at center, rgba(40,30,12,0.26), transparent 70%);
+      filter: blur(4px); z-index: -1;
+    }
+    .ztu-spine {
+      position: relative; flex-shrink: 0;
+      width: 46px; height: var(--h, 200px);
+      background: linear-gradient(100deg, var(--c1), var(--c2));
+      border-radius: 3px 5px 4px 2px;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 11px 0 9px;
+      box-shadow:
+        0 16px 22px -10px rgba(26,20,8,0.50),
+        inset -4px 0 7px rgba(0,0,0,0.42),
+        inset 3px 0 4px rgba(255,255,255,0.12),
+        inset 0 0 0 1px rgba(212,174,94,0.16);
+    }
+    .ztu-lib-card:hover .ztu-lib-collection { transform: translateY(-3px); }
+    .ztu-lib-collection { transition: transform .3s cubic-bezier(.16,1,.3,1); }
+    .ztu-spine .sp-band { width: 66%; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #d9b66a, transparent); flex-shrink: 0; }
+    .ztu-spine .sp-title {
+      writing-mode: vertical-rl; text-orientation: mixed;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 11.5px; font-weight: 800;
+      color: #ecd49c; letter-spacing: .4px; line-height: 1;
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      margin: 8px 0; text-shadow: 0 1px 2px rgba(0,0,0,0.45); white-space: nowrap;
+    }
+    .ztu-spine .sp-ic { color: rgba(212,174,94,0.82); flex-shrink: 0; display: flex; }
 
-        <g filter="url(#luxKingShadow)">
-          <!-- Top finial sphere (replaces cross — smooth luxury finial) -->
-          <circle cx="140" cy="34" r="14" fill="url(#luxKingGrad)" stroke="#7a5612" stroke-width="0.9"/>
-          <ellipse cx="135" cy="28" rx="5" ry="3" fill="#ffffff" opacity="0.78"/>
-          <ellipse cx="135" cy="28" rx="2" ry="1.2" fill="#ffffff"/>
-          <path d="M130,44 Q140,48 150,44" stroke="#1a1004" stroke-width="1.6" fill="none" opacity="0.42" stroke-linecap="round"/>
-          <!-- Finial stem connecting to crown bulb -->
-          <path d="M134,48 L146,48 L144,58 L136,58 Z" fill="url(#luxKingGrad)" stroke="#7a5612" stroke-width="0.7"/>
-          <ellipse cx="140" cy="68" rx="28" ry="12" fill="url(#luxKingGrad)"/>
-          <path d="M120,76 L160,76 L156,98 L124,98 Z" fill="url(#luxKingGrad)"/>
-          <ellipse cx="140" cy="102" rx="36" ry="10" fill="url(#luxKingGrad)"/>
-          <path d="M114,108 L166,108 L158,200 L122,200 Z" fill="url(#luxKingGrad)"/>
-          <path d="M128,120 L130,194" stroke="#f7e0a8" stroke-width="3" opacity="0.45"/>
-          <ellipse cx="140" cy="208" rx="48" ry="14" fill="url(#luxKingGrad)"/>
-          <path d="M92,210 L188,210 L182,252 L98,252 Z" fill="url(#luxKingGrad)"/>
-          <ellipse cx="140" cy="258" rx="58" ry="14" fill="url(#luxKingBase)" stroke="#a17a23" stroke-width="2"/>
-          <ellipse cx="140" cy="262" rx="60" ry="14" fill="url(#luxKingGrad)"/>
-          <ellipse cx="140" cy="268" rx="64" ry="16" fill="url(#luxKingBase)" stroke="#a17a23" stroke-width="2"/>
+    @media (max-width: 900px) {
+      .ztu-lib-card { grid-template-columns: 1fr; gap: 26px; padding: 32px 30px; text-align: center; }
+      .ztu-lib-left { display: flex; flex-direction: column; align-items: center; }
+      .ztu-lib-desc { margin-left: auto; margin-right: auto; }
+      .ztu-lib-rule { justify-content: center; }
+      .ztu-lib-collection { padding-bottom: 18px; }
+    }
+    @media (max-width: 560px) {
+      .ztu-lib-card { padding: 28px 20px; border-radius: 20px; }
+      .ztu-lib-cta { width: 100%; justify-content: center; }
+      .ztu-lib-collection { gap: 3px; }
+      .ztu-spine { width: 27px; height: 126px; padding: 7px 0 6px; border-radius: 2px 4px 3px 2px; }
+      .ztu-spine .sp-title { font-size: 8px; letter-spacing: .2px; margin: 5px 0; }
+      .ztu-spine .sp-ic svg { width: 9px; height: 9px; }
+      .ztu-spine .sp-band { height: 1.5px; }
+    }
+    @media (max-width: 380px) {
+      .ztu-spine { width: 23px; height: 112px; }
+      .ztu-spine .sp-title { font-size: 7px; }
+    }
+  </style>
 
-          <!-- ════ INSTITUTIONAL REALISM OVERLAY (matching hero king material language) ════ -->
+  <a class="ztu-lib-card" id="signals" href="library.html" aria-label="Access the ZTU Library — videos, audios and books">
 
-          <!-- Sphere bulb: hotspot + ambient undercut -->
-          <ellipse cx="131.5" cy="62" rx="3.6" ry="2" fill="#ffffff" opacity="0.86"/>
-          <ellipse cx="131.5" cy="62" rx="1.4" ry="0.8" fill="#ffffff"/>
-          <ellipse cx="140"   cy="60" rx="22" ry="1.8" fill="#fff7dc" opacity="0.50"/>
-          <path d="M115,77 Q140,82 165,77" stroke="#1a1004" stroke-width="2" fill="none" opacity="0.44" stroke-linecap="round"/>
+    <!-- subtle candlestick / chart-line backdrop -->
+    <svg class="ztu-lib-chart" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <polyline points="10,215 80,198 150,162 220,176 300,132 370,108 450,80 520,62 595,40" fill="none" stroke="#c89c3f" stroke-width="2" opacity="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <g opacity="0.7">
+        <line x1="90"  y1="176" x2="90"  y2="214" stroke="#3fae73" stroke-width="4"/><rect x="84" y="186" width="12" height="20" rx="2" fill="#3fae73"/>
+        <line x1="210" y1="142" x2="210" y2="186" stroke="#cf6b6b" stroke-width="4"/><rect x="204" y="154" width="12" height="22" rx="2" fill="#cf6b6b"/>
+        <line x1="330" y1="108" x2="330" y2="150" stroke="#3fae73" stroke-width="4"/><rect x="324" y="120" width="12" height="22" rx="2" fill="#3fae73"/>
+        <line x1="450" y1="70"  x2="450" y2="112" stroke="#3fae73" stroke-width="4"/><rect x="444" y="82"  width="12" height="22" rx="2" fill="#3fae73"/>
+        <line x1="540" y1="56"  x2="540" y2="96"  stroke="#cf6b6b" stroke-width="4"/><rect x="534" y="66"  width="12" height="18" rx="2" fill="#cf6b6b"/>
+      </g>
+    </svg>
 
-          <!-- Neck section: side chrome / shadow edges -->
-          <path d="M121.5,80 L125,96" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.62"/>
-          <path d="M158.5,80 L155,96" stroke="#1a1004" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
-
-          <!-- Mid collar (cy=102): top chrome ring + undercut -->
-          <ellipse cx="140" cy="95.5" rx="32" ry="1.6" fill="#fff7dc" opacity="0.62"/>
-          <path d="M104,108 Q140,112 176,108" stroke="#1a1004" stroke-width="2" fill="none" opacity="0.44" stroke-linecap="round"/>
-
-          <!-- Body shaft: chrome left edge + dark right edge -->
-          <path d="M116,114 L124,194" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.62"/>
-          <path d="M164,114 L156,194" stroke="#1a1004" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.50"/>
-
-          <!-- Lower bulge (cy=208): top rim + deep undercut -->
-          <ellipse cx="140" cy="201" rx="44" ry="1.6" fill="#fff7dc" opacity="0.62"/>
-          <path d="M90,217 Q140,222 190,217" stroke="#1a1004" stroke-width="2" fill="none" opacity="0.44" stroke-linecap="round"/>
-
-          <!-- Flared base body: side edge lights -->
-          <path d="M94,214 L100,246" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.58"/>
-          <path d="M186,214 L180,246" stroke="#1a1004" stroke-width="2.2" stroke-linecap="round" opacity="0.50"/>
-
-          <!-- Base discs: chrome rings + bottom ambient occlusion -->
-          <ellipse cx="140" cy="254" rx="56" ry="1.8" fill="#fff7dc" opacity="0.58"/>
-          <ellipse cx="140" cy="265" rx="60" ry="1.6" fill="#fff7dc" opacity="0.45"/>
-          <path d="M74,274 Q140,280 206,274" stroke="#1a1004" stroke-width="2.2" fill="none" opacity="0.46" stroke-linecap="round"/>
-
-          <!-- Cathedral ambient sheen down center -->
-          <ellipse cx="140" cy="154" rx="4" ry="80" fill="#ffffff" opacity="0.10"/>
-        </g>
-
-        <g opacity="0.7">
-          <ellipse cx="60"  cy="288" rx="20" ry="8" fill="#d4ae5e"/>
-          <ellipse cx="100" cy="290" rx="22" ry="9" fill="#bfa056"/>
-          <ellipse cx="180" cy="290" rx="22" ry="9" fill="#bfa056"/>
-          <ellipse cx="220" cy="288" rx="20" ry="8" fill="#d4ae5e"/>
-        </g>
-      </svg>
+    <!-- LEFT: branding (short copy) -->
+    <div class="ztu-lib-left">
+      <span class="ztu-lib-logo" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+      </span>
+      <h2 class="ztu-lib-title">ZTU<span>LIBRARY</span></h2>
+      <div class="ztu-lib-rule" aria-hidden="true"></div>
+      <div class="ztu-lib-kicker">Videos, Audios &amp; Books</div>
+      <p class="ztu-lib-desc">Access premium trading knowledge anytime.</p>
+      <span class="ztu-lib-cta">
+        Access Library
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
     </div>
 
-    <div class="lux-trusted-body">
-
-      <div class="lux-trusted-copy">
-        <h2>Trusted by Traders<br><span>Proven by Results</span></h2>
-        <p>Join a growing community of successful traders and experience the difference.</p>
-        <a href="#join" class="lux-btn-gold">
-          Join Now
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
+    <!-- RIGHT: standing trading-book collection -->
+    <div class="ztu-lib-collection" aria-hidden="true">
+      <div class="ztu-spine" style="--c1:#26395f;--c2:#15233d;--h:198px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Technical Analysis</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg></span>
       </div>
-
-      <div class="lux-stat">
-        <span class="lux-stat-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </span>
-        <div class="lux-stat-value">+15,000+</div>
-        <div class="lux-stat-label">Members Joined</div>
-        <svg class="lux-stat-chart" viewBox="0 0 180 40" preserveAspectRatio="none">
-          <polyline points="4,32 24,28 44,22 64,24 84,18 104,14 124,16 144,8 164,6 176,2" fill="none" stroke="#c89c3f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <div class="ztu-spine" style="--c1:#2c333d;--c2:#171b22;--h:208px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Trading Strategies</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
       </div>
-
-      <div class="lux-stat">
-        <span class="lux-stat-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        </span>
-        <div class="lux-stat-value">Overall Profit</div>
-        <div class="lux-stat-label">Results</div>
-        <div class="lux-stat-desc">Our previous data confirms consistent results in overall profit.</div>
-        <svg class="lux-stat-chart" viewBox="0 0 180 40" preserveAspectRatio="none">
-          <g fill="#c89c3f">
-            <rect x="4"  y="22" width="14" height="16" rx="2"/>
-            <rect x="24" y="18" width="14" height="20" rx="2"/>
-            <rect x="44" y="14" width="14" height="24" rx="2"/>
-            <rect x="64" y="20" width="14" height="18" rx="2"/>
-            <rect x="84" y="10" width="14" height="28" rx="2"/>
-            <rect x="104" y="6" width="14" height="32" rx="2"/>
-            <rect x="124" y="12" width="14" height="26" rx="2"/>
-            <rect x="144" y="2" width="14" height="36" rx="2"/>
-          </g>
-        </svg>
+      <div class="ztu-spine" style="--c1:#1d3b3a;--c2:#102524;--h:200px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Market Structure</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="9"/></svg></span>
       </div>
-
-      <div class="lux-stat">
-        <span class="lux-stat-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>
-        </span>
-        <div class="lux-stat-value">Daily Signal</div>
-        <div class="lux-stat-label">High Quality</div>
-        <div class="lux-stat-desc">Depend on only high-quality, research-based daily signals.</div>
-        <svg class="lux-stat-chart" viewBox="0 0 180 40" preserveAspectRatio="none">
-          <polyline points="4,28 24,24 44,18 64,22 84,12 104,16 124,8 144,12 164,4 176,2" fill="none" stroke="#c89c3f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <div class="ztu-spine" style="--c1:#2a2b4a;--c2:#16172b;--h:210px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Price Action Trading</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="4" height="8" rx="1"/><line x1="7" y1="4" x2="7" y2="8"/><line x1="7" y1="16" x2="7" y2="20"/><rect x="15" y="6" width="4" height="9" rx="1"/><line x1="17" y1="3" x2="17" y2="6"/><line x1="17" y1="15" x2="17" y2="21"/></svg></span>
       </div>
-
+      <div class="ztu-spine" style="--c1:#2e2329;--c2:#1a1216;--h:196px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Risk Management</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+      </div>
+      <div class="ztu-spine" style="--c1:#322a4d;--c2:#1b1730;--h:204px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Market Psychology</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-1 5 3 3 0 0 0 1 5 3 3 0 0 0 3 3"/><path d="M15 3a3 3 0 0 1 3 3 3 3 0 0 1 1 5 3 3 0 0 1-1 5 3 3 0 0 1-3 3"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span>
+      </div>
+      <div class="ztu-spine" style="--c1:#222630;--c2:#121419;--h:192px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Trading Mindset</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span>
+      </div>
+      <div class="ztu-spine" style="--c1:#1f2d48;--c2:#101a2c;--h:206px">
+        <span class="sp-band"></span>
+        <span class="sp-title">Options Trading</span>
+        <span class="sp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 21 8 12 13 3 8"/><path d="M3 13l9 5 9-5"/></svg></span>
+      </div>
     </div>
-  </div>
+
+  </a>
 </section>
 
 <!-- ── START YOUR JOURNEY ── -->
