@@ -683,20 +683,22 @@ const LIBRARY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
    B) Use the anon key (already set below) — works ONLY if your Storage
       bucket policies explicitly allow anonymous INSERT (not recommended).
    Recommended: replace with your service role key. */
-const LIBRARY_SERVICE_KEY   = LIBRARY_SUPABASE_KEY; /* Fallback — override via Storage Setup panel */
 const PASS_SESSION_KEY      = 'ztu_lib_admin_pass';
-const SVC_KEY_SESSION       = 'ztu_lib_svc_key';
 
-/* Returns the best available upload key:
-   1. Service role key entered in the Setup panel (sessionStorage)
-   2. Hardcoded LIBRARY_SERVICE_KEY constant (falls back to anon key)       */
-function getUploadKey() {
-  return sessionStorage.getItem(SVC_KEY_SESSION) || LIBRARY_SERVICE_KEY;
-}
+/* Privileged storage ops (bucket status / init / signed uploads) run on the
+   server via this Cloudflare Function. The Library service key lives in
+   Cloudflare env vars and NEVER reaches the browser — no manual key, no
+   sessionStorage. The admin passcode authenticates each call.               */
+const STORAGE_ENDPOINT = '/api/library-storage';
 
-function isUsingServiceKey() {
-  const k = getUploadKey();
-  return k !== LIBRARY_SUPABASE_KEY && k.length > 40;
+async function callStorage(action, payload = {}) {
+  const res = await fetch(STORAGE_ENDPOINT, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ action, passcode: ADMIN_PASSCODE, ...payload })
+  });
+  if (!res.ok && res.status !== 200) throw new Error(`storage endpoint HTTP ${res.status}`);
+  return res.json();
 }
 
 /* ── LANGUAGES ── */
@@ -796,61 +798,47 @@ async function sbDelete(table, id) {
   if (!r.ok) throw new Error(`DELETE ${table} failed: ${r.status}`);
 }
 
-/* Upload file to Supabase Storage, return public URL.
-   Supabase Storage REST API requires raw binary body + correct Content-Type.
-   Uses getUploadKey() which prefers a session-stored service role key.       */
+/* Upload a file to Supabase Storage WITHOUT a client-side service key.
+   1. Ask the backend for a short-lived signed upload URL.
+   2. PUT the raw bytes straight to that URL (keeps XHR progress; large files
+      never pass through the Worker). The service key stays server-side.       */
 async function uploadFile(bucket, path, file, onProgress) {
-  const uploadKey = getUploadKey();
-
-  /* Warn if still on anon key — upload will likely be rejected */
-  if (uploadKey === LIBRARY_SUPABASE_KEY) {
-    console.warn('[upload] Using anon key — upload will fail unless bucket RLS allows anon INSERT. Go to Storage Setup to add a service role key.');
+  // 1. Get a signed upload URL from the server
+  let sign;
+  try {
+    sign = await callStorage('sign-upload', { bucket, path });
+  } catch (e) {
+    throw new Error(`Could not reach storage service: ${e.message}`);
+  }
+  if (!sign.ok) {
+    if (sign.error === 'storage_not_configured') {
+      throw new Error('Storage not configured on server — add LIBRARY_SUPABASE_URL, LIBRARY_SUPABASE_SERVICE_KEY and LIBRARY_ADMIN_PASSCODE in Cloudflare.');
+    }
+    if (sign.error === 'unauthorized') throw new Error('Admin passcode rejected by storage service.');
+    throw new Error(`Could not sign upload: ${sign.detail || sign.error}`);
   }
 
+  // 2. PUT the file bytes to the signed URL (token is in the query string)
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const url = `${LIBRARY_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-    xhr.open('POST', url);
-
-    /* Auth headers — use best available key */
-    xhr.setRequestHeader('apikey',        uploadKey);
-    xhr.setRequestHeader('Authorization', `Bearer ${uploadKey}`);
-
-    /* Raw binary upload: Content-Type must be the file's MIME type.
-       Using FormData / multipart here causes Supabase to return 400.        */
-    xhr.setRequestHeader('Content-Type',  file.type || 'application/octet-stream');
-
-    /* Allow overwriting existing files at the same path */
+    xhr.open('PUT', sign.signedUrl);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
     xhr.setRequestHeader('x-upsert', 'true');
 
     xhr.upload.onprogress = e => {
-      if (e.lengthComputable && onProgress) {
-        onProgress(Math.round(e.loaded / e.total * 100));
-      }
+      if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
     };
-
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const publicUrl = `${LIBRARY_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
-        resolve(publicUrl);
+        resolve(sign.publicUrl);
       } else {
-        /* Extract exact Supabase error message for actionable feedback */
         let detail = xhr.responseText || '(empty response)';
-        try {
-          const parsed = JSON.parse(xhr.responseText);
-          detail = parsed.message || parsed.error || detail;
-        } catch {}
-        const fullMsg = `Upload failed (${xhr.status}): ${detail}`;
-        console.error(`[upload] ${bucket}/${path} →`, fullMsg);
-        reject(new Error(fullMsg));
+        try { const p = JSON.parse(xhr.responseText); detail = p.message || p.error || detail; } catch {}
+        console.error(`[upload] ${bucket}/${path} →`, xhr.status, detail);
+        reject(new Error(`Upload failed (${xhr.status}): ${detail}`));
       }
     };
-
-    xhr.onerror = () => {
-      reject(new Error('Upload network error — possible CORS issue or no internet'));
-    };
-
-    /* Send raw file bytes — Supabase expects the binary body directly */
+    xhr.onerror = () => reject(new Error('Upload network error'));
     xhr.send(file);
   });
 }
