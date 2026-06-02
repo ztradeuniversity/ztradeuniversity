@@ -437,6 +437,7 @@ export async function onRequest(context) {
   const bodyTz      = typeof body?.tz === 'string' ? body.tz.slice(0, 64) : null;          // browser timezone
   const bodyCountry = typeof body?.country === 'string' ? body.country.slice(0, 4).toUpperCase() : null;
   const traderContext = (body?.traderContext && typeof body.traderContext === 'object') ? body.traderContext : null; // Memory V2
+  const chartAnalysis = (body?.chartAnalysis && typeof body.chartAnalysis === 'object') ? body.chartAnalysis : null; // Chart Vision
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return new Response(JSON.stringify({ error: '`messages` array is required' }), { status: 400, headers: JSON_HEADERS });
   }
@@ -481,6 +482,8 @@ export async function onRequest(context) {
   const lastUserMsg = messages[messages.length - 1]?.content ?? '';
   const lang        = detectLanguage(lastUserMsg);
   const cls         = classifyIntent(lastUserMsg);
+  // Chart Vision: an uploaded-chart analysis forces the chart intent
+  if (chartAnalysis) cls.intent = 'chart';
 
   // ── PHASE 9: ACCESS GATING ────────────────────────────────────────────────
   // Gating is ONLY active when the AI Supabase project is configured (memoryData.configured).
@@ -551,6 +554,7 @@ export async function onRequest(context) {
       newsData,
       geo,
       traderContext,
+      chartAnalysis,
       isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
     });
   } catch (err) {

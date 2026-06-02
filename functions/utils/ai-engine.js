@@ -232,6 +232,13 @@ export function classifyIntent(text) {
     return { intent: 'broker', broker };
   }
 
+  // Chart image intelligence (text triggers — actual analysis is image-driven)
+  if (has(s, ['analyze my chart', 'analyse my chart', 'read my chart', 'check my chart',
+      'chart screenshot', 'my chart', 'detect pattern', 'what pattern', 'is this a double',
+      'is this a head and shoulders', 'pattern on my chart', 'analyze this chart', 'upload chart'])) {
+    return { intent: 'chart', broker };
+  }
+
   // Platform help
   if (has(s, ['tradingview', 'trading view'])) return { intent: 'platform', platform: 'tradingview', broker };
   if (has(s, ['mt5', 'metatrader', 'meta trader', 'mt4'])) return { intent: 'platform', platform: 'mt5', broker };
@@ -596,6 +603,12 @@ function buildCoachIntro(tc, intent) {
     lines.push(`And one win worth naming: you've improved your **${tc.improved[0]}** lately. 👏 Keep it going.`);
   }
 
+  // Personality Engine — trader-type tone, only when no stronger coach line fired
+  if (!lines.length && tc.type && TYPE_LINE[tc.type]
+      && ['gold', 'btc', 'macro', 'brief', 'assess', 'chart', 'stuck', 'psychology'].includes(intent)) {
+    lines.push(TYPE_LINE[tc.type]);
+  }
+
   return lines.length ? lines.join('\n\n') + '\n\n' : '';
 }
 
@@ -695,6 +708,85 @@ function buildDailyBrief({ marketData, calendarData, newsData, geo, lang }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  CHART PATTERN EDUCATION (Image/Chart Intelligence + Visualization)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Educational knowledge for each pattern the client-side vision can detect.
+// Framing is always probabilistic & educational — never a signal or guaranteed move.
+const PATTERN_EDU = {
+  'double-top':            { name: 'Double Top', bias: 'bearish reversal', logic: 'two peaks at a similar level with a trough between — buyers failed twice at resistance.', expected: 'historically often precedes a possible bearish reversal **if** the neckline (the trough) breaks with momentum.', watch: 'a clean neckline break vs. a third push into resistance (failure).' },
+  'double-bottom':         { name: 'Double Bottom', bias: 'bullish reversal', logic: 'two troughs at a similar level with a peak between — sellers failed twice at support.', expected: 'historically often indicates a possible bullish reversal after the support level holds and the neckline breaks upward.', watch: 'neckline break with rising volume vs. a third drop into support (failure).' },
+  'head-shoulders':        { name: 'Head & Shoulders', bias: 'bearish reversal', logic: 'three peaks — the middle (head) highest, two lower shoulders.', expected: 'one of the more reliable reversal structures; a neckline break *may* signal a possible downside move roughly equal to head-to-neckline height.', watch: 'the neckline break and whether the right shoulder forms on weaker momentum.' },
+  'inverse-head-shoulders':{ name: 'Inverse Head & Shoulders', bias: 'bullish reversal', logic: 'three troughs — the middle (head) lowest, two higher shoulders.', expected: 'a neckline break upward *may* signal a possible bullish reversal; measured target ≈ head-to-neckline height.', watch: 'volume expansion on the neckline break.' },
+  'ascending-triangle':    { name: 'Ascending Triangle', bias: 'bullish bias', logic: 'flat resistance with rising support — buyers stepping in higher each time.', expected: 'often resolves with a possible upside breakout, though false breaks are common.', watch: 'a decisive close above the flat resistance.' },
+  'descending-triangle':   { name: 'Descending Triangle', bias: 'bearish bias', logic: 'flat support with falling resistance — sellers pressing lower each time.', expected: 'often resolves with a possible downside breakdown.', watch: 'a decisive close below the flat support.' },
+  'symmetrical-triangle':  { name: 'Symmetrical Triangle', bias: 'neutral / continuation', logic: 'converging highs and lows — coiling energy, indecision.', expected: 'tends to break in the direction of the prior trend roughly two-thirds of the time — but direction is not guaranteed.', watch: 'which side breaks first, ideally with momentum.' },
+  'rising-wedge':          { name: 'Rising Wedge', bias: 'bearish warning', logic: 'converging upward lines with weakening momentum.', expected: 'despite the upward slope, this often warns of a possible downside reversal.', watch: 'a break of the lower wedge line.' },
+  'falling-wedge':         { name: 'Falling Wedge', bias: 'bullish signal', logic: 'converging downward lines with fading selling pressure.', expected: 'often precedes a possible upside move once the upper line breaks.', watch: 'a break above the upper wedge line.' },
+  'bull-flag':             { name: 'Bull Flag', bias: 'bullish continuation', logic: 'a sharp rise (pole) then a tight downward/sideways consolidation (flag).', expected: 'often continues the prior up-move after a breakout — measured move ≈ the pole height.', watch: 'breakout above the flag on renewed momentum.' },
+  'bear-flag':             { name: 'Bear Flag', bias: 'bearish continuation', logic: 'a sharp drop (pole) then a tight upward/sideways consolidation.', expected: 'often continues the prior down-move after a breakdown.', watch: 'breakdown below the flag.' },
+  'channel':               { name: 'Channel', bias: 'trend continuation', logic: 'price moving between two parallel sloped lines.', expected: 'price tends to respect the channel until a clear break; the break direction often sets the next leg.', watch: 'reactions at the channel edges and any breakout.' },
+  'range':                 { name: 'Range / Consolidation', bias: 'neutral', logic: 'price oscillating between horizontal support and resistance.', expected: 'ranges tend to persist until a confirmed breakout; edges often offer the cleanest reactions.', watch: 'a decisive break of either boundary.' },
+  'breakout':              { name: 'Breakout Structure', bias: 'momentum', logic: 'price pushing beyond a established level after consolidation.', expected: 'breakouts *may* extend with momentum or fail (fakeout) — retests of the broken level are common.', watch: 'whether the broken level holds on a retest.' },
+  'liquidity-sweep':       { name: 'Liquidity Sweep', bias: 'reversal context', logic: 'a sharp spike beyond an obvious high/low that quickly reverses — stops were taken.', expected: 'the snap-back *may* signal a reversal as trapped traders exit, but confirmation matters.', watch: 'price reclaiming the swept level quickly.' },
+  'support-resistance':    { name: 'Support / Resistance', bias: 'structural', logic: 'horizontal levels where price has repeatedly reacted.', expected: 'these levels often produce reactions; the more touches, the more significant — until broken.', watch: 'reactions and clean breaks of the key level.' },
+  'uptrend':               { name: 'Uptrend Structure', bias: 'bullish structure', logic: 'a sequence of higher highs and higher lows.', expected: 'trends tend to persist until structure breaks (a lower low).', watch: 'whether higher lows keep forming.' },
+  'downtrend':             { name: 'Downtrend Structure', bias: 'bearish structure', logic: 'a sequence of lower highs and lower lows.', expected: 'trends tend to persist until structure breaks (a higher high).', watch: 'whether lower highs keep forming.' },
+};
+
+function buildChartResponse(chart, lang) {
+  if (!chart) return null;
+  const patterns = Array.isArray(chart.patterns) ? chart.patterns : [];
+  let out = `## 📊 Chart Analysis (educational)\n`;
+
+  if (chart.trend) {
+    const tEdu = PATTERN_EDU[chart.trend];
+    out += `\n**Overall structure:** ${tEdu ? tEdu.name : chart.trend}.\n`;
+  }
+
+  if (patterns.length) {
+    out += `\n**Patterns detected:**\n`;
+    for (const p of patterns.slice(0, 3)) {
+      const e = PATTERN_EDU[p.key];
+      if (!e) continue;
+      const conf = p.confidence != null ? ` _(confidence: ${p.confidence})_` : '';
+      out += `\n### ${e.name} — *${e.bias}*${conf}\n`;
+      out += `- **Why detected:** ${e.logic}\n`;
+      out += `- **Pattern logic:** ${e.expected}\n`;
+      out += `- **What to watch:** ${e.watch}\n`;
+    }
+  } else {
+    out += `\nI couldn't lock onto a classic textbook pattern with confidence, but here's the structure I can read:\n`;
+  }
+
+  if (chart.levels && chart.levels.length) {
+    out += `\n**Key horizontal levels I can see** (approximate zones on your chart):\n`;
+    for (const lv of chart.levels.slice(0, 4)) {
+      out += `- ${lv.type === 'resistance' ? '🔴 Resistance' : '🟢 Support'} zone${lv.touches ? ` (~${lv.touches} touches)` : ''}\n`;
+    }
+  }
+
+  out += `\n**⚠️ Risk & psychology angle:** patterns describe *probabilities, not certainties*. The cleanest setups still fail — so size for the loss, place your stop beyond the invalidation level, and never widen it emotionally if price approaches.\n`;
+  out += `\n**This is educational structure analysis — not a buy/sell signal.** For live signals, our team posts them on [Telegram](${TELEGRAM}).`;
+  out += `\n\n📊 Cross-check the live picture on [Live Market Sentiment](live-sentiment.html), or share your **entry, stop & target** and I'll assess the trade structure with you.`;
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PERSONALITY ENGINE — trader-type tone (emotional / overtrader / scalper / …)
+// ════════════════════════════════════════════════════════════════════════════
+
+const TYPE_LINE = {
+  emotional:  `Before the charts — I know emotions run high for you, so let's keep **risk and mindset first**. 🧘`,
+  overtrader: `Quick reminder for you: **quality over quantity** — fewer, cleaner setups beat many rushed ones. ⏳`,
+  scalper:    `Scalper mode: I'll keep this **session- and risk-focused** — spread, liquidity, and timing matter most for you. ⚡`,
+  swing:      `Swing lens: let's think **higher-timeframe structure and patience** rather than noise. 🌊`,
+  funded:     `Funded-account mindset: protect the **drawdown limit** first — consistency keeps the account, not hero trades. 🛡️`,
+  advanced:   ``,
+  beginner:   ``,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
 //  RESPONSE GENERATION
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -727,20 +819,26 @@ function generateBody(ctx) {
     case 'signal':
       return signalRouteBlock(lang) + '\n\nMeanwhile, I can explain the **current market context**, assess **your own** trade idea, or check **news risk** — just ask.' + disc;
 
-    // ── GOLD ──────────────────────────────────────────────────────────────
+    // ── CHART IMAGE INTELLIGENCE ───────────────────────────────────────────
+    case 'chart': {
+      const c = buildChartResponse(ctx.chartAnalysis, lang);
+      if (c) return c + disc;
+      return `## 📊 Chart Image Intelligence\nUpload a chart screenshot using the **image button** next to the message box, and I'll analyse its structure — trend, support/resistance, and patterns like double tops/bottoms, head & shoulders, triangles, wedges, flags, channels, ranges, and liquidity sweeps — then explain the **probability and logic** (never a signal).` + disc;
+    }
+
+    // ── GOLD (User Expectation Engine: multi-angle) ────────────────────────
     case 'gold': {
       const mb = marketBlock(marketData);
       let out = '## Gold (XAU/USD) — Market Context\n';
       if (mb) out += mb + '\n\n';
-      out += `**What moves Gold right now:**\n` +
-        `- **Real yields & the Fed:** lower real yields and dovish Fed expectations tend to support Gold; rising yields pressure it.\n` +
-        `- **US Dollar (DXY):** Gold is priced in USD — a stronger dollar is a headwind, a weaker dollar a tailwind.\n` +
-        `- **Safe-haven demand:** geopolitical risk and elevated VIX can lift Gold.\n` +
-        `- **Inflation expectations:** rising breakeven inflation is historically Gold-supportive.\n`;
+      out += `**📐 Technical angle:** watch the key structural zones and whether price is making higher lows (bullish structure) or lower highs (bearish structure).\n` +
+        `**🏦 Fundamental angle:** real yields & the Fed (lower/dovish → supportive), the **US Dollar (DXY)** (inverse), and inflation expectations.\n` +
+        `**🛡️ Sentiment angle:** safe-haven demand rises with geopolitical risk and an elevated VIX.\n` +
+        `**📰 News angle:** CPI, NFP and FOMC are the big movers — check the calendar before entries.\n`;
       if (marketData?.marketRegime?.label) {
-        out += `\nWith the current regime reading **${marketData.marketRegime.label}**, position discipline matters — context can shift quickly around news.`;
+        out += `\nCurrent regime reads **${marketData.marketRegime.label}** — context can shift fast around news.`;
       }
-      out += `\n\nWant me to **review a specific Gold trade idea** (your entry, SL, TP)? Share the numbers and I'll assess the structure and risk.`;
+      out += `\n\nWant me to go deeper on the **technical**, **fundamental**, **sentiment**, or **news** angle — or **review your own Gold trade** (entry, SL, TP)?`;
       return out + disc;
     }
 
@@ -939,11 +1037,15 @@ function generateBody(ctx) {
     // ── FALLBACK (Priority 2: trusted sources) ─────────────────────────────
     case 'fallback':
     default: {
-      return `${t.fallbackIntro}\n\n` +
-        `**Markets & macro:**\n${trustedSourceBlock(lang, 'macro')}\n\n` +
-        `**News:**\n${trustedSourceBlock(lang, 'news')}\n\n` +
-        `**Learn trading:**\n${trustedSourceBlock(lang, 'education')}\n\n` +
-        `Or ask me about **Gold/BTC context, a trade assessment, brokers, risk, or psychology** — I answer those directly.` + disc;
+      // Satisfaction Engine — never "I don't know". Offer real internal help first.
+      return `Based on the available information, that's a bit outside what I can answer precisely right now — but I won't leave you empty-handed. Here's how I can genuinely help:\n\n` +
+        `- 🏅 **Gold / ₿ BTC market context** — drivers, structure, and the current regime\n` +
+        `- 📋 **AI Daily Brief™** — say *"today's market"* for events, volatility & focus\n` +
+        `- 🔍 **Trade assessment** — share your entry, stop & target and I'll review the structure\n` +
+        `- 📊 **Chart analysis** — upload a screenshot and I'll read the patterns\n` +
+        `- 🧠 **Psychology & "why am I losing"** coaching, **broker** help, and **risk/lot-size** maths\n\n` +
+        `If it's live data you're after, these official sources are reliable:\n${trustedSourceBlock(lang, 'macro')}\n\n` +
+        `What would you like to dig into?` + disc;
     }
   }
 }

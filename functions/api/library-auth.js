@@ -266,21 +266,32 @@ async function lookupIbStars(acct, env) {
   if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'broker_accounts',   acctEncoded);
   if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'license_requests',  acctEncoded);
 
+  // Proof trace (visible in Cloudflare → Functions → Real-time logs)
+  console.log(`[library-auth] lookup acct="${decodeURIComponent(acctEncoded)}" found=true active=true email=${email ? maskEmail(email) : 'NONE'}`);
+
   return { found: true, active: true, email: email || null };
 }
 
-// Fetch the first non-empty email for an account from a given table.
+// Fetch an email for an account from a given table.
+// Uses select=* (no fragile not-null filter that could 400 the whole query) and
+// resolves the email from ANY column via resolveEmail — robust to column naming.
 async function fetchEmailByAccount(supabaseUrl, serviceKey, table, acctEncoded) {
   try {
     const r = await fetch(
-      `${supabaseUrl}/rest/v1/${table}?account_number=eq.${acctEncoded}&email=not.is.null&select=email&limit=5`,
+      `${supabaseUrl}/rest/v1/${table}?account_number=eq.${acctEncoded}&select=*&limit=10`,
       { headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' } }
     );
-    if (!r.ok) return null;
+    if (!r.ok) {
+      console.error(`[library-auth] ${table} lookup HTTP ${r.status}:`, await r.text().catch(() => ''));
+      return null;
+    }
     const rows = await r.json();
+    console.log(`[library-auth] ${table}: ${Array.isArray(rows) ? rows.length : 0} row(s) for account`);
     if (Array.isArray(rows)) {
-      const hit = rows.find(x => x && x.email && String(x.email).includes('@'));
-      if (hit) return String(hit.email).trim();
+      for (const row of rows) {
+        const e = resolveEmail(row);
+        if (e) return e;
+      }
     }
   } catch (e) {
     console.error(`[library-auth] email lookup in ${table} failed:`, e?.message);
