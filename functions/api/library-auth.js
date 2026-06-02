@@ -263,8 +263,8 @@ async function lookupIbStars(acct, env) {
   // admin "IB Stars Active" list displays (account_number + email). license_requests
   // is a secondary source. Both keyed by account_number, null emails skipped.
   let email = resolveEmail(row);
-  if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'broker_accounts',   acctEncoded);
-  if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'license_requests',  acctEncoded);
+  if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'broker_accounts',   acct);
+  if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'license_requests',  acct);
 
   // Proof trace (visible in Cloudflare → Functions → Real-time logs)
   console.log(`[library-auth] lookup acct="${decodeURIComponent(acctEncoded)}" found=true active=true email=${email ? maskEmail(email) : 'NONE'}`);
@@ -273,30 +273,59 @@ async function lookupIbStars(acct, env) {
 }
 
 // Fetch an email for an account from a given table.
-// Uses select=* (no fragile not-null filter that could 400 the whole query) and
-// resolves the email from ANY column via resolveEmail — robust to column naming.
-async function fetchEmailByAccount(supabaseUrl, serviceKey, table, acctEncoded) {
+// EA tables can store account_number in non-canonical raw forms (Excel float
+// artifacts like "171929726.0", scientific notation, commas, whitespace). The
+// admin dashboard normalises before matching (normalizeAccountId); we mirror that:
+//   Pass 1 — fast indexed eq on the common raw forms.
+//   Pass 2 — tolerant ilike, then confirm via in-code normalisation.
+async function fetchEmailByAccount(supabaseUrl, serviceKey, table, acctRaw) {
+  const headers = { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' };
+  const norm    = normAcct(acctRaw);
+  if (!norm) return null;
+
+  // Pass 1 — exact-match the likely stored forms (indexed, fast).
+  const forms  = [...new Set([String(acctRaw).trim(), norm, `${norm}.0`, `${norm}.00`])].filter(Boolean);
+  const orEq   = forms.map(v => `account_number.eq.${encodeURIComponent(v)}`).join(',');
+  let email = await _queryEmail(`${supabaseUrl}/rest/v1/${table}?or=(${orEq})&select=*&limit=25`, headers, norm, table);
+  if (email) return email;
+
+  // Pass 2 — tolerant substring match (whitespace / suffix / float artifacts).
+  email = await _queryEmail(`${supabaseUrl}/rest/v1/${table}?account_number=ilike.*${encodeURIComponent(norm)}*&select=*&limit=50`, headers, norm, table);
+  return email;
+}
+
+async function _queryEmail(url, headers, norm, table) {
   try {
-    const r = await fetch(
-      `${supabaseUrl}/rest/v1/${table}?account_number=eq.${acctEncoded}&select=*&limit=10`,
-      { headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' } }
-    );
+    const r = await fetch(url, { headers });
     if (!r.ok) {
-      console.error(`[library-auth] ${table} lookup HTTP ${r.status}:`, await r.text().catch(() => ''));
+      console.error(`[library-auth] ${table} HTTP ${r.status}:`, await r.text().catch(() => ''));
       return null;
     }
     const rows = await r.json();
-    console.log(`[library-auth] ${table}: ${Array.isArray(rows) ? rows.length : 0} row(s) for account`);
+    console.log(`[library-auth] ${table}: ${Array.isArray(rows) ? rows.length : 0} candidate row(s)`);
     if (Array.isArray(rows)) {
+      // Prefer the row whose NORMALISED account matches exactly.
       for (const row of rows) {
-        const e = resolveEmail(row);
-        if (e) return e;
+        if (normAcct(row.account_number) === norm) { const e = resolveEmail(row); if (e) return e; }
       }
+      // Otherwise any candidate row that carries an email.
+      for (const row of rows) { const e = resolveEmail(row); if (e) return e; }
     }
   } catch (e) {
-    console.error(`[library-auth] email lookup in ${table} failed:`, e?.message);
+    console.error(`[library-auth] ${table} email lookup failed:`, e?.message);
   }
   return null;
+}
+
+// Mirror of the admin dashboard's normalizeAccountId (admin-dashboard.js:1506).
+function normAcct(raw) {
+  if (raw === null || raw === undefined || raw === '') return '';
+  let s = String(raw).trim().replace(/,/g, '').replace(/\s+/g, '');
+  if (/[eE]/.test(s) && /^[0-9.eE+\-]+$/.test(s)) {
+    const n = Number(s);
+    if (Number.isFinite(n)) s = String(Math.round(n));
+  }
+  return s.replace(/\.0+$/, '');
 }
 
 // Resolve an email address from a row regardless of the exact column name.
