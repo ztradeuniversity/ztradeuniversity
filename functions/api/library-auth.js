@@ -258,31 +258,34 @@ async function lookupIbStars(acct, env) {
     return { found: true, active: false };
   }
 
-  // Resolve the email from whichever column actually holds it.
+  // Resolve the email. The IB-Stars view itself usually carries no email column,
+  // so we read it from the AUTHORITATIVE broker_accounts table — exactly what the
+  // admin "IB Stars Active" list displays (account_number + email). license_requests
+  // is a secondary source. Both keyed by account_number, null emails skipped.
   let email = resolveEmail(row);
-
-  // Email source of truth: the broker/IB-Stars data carries NO email, so the
-  // admin dashboard enriches it from license_requests (first NON-EMPTY email per
-  // account). Mirror that exactly: filter out null emails and take the first hit.
-  if (!email) {
-    try {
-      const fb = await fetch(
-        `${supabaseUrl}/rest/v1/license_requests?account_number=eq.${acctEncoded}&email=not.is.null&select=email&limit=5`,
-        { headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' } }
-      );
-      if (fb.ok) {
-        const r2 = await fb.json();
-        if (Array.isArray(r2)) {
-          const hit = r2.find(x => x && x.email && String(x.email).includes('@'));
-          if (hit) email = String(hit.email).trim();
-        }
-      }
-    } catch (e) {
-      console.error('[library-auth] license_requests email fallback failed:', e?.message);
-    }
-  }
+  if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'broker_accounts',   acctEncoded);
+  if (!email) email = await fetchEmailByAccount(supabaseUrl, serviceKey, 'license_requests',  acctEncoded);
 
   return { found: true, active: true, email: email || null };
+}
+
+// Fetch the first non-empty email for an account from a given table.
+async function fetchEmailByAccount(supabaseUrl, serviceKey, table, acctEncoded) {
+  try {
+    const r = await fetch(
+      `${supabaseUrl}/rest/v1/${table}?account_number=eq.${acctEncoded}&email=not.is.null&select=email&limit=5`,
+      { headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' } }
+    );
+    if (!r.ok) return null;
+    const rows = await r.json();
+    if (Array.isArray(rows)) {
+      const hit = rows.find(x => x && x.email && String(x.email).includes('@'));
+      if (hit) return String(hit.email).trim();
+    }
+  } catch (e) {
+    console.error(`[library-auth] email lookup in ${table} failed:`, e?.message);
+  }
+  return null;
 }
 
 // Resolve an email address from a row regardless of the exact column name.

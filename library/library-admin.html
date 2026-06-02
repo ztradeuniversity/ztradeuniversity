@@ -570,30 +570,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <!-- Key Status Banner -->
         <div class="setup-section">
           <h3>Upload Key Status</h3>
-          <p>File uploads require a <strong>service role key</strong> — the anon key is blocked by Supabase's default storage policies. Enter your service role key below. It is stored in <code>sessionStorage</code> only (cleared when you close the tab).</p>
-          <div id="keyStatusBadge" class="key-status bad">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Using anon key — uploads will be blocked
+          <p>The Library <strong>service role key is managed securely on the server</strong> (Cloudflare environment variables) and is used only by the <code>/api/library-storage</code> function. It never reaches your browser — no manual entry, no <code>sessionStorage</code>.</p>
+          <div id="keyStatusBadge" class="key-status ok">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Service key managed securely on the server — no manual entry needed
           </div>
-          <div class="setup-row">
-            <div class="form-group">
-              <label class="form-label">Service Role Key</label>
-              <input type="password" class="form-input" id="svcKeyInput" placeholder="eyJhbGciOi…  (from Supabase → Settings → API)" autocomplete="off" />
-              <div class="form-hint">Find it in: Supabase Dashboard → Project Settings → API → service_role (secret)</div>
-            </div>
-            <button class="btn btn-primary" onclick="applyServiceKey()" style="margin-bottom:0;flex-shrink:0;">
-              Apply Key
-            </button>
-            <button class="btn btn-ghost" onclick="clearServiceKey()" style="margin-bottom:0;flex-shrink:0;">
-              Clear
-            </button>
+          <div class="form-hint" style="margin-top:10px;">
+            Required Cloudflare variables (one-time): <code>LIBRARY_SUPABASE_URL</code>, <code>LIBRARY_SUPABASE_SERVICE_KEY</code>, <code>LIBRARY_ADMIN_PASSCODE</code> (must equal this dashboard's passcode).
           </div>
         </div>
 
         <!-- Bucket Initialization -->
         <div class="setup-section">
           <h3>Storage Buckets</h3>
-          <p>These four buckets must exist in your Library Supabase project. Click "Initialize Buckets" to create any that are missing (requires service role key above).</p>
+          <p>These four buckets must exist in your Library Supabase project. Click "Initialize All Buckets" to create any that are missing — handled entirely on the server.</p>
           <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="initStorageBuckets()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -676,13 +666,9 @@ CREATE POLICY "Admin anon updates" ON storage.objects
 const ADMIN_PASSCODE        = 'ztu-admin-2024';  /* TODO: change before going live */
 const LIBRARY_SUPABASE_URL  = 'https://dcgtmiduqxnmfjkimxeh.supabase.co';
 const LIBRARY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZ3RtaWR1cXhubWZqa2lteGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDU0OTcsImV4cCI6MjA5NTc4MTQ5N30.Sg64TwDYMoOCqkcJmhUTQ2i3IQZyTQIT5FIJVmwbkwg';
-/* LIBRARY_SERVICE_KEY — used for file uploads to Supabase Storage.
-   Two options:
-   A) Use the SERVICE ROLE KEY (Supabase → Settings → API → service_role).
-      This bypasses RLS and always works. Keep it private — admin-only page.
-   B) Use the anon key (already set below) — works ONLY if your Storage
-      bucket policies explicitly allow anonymous INSERT (not recommended).
-   Recommended: replace with your service role key. */
+/* NOTE: the above is the public ANON key (safe for reads/inserts under RLS).
+   The privileged service_role key is NOT in this file — it lives in Cloudflare
+   env vars and is used only by /api/library-storage (server-side). */
 const PASS_SESSION_KEY      = 'ztu_lib_admin_pass';
 
 /* Privileged storage ops (bucket status / init / signed uploads) run on the
@@ -1478,127 +1464,89 @@ function toast(msg, type = 'info') {
    STORAGE SETUP — key management + bucket creation
 ============================================================================= */
 
-function applyServiceKey() {
-  const val = document.getElementById('svcKeyInput')?.value.trim();
-  if (!val || val.length < 40) {
-    toast('Key looks too short — paste the full service_role JWT.', 'error');
-    return;
-  }
-  if (val === LIBRARY_SUPABASE_KEY) {
-    toast('That is the anon key, not the service role key.', 'error');
-    return;
-  }
-  sessionStorage.setItem(SVC_KEY_SESSION, val);
-  document.getElementById('svcKeyInput').value = '';
-  refreshKeyStatusUI();
-  toast('Service role key saved for this session. Uploads will now use it.', 'success');
-  /* Hide the warning badge on the sidebar */
-  const badge = document.getElementById('setupBadge');
-  if (badge) badge.style.display = 'none';
-  checkBucketStatus();
-}
-
-function clearServiceKey() {
-  sessionStorage.removeItem(SVC_KEY_SESSION);
-  refreshKeyStatusUI();
-  toast('Service key cleared — reverted to anon key.', 'info');
-  const badge = document.getElementById('setupBadge');
-  if (badge) badge.style.display = '';
-}
-
-function refreshKeyStatusUI() {
+/* Reflect that the Library service key is now managed server-side. */
+function refreshKeyStatusUI(state) {
   const badge = document.getElementById('keyStatusBadge');
   if (!badge) return;
-  if (isUsingServiceKey()) {
-    badge.className = 'key-status ok';
-    badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Service role key active — uploads allowed';
-  } else {
+  if (state === 'bad') {
     badge.className = 'key-status bad';
-    badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Using anon key — uploads will be blocked by default';
+    badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Storage service not configured — add the Cloudflare variables below';
+  } else {
+    badge.className = 'key-status ok';
+    badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Service key managed securely on the server — no manual entry needed';
   }
 }
 
-/* Check whether each required bucket exists */
+/* Check whether each required bucket exists (server-side, no client key). */
 async function checkBucketStatus() {
-  const key = getUploadKey();
-  const buckets = ['library-covers', 'library-books', 'library-audio', 'library-videos'];
-
-  for (const b of buckets) {
+  const ids = ['library-covers', 'library-books', 'library-audio', 'library-videos'];
+  ids.forEach(b => {
     const el = document.getElementById(`bs-${b}`);
     if (el) { el.className = 'bucket-st checking'; el.textContent = '…'; }
-  }
+  });
 
-  for (const b of buckets) {
-    const el = document.getElementById(`bs-${b}`);
-    try {
-      const r = await fetch(`${LIBRARY_SUPABASE_URL}/storage/v1/bucket/${b}`, {
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      });
-      if (r.ok) {
-        if (el) { el.className = 'bucket-st exists'; el.textContent = 'Exists ✓'; }
-      } else if (r.status === 400 || r.status === 404) {
-        if (el) { el.className = 'bucket-st missing'; el.textContent = 'Missing ✗'; }
-      } else {
-        if (el) { el.className = 'bucket-st checking'; el.textContent = `${r.status}`; }
-      }
-    } catch {
-      if (el) { el.className = 'bucket-st checking'; el.textContent = 'Error'; }
-    }
-  }
-}
-
-/* Create all four required buckets */
-async function initStorageBuckets() {
-  if (!isUsingServiceKey()) {
-    toast('Apply a service role key first — bucket creation requires it.', 'error');
+  let res;
+  try {
+    res = await callStorage('status');
+  } catch (e) {
+    ids.forEach(b => { const el = document.getElementById(`bs-${b}`); if (el) { el.className = 'bucket-st checking'; el.textContent = 'Error'; } });
+    toast(`Could not reach storage service: ${e.message}`, 'error');
     return;
   }
-  const key = getUploadKey();
 
-  const defs = [
-    { id: 'library-covers',  name: 'library-covers',  public: true,  fileSizeLimit: 5242880   },
-    { id: 'library-books',   name: 'library-books',   public: false, fileSizeLimit: 52428800  },
-    { id: 'library-audio',   name: 'library-audio',   public: false, fileSizeLimit: 104857600 },
-    { id: 'library-videos',  name: 'library-videos',  public: false, fileSizeLimit: 524288000 }
-  ];
-
-  for (const def of defs) {
-    try {
-      const r = await fetch(`${LIBRARY_SUPABASE_URL}/storage/v1/bucket`, {
-        method: 'POST',
-        headers: {
-          'apikey': key, 'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(def)
-      });
-
-      if (r.ok) {
-        toast(`Created: ${def.id}`, 'success');
-      } else {
-        const body = await r.json().catch(() => ({}));
-        const msg  = body.message || body.error || r.status;
-        if (String(msg).toLowerCase().includes('already exists') || String(msg).toLowerCase().includes('duplicate')) {
-          toast(`${def.id} already exists.`, 'info');
-        } else {
-          toast(`Failed to create ${def.id}: ${msg}`, 'error');
-        }
-      }
-    } catch (e) {
-      toast(`Error creating ${def.id}: ${e.message}`, 'error');
-    }
+  if (!res.ok) {
+    refreshKeyStatusUI('bad');
+    ids.forEach(b => { const el = document.getElementById(`bs-${b}`); if (el) { el.className = 'bucket-st missing'; el.textContent = '—'; } });
+    if (res.error === 'storage_not_configured') toast('Add LIBRARY_SUPABASE_URL, LIBRARY_SUPABASE_SERVICE_KEY and LIBRARY_ADMIN_PASSCODE in Cloudflare.', 'error');
+    else if (res.error === 'unauthorized') toast('Admin passcode rejected by storage service.', 'error');
+    return;
   }
 
-  /* Refresh status after creation */
-  setTimeout(checkBucketStatus, 800);
+  refreshKeyStatusUI('ok');
+  const setupBadge = document.getElementById('setupBadge');
+  if (setupBadge) setupBadge.style.display = 'none';
+  ids.forEach(b => {
+    const el = document.getElementById(`bs-${b}`);
+    if (!el) return;
+    if (res.buckets[b]) { el.className = 'bucket-st exists';  el.textContent = 'Exists ✓'; }
+    else                { el.className = 'bucket-st missing'; el.textContent = 'Missing ✗'; }
+  });
 }
 
-/* Also refresh key status on page load */
+/* Create any missing buckets (server-side). */
+async function initStorageBuckets() {
+  let res;
+  try {
+    res = await callStorage('init');
+  } catch (e) {
+    toast(`Could not reach storage service: ${e.message}`, 'error');
+    return;
+  }
+  if (!res.ok) {
+    if (res.error === 'storage_not_configured') toast('Add the three Cloudflare storage variables first.', 'error');
+    else if (res.error === 'unauthorized') toast('Admin passcode rejected by storage service.', 'error');
+    else toast(`Bucket init failed: ${res.error}`, 'error');
+    return;
+  }
+  for (const r of res.results) {
+    if (r.status === 'created')      toast(`Created: ${r.id}`, 'success');
+    else if (r.status === 'exists')  toast(`${r.id} already exists.`, 'info');
+    else                             toast(`Failed ${r.id}: ${r.detail}`, 'error');
+  }
+  setTimeout(checkBucketStatus, 600);
+}
+
+/* Manual key box is no longer required — kept as harmless no-ops so any
+   lingering button handlers don't throw. */
+function applyServiceKey() {
+  toast('Not needed — the service key is now managed securely on the server.', 'info');
+}
+function clearServiceKey() {
+  toast('Nothing to clear — no key is stored in the browser.', 'info');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  refreshKeyStatusUI();
-  /* Show/hide the ! badge based on whether service key is set */
-  const badge = document.getElementById('setupBadge');
-  if (badge && isUsingServiceKey()) badge.style.display = 'none';
+  refreshKeyStatusUI('ok');
 });
 
 /* =============================================================================
