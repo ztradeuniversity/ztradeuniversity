@@ -6386,15 +6386,21 @@ const AdminDashboard = (() => {
     //    the rendered set — the Library OTP gate will see the same accounts.
     rows.forEach(r => {
       const dbHit = dbByAcct.get(r.account);
-      // Only PATCH if the DB row is missing or its status is not already 'active'.
-      if (dbHit && dbHit.ib_star_status === 'active') return;
+      // PATCH when the DB row is missing / not-active, OR when it is active but
+      // lacks an email/whatsapp we can supply. The email backfill is what lets
+      // the Library OTP gate read a contact for accounts whose email currently
+      // lives only in the browser CrmStore (it never reached Supabase before).
+      const needsStatus = !dbHit || dbHit.ib_star_status !== 'active';
+      const needsEmail  = r.email    && (!dbHit || !dbHit.email);
+      const needsWa     = r.whatsapp && (!dbHit || !dbHit.whatsapp);
+      if (!needsStatus && !needsEmail && !needsWa) return;
       try {
-        const payload = { ib_star_status: 'active', last_trade_date: r.lastTradeISO };
+        const payload = { account_number: r.account, ib_star_status: 'active', last_trade_date: r.lastTradeISO };
         if (r.email)    payload.email    = r.email;
         if (r.whatsapp) payload.whatsapp = r.whatsapp;
         supabaseClient
           .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
-          .upsert([{ account_number: r.account, ...payload }], { onConflict: 'account_number' })
+          .upsert([payload], { onConflict: 'account_number' })
           .then(({ error }) => {
             if (error) console.warn('[Phase17A FINAL] write-back failed for', r.account, error.message);
           });
