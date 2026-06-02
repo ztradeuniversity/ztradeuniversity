@@ -23,15 +23,15 @@
 //
 // Actions (POST with JSON body):
 //   request-otp    { account }        => { ok, token, email_mask }
-//                                        { ok:false, reason: 'not_found'|'inactive'|'email_failed' }
+//                                        { ok:false, reason: 'not_found'|'inactive'|'email_missing'|'email_failed' }
 //   verify-otp     { token, code }    => { ok, account } | { ok:false, reason, att?, token? }
 //   resend-otp     { token }          => { ok, token, email_mask }
 //   verify-session { account }        => { ok, valid }
 //
-// ib_stars_active access logic:
-//   account NOT in table                       => reason: 'not_found'  (never an IB member)
-//   account in table, ib_star_status != active => reason: 'inactive'   (paused; auto-restores when active)
-//   account in table, ib_star_status == active => proceed with OTP to email
+// Access logic (3 conditions):
+//   account NOT found / not active in 30 days  => reason: 'not_found' | 'inactive'  (Condition 2)
+//   account active but email missing/null      => reason: 'email_missing'           (Condition 3)
+//   account active + email present             => generate + send OTP               (Condition 1)
 //
 // Token anatomy (stateless - no DB required for OTP state):
 //   base64url(JSON.stringify(payload)) + '.' + HMAC-SHA256(payload_b64, secret)
@@ -103,6 +103,10 @@ async function handleRequestOtp({ account }, env) {
   if (!lookup.active) {
     return jsonOk({ ok: false, reason: 'inactive' });
   }
+  if (!lookup.email) {
+    // CONDITION 3 — eligible & active, but no email registered for verification
+    return jsonOk({ ok: false, reason: 'email_missing' });
+  }
 
   // 2. Account is active - generate OTP and sign token
   const otp   = generateOtp();
@@ -157,6 +161,7 @@ async function handleResendOtp({ token }, env) {
   const lookup = await lookupIbStars(payload.acct, env);
   if (!lookup.found)   return jsonOk({ ok: false, reason: 'not_found' });
   if (!lookup.active)  return jsonOk({ ok: false, reason: 'inactive' });
+  if (!lookup.email)   return jsonOk({ ok: false, reason: 'email_missing' });
 
   const otp      = generateOtp();
   const newToken = await signToken(payload.acct, otp, lookup.email, env);
@@ -200,10 +205,10 @@ async function lookupIbStars(acct, env) {
   }
 
   const acctEncoded = encodeURIComponent(acct);
-  // Live broker_accounts schema carries: account_number, email, ib_star_status.
-  // Phase 16.9 — same query works for the legacy 'ib_stars_active' name too;
-  // those tenants set EA_IB_STARS_TABLE explicitly.
-  const qs = `account_number=eq.${acctEncoded}&select=email,ib_star_status&limit=1`;
+  // Live broker_accounts schema carries: account_number, email, ib_star_status,
+  // last_trade_date. Active = traded within last 30 days (the SAME definition the
+  // admin "IB Stars Active" view uses); ib_star_status kept as a secondary signal.
+  const qs = `account_number=eq.${acctEncoded}&select=email,ib_star_status,last_trade_date&limit=1`;
 
   let res;
   try {
@@ -233,20 +238,26 @@ async function lookupIbStars(acct, env) {
   }
 
   const row = rows[0];
-  // Active when ib_star_status === 'active' (case-insensitive)
-  const status   = typeof row.ib_star_status === 'string' ? row.ib_star_status.trim().toLowerCase() : '';
-  const isActive = status === 'active';
+  // Active = traded within the last 30 days (matches the admin "IB Stars Active"
+  // view, whose ACTIVE badge is derived from trade recency, not a literal status
+  // string). ib_star_status === 'active' is honoured as a secondary signal.
+  let isActive = false;
+  if (row.last_trade_date) {
+    const days = (Date.now() - new Date(row.last_trade_date).getTime()) / 86400000;
+    if (days <= 30) isActive = true;
+  }
+  if (!isActive && typeof row.ib_star_status === 'string') {
+    isActive = row.ib_star_status.trim().toLowerCase() === 'active';
+  }
 
   if (!isActive) {
     return { found: true, active: false };
   }
 
-  if (!row.email) {
-    console.warn('[library-auth] Account found but email is null for:', acct);
-    return { found: true, active: false }; // Can't send OTP without email
-  }
-
-  return { found: true, active: true, email: row.email };
+  // Active, but email may be missing — surface email:null so the caller can show
+  // the "no email registered" (Request Bot License) flow instead of inactive.
+  const email = (row.email && String(row.email).trim()) ? String(row.email).trim() : null;
+  return { found: true, active: true, email };
 }
 
 // =============================================================================
@@ -336,11 +347,15 @@ function maskEmail(email) {
   if (!email || !email.includes('@')) return '***@***.***';
   const [local, domain] = email.split('@');
   if (!local || !domain) return '***@***.***';
-  /* Show first 4 chars so user can identify which inbox to check,
-     e.g. zuba****@gmail.com  (spec: "zuba****@gmail.com")         */
-  const visible = local.slice(0, Math.min(4, local.length));
-  const stars   = '*'.repeat(Math.max(3, local.length - visible.length));
-  return `${visible}${stars}@${domain}`;
+  /* Show first 2 + last 2 of the local part, e.g.
+     oldguest80@gmail.com -> ol******80@gmail.com  (spec format)   */
+  let masked;
+  if (local.length <= 4) {
+    masked = local.slice(0, 1) + '*'.repeat(Math.max(3, local.length - 1));
+  } else {
+    masked = local.slice(0, 2) + '*'.repeat(local.length - 4) + local.slice(-2);
+  }
+  return `${masked}@${domain}`;
 }
 
 // =============================================================================
