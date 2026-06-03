@@ -137,6 +137,78 @@ export const BROKERS = [
   },
 ];
 
+// ════════════════════════════════════════════════════════════════════════════
+// ★ EXTENDED BROKER PROFILES (Module 2 — deposit/withdrawal/strengths/etc.) ★
+//   Keyed by broker `key`. Edit freely. Fields are optional — the AI shows
+//   whatever is present. Times are typical/advertised, not guarantees.
+// ════════════════════════════════════════════════════════════════════════════
+export const BROKER_PROFILES = {
+  exness: {
+    platforms:      ['MT4', 'MT5', 'Exness Terminal', 'Mobile app'],
+    deposit:        ['Cards', 'Bank transfer', 'e-wallets (Skrill/Neteller)', 'Crypto', 'Local methods'],
+    withdrawal:     ['Same methods as deposit', 'Crypto'],
+    withdrawalTime: 'Often near-instant on cards/e-wallets/crypto; bank wires 1–3 business days.',
+    strengths:      ['Fast/instant withdrawals on many methods', 'Very high leverage on some entities', 'Tight spreads on Pro/Raw/Zero'],
+    weaknesses:     ['High leverage can tempt over-risking', 'Entity/regulation varies by region'],
+    complaints:     ['Occasional verification (KYC) delays', 'Leverage limits differ by jurisdiction'],
+    beginner:       'Good — Standard Cent suits very small/learning accounts.',
+  },
+  hfm: {
+    platforms:      ['MT4', 'MT5', 'HFM app'],
+    deposit:        ['Cards', 'Bank transfer', 'e-wallets', 'Local methods'],
+    withdrawal:     ['Same methods as deposit'],
+    withdrawalTime: 'e-wallets typically same/next day; cards & bank 1–5 business days.',
+    strengths:      ['Cent account for small capital', 'Strong multi-regulator coverage (FCA/CySEC/FSCA/DFSA)', 'Bonuses in some regions'],
+    weaknesses:     ['Bonus terms can be restrictive', 'Spreads on Premium are spread-only'],
+    complaints:     ['Bonus/withdrawal condition confusion'],
+    beginner:       'Good — Cent account is beginner-friendly.',
+  },
+  octa: {
+    platforms:      ['MT4', 'MT5', 'OctaTrader app'],
+    deposit:        ['Cards', 'e-wallets', 'Crypto', 'Local methods'],
+    withdrawal:     ['Same methods as deposit'],
+    withdrawalTime: 'Often within 1 business day; method-dependent.',
+    strengths:      ['Commission-free spread accounts', 'Built-in copy-trading', 'Simple onboarding'],
+    weaknesses:     ['Fewer account-type choices', 'Spread-only pricing'],
+    complaints:     ['Limited regulation footprint vs. tier-1 brokers'],
+    beginner:       'Good — simple, low-friction for newcomers.',
+  },
+  icmarkets: {
+    platforms:      ['MT4', 'MT5', 'cTrader'],
+    deposit:        ['Cards', 'Bank transfer', 'PayPal', 'e-wallets', 'Crypto'],
+    withdrawal:     ['Same methods as deposit'],
+    withdrawalTime: 'Same-day processing on most methods (bank wires longer).',
+    strengths:      ['Very tight raw spreads & deep liquidity', 'Great for scalpers/EAs', 'cTrader support'],
+    weaknesses:     ['Raw account charges commission', 'Less hand-holding for beginners'],
+    complaints:     ['Commission costs for low-volume traders'],
+    beginner:       'Moderate — powerful, but better once you understand spread+commission.',
+  },
+  fbs: {
+    platforms:      ['MT4', 'MT5', 'FBS app'],
+    deposit:        ['Cards', 'e-wallets', 'Crypto', 'Local methods'],
+    withdrawal:     ['Same methods as deposit'],
+    withdrawalTime: 'e-wallets fast; cards/bank can take a few business days.',
+    strengths:      ['Cent account for micro capital', 'Frequent promotions', 'Low entry barrier'],
+    weaknesses:     ['Promo/bonus terms can be complex', 'Spreads vary by account'],
+    complaints:     ['Bonus condition confusion', 'Verification delays at times'],
+    beginner:       'Good — Cent account is very beginner-friendly.',
+  },
+  xm: {
+    platforms:      ['MT4', 'MT5', 'XM app'],
+    deposit:        ['Cards', 'Bank transfer', 'e-wallets', 'Local methods'],
+    withdrawal:     ['Same methods as deposit'],
+    withdrawalTime: 'e-wallets typically 24h; cards/bank 2–5 business days.',
+    strengths:      ['Micro & Ultra Low accounts for beginners', 'No-requotes policy advertised', 'Strong education resources'],
+    weaknesses:     ['Standard spreads wider than raw/ECN brokers', 'Inactivity fee after dormancy'],
+    complaints:     ['Spread width vs. ECN brokers', 'Inactivity fees'],
+    beginner:       'Excellent — Micro account + education suit beginners.',
+  },
+};
+
+export function getBrokerProfile(key) {
+  return BROKER_PROFILES[key] || null;
+}
+
 // ── HELPERS (used by the AI engine — no need to edit) ────────────────────────
 
 export function listBrokerNames() {

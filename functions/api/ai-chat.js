@@ -8,7 +8,7 @@
 // knowledge base, broker dataset), then routes to trusted official sources.
 // ──────────────────────────────────────────────────────────────────────
 
-import { detectLanguage, classifyIntent, generateResponse, resolveGeo } from '../utils/ai-engine.js';
+import { detectLanguage, classifyIntent, generateResponse, resolveGeo, classifyFollowup } from '../utils/ai-engine.js';
 import { getKnowledgeEntries } from './ai-knowledge.js';
 
 const SSE_HEADERS = {
@@ -480,8 +480,39 @@ export async function onRequest(context) {
 
   // ── FREE ENGINE: detect language + classify intent (no paid API) ──────────
   const lastUserMsg = messages[messages.length - 1]?.content ?? '';
-  const lang        = detectLanguage(lastUserMsg);
-  const cls         = classifyIntent(lastUserMsg);
+  let   lastAssistantMsg = '';
+  for (let i = messages.length - 1; i >= 0; i--) { if (messages[i].role === 'assistant') { lastAssistantMsg = messages[i].content; break; } }
+
+  const sessionLang = (typeof body?.sessionLang === 'string') ? body.sessionLang : null;  // language persistence
+  const followup    = classifyFollowup(lastUserMsg);
+  const detLang     = detectLanguage(lastUserMsg);
+
+  // ── CONVERSATION CONTEXT ENGINE: resolve the effective question + transform mode
+  let genText = lastUserMsg;
+  let mode    = null;
+  let cls;
+
+  if (followup && lastAssistantMsg) {
+    // Walk back to the most recent REAL question (skip prior follow-ups)
+    let anchor = null;
+    for (let i = messages.length - 2; i >= 0; i--) {
+      if (messages[i].role === 'user' && !classifyFollowup(messages[i].content)) { anchor = messages[i].content; break; }
+    }
+    genText = anchor || lastUserMsg;
+    cls     = classifyIntent(genText);
+    mode    = followup.mode === 'lang' ? null : followup.mode;   // language switch = regenerate in target lang
+  } else {
+    cls = classifyIntent(lastUserMsg);
+  }
+
+  // ── LANGUAGE SWITCH + PERSISTENCE: pick the effective reply language
+  const SUPPORTED = ['en', 'ur', 'ur-roman', 'ar', 'id', 'ms', 'vi', 'bn', 'th'];
+  let lang;
+  if (followup && followup.mode === 'lang')                  lang = followup.lang;   // explicit switch
+  else if (detLang !== 'en')                                 lang = detLang;          // typed in a language
+  else if (sessionLang && SUPPORTED.includes(sessionLang))   lang = sessionLang;      // persisted language
+  else                                                       lang = 'en';
+
   // Chart Vision: an uploaded-chart analysis forces the chart intent
   if (chartAnalysis) cls.intent = 'chart';
 
@@ -540,8 +571,10 @@ export async function onRequest(context) {
   let answer;
   try {
     answer = generateResponse({
-      text:        lastUserMsg,
+      text:        genText,
       lang,
+      mode,
+      prevAnswer:  lastAssistantMsg,
       intent:      cls.intent,
       platform:    cls.platform,
       broker:      cls.broker,
