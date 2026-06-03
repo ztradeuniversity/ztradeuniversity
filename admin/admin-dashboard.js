@@ -2367,6 +2367,35 @@ const AdminDashboard = (() => {
       console.warn('[Phase16.9] IbStars.updateFromBrokerRows during parse failed (non-fatal):', e);
     }
 
+    /* Phase 17D — PERSISTENT BROKER REGISTRY.
+       Mirror every parsed broker row to Supabase `broker_accounts` immediately
+       on parse — NOT only inside runBrokerAutomation.  This fixes the bug
+       where uploading a broker file populated CrmStore (local) but left
+       broker_accounts (Supabase) empty, causing later license_requests to
+       miss the auto-match against accounts the admin had already imported.
+       Fire-and-forget; runs in the background so parse UI is never blocked.
+       The async upsert chunks 500 rows at a time inside _persistBrokerAccounts
+       so even thousands of rows stay responsive. */
+    try {
+      if (typeof _persistBrokerAccounts === 'function' && IntakeState.parsedRows && IntakeState.parsedRows.length > 0) {
+        _persistBrokerAccounts(
+          IntakeState.parsedRows,
+          IntakeState.columns || [],
+          IntakeState.file ? IntakeState.file.name : null
+        ).then(res => {
+          console.log('[Phase17D] broker_accounts persisted on PARSE — upserted=' + (res && res.upserted) + ', errors=' + (res && res.errors));
+          // Refresh license_requests auto-match against the freshly-persisted
+          // registry so any pending row submitted while waiting for this broker
+          // file gets matched right away.
+          try {
+            if (typeof _autoMatchPendingViaBroker === 'function') _autoMatchPendingViaBroker();
+          } catch (_) {}
+        }).catch(e => console.warn('[Phase17D] broker_accounts persist on parse failed (non-fatal):', e));
+      }
+    } catch (e) {
+      console.warn('[Phase17D] broker_accounts parse-persist invocation failed:', e);
+    }
+
     const result = runMatchEngine(accounts);
     IntakeState.matchResult = result;
 
@@ -6395,14 +6424,26 @@ const AdminDashboard = (() => {
       const needsWa     = r.whatsapp && (!dbHit || !dbHit.whatsapp);
       if (!needsStatus && !needsEmail && !needsWa) return;
       try {
-        const payload = { account_number: r.account, ib_star_status: 'active', last_trade_date: r.lastTradeISO };
+        // Full-enough payload so a NEW row (account not yet in broker_accounts —
+        // e.g. 171929726) passes NOT NULL columns. Missing updated_at was causing
+        // the INSERT to fail silently, so CrmStore-only emails never reached
+        // Supabase and the Library OTP gate saw email_missing.
+        const payload = {
+          account_number: r.account,
+          ib_star_status: 'active',
+          last_trade_date: r.lastTradeISO || null,
+          source_file: 'ib-stars-active-backfill',
+          updated_at: new Date().toISOString()
+        };
         if (r.email)    payload.email    = r.email;
         if (r.whatsapp) payload.whatsapp = r.whatsapp;
+        if (r.broker)   payload.broker   = r.broker;
         supabaseClient
           .from(IB_CFG.BROKER_ACCOUNTS_TABLE)
           .upsert([payload], { onConflict: 'account_number' })
           .then(({ error }) => {
             if (error) console.warn('[Phase17A FINAL] write-back failed for', r.account, error.message);
+            else if (needsEmail) console.log('[Phase17A FINAL] backfilled email for', r.account);
           });
       } catch (e) { console.warn('[Phase17A FINAL] write-back exception for', r.account, e); }
     });
@@ -9974,11 +10015,14 @@ const AdminDashboard = (() => {
           if (typeof renderDeliveredSection      === 'function') renderDeliveredSection();
           if (typeof refreshIntakeQueue          === 'function') refreshIntakeQueue();
           if (typeof renderDeliveryPanels        === 'function') renderDeliveryPanels();
-          // Poll engine_triggers for ~90s to see if engine consumed our row
+          // Phase 17D — extended poll to 3 min @ 5-sec interval to comfortably
+          // cover the fast-poll watcher's ~60s cadence + master_engine.ps1's
+          // ~30-90s pipeline execution.  When the engine consumes the row we
+          // also re-render every section so the new state appears at once.
           if (triggerId) {
             (async () => {
               const start = Date.now();
-              while (Date.now() - start < 90000) {
+              while (Date.now() - start < 180000) {
                 try {
                   const { data } = await supabaseClient
                     .from('engine_triggers')
@@ -9986,16 +10030,25 @@ const AdminDashboard = (() => {
                     .eq('id', triggerId)
                     .limit(1);
                   if (data && data[0] && data[0].status === 'consumed') {
-                    showToast('Engine ACK: Run Now trigger #' + triggerId + ' was consumed at ' + new Date(data[0].consumed_at).toLocaleTimeString() + '. Compile + delivery now running on the engine host.', 'success', 7000);
+                    showToast('Engine ACK: Run Now trigger #' + triggerId + ' consumed at ' + new Date(data[0].consumed_at).toLocaleTimeString() + '. Refreshing dashboard…', 'success', 7000);
+                    try {
+                      await loadData();
+                      if (typeof renderPendingRequests        === 'function') renderPendingRequests();
+                      if (typeof renderWaitingForMatch        === 'function') renderWaitingForMatch();
+                      if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+                      if (typeof renderCompileQueueSection    === 'function') renderCompileQueueSection();
+                      if (typeof renderDeliveredSection       === 'function') renderDeliveredSection();
+                    } catch (_) {}
                     return;
                   }
                 } catch (e) {}
                 await new Promise(r => setTimeout(r, 5000));
               }
+              showToast('Run Now timed out waiting for engine ACK (3 min). Confirm ZTU_TriggerWatcher is registered as a 1-min Scheduled Task (see D:\\ZTU_AUTOMATION\\TOOLS\\trigger_watcher.ps1 header).', 'warn', 9000);
             })();
           }
           if (triggerId) {
-            showToast('Run Now: trigger row queued in engine_triggers (id=' + triggerId + '). Dashboard sweeps done. PowerShell engine will consume the trigger on its next 15-min tick.', 'success', 8000);
+            showToast('Run Now: trigger row queued in engine_triggers (id=' + triggerId + '). Dashboard sweeps done. Engine fast-poll watcher (ZTU_TriggerWatcher, 60-sec interval) will invoke master_engine.ps1 within ~1 minute. Watch for the "Engine ACK" toast that fires when the row is consumed.', 'success', 8000);
           } else if (triggerInsertErr) {
             // Already showed error toast above. No fake success.
           } else {
