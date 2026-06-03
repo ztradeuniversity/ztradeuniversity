@@ -16,6 +16,10 @@
 
 import { isConfigured, uploadChart, createSession, saveAnalysis, getAnalysis } from '../utils/chart-store.js';
 import { explainAnnotations } from '../utils/chart-explain.js';
+import { buildRichChartResponse } from '../utils/chart-knowledge.js';
+import { contributePattern, aggregateFromAnalyses } from '../utils/pattern-stats.js';
+
+const PATTERN_TYPES = new Set(['double-top','double-bottom','symmetrical-triangle','ascending-triangle','descending-triangle','channel','range','bos','choch']);
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -56,9 +60,26 @@ export async function onRequest(context) {
   try { body = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400); }
   const { action } = body;
 
-  // ── EXPLAIN (works without Supabase — pure educational) ─────────────────────
+  // ── EXPLAIN ────────────────────────────────────────────────────────────────
+  // Rich (article-aware + Pattern Vault stats) when connected; basic educational
+  // (no network) otherwise. Both educational only — never a signal.
   if (action === 'explain') {
-    return json({ explanation: explainAnnotations(body.annotations || [], { chartType: body.chartType }) });
+    if (isConfigured(env)) {
+      try {
+        const explanation = await buildRichChartResponse(env, { annotations: body.annotations || [], chartType: body.chartType, lang: body.lang });
+        return json({ configured: true, rich: true, explanation });
+      } catch {
+        return json({ configured: true, rich: false, explanation: explainAnnotations(body.annotations || [], { chartType: body.chartType }) });
+      }
+    }
+    return json({ configured: false, rich: false, explanation: explainAnnotations(body.annotations || [], { chartType: body.chartType }) });
+  }
+
+  // ── AGGREGATE (Module 5) — admin-triggered ai_chart_analyses → ai_pattern_vault
+  if (action === 'aggregate') {
+    if (!env.AI_ADMIN_KEY || request.headers.get('x-admin-key') !== env.AI_ADMIN_KEY) return json({ error: 'admin only' }, 403);
+    if (!isConfigured(env)) return json({ configured: false });
+    return json({ configured: true, ...(await aggregateFromAnalyses(env, { sinceDays: body.sinceDays || 120 })) });
   }
 
   if (!isConfigured(env)) return json({ configured: false, note: 'Chart storage not connected (ZTU Chatbot AI Supabase).' });
@@ -82,14 +103,21 @@ export async function onRequest(context) {
     return json({ configured: true, sessionId: session?.id || null, imageRef: up.path, previewUrl: up.signedUrl, chartType: body.chartType || null });
   }
 
-  // ── SAVE ANALYSIS (Module 8) ────────────────────────────────────────────────
+  // ── SAVE ANALYSIS (Module 8) + LIVE PATTERN CONTRIBUTION (Module 5) ─────────
   if (action === 'save_analysis') {
     const row = await saveAnalysis(env, body.sessionId, {
       deviceId: body.deviceId, imageRef: body.imageRef,
       trend: body.trend, patterns: body.patterns, levels: body.levels,
       structure: body.structure, annotations: body.annotations, annotatedRef: body.annotatedRef,
     });
-    return json({ configured: true, saved: !!row, analysis: row });
+    // Each completed analysis contributes detected patterns to ai_pattern_vault.
+    const keys = new Set();
+    for (const a of (body.annotations || [])) {
+      const k = a.type || a.key;
+      if (k && PATTERN_TYPES.has(k) && a.level === 'detected') keys.add(k);
+    }
+    for (const k of keys) await contributePattern(env, k).catch(() => {});
+    return json({ configured: true, saved: !!row, contributed: [...keys] });
   }
 
   return json({ error: `unknown action: ${action}` }, 400);
