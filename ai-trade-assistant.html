@@ -1796,26 +1796,142 @@ chartFile && chartFile.addEventListener('change', e => {
   chartFile.value = '';
 });
 
-function handleChartFile(file) {
-  if (!file.type.startsWith('image/')) { renderMsg('ai', 'Please upload an image (a PNG/JPG screenshot of your chart).'); return; }
-  if (streaming) return;
+/* ─── CHART INTELLIGENCE LIVE ACTIVATION (Phase Next+7B) ─────────
+   Uses the deployed engine: /assets/chart-vision-pro.js + /api/ai-chart.
+   Self-contained — does NOT touch sendMessage / voice / memory / traderContext. */
+let ChartVisionPro = null;
+let chartBusy = false;
+async function loadChartVision() {
+  if (!ChartVisionPro) ChartVisionPro = await import('/assets/chart-vision-pro.js');
+  return ChartVisionPro;
+}
+
+async function handleChartFile(file) {
+  if (chartBusy) return;
+  let vis;
+  try { vis = await loadChartVision(); }
+  catch { renderMsg('ai', '🎨 The chart engine could not load. Please refresh and try again.'); return; }
+
+  // Module 1 — validate via the engine
+  const v = vis.validateImage(file);
+  if (!v.ok) { renderMsg('ai', '⚠️ ' + v.error); return; }
+
+  chartBusy = true;
   const reader = new FileReader();
   reader.onload = () => {
     const img = new Image();
-    img.onload  = () => { try { runChartAnalysis(img); } catch { renderMsg('ai', 'I had trouble reading that image — try a clearer, full chart screenshot.'); } };
-    img.onerror = () => renderMsg('ai', 'That image could not be loaded. Please try another screenshot.');
+    img.onload  = () => { runChartAnalysisPro(img, file, reader.result, vis).catch(() => {
+      renderMsg('ai', 'I had trouble reading that image — try a clearer, full chart screenshot.');
+    }).finally(() => { chartBusy = false; }); };
+    img.onerror = () => { chartBusy = false; renderMsg('ai', 'That image could not be loaded. Please try another screenshot.'); };
     img.src = reader.result;
   };
+  reader.onerror = () => { chartBusy = false; renderMsg('ai', 'Could not read that file. Please try another image.'); };
   reader.readAsDataURL(file);
 }
 
-function runChartAnalysis(img) {
-  const { overlayUrl, analysis } = analyzeChartImage(img);
-  renderChartBubble(overlayUrl);
-  pendingChart = analysis;
-  chatIn.value = '📊 Please analyse my uploaded chart.';
-  resize(); updateCount();
-  sendMessage();
+// Render a chart image inside a chat bubble (role: 'user' | 'ai')
+function renderChartImage(role, dataUrl, caption, alt) {
+  if (chatMsgs.contains(welcome)) { chatMsgs.removeChild(welcome); chipsBar.classList.remove('hidden'); }
+  const wrap = document.createElement('div'); wrap.className = 'msg msg-' + (role === 'user' ? 'u' : 'a');
+  const av = document.createElement('div'); av.className = 'msg-av'; av.setAttribute('aria-hidden', 'true');
+  av.innerHTML = role === 'user'
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+    : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="11" r="1.4"/><circle cx="15" cy="11" r="1.4"/><path d="M9 16h6M12 4V1"/></svg>';
+  const body = document.createElement('div'); body.className = 'msg-body';
+  const bub = document.createElement('div'); bub.className = 'msg-bub';
+  bub.innerHTML = `<img class="chart-img" alt="${alt || 'chart'}" src="${dataUrl}"><div class="chart-cap">${caption || ''}</div>`;
+  body.appendChild(bub); wrap.appendChild(av); wrap.appendChild(body);
+  chatMsgs.appendChild(wrap); scrollEnd();
+}
+
+// Status bubble that updates through stages (Module 6)
+function renderChartStatus() {
+  const wrap = document.createElement('div'); wrap.className = 'msg msg-a';
+  const av = document.createElement('div'); av.className = 'msg-av'; av.setAttribute('aria-hidden', 'true');
+  av.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="11" r="1.4"/><circle cx="15" cy="11" r="1.4"/><path d="M9 16h6M12 4V1"/></svg>';
+  const body = document.createElement('div'); body.className = 'msg-body';
+  const bub = document.createElement('div'); bub.className = 'msg-bub';
+  body.appendChild(bub); wrap.appendChild(av); wrap.appendChild(body);
+  chatMsgs.appendChild(wrap); scrollEnd();
+  return { set: (t) => { bub.innerHTML = t; scrollEnd(); }, remove: () => wrap.remove() };
+}
+
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function runChartAnalysisPro(img, file, originalDataUrl, vis) {
+  // Preview (Module 1)
+  renderChartImage('user', originalDataUrl, '📊 Chart uploaded', 'Uploaded chart screenshot');
+  const status = renderChartStatus();
+
+  // Stage 1–3 (Module 6) — detection + overlay are instant/local
+  status.set('📤 Uploading chart…'); await wait(180);
+  status.set('🔍 Detecting patterns, structure & levels…'); await wait(120);
+  const r = vis.analyzeImage(img);                         // Module 2 + 3 + 5
+  if (!r || !r.ok) {                                        // Module 7 — unreadable
+    status.set('🧭 I couldn\'t read clear structure in that image. Try a clean candle/line screenshot with visible swing points.');
+    return;
+  }
+  status.set('🎨 Generating annotated overlay…'); await wait(120);
+  renderChartImage('ai', r.annotatedDataUrl, '🧠 AI structure overlay — labels, zones & trend (approximate · educational)', 'AI annotated chart');
+
+  // Module 4 — explanation via /api/ai-chart (graceful fallback)
+  status.set('🧠 Building explanation…');
+  let explanation = '';
+  try {
+    const res = await fetch('/api/ai-chart', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'explain', annotations: r.annotations, chartType: r.chartType }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (res.ok) { const d = await res.json(); explanation = d.explanation || ''; }
+  } catch { /* fall through to local */ }
+  if (!explanation) explanation = localChartExplain(r);    // Module 7 — never break chat
+  status.remove();
+  renderMsg('ai', explanation);
+
+  // Module 5 — store (background, non-blocking, graceful if Supabase off)
+  storeChartAnalysis(originalDataUrl, file, r);
+}
+
+// Local fallback explanation (no network) — educational, no signals.
+function localChartExplain(r) {
+  const det = (r.annotations || []).filter(a => a.level === 'detected');
+  const pats = det.filter(a => /top|bottom|triangle|channel|range/.test(a.type)).map(a => a.displayLabel);
+  const sr = (r.annotations || []).filter(a => a.type === 'support' || a.type === 'resistance');
+  let out = `## 📊 Chart Analysis (educational)\n_Read as a **${r.chartType || 'price'}** chart._\n\n`;
+  out += `**Overall trend:** ${r.trend}.\n`;
+  if (pats.length) out += `\n**Patterns:** ${pats.join(', ')}.\n`;
+  if (sr.length)   out += `**Levels:** ${sr.length} support/resistance zone(s) detected.\n`;
+  out += `\nThese describe **probabilities, not certainties** — size for the loss and place stops beyond the invalidation level.`;
+  out += `\n\n_⚠️ Educational purpose only — not financial advice. No guaranteed outcomes. Not a buy/sell signal._`;
+  return out;
+}
+
+// Module 5 — upload to private bucket + save analysis to ai_chart_analyses.
+async function storeChartAnalysis(originalDataUrl, file, r) {
+  try {
+    const deviceId = getOrCreateUserId();
+    const up = await fetch('/api/ai-chart', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'upload', deviceId, filename: file.name, dataUrl: originalDataUrl, chartType: r.chartType }),
+      signal: AbortSignal.timeout(12000),
+    }).then(x => x.json()).catch(() => null);
+    if (!up || up.configured === false || !up.sessionId) return;   // Supabase off → silent
+    const ann = r.annotations || [];
+    await fetch('/api/ai-chart', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_analysis', sessionId: up.sessionId, deviceId, imageRef: up.imageRef,
+        trend: r.trend,
+        patterns:  ann.filter(a => /top|bottom|triangle|channel|range/.test(a.type)),
+        levels:    ann.filter(a => a.type === 'support' || a.type === 'resistance'),
+        structure: ann.filter(a => a.type === 'bos' || a.type === 'choch'),
+        annotations: ann,
+      }),
+      signal: AbortSignal.timeout(8000),
+    }).catch(() => {});
+  } catch { /* never break the chat */ }
 }
 
 function renderChartBubble(dataUrl) {
