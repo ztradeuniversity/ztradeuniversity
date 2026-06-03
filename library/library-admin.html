@@ -705,6 +705,7 @@ function checkPass() {
     document.getElementById('passGate').style.display = 'none';
     document.getElementById('appShell').classList.add('visible');
     loadCurrentTab();
+    checkBucketStatus();   /* auto-load bucket status + clear warning badge */
   } else {
     const err = document.getElementById('passErr');
     err.classList.add('show');
@@ -727,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('passGate').style.display = 'none';
     document.getElementById('appShell').classList.add('visible');
     loadCurrentTab();
+    checkBucketStatus();   /* auto-load bucket status + clear warning badge on reload */
   }
   document.getElementById('passInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') checkPass();

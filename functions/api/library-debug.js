@@ -21,9 +21,18 @@ const CORS = {
 export async function onRequest(ctx) {
   const { request, env } = ctx;
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-  if (request.method !== 'POST')    return j({ ok: false, error: 'POST only' }, 405);
 
-  let body; try { body = await request.json(); } catch { return j({ ok: false, error: 'bad json' }, 400); }
+  // Accept BOTH GET (?passcode=&account=) and POST {passcode, account}, so it can
+  // be run straight from a browser address bar for instant ground-truth evidence.
+  let body = {};
+  if (request.method === 'GET') {
+    const u = new URL(request.url);
+    body = { passcode: u.searchParams.get('passcode'), account: u.searchParams.get('account') };
+  } else if (request.method === 'POST') {
+    try { body = await request.json(); } catch { return j({ ok: false, error: 'bad json' }, 400); }
+  } else {
+    return j({ ok: false, error: 'GET or POST only' }, 405);
+  }
 
   const pass = env.LIBRARY_ADMIN_PASSCODE;
   if (!pass || !body.passcode || String(body.passcode) !== String(pass)) {
