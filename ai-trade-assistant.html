@@ -712,6 +712,17 @@
     .send-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
     .send-btn:disabled { opacity: .38; cursor: not-allowed; transform: none; }
 
+    .attach-btn {
+      width: 43px; height: 43px; border-radius: 10px; flex-shrink: 0;
+      background: var(--bg4); border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+      color: var(--muted); display: flex; align-items: center; justify-content: center;
+      transition: color .16s, border-color .16s, background .16s;
+    }
+    .attach-btn:hover { color: var(--gold2); border-color: var(--brs); background: rgba(200,156,63,0.08); }
+    /* Chart image inside a chat bubble */
+    .chart-img { max-width: 280px; width: 100%; border-radius: 10px; border: 1px solid var(--brd); display: block; }
+    .chart-cap { font-size: 10.5px; color: var(--mut2); margin-top: 5px; }
+
     .in-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 1px; gap: 8px; }
     .in-disc { font-size: 10.5px; color: var(--mut2); line-height: 1.5; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; }
     .in-disc a { color: var(--muted); text-decoration: none; }
@@ -1174,6 +1185,10 @@
     <!-- Input bar -->
     <div class="input-bar" role="form">
       <div class="input-row">
+        <button class="attach-btn" id="attachBtn" type="button" aria-label="Upload chart screenshot" title="Upload a chart screenshot for AI analysis">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </button>
+        <input type="file" id="chartFile" accept="image/*" hidden />
         <div class="input-wrap">
           <textarea
             id="chatIn"
@@ -1416,6 +1431,7 @@ let activeId  = null;
 let streaming = false;
 let voiceRec  = null;
 let isRec     = false;
+let pendingChart = null;   // Chart Vision: analysis attached to the next send
 
 /* ─── DOM ────────────────────────────────────────────────────── */
 const chatMsgs  = document.getElementById('chatMsgs');
@@ -1619,6 +1635,7 @@ async function sendMessage() {
         tz:            getBrowserTz(),
         country:       getStoredCountry(),
         traderContext: getTraderContext(),
+        chartAnalysis: pendingChart,
       }),
     });
 
@@ -1684,6 +1701,7 @@ async function sendMessage() {
   } finally {
     streaming = false; sendBtn.disabled = false;
     chatIn.disabled = false; chatIn.focus();
+    pendingChart = null;   // Chart Vision: consume one-shot analysis
   }
 }
 
@@ -1855,6 +1873,156 @@ function cancelVoice() {
 }
 
 micBtn.addEventListener('click', startVoiceMode);
+
+/* ─── CHART IMAGE INTELLIGENCE (browser-native Canvas, no paid API) ── */
+const attachBtn = document.getElementById('attachBtn');
+const chartFile = document.getElementById('chartFile');
+attachBtn && attachBtn.addEventListener('click', () => chartFile && chartFile.click());
+chartFile && chartFile.addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) handleChartFile(f);
+  chartFile.value = '';
+});
+
+function handleChartFile(file) {
+  if (!file.type.startsWith('image/')) { renderMsg('ai', 'Please upload an image (a PNG/JPG screenshot of your chart).'); return; }
+  if (streaming) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload  = () => { try { runChartAnalysis(img); } catch { renderMsg('ai', 'I had trouble reading that image — try a clearer, full chart screenshot.'); } };
+    img.onerror = () => renderMsg('ai', 'That image could not be loaded. Please try another screenshot.');
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function runChartAnalysis(img) {
+  const { overlayUrl, analysis } = analyzeChartImage(img);
+  renderChartBubble(overlayUrl);
+  pendingChart = analysis;
+  chatIn.value = '📊 Please analyse my uploaded chart.';
+  resize(); updateCount();
+  sendMessage();
+}
+
+function renderChartBubble(dataUrl) {
+  if (chatMsgs.contains(welcome)) { chatMsgs.removeChild(welcome); chipsBar.classList.remove('hidden'); }
+  const wrap = document.createElement('div'); wrap.className = 'msg msg-u';
+  const av = document.createElement('div'); av.className = 'msg-av'; av.setAttribute('aria-hidden', 'true');
+  av.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const body = document.createElement('div'); body.className = 'msg-body';
+  const bub = document.createElement('div'); bub.className = 'msg-bub';
+  bub.innerHTML = '<img class="chart-img" alt="Uploaded chart with AI structure overlay" src="' + dataUrl + '"><div class="chart-cap">📊 Chart uploaded — green = support, red = resistance, dots = swing points</div>';
+  body.appendChild(bub); wrap.appendChild(av); wrap.appendChild(body);
+  chatMsgs.appendChild(wrap); scrollEnd();
+}
+
+// Heuristic chart structure analysis from pixels (no ML, no paid API)
+function analyzeChartImage(img) {
+  const W = 340, sc = W / img.width, H = Math.max(80, Math.min(260, Math.round(img.height * sc)));
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, 0, 0, W, H);
+  let data;
+  try { data = cx.getImageData(0, 0, W, H).data; }
+  catch { return { overlayUrl: cv.toDataURL(), analysis: { trend: null, patterns: [], levels: [], note: 'unreadable' } }; }
+
+  const px = (x, y) => { const i = (y * W + x) * 4; return [data[i], data[i + 1], data[i + 2]]; };
+  const corners = [px(2, 2), px(W - 3, 2), px(2, H - 3), px(W - 3, H - 3)];
+  const bg = [0, 1, 2].map(k => Math.round(corners.reduce((s, c) => s + c[k], 0) / corners.length));
+  const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+  const TH = 70;
+
+  // Per-column price proxy = mean y of content pixels
+  const series = new Array(W).fill(null);
+  for (let x = 0; x < W; x++) {
+    let sum = 0, cnt = 0;
+    for (let y = 0; y < H; y++) if (dist(px(x, y), bg) > TH) { sum += y; cnt++; }
+    if (cnt > 0) series[x] = sum / cnt;
+  }
+  if (series.every(v => v == null)) return { overlayUrl: cv.toDataURL(), analysis: { trend: null, patterns: [], levels: [], note: 'no-content' } };
+  // interpolate gaps
+  for (let x = 0; x < W; x++) if (series[x] == null) {
+    let l = x; while (l >= 0 && series[l] == null) l--;
+    let r = x; while (r < W && series[r] == null) r++;
+    series[x] = l < 0 ? series[r] : r >= W ? series[l] : series[l] + (series[r] - series[l]) * ((x - l) / (r - l));
+  }
+  // smooth
+  const k = 4, sm = new Array(W).fill(0);
+  for (let x = 0; x < W; x++) { let s = 0, n = 0; for (let j = -k; j <= k; j++) { const xi = x + j; if (xi >= 0 && xi < W) { s += series[xi]; n++; } } sm[x] = s / n; }
+  const price = sm.map(y => H - y);                 // invert: higher = pricier
+  const minP = Math.min.apply(null, price), maxP = Math.max.apply(null, price), range = Math.max(1, maxP - minP);
+
+  // swing detection
+  const win = Math.max(6, Math.round(W * 0.05));
+  const highsR = [], lowsR = [];
+  for (let x = win; x < W - win; x++) {
+    let hi = true, lo = true;
+    for (let j = -win; j <= win; j++) { if (price[x + j] > price[x] + 0.5) hi = false; if (price[x + j] < price[x] - 0.5) lo = false; }
+    if (hi) highsR.push({ x, p: price[x] });
+    if (lo) lowsR.push({ x, p: price[x] });
+  }
+  const dedupe = (arr, better) => { const o = []; for (const e of arr) { const last = o[o.length - 1]; if (last && Math.abs(last.x - e.x) < win) { if (better(e.p, last.p)) o[o.length - 1] = e; } else o.push(e); } return o; };
+  const Hs = dedupe(highsR, (a, b) => a > b), Ls = dedupe(lowsR, (a, b) => a < b);
+
+  const slope = pts => { if (pts.length < 2) return 0; let n = pts.length, sx = 0, sy = 0, sxy = 0, sxx = 0; for (const p of pts) { sx += p.x; sy += p.p; sxy += p.x * p.p; sxx += p.x * p.x; } const d = (n * sxx - sx * sx) || 1; return (n * sxy - sx * sy) / d; };
+  const norm = s => s * W / range;
+  const hN = norm(slope(Hs)), lN = norm(slope(Ls)), allN = norm(slope(price.map((p, x) => ({ x, p }))));
+  const flat = v => Math.abs(v) < 0.12;
+  const near = (a, b, tol) => Math.abs(a - b) <= tol * range;
+
+  const trend = allN > 0.15 ? 'uptrend' : allN < -0.15 ? 'downtrend' : 'range';
+  const patterns = [];
+  if (Hs.length >= 2 && near(Hs[Hs.length - 2].p, Hs[Hs.length - 1].p, 0.06)) patterns.push({ key: 'double-top', confidence: 'moderate' });
+  if (Ls.length >= 2 && near(Ls[Ls.length - 2].p, Ls[Ls.length - 1].p, 0.06)) patterns.push({ key: 'double-bottom', confidence: 'moderate' });
+  const topH = [...Hs].sort((a, b) => b.p - a.p).slice(0, 3).sort((a, b) => a.x - b.x);
+  const topL = [...Ls].sort((a, b) => a.p - b.p).slice(0, 3).sort((a, b) => a.x - b.x);
+  if (topH.length === 3 && topH[1].p > topH[0].p && topH[1].p > topH[2].p && near(topH[0].p, topH[2].p, 0.09)) patterns.push({ key: 'head-shoulders', confidence: 'tentative' });
+  if (topL.length === 3 && topL[1].p < topL[0].p && topL[1].p < topL[2].p && near(topL[0].p, topL[2].p, 0.09)) patterns.push({ key: 'inverse-head-shoulders', confidence: 'tentative' });
+  if (flat(hN) && lN > 0.12)               patterns.push({ key: 'ascending-triangle', confidence: 'moderate' });
+  else if (flat(lN) && hN < -0.12)         patterns.push({ key: 'descending-triangle', confidence: 'moderate' });
+  else if (hN < -0.1 && lN > 0.1)          patterns.push({ key: 'symmetrical-triangle', confidence: 'tentative' });
+  else if (flat(hN) && flat(lN))           patterns.push({ key: 'range', confidence: 'moderate' });
+  else if (hN > 0.12 && lN > 0.12 && hN < lN) patterns.push({ key: 'rising-wedge', confidence: 'tentative' });
+  else if (hN < -0.12 && lN < -0.12 && hN > lN) patterns.push({ key: 'falling-wedge', confidence: 'tentative' });
+  else if (Math.abs(hN - lN) < 0.08 && Math.abs(hN) > 0.1) patterns.push({ key: 'channel', confidence: 'tentative' });
+
+  const levels = clusterLevels(Hs, 'resistance', range).concat(clusterLevels(Ls, 'support', range))
+    .sort((a, b) => b.touches - a.touches).slice(0, 4);
+
+  const seen = new Set();
+  const pats = patterns.filter(p => !seen.has(p.key) && seen.add(p.key)).slice(0, 3);
+  if (!pats.length && trend !== 'range') pats.push({ key: trend, confidence: 'moderate' });
+
+  // overlay
+  cx.lineWidth = 2;
+  for (const lv of levels) {
+    const y = H - lv.price;
+    cx.strokeStyle = lv.type === 'resistance' ? 'rgba(239,68,68,0.92)' : 'rgba(16,185,129,0.92)';
+    cx.setLineDash([6, 4]); cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke();
+  }
+  cx.setLineDash([]);
+  cx.fillStyle = 'rgba(239,68,68,0.95)'; for (const h of Hs) { cx.beginPath(); cx.arc(h.x, H - h.p, 3, 0, 7); cx.fill(); }
+  cx.fillStyle = 'rgba(16,185,129,0.95)'; for (const l of Ls) { cx.beginPath(); cx.arc(l.x, H - l.p, 3, 0, 7); cx.fill(); }
+
+  return {
+    overlayUrl: cv.toDataURL('image/png'),
+    analysis: { trend, patterns: pats, levels: levels.map(l => ({ type: l.type, touches: l.touches })), note: 'ok' },
+  };
+}
+
+function clusterLevels(swings, type, range) {
+  if (!swings.length) return [];
+  const tol = 0.05 * range, used = new Array(swings.length).fill(false), out = [];
+  for (let i = 0; i < swings.length; i++) {
+    if (used[i]) continue;
+    let sum = swings[i].p, cnt = 1; used[i] = true;
+    for (let j = i + 1; j < swings.length; j++) if (!used[j] && Math.abs(swings[j].p - swings[i].p) <= tol) { sum += swings[j].p; cnt++; used[j] = true; }
+    if (cnt >= 2) out.push({ price: sum / cnt, type, touches: cnt });
+  }
+  return out;
+}
 
 /* ─── MARKET DATA ────────────────────────────────────────────── */
 function fp(n, d=2) { return n==null ? '—' : '$'+n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
@@ -2123,6 +2291,15 @@ function updateTraderV2(text) {
   if (t.levelHint === 'beginner' && conv < 25) level = 'beginner';
   t.level = level;
 
+  // Personality Engine — trader type (sticky style + behavioural)
+  if (/\b(ftmo|funded|prop firm|\bprop\b|challenge|evaluation|payout|drawdown limit)\b/.test(s)) t.styleType = 'funded';
+  else if (/\b(scalp|scalping|m1|m5|1 ?min|5 ?min|\b1m\b|\b5m\b|tick chart|seconds)\b/.test(s)) t.styleType = 'scalper';
+  else if (/\b(swing|daily chart|\b4h\b|\bh4\b|weekly|hold for days|position trade)\b/.test(s)) t.styleType = 'swing';
+  let behaviour = null;
+  if ((mirror.overtrading || 0) >= 3) behaviour = 'overtrader';
+  else if (((mirror.fear || 0) + (mirror.revenge || 0) + (mirror.fomo || 0)) >= 4) behaviour = 'emotional';
+  t.type = t.styleType || behaviour || null;
+
   // 4) Behaviour scores
   t.discipline = tmClamp(5 + t.stopGood * 0.7 - (mirror.revenge || 0) - (mirror.overtrading || 0) - t.stopViolations);
   t.patience   = tmClamp(6 - (mirror.fomo || 0) - (mirror.overtrading || 0) + t.planMentions * 0.6);
@@ -2153,6 +2330,7 @@ function getTraderContext() {
   if (!t.conversations) return null;
   return {
     level:         t.level || 'beginner',
+    type:          t.type || null,
     conversations: t.conversations || 0,
     topWeakness:   tmTopWeakness(mirror),
     patterns: {
