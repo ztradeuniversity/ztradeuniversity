@@ -17,7 +17,12 @@
 //   response-engine.js    → localization, formatting, transforms, decorators
 //
 // The orchestrator's only job: detect → route → decorate (Coach Mode,
-// Conversation-Context transforms, Trader Journey, Conversion Engine).
+// Trader Intelligence, Conversation-Context transforms, Journey, Conversion).
+//
+// PHASE NEXT+4 — Trader Intelligence is now wired into the LIVE flow here (and
+// ONLY here). No protected engine/module was modified; the intelligence modules
+// are consumed read-only and their output is appended as light, throttled
+// decoration that always preserves the safety guardrails (no signals).
 // ════════════════════════════════════════════════════════════════════════════
 
 import {
@@ -29,11 +34,80 @@ import {
 import { buildCoachIntro } from './psychology-engine.js';
 import { route }           from './specialist-router.js';
 
+// Trader Intelligence (read-only consumers — these modules are unchanged)
+import {
+  estimateProfile, detectWeaknesses, detectStrengths, analyzePsychology,
+} from './trader-intelligence.js';
+import { personalizationDirectives } from './personalization-engine.js';
+import { buildLearningPath }         from './learning-path.js';
+
 // Re-export the public detection API (consumed by /api/ai-chat.js — unchanged)
 export { detectLanguage, classifyIntent, classifyFollowup, resolveGeo };
 
-// Master response generator: route to the specialist, then decorate.
+// Intents substantive enough to carry an intelligence insight.
+const INSIGHT_INTENTS = new Set([
+  'whylosing', 'stuck', 'assess', 'gold', 'btc', 'psychology',
+  'riskmgmt', 'strategy', 'technical', 'brief',
+]);
+const LEARN_INTENTS = new Set(['strategy', 'technical', 'knowledge']);
+
+// ── LIVE TRADER INTELLIGENCE LAYER (Modules 1–6, throttled, guardrailed) ─────
+// Returns at most ONE insight line + at most ONE learning nudge. Never fires on
+// follow-up transforms, never on greeting/signal/broker/etc., never a signal.
+function buildIntelligenceLayer(ctx, profile) {
+  const tc = ctx.traderContext;
+  if (!tc || ctx.mode) return '';                 // need a profile; skip transforms
+  if (!INSIGHT_INTENTS.has(ctx.intent)) return '';
+
+  const text  = ctx.text || '';
+  const parts = [];
+
+  // M4 Psychology — only where Coach Mode didn't already cover it (it covers
+  // whylosing/stuck), so add for gold/btc/assess/brief/riskmgmt/strategy/technical.
+  const coachHandledPsych = (ctx.intent === 'whylosing' || ctx.intent === 'stuck');
+  if (!coachHandledPsych) {
+    const psych = analyzePsychology(tc, text);
+    if (psych.observations.length) {
+      const o = psych.observations[0];
+      parts.push(`🧠 _Psychology note: I'm sensing some **${o.emotion}** — ${o.note}_`);
+    }
+  }
+
+  // M2/M3 Weakness / Strength — one only, with real signal, no overuse.
+  if (parts.length === 0) {
+    const wk = detectWeaknesses(tc, [], text);
+    const st = detectStrengths(tc, [], text);
+    if ((ctx.intent === 'whylosing' || ctx.intent === 'assess' || ctx.intent === 'riskmgmt') && wk.sentence) {
+      parts.push(`🔎 _${wk.sentence}_`);
+    } else if (st.sentence && ((tc.discipline ?? 0) >= 7 || (tc.patience ?? 0) >= 7 || (tc.confidence ?? 0) >= 7)) {
+      parts.push(`💪 _${st.sentence}_`);
+    } else if (wk.sentence && (tc.conversations ?? 0) >= 4) {
+      parts.push(`🔎 _${wk.sentence}_`);
+    }
+  }
+
+  // M6 Learning recommendation — only a few intents / beginners; no dup with CTA.
+  let learn = '';
+  const beginnerCore = profile.experience === 'beginner' && (ctx.intent === 'gold' || ctx.intent === 'btc');
+  if (LEARN_INTENTS.has(ctx.intent) || beginnerCore) {
+    const pathTitle = buildLearningPath(profile.experience || 'beginner', tc.topWeakness || null).title;
+    learn = `\n\n🗺️ _Your level fits the **${pathTitle}** — ask me for a "learning roadmap" whenever you want the step-by-step._`;
+  }
+
+  const insight = parts.length ? ('\n\n' + parts[0]) : '';
+  return insight + learn;
+}
+
+// Master response generator: detect → route → decorate.
+//   Order: Coach intro → Direct answer/context/risk (specialist body) →
+//          Psychology/Weakness/Strength insight → Learning rec → Tool rec.
 export function generateResponse(ctx) {
+  // M1/M5: live trader profiling + personalization directives (read-only)
+  const profile     = estimateProfile(ctx.traderContext, []);
+  const personalize = personalizationDirectives(profile, { topWeaknessKey: ctx.traderContext?.topWeakness });
+  // `profile`/`personalize` inform throttling + learning level below; existing
+  // Trader-Journey levelNote already adapts depth for beginner/advanced.
+
   const coach = buildCoachIntro(ctx.traderContext, ctx.intent);   // Coach Mode
   let   body  = route(ctx);                                       // Specialist Router
 
@@ -42,8 +116,11 @@ export function generateResponse(ctx) {
   else if (ctx.mode === 'expand') body = body + expandBlock(ctx);
   else if (ctx.mode === 'why')    body = whyPreface(ctx.lang) + body;
 
-  // Trader Journey + Conversion Engine (skipped on short summaries)
+  // Live Trader Intelligence insight + learning nudge (throttled; never on transforms)
+  const intel = buildIntelligenceLayer(ctx, profile);
+
+  // Trader Journey + Conversion Engine (tool recommendation) — skipped on summaries
   const extra = ctx.mode === 'short' ? '' : (levelNote(ctx.traderContext, ctx.intent) + conversionCTA(ctx.intent));
 
-  return coach + body + extra;
+  return coach + body + intel + extra;
 }

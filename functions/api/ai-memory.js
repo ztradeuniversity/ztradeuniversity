@@ -17,10 +17,11 @@
 import {
   getProfile, upsertProfile,
   saveChatMessage, getRecentChatContext,
-  saveTradeAssessment, bumpPsychologyFlags,
+  saveTradeAssessment,
   incrementFreeMessages,
   isConfigured,
 } from '../utils/ai-supabase.js';
+import { categorizeTurn } from '../utils/memory-engine.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -189,21 +190,21 @@ export async function onRequest(context) {
       return json({ configured: false, saved: false, flags });
     }
 
-    // Save both messages to chat history
-    const [u, a] = await Promise.all([
-      saveChatMessage(env, userId, conversationId, 'user', userMessage, flags),
-      aiMessage ? saveChatMessage(env, userId, conversationId, 'assistant', aiMessage, []) : Promise.resolve(null),
+    // Module 2 — store both turns in ai_chat_memory with category + intent.
+    const category = categorizeTurn(data?.intent || null, flags);   // psychology|mistake|question|…
+    const [u] = await Promise.all([
+      saveChatMessage(env, userId, conversationId, 'user', userMessage, flags,
+        { category, intent: data?.intent || null, weight: flags.length ? 6 : 3 }),
+      aiMessage
+        ? saveChatMessage(env, userId, conversationId, 'assistant', aiMessage, [],
+            { category: 'question', intent: data?.intent || null, weight: 2 })
+        : Promise.resolve(null),
     ]);
-
-    // Bump psychology flag counters if any detected
-    if (flags.length) {
-      await bumpPsychologyFlags(env, userId, flags);
-    }
 
     // Phase 9: increment free-message counter (used for access gating)
     await incrementFreeMessages(env, userId).catch(() => {});
 
-    return json({ configured: true, saved: !!(u), flags });
+    return json({ configured: true, saved: !!(u), flags, category });
   }
 
   // ── action: save_assessment ──────────────────────────────────────────────

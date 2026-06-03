@@ -1,17 +1,21 @@
 // functions/utils/ai-supabase.js
 // ──────────────────────────────────────────────────────────────────────────
-// Supabase REST client for the AI-ONLY Supabase project.
+// Supabase REST client for the DEDICATED AI project: "ZTU Chatbot".
 //
-// ⚠  COMPLETELY SEPARATE from the main website's Supabase project.
-//    Never mix credentials with the existing site Supabase.
+// ⚠  SERVER-SIDE ONLY. The SERVICE key never leaves this layer / the frontend.
+// ⚠  COMPLETELY SEPARATE from Library Supabase and Automation Supabase.
 //
-// Required Cloudflare Pages env vars (AI project only):
-//   AI_SUPABASE_URL         → https://[ai-project-ref].supabase.co
-//   AI_SUPABASE_ANON_KEY    → anon/public key from the AI Supabase project
-//   AI_SUPABASE_SERVICE_KEY → service_role key from the AI Supabase project
+// Cloudflare Pages env vars (AI / ZTU Chatbot only — names are FIXED):
+//   AI_SUPABASE_URL          → https://<ztu-chatbot-ref>.supabase.co
+//   AI_SUPABASE_ANON_KEY     → anon/public key (not used server-side; reserved)
+//   AI_SUPABASE_SERVICE_KEY  → service_role key (server-side ONLY)
 //
-// All functions return null and fail silently when env vars are absent.
-// The AI continues to work in localStorage-only mode without these vars.
+// Canonical tables (no new tables, no redesign):
+//   ai_user_profiles (PK device_id) · ai_chat_memory · ai_articles
+//   ai_article_images · ai_chart_analyses · ai_pattern_vault · ai_brokers
+//
+// Every function no-ops (returns null/[] ) when not configured, so the AI keeps
+// working in localStorage-only mode until ZTU Chatbot credentials are provided.
 // ──────────────────────────────────────────────────────────────────────────
 
 export function isConfigured(env) {
@@ -19,7 +23,7 @@ export function isConfigured(env) {
 }
 
 function svcHeaders(env) {
-  const key = env.AI_SUPABASE_SERVICE_KEY;
+  const key = env.AI_SUPABASE_SERVICE_KEY;   // service_role — server-side only
   return {
     'apikey':        key,
     'Authorization': `Bearer ${key}`,
@@ -32,179 +36,209 @@ function url(env, table, qs = '') {
   return `${env.AI_SUPABASE_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
 }
 
-// ── GENERIC HELPERS ────────────────────────────────────────────────────────
-
 async function sbFetch(env, method, table, qs, body, prefer) {
   if (!isConfigured(env)) return null;
   try {
     const headers = svcHeaders(env);
     if (prefer) headers['Prefer'] = prefer;
     const res = await fetch(url(env, table, qs), {
-      method,
-      headers,
+      method, headers,
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) {
       if (env.DEBUG === 'true') {
         const t = await res.text().catch(() => '');
-        console.error(`[ai-supabase] ${method} ${table} failed ${res.status}: ${t.slice(0,200)}`);
+        console.error(`[ai-supabase] ${method} ${table} ${res.status}: ${t.slice(0,200)}`);
       }
       return null;
     }
-    const rows = await res.json();
-    return rows;
+    return await res.json();
   } catch (err) {
     if (env.DEBUG === 'true') console.error(`[ai-supabase] ${method} ${table} error:`, err.message);
     return null;
   }
 }
 
-// ── PROFILE ────────────────────────────────────────────────────────────────
-
-export async function getProfile(env, sessionId) {
-  if (!sessionId) return null;
+// ════════════════════════════════════════════════════════════════════════════
+// ai_user_profiles  (PK: device_id)
+// ════════════════════════════════════════════════════════════════════════════
+export async function getProfile(env, deviceId) {
+  if (!deviceId) return null;
   const rows = await sbFetch(env, 'GET', 'ai_user_profiles',
-    `session_id=eq.${encodeURIComponent(sessionId)}&limit=1`, null, null);
+    `device_id=eq.${encodeURIComponent(deviceId)}&limit=1`, null, null);
   return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
-export async function upsertProfile(env, sessionId, updates) {
-  if (!sessionId || !updates) return null;
+export async function upsertProfile(env, deviceId, updates) {
+  if (!deviceId || !updates) return null;
   const rows = await sbFetch(env, 'POST', 'ai_user_profiles', null,
-    { session_id: sessionId, updated_at: new Date().toISOString(), ...updates },
+    { device_id: deviceId, last_seen_at: new Date().toISOString(), ...updates },
     'resolution=merge-duplicates,return=representation');
   return Array.isArray(rows) ? rows[0] ?? null : rows;
 }
 
-// ── CHAT HISTORY ───────────────────────────────────────────────────────────
+// Module 4 — persist the five behaviour scores (+ optional rolled-up memory).
+const SCORE_KEYS = ['discipline_score', 'patience_score', 'confidence_score', 'risk_score', 'psychology_score'];
+export async function updateScores(env, deviceId, scores = {}, extra = {}) {
+  if (!isConfigured(env) || !deviceId) return null;
+  const updates = { ...extra };
+  for (const k of SCORE_KEYS) if (scores[k] != null) updates[k] = Math.max(0, Math.min(10, Math.round(scores[k])));
+  if (!Object.keys(updates).length) return null;
+  return upsertProfile(env, deviceId, updates);
+}
 
-export async function saveChatMessage(env, sessionId, conversationId, role, content, psychologyFlags = []) {
-  if (!sessionId) return null;
-  return sbFetch(env, 'POST', 'ai_chat_history', null, {
-    session_id:      sessionId,
-    conversation_id: conversationId,
-    role,
-    content:         content.slice(0, 8000),
-    psychology_flags: psychologyFlags,
+// ════════════════════════════════════════════════════════════════════════════
+// ai_chat_memory  (categorised memory log)
+// ════════════════════════════════════════════════════════════════════════════
+// Canonical insert. `opts` = { role, content, intent, category, psychologyFlags, weight, pinned }
+export async function insertChatMemory(env, deviceId, opts = {}) {
+  if (!isConfigured(env) || !deviceId || !opts.content) return null;
+  return sbFetch(env, 'POST', 'ai_chat_memory', null, {
+    device_id:        deviceId,
+    role:             opts.role || 'user',
+    content:          String(opts.content).slice(0, 8000),
+    intent:           opts.intent || null,
+    category:         opts.category || 'question',
+    psychology_flags: opts.psychologyFlags || [],
+    weight:           opts.weight ?? 3,
+    pinned:           !!opts.pinned,
+    created_at:       new Date().toISOString(),
   }, null);
 }
 
-export async function getRecentChatContext(env, sessionId, limit = 12) {
-  if (!sessionId) return [];
-  const rows = await sbFetch(env, 'GET', 'ai_chat_history',
-    `session_id=eq.${encodeURIComponent(sessionId)}&order=created_at.desc&limit=${limit}`, null, null);
-  if (!Array.isArray(rows)) return [];
+export async function getChatMemory(env, deviceId, { category, limit = 12 } = {}) {
+  if (!isConfigured(env) || !deviceId) return [];
+  const cat = category ? `&category=eq.${encodeURIComponent(category)}` : '';
+  const rows = await sbFetch(env, 'GET', 'ai_chat_memory',
+    `device_id=eq.${encodeURIComponent(deviceId)}${cat}&order=created_at.desc&limit=${limit}`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+
+// Module 7 — retention: drop low-weight, old, non-pinned noise.
+export async function pruneChatMemory(env, deviceId, { maxAgeDays = 30, maxWeight = 2 } = {}) {
+  if (!isConfigured(env) || !deviceId) return null;
+  const cutoff = new Date(Date.now() - maxAgeDays * 86400000).toISOString();
+  return sbFetch(env, 'DELETE', 'ai_chat_memory',
+    `device_id=eq.${encodeURIComponent(deviceId)}&pinned=is.false&weight=lte.${maxWeight}&created_at=lt.${cutoff}`,
+    null, 'return=minimal');
+}
+
+// ── Compatibility wrappers (existing callers keep working) ───────────────────
+export async function saveChatMessage(env, deviceId, conversationId, role, content, psychologyFlags = [], opts = {}) {
+  return insertChatMemory(env, deviceId, {
+    role, content, psychologyFlags,
+    intent:   opts.intent   || null,
+    category: opts.category || (role === 'assistant' ? 'question' : 'question'),
+    weight:   opts.weight,
+    pinned:   opts.pinned,
+  });
+}
+export async function getRecentChatContext(env, deviceId, limit = 12) {
+  const rows = await getChatMemory(env, deviceId, { limit });
   return rows.reverse();
 }
-
-// ── TRADE ASSESSMENTS ──────────────────────────────────────────────────────
-
-export async function saveTradeAssessment(env, sessionId, data) {
-  if (!sessionId) return null;
-  return sbFetch(env, 'POST', 'ai_trade_assessments', null,
-    { session_id: sessionId, assessed_at: new Date().toISOString(), ...data }, null);
-}
-
-// ── PSYCHOLOGY FLAGS ────────────────────────────────────────────────────────
-
-const PSYCH_COL_MAP = {
-  fomo:        'fomo_score',
-  fear:        'fear_score',
-  revenge:     'revenge_score',
-  hesitation:  'hesitation_score',
-  overtrading: 'overtrading_score',
-};
-
-export async function bumpPsychologyFlags(env, sessionId, flags) {
-  if (!sessionId || !flags?.length) return null;
-  const profile = await getProfile(env, sessionId);
-  if (!profile) {
-    // Profile doesn't exist yet — create it with these initial flags
-    const init = {};
-    flags.forEach(f => { if (PSYCH_COL_MAP[f]) init[PSYCH_COL_MAP[f]] = 1; });
-    return upsertProfile(env, sessionId, init);
-  }
-  const updates = { updated_at: new Date().toISOString() };
-  flags.forEach(f => {
-    const col = PSYCH_COL_MAP[f];
-    if (col) updates[col] = Math.min((profile[col] ?? 0) + 1, 10);
+// Trade assessments now live as a categorised memory entry (no separate table).
+export async function saveTradeAssessment(env, deviceId, data = {}) {
+  return insertChatMemory(env, deviceId, {
+    role: 'assistant', category: 'risk-behavior', intent: 'assess',
+    content: JSON.stringify(data).slice(0, 8000), weight: 5,
   });
+}
+// Deprecated (psychology now stored as ai_chat_memory.psychology_flags). No-op.
+export async function bumpPsychologyFlags(/* env, deviceId, flags */) { return null; }
+
+export async function incrementFreeMessages(env, deviceId) {
+  if (!isConfigured(env) || !deviceId) return null;
+  const profile = await getProfile(env, deviceId);
+  const current = profile?.free_messages_used ?? 0;
   return sbFetch(env, 'PATCH', 'ai_user_profiles',
-    `session_id=eq.${encodeURIComponent(sessionId)}`, updates,
+    `device_id=eq.${encodeURIComponent(deviceId)}`,
+    { free_messages_used: current + 1, last_seen_at: new Date().toISOString() },
     'return=representation');
 }
 
-// ── KNOWLEDGE BASE ─────────────────────────────────────────────────────────
-
-export async function searchKnowledge(env, tags, limit = 5) {
+// ════════════════════════════════════════════════════════════════════════════
+// ai_articles + ai_article_images  (Module 5)
+// ════════════════════════════════════════════════════════════════════════════
+export async function queryArticles(env, { query, tags, limit = 3 } = {}) {
   if (!isConfigured(env)) return [];
-  // Filter by tags using PostgREST array overlap operator
-  const tagFilter = tags?.length
-    ? `&tags=ov.{${tags.map(t => encodeURIComponent(t)).join(',')}}` : '';
-  const rows = await sbFetch(env, 'GET', 'ai_knowledge_base',
-    `is_active=eq.true${tagFilter}&limit=${limit}`, null, null);
+  let qs = `is_active=eq.true&limit=${limit}`;
+  if (tags?.length) qs += `&tags=ov.{${tags.map(t => encodeURIComponent(t)).join(',')}}`;
+  else if (query)   qs += `&or=(title.ilike.*${encodeURIComponent(query)}*,summary.ilike.*${encodeURIComponent(query)}*)`;
+  const rows = await sbFetch(env, 'GET', 'ai_articles', qs, null, null);
   return Array.isArray(rows) ? rows : [];
 }
 
-// ── PATTERN VAULT (custom/AI-discovered entries) ───────────────────────────
-
-export async function getActivePatterns(env, instrument = 'ALL') {
+export async function queryArticleImages(env, { articleId, patternKey, limit = 3 } = {}) {
   if (!isConfigured(env)) return [];
+  let qs = `limit=${limit}`;
+  if (articleId)       qs += `&article_id=eq.${encodeURIComponent(articleId)}`;
+  else if (patternKey) qs += `&tags=ov.{${encodeURIComponent(patternKey)}}`;
+  const rows = await sbFetch(env, 'GET', 'ai_article_images', qs, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ai_pattern_vault  (Module 6 — pattern statistics)
+// ════════════════════════════════════════════════════════════════════════════
+export async function getPatternStats(env, patternKey, instrument = 'ALL') {
+  if (!isConfigured(env) || !patternKey) return null;
   const rows = await sbFetch(env, 'GET', 'ai_pattern_vault',
-    `is_currently_active=eq.true&instrument=in.(${instrument},ALL)&order=win_rate_pct.desc&limit=3`,
-    null, null);
-  return Array.isArray(rows) ? rows : [];
+    `pattern_key=eq.${encodeURIComponent(patternKey)}&instrument=in.(${instrument},ALL)&limit=1`, null, null);
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
-export async function upsertPattern(env, patternData) {
-  if (!isConfigured(env)) return null;
-  return sbFetch(env, 'POST', 'ai_pattern_vault', null, patternData,
-    'resolution=merge-duplicates,return=representation');
-}
-
-// ── PHASE 9: IB VERIFICATION & ACCESS CONTROL ──────────────────────────────
-
-// Look up a broker account in the AI-only IB accounts table.
-// This table is populated later from uploaded broker CSV/XLSX reports.
-export async function lookupIbAccount(env, accountNumber, brokerName) {
-  if (!isConfigured(env) || !accountNumber) return null;
-  const acct = String(accountNumber).trim();
-  // Match by account number (broker is a soft/secondary match — brokers reuse numbers)
-  let qs = `account_number=eq.${encodeURIComponent(acct)}&limit=1`;
-  const rows = await sbFetch(env, 'GET', 'ai_ib_accounts', qs, null, null);
-  if (!Array.isArray(rows) || !rows.length) return null;
-  return rows[0];
-}
-
-// Log every verification attempt (so the team can reconcile against CSV uploads later).
-export async function logVerificationRequest(env, data) {
-  if (!isConfigured(env)) return null;
-  return sbFetch(env, 'POST', 'ai_verification_requests', null, {
-    submitted_at: new Date().toISOString(),
-    ...data,
+// ════════════════════════════════════════════════════════════════════════════
+// ai_chart_analyses  (chart upload history → future pattern stats)
+// ════════════════════════════════════════════════════════════════════════════
+export async function saveChartAnalysis(env, deviceId, data = {}) {
+  if (!isConfigured(env) || !deviceId) return null;
+  return sbFetch(env, 'POST', 'ai_chart_analyses', null, {
+    device_id: deviceId, created_at: new Date().toISOString(),
+    instrument: data.instrument || null, timeframe: data.timeframe || null,
+    trend: data.trend || null, patterns: data.patterns || [], levels: data.levels || [],
+    image_ref: data.imageRef || null,
   }, null);
 }
 
-// Flip a user profile to verified (grants unlimited access).
-export async function setProfileVerified(env, sessionId, { accountNumber, brokerName, accountType }) {
-  if (!isConfigured(env) || !sessionId) return null;
-  return upsertProfile(env, sessionId, {
+// ════════════════════════════════════════════════════════════════════════════
+// LEGACY (unchanged) — used by ai-knowledge.js, ai-patterns.js, ai-verify.js.
+// These target their own existing tables and degrade gracefully.
+// ════════════════════════════════════════════════════════════════════════════
+export async function searchKnowledge(env, tags, limit = 5) {
+  if (!isConfigured(env)) return [];
+  const tagFilter = tags?.length ? `&tags=ov.{${tags.map(t => encodeURIComponent(t)).join(',')}}` : '';
+  const rows = await sbFetch(env, 'GET', 'ai_knowledge_base', `is_active=eq.true${tagFilter}&limit=${limit}`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+export async function getActivePatterns(env, instrument = 'ALL') {
+  if (!isConfigured(env)) return [];
+  const rows = await sbFetch(env, 'GET', 'ai_pattern_vault',
+    `instrument=in.(${instrument},ALL)&order=win_rate.desc.nullslast&limit=3`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+export async function upsertPattern(env, patternData) {
+  if (!isConfigured(env)) return null;
+  return sbFetch(env, 'POST', 'ai_pattern_vault', null, patternData, 'resolution=merge-duplicates,return=representation');
+}
+export async function lookupIbAccount(env, accountNumber /* , brokerName */) {
+  if (!isConfigured(env) || !accountNumber) return null;
+  const acct = String(accountNumber).trim();
+  const rows = await sbFetch(env, 'GET', 'ai_ib_accounts', `account_number=eq.${encodeURIComponent(acct)}&limit=1`, null, null);
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+export async function logVerificationRequest(env, data) {
+  if (!isConfigured(env)) return null;
+  return sbFetch(env, 'POST', 'ai_verification_requests', null, { submitted_at: new Date().toISOString(), ...data }, null);
+}
+export async function setProfileVerified(env, deviceId, { accountNumber, brokerName, accountType }) {
+  if (!isConfigured(env) || !deviceId) return null;
+  return upsertProfile(env, deviceId, {
     is_verified:             true,
     verified_account_number: accountNumber ? String(accountNumber).slice(0, 64) : null,
     verified_broker:         brokerName ? String(brokerName).slice(0, 120) : null,
     verified_account_type:   accountType ? String(accountType).slice(0, 60) : null,
     verified_at:             new Date().toISOString(),
   });
-}
-
-// Increment the free-message counter on a profile (used for soft access gating).
-export async function incrementFreeMessages(env, sessionId) {
-  if (!isConfigured(env) || !sessionId) return null;
-  const profile = await getProfile(env, sessionId);
-  const current = profile?.free_messages_used ?? 0;
-  return sbFetch(env, 'PATCH', 'ai_user_profiles',
-    `session_id=eq.${encodeURIComponent(sessionId)}`,
-    { free_messages_used: current + 1, updated_at: new Date().toISOString() },
-    'return=representation');
 }

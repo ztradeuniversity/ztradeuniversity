@@ -458,6 +458,138 @@ html, body {
   background: #1e2230;
   color: #ffffff;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   Phase 17E — Development Toolkit (admin-side reset)
+═════════════════════════════════════════════════════════════════ */
+.dev-toolkit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+}
+.dev-toolkit-card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dev-toolkit-card--full {
+  grid-column: 1 / -1;
+  background: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.32);
+}
+.dev-toolkit-card-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.dev-toolkit-card-hdr h3 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.dev-toolkit-scope {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.dev-toolkit-desc {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--color-muted-bright);
+  margin: 0;
+}
+.dev-toolkit-desc code {
+  font-family: 'Courier New', monospace;
+  font-size: 11.5px;
+  padding: 1px 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+}
+.dev-toolkit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  margin-top: auto;
+}
+.dev-toolkit-btn--warn {
+  background: rgba(245,158,11,0.14);
+  color: #fbbf24;
+  border-color: rgba(245,158,11,0.4);
+}
+.dev-toolkit-btn--warn:hover {
+  background: rgba(245,158,11,0.24);
+  border-color: rgba(245,158,11,0.6);
+}
+.dev-toolkit-btn--danger {
+  background: rgba(239,68,68,0.18);
+  color: #fca5a5;
+  border-color: rgba(239,68,68,0.5);
+}
+.dev-toolkit-btn--danger:hover {
+  background: rgba(239,68,68,0.32);
+  border-color: rgba(239,68,68,0.7);
+  color: #fff;
+}
+.dev-toolkit-targets {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--color-muted-bright);
+  line-height: 1.75;
+}
+.dev-toolkit-targets li code {
+  font-family: 'Courier New', monospace;
+  font-size: 11.5px;
+  padding: 1px 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  color: #c7d2fe;
+}
+/* Reuse the Phase 17B bulletproof input contrast for the confirmation textbox */
+#devResetOverlay .ib-changed-search-input {
+  background: #1e2230 !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255,255,255,0.22) !important;
+  caret-color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+#devResetOverlay .ib-changed-search-input::placeholder {
+  color: rgba(255,255,255,0.45) !important;
+  opacity: 1 !important;
+}
+#devResetOverlay .ib-changed-search-input:focus {
+  outline: none !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.28) !important;
+  background: #232838 !important;
+}
+.btn-clear-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .ib-changed-search-btn {
   padding: 9px 16px;
   background: var(--color-accent);

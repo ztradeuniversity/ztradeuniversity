@@ -3519,16 +3519,22 @@ const AdminDashboard = (() => {
       if (!acctList.length) return { scanned, matchedNow: 0, errors: 0 };
 
       // 2) Look those accounts up in broker_accounts
+      //    Phase 18 CRITICAL FIX — column is `account_number` in the Supabase
+      //    table (the broker file's raw 'client_account' header is normalised
+      //    to `account_number` at upsert time by _persistBrokerAccounts).
+      //    The pre-fix query used 'client_account' and never matched anything,
+      //    so every license_request went to the engine's 15-min tick instead
+      //    of being auto-matched by the dashboard.
       const { data: brokerHits, error: brokErr } = await supabaseClient
         .from('broker_accounts')
-        .select('client_account')
-        .in('client_account', acctList);
+        .select('account_number')
+        .in('account_number', acctList);
       if (brokErr) {
         console.warn('[AutoMatch] broker_accounts fetch error:', brokErr);
         return { scanned, matchedNow: 0, errors: 1 };
       }
       const hitSet = new Set(
-        (brokerHits || []).map(b => String(b.client_account || '').trim())
+        (brokerHits || []).map(b => String(b.account_number || '').trim())
       );
       if (hitSet.size === 0) {
         return { scanned, matchedNow: 0, errors: 0 };
@@ -7227,8 +7233,17 @@ const AdminDashboard = (() => {
              m.indexOf('column') !== -1;
     };
 
+    /* Phase 18 CRITICAL FIX — break on ANY non-error response, not only when
+       resp.data has rows.  If anon RLS allows INSERT but denies SELECT, the
+       previous logic would continue the cascade with a different payload
+       shape — silently inserting the row 2-4 times.  Now: any successful
+       INSERT terminates the loop; we then do a follow-up SELECT to recover
+       the new id for the success toast (best-effort; the row exists either
+       way). */
     let insertedId = null;
+    let insertSucceeded = false;
     let lastErr = null;
+    let lastSuccessfulAcct = null;
     for (const step of cascade) {
       try {
         const resp = await supabaseClient.from(DB_SCHEMA.TABLE)
@@ -7240,26 +7255,44 @@ const AdminDashboard = (() => {
             console.warn('[CreateLicense] missing column detected — retrying without:', step.drop || '(initial)');
             continue;
           }
-          // Hard error — stop the cascade
+          // Hard error — stop the cascade.
           setErr('Database error [' + (resp.error.code || '?') + ']: ' + resp.error.message);
           return;
         }
-        if (resp.data && resp.data[0]) {
+        // No error == INSERT accepted by the server. Stop the cascade
+        // regardless of whether RLS returned the inserted row.
+        insertSucceeded   = true;
+        lastSuccessfulAcct = step.row.account_number;
+        if (resp.data && resp.data[0] && resp.data[0].id) {
           insertedId = resp.data[0].id;
-          break;
         }
+        break;
       } catch (e) {
         lastErr = e;
         console.warn('[CreateLicense] insert exception:', e);
       }
     }
 
-    if (!insertedId) {
+    if (!insertSucceeded) {
       setErr('Could not save the request: ' + (lastErr && lastErr.message ? lastErr.message : 'unknown error'));
       return;
     }
+    // Best-effort: if RLS denied the SELECT return, fetch the id we just
+    // created so the toast can show it.  Soft-fail if the lookup also gets
+    // RLS-blocked.
+    if (!insertedId && lastSuccessfulAcct) {
+      try {
+        const { data } = await supabaseClient
+          .from(DB_SCHEMA.TABLE)
+          .select('id')
+          .eq('account_number', lastSuccessfulAcct)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (data && data[0]) insertedId = data[0].id;
+      } catch (_) { /* non-fatal */ }
+    }
 
-    showToast('✓ License request submitted on behalf of customer — id=' + insertedId + '. Entering the standard pipeline.', 'success', 6000);
+    showToast('✓ License request submitted on behalf of customer' + (insertedId ? ' — id=' + insertedId : '') + '. Entering the standard pipeline.', 'success', 6000);
     _closeCreateLicenseModal();
 
     // 6. Pull the fresh row into State.requests + propagate, then fire the
@@ -7281,6 +7314,284 @@ const AdminDashboard = (() => {
         renderCrmSearch(q ? q.value : '');
       }
     } catch (e) { console.warn('[CreateLicense] post-submit refresh failed:', e); }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     Phase 17E — DEVELOPMENT TOOLKIT (admin-side reset utilities)
+     ───────────────────────────────────────────────────────────
+     Four destructive operations, each gated by a confirmation
+     modal that requires typing the literal phrase
+       RESET PRODUCTION DATA
+     before the Execute button enables.
+
+     ONLY row data is deleted.  Tables, schema, RLS policies,
+     functions, automation code, matching logic, broker intake
+     flow, compile pipeline, and Library Access OTP gate are
+     never touched by these actions.
+  ══════════════════════════════════════════════════════════ */
+
+  /* PostgREST DELETE requires a filter to prevent accidental table-wide
+     wipes.  `.not('id','is',null)` matches every row safely on every table
+     we touch (each has an `id` PK — BIGSERIAL or UUID).  Returns
+     { ok: bool, error?: object }. */
+  async function _devDelete(table) {
+    if (!supabaseClient || !DataLayer.isLive) {
+      return { ok: false, error: { message: 'Supabase is not live.' } };
+    }
+    try {
+      const { error } = await supabaseClient.from(table).delete().not('id', 'is', null);
+      if (error) {
+        console.warn('[DevToolkit] delete failed for ' + table + ':', error.message);
+        return { ok: false, error };
+      }
+      return { ok: true };
+    } catch (e) {
+      console.warn('[DevToolkit] delete exception for ' + table + ':', e);
+      return { ok: false, error: e };
+    }
+  }
+
+  function _devClearLocalStorageKeys(keys) {
+    let removed = 0;
+    (keys || []).forEach(k => {
+      try {
+        if (window.localStorage.getItem(k) !== null) {
+          window.localStorage.removeItem(k);
+          removed++;
+        }
+      } catch (_) {}
+    });
+    return removed;
+  }
+
+  /* Action definitions — each carries:
+       label       : human-readable title shown in the confirm modal
+       summary     : one-line description shown above the targets list
+       targets     : array of "what will be cleared" bullet strings
+       tables      : Supabase tables to DELETE (in order)
+       localKeys   : localStorage keys to remove
+       memReset    : optional in-memory reset (RetryPool / IbStars / CrmStore) */
+  const _devActions = {
+    'clear-requests': {
+      label: 'Clear Test License Requests',
+      summary: 'Deletes every license request row, the resend queue, and engine triggers. Empties RetryPool from localStorage. Pending / Waiting / Matched / Compile / Delivered tabs will all show empty.',
+      targets: [
+        '<code>license_requests</code> — every row deleted',
+        '<code>resend_requests</code> — every row deleted',
+        '<code>engine_triggers</code> — every row deleted',
+        '<code>ZTU_ADMIN_RETRY_POOL_V1</code> (localStorage) — cleared',
+      ],
+      tables: ['license_requests', 'resend_requests', 'engine_triggers'],
+      localKeys: ['ZTU_ADMIN_RETRY_POOL_V1'],
+      memReset: () => {
+        try { if (typeof RetryPool !== 'undefined' && RetryPool) RetryPool._data = null; } catch (_) {}
+        try { if (Array.isArray(State.requests)) State.requests.length = 0; } catch (_) {}
+      },
+    },
+    'clear-emails': {
+      label: 'Clear Test Emails',
+      summary: 'Deletes every row from email_outbox and wa_outbox. Resets sent/pending/failed counters.',
+      targets: [
+        '<code>email_outbox</code> — every row deleted',
+        '<code>wa_outbox</code> — every row deleted',
+        'Per-tab Sent / Pending / Failed badges — reset to 0',
+      ],
+      tables: ['email_outbox', 'wa_outbox'],
+      localKeys: ['ZTU_EMAIL_QUEUE_V1', 'ZTU_WA_QUEUE_V1'],
+      memReset: () => {},
+    },
+    'clear-broker': {
+      label: 'Clear Test Broker Registry',
+      summary: 'Deletes broker_accounts and clears the CRM + IB Stars activity caches. Next broker file you upload becomes the new production registry.',
+      targets: [
+        '<code>broker_accounts</code> — every row deleted',
+        '<code>ZTU_CRM_DATA_V1</code> (localStorage) — cleared',
+        '<code>ZTU_IB_STARS_ACTIVITY_V1</code> (localStorage) — cleared',
+        'Active Clients / Inactive Clients / High Value / IB Stars Active / IB Stars Inactive — empty until next broker upload',
+      ],
+      tables: ['broker_accounts'],
+      localKeys: ['ZTU_CRM_DATA_V1', 'ZTU_IB_STARS_ACTIVITY_V1'],
+      memReset: () => {
+        try { if (typeof CrmStore !== 'undefined' && CrmStore) CrmStore._data = null; } catch (_) {}
+        try { if (typeof IbStars  !== 'undefined' && IbStars)  IbStars._data  = null; } catch (_) {}
+      },
+    },
+    'full-reset': {
+      label: 'Full Development Reset',
+      summary: 'Deletes ALL test/dev row data in every table that the dashboard writes to, AND clears every ZTU_* localStorage key. Tables, schema, RLS, automation logic, engine, and Library Access remain intact. After completion the dashboard behaves as a fresh production install.',
+      targets: [
+        '<code>license_requests</code>',
+        '<code>resend_requests</code>',
+        '<code>engine_triggers</code>',
+        '<code>email_outbox</code>',
+        '<code>wa_outbox</code>',
+        '<code>broker_accounts</code>',
+        '<code>client_overrides</code>',
+        '<code>blocked_clients</code>',
+        '<code>ib_changed_accounts</code>',
+        'Every <code>ZTU_*</code> localStorage key (CRM cache, RetryPool, IB Stars cache, Email/WA queues, Admin session)',
+      ],
+      tables: [
+        'license_requests', 'resend_requests', 'engine_triggers',
+        'email_outbox', 'wa_outbox',
+        'broker_accounts',
+        'client_overrides', 'blocked_clients', 'ib_changed_accounts',
+      ],
+      localKeys: [
+        'ZTU_CRM_DATA_V1',
+        'ZTU_ADMIN_RETRY_POOL_V1',
+        'ZTU_IB_STARS_ACTIVITY_V1',
+        'ZTU_EMAIL_QUEUE_V1',
+        'ZTU_WA_QUEUE_V1',
+        'adc_state_v3',
+      ],
+      memReset: () => {
+        try { if (typeof RetryPool !== 'undefined' && RetryPool) RetryPool._data = null; } catch (_) {}
+        try { if (typeof IbStars   !== 'undefined' && IbStars)   IbStars._data   = null; } catch (_) {}
+        try { if (typeof CrmStore  !== 'undefined' && CrmStore)  CrmStore._data  = null; } catch (_) {}
+        try { if (Array.isArray(State.requests)) State.requests.length = 0; } catch (_) {}
+      },
+    },
+  };
+
+  let _devActiveActionKey = null;
+
+  function _openDevResetModal(actionKey) {
+    const act = _devActions[actionKey];
+    if (!act) return;
+    _devActiveActionKey = actionKey;
+    const ov = document.getElementById('devResetOverlay');
+    if (!ov) return;
+    document.getElementById('devResetTitle').innerHTML =
+      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M10 2L1 18h18L10 2z"/><path d="M10 8v4M10 15v.5"/></svg> ' +
+      esc(act.label);
+    document.getElementById('devResetSummary').textContent = act.summary;
+    document.getElementById('devResetTargets').innerHTML =
+      act.targets.map(t => '<li>' + t + '</li>').join('');
+    const inp = document.getElementById('devResetConfirmInput');
+    const exe = document.getElementById('devResetExecute');
+    const err = document.getElementById('devResetError');
+    inp.value = '';
+    exe.disabled = true;
+    if (err) { err.hidden = true; err.textContent = ''; }
+    ov.hidden = false;
+    setTimeout(() => { try { inp.focus(); } catch (_) {} }, 60);
+  }
+  function _closeDevResetModal() {
+    const ov = document.getElementById('devResetOverlay');
+    if (ov) ov.hidden = true;
+    _devActiveActionKey = null;
+  }
+
+  async function _executeDevResetAction() {
+    const key = _devActiveActionKey;
+    const act = _devActions[key];
+    if (!act) return;
+    const exe = document.getElementById('devResetExecute');
+    const err = document.getElementById('devResetError');
+    const origLabel = exe.textContent;
+    exe.disabled = true;
+    exe.textContent = 'Working…';
+    if (err) { err.hidden = true; err.textContent = ''; }
+
+    console.group('[DevToolkit] executing ' + act.label);
+    let tablesCleared = 0;
+    let tablesFailed  = [];
+    for (const table of (act.tables || [])) {
+      try {
+        const res = await _devDelete(table);
+        if (res.ok) {
+          tablesCleared++;
+          console.log('[DevToolkit] cleared ' + table);
+        } else {
+          tablesFailed.push(table);
+          console.warn('[DevToolkit] failed to clear ' + table + ':', res.error);
+        }
+      } catch (e) {
+        tablesFailed.push(table);
+        console.warn('[DevToolkit] exception clearing ' + table + ':', e);
+      }
+    }
+
+    // Local cache clear
+    const lsRemoved = _devClearLocalStorageKeys(act.localKeys || []);
+    try { (act.memReset || (()=>{}))(); } catch (_) {}
+
+    console.log('[DevToolkit] tablesCleared=' + tablesCleared +
+                '  tablesFailed=' + tablesFailed.length +
+                '  localStorageKeysRemoved=' + lsRemoved);
+    console.groupEnd();
+
+    _closeDevResetModal();
+
+    if (tablesFailed.length === 0) {
+      showToast('✓ ' + act.label + ' complete — ' + tablesCleared + ' table(s) cleared, ' + lsRemoved + ' local cache key(s) removed.', 'success', 6000);
+    } else {
+      showToast('⚠ ' + act.label + ' partial — cleared ' + tablesCleared + ', failed: [' + tablesFailed.join(', ') + ']. See console.', 'warn', 8000);
+    }
+
+    // Refresh every visible section so the empty state appears immediately.
+    try {
+      await loadData();
+      if (typeof renderPendingRequests        === 'function') renderPendingRequests();
+      if (typeof renderWaitingForMatch        === 'function') renderWaitingForMatch();
+      if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
+      if (typeof renderCompileQueueSection    === 'function') renderCompileQueueSection();
+      if (typeof renderDeliveredSection       === 'function') renderDeliveredSection();
+      if (typeof renderCrmActive              === 'function') renderCrmActive();
+      if (typeof renderCrmInactive            === 'function') renderCrmInactive();
+      if (typeof renderCrmHighValue           === 'function') renderCrmHighValue();
+      if (typeof _renderIbStarsActive         === 'function') _renderIbStarsActive();
+      if (typeof _renderIbStarsInactive       === 'function') _renderIbStarsInactive();
+      if (typeof _renderBlockedList           === 'function') _renderBlockedList();
+      if (typeof _renderIbChangedList         === 'function') _renderIbChangedList();
+      if (typeof renderCrmSearch              === 'function') {
+        const q = document.getElementById('crmSearchInput');
+        renderCrmSearch(q ? q.value : '');
+      }
+      if (typeof refreshIntakeQueue           === 'function') refreshIntakeQueue();
+    } catch (e) {
+      console.warn('[DevToolkit] post-reset refresh failed:', e);
+    }
+
+    exe.textContent = origLabel;
+  }
+
+  function _bindDevToolkit() {
+    // Wire each card's button to the confirmation modal.
+    document.querySelectorAll('[data-dev-action]').forEach(btn => {
+      if (btn.dataset.devBound === '1') return;
+      btn.dataset.devBound = '1';
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.devAction;
+        _openDevResetModal(key);
+      });
+    });
+    const ov  = document.getElementById('devResetOverlay');
+    const cls = document.getElementById('devResetClose');
+    const cnl = document.getElementById('devResetCancel');
+    const exe = document.getElementById('devResetExecute');
+    const inp = document.getElementById('devResetConfirmInput');
+    if (cls && !cls.dataset.bound) { cls.addEventListener('click', _closeDevResetModal); cls.dataset.bound = '1'; }
+    if (cnl && !cnl.dataset.bound) { cnl.addEventListener('click', _closeDevResetModal); cnl.dataset.bound = '1'; }
+    if (ov  && !ov.dataset.bound)  {
+      ov.addEventListener('click', (e) => { if (e.target === ov) _closeDevResetModal(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && ov && !ov.hidden) _closeDevResetModal();
+      });
+      ov.dataset.bound = '1';
+    }
+    if (inp && !inp.dataset.bound) {
+      inp.addEventListener('input', () => {
+        const v = (inp.value || '').trim();
+        if (exe) exe.disabled = (v !== 'RESET PRODUCTION DATA');
+      });
+      inp.dataset.bound = '1';
+    }
+    if (exe && !exe.dataset.bound) {
+      exe.addEventListener('click', _executeDevResetAction);
+      exe.dataset.bound = '1';
+    }
   }
 
   function _bindCreateLicense() {
@@ -7348,6 +7659,8 @@ const AdminDashboard = (() => {
     if (ecSave) ecSave.addEventListener('click', _saveEditClient);
     // Phase 17C — wire Create License Request button + modal
     _bindCreateLicense();
+    // Phase 17E — wire Development Toolkit reset buttons + confirmation modal
+    if (typeof _bindDevToolkit === 'function') _bindDevToolkit();
 
     // Blocked-Clients search + refresh
     const bsBtn = document.getElementById('blockedSearchBtn');

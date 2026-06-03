@@ -42,8 +42,15 @@ export function normalizeDeviceId(id) {
   return id.trim().slice(0, 80);
 }
 
-// FUTURE: resolve (or lazily create) the profile row for a device.
-// Stub — returns configured:false until AI_SUPABASE_* (ZTU Chatbot) is provided.
-export async function resolveDeviceProfile(/* env, deviceId */) {
-  return { configured: false, deviceId: null, profile: null, table: 'ai_user_profiles' };
+// CONNECTED: resolve (and lazily create) the profile row for a device.
+// No-ops gracefully (configured:false) until ZTU Chatbot credentials exist.
+import { isConfigured, getProfile, upsertProfile } from './ai-supabase.js';
+
+export async function resolveDeviceProfile(env, deviceId, seed = {}) {
+  const id = normalizeDeviceId(deviceId);
+  if (!isConfigured(env)) return { configured: false, deviceId: id, profile: null, table: 'ai_user_profiles' };
+  if (!id) return { configured: true, deviceId: null, profile: null, table: 'ai_user_profiles' };
+  let profile = await getProfile(env, id);
+  if (!profile) profile = await upsertProfile(env, id, { created_at: new Date().toISOString(), ...seed });
+  return { configured: true, deviceId: id, profile, table: 'ai_user_profiles' };
 }

@@ -76,18 +76,47 @@ export const RETENTION_POLICY = {
   rollupBeforePrune:'fold recurring patterns into ai_user_profiles (strengths/weaknesses/scores) before deleting raw rows',
 };
 
-// ── STUBS (configured:false until ZTU Chatbot AI Supabase is connected) ──────
-export async function recordMemory(/* env, { deviceId, category, role, content, intent, flags, weight } */) {
-  return { configured: false, saved: false, table: 'ai_chat_memory' };
+// ── CONNECTED to ZTU Chatbot AI Supabase (canonical tables) ──────────────────
+// All calls no-op gracefully (configured:false) until credentials are provided.
+import {
+  isConfigured,
+  insertChatMemory,
+  getChatMemory,
+  updateScores as sbUpdateScores,
+  pruneChatMemory,
+} from './ai-supabase.js';
+
+// Module 2 — write a categorised memory entry to ai_chat_memory.
+export async function recordMemory(env, { deviceId, category, role, content, intent, flags, weight, pinned } = {}) {
+  if (!isConfigured(env)) return { configured: false, saved: false, table: 'ai_chat_memory' };
+  const row = await insertChatMemory(env, deviceId, {
+    role, content, intent,
+    category: category || 'question',
+    psychologyFlags: flags || [],
+    weight, pinned,
+  });
+  return { configured: true, saved: !!row, table: 'ai_chat_memory' };
 }
-export async function getMemory(/* env, { deviceId, category, limit } */) {
-  return { configured: false, entries: [], table: 'ai_chat_memory' };
+
+// Read recent categorised memory for a device.
+export async function getMemory(env, { deviceId, category, limit = 12 } = {}) {
+  if (!isConfigured(env)) return { configured: false, entries: [], table: 'ai_chat_memory' };
+  const entries = await getChatMemory(env, deviceId, { category, limit });
+  return { configured: true, entries, table: 'ai_chat_memory' };
 }
-export async function updateScores(/* env, { deviceId, scores } */) {
-  return { configured: false, updated: false, table: 'ai_user_profiles' };
+
+// Module 4 — persist the five behaviour scores (+ optional rolled-up fields).
+export async function updateScores(env, { deviceId, scores = {}, extra = {} } = {}) {
+  if (!isConfigured(env)) return { configured: false, updated: false, table: 'ai_user_profiles' };
+  const row = await sbUpdateScores(env, deviceId, scores, extra);
+  return { configured: true, updated: !!row, table: 'ai_user_profiles' };
 }
-export async function pruneMemory(/* env, deviceId */) {
-  return { configured: false, pruned: 0, policy: 'RETENTION_POLICY' };
+
+// Module 7 — retention cleanup per RETENTION_POLICY (low-weight, old, non-pinned).
+export async function pruneMemory(env, deviceId) {
+  if (!isConfigured(env)) return { configured: false, pruned: 0, policy: 'RETENTION_POLICY' };
+  await pruneChatMemory(env, deviceId, { maxAgeDays: 30, maxWeight: RETENTION_POLICY.pruneNoiseMaxWeight || 2 });
+  return { configured: true, table: 'ai_chat_memory', policy: 'RETENTION_POLICY' };
 }
 
 // Pure helper (safe now): classify which memory category a turn belongs to,

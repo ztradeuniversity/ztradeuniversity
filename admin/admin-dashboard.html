@@ -217,6 +217,14 @@
           System Status
         </a>
 
+        <!-- Phase 17E — Development Toolkit (admin-side test data reset) -->
+        <a href="#" class="nav-item nav-item--danger" data-section="dev-toolkit" data-label="Development Toolkit">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h14M5 6v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6M8 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2M9 10v5M11 10v5"/>
+          </svg>
+          Development Toolkit
+        </a>
+
       </nav>
 
       <div class="sidebar-footer">
@@ -1671,6 +1679,107 @@
 
         </section><!-- /section-status -->
 
+
+        <!-- ════════════════════════════════════════════════════════════════
+             Phase 17E — DEVELOPMENT TOOLKIT section
+             Production data reset utilities.  Each button surfaces a
+             confirmation modal that requires typing "RESET PRODUCTION DATA".
+        ═════════════════════════════════════════════════════════════════ -->
+        <section class="dash-section" id="section-dev-toolkit">
+          <div class="section-intro">
+            <h2 class="section-heading">Development Toolkit</h2>
+            <p class="section-sub">
+              <strong>Destructive operations.</strong> These tools clear test/development data so the system can be handed off to production with a fresh state. Tables, schema, RLS policies, functions, automation code, matching logic, broker intake pipeline, compile queue and Library Access logic are <strong>NEVER</strong> touched — only the row data is removed. Every action below requires typing <code>RESET PRODUCTION DATA</code> before it fires.
+            </p>
+          </div>
+
+          <div class="dev-toolkit-grid">
+
+            <div class="dev-toolkit-card">
+              <div class="dev-toolkit-card-hdr">
+                <h3>Clear Test License Requests</h3>
+                <span class="dev-toolkit-scope">Supabase + dashboard cache</span>
+              </div>
+              <p class="dev-toolkit-desc">
+                Deletes every row from <code>license_requests</code>, the <code>resend_requests</code> queue, and <code>engine_triggers</code>. Removes RetryPool entries from <code>localStorage</code> (<code>ZTU_ADMIN_RETRY_POOL_V1</code>). Pending, Waiting, Matched, Compile and Delivered tabs will all show empty after the operation. Does NOT touch broker_accounts, CRM data, IB Stars, IB Changed, or delivered_history archives on the engine host.
+              </p>
+              <button class="dev-toolkit-btn dev-toolkit-btn--warn" data-dev-action="clear-requests" type="button">
+                Clear Test License Requests
+              </button>
+            </div>
+
+            <div class="dev-toolkit-card">
+              <div class="dev-toolkit-card-hdr">
+                <h3>Clear Test Emails</h3>
+                <span class="dev-toolkit-scope">Supabase outboxes</span>
+              </div>
+              <p class="dev-toolkit-desc">
+                Deletes every row from <code>email_outbox</code> and <code>wa_outbox</code>. Resets all "Sent / Pending / Failed" counters. Does NOT delete actual emails already delivered by Gmail SMTP — those live in the recipients' inboxes. Use this before launch to clear out test send history.
+              </p>
+              <button class="dev-toolkit-btn dev-toolkit-btn--warn" data-dev-action="clear-emails" type="button">
+                Clear Test Emails
+              </button>
+            </div>
+
+            <div class="dev-toolkit-card">
+              <div class="dev-toolkit-card-hdr">
+                <h3>Clear Test Broker Registry</h3>
+                <span class="dev-toolkit-scope">Supabase + CrmStore + IbStars</span>
+              </div>
+              <p class="dev-toolkit-desc">
+                Deletes every row from <code>broker_accounts</code> (Supabase) and clears the CrmStore (<code>ZTU_CRM_DATA_V1</code>) plus IbStars activity cache (<code>ZTU_IB_STARS_ACTIVITY_V1</code>) localStorage stores. After this, Active Clients / Inactive Clients / High Value / IB Stars Active / IB Stars Inactive will all be empty. The first broker file you upload after the reset becomes the new production registry.
+              </p>
+              <button class="dev-toolkit-btn dev-toolkit-btn--warn" data-dev-action="clear-broker" type="button">
+                Clear Test Broker Registry
+              </button>
+            </div>
+
+            <div class="dev-toolkit-card dev-toolkit-card--full">
+              <div class="dev-toolkit-card-hdr">
+                <h3>Full Development Reset</h3>
+                <span class="dev-toolkit-scope">All of the above + caches</span>
+              </div>
+              <p class="dev-toolkit-desc">
+                <strong>Cleans EVERYTHING marked above</strong> in one operation:
+                <code>license_requests</code>, <code>resend_requests</code>, <code>engine_triggers</code>, <code>email_outbox</code>, <code>wa_outbox</code>, <code>broker_accounts</code>, <code>client_overrides</code>, <code>blocked_clients</code>, <code>ib_changed_accounts</code>, and every <code>ZTU_*</code> localStorage key. After this, the dashboard behaves exactly as it would on a fresh production install. Tables, schema, RLS policies, automation code, the Library Access OTP gate, and the PowerShell engine all remain intact.
+              </p>
+              <button class="dev-toolkit-btn dev-toolkit-btn--danger" data-dev-action="full-reset" type="button">
+                Full Development Reset
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Reset confirmation modal — gated by typed RESET PRODUCTION DATA -->
+          <div class="clear-cache-overlay" id="devResetOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="devResetTitle">
+            <div class="clear-cache-modal" style="max-width:540px">
+              <div class="clear-cache-hdr">
+                <h3 class="clear-cache-title" id="devResetTitle" style="color:#fca5a5">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M10 2L1 18h18L10 2z"/><path d="M10 8v4M10 15v.5"/></svg>
+                  Confirm destructive operation
+                </h3>
+                <button class="clear-cache-close" id="devResetClose" aria-label="Close" type="button">×</button>
+              </div>
+              <div class="clear-cache-body">
+                <p class="clear-cache-note" id="devResetSummary" style="margin-bottom:14px"></p>
+                <ul id="devResetTargets" class="dev-toolkit-targets"></ul>
+                <p style="font-size:13px;color:rgba(255,255,255,0.78);margin:14px 0 8px;font-weight:600">
+                  To proceed, type the following phrase exactly:
+                </p>
+                <p style="font-family:'Courier New',monospace;font-size:14px;font-weight:800;color:#fca5a5;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.36);border-radius:6px;padding:9px 12px;letter-spacing:0.04em;text-align:center">
+                  RESET PRODUCTION DATA
+                </p>
+                <input type="text" id="devResetConfirmInput" class="ib-changed-search-input" style="margin-top:10px;font-family:'Courier New',monospace;letter-spacing:0.04em" placeholder="Type the phrase here" autocomplete="off" />
+                <p class="clear-cache-error" id="devResetError" hidden></p>
+                <div class="clear-cache-actions" style="margin-top:18px">
+                  <button class="btn-ghost" id="devResetCancel" type="button">Cancel</button>
+                  <span class="clear-cache-spacer"></span>
+                  <button class="btn-clear-confirm" id="devResetExecute" type="button" disabled style="background:#b91c1c">Execute</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
 
         <!-- ─────────────────────────────────────

@@ -1,74 +1,64 @@
 // functions/utils/retrieval-engine.js
 // ════════════════════════════════════════════════════════════════════════════
-// RETRIEVAL ENGINE — Article (Module 4) + Image (Module 5) + Pattern History
-// (Module 6). ARCHITECTURE / FOUNDATION ONLY.
+// RETRIEVAL ENGINE — Article (Module 4/5) + Image (Module 5) + Pattern History
+// (Module 6). NOW CONNECTED to the ZTU Chatbot AI Supabase canonical tables via
+// ai-supabase.js (server-side, service key only). Degrades to education-only /
+// empty results until credentials are provided.
 //
-// Orchestrates the existing (untouched) article-engine & image-engine stubs and
-// adds pattern-history retrieval. Everything degrades to `configured:false`
-// until the ZTU Chatbot AI Supabase is connected later.
-//
-// FUTURE DESTINATIONS:
-//   articles → ai_articles · images → ai_article_images
-//   patterns → ai_pattern_vault (+ ai_chart_analyses for live occurrences)
+//   articles → ai_articles · images → ai_article_images · stats → ai_pattern_vault
 // ════════════════════════════════════════════════════════════════════════════
 
-import { searchArticles, recommendArticle, renderArticleCitation } from './article-engine.js';
-import { findExampleImages } from './image-engine.js';
+import { isConfigured, queryArticles, queryArticleImages, getPatternStats } from './ai-supabase.js';
+import { renderArticleCitation } from './article-engine.js';
 import { PATTERN_EDU } from './pattern-engine.js';
 
-// ── MODULE 4 — ARTICLE RETRIEVAL ─────────────────────────────────────────────
-// Flow: question → search ai_articles → extract knowledge → answer → recommend.
+// ── MODULE 4/5 — ARTICLE RETRIEVAL ───────────────────────────────────────────
 export const ARTICLE_RETRIEVAL_FLOW = [
   'user question',
-  'searchArticles(query, tags)            → ai_articles',
+  'queryArticles(query, tags)             → ai_articles',
   'extract relevant passage(s)',
   'fuse into engine answer (knowledge-router L1)',
-  'recommendArticle() → renderArticleCitation() ("Related reading")',
+  'renderArticleCitation() ("Related reading")',
 ];
 
-export async function retrieveArticleKnowledge(/* env, */ { query, tags } = {}) {
-  const found = await searchArticles({ query, tags, limit: 3 }).catch(() => ({ configured: false, results: [] }));
-  const rec   = await recommendArticle({ topic: query, tags }).catch(() => ({ configured: false, article: null }));
+export async function retrieveArticleKnowledge(env, { query, tags } = {}) {
+  const results = await queryArticles(env, { query, tags, limit: 3 });
+  const top = results[0] || null;
   return {
-    configured: !!found.configured,
+    configured: isConfigured(env),
     table: 'ai_articles',
-    passages: found.results || [],
-    recommendation: rec.article || null,
-    citation: rec.article ? renderArticleCitation(rec.article) : '',
+    passages: results,
+    recommendation: top,
+    citation: top ? renderArticleCitation(top) : '',
   };
 }
 
 // ── MODULE 5 — IMAGE RETRIEVAL ───────────────────────────────────────────────
-// Flow: question → find matching educational image → return → explain.
 export const IMAGE_RETRIEVAL_FLOW = [
   'user question',
-  'findExampleImages(topic/patternKey)    → ai_article_images',
+  'queryArticleImages(topic/patternKey)   → ai_article_images',
   'return image (url + caption)',
-  'explain image (link to ai_articles via article_id)',
+  'explain image (linked via article_id → ai_articles)',
 ];
 
-export async function retrieveImage(/* env, */ { topic, patternKey } = {}) {
-  const res = await findExampleImages({ topic, patternKey, limit: 3 }).catch(() => ({ configured: false, images: [] }));
+export async function retrieveImage(env, { topic, patternKey } = {}) {
+  const images = await queryArticleImages(env, { patternKey, limit: 3 });
   return {
-    configured: !!res.configured,
+    configured: isConfigured(env),
     table: 'ai_article_images',
-    images: res.images || [],
-    explain: (res.images && res.images[0])
-      ? `Example: ${res.images[0].caption || topic || patternKey}`
-      : '',
+    images,
+    explain: images[0] ? `Example: ${images[0].caption || topic || patternKey || ''}` : '',
   };
 }
 
 // ── MODULE 6 — PATTERN HISTORY RETRIEVAL ─────────────────────────────────────
-// Flow: "Double Bottom" → search ai_pattern_vault → occurrences/win/loss/avg move.
 export const PATTERN_RETRIEVAL_FLOW = [
   'user names a pattern (e.g. "double bottom")',
-  'lookup ai_pattern_vault[pattern_key]   → occurrences, win_rate, loss_rate, avg_move',
-  '(optional) aggregate live ai_chart_analyses for recent occurrences',
-  'render probability + education (pattern-engine.PATTERN_EDU) — no signal',
+  'getPatternStats(pattern_key)           → ai_pattern_vault',
+  'render probability (stats) + education (pattern-engine.PATTERN_EDU)',
+  'no signal · no guaranteed direction',
 ];
 
-// Map a free-text pattern name to a canonical pattern key (pure, safe now).
 export function resolvePatternKey(text) {
   const s = (text || '').toLowerCase();
   if (/double\s*top/.test(s)) return 'double-top';
@@ -89,15 +79,23 @@ export function resolvePatternKey(text) {
   return null;
 }
 
-export async function retrievePatternHistory(/* env, */ patternText) {
+export async function retrievePatternHistory(env, patternText) {
   const key = resolvePatternKey(patternText);
   const edu = key ? PATTERN_EDU[key] : null;
-  // Education is available now; the STATISTICS come from ai_pattern_vault later.
+  const stats = key ? await getPatternStats(env, key) : null;  // ai_pattern_vault
   return {
-    configured: false,                 // stats source not connected yet
+    configured: isConfigured(env),
     table: 'ai_pattern_vault',
     patternKey: key,
-    education: edu || null,            // name/bias/logic/expected/watch (live today)
-    stats: null,                       // FUTURE: { occurrences, win_rate, loss_rate, avg_move, sample_size }
+    education: edu || null,
+    stats: stats
+      ? {
+          occurrences: stats.occurrences ?? null,
+          win_rate:    stats.win_rate ?? null,
+          loss_rate:   stats.loss_rate ?? null,
+          avg_move:    stats.avg_move ?? null,
+          sample_size: stats.sample_size ?? null,
+        }
+      : null,
   };
 }

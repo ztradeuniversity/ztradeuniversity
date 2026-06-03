@@ -10,6 +10,8 @@
 
 import { detectLanguage, classifyIntent, generateResponse, resolveGeo, classifyFollowup } from '../utils/ai-engine.js';
 import { getKnowledgeEntries } from './ai-knowledge.js';
+import { isConfigured as aiSbConfigured, upsertProfile, updateScores } from '../utils/ai-supabase.js';
+import { detectStrengths, detectWeaknesses } from '../utils/trader-intelligence.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -416,8 +418,31 @@ function buildSystemWithMarket(marketData) {
 
 // ── MAIN HANDLER ──────────────────────────────────────────────────────
 
+// MODULE 3 helper — merge a persisted ai_user_profiles row into the client's
+// localStorage traderContext (server memory augments, never erases client signal).
+function mergeProfileIntoContext(clientTC, profile) {
+  if (!profile) return clientTC || null;
+  const c = clientTC || {};
+  const pick = (a, b) => (a != null ? a : b);
+  return {
+    ...c,
+    level:         c.level || profile.trader_level || undefined,
+    type:          c.type  || profile.trader_type  || undefined,
+    conversations: Math.max(c.conversations || 0, profile.conversation_count || 0) || undefined,
+    topWeakness:   c.topWeakness || undefined,                  // key stays client-side
+    patterns:      c.patterns || {},
+    patience:      pick(c.patience,   profile.patience_score),
+    discipline:    pick(c.discipline, profile.discipline_score),
+    confidence:    pick(c.confidence, profile.confidence_score),
+    improved:      c.improved || [],
+    strengths:     Array.isArray(profile.strengths)  ? profile.strengths  : (c.strengths  || []),
+    weaknesses:    Array.isArray(profile.weaknesses) ? profile.weaknesses : (c.weaknesses || []),
+  };
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
+  const waitUntil = (p) => { try { context.waitUntil?.(p); } catch {} };   // background persistence
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: JSON_HEADERS });
@@ -569,6 +594,11 @@ export async function onRequest(context) {
 
   // ── GENERATE THE ANSWER FROM INTERNAL INTELLIGENCE (free engine) ──────────
   let answer;
+  // ── MODULE 3: inject persisted device memory into the trader context ──────
+  // Server-stored profile (ai_user_profiles) augments the client's localStorage
+  // traderContext so strengths/weaknesses/scores persist across sessions/devices.
+  const mergedTraderContext = mergeProfileIntoContext(traderContext, memoryData?.profile);
+
   try {
     answer = generateResponse({
       text:        genText,
@@ -586,7 +616,7 @@ export async function onRequest(context) {
       calendarData,
       newsData,
       geo,
-      traderContext,
+      traderContext: mergedTraderContext,
       chartAnalysis,
       isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
     });
@@ -594,6 +624,29 @@ export async function onRequest(context) {
     answer = (env.DEBUG === 'true')
       ? `Engine error: ${err.message}`
       : 'Sorry, I had trouble composing that answer. Please rephrase, or ask about Gold/BTC context, a trade assessment, brokers, or trading psychology.';
+  }
+
+  // ── MODULES 1 & 4: persist device profile + scores (background, server-side) ─
+  // Service key stays in ai-supabase.js; never exposed to the client. No-ops
+  // entirely until the ZTU Chatbot AI Supabase credentials are configured.
+  if (userId && aiSbConfigured(env)) {
+    const wk = detectWeaknesses(mergedTraderContext, [], lastUserMsg);
+    const st = detectStrengths(mergedTraderContext, [], lastUserMsg);
+    waitUntil(Promise.allSettled([
+      upsertProfile(env, userId, {
+        preferred_language: lang,
+        trader_level:       mergedTraderContext?.level || null,
+        trader_type:        mergedTraderContext?.type || null,
+        conversation_count: mergedTraderContext?.conversations ?? null,
+        weaknesses:         wk.weaknesses.map(w => w.label).slice(0, 5),
+        strengths:          st.strengths.slice(0, 5),
+      }),
+      updateScores(env, userId, {
+        discipline_score: mergedTraderContext?.discipline,
+        patience_score:   mergedTraderContext?.patience,
+        confidence_score: mergedTraderContext?.confidence,
+      }),
+    ]));
   }
 
   // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
