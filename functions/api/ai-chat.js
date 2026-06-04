@@ -12,6 +12,7 @@ import { detectLanguage, classifyIntent, generateResponse, resolveGeo, classifyF
 import { getKnowledgeEntries } from './ai-knowledge.js';
 import { isConfigured as aiSbConfigured, upsertProfile, updateScores } from '../utils/ai-supabase.js';
 import { detectStrengths, detectWeaknesses } from '../utils/trader-intelligence.js';
+import { buildKnowledgeLayer } from '../utils/knowledge-orchestrator.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -624,6 +625,30 @@ export async function onRequest(context) {
     answer = (env.DEBUG === 'true')
       ? `Engine error: ${err.message}`
       : 'Sorry, I had trouble composing that answer. Please rephrase, or ask about Gold/BTC context, a trade assessment, brokers, or trading psychology.';
+  }
+
+  // ── PHASE 8: RESPONSE ORCHESTRATOR — Memory → Articles → Broker → Pattern ──
+  // Weave the Knowledge Base layer around the engine answer (which already holds
+  // live-market context). Fully graceful: no-ops when Supabase is unconfigured,
+  // skipped for uploaded-chart turns, and English knowledge bodies are injected
+  // ONLY for English so the Language Lock is never violated (localized memory
+  // recall is safe in any language). Raw memory rows are never exposed.
+  if (aiSbConfigured(env) && !chartAnalysis) {
+    try {
+      const kl = await buildKnowledgeLayer(env, {
+        intent:  cls.intent,
+        text:    genText,
+        lang,
+        profile: memoryData?.profile || null,
+      });
+      if (kl) {
+        let head = '';
+        if (kl.recall)                 head += kl.recall + '\n\n';   // 1) memory (localized)
+        if (lang === 'en' && kl.prepend) head += kl.prepend + '\n\n'; // 2-3) articles + broker
+        if (head) answer = head + answer;
+        if (lang === 'en' && kl.append) answer = answer + kl.append;  // 4) pattern vault
+      }
+    } catch { /* knowledge layer is additive; never blocks the reply */ }
   }
 
   // ── MODULES 1 & 4: persist device profile + scores (background, server-side) ─

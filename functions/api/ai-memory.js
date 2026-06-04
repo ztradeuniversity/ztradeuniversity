@@ -22,6 +22,7 @@ import {
   isConfigured,
 } from '../utils/ai-supabase.js';
 import { categorizeTurn } from '../utils/memory-engine.js';
+import { extractFacts } from '../utils/memory-facts.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -201,10 +202,31 @@ export async function onRequest(context) {
         : Promise.resolve(null),
     ]);
 
+    // ── PHASE 8A: HIGH-VALUE MEMORY FACTS ────────────────────────────────────
+    // Extract durable trader facts (preferred instrument, level, style, goals),
+    // store them PINNED at high weight so retention never prunes them, and roll
+    // the structured ones up into ai_user_profiles for instant recall.
+    let storedFacts = [];
+    try {
+      const facts = extractFacts(userMessage);
+      if (facts.length) {
+        const profileUpdates = {};
+        await Promise.all(facts.map(f => {
+          if (f.profileField && f.value) profileUpdates[f.profileField] = f.value;
+          return saveChatMessage(env, userId, conversationId, 'user', f.fact, [],
+            { category: f.category, intent: data?.intent || null, weight: f.weight, pinned: !!f.pinned });
+        }));
+        if (Object.keys(profileUpdates).length) {
+          await upsertProfile(env, userId, profileUpdates).catch(() => {});
+        }
+        storedFacts = facts.map(f => f.category);
+      }
+    } catch { /* fact extraction is best-effort; never blocks the save */ }
+
     // Phase 9: increment free-message counter (used for access gating)
     await incrementFreeMessages(env, userId).catch(() => {});
 
-    return json({ configured: true, saved: !!(u), flags, category });
+    return json({ configured: true, saved: !!(u), flags, category, facts: storedFacts });
   }
 
   // ── action: save_assessment ──────────────────────────────────────────────

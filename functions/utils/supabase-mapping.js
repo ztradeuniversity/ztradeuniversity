@@ -86,12 +86,12 @@ export const AI_SUPABASE_TABLES = {
     },
   },
   ai_brokers: {
-    purpose: 'Broker knowledge base (future home of broker-data.js BROKER_PROFILES).',
-    pk: 'key',
+    purpose: 'Broker knowledge base (educational broker profiles for the AI assistant).',
+    pk: 'broker_name',
     columns: {
-      key: 'text PK', name: 'text', regulators: 'text[]', account_types: 'text[]',
-      profile: 'jsonb (platforms/deposit/withdrawal/strengths/weaknesses/complaints/beginner)',
-      website: 'text', help: 'text', updated_at: 'timestamptz',
+      broker_name: 'text', regulation: 'text', account_types: 'text',
+      deposit_methods: 'text', withdrawal_methods: 'text',
+      strengths: 'text', weaknesses: 'text', updated_at: 'timestamptz',
     },
   },
 };
