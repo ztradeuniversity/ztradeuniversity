@@ -33,6 +33,8 @@ import {
 } from './response-engine.js';
 import { buildCoachIntro } from './psychology-engine.js';
 import { route }           from './specialist-router.js';
+// Language Lock — fully-localized bodies (prevents English/Urdu mixing)
+import { hasLocale, localizedBody, localizedExpand } from './engine-i18n.js';
 
 // Trader Intelligence (read-only consumers — these modules are unchanged)
 import {
@@ -102,6 +104,18 @@ function buildIntelligenceLayer(ctx, profile) {
 //   Order: Coach intro → Direct answer/context/risk (specialist body) →
 //          Psychology/Weakness/Strength insight → Learning rec → Tool rec.
 export function generateResponse(ctx) {
+  // ── LANGUAGE LOCK ─────────────────────────────────────────────────────────
+  // When the user has locked a fully-supported language (Urdu / Roman Urdu /
+  // Arabic), build the ENTIRE reply from localized bodies and skip all English
+  // decorations (coach / intelligence / level / CTA) so nothing mixes.
+  if (hasLocale(ctx.lang)) {
+    let lbody = localizedBody(ctx.intent, ctx.lang, ctx);
+    if      (ctx.mode === 'short')  lbody = condense(lbody, ctx.lang);
+    else if (ctx.mode === 'expand') lbody = lbody + localizedExpand(ctx.lang);
+    else if (ctx.mode === 'why')    lbody = whyPreface(ctx.lang) + lbody;
+    return lbody;
+  }
+
   // M1/M5: live trader profiling + personalization directives (read-only)
   const profile     = estimateProfile(ctx.traderContext, []);
   const personalize = personalizationDirectives(profile, { topWeaknessKey: ctx.traderContext?.topWeakness });
