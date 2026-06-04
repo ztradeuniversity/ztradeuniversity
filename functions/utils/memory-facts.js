@@ -57,17 +57,23 @@ export function extractFacts(text) {
 
 // Natural, in-language recall (Phase 8A.3). Returns '' unless a stored fact is
 // relevant to the current intent. Never reveals raw memory rows.
-const RECALL_INTENTS = new Set(['gold', 'btc', 'macro', 'assess', 'brief', 'whylosing', 'greeting', 'strategy', 'technical', 'mood', 'riskmgmt']);
+// Phase 8C: aboutme/selfassess/fallback added so the assistant references what
+// it remembers across those paths too.
+const RECALL_INTENTS = new Set(['gold', 'btc', 'macro', 'assess', 'brief', 'whylosing', 'greeting', 'strategy', 'technical', 'mood', 'riskmgmt', 'aboutme', 'selfassess', 'fallback']);
 export function buildMemoryRecall(profile, intent, lang = 'en') {
   if (!profile || !RECALL_INTENTS.has(intent)) return '';
+  // The aboutme builder already recites the full profile — skip the one-liner
+  // there to avoid repetition.
+  if (intent === 'aboutme') return '';
   const instr = profile.favorite_instrument;
   const level = profile.trader_level;
-  if (!instr && !level) return '';
+  const style = profile.trading_style;
+  if (!instr && !level && !style) return '';
   const L = {
-    en:         instr ? `_I remember you focus primarily on **${instr}** — keeping that in mind._` : `_Picking up from your **${level}** level._`,
-    ur:         instr ? `_مجھے یاد ہے کہ آپ بنیادی طور پر **${instr}** پر فوکس کرتے ہیں۔_` : `_آپ کے **${level}** لیول کو مدِنظر رکھتے ہوئے۔_`,
-    'ur-roman': instr ? `_Mujhe yaad hai aap mukhya tor par **${instr}** par focus karte hain._` : `_Aap ke **${level}** level ko madde-nazar rakhte hue._`,
-    ar:         instr ? `_أتذكّر أنك تركّز أساساً على **${instr}**._` : `_نواصل من مستواك **${level}**._`,
+    en:         instr ? `_I remember you focus primarily on **${instr}**${style ? ` (${style})` : ''} — keeping that in mind._` : style ? `_I remember you trade as a **${style}**._` : `_Picking up from your **${level}** level._`,
+    ur:         instr ? `_مجھے یاد ہے کہ آپ بنیادی طور پر **${instr}** پر فوکس کرتے ہیں۔_` : style ? `_مجھے یاد ہے آپ **${style}** انداز میں trade کرتے ہیں۔_` : `_آپ کے **${level}** لیول کو مدِنظر رکھتے ہوئے۔_`,
+    'ur-roman': instr ? `_Mujhe yaad hai aap mukhya tor par **${instr}** par focus karte hain._` : style ? `_Mujhe yaad hai aap **${style}** andaaz mein trade karte hain._` : `_Aap ke **${level}** level ko madde-nazar rakhte hue._`,
+    ar:         instr ? `_أتذكّر أنك تركّز أساساً على **${instr}**._` : style ? `_أتذكّر أنك تتداول بأسلوب **${style}**._` : `_نواصل من مستواك **${level}**._`,
   };
   return L[lang] || L.en;
 }

@@ -8,20 +8,75 @@
 
 import { loc, trustedSourceBlock, signalRouteBlock, money, extractNumbers, parseTradeLevels } from './response-engine.js';
 import { parseCountryFromText, COUNTRY_TZ } from './intent-engine.js';
+import { readProfileFacts } from './profile-recall.js';
 
 export function buildGreeting(ctx) { return loc(ctx.lang).greet; }
 
-// User Satisfaction Engine — never "I don't know"; always offer real help.
+// ── PHASE 8C: ABOUT-ME / MEMORY RECALL ───────────────────────────────────────
+// Answers "what do you know about me?" from the stored profile. If nothing is
+// stored yet, asks for the key facts naturally (and remembers them next time).
+export function buildAboutMe(ctx) {
+  const f = readProfileFacts(ctx);
+  if (!f.hasData) {
+    return `## What I Know About You\n` +
+      `We're still getting to know each other — I don't have much saved yet. Tell me a few things and I'll remember them next time:\n\n` +
+      `- **What do you trade most?** (e.g., Gold, BTC)\n` +
+      `- **Your experience level?** (beginner / intermediate / advanced)\n` +
+      `- **Your style?** (scalping, intraday, swing)\n\n` +
+      `You can also run the **[Trader Self-Assessment](trader-assessment.html)** and I'll tailor everything to your profile.`;
+  }
+  let out = `## What I Remember About You\n`;
+  if (f.instrument)        out += `- 🎯 You focus primarily on **${f.instrument}**\n`;
+  if (f.level)             out += `- 📈 Experience level: **${f.level}**\n`;
+  if (f.style)             out += `- 🧭 Trading style: **${f.style}**\n`;
+  if (f.convs)             out += `- 💬 We've talked across **${f.convs}** conversation${f.convs > 1 ? 's' : ''}\n`;
+  if (f.strengths.length)  out += `- ✅ Strengths: ${f.strengths.join(', ')}\n`;
+  if (f.weaknesses.length) out += `- ⚠️ Areas to work on: ${f.weaknesses.join(', ')}\n`;
+  if (f.psych.length)      out += `- 🧠 Psychology patterns I've noticed: ${f.psych.join(', ')}\n`;
+  if (f.recentTopics.length) out += `- 🕘 Recently you asked about: ${f.recentTopics.map(t => `"${t}"`).join(', ')}\n`;
+  out += `\nI use this to tailor my answers. Want to **update** anything — or shall we dig into ${f.instrument || 'the market'}?`;
+  return out;
+}
+
+// User Satisfaction Engine — never "I don't know". Intelligent fallback:
+//   1) memory-aware (reference what we know) · 2) recent-context · 3) clarify
+//   (low confidence) · 4) short capability hint (last resort).
 export function buildFallback(ctx) {
   const { lang } = ctx;
-  return `Based on the available information, that's a bit outside what I can answer precisely right now — but I won't leave you empty-handed. Here's how I can genuinely help:\n\n` +
-    `- 🏅 **Gold / ₿ BTC market context** — drivers, structure, and the current regime\n` +
-    `- 📋 **AI Daily Brief™** — say *"today's market"* for events, volatility & focus\n` +
-    `- 🔍 **Trade assessment** — share your entry, stop & target and I'll review the structure\n` +
-    `- 📊 **Chart analysis** — upload a screenshot and I'll read the patterns\n` +
-    `- 🧠 **Psychology & "why am I losing"** coaching, **broker** help, and **risk/lot-size** maths\n\n` +
-    `If it's live data you're after, these official sources are reliable:\n${trustedSourceBlock(lang, 'macro')}\n\n` +
-    `What would you like to dig into?`;
+  const f = readProfileFacts(ctx);
+
+  // 1) Memory-aware — anchor on what we already know about the trader.
+  if (f.hasData && (f.instrument || f.level || f.style)) {
+    const bits = [];
+    if (f.instrument) bits.push(`your focus on **${f.instrument}**`);
+    if (f.level)      bits.push(`your **${f.level}** level`);
+    const ref = bits.length ? `Given ${bits.join(' and ')}, ` : '';
+    return `I want to answer the right thing. ${ref}here's what I can dig into with you:\n\n` +
+      `- 🏅 **Gold / ₿ BTC market context**\n` +
+      `- 🔍 **Trade assessment** — share your entry, stop & target\n` +
+      `- 🧠 **"Why am I losing" / psychology** coaching\n` +
+      `- 📊 **Chart analysis** — upload a screenshot\n\n` +
+      `What would you like — or could you rephrase in a few words?`;
+  }
+
+  // 2) Recent-context clarification.
+  if (f.recentTopics.length) {
+    return `I didn't quite catch that. Earlier you asked about ${f.recentTopics.slice(0, 2).map(t => `"${t}"`).join(' and ')} — ` +
+      `want to continue there, or ask about **Gold/BTC** context, a **trade assessment**, or **chart analysis**?`;
+  }
+
+  // 3) Low-confidence → ask a clarifying question instead of a generic dump.
+  if (ctx.confidence === 'low') {
+    return `I want to give you a precise answer — could you tell me a little more?\n\n` +
+      `- Are you asking about **Gold** or **₿ BTC**?\n` +
+      `- Market **context**, a **trade assessment**, **chart analysis**, or **psychology**?\n\n` +
+      `A few words is enough and I'll take it from there.`;
+  }
+
+  // 4) Last-resort capability hint (kept short).
+  return `Here's how I can help: **Gold/BTC market context**, **trade assessment** (share entry/stop/target), ` +
+    `**chart analysis** (upload a screenshot), **broker** help, and **psychology** coaching.\n\n` +
+    `If it's live data you're after:\n${trustedSourceBlock(lang, 'macro')}\n\nWhat would you like to dig into?`;
 }
 
 export function buildSignal(ctx) {

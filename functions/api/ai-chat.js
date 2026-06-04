@@ -600,6 +600,15 @@ export async function onRequest(context) {
   // traderContext so strengths/weaknesses/scores persist across sessions/devices.
   const mergedTraderContext = mergeProfileIntoContext(traderContext, memoryData?.profile);
 
+  // ── PHASE 8C: activate memory-context builder + recent-conversation recap ──
+  // buildMemoryContext is computed (it summarises profile + recent topics) and a
+  // clean recentRecap array is derived for the response builders (aboutme /
+  // intelligent fallback). Both are best-effort and degrade to empty safely.
+  const memoryContext = buildMemoryContext(memoryData);
+  const recentRecap   = Array.isArray(memoryData?.recentChats)
+    ? memoryData.recentChats.filter(m => m && m.role === 'user').slice(-4).map(m => String(m.content || '').slice(0, 80)).filter(Boolean)
+    : [];
+
   try {
     answer = generateResponse({
       text:        genText,
@@ -607,12 +616,15 @@ export async function onRequest(context) {
       mode,
       prevAnswer:  lastAssistantMsg,
       intent:      cls.intent,
+      confidence:  cls.confidence,
       platform:    cls.platform,
       broker:      cls.broker,
       newsFocus:   cls.newsFocus,
       marketData,
       patternData,
       memoryData,
+      memoryContext,
+      recentRecap,
       knowledgeEntries,
       calendarData,
       newsData,

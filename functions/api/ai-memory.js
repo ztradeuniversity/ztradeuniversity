@@ -152,11 +152,17 @@ export async function onRequest(context) {
       return json({ configured: false, profile: null, summary: null });
     }
 
-    const profile = await getProfile(env, userId);
+    // Phase 8C: also return recentChats so the chat engine can recall recent
+    // conversation topics (additive field — existing consumers ignore it).
+    const [profile, recentChats] = await Promise.all([
+      getProfile(env, userId),
+      getRecentChatContext(env, userId, 8).catch(() => []),
+    ]);
     return json({
       configured: true,
       profile,
       summary: buildProfileSummary(profile),
+      recentChats: (recentChats || []).map(c => ({ role: c.role, content: String(c.content || '').slice(0, 500) })),
     });
   }
 

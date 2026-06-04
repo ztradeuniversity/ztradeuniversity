@@ -649,6 +649,14 @@
     .mic-btn.rec { color: var(--bear); animation: recPulse 1s ease-in-out infinite; }
     @keyframes recPulse { 0%,100%{opacity:1}50%{opacity:.45} }
     .mic-btn.no-support { opacity: .28; cursor: not-allowed; pointer-events: none; }
+    .tts-toggle {
+      background: none; border: 0; padding: 1px 3px; margin: 0 4px 0 0; cursor: pointer;
+      color: var(--mut2); border-radius: 5px; font-size: 10.5px; display: inline-flex;
+      align-items: center; gap: 3px; transition: color .16s;
+    }
+    .tts-toggle:hover { color: var(--gold2); }
+    .tts-toggle.on { color: var(--gold2); }
+    .tts-toggle.no-support { display: none; }
 
     .send-btn {
       width: 43px; height: 43px; border-radius: 10px; flex-shrink: 0;
@@ -1113,7 +1121,7 @@
           <button class="chip" onclick="quickAsk('Why am I losing money trading? Break down the possible causes across psychology, execution, risk management, patience, and news timing.')">🔍 Why am I losing?</button>
           <button class="chip" onclick="quickAsk('Summarise the key lessons from Trading in the Zone by Mark Douglas and how they apply to Gold and BTC trading.')">📖 Mark Douglas</button>
           <button class="chip" onclick="quickAsk('Give me a beginner trading roadmap — what should I learn first and in what order to become consistent?')">🗺️ Beginner Roadmap</button>
-          <button class="chip" onclick="quickAsk('Show me my AI trader profile — what patterns do you notice in my trading behaviour so far?')">🪞 My Trader Profile</button>
+          <button class="chip" onclick="quickAsk('What do you know about me? Summarise my trader profile — my level, style, favourite instrument, and the patterns you notice.')">🪞 My Trader Profile</button>
         </div>
       </div>
     </div>
@@ -1127,7 +1135,7 @@
       <button class="chip" onclick="quickAsk('My trade is in drawdown. Help me think through the market context.')">🆘 Stuck trade</button>
       <button class="chip" onclick="quickAsk('What high-impact news events could affect Gold or BTC this week?')">📅 News risk</button>
       <button class="chip" onclick="quickAsk('Why am I losing? Break down causes across psychology, execution, risk, patience, and news timing.')">🔍 Why losing?</button>
-      <button class="chip" onclick="quickAsk('Show me my AI trader profile and what patterns you notice in my trading behaviour.')">🪞 My profile</button>
+      <button class="chip" onclick="quickAsk('What do you know about me? Summarise my trader profile, level, style, and the patterns you notice.')">🪞 My profile</button>
       <button class="chip" onclick="quickAsk('Summarise Trading in the Zone by Mark Douglas — key lessons for a Gold trader.')">📖 Mark Douglas</button>
     </div>
 
@@ -1171,6 +1179,10 @@
               <option value="th-TH">ภาษาไทย (Thai)</option>
             </select>
           </span>
+          <button class="tts-toggle" id="ttsBtn" type="button" aria-label="Toggle spoken replies" title="Speak replies aloud">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <span id="ttsLabel">Speak: off</span>
+          </button>
           <span class="in-disc-text"> · Educational only — not financial advice.</span>
         </span>
         <span class="in-count hidden" id="inCount"></span>
@@ -1623,6 +1635,8 @@ async function sendMessage() {
       pushMsg('ai', aiText);
       // Phase 5: save interaction + detect psychology (non-blocking)
       saveInteraction(text, aiText);
+      // Phase 8D: speak the reply aloud when TTS is enabled (language-aware)
+      speakReply(aiText);
     }
 
   } catch (err) {
@@ -1785,6 +1799,64 @@ function toggleVoice() {
 }
 
 micBtn.addEventListener('click', toggleVoice);
+
+/* ─── TEXT-TO-SPEECH (Phase 8D) — browser speechSynthesis, language-aware ── */
+const ttsBtn   = document.getElementById('ttsBtn');
+const ttsLabel = document.getElementById('ttsLabel');
+const TTS_KEY  = 'ztu_ai_tts';
+const TTS_SUPPORTED = (typeof window !== 'undefined') && ('speechSynthesis' in window);
+let   ttsOn    = false;
+
+function ttsBcp47(code) {
+  return ({ en:'en-US', ur:'ur-PK', 'ur-roman':'ur-PK', ar:'ar-SA', id:'id-ID', ms:'ms-MY', vi:'vi-VN', bn:'bn-BD', th:'th-TH' })[code] || 'en-US';
+}
+function ttsStrip(md) {
+  return String(md || '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/[#*_>`~|]/g, ' ')
+    .replace(/\s+/g, ' ').trim().slice(0, 700);
+}
+function ttsPickVoice(lang) {
+  try {
+    const vs = speechSynthesis.getVoices() || [];
+    const base = lang.split('-')[0];
+    return vs.find(v => v.lang === lang) || vs.find(v => v.lang && v.lang.startsWith(base)) || null;
+  } catch { return null; }
+}
+function speakReply(text) {
+  if (!ttsOn || !TTS_SUPPORTED) return;
+  const clean = ttsStrip(text);
+  if (!clean) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = ttsBcp47(getSessionLang() || 'en');   // respect the locked reply language
+    const v = ttsPickVoice(u.lang);
+    if (v) u.voice = v;
+    u.rate = 1; u.pitch = 1;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+function setTts(on) {
+  ttsOn = !!on;
+  try { localStorage.setItem(TTS_KEY, ttsOn ? '1' : '0'); } catch {}
+  if (ttsBtn)   ttsBtn.classList.toggle('on', ttsOn);
+  if (ttsLabel) ttsLabel.textContent = 'Speak: ' + (ttsOn ? 'on' : 'off');
+  if (!ttsOn && TTS_SUPPORTED) { try { speechSynthesis.cancel(); } catch {} }
+}
+if (ttsBtn) {
+  if (!TTS_SUPPORTED) {
+    ttsBtn.classList.add('no-support');
+    ttsBtn.title = 'Spoken replies are not supported in this browser.';
+  } else {
+    setTts(localStorage.getItem(TTS_KEY) === '1');
+    try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch {}
+    ttsBtn.addEventListener('click', () => setTts(!ttsOn));
+  }
+}
 
 /* ─── CHART IMAGE INTELLIGENCE (browser-native Canvas, no paid API) ── */
 const attachBtn = document.getElementById('attachBtn');

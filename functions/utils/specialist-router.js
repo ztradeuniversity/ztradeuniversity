@@ -57,6 +57,7 @@ export function route(ctx) {
     case 'technical':  return edu.buildTechnical(ctx)  + disc;
     case 'funding':    return edu.buildFunding(ctx)    + disc;
     case 'selfassess': return edu.buildSelfAssess(ctx) + disc;
+    case 'aboutme':    return edu.buildAboutMe(ctx)    + disc;
     case 'setcountry': return edu.buildSetCountry(ctx) + disc;
 
     // ── Risk Manager ──

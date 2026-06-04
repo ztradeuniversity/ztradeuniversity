@@ -15,6 +15,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { loc } from './response-engine.js';
+import { readProfileFacts } from './profile-recall.js';
 
 const TG = 'https://t.me/ztradeuniversity';
 const WA = 'https://wa.me/17189730347';
@@ -76,6 +77,19 @@ const T = {
     },
     psychology: (c) => T.ur.knowledge(c),
     setcountry: () => `آپ کس ملک سے trading کرتے ہیں؟ (مثلاً پاکستان، انڈیا، انڈونیشیا، UAE…) میں یاد رکھ کر تمام ایونٹ اور سیشن اوقات آپ کے مقامی time میں دکھاؤں گا۔`,
+    aboutme: (c) => {
+      const f = readProfileFacts(c);
+      if (!f.hasData) return `## آپ کے بارے میں\nہم ابھی ایک دوسرے کو جان رہے ہیں — میرے پاس زیادہ معلومات محفوظ نہیں۔ یہ بتائیں تو میں یاد رکھوں گا:\n- آپ زیادہ تر کیا trade کرتے ہیں؟ (Gold، BTC)\n- آپ کا تجربہ؟ (beginner / intermediate / advanced)\n- آپ کا انداز؟ (scalping، intraday، swing)`;
+      let o = `## میں آپ کے بارے میں کیا جانتا ہوں\n`;
+      if (f.instrument)        o += `- 🎯 آپ بنیادی طور پر **${f.instrument}** پر فوکس کرتے ہیں\n`;
+      if (f.level)             o += `- 📈 تجربہ: **${f.level}**\n`;
+      if (f.style)             o += `- 🧭 انداز: **${f.style}**\n`;
+      if (f.convs)             o += `- 💬 ہم **${f.convs}** گفتگو کر چکے ہیں\n`;
+      if (f.strengths.length)  o += `- ✅ طاقتیں: ${f.strengths.join('، ')}\n`;
+      if (f.weaknesses.length) o += `- ⚠️ بہتری کے شعبے: ${f.weaknesses.join('، ')}\n`;
+      if (f.psych.length)      o += `- 🧠 نفسیاتی رجحانات: ${f.psych.join('، ')}\n`;
+      return o + `\nمیں اسی کو مدِنظر رکھ کر جواب دیتا ہوں۔ کیا ${f.instrument || 'مارکیٹ'} پر بات کریں؟`;
+    },
     chart: () => `## 📊 Chart Intelligence\nmessage box کے ساتھ موجود **image button** سے اپنے chart کا screenshot upload کریں — میں اس کا **Trend، Support/Resistance** اور patterns (Double Top/Bottom، triangle، channel، range، BOS، CHOCH) پڑھ کر **امکان اور منطق** سمجھاؤں گا (کوئی signal نہیں)۔`,
   },
 
@@ -107,6 +121,19 @@ const T = {
     knowledge: (c) => { const e = (c.knowledgeEntries || [])[0]; return e ? `## ${e.title}\n${e.summary || (e.content || '').slice(0, 500)}` : `Main knowledge base se asbaaq share kar sakta hoon — Mark Douglas, Van Tharp, Market Wizards, psychology, beginner roadmap, glossary. Kaun sa chahein?`; },
     psychology: (c) => T['ur-roman'].knowledge(c),
     setcountry: () => `Aap kis mulk se trading karte hain? (Pakistan, India, Indonesia, UAE…) Main yaad rakh kar tamam event aur session auqaat aap ke local time mein dikhaoon ga.`,
+    aboutme: (c) => {
+      const f = readProfileFacts(c);
+      if (!f.hasData) return `## Aap ke baare mein\nHum abhi ek doosre ko jaan rahe hain — mere paas zyada maloomat mehfooz nahi. Yeh batayein to main yaad rakhoon ga:\n- Aap zyada tar kya trade karte hain? (Gold, BTC)\n- Aap ka tajurba? (beginner / intermediate / advanced)\n- Aap ka andaaz? (scalping, intraday, swing)`;
+      let o = `## Main aap ke baare mein kya jaanta hoon\n`;
+      if (f.instrument)        o += `- 🎯 Aap mukhya tor par **${f.instrument}** par focus karte hain\n`;
+      if (f.level)             o += `- 📈 Tajurba: **${f.level}**\n`;
+      if (f.style)             o += `- 🧭 Andaaz: **${f.style}**\n`;
+      if (f.convs)             o += `- 💬 Hum **${f.convs}** baat-cheet kar chuke hain\n`;
+      if (f.strengths.length)  o += `- ✅ Taqatein: ${f.strengths.join(', ')}\n`;
+      if (f.weaknesses.length) o += `- ⚠️ Behtari ke shobe: ${f.weaknesses.join(', ')}\n`;
+      if (f.psych.length)      o += `- 🧠 Psychology patterns: ${f.psych.join(', ')}\n`;
+      return o + `\nMain isi ko madde-nazar rakh kar jawab deta hoon. Kya ${f.instrument || 'market'} par baat karein?`;
+    },
     chart: () => `## 📊 Chart Intelligence\nMessage box ke sath **image button** se apne chart ka screenshot upload karein — main uska **Trend, Support/Resistance** aur patterns (Double Top/Bottom, triangle, channel, range, BOS, CHOCH) parh kar **probability aur logic** samjhaaoon ga (koi signal nahi).`,
   },
 
@@ -123,6 +150,19 @@ const T = {
     stuck: (c) => `## بخصوص صفقة في خسارة (drawdown)\nأولاً — هذا التوتر طبيعي، لنفكّر بهدوء. 🧭\n${c.marketData ? snap(c.marketData, 'ar') : ''}- الصفقات المتعثّرة تحمل **عدم يقين حقيقي**.\n- ⚠️ احذر **averaging** العاطفي و**الدخول الانتقامي**.\n- سؤال مفيد: *"لو لم يكن لديّ مركز الآن، هل كنت سأفتح هذه الصفقة؟"*\n\nلن أطلب منك الاحتفاظ أو الإغلاق أو الإضافة — القرار لك ولخطتك.`,
     assess: () => `## تقييم الصفقة (تعليمي)\nأرسل **entry و Stop Loss و Take Profit** (مثل *"entry 2650, stop 2640, target 2675"*) لأحسب **Risk Reward** وأراجع الـ structure — تعليمي بالكامل، دون أي توصية شراء/بيع.`,
     broker: () => `## مساعدة الوسطاء\nأساعدك في **أنواع الحسابات**، التحقق من التنظيم، الإيداع/السحب، مشاكل تسجيل دخول MT5، الـ spreads/commission، الـ leverage والـ margin. الوسطاء: Exness, HFM, Octa, IC Markets, FBS, XM.`,
+    aboutme: (c) => {
+      const f = readProfileFacts(c);
+      if (!f.hasData) return `## ماذا أعرف عنك\nما زلنا نتعرّف على بعضنا — لا أملك الكثير محفوظاً بعد. أخبرني ببعض الأمور وسأتذكّرها:\n- ما الذي تتداوله غالباً؟ (Gold، BTC)\n- مستوى خبرتك؟ (مبتدئ / متوسط / متقدّم)\n- أسلوبك؟ (scalping، intraday، swing)`;
+      let o = `## ما الذي أتذكّره عنك\n`;
+      if (f.instrument)        o += `- 🎯 تركّز أساساً على **${f.instrument}**\n`;
+      if (f.level)             o += `- 📈 مستوى الخبرة: **${f.level}**\n`;
+      if (f.style)             o += `- 🧭 أسلوب التداول: **${f.style}**\n`;
+      if (f.convs)             o += `- 💬 تحدّثنا عبر **${f.convs}** محادثة\n`;
+      if (f.strengths.length)  o += `- ✅ نقاط القوة: ${f.strengths.join('، ')}\n`;
+      if (f.weaknesses.length) o += `- ⚠️ مجالات للتحسين: ${f.weaknesses.join('، ')}\n`;
+      if (f.psych.length)      o += `- 🧠 أنماط نفسية لاحظتها: ${f.psych.join('، ')}\n`;
+      return o + `\nأستخدم هذا لأخصّص إجاباتي. هل نتعمّق في ${f.instrument || 'السوق'}؟`;
+    },
     chart: () => `## 📊 ذكاء الشارت\nارفع لقطة شاشة للشارت عبر **زر الصورة** بجانب صندوق الرسائل — سأقرأ الـ **Trend و Support/Resistance** والأنماط (Double Top/Bottom، triangle، channel، range، BOS، CHOCH) وأشرح **الاحتمال والمنطق** (دون أي signal).`,
   },
 };

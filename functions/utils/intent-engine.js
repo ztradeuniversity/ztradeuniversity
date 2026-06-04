@@ -159,10 +159,19 @@ export function classifyIntent(text) {
   if (has(s, ['tradingview', 'trading view'])) return { intent: 'platform', platform: 'tradingview', broker };
   if (has(s, ['mt5', 'metatrader', 'meta trader', 'mt4'])) return { intent: 'platform', platform: 'mt5', broker };
 
+  // ABOUT ME / MEMORY RECALL (Phase 8C) — surface what we remember about the user
+  if (has(s, ['what do you know about me', 'what do you remember about me', 'tell me about me',
+      'about me', 'do you remember me', 'remember me', 'what have i told you', 'who am i',
+      'my profile', 'my info', 'my details', 'what do you know about my trading',
+      'میرے بارے میں کیا جانتے', 'میرے بارے میں کیا جانتی', 'کیا تم مجھے یاد', 'کیا آپ مجھے یاد',
+      'مجھے یاد رکھتے', 'میرا پروفائل', 'میرے بارے میں بتاؤ', 'میرے بارے میں بتائیں'])) {
+    return { intent: 'aboutme', confidence: 'high', broker };
+  }
+
   // Self-assessment (route to existing tool) — before trade-assessment
   if (has(s, ['self assessment', 'self-assessment', 'assess myself', 'what kind of trader am i',
       'what type of trader', 'trader profile', 'my trader level', "what's my level", 'evaluate myself'])) {
-    return { intent: 'selfassess', broker };
+    return { intent: 'selfassess', confidence: 'high', broker };
   }
 
   // Trade assessment
@@ -261,7 +270,7 @@ export function classifyIntent(text) {
     return { intent: 'greeting', broker };
   }
 
-  return { intent: 'fallback', broker };
+  return { intent: 'fallback', confidence: 'low', broker };
 }
 
 // ── CONVERSATION CONTEXT ENGINE — follow-up / language-switch detection ──────
