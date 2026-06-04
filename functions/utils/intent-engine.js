@@ -5,8 +5,9 @@
 // timezone resolution layer. Pure detection: no response text lives here.
 // ════════════════════════════════════════════════════════════════════════════
 
-import { findBroker } from './broker-data.js';
-import { has }        from './response-engine.js';
+import { findBroker }   from './broker-data.js';
+import { has }          from './response-engine.js';
+import { extractFacts } from './memory-facts.js';
 
 // ── LANGUAGE DETECTION (9 languages, no API) ─────────────────────────────────
 export function detectLanguage(text) {
@@ -168,6 +169,18 @@ export function classifyIntent(text) {
     return { intent: 'aboutme', confidence: 'high', broker };
   }
 
+  // PROFILE STATEMENT (Phase 8E) — the user is telling us about themselves
+  // ("I only trade Gold", "I'm a beginner", "I scalp intraday"). Detect the
+  // statement and acknowledge it, rather than dumping a market/education answer.
+  {
+    const facts       = extractFacts(s);
+    const wordCount   = s.split(/\s+/).filter(Boolean).length;
+    const isQuestion  = /\?|^(what|why|how|when|where|which|who|is|are|do|does|should|can|tell|explain|give)\b/.test(s);
+    if (facts.length && wordCount <= 9 && !isQuestion) {
+      return { intent: 'profileinfo', facts, confidence: 'high', broker: null };
+    }
+  }
+
   // Self-assessment (route to existing tool) — before trade-assessment
   if (has(s, ['self assessment', 'self-assessment', 'assess myself', 'what kind of trader am i',
       'what type of trader', 'trader profile', 'my trader level', "what's my level", 'evaluate myself'])) {
@@ -268,6 +281,21 @@ export function classifyIntent(text) {
   // Help / about the assistant
   if (has(s, ['what can you do', 'help', 'how do you work', 'who are you', 'features'])) {
     return { intent: 'greeting', broker };
+  }
+
+  // DOMAIN GUARDRAIL (Phase 8E) — clearly off-topic (non-trading) → polite redirect.
+  // High-precision: requires an off-topic marker AND no trading vocabulary present.
+  {
+    const OFFTOPIC = ['weather', 'tell me a joke', 'a joke', 'recipe', 'how to cook', 'movie', 'a film', 'song', 'lyrics',
+      'football', 'cricket match', 'horoscope', 'astrology', 'write code', 'python code', 'javascript', 'write an essay',
+      'write a poem', 'my homework', 'capital of', 'who is the president', 'prime minister', 'dating', 'girlfriend', 'boyfriend',
+      'translate this', 'distance between', 'who won the'];
+    const TRADING = ['gold', 'xau', 'btc', 'bitcoin', 'crypto', 'forex', 'trade', 'trading', 'market', 'price', 'chart', 'broker',
+      'pip', 'lot', 'risk', 'stop loss', 'entry', 'tp', 'sl', 'fed', 'dxy', 'yield', 'vix', 'session', 'signal', 'candle',
+      'support', 'resistance', 'volatility', 'account', 'invest'];
+    if (has(s, OFFTOPIC) && !has(s, TRADING)) {
+      return { intent: 'offtopic', confidence: 'high', broker: null };
+    }
   }
 
   return { intent: 'fallback', confidence: 'low', broker };

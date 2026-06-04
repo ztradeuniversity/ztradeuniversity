@@ -617,6 +617,7 @@ export async function onRequest(context) {
       prevAnswer:  lastAssistantMsg,
       intent:      cls.intent,
       confidence:  cls.confidence,
+      facts:       cls.facts,
       platform:    cls.platform,
       broker:      cls.broker,
       newsFocus:   cls.newsFocus,

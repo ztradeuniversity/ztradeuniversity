@@ -9,8 +9,44 @@
 import { loc, trustedSourceBlock, signalRouteBlock, money, extractNumbers, parseTradeLevels } from './response-engine.js';
 import { parseCountryFromText, COUNTRY_TZ } from './intent-engine.js';
 import { readProfileFacts } from './profile-recall.js';
+import { extractFacts } from './memory-facts.js';
+import { vary, ACK_OPENERS, FB_OPENERS } from './humanize.js';
 
 export function buildGreeting(ctx) { return loc(ctx.lang).greet; }
+
+// ── PHASE 8E: PROFILE STATEMENT ACK (human confirmation + follow-up) ─────────
+// "I only trade Gold" → "Got it — I'll remember you focus on Gold. <follow-up>"
+export function buildProfileAck(ctx) {
+  const facts = (ctx.facts && ctx.facts.length) ? ctx.facts : extractFacts(ctx.text || '');
+  const parts = [];
+  let followup = '';
+  for (const f of facts) {
+    if (f.category === 'favorite-instrument') {
+      parts.push(`you focus primarily on **${f.value}**`);
+      followup = `Want me to tailor **${f.value}** market context to how you trade, or check today's **${f.value}** drivers?`;
+    } else if (f.category === 'trading-style') {
+      parts.push(`you trade as a **${f.value}**`);
+      followup = followup || `That style lives or dies on tight risk — want a quick rundown of risk control for a **${f.value}**?`;
+    } else if (f.category === 'experience') {
+      parts.push(`you're at a **${f.value}** level`);
+      followup = followup || `I'll keep things clear and foundational. What do you trade most — **Gold** or **₿ BTC**?`;
+    } else if (f.category === 'goal') {
+      parts.push(`I've noted your goal`);
+      followup = followup || `Good goal to have — want a simple, low-risk way to work toward it?`;
+    }
+  }
+  const opener = vary(ACK_OPENERS, ctx.text || '');
+  const ack = parts.length
+    ? `${opener} — I'll remember that ${parts.join(' and ')}. ✅`
+    : `${opener} — noted. ✅`;
+  return `${ack}\n\n${followup || `What would you like to dig into — **market context**, a **trade review**, or **psychology**?`}`;
+}
+
+// ── PHASE 8E: DOMAIN GUARDRAIL (off-topic → polite redirect) ─────────────────
+export function buildOffTopic(ctx) {
+  return `I'm your **trading assistant**, so I stick to markets — **Gold**, **₿ BTC**, market context, trade reviews, risk, and trading psychology. ` +
+    `That one's outside my lane, but I'm all yours for anything trading-related.\n\nWhat would you like to look at — Gold/BTC context, a trade assessment, or chart analysis?`;
+}
 
 // ── PHASE 8C: ABOUT-ME / MEMORY RECALL ───────────────────────────────────────
 // Answers "what do you know about me?" from the stored profile. If nothing is
@@ -51,7 +87,7 @@ export function buildFallback(ctx) {
     if (f.instrument) bits.push(`your focus on **${f.instrument}**`);
     if (f.level)      bits.push(`your **${f.level}** level`);
     const ref = bits.length ? `Given ${bits.join(' and ')}, ` : '';
-    return `I want to answer the right thing. ${ref}here's what I can dig into with you:\n\n` +
+    return `${vary(FB_OPENERS, ctx.text || '')}. ${ref}here's what I can dig into with you:\n\n` +
       `- 🏅 **Gold / ₿ BTC market context**\n` +
       `- 🔍 **Trade assessment** — share your entry, stop & target\n` +
       `- 🧠 **"Why am I losing" / psychology** coaching\n` +

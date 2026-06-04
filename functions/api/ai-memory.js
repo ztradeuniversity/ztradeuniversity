@@ -222,8 +222,10 @@ export async function onRequest(context) {
           return saveChatMessage(env, userId, conversationId, 'user', f.fact, [],
             { category: f.category, intent: data?.intent || null, weight: f.weight, pinned: !!f.pinned });
         }));
-        if (Object.keys(profileUpdates).length) {
-          await upsertProfile(env, userId, profileUpdates).catch(() => {});
+        // Phase 8E: write each field independently so a single unknown column
+        // (e.g. favorite_instrument before its migration) can't fail the others.
+        for (const [k, val] of Object.entries(profileUpdates)) {
+          await upsertProfile(env, userId, { [k]: val }).catch(() => {});
         }
         storedFacts = facts.map(f => f.category);
       }

@@ -77,6 +77,19 @@ const T = {
     },
     psychology: (c) => T.ur.knowledge(c),
     setcountry: () => `آپ کس ملک سے trading کرتے ہیں؟ (مثلاً پاکستان، انڈیا، انڈونیشیا، UAE…) میں یاد رکھ کر تمام ایونٹ اور سیشن اوقات آپ کے مقامی time میں دکھاؤں گا۔`,
+    profileinfo: (c) => {
+      const facts = c.facts || [];
+      const parts = []; let fu = '';
+      for (const f of facts) {
+        if (f.category === 'favorite-instrument') { parts.push(`آپ بنیادی طور پر **${f.value}** پر فوکس کرتے ہیں`); fu = `کیا میں **${f.value}** کا market context آپ کے انداز کے مطابق بناؤں؟`; }
+        else if (f.category === 'trading-style')   { parts.push(`آپ **${f.value}** انداز میں trade کرتے ہیں`); fu = fu || `کیا اس style کے لیے رسک کنٹرول کی مختصر وضاحت دوں؟`; }
+        else if (f.category === 'experience')      { parts.push(`آپ **${f.value}** لیول پر ہیں`); fu = fu || `میں آسان اور بنیادی انداز میں سمجھاؤں گا۔ آپ زیادہ تر **Gold** یا **BTC** trade کرتے ہیں؟`; }
+        else if (f.category === 'goal')            { parts.push(`میں نے آپ کا مقصد نوٹ کر لیا`); fu = fu || `کیا اس مقصد کے لیے کم رسک والا سادہ پلان دوں؟`; }
+      }
+      const ack = parts.length ? `سمجھ گیا — میں یاد رکھوں گا کہ ${parts.join(' اور ')}۔ ✅` : `سمجھ گیا۔ ✅`;
+      return `${ack}\n\n${fu || 'آپ کیا دیکھنا چاہیں گے — **market context**، **trade کا جائزہ**، یا **psychology**؟'}`;
+    },
+    offtopic: () => `میں آپ کا **trading assistant** ہوں — میں صرف markets پر بات کرتا ہوں: **Gold**، **BTC**، market context، trade کا جائزہ، رسک اور psychology۔ یہ میرے دائرے سے باہر ہے، لیکن trading کے کسی بھی سوال کے لیے حاضر ہوں۔`,
     aboutme: (c) => {
       const f = readProfileFacts(c);
       if (!f.hasData) return `## آپ کے بارے میں\nہم ابھی ایک دوسرے کو جان رہے ہیں — میرے پاس زیادہ معلومات محفوظ نہیں۔ یہ بتائیں تو میں یاد رکھوں گا:\n- آپ زیادہ تر کیا trade کرتے ہیں؟ (Gold، BTC)\n- آپ کا تجربہ؟ (beginner / intermediate / advanced)\n- آپ کا انداز؟ (scalping، intraday، swing)`;
@@ -121,6 +134,19 @@ const T = {
     knowledge: (c) => { const e = (c.knowledgeEntries || [])[0]; return e ? `## ${e.title}\n${e.summary || (e.content || '').slice(0, 500)}` : `Main knowledge base se asbaaq share kar sakta hoon — Mark Douglas, Van Tharp, Market Wizards, psychology, beginner roadmap, glossary. Kaun sa chahein?`; },
     psychology: (c) => T['ur-roman'].knowledge(c),
     setcountry: () => `Aap kis mulk se trading karte hain? (Pakistan, India, Indonesia, UAE…) Main yaad rakh kar tamam event aur session auqaat aap ke local time mein dikhaoon ga.`,
+    profileinfo: (c) => {
+      const facts = c.facts || [];
+      const parts = []; let fu = '';
+      for (const f of facts) {
+        if (f.category === 'favorite-instrument') { parts.push(`aap mukhya tor par **${f.value}** par focus karte hain`); fu = `Kya main **${f.value}** ka market context aap ke andaaz ke mutabiq banaoon?`; }
+        else if (f.category === 'trading-style')   { parts.push(`aap **${f.value}** andaaz mein trade karte hain`); fu = fu || `Kya is style ke liye risk control ki mukhtasar wazahat doon?`; }
+        else if (f.category === 'experience')      { parts.push(`aap **${f.value}** level par hain`); fu = fu || `Main aasan aur buniyadi andaaz mein samjhaoon ga. Aap zyada tar **Gold** ya **BTC** trade karte hain?`; }
+        else if (f.category === 'goal')            { parts.push(`main ne aap ka maqsad note kar liya`); fu = fu || `Kya is maqsad ke liye kam-risk wala saada plan doon?`; }
+      }
+      const ack = parts.length ? `Samajh gaya — main yaad rakhoon ga ke ${parts.join(' aur ')}. ✅` : `Samajh gaya. ✅`;
+      return `${ack}\n\n${fu || 'Aap kya dekhna chahenge — **market context**, **trade ka jaaiza**, ya **psychology**?'}`;
+    },
+    offtopic: () => `Main aap ka **trading assistant** hoon — main sirf markets par baat karta hoon: **Gold**, **BTC**, market context, trade ka jaaiza, risk aur psychology. Yeh mere daire se bahar hai, lekin trading ke kisi bhi sawal ke liye hazir hoon.`,
     aboutme: (c) => {
       const f = readProfileFacts(c);
       if (!f.hasData) return `## Aap ke baare mein\nHum abhi ek doosre ko jaan rahe hain — mere paas zyada maloomat mehfooz nahi. Yeh batayein to main yaad rakhoon ga:\n- Aap zyada tar kya trade karte hain? (Gold, BTC)\n- Aap ka tajurba? (beginner / intermediate / advanced)\n- Aap ka andaaz? (scalping, intraday, swing)`;
@@ -163,6 +189,19 @@ const T = {
       if (f.psych.length)      o += `- 🧠 أنماط نفسية لاحظتها: ${f.psych.join('، ')}\n`;
       return o + `\nأستخدم هذا لأخصّص إجاباتي. هل نتعمّق في ${f.instrument || 'السوق'}؟`;
     },
+    profileinfo: (c) => {
+      const facts = c.facts || [];
+      const parts = []; let fu = '';
+      for (const f of facts) {
+        if (f.category === 'favorite-instrument') { parts.push(`تركّز أساساً على **${f.value}**`); fu = `هل أخصّص سياق سوق **${f.value}** حسب أسلوبك؟`; }
+        else if (f.category === 'trading-style')   { parts.push(`تتداول بأسلوب **${f.value}**`); fu = fu || `هل أعطيك ملخّصاً سريعاً لإدارة المخاطر لهذا الأسلوب؟`; }
+        else if (f.category === 'experience')      { parts.push(`مستواك **${f.value}**`); fu = fu || `سأبقي الشرح واضحاً وأساسياً. ماذا تتداول غالباً — **Gold** أم **BTC**؟`; }
+        else if (f.category === 'goal')            { parts.push(`سجّلت هدفك`); fu = fu || `هل أقترح خطة بسيطة منخفضة المخاطر لتحقيقه؟`; }
+      }
+      const ack = parts.length ? `حسناً — سأتذكّر أن ${parts.join(' و')}. ✅` : `حسناً، سجّلت ذلك. ✅`;
+      return `${ack}\n\n${fu || 'ماذا تريد أن نتناول — **سياق السوق**، **مراجعة صفقة**، أو **السيكولوجيا**؟'}`;
+    },
+    offtopic: () => `أنا **مساعد التداول** الخاص بك — أركّز على الأسواق: **Gold**، **BTC**، سياق السوق، مراجعة الصفقات، المخاطر والسيكولوجيا. هذا خارج نطاقي، لكنني جاهز لأي سؤال عن التداول.`,
     chart: () => `## 📊 ذكاء الشارت\nارفع لقطة شاشة للشارت عبر **زر الصورة** بجانب صندوق الرسائل — سأقرأ الـ **Trend و Support/Resistance** والأنماط (Double Top/Bottom، triangle، channel، range، BOS، CHOCH) وأشرح **الاحتمال والمنطق** (دون أي signal).`,
   },
 };

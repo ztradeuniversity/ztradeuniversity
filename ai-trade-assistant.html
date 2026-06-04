@@ -1752,10 +1752,18 @@ function initVoice() {
   voiceRec.onend = () => {
     isRec = false; micBtn.classList.remove('rec');
     const finalText = (voiceBase + voiceFinal).trim();
+    const hadSpeech = voiceFinal.trim().length > 0;
     if (finalText) {
-      chatIn.value = finalText.replace(/\s+/g, ' '); resize(); updateCount(); chatIn.focus();
+      chatIn.value = finalText.replace(/\s+/g, ' '); resize(); updateCount();
       const label = detectLanguageLabel(voiceFinal.trim() || finalText);
-      showVoicePill('done', '✓ Language detected: ' + label + ' — edit if needed, then send', 2600);
+      if (hadSpeech && !streaming) {
+        // Phase 8E — ChatGPT-style: auto-send the spoken message after recognition ends
+        showVoicePill('done', '✓ ' + label + ' — sending…', 1400);
+        setTimeout(() => { if (chatIn.value.trim() && !streaming) sendMessage(); }, 300);
+      } else {
+        chatIn.focus();
+        showVoicePill('done', '✓ Language detected: ' + label + ' — edit if needed, then send', 2600);
+      }
     } else {
       hideVoicePill();
     }
