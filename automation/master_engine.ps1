@@ -108,13 +108,43 @@ $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  Supabase configuration — same project as the website + admin scripts.
-#  The anon key is safe to embed (it's bound by RLS, identical to the value
-#  already present in license-request.html / admin-upload-report.html).
+#  Supabase configuration
+#  ───────────────────────────────────────────────────────────────────────────
+#  Phase 18.1 Stage 1 — engine now prefers the service_role key.
+#
+#  Two keys are declared:
+#    $script:SupabaseAnonKey    — public key (browser-side), still safe under
+#                                 today's RLS but will be locked out once
+#                                 Stages 4-6 tighten policies.  Kept as the
+#                                 fallback during the transition window.
+#    $script:SupabaseServiceKey — service_role key (server-side ONLY).  Paste
+#                                 it from Supabase → Settings → API → "service
+#                                 role secret".  When set, the engine uses it
+#                                 for every REST call, which means the engine
+#                                 will continue to work after we revoke anon
+#                                 INSERT/UPDATE/DELETE on production tables.
+#
+#  IMPORTANT — security:
+#    The service_role key bypasses RLS entirely.  Keep this file (and the
+#    repo it lives in) PRIVATE.  Never commit it to a public GitHub repo.
+#    The file already lives on the engine host only (D:\ZTU_AUTOMATION\) and
+#    is not shipped to Cloudflare Pages, so this is safe.
+#
+#  $script:SupabaseAuthKey is computed below as: service if set, else anon.
+#  Every Invoke-WebRequest in the engine reads $script:SupabaseAuthKey, so
+#  toggling between keys is a one-line edit.
 # ═══════════════════════════════════════════════════════════════════════════
-$script:SupabaseUrl     = 'https://yivkkfplrkcncjaqifxb.supabase.co'
-$script:SupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQ5MjcsImV4cCI6MjA5NDkwMDkyN30._CC6KIPVOhzMyOnLDtTpLbtMwee8y-991YFpoC3eC5Q'
-$script:Table           = 'license_requests'
+$script:SupabaseUrl        = 'https://yivkkfplrkcncjaqifxb.supabase.co'
+$script:SupabaseAnonKey    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQ5MjcsImV4cCI6MjA5NDkwMDkyN30._CC6KIPVOhzMyOnLDtTpLbtMwee8y-991YFpoC3eC5Q'
+$script:SupabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTMyNDkyNywiZXhwIjoyMDk0OTAwOTI3fQ.vIzwK1VLBfCTnXl-rIo3jvHu2QphHdQUpaGauszeJqY'
+if ([string]::IsNullOrWhiteSpace($script:SupabaseServiceKey)) {
+    $script:SupabaseAuthKey = $script:SupabaseAnonKey
+    Write-Host '[Phase18.1] Using anon key (SupabaseServiceKey is empty).' -ForegroundColor Yellow
+} else {
+    $script:SupabaseAuthKey = $script:SupabaseServiceKey
+    Write-Host '[Phase18.1] Using service_role key (bypasses RLS).' -ForegroundColor Cyan
+}
+$script:Table              = 'license_requests'
 
 # Status constants (mirror admin-upload-report.html / compile-dashboard.html)
 $STATUS_COMPILE_READY = 'compile_ready'
@@ -210,8 +240,8 @@ function Invoke-SupabaseRequest {
         $Body
     )
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Content-Type'  = 'application/json'
         'Prefer'        = 'return=representation'
     }
@@ -269,8 +299,8 @@ function Get-BrokerAccountNumbers([int]$Limit = 10000) {
     $path = "/broker_accounts?select=account_number&limit=$Limit"
     $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -300,8 +330,8 @@ function Get-LicenseRequestById([string]$Id) {
     $path = "/$script:Table" + "?id=eq.$Id&select=id,account_number,email,status,broker_name,whatsapp_number,created_at&limit=1"
     $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -336,8 +366,8 @@ function Get-PendingResendRequests([int]$Limit = 100) {
     $path = "/resend_requests?status=eq.pending&select=id,license_request_id,account_number,recipient_email,requested_by,created_at&order=created_at.asc&limit=$Limit"
     $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -375,8 +405,8 @@ function Update-ResendRequestStatus {
     }
     $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Content-Type'  = 'application/json'
         'Prefer'        = 'return=minimal'
     }
@@ -399,8 +429,8 @@ function Get-LicenseRequestResendCount([string]$Id) {
     if ([string]::IsNullOrWhiteSpace($Id)) { return 0 }
     $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/' + $script:Table + '?id=eq.' + $Id + '&select=resend_count&limit=1'
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -429,8 +459,8 @@ function Get-IbChangedAccountSet([int]$Limit = 5000) {
     $result = @{}
     $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/ib_changed_accounts?select=account_number&limit=' + $Limit
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -459,8 +489,8 @@ function Get-PendingLicenseRequests([int]$Limit = 500) {
     $path = "/$script:Table" + "?status=eq.pending&select=id,account_number&order=created_at.asc&limit=$Limit"
     $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -506,8 +536,8 @@ function Get-EmailOutboxPending([int]$Limit = 50) {
     $path = "/email_outbox?status=eq.pending&select=$cols&order=created_at.asc&limit=$Limit"
     $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Accept'        = 'application/json'
     }
     try {
@@ -570,8 +600,8 @@ function Update-EmailOutboxStatus {
 
     $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
-        'apikey'        = $script:SupabaseAnonKey
-        'Authorization' = 'Bearer ' + $script:SupabaseAnonKey
+        'apikey'        = $script:SupabaseAuthKey
+        'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
         'Content-Type'  = 'application/json'
         'Prefer'        = 'return=minimal,count=exact'
     }
@@ -928,12 +958,18 @@ try {
     # admin can see in the dashboard that the trigger was honored on this tick.
     # The engine cycle runs the same logic regardless — this is purely an
     # audit trail so manual click + auto-tick both leave evidence.
+    # Phase 18.2 CRITICAL FIX — the previous query referenced `requested_at`,
+    # which does NOT exist in the live engine_triggers table.  PostgREST
+    # returned HTTP 400 (42703 column does not exist) on every cycle, so
+    # the engine never noticed Run Now triggers and the watcher always
+    # treated the table as empty.  The actual columns the dashboard writes
+    # and reads are: id, status, requested_by, created_at, consumed_at.
     $stat_triggersConsumed = 0
     try {
         $pendingTriggers = @()
         try {
-            $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/engine_triggers?status=eq.pending&select=id,requested_at,requested_by&order=requested_at.asc&limit=50'
-            $headers = @{ 'apikey'=$script:SupabaseAnonKey; 'Authorization'='Bearer '+$script:SupabaseAnonKey; 'Accept'='application/json' }
+            $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/engine_triggers?status=eq.pending&select=id,created_at,requested_by&order=created_at.asc&limit=50'
+            $headers = @{ 'apikey'=$script:SupabaseAuthKey; 'Authorization'='Bearer '+$script:SupabaseAuthKey; 'Accept'='application/json' }
             $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
             $json = [string]$resp.Content
             if (-not [string]::IsNullOrWhiteSpace($json) -and $json -ne '[]') {
@@ -943,7 +979,9 @@ try {
                 $pendingTriggers = @($jss.DeserializeObject($json))
             }
         } catch {
-            Write-Warn2 ("engine_triggers fetch failed (table missing? non-fatal): {0}" -f $_.Exception.Message)
+            $resp = $_.Exception.Response
+            $code = if ($resp) { [int]$resp.StatusCode } else { -1 }
+            Write-Warn2 ("engine_triggers fetch failed [HTTP {0}]: {1}" -f $code, $_.Exception.Message)
         }
         if ($pendingTriggers.Count -gt 0) {
             Write-Step ("Phase 16.2 — found {0} pending Run Now trigger(s) — consuming..." -f $pendingTriggers.Count)
@@ -952,13 +990,13 @@ try {
                     $consumedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                     $patchUri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/engine_triggers?id=eq.' + [string]$t.id
                     $patchHeaders = @{
-                        'apikey'=$script:SupabaseAnonKey; 'Authorization'='Bearer '+$script:SupabaseAnonKey
+                        'apikey'=$script:SupabaseAuthKey; 'Authorization'='Bearer '+$script:SupabaseAuthKey
                         'Content-Type'='application/json'; 'Prefer'='return=minimal'
                     }
                     $body = (@{ status='consumed'; consumed_at=$consumedAt } | ConvertTo-Json -Compress)
                     [void](Invoke-WebRequest -Uri $patchUri -Method PATCH -Headers $patchHeaders -Body $body -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop)
                     $stat_triggersConsumed++
-                    Write-Ok ("Trigger #{0} consumed (requested {1})" -f $t.id, $t.requested_at)
+                    Write-Ok ("Trigger #{0} consumed (requested {1})" -f $t.id, $t.created_at)
                 } catch {
                     Write-Warn2 ("Trigger #{0} PATCH failed: {1}" -f $t.id, $_.Exception.Message)
                 }
@@ -1484,7 +1522,7 @@ try {
                 $newCount = ($cur + 1)
                 $patchUri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/' + $script:Table + '?id=eq.' + $licId
                 $hdrs = @{
-                    'apikey'=$script:SupabaseAnonKey; 'Authorization'='Bearer '+$script:SupabaseAnonKey
+                    'apikey'=$script:SupabaseAuthKey; 'Authorization'='Bearer '+$script:SupabaseAuthKey
                     'Content-Type'='application/json'; 'Prefer'='return=minimal'
                 }
                 $body = (@{ resend_count = $newCount; last_resend_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') } | ConvertTo-Json -Compress)
