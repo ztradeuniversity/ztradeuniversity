@@ -34,11 +34,77 @@
     if (j && typeof j.graphEnabled === 'boolean') $('graphflag').textContent = j.graphEnabled ? 'enabled' : 'disabled';
   }
 
+  // populate-anchors is chunked server-side (subrequest cap) → loop nextOffset.
+  // A single batch returning 5xx does NOT abort — we log the error and advance the
+  // offset so subsequent batches still run. 403 (auth failure) is the only hard stop.
+  async function runPopulate(key) {
+    let offset = 0, authored = 0, published = 0, total = 0, batchErrors = 0;
+    const all = [], batchErrs = [];
+    for (let guard = 0; guard < 50; guard++) {
+      render('… populating anchors (from #' + offset + ') …');
+      let res, body;
+      try {
+        res = await fetch(ENDPOINT, {
+          method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'populate-anchors', offset }),
+        });
+        body = await res.json().catch(() => ({}));
+      } catch (fetchErr) {
+        // Network error — log and advance; don't abort remaining batches.
+        batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
+        batchErrors++;
+        offset += 2;   // advance by default limit so loop makes progress
+        if (offset >= (total || 9999)) break;
+        continue;
+      }
+      if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
+      if (!res.ok) {
+        // Server error on this batch — log it, advance offset, continue remaining batches.
+        batchErrs.push({ offset, httpStatus: res.status, error: JSON.stringify(body).slice(0, 300) });
+        batchErrors++;
+        offset += 2;
+        if (offset >= (total || 9999)) break;
+        continue;
+      }
+      total = body.total; authored += body.authored || 0; published += body.published || 0;
+      all.push(...(body.results || []));
+      render('… ' + Math.min(offset + (body.processed || 0), total) + '/' + total + ' processed (published so far: ' + published + ') …');
+      if (body.nextOffset == null) break;
+      offset = body.nextOffset;
+    }
+    // Collect per-concept failures: unhandled errors, author failures, and publish failures.
+    const failures = all.filter(r =>
+      r.error ||
+      (r.authored && String(r.authored).startsWith('FAILED')) ||
+      r.published === false
+    );
+    // Build human-readable failure detail lines.
+    const failLines = failures.map(r => {
+      const parts = ['id=' + r.id];
+      if (r.error)        parts.push('throw: ' + r.error);
+      if (r.authored && String(r.authored).startsWith('FAILED')) parts.push('author: ' + r.authored + (r.authorErrors ? ' ' + JSON.stringify(r.authorErrors) : ''));
+      if (r.published === false) parts.push('publish-stage=' + (r.publishStage || '?') + ' error=' + (r.publishError || '?'));
+      return parts.join(' | ');
+    });
+    const anyFailed = failures.length > 0 || batchErrors > 0;
+    render(
+      (anyFailed ? '⚠️' : '✅') + ' populate-anchors done — authored=' + authored +
+      ', published=' + published + '/' + total +
+      (batchErrors   ? '\n❌ ' + batchErrors + ' batch HTTP error(s):\n' + batchErrs.map(e => JSON.stringify(e)).join('\n') : '') +
+      (failures.length ? '\n⚠️ ' + failures.length + ' concept failure(s):\n' + failLines.join('\n') : '') +
+      '\n\n' + JSON.stringify(all, null, 2),
+      anyFailed ? 'err' : 'ok'
+    );
+    refreshStatus(key);
+  }
+
   async function run(action) {
     const meta = META[action];
     const key = getKey();
     if (!key) return;
     if (meta.write && !window.confirm(meta.warn)) return;
+
+    if (action === 'populate-anchors') { setBusy(true); try { await runPopulate(key); } finally { setBusy(false); } return; }
 
     setBusy(true);
     render('… running ' + action + ' …');

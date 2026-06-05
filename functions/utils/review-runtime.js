@@ -20,29 +20,29 @@ const TRANSITIONS = {
 export function canTransition(from, to) { return (TRANSITIONS[from] || []).includes(to); }
 
 export async function submitForReview(env, node) {
-  await upsertNode(env, { ...node, status: STATUS.IN_REVIEW });
+  const wrote = await upsertNode(env, { ...node, status: STATUS.IN_REVIEW });
   await addReview(env, node.id, { status: 'pending' });
-  return { id: node.id, status: STATUS.IN_REVIEW };
+  return { id: node.id, status: STATUS.IN_REVIEW, wrote: !!wrote };
 }
 
 // Approve + publish. KOS publish-validation is enforced by the caller
 // (authoring-workflow.publishConcept) — this performs the lifecycle transition.
 export async function approveAndPublish(env, node, reviewer = 'admin') {
-  await snapshotVersion(env, node, reviewer);       // version history for rollback
-  await setStatus(env, node.id, STATUS.PUBLISHED);
+  await snapshotVersion(env, node, reviewer);
+  const wrote = await setStatus(env, node.id, STATUS.PUBLISHED);
   await addReview(env, node.id, { status: 'approved', reviewer });
-  return { id: node.id, status: STATUS.PUBLISHED };
+  return { id: node.id, status: STATUS.PUBLISHED, wrote: !!wrote };
 }
 
 export async function rejectToDraft(env, id, reviewer, notes) {
-  await setStatus(env, id, STATUS.DRAFT);
+  const wrote = await setStatus(env, id, STATUS.DRAFT);
   await addReview(env, id, { status: 'rejected', reviewer, notes });
-  return { id, status: STATUS.DRAFT };
+  return { id, status: STATUS.DRAFT, wrote: !!wrote };
 }
 
 export async function retire(env, id) {
-  await setStatus(env, id, STATUS.DEPRECATED);
-  return { id, status: STATUS.DEPRECATED };
+  const wrote = await setStatus(env, id, STATUS.DEPRECATED);
+  return { id, status: STATUS.DEPRECATED, wrote: !!wrote };
 }
 
 export async function rollback(env, id, version) {

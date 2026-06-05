@@ -54,7 +54,7 @@ export async function onRequest(context) {
     if (a === 'validate')     return json(validateKnowledgeObject(body.object, { mode: body.mode || 'publish' }));
     if (a === 'author')       return json(await authorConcept(env, body.object, { origin: body.origin }));
     if (a === 'author-batch') return json(await authorBatch(env, body.objects, { origin: body.origin }));
-    if (a === 'populate-anchors') return json(await populateAnchors(env, { publish: body.publish !== false }));
+    if (a === 'populate-anchors') return json(await populateAnchors(env, { offset: body.offset || 0, limit: body.limit || 2, publish: body.publish !== false }));
     if (a === 'publish')      return json(await publishConcept(env, body.object, body.reviewer || 'admin'));
     if (a === 'reject')       return json(await rejectToDraft(env, body.id, body.reviewer || 'admin', body.notes));
     if (a === 'retire')       return json(await retire(env, body.id));

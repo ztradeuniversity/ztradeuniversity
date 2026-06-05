@@ -22,24 +22,41 @@ export function validateAnchors() {
   };
 }
 
-// Author + publish the full anchor batch (admin-run). Idempotent: re-running
-// re-authors (upsert by id) and re-syncs edges. Returns a per-concept summary.
-export async function populateAnchors(env, { publish = true } = {}) {
+// Author + publish the anchor batch in CHUNKS (admin-run). Each concept makes
+// ~7+edges Supabase subrequests; Cloudflare caps subrequests per request (~50 on
+// the bundled plan), so the batch is processed `limit` concepts at a time and the
+// caller pages with `nextOffset` (the admin page auto-loops). Per-concept try/catch
+// isolates failures so one bad concept can't abort the rest. Idempotent (upsert by id).
+export async function populateAnchors(env, { offset = 0, limit = 2, publish = true } = {}) {
+  const total = ANCHOR_CONCEPTS.length;
+  const start = Math.max(0, offset | 0);
+  const slice = ANCHOR_CONCEPTS.slice(start, start + Math.max(1, limit | 0));
   const results = [];
-  for (const kos of ANCHOR_CONCEPTS) {
-    const authored = await authorConcept(env, kos, { origin: 'authored', autoSubmit: false });
-    let published = null;
-    if (publish && authored.ok && authored.action !== 'merged') {
-      published = await publishConcept(env, kos, 'anchor-batch-1');
+  for (const kos of slice) {
+    try {
+      const authored = await authorConcept(env, kos, { origin: 'authored', autoSubmit: false });
+      let published = null;
+      if (publish && authored.ok && authored.action !== 'merged') {
+        published = await publishConcept(env, kos, 'anchor-batch-1');
+      }
+      // Capture full error detail so the admin page can identify exactly which concept
+      // failed and at which stage — never suppress stage/error fields.
+      results.push({
+        id: kos.id, category: kos.category,
+        authored: authored.ok ? (authored.action || 'drafted') : ('FAILED:' + (authored.stage || 'unknown')),
+        authorErrors: authored.ok ? null : (authored.errors || null),
+        published: published ? !!published.ok : null,
+        publishStage: (published && !published.ok) ? (published.stage || null) : null,
+        publishError: (published && !published.ok) ? (published.error || null) : null,
+        edges: published?.edges ?? null,
+      });
+    } catch (e) {
+      // Unhandled throw from any step — concept id + message always surfaced.
+      results.push({ id: kos.id, category: kos.category, error: String((e && e.message) || e) });
     }
-    results.push({
-      id: kos.id, category: kos.category,
-      authored: authored.ok ? (authored.action || 'drafted') : ('FAILED:' + (authored.stage || 'unknown')),
-      published: published ? !!published.ok : null,
-      edges: published?.edges ?? null,
-    });
   }
-  const authoredOk = results.filter(r => !String(r.authored).startsWith('FAILED')).length;
+  const nextOffset = (start + slice.length) < total ? (start + slice.length) : null;
+  const authoredOk = results.filter(r => !r.error && !String(r.authored).startsWith('FAILED')).length;
   const publishedOk = results.filter(r => r.published === true).length;
-  return { total: results.length, authored: authoredOk, published: publishedOk, results };
+  return { total, offset: start, processed: slice.length, nextOffset, authored: authoredOk, published: publishedOk, results };
 }

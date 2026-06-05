@@ -57,7 +57,19 @@ export async function publishConcept(env, kos, reviewer = 'admin') {
   const validation = validateKnowledgeObject(kos, { mode: 'publish' });
   if (!validation.valid) return { ok: false, stage: 'publish-validation', errors: validation.errors, validation };
   const node = await attachEmbedding(env, nodeFromKOS(kos));
+  // Upsert the row as published — idempotent, guarantees the row exists even if the
+  // earlier authorConcept write failed. upsertNode returns null on ANY Supabase error
+  // (table missing, RLS, unreachable), so this is the authoritative write-success gate.
+  // NOTE: setStatus (used inside approveAndPublish) does a PATCH and cannot distinguish
+  // "0 rows matched" from "1 row updated" — it ALWAYS returns true when the HTTP call
+  // succeeds — so it cannot be used as the ok gate.
+  const wrote = await upsertNode(env, { ...node, status: STATUS.PUBLISHED });
+  if (!wrote) {
+    return { ok: false, stage: 'db-write', error: 'upsertNode failed — Supabase unreachable, kb_nodes missing, or RLS blocking service key', validation };
+  }
+  // Audit trail: version snapshot + review record. Best-effort — failures here do not
+  // un-publish the concept (the row is already written above).
   await approveAndPublish(env, node, reviewer);
-  const edges = await syncEdges(env, node);         // wire engagement / learning-journey graph
+  const edges = await syncEdges(env, node);
   return { ok: true, status: 'published', edges: edges.synced, validation };
 }
