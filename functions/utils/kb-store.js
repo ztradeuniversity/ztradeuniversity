@@ -67,19 +67,32 @@ export async function insertQuestionPattern(env, conceptId, text, lang = 'en', s
 export async function insertEdge(env, src, dst, type, weight = 1.0, meta = {}) {
   return sb(env, 'POST', 'kb_edges', null, { src, dst, type, weight, meta }, 'return=minimal');
 }
+// Bulk insert — PostgREST accepts a JSON array body, so an entire node's edge set
+// is ONE subrequest instead of N. This is the critical fix for the populate path:
+// a concept like gold-buy-sell derives ~13 edges; inserting them one-by-one made a
+// 2-concept chunk exceed Cloudflare's per-invocation subrequest/time budget and the
+// worker was terminated mid-batch. Returns true on success (or when there is nothing
+// to insert), null on failure — same contract as the single-row helper.
+export async function insertEdges(env, rows = []) {
+  if (!isConfigured(env)) return null;
+  if (!Array.isArray(rows) || rows.length === 0) return true;
+  return sb(env, 'POST', 'kb_edges', null, rows, 'return=minimal');
+}
 // Delete derived (outgoing) edges for a node so a re-sync is idempotent.
 export async function deleteEdgesBySrc(env, src) {
   return sb(env, 'DELETE', 'kb_edges', `src=eq.${encodeURIComponent(src)}`, null, 'return=minimal');
 }
 // Phase 11C.4 — regenerate a node's relationship edges from its KOS data.
-// Idempotent (delete-by-src + re-insert). Graceful when unconfigured.
+// Idempotent (delete-by-src + single bulk insert). Exactly TWO subrequests per node
+// regardless of edge count (was 1 + N). Graceful when unconfigured.
 export async function syncEdges(env, node) {
   if (!isConfigured(env) || !node?.id) return { synced: 0, configured: isConfigured(env) };
   const edges = deriveEdgesFromKOS(node);
   await deleteEdgesBySrc(env, node.id);
-  let synced = 0;
-  for (const e of edges) { if (await insertEdge(env, e.src, e.dst, e.type, e.weight, e.meta)) synced++; }
-  return { synced, configured: true };
+  if (!edges.length) return { synced: 0, configured: true };
+  const rows = edges.map(e => ({ src: e.src, dst: e.dst, type: e.type, weight: e.weight, meta: e.meta }));
+  const ok = await insertEdges(env, rows);
+  return { synced: ok ? edges.length : 0, configured: true };
 }
 export async function insertSource(env, source) {
   return sb(env, 'POST', 'kb_sources', null, { ...source }, 'return=representation');

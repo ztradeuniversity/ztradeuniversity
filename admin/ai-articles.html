@@ -141,7 +141,7 @@ function hdrs(){return {'Content-Type':'application/json','x-admin-key':KEY};}
 async function unlock(){
   KEY=document.getElementById('adminKey').value.trim();
   if(!KEY){toast('Enter the admin key');return;}
-  sessionStorage.setItem('ztu_art_key',KEY);
+  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin)
   await loadCategories();
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('manager').classList.remove('hidden');
@@ -277,7 +277,7 @@ function uploadImage(){
 }
 
 // auto-unlock if key cached this session
-(function(){const k=sessionStorage.getItem('ztu_art_key');if(k){document.getElementById('adminKey').value=k;unlock();}})();
+(function(){const k=sessionStorage.getItem('ztu_kb_admin_key')||sessionStorage.getItem('ztu_art_key');if(k){document.getElementById('adminKey').value=k;unlock();}})();
 </script>
 </body>
 </html>

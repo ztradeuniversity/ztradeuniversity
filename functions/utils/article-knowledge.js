@@ -67,6 +67,51 @@ export async function buildKnowledgeInjection(env, { query, intent, lang, limit 
   };
 }
 
+// ── ARTICLE → KOS CONCEPT (graph contribution) ───────────────────────────────
+// Pure mapper: turn a published article into a Knowledge Object so it can enter
+// the SAME authoring pipeline as anchor concepts (authorConcept, origin:'article').
+// The concept lands as an ai_draft for human review — it is NOT auto-published, so
+// article edits can never silently overwrite the live graph. Reuses existing
+// architecture (no new tables, no new pipeline). Returns null when the article is
+// too thin to make a useful concept.
+export function conceptFromArticle(article) {
+  if (!article || !article.id || !article.title) return null;
+  const title = String(article.title).trim();
+  const summary = (article.summary || '').trim();
+  const content = (article.content || '').trim();
+  const short = summary.length > 40 ? summary : content.slice(0, 400);
+  if (!short) return null;                                   // nothing renderable
+  const tags = Array.isArray(article.tags) ? article.tags.filter(Boolean) : [];
+  const lowerTitle = title.toLowerCase();
+  // At least one question pattern is required by the KOS contract — derive from the
+  // title and tags (the retriever matches on these later).
+  const questionPatterns = [
+    lowerTitle,
+    ...tags.slice(0, 4).map(t => `${String(t).toLowerCase()} ${lowerTitle}`),
+  ].filter(Boolean);
+  return {
+    id: `article-${article.id}`,                            // namespaced — no clash with anchors
+    category: article.category || 'articles',
+    topic: title,
+    title,
+    level: article.difficulty || 'beginner',
+    lang: article.language || 'en',
+    concepts: tags.length ? tags : [lowerTitle],
+    questionPatterns,
+    canonical: {
+      short,
+      deep: content.slice(0, 1200) || short,
+    },
+    relevanceTags: tags,
+    responseObjective: 'educate',
+    desiredOutcome: 'answer grounded in published ZTU article content',
+    origin: 'article',
+    sources: [{ id: String(article.id), title, slug: article.slug || null }],
+    status: 'ai_draft',
+    confidence: 'MEDIUM',
+  };
+}
+
 // ── MODULE 6 — RELATED ARTICLES + IMAGES + NEXT READING ──────────────────────
 export async function relatedArticles(env, articleId, limit = 4) {
   if (!isConfigured(env) || !articleId) return { related: [], images: [], next: null };

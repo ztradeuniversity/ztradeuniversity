@@ -50,19 +50,20 @@
         });
         body = await res.json().catch(() => ({}));
       } catch (fetchErr) {
-        // Network error — log and advance; don't abort remaining batches.
+        // Network error — log and advance by ONE concept; don't abort the rest.
+        // Population is idempotent (upsert by id), so a re-touch is harmless.
         batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
         batchErrors++;
-        offset += 2;   // advance by default limit so loop makes progress
+        offset += 1;
         if (offset >= (total || 9999)) break;
         continue;
       }
       if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
       if (!res.ok) {
-        // Server error on this batch — log it, advance offset, continue remaining batches.
+        // Server error on this chunk — log it, advance ONE concept, continue the rest.
         batchErrs.push({ offset, httpStatus: res.status, error: JSON.stringify(body).slice(0, 300) });
         batchErrors++;
-        offset += 2;
+        offset += 1;
         if (offset >= (total || 9999)) break;
         continue;
       }

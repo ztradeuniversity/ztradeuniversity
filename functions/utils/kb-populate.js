@@ -27,7 +27,7 @@ export function validateAnchors() {
 // the bundled plan), so the batch is processed `limit` concepts at a time and the
 // caller pages with `nextOffset` (the admin page auto-loops). Per-concept try/catch
 // isolates failures so one bad concept can't abort the rest. Idempotent (upsert by id).
-export async function populateAnchors(env, { offset = 0, limit = 2, publish = true } = {}) {
+export async function populateAnchors(env, { offset = 0, limit = 1, publish = true } = {}) {
   const total = ANCHOR_CONCEPTS.length;
   const start = Math.max(0, offset | 0);
   const slice = ANCHOR_CONCEPTS.slice(start, start + Math.max(1, limit | 0));

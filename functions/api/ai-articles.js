@@ -20,7 +20,8 @@ import {
   isConfigured, listArticles, getArticle, createArticle, updateArticle,
   setArticleStatus, deleteArticle, listImages, insertImage, deleteImage, uploadImage,
 } from '../utils/article-store.js';
-import { searchArticles, relatedArticles, buildKnowledgeInjection } from '../utils/article-knowledge.js';
+import { searchArticles, relatedArticles, buildKnowledgeInjection, conceptFromArticle } from '../utils/article-knowledge.js';
+import { authorConcept } from '../utils/authoring-workflow.js';
 import {
   ARTICLE_CATEGORIES, ARTICLE_LANGUAGES, isValidCategory,
   slugify, estimateReadingTime,
@@ -129,7 +130,22 @@ export async function onRequest(context) {
     return json({ configured: true, saved: !!result, article: result });
   }
 
-  if (action === 'publish') return json({ configured: true, article: await setArticleStatus(env, data?.id, true) });
+  if (action === 'publish') {
+    const article = await setArticleStatus(env, data?.id, true);
+    // ARTICLE → GRAPH (best-effort, non-blocking, draft-only). A published article
+    // contributes an ai_draft concept to kb_nodes via the EXISTING authoring pipeline
+    // (KOS gate → dedup → review). It is NOT auto-published — an operator promotes it
+    // in KB Admin — so this can never overwrite the live graph or break article saving.
+    if (article) {
+      const kos = conceptFromArticle(article);
+      if (kos) {
+        context.waitUntil(
+          authorConcept(env, kos, { origin: 'article', autoSubmit: true }).catch(() => {})
+        );
+      }
+    }
+    return json({ configured: true, article, graphDraft: !!article });
+  }
   if (action === 'draft')   return json({ configured: true, article: await setArticleStatus(env, data?.id, false) });
   if (action === 'delete')  return json({ configured: true, deleted: await deleteArticle(env, data?.id) });
 
