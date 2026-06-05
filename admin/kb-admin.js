@@ -15,6 +15,7 @@
     'validate-anchors': { method: 'GET',  write: false },
     'migrate-seed':     { method: 'POST', write: true,  warn: 'Run MIGRATE-SEED? This writes the 3 base seed concepts.' },
     'populate-anchors': { method: 'POST', write: true,  warn: 'Run POPULATE-ANCHORS? This authors + publishes all 20 anchor concepts.' },
+    'sync-edges':       { method: 'POST', write: true,  warn: 'Run SYNC-EDGES? Rebuilds concept→concept edges for every published node (run after Populate Anchors).' },
   };
 
   function render(text, cls) {

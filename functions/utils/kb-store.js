@@ -64,35 +64,31 @@ export async function upsertNode(env, node) {
 export async function insertQuestionPattern(env, conceptId, text, lang = 'en', sourceId = null) {
   return sb(env, 'POST', 'kb_question_patterns', null, { concept_id: conceptId, text, lang, source_id: sourceId }, 'return=minimal');
 }
+// Single-row edge insert. Per-row (NOT bulk array) on purpose: kb_edges.dst has a
+// FK to kb_nodes(id), so an edge pointing to a not-yet-created node fails. Per-row
+// inserts let the VALID edges land while the dangling ones fail in isolation; a bulk
+// array insert is atomic and would reject the WHOLE set on the first FK violation
+// (→ 0 edges). Returns true on success, null on failure (sb swallows the FK error).
 export async function insertEdge(env, src, dst, type, weight = 1.0, meta = {}) {
   return sb(env, 'POST', 'kb_edges', null, { src, dst, type, weight, meta }, 'return=minimal');
-}
-// Bulk insert — PostgREST accepts a JSON array body, so an entire node's edge set
-// is ONE subrequest instead of N. This is the critical fix for the populate path:
-// a concept like gold-buy-sell derives ~13 edges; inserting them one-by-one made a
-// 2-concept chunk exceed Cloudflare's per-invocation subrequest/time budget and the
-// worker was terminated mid-batch. Returns true on success (or when there is nothing
-// to insert), null on failure — same contract as the single-row helper.
-export async function insertEdges(env, rows = []) {
-  if (!isConfigured(env)) return null;
-  if (!Array.isArray(rows) || rows.length === 0) return true;
-  return sb(env, 'POST', 'kb_edges', null, rows, 'return=minimal');
 }
 // Delete derived (outgoing) edges for a node so a re-sync is idempotent.
 export async function deleteEdgesBySrc(env, src) {
   return sb(env, 'DELETE', 'kb_edges', `src=eq.${encodeURIComponent(src)}`, null, 'return=minimal');
 }
 // Phase 11C.4 — regenerate a node's relationship edges from its KOS data.
-// Idempotent (delete-by-src + single bulk insert). Exactly TWO subrequests per node
-// regardless of edge count (was 1 + N). Graceful when unconfigured.
+// Idempotent (delete-by-src + per-edge insert). FK-tolerant: edges to nodes that do
+// not exist yet simply fail (inert by design — getNeighbors filters to PUBLISHED
+// nodes). With populate limit=1 the per-edge inserts stay well under the subrequest
+// budget for a single concept. Re-run via syncAllEdges once all nodes exist to
+// backfill concept→concept edges that were forward-referenced during population.
 export async function syncEdges(env, node) {
   if (!isConfigured(env) || !node?.id) return { synced: 0, configured: isConfigured(env) };
   const edges = deriveEdgesFromKOS(node);
   await deleteEdgesBySrc(env, node.id);
-  if (!edges.length) return { synced: 0, configured: true };
-  const rows = edges.map(e => ({ src: e.src, dst: e.dst, type: e.type, weight: e.weight, meta: e.meta }));
-  const ok = await insertEdges(env, rows);
-  return { synced: ok ? edges.length : 0, configured: true };
+  let synced = 0;
+  for (const e of edges) { if (await insertEdge(env, e.src, e.dst, e.type, e.weight, e.meta)) synced++; }
+  return { synced, configured: true };
 }
 export async function insertSource(env, source) {
   return sb(env, 'POST', 'kb_sources', null, { ...source }, 'return=representation');
