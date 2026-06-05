@@ -59,7 +59,7 @@ export function extractFacts(text) {
 // relevant to the current intent. Never reveals raw memory rows.
 // Phase 8C: aboutme/selfassess/fallback added so the assistant references what
 // it remembers across those paths too.
-const RECALL_INTENTS = new Set(['gold', 'btc', 'macro', 'assess', 'brief', 'whylosing', 'greeting', 'strategy', 'technical', 'mood', 'riskmgmt', 'aboutme', 'selfassess', 'fallback']);
+const RECALL_INTENTS = new Set(['gold', 'btc', 'macro', 'assess', 'brief', 'whylosing', 'greeting', 'strategy', 'technical', 'mood', 'riskmgmt', 'aboutme', 'selfassess', 'fallback', 'career']);
 export function buildMemoryRecall(profile, intent, lang = 'en') {
   if (!profile || !RECALL_INTENTS.has(intent)) return '';
   // The aboutme builder already recites the full profile — skip the one-liner

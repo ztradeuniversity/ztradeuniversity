@@ -74,6 +74,33 @@ export function buildAboutMe(ctx) {
   return out;
 }
 
+// ── PHASE 11A.5: ISLAMIC / HALAL TRADING (educational, NEVER a fatwa) ─────────
+export function buildIslamic(ctx) {
+  return `## Islamic / Halal Trading — Educational Note\n` +
+    `I'm not a religious authority, so please treat this as **education, not a fatwa** — for a binding ruling, consult a qualified scholar you trust.\n\n` +
+    `The main points scholars discuss about trading:\n` +
+    `- **Riba (interest):** overnight **swap/rollover** charges are interest-based. Many brokers offer **swap-free / Islamic accounts** that remove them.\n` +
+    `- **Gharar (excessive uncertainty) & leverage:** heavy leverage and pure speculation are debated; clear analysis and lower risk are viewed more favourably by many.\n` +
+    `- **Asset ownership:** trading real, owned assets vs. pure derivatives is part of the discussion.\n\n` +
+    `Neutral, practical steps: use a **swap-free account**, avoid interest charges, trade from analysis (not gambling), and **ask a scholar** about your specific case.\n\n` +
+    `Want help with **swap-free account** basics, or the risk-management side?`;
+}
+
+// ── PHASE 10: TRADING CAREER / PROFITABILITY / WEALTH ────────────────────────
+export function buildCareer(ctx) {
+  const f = readProfileFacts(ctx);
+  const inst = f.instrument ? `As a **${f.instrument}** trader, ` : '';
+  return `## Becoming a Profitable Trader (educational)\n` +
+    `${inst}the traders who last aren't the ones chasing perfect entries — they're the ones who treat this as a **process, not a jackpot**:\n\n` +
+    `- **🛡️ Risk first:** survive long enough to get good. Risk **1–2% per trade** so no losing streak can end you.\n` +
+    `- **🔁 Consistency over intensity:** one repeatable setup traded with discipline beats ten random ideas.\n` +
+    `- **🧠 Psychology is the edge:** FOMO, revenge, and impatience blow more accounts than bad analysis ever does.\n` +
+    `- **📈 Compounding + realistic targets:** steady small gains compound; "get rich quick" sizing is how accounts die.\n` +
+    `- **📓 Review everything:** journal trades, study your mistakes, and let the data — not emotion — shape your plan.\n\n` +
+    `Wealth from trading is the **by-product** of skill + risk control + patience, not the goal you chase trade-to-trade. ` +
+    `Want a **beginner roadmap**, a look at **risk management**, or the **psychology** side first?`;
+}
+
 // User Satisfaction Engine — never "I don't know". Intelligent fallback:
 //   1) memory-aware (reference what we know) · 2) recent-context · 3) clarify
 //   (low confidence) · 4) short capability hint (last resort).

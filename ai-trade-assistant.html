@@ -1241,32 +1241,32 @@
     <div class="modal-title" id="vfTitle">Unlock <span class="gld">Unlimited</span> AI Access</div>
     <div class="modal-sub" id="vfSub">Verify your trading account under our IB to unlock unlimited Trading AI access — pattern intelligence, trade assessment, memory, and more.</div>
 
-    <form class="vf-form" id="vfForm" onsubmit="submitVerification(event)">
+    <!-- Phase 9: Step 1 — Account Number only (email is resolved server-side by the Library/EA system) -->
+    <form class="vf-form" id="vfFormReq" onsubmit="requestOtp(event)">
       <div class="vf-field">
         <label class="vf-label" for="vfAccount">Trading Account Number</label>
         <input class="vf-input" id="vfAccount" type="text" inputmode="numeric" autocomplete="off"
                placeholder="e.g. 5042178" required />
       </div>
+      <button type="submit" class="vf-submit" id="vfReqBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Send verification code
+      </button>
+    </form>
+
+    <!-- Phase 9: Step 2 — OTP -->
+    <form class="vf-form" id="vfFormOtp" style="display:none" onsubmit="verifyOtp(event)">
       <div class="vf-field">
-        <label class="vf-label" for="vfBroker">Broker Name</label>
-        <input class="vf-input" id="vfBroker" type="text" autocomplete="off"
-               placeholder="e.g. Exness, IC Markets, XM…" required />
+        <label class="vf-label" for="vfCode">6-digit code (sent to your registered email)</label>
+        <input class="vf-input" id="vfCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+               placeholder="123456" required />
       </div>
-      <div class="vf-field">
-        <label class="vf-label" for="vfType">Account Type</label>
-        <select class="vf-select" id="vfType" required>
-          <option value="">Select account type…</option>
-          <option value="Standard">Standard</option>
-          <option value="ECN / Raw">ECN / Raw Spread</option>
-          <option value="Cent">Cent / Micro</option>
-          <option value="Pro">Pro</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <button type="submit" class="vf-submit" id="vfSubmit">
+      <button type="submit" class="vf-submit" id="vfOtpBtn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
         Verify &amp; Unlock
       </button>
+      <button type="button" class="vf-resend" id="vfResend" onclick="requestOtp(null, true)"
+              style="background:none;border:0;color:var(--mut2);font-size:12px;margin-top:8px;cursor:pointer;width:100%">Resend code</button>
     </form>
 
     <div id="vfResult"></div>
@@ -1282,11 +1282,11 @@
         WhatsApp
       </a>
     </div>
-    <a class="vf-cta ib" href="create-account-with-us.html" style="margin-top:8px;width:100%">
+    <a class="vf-cta ib" id="vfJoinLink" href="license-request.html" target="_blank" rel="noopener" style="margin-top:8px;width:100%">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       Open an Account Under Our IB
     </a>
-    <p class="vf-free-note">Your account number is used only to confirm IB membership. We never ask for your password.</p>
+    <p class="vf-free-note">Unlimited AI access is <strong>free</strong> for active IB members — no subscription, no AI fees. We never ask for your password.</p>
   </div>
 </div>
 
@@ -1573,6 +1573,7 @@ async function sendMessage() {
       body: JSON.stringify({
         messages:      apiMsgs,
         userId:        getOrCreateUserId(),
+        identityToken: getIdentityToken(),
         tz:            getBrowserTz(),
         country:       getStoredCountry(),
         traderContext: getTraderContext(),
@@ -1592,8 +1593,10 @@ async function sendMessage() {
       const data = await res.json().catch(() => ({}));
       think.remove();
       if (data.gated) {
-        // Re-insert the user's message into the input so it isn't lost
-        chatIn.value = text; resize(); updateCount();
+        // Phase 9: render the localized limit-reached card, then open verify flow.
+        renderGatedCard(data);
+        chatIn.value = text; resize(); updateCount();   // keep the user's message
+        if (data.cta?.url) lastJoinUrl = data.cta.url;
         openVerifyModal(true);
         streaming = false; sendBtn.disabled = false; chatIn.disabled = false;
         return;
@@ -2244,6 +2247,14 @@ function getOrCreateUserId() {
   return id;
 }
 
+/* ─── PHASE 9: IDENTITY SESSION (client) ─────────────────────── */
+const IDENTITY_KEY = 'ztu_ai_identity';
+const ACCT_KEY     = 'ztu_ai_acct';
+function getIdentityToken() { return localStorage.getItem(IDENTITY_KEY) || ''; }
+function setIdentityToken(t) { if (t) localStorage.setItem(IDENTITY_KEY, t); }
+function clearIdentityToken() { localStorage.removeItem(IDENTITY_KEY); localStorage.removeItem(ACCT_KEY); }
+function getStoredAcct() { return localStorage.getItem(ACCT_KEY) || ''; }
+
 /* ─── LANGUAGE PERSISTENCE (client) ──────────────────────────── */
 const LANG_KEY = 'ztu_ai_lang';
 function getSessionLang() { return localStorage.getItem(LANG_KEY) || ''; }
@@ -2807,80 +2818,136 @@ let accessState = { gatingEnabled: false, verified: true, freeUsed: 0, freeLimit
 
 function isVerifiedLocal() { return localStorage.getItem(VERIFIED_KEY) === '1'; }
 
-async function checkAccess() {
-  try {
-    const res = await fetch(`/api/ai-verify?userId=${encodeURIComponent(getOrCreateUserId())}`, { signal: AbortSignal.timeout(4000) });
-    if (!res.ok) return;
-    accessState = await res.json();
-    if (accessState.verified) localStorage.setItem(VERIFIED_KEY, '1');
-    updateAccessBadge();
-  } catch {}
+let lastJoinUrl = '';
+
+// Render the localized limit-reached card as an assistant message.
+function renderGatedCard(data) {
+  let md = `### ${data.title || 'Free message limit reached'}\n`;
+  if (data.headline)         md += `\n**${data.headline}**\n`;
+  if (data.benefits?.length) md += `\n` + data.benefits.map(b => `- ✓ ${b}`).join('\n') + `\n`;
+  if (data.steps?.length)    md += `\n` + data.steps.join('\n') + `\n`;
+  if (data.afterNote)        md += `\n_${data.afterNote}_\n`;
+  if (data.cta?.url)         md += `\n👉 [${data.cta.label || 'Create your IB account'}](${data.cta.url})\n`;
+  if (data.freeNotice)       md += `\n_${data.freeNotice}_`;
+  renderMsg('ai', md);
 }
 
-function updateAccessBadge() {
+// Phase 9: validate the identity session on load; handle removal (revalidation).
+async function checkAccess() {
+  const token = getIdentityToken();
+  if (!token) { updateAccessBadge(false); return; }
+  try {
+    const res = await fetch('/api/ai-access', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'session', token, lang: getSessionLang() || 'en' }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.joinUrl) lastJoinUrl = data.joinUrl;
+    if (data.valid && data.tier === 'unlimited') {
+      if (data.token) setIdentityToken(data.token);   // refreshed eligibility window
+      updateAccessBadge(true);
+    } else {
+      if (data.removed) renderMsg('ai', (data.message || 'Your account is no longer active.'));
+      clearIdentityToken();
+      updateAccessBadge(false);
+    }
+  } catch { /* keep current token; offline */ }
+}
+
+// UX rule: never show "visitor/limited/free-left" before the limit. Only a
+// positive "Unlimited" badge once verified; otherwise the badge stays hidden.
+function updateAccessBadge(unlimited) {
   const badge = document.getElementById('accessBadge');
   if (!badge) return;
-  // Only surface a badge when gating is actually enabled
-  if (!accessState.gatingEnabled) { badge.classList.add('hidden'); return; }
-  badge.classList.remove('hidden');
-  if (accessState.verified || isVerifiedLocal()) {
+  if (unlimited) {
+    badge.classList.remove('hidden');
     badge.className = 'access-badge';
     badge.innerHTML = '✓ Unlimited';
   } else {
-    badge.className = 'access-badge locked';
-    const rem = accessState.remaining != null ? accessState.remaining : Math.max(0, accessState.freeLimit - accessState.freeUsed);
-    badge.innerHTML = `🔓 ${rem} free left`;
+    badge.classList.add('hidden');
   }
 }
 
 function openVerifyModal(fromGate) {
   const sub = document.getElementById('vfSub');
-  if (sub && fromGate) {
-    sub.textContent = 'You\'ve reached your free message limit. Verify your trading account under our IB to unlock unlimited Trading AI access — or grab live signals on Telegram below.';
-  }
+  if (sub) sub.innerHTML = 'Unlimited AI access is <strong>free</strong> for active IB members. Verify with your <strong>Account Number + registered Email</strong> (OTP) to unlock it.';
   document.getElementById('vfResult').innerHTML = '';
+  // reset to step 1
+  const fReq = document.getElementById('vfFormReq'), fOtp = document.getElementById('vfFormOtp');
+  if (fReq) fReq.style.display = ''; if (fOtp) fOtp.style.display = 'none';
+  const join = document.getElementById('vfJoinLink');
+  if (join && lastJoinUrl) join.setAttribute('href', lastJoinUrl);
   openModal('verifyModal');
 }
 
-async function submitVerification(e) {
-  e.preventDefault();
-  const accountNumber = document.getElementById('vfAccount').value.trim();
-  const brokerName    = document.getElementById('vfBroker').value.trim();
-  const accountType   = document.getElementById('vfType').value;
-  const btn    = document.getElementById('vfSubmit');
+let _vfAccount = '', _vfOtpToken = '';
+
+// Step 1 — request OTP (account number only; Library/EA resolves the email).
+async function requestOtp(e, resend) {
+  if (e) e.preventDefault();
+  const account = resend ? _vfAccount : document.getElementById('vfAccount').value.trim();
+  const btn    = document.getElementById(resend ? 'vfResend' : 'vfReqBtn');
   const result = document.getElementById('vfResult');
-  if (!accountNumber || !brokerName || !accountType) return;
+  if (!account) return;
+  _vfAccount = account;
 
-  btn.disabled = true; btn.innerHTML = 'Verifying…';
+  btn.disabled = true; const lbl = btn.innerHTML; btn.innerHTML = 'Sending…';
   result.innerHTML = '';
-
   try {
-    const res = await fetch('/api/ai-verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: getOrCreateUserId(), accountNumber, brokerName, accountType }),
+    const res = await fetch('/api/ai-access', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'request', account, lang: getSessionLang() || 'en' }),
     });
     const data = await res.json().catch(() => ({}));
-
-    if (data.verified) {
-      localStorage.setItem(VERIFIED_KEY, '1');
-      accessState.verified = true;
-      updateAccessBadge();
+    if (data.joinUrl) { lastJoinUrl = data.joinUrl; const j = document.getElementById('vfJoinLink'); if (j) j.setAttribute('href', data.joinUrl); }
+    if (data.ok && data.otpToken) {
+      _vfOtpToken = data.otpToken;
       result.className = 'vf-result ok';
-      result.textContent = data.message || '✅ Verified! You now have unlimited access.';
-      document.getElementById('vfForm').style.display = 'none';
-      setTimeout(() => closeModal('verifyModal'), 2200);
+      result.textContent = `Code sent to your registered email${data.email_mask ? ' (' + data.email_mask + ')' : ''}.`;
+      document.getElementById('vfFormReq').style.display = 'none';
+      document.getElementById('vfFormOtp').style.display = '';
+      document.getElementById('vfCode').focus();
     } else {
+      // STATE A (not_found → Join-IB), STATE B (email_missing), STATE C (inactive)
       result.className = 'vf-result fail';
-      result.textContent = data.message || 'Account not found under our IB. Please open or connect your account under our IB to unlock unlimited access.';
+      result.textContent = data.message || 'We could not verify that account right now.';
     }
   } catch {
-    result.className = 'vf-result info';
-    result.textContent = 'Could not reach the verification service right now. Please try again shortly, or join our Telegram for signals.';
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> Verify &amp; Unlock';
-  }
+    result.className = 'vf-result info'; result.textContent = 'Could not reach the verification service. Please try again shortly.';
+  } finally { btn.disabled = false; btn.innerHTML = lbl; }
+}
+
+// Step 2 — verify OTP → mint AI access token (unlimited).
+async function verifyOtp(e) {
+  if (e) e.preventDefault();
+  const code = document.getElementById('vfCode').value.trim();
+  const btn    = document.getElementById('vfOtpBtn');
+  const result = document.getElementById('vfResult');
+  if (!code) return;
+
+  btn.disabled = true; const lbl = btn.innerHTML; btn.innerHTML = 'Verifying…';
+  result.innerHTML = '';
+  try {
+    const res = await fetch('/api/ai-access', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify', otpToken: _vfOtpToken, code, userId: getOrCreateUserId(), lang: getSessionLang() || 'en' }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.ok && data.token) {
+      setIdentityToken(data.token);
+      if (_vfAccount) localStorage.setItem(ACCT_KEY, _vfAccount);
+      localStorage.setItem(VERIFIED_KEY, '1');
+      updateAccessBadge(true);
+      result.className = 'vf-result ok'; result.textContent = data.message || '✅ Verified! Unlimited AI access unlocked.';
+      document.getElementById('vfFormOtp').style.display = 'none';
+      setTimeout(() => closeModal('verifyModal'), 2000);
+    } else {
+      if (data.otpToken) _vfOtpToken = data.otpToken;   // Library decrements attempts → updated token
+      result.className = 'vf-result fail'; result.textContent = data.message || 'Incorrect or expired code.';
+    }
+  } catch {
+    result.className = 'vf-result info'; result.textContent = 'Could not reach the verification service. Please try again shortly.';
+  } finally { btn.disabled = false; btn.innerHTML = lbl; }
 }
 
 /* ─── BOOT ───────────────────────────────────────────────────── */

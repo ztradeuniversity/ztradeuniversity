@@ -58,6 +58,8 @@ export function route(ctx) {
     case 'funding':    return edu.buildFunding(ctx)    + disc;
     case 'selfassess':  return edu.buildSelfAssess(ctx) + disc;
     case 'aboutme':     return edu.buildAboutMe(ctx)    + disc;
+    case 'career':      return edu.buildCareer(ctx)     + disc;
+    case 'islamic':     return edu.buildIslamic(ctx)    + disc;
     case 'profileinfo': return edu.buildProfileAck(ctx) + disc;
     case 'offtopic':    return edu.buildOffTopic(ctx)   + disc;
     case 'setcountry':  return edu.buildSetCountry(ctx) + disc;

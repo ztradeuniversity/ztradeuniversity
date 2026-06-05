@@ -13,6 +13,21 @@ import { getKnowledgeEntries } from './ai-knowledge.js';
 import { isConfigured as aiSbConfigured, upsertProfile, updateScores } from '../utils/ai-supabase.js';
 import { detectStrengths, detectWeaknesses } from '../utils/trader-intelligence.js';
 import { buildKnowledgeLayer } from '../utils/knowledge-orchestrator.js';
+import { resolveTier } from '../utils/identity-session.js';
+import { limitReachedPayload } from '../utils/access-copy.js';
+import { analyzeQuestion } from '../utils/question-awareness.js';
+import { planIntent, shortStatusAnswer, followupBlock, statusPrefix } from '../utils/answer-planner.js';
+import { analyzeCognition } from '../utils/question-cognition.js';
+import { assessConfidence } from '../utils/confidence-engine.js';
+import { decideDepth } from '../utils/answer-depth.js';
+import { buildPlan, singleFollowup } from '../utils/human-response.js';
+import { compress } from '../utils/answer-compression.js';
+import { buildConversationState, resolveReferences } from '../utils/conversation-state.js';
+import { emotionalLead, levelMode } from '../utils/adaptive-response.js';
+import { knowledgeConfidence, planRetrieval, unknownResponse, lowConfidencePreface, detectContradiction, balancedNote, rankSources } from '../utils/knowledge-intelligence.js';
+import { detectUnderlyingNeed } from '../utils/underlying-need.js';
+import { semanticMatch } from '../utils/semantic-retrieval.js';
+import { KB_SEED } from '../utils/kb-schema.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -460,6 +475,7 @@ export async function onRequest(context) {
 
   const rawMessages = body?.messages;
   const userId      = typeof body?.userId === 'string' ? body.userId.slice(0, 80) : null;
+  const identityToken = typeof body?.identityToken === 'string' ? body.identityToken : null;  // Phase 9 session
   const bodyTz      = typeof body?.tz === 'string' ? body.tz.slice(0, 64) : null;          // browser timezone
   const bodyCountry = typeof body?.country === 'string' ? body.country.slice(0, 4).toUpperCase() : null;
   const traderContext = (body?.traderContext && typeof body.traderContext === 'object') ? body.traderContext : null; // Memory V2
@@ -542,26 +558,23 @@ export async function onRequest(context) {
   // Chart Vision: an uploaded-chart analysis forces the chart intent
   if (chartAnalysis) cls.intent = 'chart';
 
-  // ── PHASE 9: ACCESS GATING ────────────────────────────────────────────────
-  // Gating is ONLY active when the AI Supabase project is configured (memoryData.configured).
-  // Until then, access is unlimited so no live user is ever locked out.
+  // ── PHASE 9: IDENTITY-BASED ACCESS GATING ─────────────────────────────────
+  // Tier comes from the signed identity session (issued after Account+Email+OTP
+  // against EA ib_stars_active). Unlimited tier bypasses all gating. Visitors get
+  // AI_VISITOR_MESSAGE_LIMIT (default 5) free messages — and ONLY at the limit do
+  // we surface the access/conversion screen (no tier labels or warnings before).
+  // Gating stays dormant until the AI Supabase project is configured.
+  const { tier } = await resolveTier(env, identityToken);
   const gatingEnabled = !!memoryData?.configured;
-  if (gatingEnabled && memoryData?.profile) {
-    const profile   = memoryData.profile;
-    const freeLimit  = parseInt(env.AI_FREE_MESSAGE_LIMIT ?? '15', 10) || 15;
-    const freeUsed   = profile.free_messages_used ?? 0;
-    const isVerified = !!profile.is_verified;
+  if (tier !== 'unlimited' && gatingEnabled && memoryData?.profile) {
+    const profile     = memoryData.profile;
+    const visitorLimit = parseInt(env.AI_VISITOR_MESSAGE_LIMIT ?? '5', 10) || 5;
+    const freeUsed    = profile.free_messages_used ?? 0;
+    const legacyVerified = !!profile.is_verified;   // grandfather previously-verified users
 
-    if (!isVerified && freeUsed >= freeLimit) {
-      // Return a structured "gated" response (not an error) — client shows unlock modal.
-      return new Response(JSON.stringify({
-        gated:     true,
-        freeUsed,
-        freeLimit,
-        message:   'You\'ve reached your free message limit. Unlock unlimited Trading AI access by verifying your trading account under our IB.',
-        telegram:  'https://t.me/ztradeuniversity',
-        whatsapp:  'https://wa.me/17189730347',
-      }), { status: 200, headers: JSON_HEADERS });
+    if (!legacyVerified && freeUsed >= visitorLimit) {
+      // Structured, localized limit-reached card (client renders + opens verify flow).
+      return new Response(JSON.stringify(limitReachedPayload(env, lang)), { status: 200, headers: JSON_HEADERS });
     }
   }
 
@@ -609,35 +622,167 @@ export async function onRequest(context) {
     ? memoryData.recentChats.filter(m => m && m.role === 'user').slice(-4).map(m => String(m.content || '').slice(0, 80)).filter(Boolean)
     : [];
 
-  try {
-    answer = generateResponse({
-      text:        genText,
-      lang,
-      mode,
-      prevAnswer:  lastAssistantMsg,
-      intent:      cls.intent,
-      confidence:  cls.confidence,
-      facts:       cls.facts,
-      platform:    cls.platform,
-      broker:      cls.broker,
-      newsFocus:   cls.newsFocus,
-      marketData,
-      patternData,
-      memoryData,
-      memoryContext,
-      recentRecap,
-      knowledgeEntries,
-      calendarData,
-      newsData,
-      geo,
-      traderContext: mergedTraderContext,
-      chartAnalysis,
-      isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
-    });
-  } catch (err) {
-    answer = (env.DEBUG === 'true')
-      ? `Engine error: ${err.message}`
-      : 'Sorry, I had trouble composing that answer. Please rephrase, or ask about Gold/BTC context, a trade assessment, brokers, or trading psychology.';
+  // ── PHASE 10.5: COGNITIVE REASONING — understand → think → reason → plan ──
+  // Pipeline: cognition → confidence → depth → human plan → specialist router.
+  // Low confidence (e.g. "should I buy Gold?" with no context) asks ONE short
+  // question instead of a long answer. Market dumps only on explicit status asks.
+  // At most ONE natural follow-up (never a capability menu). Skipped for
+  // follow-up transforms and chart turns so those flows are preserved.
+  const MARKET_DUMP_INTENTS = new Set(['gold', 'btc', 'macro', 'brief', 'mood', 'events', 'session']);
+  const NO_CONDENSE = new Set(['aboutme', 'profileinfo', 'career', 'assess', 'lotsize', 'selfassess', 'signal', 'setcountry', 'offtopic', 'greeting', 'broker', 'funding', 'islamic']);
+  let p10Intent      = cls.intent;
+  let p10Mode        = mode;
+  let p10MarketDump  = true;
+  let p10Followups   = '';
+  let p10Prefix      = '';
+  let p10Depth       = 'STANDARD';
+  let allowKnowledge = true;
+  let directAnswer    = null;
+  let clarifyAnswer   = null;
+  let p10Lead         = '';
+  let p10Contradiction = '';
+  let kbAnswer        = null;
+  if (!followup && !chartAnalysis) {
+    // ── PHASE 11A.1: CONVERSATION INTELLIGENCE — resolve "it/that/improve" to the
+    // active instrument from the thread (or the saved favorite) before classifying.
+    const convState = buildConversationState(messages);
+    const resolved  = resolveReferences(genText, convState, memoryData?.profile);
+    const aText     = resolved.text;                                  // analysis-only text (carries context)
+    const aCls      = resolved.changed ? classifyIntent(aText) : cls; // re-classify if context was carried
+
+    const cognition  = analyzeCognition(aText, { memoryData, traderContext: mergedTraderContext });
+    const confidence = assessConfidence(aText, cognition, lang);
+    if (confidence.requiresClarification) {
+      clarifyAnswer = confidence.clarificationQuestion;            // one short question, no long answer
+    } else {
+      const analysis = cognition._qa;
+      const plan     = planIntent(analysis, aCls);
+      const depth    = decideDepth(aText, cognition);
+      const hplan    = buildPlan(cognition, confidence, depth);
+      p10Depth       = depth;
+      p10Intent      = plan.intent;
+      p10MarketDump  = plan.marketDump;
+      allowKnowledge = hplan.allowKnowledgeAppend;
+      // depth → mode, but never condense structured/conversational answers
+      p10Mode = (!NO_CONDENSE.has(p10Intent) && (depth === 'SHORT' || depth === 'MICRO')) ? 'short' : mode;
+      // ── PHASE 11A.2: ADAPTIVE RESPONSE — advanced traders get a terser answer.
+      if (!NO_CONDENSE.has(p10Intent)) p10Mode = levelMode(cognition, p10Mode);
+
+      // ── PHASE 11A.3: HUMAN-MENTOR REASONING — answer the deeper need.
+      // "I lost my account" is psychology+recovery, not a data lookup. Only
+      // upgrade weak/generic intents so explicit intents are never overridden.
+      const uNeed = detectUnderlyingNeed(aText);
+      if (uNeed.found && ['fallback', 'technical', 'knowledge'].includes(p10Intent)) {
+        p10Intent = uNeed.intent;
+        p10MarketDump = false;
+      }
+
+      // ── PHASE 11A.3: KNOWLEDGE INTELLIGENCE — confidence, retrieval, no-fabricate.
+      const kctx = {
+        text: aText, intent: p10Intent, category: analysis.category,
+        marketDumpAllowed: p10MarketDump, hasLiveData: !!(marketData && marketData.status === 'ok'),
+        hasMemory: !!memoryData?.profile, carried: resolved.carried, depth,
+        brokerKnown: !!aCls.broker,
+      };
+      const kConf     = knowledgeConfidence(kctx);
+      const retrieval = planRetrieval(kctx, kConf);
+      allowKnowledge  = allowKnowledge && (retrieval.article || retrieval.pattern);
+
+      if (kConf.level === 'UNKNOWN') {
+        // Never invent facts we can't verify (e.g., unknown broker regulation).
+        directAnswer = unknownResponse(lang);
+      } else if (analysis.multi && analysis.statusInstrument) {
+        // MULTI: lead with the live status line, answer the advice side, no dump.
+        p10Prefix = statusPrefix(analysis, marketData, lang);
+        const eduText = analysis.eduPart || aText;
+        const eduCls  = classifyIntent(eduText);
+        const eduA    = analyzeQuestion(eduText);
+        const eduPlan = planIntent(eduA, eduCls);
+        let ei = eduPlan.intent;
+        if (MARKET_DUMP_INTENTS.has(ei)) ei = 'technical';
+        p10Intent      = ei;
+        p10MarketDump  = false;
+        allowKnowledge = false;
+        p10Mode        = NO_CONDENSE.has(ei) ? mode : 'short';
+        p10Followups   = singleFollowup(cognition, lang);
+      } else if (plan.marketDump && (depth === 'MICRO' || depth === 'SHORT')) {
+        // Explicit short status → one concise line + ONE natural follow-up.
+        directAnswer = shortStatusAnswer({ ...analysis, suggestedFollowups: [] }, marketData, lang, singleFollowup(cognition, lang));
+      } else if (!plan.marketDump) {
+        p10Followups = singleFollowup(cognition, lang);            // ≤1 natural follow-up, never a menu
+        // ── PHASE 11A.2: emotional adaptation — calm/supportive lead when warranted.
+        p10Lead = emotionalLead(cognition, lang);
+        // ── PHASE 11A.4: SEMANTIC RETRIEVAL — answer from the KB by meaning when a
+        // high-confidence match exists. English-only for now (localized KB lands in
+        // 11B); depth-aware; curated (short/deep), never a raw article dump.
+        if (lang === 'en' && kConf.level !== 'LOW') {
+          const m = semanticMatch(aText, KB_SEED)[0];
+          if (m && m.confidence === 'HIGH') {
+            kbAnswer = (depth === 'DEEP' && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
+          }
+        }
+      }
+
+      // ── PHASE 11A.3: confidence-driven behavior ───────────────────────────
+      // LOW (future prediction) → honest "no one can predict this" lead, then educate.
+      if (kConf.level === 'LOW' && !directAnswer) p10Lead = lowConfidencePreface(lang);
+      // Recovery/psychology underlying-need → ensure a supportive mentor lead.
+      else if (uNeed.found && !directAnswer && !p10Lead && ['recovery', 'why-losing', 'psychology', 'discipline'].includes(uNeed.need)) {
+        p10Lead = emotionalLead({ emotionalTone: 'frustrated' }, lang);
+      }
+      // Contradiction guard for market answers when independent signals disagree.
+      if (p10MarketDump && !directAnswer) {
+        const cc = detectContradiction({ changePct: marketData?.gold?.changePct, regimeLabel: marketData?.marketRegime?.label, patternBias: patternData?.bias });
+        if (cc.conflict) p10Contradiction = balancedNote(lang);
+      }
+    }
+  }
+
+  if (clarifyAnswer) {
+    answer = clarifyAnswer;
+  } else if (directAnswer) {
+    answer = directAnswer;
+  } else if (kbAnswer) {
+    // PHASE 11A.4: KB-grounded answer (curated, depth-aware) + mentor lead + 1 follow-up.
+    answer = compress(kbAnswer, p10Depth) + '\n\n_⚠️ Educational only — not financial advice._';
+    if (p10Lead)      answer = p10Lead + '\n\n' + answer;
+    if (p10Followups) answer = answer + p10Followups;
+  } else {
+    try {
+      answer = generateResponse({
+        text:        genText,
+        lang,
+        mode:        p10Mode,
+        prevAnswer:  lastAssistantMsg,
+        intent:      p10Intent,
+        confidence:  cls.confidence,
+        facts:       cls.facts,
+        platform:    cls.platform,
+        broker:      cls.broker,
+        newsFocus:   cls.newsFocus,
+        marketData,
+        patternData,
+        memoryData,
+        memoryContext,
+        recentRecap,
+        knowledgeEntries,
+        calendarData,
+        newsData,
+        geo,
+        traderContext: mergedTraderContext,
+        chartAnalysis,
+        isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
+      });
+    } catch (err) {
+      answer = (env.DEBUG === 'true')
+        ? `Engine error: ${err.message}`
+        : 'Sorry, I had trouble composing that answer. Please rephrase, or ask about Gold/BTC context, a trade assessment, brokers, or trading psychology.';
+    }
+    if (p10Prefix)        answer = p10Prefix + answer;       // multi-question: lead status line
+    answer = compress(answer, p10Depth);                     // Phase 10.5: de-duplicate / tighten
+    if (p10Contradiction) answer = answer + p10Contradiction; // 11A.3: balanced note on mixed signals
+    if (p10Lead)          answer = p10Lead + '\n\n' + answer; // 11A.2/11A.3: mentor / no-certainty lead
+    if (p10Followups)     answer = answer + p10Followups;    // ≤1 natural follow-up
   }
 
   // ── PHASE 8: RESPONSE ORCHESTRATOR — Memory → Articles → Broker → Pattern ──
@@ -646,10 +791,10 @@ export async function onRequest(context) {
   // skipped for uploaded-chart turns, and English knowledge bodies are injected
   // ONLY for English so the Language Lock is never violated (localized memory
   // recall is safe in any language). Raw memory rows are never exposed.
-  if (aiSbConfigured(env) && !chartAnalysis) {
+  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge) {
     try {
       const kl = await buildKnowledgeLayer(env, {
-        intent:  cls.intent,
+        intent:  p10Intent,
         text:    genText,
         lang,
         profile: memoryData?.profile || null,

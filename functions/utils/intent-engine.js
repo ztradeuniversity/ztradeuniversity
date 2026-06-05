@@ -7,7 +7,8 @@
 
 import { findBroker }   from './broker-data.js';
 import { has }          from './response-engine.js';
-import { extractFacts } from './memory-facts.js';
+import { extractFacts }          from './memory-facts.js';
+import { detectCulturalContext } from './cultural-awareness.js';
 
 // ── LANGUAGE DETECTION (9 languages, no API) ─────────────────────────────────
 export function detectLanguage(text) {
@@ -141,6 +142,11 @@ export function classifyIntent(text) {
     return { intent: 'funding', broker };
   }
 
+  // Cultural / religious awareness (Phase 11A.5) — Islamic finance (educational, never a fatwa)
+  if (detectCulturalContext(s).found) {
+    return { intent: 'islamic', confidence: 'high', broker };
+  }
+
   // Broker module
   if (broker || has(s, ['broker', 'regulated', 'regulation', 'fca', 'cysec', 'asic', 'fsca',
       'deposit pending', 'withdrawal delay', 'withdraw', 'deposit', 'mt5 login', 'invalid account',
@@ -230,6 +236,14 @@ export function classifyIntent(text) {
   if (has(s, ['what is', 'what are', 'explain', 'define', 'meaning of', 'how does']) &&
       has(s, ['stop loss', 'risk reward', 'leverage', 'margin', 'pip', 'spread', 'lot'])) {
     return { intent: 'knowledge', knowledgeTopic: 'glossary', broker };
+  }
+
+  // Trading career / profitability / wealth (Phase 10)
+  if (has(s, ['become profitable', 'be profitable', 'consistently profitable', 'become a profitable',
+      'make money trading', 'earn from trading', 'trade for a living', 'trading for a living',
+      'full time trader', 'full-time trader', 'quit my job', 'living from trading', 'make a living trading',
+      'financial freedom', 'become a millionaire', 'millionaire trader', 'get rich trading', 'trading career'])) {
+    return { intent: 'career', confidence: 'high', broker };
   }
 
   // Strategy (Phase Next)
