@@ -41,8 +41,15 @@
   async function runPopulate(key) {
     let offset = 0, authored = 0, published = 0, total = 0, batchErrors = 0;
     const all = [], batchErrs = [];
-    for (let guard = 0; guard < 50; guard++) {
-      render('… populating anchors (from #' + offset + ') …');
+    // Per-offset retry: a transient non-200 on a single concept's chunk must NOT
+    // permanently skip that concept (root cause of one missing anchor). Retry the
+    // SAME offset up to RETRY_MAX times before giving up and advancing. Idempotent
+    // (upsert by id), so a re-touch never duplicates or corrupts.
+    const RETRY_MAX = 2;
+    let lastOffset = -1, attempt = 0;
+    for (let guard = 0; guard < 120; guard++) {
+      if (offset !== lastOffset) { lastOffset = offset; attempt = 0; }
+      render('… populating anchors (from #' + offset + ')' + (attempt ? ' retry ' + attempt : '') + ' …');
       let res, body;
       try {
         res = await fetch(ENDPOINT, {
@@ -51,8 +58,8 @@
         });
         body = await res.json().catch(() => ({}));
       } catch (fetchErr) {
-        // Network error — log and advance by ONE concept; don't abort the rest.
-        // Population is idempotent (upsert by id), so a re-touch is harmless.
+        // Network error — retry the SAME offset; only advance after RETRY_MAX tries.
+        if (++attempt <= RETRY_MAX) { continue; }
         batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
         batchErrors++;
         offset += 1;
@@ -61,7 +68,8 @@
       }
       if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
       if (!res.ok) {
-        // Server error on this chunk — log it, advance ONE concept, continue the rest.
+        // Server error on this chunk — retry the SAME offset; only advance (skip) after RETRY_MAX.
+        if (++attempt <= RETRY_MAX) { continue; }
         batchErrs.push({ offset, httpStatus: res.status, error: JSON.stringify(body).slice(0, 300) });
         batchErrors++;
         offset += 1;

@@ -276,8 +276,8 @@ function uploadImage(){
   reader.readAsDataURL(f);
 }
 
-// auto-unlock if key cached this session
-(function(){const k=sessionStorage.getItem('ztu_kb_admin_key')||sessionStorage.getItem('ztu_art_key');if(k){document.getElementById('adminKey').value=k;unlock();}})();
+// auto-unlock if key cached this session — canonical slot only (legacy ztu_art_key purged)
+(function(){try{sessionStorage.removeItem('ztu_art_key');}catch(_){}const k=sessionStorage.getItem('ztu_kb_admin_key');if(k){document.getElementById('adminKey').value=k;unlock();}})();
 </script>
 </body>
 </html>
