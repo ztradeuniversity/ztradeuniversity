@@ -15,13 +15,18 @@ import { nodeFromKOS, mergeNodes, STATUS, ORIGIN } from './kb-graph.js';
 import { attachEmbedding } from './embedding-provider.js';
 
 // Ingest a candidate knowledge object through the full gate.
-export async function authorConcept(env, kos, { origin = ORIGIN.AUTHORED, autoSubmit = true, existing } = {}) {
+// skipDedup: canonical concepts (the curated anchor set) are the SOURCE OF TRUTH and
+// must always become their own node — never fold into a pre-existing (e.g. legacy seed)
+// concept. Anchor population sets this so dedup can't merge/suppress an anchor.
+export async function authorConcept(env, kos, { origin = ORIGIN.AUTHORED, autoSubmit = true, existing, skipDedup = false } = {}) {
   // 1) KOS GATE — structural validity required to even enter (no bypass).
   const validation = validateKnowledgeObject(kos, { mode: 'draft' });
   if (!validation.valid) return { ok: false, stage: 'validation', errors: validation.errors, validation };
 
-  // 2) DEDUP-ON-INGEST
-  const dedup = await dedupKnowledge(env, kos, { existing });
+  // 2) DEDUP-ON-INGEST (bypassed for canonical/trusted concepts → always 'new').
+  const dedup = skipDedup
+    ? { decision: 'new', match: null, score: 0, mergeKeyHit: false, reason: 'skip-dedup' }
+    : await dedupKnowledge(env, kos, { existing });
   const node = nodeFromKOS({ ...kos, origin });
 
   if (dedup.decision === 'merge' && dedup.match) {

@@ -1884,8 +1884,14 @@ chartFile && chartFile.addEventListener('change', e => {
    Self-contained — does NOT touch sendMessage / voice / memory / traderContext. */
 let ChartVisionPro = null;
 let chartBusy = false;
-async function loadChartVision() {
-  if (!ChartVisionPro) ChartVisionPro = await import('/assets/chart-vision-pro.js');
+// bust=true appends a version query to defeat a stale/immutable edge or browser
+// cache (assets are served `immutable, max-age=2592000` but the URL is unversioned,
+// so a once-cached 404/HTML response would otherwise persist for ~30 days).
+async function loadChartVision(bust) {
+  if (!ChartVisionPro) {
+    const url = '/assets/chart-vision-pro.js' + (bust ? ('?v=' + Date.now()) : '');
+    ChartVisionPro = await import(url);
+  }
   return ChartVisionPro;
 }
 
@@ -1893,7 +1899,16 @@ async function handleChartFile(file) {
   if (chartBusy) return;
   let vis;
   try { vis = await loadChartVision(); }
-  catch { renderMsg('ai', '🎨 The chart engine could not load. Please refresh and try again.'); return; }
+  catch (e1) {
+    // Surface the real reason (was previously swallowed → undiagnosable in prod).
+    console.error('[chart-vision] module load failed:', e1);
+    try { vis = await loadChartVision(true); }   // one cache-busting retry
+    catch (e2) {
+      console.error('[chart-vision] cache-bust retry failed:', e2);
+      renderMsg('ai', '🎨 The chart analysis engine (assets/chart-vision-pro.js) could not load. Please hard-refresh (Ctrl/Cmd+Shift+R) and try again — if it persists, the chart engine asset may not be deployed.');
+      return;
+    }
+  }
 
   // Module 1 — validate via the engine
   const v = vis.validateImage(file);

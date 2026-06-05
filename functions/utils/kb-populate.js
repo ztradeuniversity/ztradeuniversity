@@ -34,7 +34,9 @@ export async function populateAnchors(env, { offset = 0, limit = 1, publish = tr
   const results = [];
   for (const kos of slice) {
     try {
-      const authored = await authorConcept(env, kos, { origin: 'authored', autoSubmit: false });
+      // skipDedup: anchors are canonical — never let dedup fold one into a legacy seed
+      // (e.g. becoming-profitable ↔ dev-001), which would skip publish and drop the node.
+      const authored = await authorConcept(env, kos, { origin: 'authored', autoSubmit: false, skipDedup: true });
       let published = null;
       if (publish && authored.ok && authored.action !== 'merged') {
         published = await publishConcept(env, kos, 'anchor-batch-1');
