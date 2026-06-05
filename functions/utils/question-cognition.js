@@ -29,7 +29,8 @@ export function analyzeCognition(text, { memoryData, traderContext } = {}) {
 
   // emotionalTone
   let emotionalTone = 'neutral';
-  for (const [t, re] of EMOTION) if (re.test(s)) { emotionalTone = t; break; }
+  if (/\b(overwhelm|too much to|so confusing|don'?t know where to start|where do i even start|so much to learn|information overload|drowning in)\b/.test(s)) emotionalTone = 'overwhelmed';
+  else for (const [t, re] of EMOTION) if (re.test(s)) { emotionalTone = t; break; }
 
   // hiddenGoal — what they actually want beneath the words
   let hiddenGoal = null;

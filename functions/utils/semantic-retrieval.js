@@ -18,7 +18,7 @@ function toks(s) {
 // ── TRADING CONCEPT LEXICON — the semantic bridge ────────────────────────────
 // concept → trigger phrases/terms (substring-matched, lowercase).
 const CONCEPTS = {
-  'account-recovery':  ['lose account', 'losing account', 'lost account', 'blew account', 'blow account', 'blown account', 'blowing account', 'recover', 'recovery', 'comeback', 'rebuild', 'start over', 'stop losing account', 'wiped account', 'lost my money', 'lost it all'],
+  'account-recovery':  ['lose account', 'losing account', 'lost account', 'lost my account', 'lost my money', 'lost my capital', 'lost my funds', 'losing my account', 'stop losing my account', 'keep losing my account', 'blew account', 'blow account', 'blown account', 'blowing account', 'recover', 'recovery', 'comeback', 'rebuild', 'start over', 'stop losing account', 'wiped account', 'lost it all'],
   'risk-management':   ['stopped out', 'stop out', 'stop loss', 'sl hunt', 'risk', 'drawdown', 'position size', 'lot size', 'over risk', 'overrisk', 'risk reward', 'money management', 'protect capital', 'too tight', 'wide stop'],
   'trader-development':['become profitable', 'be profitable', 'consistently profitable', 'consistency', 'improve', 'get better', 'do better', 'develop', 'grow as a trader', 'progress', 'next level', 'profitable trader', 'master trading'],
   'psychology':        ['fomo', 'revenge', 'fear', 'scared', 'greed', 'greedy', 'discipline', 'emotional', 'tilt', 'patience', 'mindset', 'overtrade', 'hesitate', 'confidence'],

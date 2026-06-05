@@ -12,7 +12,26 @@ import { readProfileFacts } from './profile-recall.js';
 import { extractFacts } from './memory-facts.js';
 import { vary, ACK_OPENERS, FB_OPENERS } from './humanize.js';
 
-export function buildGreeting(ctx) { return loc(ctx.lang).greet; }
+export function buildGreeting(ctx) {
+  const base = loc(ctx.lang).greet;
+  // Salam → reply with the customary "Wa Alaikum Assalam" before the greeting.
+  if (ctx.lang === 'en' && /\b(salam|assalam|asalam|aslam|salaam|assalamu)\b/i.test(ctx.text || '')) {
+    return `**Wa Alaikum Assalam** — I hope you're doing well today. ${base}`;
+  }
+  return base;
+}
+
+// ── PHASE 11B.2: HUMAN SMALL TALK (warm, brief, gently redirect to trading) ──
+export function buildSmallTalk(ctx) {
+  const s = (ctx.text || '').toLowerCase();
+  if (/\b(thank|thanks|thankyou|thank u|thx|shukr|jazak|appreciate)\b/.test(s))
+    return `You're welcome — glad it helped. 🙂 Whenever you want to dig into Gold, BTC, a trade you're weighing, or the psychology side, I'm right here.`;
+  if (/\b(bye|goodbye|good night|see you|see ya|take care|hafiz)\b/.test(s))
+    return `Take care — trade safe and protect your capital. I'll be here whenever you need me. 👋`;
+  if (/\b(how are you|how r u|how are u|how'?s it going|hows it going|kaise|kya haal)\b/.test(s))
+    return `I'm well, thank you — ready to help you trade smarter. What's on your mind: Gold, BTC, a trade you're weighing, or something you'd like to learn?`;
+  return `Good to see you. 🙂 What would you like to look at today — market context, a trade, or learning something new?`;
+}
 
 // ── PHASE 8E: PROFILE STATEMENT ACK (human confirmation + follow-up) ─────────
 // "I only trade Gold" → "Got it — I'll remember you focus on Gold. <follow-up>"

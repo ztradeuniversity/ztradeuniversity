@@ -107,6 +107,24 @@ export function classifyIntent(text) {
     return { intent: 'greeting', broker: null };
   }
 
+  // Small talk (Phase 11B.2) — thanks / farewell / well-being / time-of-day.
+  // Only when it's PRIMARILY a pleasantry: short and with no real trading
+  // question attached ("thanks, how do I trade gold?" must answer the question).
+  {
+    const isPleasantry =
+      /\b(thank you|thanks|thankyou|thank u|thx|shukriya|shukria|jazak|appreciate|appreciated)\b/.test(s)
+      || /\b(bye|goodbye|good night|good evening|see you|see ya|take care|khuda hafiz|allah hafiz)\b/.test(s)
+      || /\b(how are you|how r u|how are u|how'?s it going|hows it going|kaise ho|kaise hain|kya haal)\b/.test(s)
+      || /^(good morning|good afternoon|good evening)\b/.test(s);
+    const wc = s.split(/\s+/).filter(Boolean).length;
+    const hasTradingContent = has(s, ['gold', 'xau', 'btc', 'bitcoin', 'crypto', 'forex', 'trade', 'trading',
+      'market', 'price', 'strategy', 'risk', 'chart', 'setup', 'lot', 'account', 'position', 'broker',
+      'how do i', 'how to', 'why am i', 'should i', 'halal']);
+    if (isPleasantry && wc <= 6 && !hasTradingContent) {
+      return { intent: 'smalltalk', confidence: 'high', broker: null };
+    }
+  }
+
   // SET COUNTRY (Country Intelligence Layer)
   {
     const countryCode    = parseCountryFromText(s);

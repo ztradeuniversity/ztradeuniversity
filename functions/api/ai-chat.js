@@ -26,8 +26,11 @@ import { buildConversationState, resolveReferences } from '../utils/conversation
 import { emotionalLead, levelMode } from '../utils/adaptive-response.js';
 import { knowledgeConfidence, planRetrieval, unknownResponse, lowConfidencePreface, detectContradiction, balancedNote, rankSources } from '../utils/knowledge-intelligence.js';
 import { detectUnderlyingNeed } from '../utils/underlying-need.js';
-import { semanticMatch } from '../utils/semantic-retrieval.js';
-import { KB_SEED } from '../utils/kb-schema.js';
+import { retrieveBest } from '../utils/graph-retrieval.js';
+import { logMissingKnowledge } from '../utils/kb-store.js';
+import { composeAnswer } from '../utils/composer.js';
+import { recommendGuidance, complimentLine } from '../utils/guidance-recommender.js';
+import { relevanceEngine, enforceRelevance, applyEntityFilter } from '../utils/relevance-engine.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -629,7 +632,7 @@ export async function onRequest(context) {
   // At most ONE natural follow-up (never a capability menu). Skipped for
   // follow-up transforms and chart turns so those flows are preserved.
   const MARKET_DUMP_INTENTS = new Set(['gold', 'btc', 'macro', 'brief', 'mood', 'events', 'session']);
-  const NO_CONDENSE = new Set(['aboutme', 'profileinfo', 'career', 'assess', 'lotsize', 'selfassess', 'signal', 'setcountry', 'offtopic', 'greeting', 'broker', 'funding', 'islamic']);
+  const NO_CONDENSE = new Set(['aboutme', 'profileinfo', 'career', 'assess', 'lotsize', 'selfassess', 'signal', 'setcountry', 'offtopic', 'greeting', 'broker', 'funding', 'islamic', 'smalltalk']);
   let p10Intent      = cls.intent;
   let p10Mode        = mode;
   let p10MarketDump  = true;
@@ -642,6 +645,8 @@ export async function onRequest(context) {
   let p10Lead         = '';
   let p10Contradiction = '';
   let kbAnswer        = null;
+  let p10GuideAppend  = '';
+  let rel             = null;   // Phase 11C.0B relevance frame (no-drift)
   if (!followup && !chartAnalysis) {
     // ── PHASE 11A.1: CONVERSATION INTELLIGENCE — resolve "it/that/improve" to the
     // active instrument from the thread (or the saved favorite) before classifying.
@@ -672,8 +677,8 @@ export async function onRequest(context) {
       // "I lost my account" is psychology+recovery, not a data lookup. Only
       // upgrade weak/generic intents so explicit intents are never overridden.
       const uNeed = detectUnderlyingNeed(aText);
-      if (uNeed.found && ['fallback', 'technical', 'knowledge'].includes(p10Intent)) {
-        p10Intent = uNeed.intent;
+      if (uNeed.found && ['fallback', 'technical', 'knowledge', 'strategy'].includes(p10Intent)) {
+        p10Intent = uNeed.intent;   // trader-problem overrides a mis-matched strategy/knowledge intent
         p10MarketDump = false;
       }
 
@@ -687,6 +692,8 @@ export async function onRequest(context) {
       const kConf     = knowledgeConfidence(kctx);
       const retrieval = planRetrieval(kctx, kConf);
       allowKnowledge  = allowKnowledge && (retrieval.article || retrieval.pattern);
+      // ── PHASE 11C.0B: relevance frame — decides what may / may not appear.
+      rel = relevanceEngine(aText, { intent: p10Intent, category: analysis.category, statusInstrument: analysis.statusInstrument });
 
       if (kConf.level === 'UNKNOWN') {
         // Never invent facts we can't verify (e.g., unknown broker regulation).
@@ -709,15 +716,26 @@ export async function onRequest(context) {
         // Explicit short status → one concise line + ONE natural follow-up.
         directAnswer = shortStatusAnswer({ ...analysis, suggestedFollowups: [] }, marketData, lang, singleFollowup(cognition, lang));
       } else if (!plan.marketDump) {
-        p10Followups = singleFollowup(cognition, lang);            // ≤1 natural follow-up, never a menu
+        // CTA intelligence: intents whose body already invites the user (or are
+        // pure conversation) get NO extra offer — the Composer enforces a single
+        // forward line; otherwise one natural, non-menu follow-up.
+        const SELF_INVITE = new Set(['smalltalk', 'greeting', 'assess', 'lotsize', 'chart', 'signal', 'setcountry', 'offtopic']);
+        // ── PHASE 11B.4: TRADER-PROBLEM → natural Trader Self-Assessment guidance
+        // (statement, blended into the body so it isn't dropped as a forward offer).
+        const guide = recommendGuidance({ intent: p10Intent, lang });
+        if (guide) { p10GuideAppend = guide; p10Followups = ''; }
+        else p10Followups = SELF_INVITE.has(p10Intent) ? '' : singleFollowup(cognition, lang);
         // ── PHASE 11A.2: emotional adaptation — calm/supportive lead when warranted.
-        p10Lead = emotionalLead(cognition, lang);
+        if (p10Intent !== 'smalltalk' && p10Intent !== 'greeting') p10Lead = emotionalLead(cognition, lang, aText);
+        // ── PHASE 11B.4: respectful dua for Muslim users (Islamic-finance only; no spam).
+        if (p10Intent === 'islamic') p10Lead = complimentLine('islamic', lang);
         // ── PHASE 11A.4: SEMANTIC RETRIEVAL — answer from the KB by meaning when a
         // high-confidence match exists. English-only for now (localized KB lands in
         // 11B); depth-aware; curated (short/deep), never a raw article dump.
         if (lang === 'en' && kConf.level !== 'LOW') {
-          const m = semanticMatch(aText, KB_SEED)[0];
-          if (m && m.confidence === 'HIGH') {
+          const m = await retrieveBest(env, aText, { lang, category: analysis.category });   // graph-backed when enabled, else KB_SEED; category narrows candidates at scale
+          // Phase 11C.0B: only use a KB hit that passes relevance (no topic drift).
+          if (m && m.confidence === 'HIGH' && enforceRelevance({ category: m.item.category, concepts: m.item.concepts, relevanceTags: m.item.relevanceTags }, rel)) {
             kbAnswer = (depth === 'DEEP' && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
           }
         }
@@ -728,7 +746,7 @@ export async function onRequest(context) {
       if (kConf.level === 'LOW' && !directAnswer) p10Lead = lowConfidencePreface(lang);
       // Recovery/psychology underlying-need → ensure a supportive mentor lead.
       else if (uNeed.found && !directAnswer && !p10Lead && ['recovery', 'why-losing', 'psychology', 'discipline'].includes(uNeed.need)) {
-        p10Lead = emotionalLead({ emotionalTone: 'frustrated' }, lang);
+        p10Lead = emotionalLead({ emotionalTone: 'frustrated' }, lang, aText);
       }
       // Contradiction guard for market answers when independent signals disagree.
       if (p10MarketDump && !directAnswer) {
@@ -738,15 +756,25 @@ export async function onRequest(context) {
     }
   }
 
+  // ── PHASE 11B.2: MISSING-KNOWLEDGE QUEUE (flagged, graceful, background) ──
+  // When the graph is live and we couldn't confidently answer from knowledge,
+  // capture the gap for admin review. No-op until KB_GRAPH_ENABLED + tables exist.
+  if (env.KB_GRAPH_ENABLED === 'true' && !followup && !chartAnalysis && !kbAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
+    waitUntil(logMissingKnowledge(env, { question: genText, intent: cls.intent, category: null, confidence: clarifyAnswer ? 'clarify' : 'low' }));
+  }
+
   if (clarifyAnswer) {
     answer = clarifyAnswer;
   } else if (directAnswer) {
     answer = directAnswer;
   } else if (kbAnswer) {
-    // PHASE 11A.4: KB-grounded answer (curated, depth-aware) + mentor lead + 1 follow-up.
-    answer = compress(kbAnswer, p10Depth) + '\n\n_⚠️ Educational only — not financial advice._';
-    if (p10Lead)      answer = p10Lead + '\n\n' + answer;
-    if (p10Followups) answer = answer + p10Followups;
+    // PHASE 11A.4 + 11B.3: KB-grounded answer composed into one mentor reply.
+    answer = await composeAnswer({
+      lead: p10Lead,
+      body: compress(kbAnswer, p10Depth) + p10GuideAppend,
+      engagement: p10Followups,
+      disclaimer: '_⚠️ Educational only — not financial advice._',
+    }, { lang, intent: p10Intent });
   } else {
     try {
       answer = generateResponse({
@@ -773,16 +801,19 @@ export async function onRequest(context) {
         chartAnalysis,
         isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
       });
+      // PHASE 11B.3: single human composition — ONE forward line, ONE disclaimer.
+      answer = await composeAnswer({
+        lead: p10Lead,
+        prefix: p10Prefix,
+        body: compress(answer, p10Depth) + p10GuideAppend,
+        contradiction: p10Contradiction,
+        engagement: p10Followups,
+      }, { lang, intent: p10Intent });
     } catch (err) {
       answer = (env.DEBUG === 'true')
         ? `Engine error: ${err.message}`
         : 'Sorry, I had trouble composing that answer. Please rephrase, or ask about Gold/BTC context, a trade assessment, brokers, or trading psychology.';
     }
-    if (p10Prefix)        answer = p10Prefix + answer;       // multi-question: lead status line
-    answer = compress(answer, p10Depth);                     // Phase 10.5: de-duplicate / tighten
-    if (p10Contradiction) answer = answer + p10Contradiction; // 11A.3: balanced note on mixed signals
-    if (p10Lead)          answer = p10Lead + '\n\n' + answer; // 11A.2/11A.3: mentor / no-certainty lead
-    if (p10Followups)     answer = answer + p10Followups;    // ≤1 natural follow-up
   }
 
   // ── PHASE 8: RESPONSE ORCHESTRATOR — Memory → Articles → Broker → Pattern ──
@@ -831,6 +862,10 @@ export async function onRequest(context) {
       }),
     ]));
   }
+
+  // ── PHASE 11C.0B: NO-DRIFT entity filter — a Gold answer must not carry a BTC
+  // price line (and vice-versa). Whitelisted instrument codes only → Language-Lock safe.
+  if (rel && rel.primaryEntity && p10MarketDump) answer = applyEntityFilter(answer, rel);
 
   // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
   const encoder = new TextEncoder();

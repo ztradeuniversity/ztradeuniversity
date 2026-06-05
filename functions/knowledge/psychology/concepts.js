@@ -1,0 +1,71 @@
+// functions/knowledge/psychology/concepts.js
+// CATEGORY: psychology — emotions, discipline, journaling, the path to consistency.
+
+export const PSYCHOLOGY_CONCEPTS = [
+  {
+    id: 'trading-psychology', category: 'psychology', topic: 'Trading Psychology', level: 'beginner',
+    title: 'Trading Psychology', intent: 'psychology',
+    concepts: ['psychology', 'emotions', 'fear', 'greed', 'mindset'],
+    questionPatterns: ['how do i control my emotions trading', 'trading psychology help', 'i trade emotionally', 'fear and greed in trading', 'how to stay calm trading'],
+    canonical: {
+      short: 'Trading psychology is managing the fear and greed that turn a good plan into a bad click. The goal is not to feel nothing — it is to act on your rules even when you feel everything. Small risk is what keeps the emotion small.',
+      deep: 'Emotion scales with money on the line. Risk too much and fear hijacks the exit while greed widens the target; risk a little and the same rules suddenly feel easy to follow. So the fastest psychology fix is usually a smaller position, not more willpower.',
+    },
+    responseObjective: 'mentor', desiredOutcome: 'act on rules under emotional pressure',
+    relevanceTags: ['psychology', 'emotions'],
+    guidance: { traderProblem: true },
+    recommendedAssessment: 'trader',
+    related: ['trading-discipline', 'trader-assessment'], nextSteps: ['trading-discipline'], followups: ['trading-discipline'],
+    riskNote: 'Oversized trades create the emotion that breaks the plan.',
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+  {
+    id: 'trading-discipline', category: 'psychology', topic: 'Trading Discipline', level: 'beginner',
+    title: 'Trading Discipline', intent: 'psychology',
+    concepts: ['discipline', 'consistency', 'process', 'rules'],
+    questionPatterns: ['how do i become disciplined trading', 'i lack discipline', 'how to follow my trading plan', 'stop breaking my rules', 'trading discipline tips'],
+    canonical: {
+      short: 'Discipline is doing the boring thing on purpose: the same risk, the same checklist, the same process whether you are up or down. It is built from small promises kept to yourself, not from a burst of motivation.',
+      deep: 'Willpower runs out; systems do not. Write the rules down, make them few enough to actually follow, and review whether you kept them — not just whether you won. Kept rules compound into trust in yourself, and that trust is what lets you take the next valid setup calmly.',
+    },
+    responseObjective: 'mentor', desiredOutcome: 'a repeatable process followed regardless of mood',
+    relevanceTags: ['discipline', 'process'],
+    guidance: { traderProblem: true },
+    prerequisites: ['trading-psychology'], recommendedTools: ['journal'],
+    nextSteps: ['trading-journal'], followups: ['trading-journal'],
+    riskNote: 'Rules only protect you if you keep them when it is hard.',
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+  {
+    id: 'trading-journal', category: 'psychology', topic: 'Trading Journal', level: 'beginner',
+    title: 'Keeping a Trading Journal', intent: 'psychology',
+    concepts: ['journal', 'review', 'logging', 'data'],
+    questionPatterns: ['how do i keep a trading journal', 'what should i journal', 'trading journal template', 'why journal my trades', 'how to review my trades'],
+    canonical: {
+      short: 'A journal turns random trades into data: log the setup, the risk, the reason for entering, and how you felt, then review weekly for patterns. You cannot fix what you never wrote down.',
+      deep: 'The screenshot is the easy part; the value is in the review. Once a week, look for the repeating mistake — the oversized trade, the entry with no level, the revenge click — and pick one to remove. A journal you never review is just a diary.',
+    },
+    responseObjective: 'educate', desiredOutcome: 'learn from your own history systematically',
+    relevanceTags: ['journal', 'review'],
+    recommendedTools: ['journal'],
+    related: ['trading-discipline'], nextSteps: ['becoming-profitable'], followups: ['becoming-profitable'],
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+  {
+    id: 'becoming-profitable', category: 'psychology', topic: 'Becoming Profitable', level: 'intermediate',
+    title: 'Becoming a Profitable Trader', intent: 'whylosing',
+    concepts: ['profitable', 'consistency', 'expectancy', 'growth'],
+    questionPatterns: ['how do i become profitable', 'how to be a profitable trader', 'why am i not making money', 'path to profitability', 'how long to become profitable'],
+    canonical: {
+      short: 'Becoming profitable is mostly subtraction: cut oversized risk, cut revenge trades, cut setups you cannot define. Protect capital, repeat one edge with small consistent risk, and let a positive expectancy compound over months — not days.',
+      deep: 'Most traders try to add — more indicators, more setups, more screen time — when the gains come from removing leaks. Survive first, keep risk boringly small, journal honestly, and let the math work over a sample of trades. Consistency is a by-product of capital preservation, not a separate skill.',
+    },
+    responseObjective: 'encourage', desiredOutcome: 'a realistic, capital-first path to consistency',
+    relevanceTags: ['profitability', 'growth'],
+    guidance: { traderProblem: true },
+    prerequisites: ['trading-discipline', 'risk-reward'], related: ['trader-assessment'],
+    recommendedAssessment: 'trader', journeyStages: ['journey-mastery'], followups: ['trader-assessment'],
+    riskNote: 'Survival first — you can only compound an account that is still alive.',
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+];

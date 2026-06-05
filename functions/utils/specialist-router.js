@@ -52,6 +52,7 @@ export function route(ctx) {
 
     // ── Beginner Mentor / Education ──
     case 'greeting':   return edu.buildGreeting(ctx)   + disc;
+    case 'smalltalk':  return edu.buildSmallTalk(ctx)  + disc;
     case 'platform':   return edu.buildPlatform(ctx)   + disc;
     case 'strategy':   return edu.buildStrategy(ctx)   + disc;
     case 'technical':  return edu.buildTechnical(ctx)  + disc;
