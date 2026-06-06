@@ -23,18 +23,31 @@ import { RECOVERY_CONCEPTS } from './recovery/concepts.js';
 import { ISLAMIC_CONCEPTS } from './islamic/concepts.js';
 import { BROKER_CONCEPTS } from './brokers/concepts.js';
 
+// ── Phase-100 expansion (additive only; existing files above are untouched) ──
+import { GOLD_SESSION_CONCEPTS } from './gold/sessions-concepts.js';
+import { FOREX_CONCEPTS } from './forex/concepts.js';
+import { BROKERS_EXPANDED_CONCEPTS } from './brokers/expanded-concepts.js';
+import { RISK_EXPANDED_CONCEPTS } from './risk/expanded-concepts.js';
+import { PSYCHOLOGY_EXPANDED_CONCEPTS } from './psychology/expanded-concepts.js';
+import { DISCIPLINE_CONCEPTS } from './discipline/concepts.js';
+import { STRUCTURE_EXPANDED_CONCEPTS } from './structure/expanded-concepts.js';
+import { LIQUIDITY_CONCEPTS } from './liquidity/concepts.js';
+
 // category → concept[]  (a category MAY span multiple files; concat them here)
 export const CATEGORY_MODULES = Object.freeze({
-  gold: GOLD_CONCEPTS,
-  risk: RISK_CONCEPTS,
+  gold: [...GOLD_CONCEPTS, ...GOLD_SESSION_CONCEPTS],
+  risk: [...RISK_CONCEPTS, ...RISK_EXPANDED_CONCEPTS],
   assessment: ASSESSMENT_CONCEPTS,
-  psychology: PSYCHOLOGY_CONCEPTS,
-  structure: STRUCTURE_CONCEPTS,
+  psychology: [...PSYCHOLOGY_CONCEPTS, ...PSYCHOLOGY_EXPANDED_CONCEPTS],
+  structure: [...STRUCTURE_CONCEPTS, ...STRUCTURE_EXPANDED_CONCEPTS],
   news: NEWS_CONCEPTS,
   'getting-started': GETTING_STARTED_CONCEPTS,
   recovery: RECOVERY_CONCEPTS,
   islamic: ISLAMIC_CONCEPTS,
-  brokers: BROKER_CONCEPTS,
+  brokers: [...BROKER_CONCEPTS, ...BROKERS_EXPANDED_CONCEPTS],
+  forex: FOREX_CONCEPTS,
+  discipline: DISCIPLINE_CONCEPTS,
+  liquidity: LIQUIDITY_CONCEPTS,
 });
 
 export const CATEGORIES = Object.keys(CATEGORY_MODULES);

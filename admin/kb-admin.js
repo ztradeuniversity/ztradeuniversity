@@ -47,7 +47,7 @@
     // (upsert by id), so a re-touch never duplicates or corrupts.
     const RETRY_MAX = 2;
     let lastOffset = -1, attempt = 0;
-    for (let guard = 0; guard < 120; guard++) {
+    for (let guard = 0; guard < 300; guard++) {
       if (offset !== lastOffset) { lastOffset = offset; attempt = 0; }
       render('… populating anchors (from #' + offset + ')' + (attempt ? ' retry ' + attempt : '') + ' …');
       let res, body;
@@ -108,6 +108,50 @@
     refreshStatus(key);
   }
 
+  // sync-edges is chunked client-side too: each node emits ~9 Supabase subrequests
+  // (1 delete + N edge inserts), so a single invocation over 100+ nodes would exceed
+  // Cloudflare's per-invocation subrequest budget. We page with a small limit and let
+  // the server advance via nextOffset. Idempotent (delete-by-src + re-insert per node).
+  async function runSyncEdges(key) {
+    const LIMIT = 3;                 // ≤3 nodes × ≤14 subrequests ≈ 43 per invocation (under free-plan 50 cap)
+    let offset = 0, nodes = 0, edges = 0, batchErrors = 0;
+    const batchErrs = [];
+    let lastOffset = -1, attempt = 0;
+    const RETRY_MAX = 2;
+    for (let guard = 0; guard < 300; guard++) {
+      if (offset !== lastOffset) { lastOffset = offset; attempt = 0; }
+      render('… syncing edges (from #' + offset + ')' + (attempt ? ' retry ' + attempt : '') + ' …');
+      let res, body;
+      try {
+        res = await fetch(ENDPOINT, {
+          method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync-edges', limit: LIMIT, offset }),
+        });
+        body = await res.json().catch(() => ({}));
+      } catch (fetchErr) {
+        if (++attempt <= RETRY_MAX) { continue; }
+        batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
+        batchErrors++; offset += LIMIT; continue;
+      }
+      if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
+      if (!res.ok) {
+        if (++attempt <= RETRY_MAX) { continue; }
+        batchErrs.push({ offset, httpStatus: res.status, error: JSON.stringify(body).slice(0, 300) });
+        batchErrors++; offset += LIMIT; continue;
+      }
+      nodes += body.nodes || 0; edges += body.edges || 0;
+      render('… edges synced for ' + nodes + ' node(s), ' + edges + ' edge(s) so far …');
+      if (body.nextOffset == null) break;
+      offset = body.nextOffset;
+    }
+    render(
+      (batchErrors ? '⚠️' : '✅') + ' sync-edges done — nodes=' + nodes + ', edges=' + edges +
+      (batchErrors ? '\n❌ ' + batchErrors + ' batch error(s):\n' + batchErrs.map(e => JSON.stringify(e)).join('\n') : ''),
+      batchErrors ? 'err' : 'ok'
+    );
+    refreshStatus(key);
+  }
+
   async function run(action) {
     const meta = META[action];
     const key = getKey();
@@ -115,6 +159,7 @@
     if (meta.write && !window.confirm(meta.warn)) return;
 
     if (action === 'populate-anchors') { setBusy(true); try { await runPopulate(key); } finally { setBusy(false); } return; }
+    if (action === 'sync-edges')       { setBusy(true); try { await runSyncEdges(key); } finally { setBusy(false); } return; }
 
     setBusy(true);
     render('… running ' + action + ' …');
