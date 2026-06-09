@@ -53,6 +53,14 @@ export function rowToEntry(row) {
     deepAnswer: canon.deep || data.deepAnswer || null,
     related: data.related || [],
     levels: data.levels || null,
+    // Phase 6 — COACH LAYER fields (mentor intelligence surfaced for the coach reply).
+    // Additive: existing consumers ignore them; the chatbot uses them to add a
+    // "common beginner mistake" + "pro tip" derived from the concept's own data.
+    commonMistakes: data.commonMistakes || [],
+    misconceptions: data.misconceptions || [],
+    riskNote: data.riskNote || null,
+    marketContext: data.marketContext || null,
+    nextSteps: data.nextSteps || [],
     // Worker-side vector (jsonb array) for hybrid cosine; the pgvector column is
     // reserved for future server-side ANN. null until backfilled.
     embedding: data.embedding || row.embedding || null,
@@ -123,6 +131,7 @@ export function nodeFromKOS(kos) {
       prerequisites: kos.prerequisites || [], nextSteps: kos.nextSteps || [], followups: kos.followups || [],
       guidance: kos.guidance || {}, commonMistakes: kos.commonMistakes || [], misconceptions: kos.misconceptions || [],
       islamic: kos.islamic || null, riskNote: kos.riskNote || null,
+      marketContext: kos.marketContext || null,   // Phase 8 — real-market illustration for the research coach
       recommendedTools: kos.recommendedTools || [], recommendedArticles: kos.recommendedArticles || [],
       recommendedAssessment: kos.recommendedAssessment || null,
       relevanceTags: kos.relevanceTags || [], negativeExamples: kos.negativeExamples || [],

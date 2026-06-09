@@ -21,7 +21,8 @@ import {
   setArticleStatus, deleteArticle, listImages, insertImage, deleteImage, uploadImage,
 } from '../utils/article-store.js';
 import { searchArticles, relatedArticles, buildKnowledgeInjection, conceptFromArticle } from '../utils/article-knowledge.js';
-import { authorConcept } from '../utils/authoring-workflow.js';
+import { authorConcept, publishConcept } from '../utils/authoring-workflow.js';
+import { ARTICLE_SEED } from '../utils/article-seed.js';
 import {
   ARTICLE_CATEGORIES, ARTICLE_LANGUAGES, isValidCategory,
   slugify, estimateReadingTime,
@@ -165,6 +166,39 @@ export async function onRequest(context) {
   }
 
   if (action === 'delete_image') return json({ configured: true, deleted: await deleteImage(env, data?.id) });
+
+  // ── PHASE 2.2 — BULK SEO ARTICLE IMPORT (admin). Idempotent by slug. Each seed
+  // article is published to ai_articles AND pushed into the knowledge graph as a
+  // PUBLISHED concept (curated seed = pre-approved), so the chatbot can answer from
+  // Articles + Concepts immediately. Re-running updates in place (no duplicates).
+  if (action === 'import-articles') {
+    const results = [];
+    for (const seed of ARTICLE_SEED) {
+      try {
+        const existing = await getArticle(env, seed.slug);
+        const payload = {
+          title: seed.title, slug: seed.slug, summary: seed.summary || '', content: seed.content || '',
+          category: seed.category || null, tags: Array.isArray(seed.tags) ? seed.tags : [],
+          difficulty: seed.difficulty || 'beginner', language: seed.language || 'en',
+          author: seed.author || 'ZTU', reading_time: estimateReadingTime(seed.content), is_active: true,
+        };
+        const article = existing
+          ? await updateArticle(env, existing.id, payload)
+          : await createArticle(env, { ...payload, created_at: new Date().toISOString() });
+        let graphPublished = false;
+        if (article) {
+          const kos = conceptFromArticle(article);
+          if (kos) { const p = await publishConcept(env, kos, 'article-seed').catch(() => null); graphPublished = !!(p && p.ok); }
+        }
+        results.push({ slug: seed.slug, action: existing ? 'updated' : 'created', saved: !!article, graphPublished });
+      } catch (e) {
+        results.push({ slug: seed.slug, error: String((e && e.message) || e) });
+      }
+    }
+    const saved = results.filter(r => r.saved).length;
+    const graphed = results.filter(r => r.graphPublished).length;
+    return json({ configured: true, total: ARTICLE_SEED.length, saved, graphPublished: graphed, results });
+  }
 
   return json({ error: `unknown action: ${action}` }, 400);
 }

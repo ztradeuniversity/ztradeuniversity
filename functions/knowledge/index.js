@@ -33,6 +33,44 @@ import { DISCIPLINE_CONCEPTS } from './discipline/concepts.js';
 import { STRUCTURE_EXPANDED_CONCEPTS } from './structure/expanded-concepts.js';
 import { LIQUIDITY_CONCEPTS } from './liquidity/concepts.js';
 
+// ── Phase-2 expansion (additive only; new categories) ──
+import { SMART_MONEY_CONCEPTS } from './smart-money/concepts.js';
+import { PROP_FIRM_CONCEPTS } from './prop-firms/concepts.js';
+import { STRATEGY_CONCEPTS } from './strategy/concepts.js';
+import { PLANNING_CONCEPTS } from './planning/concepts.js';
+import { MISTAKES_CONCEPTS } from './mistakes/concepts.js';
+
+// ── Phase-4 expansion (additive only; new categories) ──
+import { EXECUTION_CONCEPTS } from './execution/concepts.js';
+import { REVIEW_CONCEPTS } from './review/concepts.js';
+
+// ── Phase-5 expansion (additive only; new categories) ──
+import { PRICE_ACTION_CONCEPTS } from './price-action/concepts.js';
+import { MARKETS_CONCEPTS } from './markets/concepts.js';
+
+// ── Phase-6 expansion (additive only; new categories) ──
+import { INSTITUTIONAL_CONCEPTS } from './institutional/concepts.js';
+import { COACHING_CONCEPTS } from './coaching/concepts.js';
+
+// ── Phase-7 expansion (additive only; new category) ──
+import { MACRO_CONCEPTS } from './macro/concepts.js';
+
+// ── Phase-8 expansion (additive only; new category) ──
+import { RESEARCH_CONCEPTS } from './research/concepts.js';
+
+// ── Phase-9 expansion (additive only; new category) ──
+import { ADVANCED_CONCEPTS } from './advanced/concepts.js';
+
+// ── Phase-10 expansion (additive only; new category) ──
+import { PROFESSIONAL_CONCEPTS } from './professional/concepts.js';
+
+// ── Phase-11 expansion (additive only; new category) ──
+import { DESK_CONCEPTS } from './desk/concepts.js';
+
+// ── Phase-12 expansion (additive only; new categories) ──
+import { PORTFOLIO_CONCEPTS } from './portfolio/concepts.js';
+import { INSTRUMENTS_CONCEPTS } from './instruments/concepts.js';
+
 // category → concept[]  (a category MAY span multiple files; concat them here)
 export const CATEGORY_MODULES = Object.freeze({
   gold: [...GOLD_CONCEPTS, ...GOLD_SESSION_CONCEPTS],
@@ -48,6 +86,24 @@ export const CATEGORY_MODULES = Object.freeze({
   forex: FOREX_CONCEPTS,
   discipline: DISCIPLINE_CONCEPTS,
   liquidity: LIQUIDITY_CONCEPTS,
+  'smart-money': SMART_MONEY_CONCEPTS,
+  'prop-firms': PROP_FIRM_CONCEPTS,
+  strategy: STRATEGY_CONCEPTS,
+  planning: PLANNING_CONCEPTS,
+  mistakes: MISTAKES_CONCEPTS,
+  execution: EXECUTION_CONCEPTS,
+  review: REVIEW_CONCEPTS,
+  'price-action': PRICE_ACTION_CONCEPTS,
+  markets: MARKETS_CONCEPTS,
+  institutional: INSTITUTIONAL_CONCEPTS,
+  coaching: COACHING_CONCEPTS,
+  macro: MACRO_CONCEPTS,
+  research: RESEARCH_CONCEPTS,
+  advanced: ADVANCED_CONCEPTS,
+  professional: PROFESSIONAL_CONCEPTS,
+  desk: DESK_CONCEPTS,
+  portfolio: PORTFOLIO_CONCEPTS,
+  instruments: INSTRUMENTS_CONCEPTS,
 });
 
 export const CATEGORIES = Object.keys(CATEGORY_MODULES);

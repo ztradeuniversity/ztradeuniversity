@@ -12,8 +12,8 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { provisionStatus, validateParity, rollbackCheck, provisionSeed } from '../utils/kb-provision.js';
-import { backfillEmbeddings, syncAllEdges, graphActive, getPublishedConcepts } from '../utils/kb-store.js';
-import { retrieveBest, nextStepInvite } from '../utils/graph-retrieval.js';
+import { backfillEmbeddings, syncAllEdges, graphActive, getPublishedConcepts, getMissingKnowledge } from '../utils/kb-store.js';
+import { retrieveBest, nextStepInvite, buildLearningPath, buildStudyPlan, buildPractice, buildScenario, scenarioKeys, buildCourse, courseKeys, buildMissions, buildExam, buildLab, labTypes, buildCaseStudy, buildCertification, certificationKeys, buildChecklist, checklistKeys, buildPlaybook, buildAchievements, buildDashboard } from '../utils/graph-retrieval.js';
 import { classifyIntent } from '../utils/intent-engine.js';
 import { relevanceEngine, enforceRelevance } from '../utils/relevance-engine.js';
 import { scoreEntry } from '../utils/semantic-retrieval.js';
@@ -50,6 +50,109 @@ export async function onRequest(context) {
     if (action === 'rollback-check') return json(rollbackCheck(env));
     if (action === 'review-queue')   return json({ queue: await reviewQueue(env) });
     if (action === 'validate-anchors') return json(validateAnchors());   // pure, no DB
+    // LEARNING PATH — ?action=learning-path&start=<conceptId> → ordered graph journey.
+    if (action === 'learning-path') {
+      const start = new URL(request.url).searchParams.get('start') || 'beginner-roadmap';
+      return json(await buildLearningPath(env, start, { maxSteps: 6 }));
+    }
+    // ROADMAP / STUDY PLAN — ?action=study-plan&level=quickstart|beginner|intermediate|advanced.
+    if (action === 'study-plan') {
+      const lvl = new URL(request.url).searchParams.get('level') || 'beginner';
+      // 15-day quick start / 30-day beginner / 60-day intermediate / 90-day advanced.
+      const map = { quickstart: 8, beginner: 12, intermediate: 20, advanced: 30 };
+      const planLevel = lvl === 'quickstart' ? 'beginner' : lvl;
+      return json({ requested: lvl, ...(await buildStudyPlan(env, { level: planLevel, count: map[lvl] || 12 })) });
+    }
+    // AI PRACTICE MODE — ?action=practice&level=beginner|intermediate|advanced → exercises.
+    if (action === 'practice') {
+      const lvl = new URL(request.url).searchParams.get('level') || 'beginner';
+      return json(await buildPractice(env, { level: lvl, count: 3 }));
+    }
+    // MARKET SCENARIO ENGINE — ?action=scenario&key=bullish-gold|bearish-gold|high-inflation|...
+    if (action === 'scenario') {
+      const key = new URL(request.url).searchParams.get('key');
+      if (!key) return json({ scenarios: scenarioKeys() });
+      return json(await buildScenario(env, key));
+    }
+    // AI TRADING UNIVERSITY — ?action=course&key=beginner|...|gold-specialist|risk-specialist
+    if (action === 'course') {
+      const key = new URL(request.url).searchParams.get('key');
+      if (!key) return json({ courses: courseKeys() });
+      return json(await buildCourse(env, key));
+    }
+    // AI MENTOR MISSIONS — ?action=missions&level=beginner|intermediate|advanced
+    if (action === 'missions') {
+      const lvl = new URL(request.url).searchParams.get('level') || null;
+      return json(await buildMissions(env, { level: lvl, count: 5 }));
+    }
+    // AI EXAMINATION — ?action=exam&level=beginner|intermediate|advanced
+    if (action === 'exam') {
+      const lvl = new URL(request.url).searchParams.get('level') || 'beginner';
+      return json(await buildExam(env, { level: lvl, count: 10 }));
+    }
+    // AI TRADING LAB — ?action=lab&type=chart|decision|risk|psychology&level=...
+    if (action === 'lab') {
+      const u = new URL(request.url);
+      const type = u.searchParams.get('type');
+      if (!type) return json({ labTypes: labTypes() });
+      return json(await buildLab(env, { type, level: u.searchParams.get('level') || null, count: 5 }));
+    }
+    // AI CASE STUDY — ?action=case-study&id=<conceptId> (e.g. liquidity-sweep, nfp, revenge-trading)
+    if (action === 'case-study') {
+      const id = new URL(request.url).searchParams.get('id');
+      return json(await buildCaseStudy(env, id));
+    }
+    // AI CERTIFICATION — ?action=certification&key=beginner-trader|gold-specialist|...
+    if (action === 'certification') {
+      const key = new URL(request.url).searchParams.get('key');
+      if (!key) return json({ certifications: certificationKeys() });
+      return json(await buildCertification(env, key));
+    }
+    // AI TRADING DESK — ?action=checklist&key=pre-market|london|new-york|news-event|post-trade|weekly-review
+    if (action === 'checklist') {
+      const key = new URL(request.url).searchParams.get('key');
+      if (!key) return json({ checklists: checklistKeys() });
+      return json(await buildChecklist(env, key));
+    }
+    // AI PLAYBOOK — ?action=playbook&id=<conceptId> (e.g. gold-breakout-failure, liquidity-sweep, nfp)
+    if (action === 'playbook') {
+      const id = new URL(request.url).searchParams.get('id');
+      return json(await buildPlaybook(env, id));
+    }
+    // AI ACHIEVEMENTS — graph-anchored achievements with completion requirements.
+    if (action === 'achievements') return json(buildAchievements());
+    // AI TRADING DASHBOARD — ?action=dashboard&level=beginner|intermediate|advanced
+    // Unifies roadmap, missions, practice, recommendations, weak areas, certifications.
+    if (action === 'dashboard') {
+      const lvl = new URL(request.url).searchParams.get('level') || 'beginner';
+      return json(await buildDashboard(env, { level: lvl }));
+    }
+    // KNOWLEDGE ANALYTICS — most-missed topics → admin recommendations (anonymous).
+    if (action === 'analytics') {
+      const missing = await getMissingKnowledge(env, { limit: 50 });
+      const byCategory = {};
+      for (const m of missing) { const c = m.category || 'uncategorized'; byCategory[c] = (byCategory[c] || 0) + (m.frequency || 1); }
+      // PHASE 13 — Self-Improvement V2: turn the top gaps into concrete authoring
+      // recommendations across every content type (no duplicate authoring — these are
+      // gaps the graph does NOT yet cover).
+      const top = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const recommendedNext = top.map(([category, frequency]) => ({
+        category, frequency,
+        nextConcept: `Author a concept covering the most-missed "${category}" question`,
+        nextArticle: `Publish an SEO article for "${category}" (auto-creates a graph concept on approval)`,
+        nextPlaybook: `Add a playbook once a "${category}" concept exists`,
+        nextPractice: `Practice/exam items generate automatically once the concept is published`,
+        nextMission: `Mission auto-generates from the new "${category}" concept`,
+        nextCertification: `Fold into the matching specialist certification`,
+      }));
+      return json({
+        graphActive: graphActive(env),
+        missingTopics: missing.map(m => ({ question: m.question, intent: m.intent, category: m.category, frequency: m.frequency || 1 })),
+        gapsByCategory: byCategory,
+        recommendedNext,
+        recommendation: missing.length ? 'Author concepts/articles for the highest-frequency gaps above.' : 'No knowledge gaps logged yet.',
+      });
+    }
     // DEPLOYMENT PROBE — feature-detects which version of each module is LIVE, so you
     // can prove production is running the latest bundle (no DB writes, no side effects).
     if (action === 'deployment-probe') {

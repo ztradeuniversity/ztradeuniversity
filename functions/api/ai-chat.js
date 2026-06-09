@@ -26,11 +26,19 @@ import { buildConversationState, resolveReferences } from '../utils/conversation
 import { emotionalLead, levelMode } from '../utils/adaptive-response.js';
 import { knowledgeConfidence, planRetrieval, unknownResponse, lowConfidencePreface, detectContradiction, balancedNote, rankSources } from '../utils/knowledge-intelligence.js';
 import { detectUnderlyingNeed } from '../utils/underlying-need.js';
-import { retrieveBest, nextStepInvite } from '../utils/graph-retrieval.js';
+import { retrieveBest, nextStepInvite, suggestQuestions } from '../utils/graph-retrieval.js';
+import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer } from '../utils/composer.js';
 import { recommendGuidance, complimentLine } from '../utils/guidance-recommender.js';
 import { relevanceEngine, enforceRelevance, applyEntityFilter } from '../utils/relevance-engine.js';
+import { decideMentorAction, detectLearnerState, getMentorPrefix, buildMentorDecision, buildProactiveGuidance } from '../utils/mentor-brain.js';
+import { buildSessionMemory, formatSessionRecall } from '../utils/session-memory.js';
+import { recoverMessage } from '../utils/recovery-engine.js';
+import { buildMentorJourney, progressRecall, studyContinuation } from '../utils/mentor-journey.js';
+import { selectTeachingStyle, teachingLead, teachingTail } from '../utils/teaching-style.js';
+import { interpretIndirect, needContextLine } from '../utils/dialogue-understanding.js';
+import { detectEmotion, readBetweenLines, emotionLead, betweenLinesLead } from '../utils/emotion-layer.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -528,12 +536,18 @@ export async function onRequest(context) {
   let   lastAssistantMsg = '';
   for (let i = messages.length - 1; i >= 0; i--) { if (messages[i].role === 'assistant') { lastAssistantMsg = messages[i].content; break; } }
 
+  // ── PHASE 14: CONVERSATION RECOVERY — normalize typos, fragments, incomplete messages.
+  // Applied before followup/lang detection so classification sees cleaned text.
+  // lastUserMsg is preserved for followup + language detection (not modified).
+  const _recovery = recoverMessage(lastUserMsg, messages);
+
   const sessionLang = (typeof body?.sessionLang === 'string') ? body.sessionLang : null;  // language persistence
   const followup    = classifyFollowup(lastUserMsg);
   const detLang     = detectLanguage(lastUserMsg);
 
   // ── CONVERSATION CONTEXT ENGINE: resolve the effective question + transform mode
-  let genText = lastUserMsg;
+  // Use recovered text for initial classification; original lastUserMsg for followup/lang detection.
+  let genText = _recovery.text;
   let mode    = null;
   let cls;
 
@@ -547,7 +561,21 @@ export async function onRequest(context) {
     cls     = classifyIntent(genText);
     mode    = followup.mode === 'lang' ? null : followup.mode;   // language switch = regenerate in target lang
   } else {
-    cls = classifyIntent(lastUserMsg);
+    cls = classifyIntent(_recovery.text);
+  }
+
+  // ── PHASE 16: DEEP QUESTION UNDERSTANDING — indirect / hypothetical follow-ups ──
+  // Additive layer between Phase 11A.1 (pronoun→instrument) and Phase 14 recovery
+  // (typos/fragments): catches "and if gold goes up?", "what would you do?",
+  // "is that good or bad?" — enriches the analysis text with the active topic +
+  // scenario and re-classifies so the mentor answers in context (multi-turn
+  // continuity, STEP 7) instead of restarting. Narrowly guarded → no effect on
+  // normal messages; skipped entirely for explicit follow-up transforms.
+  let _needContext = false;
+  if (!followup) {
+    const _interp = interpretIndirect({ text: _recovery.text, lastAssistant: lastAssistantMsg, messages });
+    if (_interp.changed) { genText = _interp.enrichedText; cls = classifyIntent(genText); }
+    else if (_interp.kind === 'needs-context') { _needContext = true; }
   }
 
   // ── LANGUAGE SWITCH + PERSISTENCE: pick the effective reply language
@@ -646,7 +674,13 @@ export async function onRequest(context) {
   let p10Contradiction = '';
   let kbAnswer        = null;
   let p10GuideAppend  = '';
-  let rel             = null;   // Phase 11C.0B relevance frame (no-drift)
+  let p10Level        = 'beginner';  // Phase 4: detected experience level (mentor adaptation)
+  let p10KbCat        = null;        // Phase 5: matched concept category (article recommendation)
+  let rel             = null;        // Phase 11C.0B relevance frame (no-drift)
+  // ── PHASE 14: MENTOR BRAIN state (populated inside Phase 10.5 block below) ──
+  let sessionMem      = {};
+  let learnerState    = 'New Student';
+  let mentorAction    = 'StaySilent';
   if (!followup && !chartAnalysis) {
     // ── PHASE 11A.1: CONVERSATION INTELLIGENCE — resolve "it/that/improve" to the
     // active instrument from the thread (or the saved favorite) before classifying.
@@ -663,6 +697,9 @@ export async function onRequest(context) {
       const analysis = cognition._qa;
       const plan     = planIntent(analysis, aCls);
       const depth    = decideDepth(aText, cognition);
+      // PHASE 4 — AI PERSONAL MENTOR: detect experience level so explanations adapt
+      // (beginners get the concise canonical, advanced get the deep body + harder follow-ups).
+      p10Level = cognition.userLevel || mergedTraderContext?.level || 'beginner';
       const hplan    = buildPlan(cognition, confidence, depth);
       p10Depth       = depth;
       p10Intent      = plan.intent;
@@ -736,7 +773,26 @@ export async function onRequest(context) {
           const m = await retrieveBest(env, aText, { lang, category: analysis.category });   // graph-backed when enabled, else KB_SEED; category narrows candidates at scale
           // Phase 11C.0B: only use a KB hit that passes relevance (no topic drift).
           if (m && m.confidence === 'HIGH' && enforceRelevance({ category: m.item.category, concepts: m.item.concepts, relevanceTags: m.item.relevanceTags }, rel)) {
-            kbAnswer = (depth === 'DEEP' && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
+            // PHASE 4 — level-adaptive depth: advanced (or DEEP intent) → deep body;
+            // beginners always get the concise canonical so they are not overwhelmed.
+            const wantDeep = (depth === 'DEEP' || p10Level === 'advanced') && p10Level !== 'beginner';
+            kbAnswer = (wantDeep && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
+            p10KbCat = m.item.category || null;   // Phase 5: drive article recommendation
+            // PHASE 7 — AI DECISION COACH: a 5-part reply, every part drawn from the
+            // concept's OWN graph data (never hardcoded). 1) Direct (above) · 2) Common
+            // beginner error (commonMistakes) · 3) Professional insight (misconceptions)
+            // · 4) Risk warning (riskNote) · 5) Next step (graph follow-up, set below).
+            // PHASE 8 — RESEARCH COACH: + Real Market Context (concept.marketContext).
+            const _mistake = (m.item.commonMistakes && m.item.commonMistakes[0]) || '';
+            const _insight = (m.item.misconceptions && m.item.misconceptions[0]) || '';
+            const _risk    = m.item.riskNote || '';
+            const _context = m.item.marketContext || '';
+            let _coach = '';
+            if (_mistake) _coach += `\n\n⚠️ **Common beginner mistake:** ${_mistake}`;
+            if (_insight) _coach += `\n\n🎯 **Professional insight:** ${_insight}`;
+            if (_risk)    _coach += `\n\n🛡️ **Risk warning:** ${_risk}`;
+            if (_context) _coach += `\n\n📊 **Real market context:** ${_context}`;
+            if (_coach) kbAnswer += _coach;
             // HUMAN BEHAVIOUR LAYER: guide the user onward — surface the concept's graph
             // next-steps as ONE natural mentor invite (overrides the generic follow-up).
             const invite = nextStepInvite(m.followups, m.item);
@@ -757,7 +813,97 @@ export async function onRequest(context) {
         const cc = detectContradiction({ changePct: marketData?.gold?.changePct, regimeLabel: marketData?.marketRegime?.label, patternBias: patternData?.bias });
         if (cc.conflict) p10Contradiction = balancedNote(lang);
       }
+
+      // ── PHASE 17: HUMAN MENTOR EMOTION LAYER — gentle, non-therapist tone. Catches
+      // the emotional states the keyword detector scores as neutral (overconfidence,
+      // impatience, disappointment, burnout, confusion, fear) and the "reading
+      // between the lines" defeat cues ("nothing is working" / "maybe trading isn't
+      // for me"), then leads with ONE calm acknowledgment that redirects to the
+      // PROCESS — never dramatic, always a trading mentor. Runs BEFORE the mentor-
+      // brain prefix so a real emotional cue takes precedence over a generic teach
+      // lead, and stays additive by only filling an EMPTY lead (Phase 11's explicit
+      // frustrated/anxious leads already set it keep priority). Silent on non-
+      // emotional turns (STEP 6); varied phrasing avoids repetition (STEP 7). Market/
+      // operational intents are skipped.
+      if (!p10Lead && !MARKET_DUMP_INTENTS.has(p10Intent) &&
+          !['signal', 'chart', 'setcountry', 'lotsize', 'smalltalk', 'greeting', 'offtopic'].includes(p10Intent)) {
+        const _btl = readBetweenLines(aText);
+        if (_btl.defeated) {
+          p10Lead = betweenLinesLead(_btl, lang, aText);
+        } else {
+          const _emo = detectEmotion(aText, { cognition, profile: memoryData?.profile });
+          if (_emo.state !== 'neutral') p10Lead = emotionLead(_emo.state, { lang, seed: aText });
+        }
+      }
+
+      // ── PHASE 14: MENTOR BRAIN — session memory, learner state, action, prefix, proactive ──
+      // All additive — only sets p10Lead / p10GuideAppend when not already set by prior logic.
+      sessionMem   = buildSessionMemory(messages, memoryData?.profile || {}, mergedTraderContext || {}, recentRecap);
+      learnerState = detectLearnerState(memoryData?.profile || {}, mergedTraderContext || {}, sessionMem);
+      mentorAction = decideMentorAction({
+        cognition, learnerState, sessionMem, intent: p10Intent,
+        hasKbAnswer: !!kbAnswer, clarifying: false,
+      });
+      // Session recall — natural reference to previous learning ("You've been exploring Risk Management...")
+      // Only fires for educational actions when the mentor hasn't already set a lead.
+      if (!p10Lead && sessionMem.lastTopic && ['Teach', 'Practice', 'Recommend'].includes(mentorAction)) {
+        const _recall = formatSessionRecall(sessionMem, lang, aText);
+        if (_recall) p10Lead = _recall;
+      }
+      // Mentor prefix phrases — only when p10Lead is still empty and intent is not operational/conversational.
+      if (!p10Lead && !['greeting', 'smalltalk', 'offtopic', 'signal', 'setcountry', 'chart', 'lotsize'].includes(p10Intent)) {
+        const _mPfx = getMentorPrefix(mentorAction, learnerState, lang, aText);
+        if (_mPfx) p10Lead = _mPfx;
+      }
+      // Proactive guidance appended to body (Recommend action + specific learner states only).
+      const _proactive = buildProactiveGuidance(mentorAction, learnerState, lang);
+      if (_proactive) p10GuideAppend += _proactive;
+
+      // ── PHASE 15: LONG-TERM MENTOR RELATIONSHIP — cross-session continuity ──
+      // Phase 14's session recall handles WITHIN-thread continuity (scans messages);
+      // Phase 15 handles ACROSS-session continuity from the persisted profile +
+      // recentRecap. The two are complementary: on a fresh session the in-thread
+      // history is short, so Phase 14 leaves the lead empty and Phase 15 can pick
+      // up the long-term thread. Strictly additive — only sets p10Lead when STILL
+      // empty (never overrides emotional/recovery/Phase-14 leads). Varied + often
+      // silent so it never feels robotic.
+      const _returning = (messages.filter(m => m.role === 'user').length <= 1) &&
+                         (recentRecap.length > 0 || (memoryData?.profile?.conversation_count ?? 0) > 1);
+      const journey = buildMentorJourney({
+        profile: memoryData?.profile || {}, traderContext: mergedTraderContext || {},
+        sessionMem, recentRecap, messages, returning: _returning,
+      });
+      if (!p10Lead && !['greeting', 'smalltalk', 'offtopic', 'signal', 'setcountry', 'chart', 'lotsize'].includes(p10Intent)) {
+        const _cont = _returning ? studyContinuation(journey, lang, aText) : '';
+        const _line = _cont || progressRecall(journey, lang, aText);
+        if (_line) p10Lead = _line;
+      }
+
+      // ── PHASE 16: HUMAN TEACHING STYLE — frame the answer like a mentor (STEP 2/5/6).
+      // Picks a teaching mode (simple/analogy/step-by-step/socratic/challenge) from
+      // level + tone + depth, then offers a rare, varied framing lead and/or think-
+      // prompt tail. Strictly additive: lead only when STILL empty (never overrides
+      // emotional/recovery/Phase-14/15 leads); tail only when no guide tail is set
+      // (never stacks). One mentor — the level just shifts emphasis, no switching.
+      const _style = selectTeachingStyle({ level: p10Level, intent: p10Intent, cognition, depth: p10Depth, seed: aText });
+      if (_style !== 'none') {
+        if (!p10Lead) {
+          const _tLead = teachingLead(_style, { lang, seed: aText });
+          if (_tLead) p10Lead = _tLead;
+        }
+        if (!p10GuideAppend) {
+          const _tTail = teachingTail(_style, { lang, seed: aText });
+          if (_tTail) p10GuideAppend += _tTail;
+        }
+      }
     }
+  }
+
+  // ── PHASE 16: BETTER UNKNOWN BEHAVIOUR (STEP 4) — when a question was indirect
+  // but had nothing to anchor to, ask for a little context naturally instead of
+  // guessing or fabricating. Only when nothing confident was produced. Additive.
+  if (_needContext && !clarifyAnswer && !directAnswer && !kbAnswer && (p10Intent === 'fallback' || cls.intent === 'fallback')) {
+    clarifyAnswer = needContextLine(lang, genText);
   }
 
   // ── PHASE 11B.2: MISSING-KNOWLEDGE QUEUE (flagged, graceful, background) ──
@@ -865,6 +1011,50 @@ export async function onRequest(context) {
         confidence_score: mergedTraderContext?.confidence,
       }),
     ]));
+  }
+
+  // ── PHASE 2: USER ENGAGEMENT — when the turn was vague/unmatched (clarify or
+  // fallback), guide the user with real, answerable questions pulled live from the
+  // graph (basic→advanced). English-only (Language-Lock safe); graceful when the
+  // graph is inactive (suggestQuestions returns []). Never added to a confident answer.
+  if (lang === 'en' && !chartAnalysis && !kbAnswer && !directAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
+    try {
+      const qs = await suggestQuestions(env, { lang, limit: 3, level: p10Level });
+      if (qs.length) answer = answer.trimEnd() + '\n\nYou can also ask me:\n' + qs.map(q => '• ' + q).join('\n');
+    } catch { /* engagement is additive; never blocks the reply */ }
+  }
+
+  // ── PHASE 13: DYNAMIC FOLLOW-UP ENGINE — a human mentor does NOT tack the same
+  // "related article + next step" onto every reply. The graph next-step invite is
+  // already woven in by the composer; here we choose AT MOST ONE extra tail, and
+  // often none, varied deterministically so the conversation never feels robotic:
+  //   • article   — surface a relevant article (when one genuinely matches)
+  //   • reflect   — a short mentor prompt to apply the concept (no fake commands)
+  //   • none      — let the answer breathe; rely on the woven next-step
+  if (lang === 'en' && kbAnswer) {
+    try {
+      const seed = ((p10KbCat || '').length + (messages.length || 0)) % 4;   // 0..3
+      const channel = ['article', 'reflect', 'none', 'article'][seed];
+      if (channel === 'article' && aiSbConfigured(env)) {
+        const arts = await searchArticles(env, { q: aText, category: p10KbCat || undefined, limit: 1 });
+        const a = arts && arts[0];
+        if (a && a.title) answer = answer.trimEnd() + `\n\n📖 Related article: ${a.slug ? `[${a.title}](${a.slug})` : a.title}`;
+      } else if (channel === 'reflect') {
+        const topic = (rel && rel.primaryEntity) ? rel.primaryEntity : 'this';
+        answer = answer.trimEnd() + `\n\n🧭 Try applying ${topic === 'this' ? 'this' : topic + ' analysis'} to your own chart or last trade — notice what you'd do differently.`;
+      }
+      // 'none' → no tail; the woven next-step invite already guides the user.
+    } catch { /* follow-up is additive; never blocks the reply */ }
+  }
+
+  // ── PHASE 14: POST-ANSWER MENTOR DECISION TAIL ───────────────────────────────
+  // Fires AT MOST once, only for Reflect action after educational KB answers.
+  // English-only. Never fires on clarify/direct-status/chart turns.
+  if (lang === 'en' && kbAnswer && !chartAnalysis && !clarifyAnswer && !directAnswer && mentorAction === 'Reflect') {
+    try {
+      const _mDec = buildMentorDecision(mentorAction, learnerState, p10Intent, lang, genText.slice(0, 30));
+      if (_mDec.text) answer = answer.trimEnd() + _mDec.text;
+    } catch { /* mentor decision is additive; never blocks the reply */ }
   }
 
   // ── PHASE 11C.0B: NO-DRIFT entity filter — a Gold answer must not carry a BTC

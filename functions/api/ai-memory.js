@@ -23,6 +23,7 @@ import {
 } from '../utils/ai-supabase.js';
 import { categorizeTurn } from '../utils/memory-engine.js';
 import { extractFacts } from '../utils/memory-facts.js';
+import { buildMentorJourney, journeyDashboard } from '../utils/mentor-journey.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -158,11 +159,21 @@ export async function onRequest(context) {
       getProfile(env, userId),
       getRecentChatContext(env, userId, 8).catch(() => []),
     ]);
+    // ── PHASE 15: additive read-only journey projection for the existing dashboard.
+    // Pure synthesis over the same profile + recent chats — no extra storage.
+    let journey = null;
+    try {
+      if (profile) {
+        const recap = (recentChats || []).filter(c => c.role === 'user').map(c => String(c.content || '')).slice(-6);
+        journey = journeyDashboard(buildMentorJourney({ profile, traderContext: {}, sessionMem: {}, recentRecap: recap, messages: [], returning: false }));
+      }
+    } catch { journey = null; }
     return json({
       configured: true,
       profile,
       summary: buildProfileSummary(profile),
       recentChats: (recentChats || []).map(c => ({ role: c.role, content: String(c.content || '').slice(0, 500) })),
+      journey,   // Phase 15 — existing consumers ignore unknown fields
     });
   }
 

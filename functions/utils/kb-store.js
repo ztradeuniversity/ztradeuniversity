@@ -158,6 +158,16 @@ export async function logMissingKnowledge(env, { question, intent, category, con
   }, 'resolution=merge-duplicates,return=minimal');
 }
 
+// ── KNOWLEDGE ANALYTICS (Phase 6) — read the gap queue for admin recommendations.
+// Anonymous: only the (normalized) question, intent, category, and frequency. No user
+// data. Returns the most-frequently-missed topics so an operator can author the next
+// concept/article. Graceful: [] until configured + kb_missing exists.
+export async function getMissingKnowledge(env, { limit = 50 } = {}) {
+  const rows = await sb(env, 'GET', 'kb_missing',
+    `order=frequency.desc.nullslast,last_seen.desc&limit=${limit}`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+
 // ── EMBEDDING BACKFILL (Phase 11C.3) — admin-run, idempotent. Computes vectors
 // for published concepts that lack one (data.embedding). Graceful: no-op when
 // embeddings unconfigured/disabled. Re-running only fills the gaps (no re-embed).

@@ -1035,6 +1035,24 @@
       <p class="mirror-note">Scores update as we talk. Stored locally on your device.</p>
     </div>
 
+    <!-- Phase 15: Mentor Journey (reuses the existing dashboard; no second build) -->
+    <div class="sc" id="journeyPanel" style="display:none">
+      <div class="sc-ttl">Your Mentor Journey
+        <span class="trader-level" id="jLevel">Beginner</span>
+      </div>
+      <div class="mirror-insight" id="jPath">Building your foundation.</div>
+      <div class="sc-subttl">Next milestone</div>
+      <div class="mirror-note" id="jMilestone" style="text-align:left">—</div>
+      <div class="sc-subttl">Active goal</div>
+      <div class="mirror-note" id="jGoal" style="text-align:left">—</div>
+      <div class="sc-subttl">Focus area</div>
+      <div class="mirror-note" id="jWeak" style="text-align:left">—</div>
+      <div id="jAchWrap" style="display:none">
+        <div class="sc-subttl">Achievements</div>
+        <div class="mirror-note" id="jAch" style="text-align:left">—</div>
+      </div>
+    </div>
+
     <!-- Phase 6: Knowledge Library -->
     <div class="sc">
       <div class="sc-ttl">Knowledge Library</div>
@@ -2504,6 +2522,9 @@ function updateTraderV2(text) {
   renderMirror(mirror);
   renderTraderV2(t, mirror);
   renderRecommendations();
+  // Phase 15: live-refresh the journey panel from local signals (skip when the
+  // server already supplied a richer journey, to avoid clobbering it).
+  if (!_journeyFromServer) { try { const lj = localJourney(); if (lj) renderJourney(lj); } catch {} }
 }
 
 // Compact profile sent to the server engine for Coach Mode + Journey adaptation
@@ -2542,6 +2563,59 @@ function renderTraderV2(t, mirror) {
     else if (wk && (t.conversations || 0) >= 3) ins.textContent = `🎯 Across ${t.conversations} chats, your main focus area is ${phrase[wk]}. Let's work on it together.`;
     else                                       ins.textContent = `I'm learning your trading patterns as we talk — keep going.`;
   }
+}
+
+/* ─── PHASE 15: MENTOR JOURNEY PANEL ─────────────────────────────
+   Reuses the existing dashboard + /api/ai-memory GET. Server journey when the
+   AI Supabase is configured; otherwise a light local projection so the panel is
+   useful immediately. Purely additive — does not touch the Trader Mirror. */
+function renderJourney(j) {
+  const panel = document.getElementById('journeyPanel');
+  if (!panel || !j) return;
+  const set = (id, v) => { const e = document.getElementById(id); if (e && v) e.textContent = v; };
+  const cap = s => String(s || '').replace(/^./, c => c.toUpperCase());
+  set('jLevel', cap(j.level || 'beginner'));
+  if (j.path) set('jPath', j.path + (j.pathFocus ? ' — ' + j.pathFocus : ''));
+  set('jMilestone', j.nextMilestone || 'Learn the language of the market');
+  set('jGoal', j.activeGoal || 'Learning the fundamentals');
+  set('jWeak', j.weakArea ? cap(j.weakArea) : 'Building a broad foundation');
+  if (j.achievements && j.achievements.length) {
+    const wrap = document.getElementById('jAchWrap');
+    if (wrap) wrap.style.display = '';
+    set('jAch', j.achievements.map(cap).join(' · '));
+  }
+  panel.style.display = '';
+}
+
+let _journeyFromServer = false;
+async function loadJourney() {
+  try {
+    const res = await fetch('/api/ai-memory?userId=' + encodeURIComponent(getOrCreateUserId()), { signal: AbortSignal.timeout(4000) });
+    const d = await res.json().catch(() => ({}));
+    if (d && d.journey) { _journeyFromServer = true; renderJourney(d.journey); return; }
+  } catch { /* offline / unconfigured → local fallback below */ }
+  const local = localJourney();
+  if (local) renderJourney(local);
+}
+
+// Light client projection (mirrors learning-path.js levels) for when the AI
+// Supabase isn't configured — keeps the panel meaningful without server memory.
+function localJourney() {
+  const tc = getTraderContext();
+  if (!tc) return null;
+  const level = tc.level || 'beginner';
+  const paths = {
+    beginner:     { title: 'Foundation Path',    focus: 'survive first, learn the market', next: 'Risk basics: stop loss, take profit, the 1–2% rule' },
+    intermediate: { title: 'Execution Path',     focus: 'consistency in entries & risk',   next: 'Build & follow a written trading plan' },
+    advanced:     { title: 'Optimization Path',  focus: 'refine edge, manage psychology',  next: 'Quantify your edge: expectancy & drawdown' },
+  };
+  const p = paths[level] || paths.beginner;
+  const weakMap = { revenge: 'revenge trading', fomo: 'FOMO', overtrading: 'overtrading', hesitation: 'hesitation', fear: 'fear of pulling the trigger' };
+  return {
+    level, path: p.title, pathFocus: p.focus, nextMilestone: p.next,
+    activeGoal: null, weakArea: weakMap[tc.topWeakness] || null,
+    achievements: (tc.improved || []).map(i => 'improved ' + i),
+  };
 }
 
 // Save interaction to server (best-effort, non-blocking)
@@ -2983,6 +3057,9 @@ async function verifyOtp(e) {
   // Phase 5: restore mirror data from localStorage
   renderMirror(getMirrorData());
   renderTraderV2();   // Memory V2: restore level, scores & insight
+
+  // Phase 15: long-term Mentor Journey panel (server journey → local fallback)
+  loadJourney();
 
   // Market data (60s refresh)
   fetchMkt();
