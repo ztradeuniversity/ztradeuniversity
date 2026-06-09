@@ -13,7 +13,7 @@
 // ingests, or changes traversal. All graceful when unconfigured / un-provisioned.
 // ════════════════════════════════════════════════════════════════════════════
 
-import { isConfigured, countConcepts, migrateSeed } from './kb-store.js';
+import { isConfigured, countConcepts, migrateSeed, graphActive } from './kb-store.js';
 import { retrieveBest } from './graph-retrieval.js';
 import { semanticMatch } from './semantic-retrieval.js';
 import { KB_SEED } from './kb-schema.js';
@@ -40,18 +40,23 @@ export async function checkSchema(env) {
 
 export async function provisionStatus(env) {
   const configured = isConfigured(env);
-  const graphEnabled = env?.KB_GRAPH_ENABLED === 'true';
+  const forcedOff = env?.KB_GRAPH_ENABLED === 'false';
   const schema = await checkSchema(env);
   const schemaComplete = KB_TABLES.every(t => schema[t]);
-  const conceptCount = schemaComplete ? await countConcepts(env) : 0;
+  // Count published concepts whenever kb_nodes exists (retrieval only needs kb_nodes),
+  // NOT gated on full schema — the other kb_* tables are optional for serving answers.
+  const conceptCount = (configured && schema.kb_nodes) ? await countConcepts(env) : 0;
+  // SINGLE SOURCE OF TRUTH: the badge reports exactly what the chatbot uses to decide
+  // graph vs KB_SEED — graphActive(env). No separate/stricter badge logic.
+  const graphEnabled = graphActive(env);
   return {
     configured, graphEnabled, schema, schemaComplete, conceptCount,
-    // "ready" = safe to flip the flag on (tables exist + seed migrated)
-    ready: configured && schemaComplete && conceptCount > 0,
+    ready: configured && schema.kb_nodes && conceptCount > 0,
     note: !configured ? 'AI Supabase not configured'
-      : !schemaComplete ? 'run the kb_* SQL, then migrateSeed'
-      : conceptCount === 0 ? 'tables exist; run migrateSeed'
-      : graphEnabled ? 'graph live' : 'provisioned; set KB_GRAPH_ENABLED=true to activate',
+      : !schema.kb_nodes ? 'run the kb_* SQL (at least kb_nodes), then migrateSeed'
+      : conceptCount === 0 ? 'kb_nodes exists; run migrateSeed + populate'
+      : forcedOff ? 'provisioned but KB_GRAPH_ENABLED=false (forced KB_SEED fallback)'
+      : 'graph live',
   };
 }
 
@@ -86,7 +91,7 @@ export function rollbackCheck(env) {
   const probe = semanticMatch('how do I stop losing accounts', KB_SEED)[0];
   return {
     rollbackSafe: probe?.item?.id === 'recovery-001' && probe?.confidence === 'HIGH',
-    currentFlag: env?.KB_GRAPH_ENABLED === 'true' ? 'on' : 'off',
+    currentFlag: graphActive(env) ? 'on' : 'off',
     revert: 'set KB_GRAPH_ENABLED=false → retrieval falls back to KB_SEED (tables remain, inert)',
   };
 }

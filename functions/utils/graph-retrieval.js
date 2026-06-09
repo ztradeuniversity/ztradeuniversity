@@ -17,7 +17,7 @@
 
 import { semanticMatch, scoreEntry } from './semantic-retrieval.js';
 import { KB_SEED } from './kb-schema.js';
-import { getPublishedConcepts, isConfigured, getNeighbors } from './kb-store.js';
+import { getPublishedConcepts, isConfigured, getNeighbors, graphActive } from './kb-store.js';
 import { ENGAGEMENT_EDGES } from './kb-graph.js';
 import { isEmbeddingConfigured, embedText } from './embedding-provider.js';
 import { makeHybridScorer } from './hybrid-scorer.js';
@@ -42,7 +42,7 @@ function rank(query, entries) {
 // flag defaults OFF → loads everything exactly as today (zero regression); when
 // a narrowed query returns nothing it falls back to the full set (correctness).
 async function loadEntries(env, ctx) {
-  const useGraph = env?.KB_GRAPH_ENABLED === 'true' && isConfigured(env);
+  const useGraph = graphActive(env);
   if (useGraph) {
     const lang = ctx?.lang || 'en';
     const narrow = env?.KB_RETRIEVAL_NARROW === 'true' && ctx?.category;
@@ -79,9 +79,27 @@ export async function retrieveBest(env, query, ctx = {}) {
   // Phase 11B.2: attach engagement neighbors (natural follow-ups / next-best-action)
   // when the graph is live. The Composer (11B.3) renders these as human sentences;
   // the current pipeline keeps using its own single follow-up, so this is inert today.
-  if (top && env?.KB_GRAPH_ENABLED === 'true' && isConfigured(env)) {
+  if (top && graphActive(env)) {
     const nb = await getNeighbors(env, top.item.id, ENGAGEMENT_EDGES, 2);
     top.followups = nb.map(x => ({ id: x.node.id, topic: x.node.subcategory || x.node.id, edgeType: x.edgeType }));
   }
   return top;
+}
+
+// ── HUMAN BEHAVIOUR LAYER ─────────────────────────────────────────────────────
+// Turn a concept's graph neighbours (next-best-question / next-step edges) into ONE
+// natural mentor invitation to go deeper — so the bot guides instead of dead-ending.
+// English only (KB answers are English-gated); returns '' when there is nothing to
+// suggest, so the Composer keeps a single forward line.
+const _titleize = (s) => String(s || '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+export function nextStepInvite(followups = [], item = {}) {
+  let topics = (Array.isArray(followups) ? followups : [])
+    .map(f => f && (f.topic || f.id)).filter(Boolean).map(_titleize);
+  if (!topics.length) {
+    topics = [...(item.related || []), ...(item.nextSteps || [])].slice(0, 2).map(_titleize);
+  }
+  topics = [...new Set(topics)].slice(0, 2);
+  if (!topics.length) return '';
+  const list = topics.length === 2 ? `**${topics[0]}** or **${topics[1]}**` : `**${topics[0]}**`;
+  return `If you'd like to go deeper, I can walk you through ${list} next — just ask.`;
 }

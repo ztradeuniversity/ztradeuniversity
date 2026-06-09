@@ -26,8 +26,8 @@ import { buildConversationState, resolveReferences } from '../utils/conversation
 import { emotionalLead, levelMode } from '../utils/adaptive-response.js';
 import { knowledgeConfidence, planRetrieval, unknownResponse, lowConfidencePreface, detectContradiction, balancedNote, rankSources } from '../utils/knowledge-intelligence.js';
 import { detectUnderlyingNeed } from '../utils/underlying-need.js';
-import { retrieveBest } from '../utils/graph-retrieval.js';
-import { logMissingKnowledge } from '../utils/kb-store.js';
+import { retrieveBest, nextStepInvite } from '../utils/graph-retrieval.js';
+import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer } from '../utils/composer.js';
 import { recommendGuidance, complimentLine } from '../utils/guidance-recommender.js';
 import { relevanceEngine, enforceRelevance, applyEntityFilter } from '../utils/relevance-engine.js';
@@ -737,6 +737,10 @@ export async function onRequest(context) {
           // Phase 11C.0B: only use a KB hit that passes relevance (no topic drift).
           if (m && m.confidence === 'HIGH' && enforceRelevance({ category: m.item.category, concepts: m.item.concepts, relevanceTags: m.item.relevanceTags }, rel)) {
             kbAnswer = (depth === 'DEEP' && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
+            // HUMAN BEHAVIOUR LAYER: guide the user onward — surface the concept's graph
+            // next-steps as ONE natural mentor invite (overrides the generic follow-up).
+            const invite = nextStepInvite(m.followups, m.item);
+            if (invite) p10Followups = invite;
           }
         }
       }
@@ -759,7 +763,7 @@ export async function onRequest(context) {
   // ── PHASE 11B.2: MISSING-KNOWLEDGE QUEUE (flagged, graceful, background) ──
   // When the graph is live and we couldn't confidently answer from knowledge,
   // capture the gap for admin review. No-op until KB_GRAPH_ENABLED + tables exist.
-  if (env.KB_GRAPH_ENABLED === 'true' && !followup && !chartAnalysis && !kbAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
+  if (graphActive(env) && !followup && !chartAnalysis && !kbAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
     waitUntil(logMissingKnowledge(env, { question: genText, intent: cls.intent, category: null, confidence: clarifyAnswer ? 'clarify' : 'low' }));
   }
 
