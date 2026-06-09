@@ -29,7 +29,12 @@ async function sb(env, method, table, qs, body, prefer) {
     const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(6000) });
     if (!res.ok) return null;
     if (method === 'HEAD') return res.headers.get('content-range');
-    if (prefer === 'return=minimal' || method === 'DELETE') return true;
+    // return=minimal responses have an EMPTY body, so res.json() would throw and
+    // wrongly yield null on a SUCCESSFUL write. Detect it by substring so composite
+    // prefers like 'resolution=merge-duplicates,return=minimal' (upsertNode) are
+    // correctly treated as success. This is the fix for the false "upsertNode failed"
+    // db-write error in publishConcept while the row was actually committed.
+    if ((prefer && prefer.includes('return=minimal')) || method === 'DELETE') return true;
     return res.json().catch(() => null);
   } catch { return null; }
 }
