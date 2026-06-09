@@ -16,14 +16,14 @@ export function isConfigured(env) {
   return !!(env?.AI_SUPABASE_URL && env?.AI_SUPABASE_SERVICE_KEY);
 }
 
-// Graph activation: ON automatically once the AI Supabase is configured, so a
-// populated graph serves the chatbot without a manual flag flip. KB_GRAPH_ENABLED
-// is now an explicit OVERRIDE: set it to 'false' to force the KB_SEED fallback
-// (instant rollback, no data loss); 'true' or unset → active when configured.
-// Retrieval still falls back to KB_SEED automatically if the graph returns no rows,
-// so this is safe even before the tables are populated.
+// Graph activation: ON automatically once the AI Supabase is configured — no env
+// flag required. This is the SINGLE activation source for both the chatbot
+// retrieval path and the KB Admin badge, so they can never disagree. Retrieval
+// still falls back to KB_SEED automatically when the graph returns no rows, so this
+// is safe even before the tables are populated. (KB_GRAPH_ENABLED is no longer read
+// for activation; the graph follows the data, not a manual/stale flag.)
 export function graphActive(env) {
-  return env?.KB_GRAPH_ENABLED !== 'false' && isConfigured(env);
+  return isConfigured(env);
 }
 
 async function sb(env, method, table, qs, body, prefer) {

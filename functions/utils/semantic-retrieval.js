@@ -66,7 +66,14 @@ export function scoreEntry(query, entry) {
 
   const raw = conceptScore * 0.62 + patternScore * 0.30 + titleScore * 0.08;
   const semanticScore = Math.round(Math.min(1, raw) * 100);
-  const confidence = semanticScore >= 55 ? 'HIGH' : semanticScore >= 30 ? 'MEDIUM' : 'LOW';
+  // STRONG-DIRECT match → HIGH on its own. The graph concepts carry domain words in
+  // concepts[] (not the small semantic lexicon), so their conceptScore is 0 and a
+  // perfect question-pattern / title match would otherwise cap at ~38 (MEDIUM) and
+  // never clear the HIGH gate the chatbot requires. A near-exact pattern match (or a
+  // query that essentially IS the concept title) is unambiguous, so treat it as HIGH.
+  const strongDirect = patternScore >= 0.6 || titleScore >= 0.85;
+  const confidence = (semanticScore >= 55 || strongDirect) ? 'HIGH'
+    : semanticScore >= 30 ? 'MEDIUM' : 'LOW';
   return { semanticScore, confidence };
 }
 

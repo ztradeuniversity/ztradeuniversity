@@ -12,7 +12,15 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { provisionStatus, validateParity, rollbackCheck, provisionSeed } from '../utils/kb-provision.js';
-import { backfillEmbeddings, syncAllEdges } from '../utils/kb-store.js';
+import { backfillEmbeddings, syncAllEdges, graphActive, getPublishedConcepts } from '../utils/kb-store.js';
+import { retrieveBest, nextStepInvite } from '../utils/graph-retrieval.js';
+import { classifyIntent } from '../utils/intent-engine.js';
+import { relevanceEngine, enforceRelevance } from '../utils/relevance-engine.js';
+import { scoreEntry } from '../utils/semantic-retrieval.js';
+
+// Bundle marker — bump when deploying. The deployment-probe echoes this so you can
+// confirm production is running THIS build (not a cached/old bundle).
+const BUILD_TAG = '2026-06-09-graph-activation+strongdirect+forbidonly';
 import { authorConcept, publishConcept, authorBatch } from '../utils/authoring-workflow.js';
 import { validateAnchors, populateAnchors } from '../utils/kb-populate.js';
 import { reviewQueue, rejectToDraft, retire, rollback } from '../utils/review-runtime.js';
@@ -42,6 +50,62 @@ export async function onRequest(context) {
     if (action === 'rollback-check') return json(rollbackCheck(env));
     if (action === 'review-queue')   return json({ queue: await reviewQueue(env) });
     if (action === 'validate-anchors') return json(validateAnchors());   // pure, no DB
+    // DEPLOYMENT PROBE — feature-detects which version of each module is LIVE, so you
+    // can prove production is running the latest bundle (no DB writes, no side effects).
+    if (action === 'deployment-probe') {
+      // v2 graphActive ignores KB_GRAPH_ENABLED (config-only); v1 still gated on the flag.
+      const graphV = graphActive({ AI_SUPABASE_URL: 'x', AI_SUPABASE_SERVICE_KEY: 'y', KB_GRAPH_ENABLED: 'false' })
+        ? 'config-only(v2)' : 'flag-gated(v1)';
+      // v2 scoreEntry promotes a near-exact pattern match to HIGH; v1 caps at MEDIUM.
+      const probeEntry = { questionPatterns: ['what is a liquidity sweep'], concepts: ['liquidity sweep'], category: 'liquidity', subcategory: 'Liquidity Sweep' };
+      const retrievalV = scoreEntry('what is a liquidity sweep', probeEntry).confidence === 'HIGH'
+        ? 'strong-direct-HIGH(v2)' : 'lexical-cap-MEDIUM(v1)';
+      // v2 enforceRelevance is forbid-only (keeps off-topic-but-not-forbidden); v1 allow-gate rejects.
+      const relevanceV = enforceRelevance({ category: 'liquidity', relevanceTags: ['liquidity', 'sweep'] }, { forbiddenTopics: ['broker'], allowedTopics: ['technical'], confidence: 'HIGH' })
+        ? 'forbid-only(v2)' : 'allow-gate-reject(v1)';
+      return json({
+        buildVersion: BUILD_TAG,
+        deploymentSource: 'cloudflare-pages-functions (this Worker is live)',
+        graphRuntimeVersion: graphV,
+        aiChatVersion: typeof nextStepInvite === 'function' ? 'human-layer(v2)' : 'unknown',
+        retrievalVersion: retrievalV,
+        relevanceVersion: relevanceV,
+        probeVersion: typeof scoreEntry === 'function' ? 'present' : 'missing',
+        allLatest: graphV.includes('v2') && retrievalV.includes('v2') && relevanceV.includes('v2'),
+      });
+    }
+    // PROOF probe — what the LIVE chatbot retrieval actually does for a query:
+    //   ?action=retrieval-probe&q=what is a liquidity sweep
+    // Reveals the runtime source (kb_nodes graph vs KB_SEED) + the top hit/confidence.
+    if (action === 'retrieval-probe') {
+      const q = new URL(request.url).searchParams.get('q') || 'what is a liquidity sweep';
+      const active = graphActive(env);
+      const publishedLoaded = active ? (await getPublishedConcepts(env, { lang: 'en' })).length : 0;
+      const top = await retrieveBest(env, q, { lang: 'en' });
+      // Replicate the EXACT ai-chat acceptance gate (lang en, HIGH confidence, relevance kept).
+      const cls = classifyIntent(q);
+      const intent = (cls && cls.intent) || 'fallback';
+      const rel = relevanceEngine(q, { intent, category: top?.item?.category });
+      const kept = top ? enforceRelevance({ category: top.item.category, concepts: top.item.concepts, relevanceTags: top.item.relevanceTags }, rel) : false;
+      const used = !!(top && top.confidence === 'HIGH' && kept);
+      const rejectionReason = !top ? 'no_match'
+        : top.confidence !== 'HIGH' ? `confidence_${top.confidence}_below_HIGH`
+        : !kept ? `relevance_reject(intent=${intent}; forbidden=[${rel.forbiddenTopics.join(',')}])`
+        : null;
+      return json({
+        query: q,
+        source: active && publishedLoaded > 0 ? 'graph(kb_nodes)' : 'KB_SEED',
+        graphActive: active,
+        publishedLoaded,
+        topConcept: top ? top.item.id : null,
+        score: top ? top.semanticScore : null,
+        confidence: top ? top.confidence : null,
+        relevanceDecision: top ? (kept ? 'keep' : 'reject') : 'n/a',
+        rejectionReason,
+        usedByChatbot: used,
+        intent,
+      });
+    }
     return json({ error: 'unknown action' }, 400);
   }
 

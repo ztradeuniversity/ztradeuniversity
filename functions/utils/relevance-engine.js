@@ -58,15 +58,17 @@ export function relevanceEngine(text, { intent, category, statusInstrument } = {
 }
 
 // Gate a retrieved KB/graph concept against the question's relevance frame.
+// Reject ONLY on an explicit topic conflict (the forbidden list catches real drift,
+// e.g. a broker concept on a gold question, a btc concept on a gold question). The
+// positive allow-list is NOT a rejection gate: with 100+ concepts across many
+// categories (liquidity, structure, forex, discipline…) a HIGH retrieval match is
+// trusted unless it conflicts. The old allow-overlap reject dropped valid concepts
+// like 'liquidity-sweep' on a 'technical' query — that is the fix.
 export function enforceRelevance(conceptMeta = {}, rel = {}) {
   const cat = String(conceptMeta.category || '').toLowerCase();
   const tags = (conceptMeta.relevanceTags || conceptMeta.concepts || []).map(t => String(t).toLowerCase());
   const hay = [cat, ...tags];
-  if ((rel.forbiddenTopics || []).some(f => hay.some(h => h.includes(f)))) return false;       // hard reject
-  if ((rel.allowedTopics || []).length) {
-    const overlap = (rel.allowedTopics).some(a => hay.some(h => h.includes(a)));
-    if (!overlap) return rel.confidence === 'HIGH' ? false : true;   // off-topic + we're sure → reject
-  }
+  if ((rel.forbiddenTopics || []).some(f => hay.some(h => h.includes(f)))) return false;       // hard reject on conflict
   return true;
 }
 

@@ -115,26 +115,34 @@
   // Cloudflare's per-invocation subrequest budget. We page with a small limit and let
   // the server advance via nextOffset. Idempotent (delete-by-src + re-insert per node).
   async function runSyncEdges(key) {
-    const LIMIT = 3;                 // ≤3 nodes × ≤14 subrequests ≈ 43 per invocation (under free-plan 50 cap)
+    // limit:1 — ONE node per invocation. The heaviest concepts (gold-buy-sell ~13
+    // edges) cluster together in id order; processing several at once overran the
+    // worker and the request hung (~offset #30). One node = ≤~15 subrequests, ~3s,
+    // never hangs. A client-side abort timeout retries any stuck invocation instead
+    // of blocking the loop forever (the page fetch has no timeout of its own).
+    const LIMIT = 1;
     let offset = 0, nodes = 0, edges = 0, batchErrors = 0;
     const batchErrs = [];
     let lastOffset = -1, attempt = 0;
     const RETRY_MAX = 2;
-    for (let guard = 0; guard < 300; guard++) {
+    for (let guard = 0; guard < 400; guard++) {
       if (offset !== lastOffset) { lastOffset = offset; attempt = 0; }
       render('… syncing edges (from #' + offset + ')' + (attempt ? ' retry ' + attempt : '') + ' …');
       let res, body;
+      const ctl = new AbortController();
+      const tmo = setTimeout(() => ctl.abort(), 25000);   // abort a hung invocation → retry
       try {
         res = await fetch(ENDPOINT, {
           method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'sync-edges', limit: LIMIT, offset }),
+          signal: ctl.signal,
         });
         body = await res.json().catch(() => ({}));
       } catch (fetchErr) {
         if (++attempt <= RETRY_MAX) { continue; }
         batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
         batchErrors++; offset += LIMIT; continue;
-      }
+      } finally { clearTimeout(tmo); }
       if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
       if (!res.ok) {
         if (++attempt <= RETRY_MAX) { continue; }
