@@ -54,7 +54,9 @@
       try {
         res = await fetch(ENDPOINT, {
           method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'populate-anchors', offset }),
+          // limit:1 — one concept per invocation keeps subrequests (~20) under the
+          // Cloudflare per-invocation cap. Explicit so the server default can never override it.
+          body: JSON.stringify({ action: 'populate-anchors', offset, limit: 1 }),
         });
         body = await res.json().catch(() => ({}));
       } catch (fetchErr) {
