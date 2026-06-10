@@ -1583,6 +1583,8 @@ async function sendMessage() {
 
   let aiText = '';
   let aiBub  = null;
+  let suggestions = [];   // Phase 19: smart suggestion chips from the stream
+  let actions = [];       // Phase 23: concept-anchored context-menu action chips
 
   try {
     const res = await fetch(API, {
@@ -1648,6 +1650,8 @@ async function sendMessage() {
           const ev = JSON.parse(raw);
           if (ev.error) throw new Error(ev.error);
           if (ev.t) { aiText += ev.t; aiBub.innerHTML = md(aiText); scrollEnd(); }
+          if (ev.suggestions && Array.isArray(ev.suggestions)) suggestions = ev.suggestions;  // Phase 19
+          if (ev.actions && Array.isArray(ev.actions)) actions = ev.actions;                  // Phase 23
         } catch (pe) { if (!pe.message?.includes('JSON')) throw pe; }
       }
     }
@@ -1659,6 +1663,10 @@ async function sendMessage() {
       // Phase 8D: speak the reply aloud when TTS is enabled (language-aware)
       speakReply(aiText);
     }
+    // Phase 19: render clickable suggestion chips under the answer (if any).
+    if (suggestions.length && aiBub) renderSuggestChips(aiBub, suggestions);
+    // Phase 23: render concept-anchored context-menu action chips (if any).
+    if (actions.length && aiBub) renderActionChips(aiBub, actions);
 
   } catch (err) {
     think?.remove();
@@ -1673,6 +1681,56 @@ async function sendMessage() {
 /* ─── QUICK ASK ──────────────────────────────────────────────── */
 function quickAsk(txt) {
   chatIn.value = txt; resize(); updateCount(); sendBtn.disabled = false; sendMessage();
+}
+
+/* ─── PHASE 19: SMART SUGGESTION CHIPS ───────────────────────────
+   Renders graph-derived, clickable next-question chips under an AI answer so the
+   student rarely needs to type. Reuses the existing .know-chip styling + quickAsk;
+   no new suggestion engine. */
+function renderSuggestChips(bub, list) {
+  if (!bub || !bub.parentNode || !Array.isArray(list) || !list.length) return;
+  const seen = new Set();
+  const wrap = document.createElement('div');
+  wrap.className = 'sug-wrap';
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:10px';
+  list.slice(0, 5).forEach(label => {
+    const text = String(label || '').trim();
+    const key = text.toLowerCase();
+    if (!text || seen.has(key)) return;            // STEP 7: no duplicate buttons
+    seen.add(key);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'know-chip';
+    b.textContent = text;
+    b.addEventListener('click', () => { if (!streaming) quickAsk(text); });
+    wrap.appendChild(b);
+  });
+  if (wrap.children.length) { bub.parentNode.appendChild(wrap); scrollEnd(); }
+}
+
+/* ─── PHASE 23: CONTEXT-MENU ACTION CHIPS ────────────────────────
+   Concept-anchored actions ({label, query}). The label is shown; clicking sends
+   the query into the engine, which answers it from the graph. Reuses .know-chip. */
+function renderActionChips(bub, list) {
+  if (!bub || !bub.parentNode || !Array.isArray(list) || !list.length) return;
+  const seen = new Set();
+  const wrap = document.createElement('div');
+  wrap.className = 'act-wrap';
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px';
+  list.slice(0, 5).forEach(a => {
+    const label = String(a && a.label || '').trim();
+    const query = String(a && a.query || '').trim();
+    const key = label.toLowerCase();
+    if (!label || !query || seen.has(key)) return;
+    seen.add(key);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'know-chip';
+    b.textContent = label;
+    b.addEventListener('click', () => { if (!streaming) quickAsk(query); });
+    wrap.appendChild(b);
+  });
+  if (wrap.children.length) { bub.parentNode.appendChild(wrap); scrollEnd(); }
 }
 
 /* ─── INPUT ──────────────────────────────────────────────────── */
@@ -3060,6 +3118,23 @@ async function verifyOtp(e) {
 
   // Phase 15: long-term Mentor Journey panel (server journey → local fallback)
   loadJourney();
+
+  // Phase 30: make the dashboard journey the hub — clicking the next milestone or
+  // active goal sends it into the mentor (one-click learning, no typing). Additive
+  // delegated listener; does not modify the journey renderer.
+  const _jp = document.getElementById('journeyPanel');
+  if (_jp) {
+    ['jMilestone', 'jGoal', 'jWeak'].forEach(id => { const el = document.getElementById(id); if (el) el.style.cursor = 'pointer'; });
+    _jp.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!t || streaming) return;
+      const txt = (t.textContent || '').trim();
+      if (!txt || txt === '—') return;
+      if (t.id === 'jMilestone') quickAsk('Explain ' + txt);
+      else if (t.id === 'jWeak')  quickAsk('Help me improve my ' + txt);
+      else if (t.id === 'jGoal' && !/learning the fundamentals/i.test(txt)) quickAsk('How do I work towards ' + txt + '?');
+    });
+  }
 
   // Market data (60s refresh)
   fetchMkt();

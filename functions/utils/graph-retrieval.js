@@ -21,6 +21,7 @@ import { getPublishedConcepts, isConfigured, getNeighbors, graphActive, getMissi
 import { ENGAGEMENT_EDGES } from './kb-graph.js';
 import { isEmbeddingConfigured, embedText } from './embedding-provider.js';
 import { makeHybridScorer } from './hybrid-scorer.js';
+import { getAnchorEntries } from './anchor-entries.js';
 
 // Pluggable scorer (default lexical). Future: pgvector / Workers AI embeddings.
 let _scorer = scoreEntry;
@@ -53,7 +54,11 @@ async function loadEntries(env, ctx) {
     const rows = await getPublishedConcepts(env, { lang });
     if (rows && rows.length) return rows;          // graph-backed (full)
   }
-  return KB_SEED;                                   // graceful fallback — current behavior
+  // ACTIVATION: serve the AUTHORED concept library (349 KOS concepts + legacy
+  // KB_SEED) when the graph DB isn't provisioned — no infra required. Falls back to
+  // bare KB_SEED only if the anchor library somehow failed to load.
+  const anchors = getAnchorEntries();
+  return (anchors && anchors.length) ? anchors : KB_SEED;
 }
 
 export async function retrieve(env, query, ctx = {}) {
@@ -96,8 +101,10 @@ export async function retrieveBest(env, query, ctx = {}) {
 // across beginner/intermediate/advanced so there's always a next thing to ask.
 // Returns [] when the graph isn't active/populated (caller falls back to its default).
 export async function suggestQuestions(env, { lang = 'en', limit = 4, exclude = [], level = null } = {}) {
-  if (!graphActive(env)) return [];
-  const rows = await getPublishedConcepts(env, { lang });
+  // ACTIVATION: use the graph DB when live, else the authored anchor library, so
+  // smart-suggestion chips populate offline too (was [] before provisioning).
+  let rows = graphActive(env) ? await getPublishedConcepts(env, { lang }) : null;
+  if (!rows || !rows.length) rows = getAnchorEntries();
   if (!rows || !rows.length) return [];
   const ex = new Set(exclude);
   const tiers = { beginner: [], intermediate: [], advanced: [] };

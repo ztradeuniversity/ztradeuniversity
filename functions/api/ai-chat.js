@@ -29,7 +29,11 @@ import { detectUnderlyingNeed } from '../utils/underlying-need.js';
 import { retrieveBest, nextStepInvite, suggestQuestions } from '../utils/graph-retrieval.js';
 import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
-import { composeAnswer } from '../utils/composer.js';
+import { composeAnswer, setComposer } from '../utils/composer.js';
+import { llmConfigured, makeLLMComposer } from '../utils/composer-llm.js';
+import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
+import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
+import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
 import { recommendGuidance, complimentLine } from '../utils/guidance-recommender.js';
 import { relevanceEngine, enforceRelevance, applyEntityFilter } from '../utils/relevance-engine.js';
 import { decideMentorAction, detectLearnerState, getMentorPrefix, buildMentorDecision, buildProactiveGuidance } from '../utils/mentor-brain.js';
@@ -39,6 +43,17 @@ import { buildMentorJourney, progressRecall, studyContinuation } from '../utils/
 import { selectTeachingStyle, teachingLead, teachingTail } from '../utils/teaching-style.js';
 import { interpretIndirect, needContextLine } from '../utils/dialogue-understanding.js';
 import { detectEmotion, readBetweenLines, emotionLead, betweenLinesLead } from '../utils/emotion-layer.js';
+import { detectLearningStyle, learningStyleNote } from '../utils/learning-style.js';
+import { buildSuggestionChips } from '../utils/suggestion-chips.js';
+import { detectUnsupportedScript, unknownLanguageReply } from '../utils/language-intel.js';
+import { normalizeSlang } from '../utils/slang-normalizer.js';
+import { buildContextActions } from '../utils/concept-actions.js';
+import { detectExplanationRequest, explanationLead } from '../utils/explanation-engine.js';
+import { buildRelationshipRecall } from '../utils/relationship-recall.js';
+import { detectConversationMove, conversationLead } from '../utils/conversation-flow.js';
+import { normalizeMultilang, refineLanguage } from '../utils/lang-assist.js';
+import { detectLearningSpeed, adaptiveStance, smartRecommendation } from '../utils/adaptive-mentor.js';
+import { fallbackPathChips } from '../utils/journey-flow.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -471,6 +486,14 @@ export async function onRequest(context) {
   const { request, env } = context;
   const waitUntil = (p) => { try { context.waitUntil?.(p); } catch {} };   // background persistence
 
+  // ── ACTIVATION: register the GROUNDED generative composer when a model is bound
+  // (Cloudflare Workers AI env.AI, or an OpenAI-compatible LLM_ENDPOINT). The graph
+  // stays the source of truth — the LLM only rewrites the already-grounded draft
+  // into human prose (English-only; non-English keeps the localized template). If
+  // unbound or the call fails, composer.js falls back to the rule assembler — so
+  // this is fully dormant + non-breaking until configured.
+  if (llmConfigured(env)) { try { setComposer(makeLLMComposer(env)); } catch {} }
+
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: JSON_HEADERS });
   }
@@ -578,6 +601,38 @@ export async function onRequest(context) {
     else if (_interp.kind === 'needs-context') { _needContext = true; }
   }
 
+  // ── PHASE 22: INTENT V2 — trading-slang normalization. Additive, conservative:
+  // only re-routes when slang actually changed the text AND the current intent is
+  // weak (fallback/technical/knowledge), so clear intents are never overridden.
+  // Reuses the recovery + indirect understanding above; only the analysis text is
+  // normalized (never the words shown to the user).
+  if (!followup) {
+    const _slang = normalizeSlang(genText);
+    if (_slang.changed && ['fallback', 'technical', 'knowledge'].includes(cls.intent)) {
+      genText = _slang.text;
+      cls = classifyIntent(genText);
+    }
+  }
+
+  // ── PHASE 28: MULTI-LANGUAGE ASSIST — expand "B/E" (breakeven) + Roman-Urdu
+  // trading vocab (khareedna→buy, bechna→sell, nuksan→loss…) so mixed / broken-
+  // grammar messages classify to the right intent. ONLY the analysis text is
+  // normalized; the reply LANGUAGE stays whatever the Language Lock chose. Additive:
+  // re-classifies weak intents only, never overrides a clear one.
+  if (!followup) {
+    const _ml = normalizeMultilang(genText);
+    if (_ml.changed && ['fallback', 'technical', 'knowledge'].includes(cls.intent)) {
+      genText = _ml.text;
+      cls = classifyIntent(genText);
+    }
+  }
+
+  // ── PHASE 20: MULTI-LANGUAGE — detect a genuinely UNSUPPORTED language/script
+  // (Chinese/Russian/Hindi/…) so we reply politely with the languages we DO speak
+  // instead of answering in English (STEP 7). High-precision; reuses the existing
+  // Language Lock for everything it already handles.
+  const _unsupported = detectUnsupportedScript(lastUserMsg);
+
   // ── LANGUAGE SWITCH + PERSISTENCE: pick the effective reply language
   const SUPPORTED = ['en', 'ur', 'ur-roman', 'ar', 'id', 'ms', 'vi', 'bn', 'th'];
   let lang;
@@ -585,6 +640,15 @@ export async function onRequest(context) {
   else if (detLang !== 'en')                                 lang = detLang;          // typed in a language
   else if (sessionLang && SUPPORTED.includes(sessionLang))   lang = sessionLang;      // persisted language
   else                                                       lang = 'en';
+
+  // ── PHASE 28: MULTI-LANGUAGE — when the Language Lock defaulted to English but the
+  // message clearly carries Roman-Urdu trading phrasing the ≥2-marker detector missed
+  // (short/mixed, e.g. "gold buy karun?" / "stop loss kitna hona chahiye"), upgrade to
+  // Roman Urdu so the reply matches. Additive: only acts on an English default; never
+  // overrides an explicit switch or a non-English detection.
+  if (lang === 'en' && !(followup && followup.mode === 'lang')) {
+    lang = refineLanguage(lastUserMsg, 'en');
+  }
 
   // Chart Vision: an uploaded-chart analysis forces the chart intent
   if (chartAnalysis) cls.intent = 'chart';
@@ -677,6 +741,12 @@ export async function onRequest(context) {
   let p10Level        = 'beginner';  // Phase 4: detected experience level (mentor adaptation)
   let p10KbCat        = null;        // Phase 5: matched concept category (article recommendation)
   let rel             = null;        // Phase 11C.0B relevance frame (no-drift)
+  let p10Related      = [];          // Phase 19: answered concept's related/next topics (chip source)
+  let p10ConceptTitle = '';          // Phase 23/24: answered concept identity + capabilities (context menu)
+  let p10HasExample   = false;
+  let p10HasMistakes  = false;
+  let p10HasDeep      = false;
+  let p10NextStepTopic = '';
   // ── PHASE 14: MENTOR BRAIN state (populated inside Phase 10.5 block below) ──
   let sessionMem      = {};
   let learnerState    = 'New Student';
@@ -778,6 +848,13 @@ export async function onRequest(context) {
             const wantDeep = (depth === 'DEEP' || p10Level === 'advanced') && p10Level !== 'beginner';
             kbAnswer = (wantDeep && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
             p10KbCat = m.item.category || null;   // Phase 5: drive article recommendation
+            p10Related = [...(m.item.related || []), ...(m.item.nextSteps || [])];   // Phase 19: chip source
+            // Phase 23/24: capture the concept's identity + which actions it can offer (graph-gated).
+            p10ConceptTitle  = m.item.subcategory || m.item.topic || m.item.id || '';
+            p10HasExample    = !!m.item.marketContext;
+            p10HasMistakes   = !!(m.item.commonMistakes && m.item.commonMistakes.length);
+            p10HasDeep       = !!m.item.deepAnswer;
+            p10NextStepTopic = (m.item.nextSteps && m.item.nextSteps[0]) || (m.item.related && m.item.related[0]) || '';
             // PHASE 7 — AI DECISION COACH: a 5-part reply, every part drawn from the
             // concept's OWN graph data (never hardcoded). 1) Direct (above) · 2) Common
             // beginner error (commonMistakes) · 3) Professional insight (misconceptions)
@@ -836,6 +913,49 @@ export async function onRequest(context) {
         }
       }
 
+      // ── PHASE 27: DEEP CONVERSATION FLOW — in a long thread, acknowledge the
+      // conversational MOVE (repair "no, not that" / rejection "I tried that" /
+      // affirmation "that's exactly my problem" / caveat "yes but not always" /
+      // continuation "but I failed") so the conversation is repaired/continued, not
+      // restarted (STEP 1/3/5). Reference resolution is already done by Phase 16
+      // (interpretIndirect) + Phase 11 (conversation-state); this only adds the human
+      // acknowledgment. Additive: fills an empty lead only (emotion keeps priority),
+      // and stays silent on non-move turns (STEP 6). Skipped for the first message.
+      if (!p10Lead && !MARKET_DUMP_INTENTS.has(p10Intent) && lastAssistantMsg &&
+          !['signal', 'chart', 'setcountry', 'lotsize', 'greeting'].includes(p10Intent)) {
+        const _move = detectConversationMove(lastUserMsg);
+        if (_move) {
+          const _moveLead = conversationLead(_move, { lang, seed: aText });
+          if (_moveLead) p10Lead = _moveLead;
+        }
+      }
+
+      // ── PHASE 18: PERSONALITY & LEARNING-STYLE — adapt HOW we explain to match how
+      // this student learns (simple/step/examples/analogy/practical/analytical),
+      // inferred gradually from the conversation + cross-session recap (no storage,
+      // no profiling). Additive: only fills an EMPTY lead; runs after the emotion
+      // layer (feelings first) but before the generic mentor prefix + the Phase 16
+      // level/seed teaching pick, which stay the fallback. One mentor — only the
+      // teaching STYLE shifts, never the personality (STEP 4). Silent without a
+      // confident style (STEP 6).
+      if (!p10Lead) {
+        const _ls = detectLearningStyle({ messages, profile: memoryData?.profile, recentRecap });
+        const _lsNote = learningStyleNote(_ls, { lang, seed: aText, level: p10Level, intent: p10Intent });
+        if (_lsNote) p10Lead = _lsNote;
+      }
+
+      // ── PHASE 24: HUMAN EXPLANATION ENGINE — when the student EXPLICITLY asks for a
+      // style ("explain like I'm 5", "tell it as a story", "use an analogy"), open
+      // with a brief leveled framing lead. Additive: fills an empty lead only; covers
+      // the very-simple / story / analogy tiers Phase 16 teaching-style does not.
+      if (!p10Lead && !MARKET_DUMP_INTENTS.has(p10Intent)) {
+        const _expStyle = detectExplanationRequest(aText);
+        if (_expStyle) {
+          const _expLead = explanationLead(_expStyle, { lang, seed: aText });
+          if (_expLead) p10Lead = _expLead;
+        }
+      }
+
       // ── PHASE 14: MENTOR BRAIN — session memory, learner state, action, prefix, proactive ──
       // All additive — only sets p10Lead / p10GuideAppend when not already set by prior logic.
       sessionMem   = buildSessionMemory(messages, memoryData?.profile || {}, mergedTraderContext || {}, recentRecap);
@@ -858,6 +978,41 @@ export async function onRequest(context) {
       // Proactive guidance appended to body (Recommend action + specific learner states only).
       const _proactive = buildProactiveGuidance(mentorAction, learnerState, lang);
       if (_proactive) p10GuideAppend += _proactive;
+
+      // ── PHASE 25: MEMORY & RELATIONSHIP V2 — occasionally reference the student's own
+      // journey (a recent achievement, or the weakness we were tightening) from the
+      // EXISTING session memory + traderContext. No new storage. Additive: fills an
+      // empty lead only; rare + varied so continuity feels human, never robotic.
+      if (!p10Lead && !['greeting', 'smalltalk', 'offtopic', 'signal', 'setcountry', 'chart', 'lotsize'].includes(p10Intent)) {
+        const _relRecall = buildRelationshipRecall({
+          sessionMem,
+          journey: {
+            achievements: Array.isArray(mergedTraderContext?.improved) ? mergedTraderContext.improved.map(i => 'improved ' + i) : [],
+            weakArea: sessionMem.lastWeakArea || null,
+          },
+          lang, seed: aText,
+        });
+        if (_relRecall) p10Lead = _relRecall;
+      }
+
+      // ── PHASE 29: ADAPTIVE MENTOR — personalize to THIS trader: detect learning
+      // speed (fast/slow/confused), derive an emphasis stance, and weave ONE weak-
+      // area-targeted recommendation (practice/concept/mission/challenge) chosen from
+      // the student's ACTUAL weak area (reused analytics/memory). Additive: appends
+      // to the body only when no other guide tail is set (never stacks), gated +
+      // varied so it's never spammy, and skipped for operational/market intents.
+      if (!p10GuideAppend && !MARKET_DUMP_INTENTS.has(p10Intent) &&
+          !['signal', 'chart', 'setcountry', 'lotsize', 'smalltalk', 'greeting', 'offtopic', 'aboutme', 'profileinfo'].includes(p10Intent)) {
+        const _weakArea = sessionMem.lastWeakArea ||
+                          (Array.isArray(memoryData?.profile?.weaknesses) && memoryData.profile.weaknesses[0]) ||
+                          (Array.isArray(mergedTraderContext?.weaknesses) && mergedTraderContext.weaknesses[0]) || '';
+        if (_weakArea) {
+          const _speed = detectLearningSpeed({ cognition, profile: memoryData?.profile || {}, traderContext: mergedTraderContext || {}, messages });
+          const _stance = adaptiveStance({ level: p10Level, learnerState, emotion: cognition.emotionalTone, speed: _speed });
+          const _rec = smartRecommendation({ weakArea: _weakArea, level: p10Level, speed: _speed, stance: _stance, lang, seed: aText });
+          if (_rec) p10GuideAppend += _rec;
+        }
+      }
 
       // ── PHASE 15: LONG-TERM MENTOR RELATIONSHIP — cross-session continuity ──
       // Phase 14's session recall handles WITHIN-thread continuity (scans messages);
@@ -912,6 +1067,57 @@ export async function onRequest(context) {
   if (graphActive(env) && !followup && !chartAnalysis && !kbAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
     waitUntil(logMissingKnowledge(env, { question: genText, intent: cls.intent, category: null, confidence: clarifyAnswer ? 'clarify' : 'low' }));
   }
+
+  // ── ACTIVATION: DETERMINISTIC CALCULATORS — when the user gives the numbers for a
+  // lot-size / risk-reward / pip-value question, compute the EXACT answer (pure math,
+  // never hallucinated) and short-circuit the engine. Highest content priority.
+  if (!_unsupported && !chartAnalysis && !followup) {
+    try {
+      const _calc = detectCalcRequest(genText);
+      if (_calc.ready) { const _out = runCalculator(_calc, lang); if (_out) { directAnswer = _out; clarifyAnswer = null; } }
+    } catch { /* additive — never blocks the reply */ }
+  }
+
+  // ── LIVE MARKET INTELLIGENCE — for a buy/sell DECISION on Gold/BTC, give the
+  // structured educational analysis (Technical · Fundamental · Educational · Risk,
+  // probability not certainty, never a signal) from the already-fetched marketData;
+  // for a live-price ask on an instrument we have NO feed for (EUR/USD, indices,
+  // oil), say so honestly instead of inventing a number (STEP 9). Additive.
+  if (!chartAnalysis && !followup && !_unsupported) {
+    try {
+      const _decInst = marketDecisionInstrument(genText);
+      const _pxAsk   = livePriceInstrument(genText);
+      if (_decInst) {
+        directAnswer = buildMarketContext({ marketData, calendarData, instrument: _decInst, lang });
+        clarifyAnswer = null;
+      } else if (!directAnswer && _pxAsk && (!_pxAsk.supported || marketData?.status !== 'ok')) {
+        directAnswer = priceUnavailable(_pxAsk.label, lang);
+        clarifyAnswer = null;
+      }
+    } catch { /* additive — never blocks the reply */ }
+  }
+
+  // ── MARKET EXPLAIN — "why is gold/dollar/market moving" → educational driver
+  // explanation; a buy/sell/hold DECISION on a no-live-feed instrument (EUR/USD,
+  // indices, oil) → conceptual Technical/Fundamental/Risk/Confirmation/Conclusion
+  // analysis without inventing a price (STEP 8). Additive; only when nothing
+  // confident was already produced.
+  if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported) {
+    try {
+      const _why = detectMarketWhy(genText);
+      if (_why.topic) {
+        const _ex = buildWhyExplanation({ marketData, calendarData, topic: _why.topic, lang });
+        if (_ex) directAnswer = _ex;
+      } else {
+        const _bd = detectBroadDecision(genText);
+        if (_bd) directAnswer = genericDecisionAnalysis(_bd.label, lang);
+      }
+    } catch { /* additive — never blocks the reply */ }
+  }
+
+  // ── PHASE 20: unsupported language → polite, honest reply (highest priority,
+  // never hallucinate, never fake a translation). Clears any English clarify menu.
+  if (_unsupported) { directAnswer = unknownLanguageReply(_unsupported); clarifyAnswer = null; }
 
   if (clarifyAnswer) {
     answer = clarifyAnswer;
@@ -1061,6 +1267,47 @@ export async function onRequest(context) {
   // price line (and vice-versa). Whitelisted instrument codes only → Language-Lock safe.
   if (rel && rel.primaryEntity && p10MarketDump) answer = applyEntityFilter(answer, rel);
 
+  // ── PHASE 19: SMART SUGGESTION CHIPS — graph-derived, clickable next questions so
+  // the student rarely needs to type. Easier+fewer when confidence was low (STEP 5);
+  // suppressed on unsupported-language + chart turns. Graceful [] until the graph is
+  // provisioned. Streamed as a final SSE event; the client renders clickable chips.
+  let suggestionChips = [];
+  if (!_unsupported && !chartAnalysis) {
+    try {
+      suggestionChips = await buildSuggestionChips(env, {
+        lang, level: p10Level, related: p10Related,
+        lowConfidence: !!clarifyAnswer || p10Intent === 'fallback',
+      });
+    } catch { suggestionChips = []; }
+  }
+
+  // ── PHASE 23: CONTEXT-MENU ACTION CHIPS — concept-anchored clickable actions
+  // (Learn more / Show example / Common mistakes / Practice / Next step), each GATED
+  // by what the answered concept actually carries in the graph (no marketContext →
+  // no "Show example") = hallucination-safe (STEP 6). One-click learning (STEP 4),
+  // short labels (STEP 5). Only on a real KB-grounded educational answer.
+  let actionChips = [];
+  if (!_unsupported && !chartAnalysis && kbAnswer && p10ConceptTitle) {
+    try {
+      actionChips = buildContextActions({
+        topic: p10ConceptTitle, title: p10ConceptTitle,
+        hasExample: p10HasExample, hasMistakes: p10HasMistakes,
+        hasDeep: p10HasDeep, nextStepTopic: p10NextStepTopic, lang,
+      });
+    } catch { actionChips = []; }
+  }
+
+  // ── PHASE 30: NO DEAD ENDS — if neither graph suggestions nor concept actions
+  // were produced (e.g. graph not provisioned, or a short status/fallback answer),
+  // guarantee a clickable path forward with always-answerable starter chips. Reuses
+  // the Phase 19 suggestions event + renderer (plain strings). Skipped for
+  // unsupported-language + chart turns. Never a dead end (STEP 1/2/4).
+  if (!_unsupported && !chartAnalysis && !suggestionChips.length && !actionChips.length) {
+    try {
+      suggestionChips = fallbackPathChips({ lang, level: p10Level });
+    } catch { /* additive — never blocks the reply */ }
+  }
+
   // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
   const encoder = new TextEncoder();
   const { readable, writable } = new TransformStream();
@@ -1083,6 +1330,14 @@ export async function onRequest(context) {
         }
       }
       if (batch) await writer.write(encoder.encode(`data: ${JSON.stringify({ t: batch })}\n\n`));
+      // PHASE 19: emit clickable suggestion chips as a final structured event.
+      if (suggestionChips && suggestionChips.length) {
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ suggestions: suggestionChips })}\n\n`));
+      }
+      // PHASE 23: emit concept-anchored context-menu action chips.
+      if (actionChips && actionChips.length) {
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ actions: actionChips })}\n\n`));
+      }
       await writer.write(encoder.encode('data: [DONE]\n\n'));
     } catch {
       try { await writer.write(encoder.encode(`data: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`)); } catch {}

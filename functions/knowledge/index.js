@@ -71,30 +71,47 @@ import { DESK_CONCEPTS } from './desk/concepts.js';
 import { PORTFOLIO_CONCEPTS } from './portfolio/concepts.js';
 import { INSTRUMENTS_CONCEPTS } from './instruments/concepts.js';
 
+// ── Phase-21 expansion — BEGINNER KNOWLEDGE FOUNDATION (additive only) ──
+import { MARKETS_BASICS_CONCEPTS } from './markets/basics-concepts.js';
+import { MARKETS_MORE_BASICS_CONCEPTS } from './markets/more-basics-concepts.js';
+import { PRICE_ACTION_BASICS_CONCEPTS } from './price-action/basics-concepts.js';
+import { PRICE_ACTION_STRUCTURE_BASICS_CONCEPTS } from './price-action/structure-basics-concepts.js';
+import { ORDERS_CONCEPTS } from './orders/concepts.js';
+import { BROKERS_BASICS_CONCEPTS } from './brokers/basics-concepts.js';
+import { RISK_BASICS_CONCEPTS } from './risk/basics-concepts.js';
+import { PSYCHOLOGY_BASICS_CONCEPTS } from './psychology/basics-concepts.js';
+import { GETTING_STARTED_BASICS_CONCEPTS } from './getting-started/basics-concepts.js';
+import { GETTING_STARTED_EXTRAS_CONCEPTS } from './getting-started/journey-extras-concepts.js';
+import { PLATFORMS_CONCEPTS } from './platforms/concepts.js';   // ACTIVATION — beginner platform how-tos
+import { PROP_FIRM_BASICS_CONCEPTS } from './prop-firms/basics-concepts.js';   // LIVE-PHASE — beginner prop-firm how-tos
+import { GETTING_STARTED_FAQ_CONCEPTS } from './getting-started/faq-concepts.js';   // FINAL-PHASE — high-search FAQs
+
 // category → concept[]  (a category MAY span multiple files; concat them here)
 export const CATEGORY_MODULES = Object.freeze({
   gold: [...GOLD_CONCEPTS, ...GOLD_SESSION_CONCEPTS],
-  risk: [...RISK_CONCEPTS, ...RISK_EXPANDED_CONCEPTS],
+  risk: [...RISK_CONCEPTS, ...RISK_EXPANDED_CONCEPTS, ...RISK_BASICS_CONCEPTS],
   assessment: ASSESSMENT_CONCEPTS,
-  psychology: [...PSYCHOLOGY_CONCEPTS, ...PSYCHOLOGY_EXPANDED_CONCEPTS],
+  psychology: [...PSYCHOLOGY_CONCEPTS, ...PSYCHOLOGY_EXPANDED_CONCEPTS, ...PSYCHOLOGY_BASICS_CONCEPTS],
   structure: [...STRUCTURE_CONCEPTS, ...STRUCTURE_EXPANDED_CONCEPTS],
   news: NEWS_CONCEPTS,
-  'getting-started': GETTING_STARTED_CONCEPTS,
+  'getting-started': [...GETTING_STARTED_CONCEPTS, ...GETTING_STARTED_BASICS_CONCEPTS, ...GETTING_STARTED_EXTRAS_CONCEPTS, ...GETTING_STARTED_FAQ_CONCEPTS],
   recovery: RECOVERY_CONCEPTS,
   islamic: ISLAMIC_CONCEPTS,
-  brokers: [...BROKER_CONCEPTS, ...BROKERS_EXPANDED_CONCEPTS],
+  brokers: [...BROKER_CONCEPTS, ...BROKERS_EXPANDED_CONCEPTS, ...BROKERS_BASICS_CONCEPTS],
   forex: FOREX_CONCEPTS,
   discipline: DISCIPLINE_CONCEPTS,
   liquidity: LIQUIDITY_CONCEPTS,
   'smart-money': SMART_MONEY_CONCEPTS,
-  'prop-firms': PROP_FIRM_CONCEPTS,
+  'prop-firms': [...PROP_FIRM_CONCEPTS, ...PROP_FIRM_BASICS_CONCEPTS],
   strategy: STRATEGY_CONCEPTS,
   planning: PLANNING_CONCEPTS,
   mistakes: MISTAKES_CONCEPTS,
   execution: EXECUTION_CONCEPTS,
   review: REVIEW_CONCEPTS,
-  'price-action': PRICE_ACTION_CONCEPTS,
-  markets: MARKETS_CONCEPTS,
+  orders: ORDERS_CONCEPTS,
+  platforms: PLATFORMS_CONCEPTS,
+  'price-action': [...PRICE_ACTION_CONCEPTS, ...PRICE_ACTION_BASICS_CONCEPTS, ...PRICE_ACTION_STRUCTURE_BASICS_CONCEPTS],
+  markets: [...MARKETS_CONCEPTS, ...MARKETS_BASICS_CONCEPTS, ...MARKETS_MORE_BASICS_CONCEPTS],
   institutional: INSTITUTIONAL_CONCEPTS,
   coaching: COACHING_CONCEPTS,
   macro: MACRO_CONCEPTS,

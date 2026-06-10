@@ -25,6 +25,7 @@ import { authorConcept, publishConcept, authorBatch } from '../utils/authoring-w
 import { validateAnchors, populateAnchors } from '../utils/kb-populate.js';
 import { reviewQueue, rejectToDraft, retire, rollback } from '../utils/review-runtime.js';
 import { validateKnowledgeObject } from '../utils/kos-validator.js';
+import { buildEvolutionReport } from '../utils/evolution-engine.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -152,6 +153,11 @@ export async function onRequest(context) {
         recommendedNext,
         recommendation: missing.length ? 'Author concepts/articles for the highest-frequency gaps above.' : 'No knowledge gaps logged yet.',
       });
+    }
+    // PHASE 26 — AI SELF-EVOLUTION: prioritized improvement plan from logged gaps.
+    // Recommendations only (concepts/articles/missions/practice/exams) — never auto-written.
+    if (action === 'evolution') {
+      return json(await buildEvolutionReport(env, { limit: 100, topN: 8 }));
     }
     // DEPLOYMENT PROBE — feature-detects which version of each module is LIVE, so you
     // can prove production is running the latest bundle (no DB writes, no side effects).
