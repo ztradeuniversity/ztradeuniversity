@@ -13,10 +13,14 @@
 // persona is the system prompt. Pure logic + one optional model call.
 // ════════════════════════════════════════════════════════════════════════════
 
-// Configured when a Cloudflare Workers AI binding (env.AI) exists, or an
-// OpenAI-compatible endpoint is provided. Dormant otherwise.
+// Configured when a Cloudflare Workers AI binding (env.AI) exists, OR a legacy
+// OpenAI-compatible endpoint (LLM_ENDPOINT + LLM_API_KEY) is provided, OR the new
+// OPENAI_* adapter is switched on (OPENAI_ENABLED=true + OPENAI_API_KEY). Dormant otherwise.
+// Backward compatible: the original two conditions are preserved untouched.
 export function llmConfigured(env) {
-  return !!(env && (env.AI || (env.LLM_ENDPOINT && env.LLM_API_KEY)));
+  if (!env) return false;
+  const openaiReady = String(env.OPENAI_ENABLED).toLowerCase() === 'true' && !!env.OPENAI_API_KEY;
+  return !!(env.AI || (env.LLM_ENDPOINT && env.LLM_API_KEY) || openaiReady);
 }
 
 const SYSTEM = `You are the ZTU AI trading mentor — a calm, warm, experienced senior trader teaching Gold (XAU/USD) and Bitcoin. Rewrite the DRAFT below into natural, human mentor language.
@@ -35,28 +39,62 @@ function assembleDraft(parts = {}) {
     .trim();
 }
 
+// Resolve the OpenAI (or OpenAI-compatible) fallback config. The NEW OPENAI_* names
+// take precedence over the legacy LLM_* names; legacy names keep working unchanged.
+function resolveOpenAI(env) {
+  const key = env.OPENAI_API_KEY || env.LLM_API_KEY || '';
+  const model = env.OPENAI_MODEL || env.LLM_MODEL || 'gpt-4o-mini';
+  // Explicit endpoint wins; otherwise default to the public OpenAI endpoint when an
+  // OPENAI_API_KEY is present (so users of the new names need not set an endpoint).
+  const endpoint = env.LLM_ENDPOINT || (env.OPENAI_API_KEY ? 'https://api.openai.com/v1/chat/completions' : '');
+  const enabledByNew = String(env.OPENAI_ENABLED).toLowerCase() === 'true';
+  const enabledByLegacy = !!(env.LLM_ENDPOINT && env.LLM_API_KEY); // preserve existing behavior
+  const usable = !!(key && endpoint) && (enabledByNew || enabledByLegacy);
+  // OpenAI may run AFTER Workers AI only when explicitly opted in. Legacy combos keep
+  // their exact prior behavior (no surprise cross-engine fallback).
+  const fallbackEnabled = String(env.OPENAI_FALLBACK_ENABLED).toLowerCase() === 'true';
+  return { key, model, endpoint, usable, fallbackEnabled };
+}
+
+async function callOpenAI(oa, messages) {
+  const res = await fetch(oa.endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${oa.key}` },
+    body: JSON.stringify({ model: oa.model, messages, max_tokens: 700, temperature: 0.4 }),
+    signal: AbortSignal.timeout(8000),
+  });
+  const j = await res.json().catch(() => null);
+  return j?.choices?.[0]?.message?.content || '';
+}
+
 async function callModel(env, system, user) {
+  const messages = [{ role: 'system', content: system }, { role: 'user', content: user }];
+
+  // PRIMARY engine: Cloudflare Workers AI (default; free-tier, lowest cost). On a
+  // non-empty success we return immediately so the paid OpenAI path is never touched.
   if (env.AI && typeof env.AI.run === 'function') {
-    const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct';
-    const r = await env.AI.run(model, {
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_tokens: 700, temperature: 0.4,
-    });
-    return r && (r.response || r.result || (typeof r === 'string' ? r : ''));
+    let cfText = '';
+    try {
+      const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct';
+      const r = await env.AI.run(model, { messages, max_tokens: 700, temperature: 0.4 });
+      cfText = (r && (r.response || r.result || (typeof r === 'string' ? r : ''))) || '';
+    } catch { cfText = ''; }
+    if (cfText && cfText.trim()) return cfText;
+    // Workers AI unavailable/empty → OpenAI ONLY as a last-resort fallback, and ONLY
+    // when explicitly enabled (OPENAI_FALLBACK_ENABLED=true).
+    const oa = resolveOpenAI(env);
+    if (oa.usable && oa.fallbackEnabled) {
+      try { return await callOpenAI(oa, messages); } catch { return ''; }
+    }
+    return '';
   }
-  if (env.LLM_ENDPOINT && env.LLM_API_KEY) {
-    const res = await fetch(env.LLM_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.LLM_API_KEY}` },
-      body: JSON.stringify({
-        model: env.LLM_MODEL || 'gpt-4o-mini',
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        max_tokens: 700, temperature: 0.4,
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-    const j = await res.json().catch(() => null);
-    return j?.choices?.[0]?.message?.content || '';
+
+  // No Workers AI binding → OpenAI / OpenAI-compatible endpoint is the sole LLM (this is
+  // the legacy LLM_* path, preserved). The rule assembler in composer.js remains the
+  // ultimate fallback if this returns empty.
+  const oa = resolveOpenAI(env);
+  if (oa.usable) {
+    try { return await callOpenAI(oa, messages); } catch { return ''; }
   }
   return '';
 }
