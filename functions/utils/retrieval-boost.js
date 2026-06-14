@@ -26,6 +26,7 @@ const EXPAND = [
   [/\b(is (it|trading|forex|gold) (halal|haram)|allowed in islam|islamic account|swap free)\b/i, ' islamic halal swap-free permissible'],
   [/\b(am i ready|when (can|should) i go live|ready for live)\b/i, ' demo vs live going live ready'],
   [/\b(how do i (start|begin)|where do i (start|begin)|new to (trading|forex)|complete beginner|just starting)\b/i, ' how to start beginner roadmap learn'],
+  [/\b(ema|sma|ma cross|ema cross|golden cross|death cross|moving average cross)\b/i, ' moving average'],
 ];
 
 // Append canonical terms when a natural-phrasing trigger is present. Returns the
@@ -37,14 +38,50 @@ export function expandQuery(text) {
   return add ? (s + add) : s;
 }
 
-// Wrap the base lexical scorer: score original AND expanded, keep the higher. Never
-// reduces a match → HIGH gate + hallucination safety preserved. `base` is scoreEntry.
+// Generic concept tags that don't uniquely identify a concept (so they must NOT
+// trigger a direct-match promotion).
+const GENERIC_TAG = new Set([
+  'basics', 'strategy', 'indicator', 'indicators', 'crypto', 'beginner', 'trading',
+  'momentum', 'risk', 'trend', 'levels', 'platform', 'volatility', 'zones', 'intraday',
+  'charts', 'account', 'execution', 'order', 'markets', 'market', 'structure', 'leverage',
+]);
+
+// A query literally containing a concept's DISTINCTIVE single-word tag (mt5, fibonacci,
+// rsi, vwap, ict, liquidation, altcoins…) is an unambiguous, high-confidence match —
+// the same KIND of signal as scoreEntry's strongDirect. It never promotes an UNRELATED
+// low match (the tag must be present in the query), so the HIGH gate + hallucination
+// safety hold; it only helps the directly-named concept clear the gate.
+// Only the entry's PRIMARY tag (concepts[0]) counts — its main subject. This way a
+// concept that merely lists a term as a SECONDARY tag (e.g. optimal-trade-entry
+// listing 'fibonacci') can never be promoted over the concept the term defines
+// (fibonacci-retracement). Two concepts can't share the same primary subject, so
+// exactly the directly-named concept is helped — no wrong concept at HIGH.
+function tagDirectHit(query, entry) {
+  const primary = entry.concepts && entry.concepts[0];
+  if (typeof primary !== 'string' || primary.length < 3) return false;
+  const q = ' ' + String(query || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+  if (primary.includes('-')) {
+    // Multi-word concept name (e.g. 'order-block', 'moving-average'): require the FULL
+    // spaced phrase, so only the literally-named concept matches. Skip all-generic names.
+    const parts = primary.split('-');
+    if (parts.every(p => GENERIC_TAG.has(p))) return false;
+    return q.includes(' ' + parts.join(' ') + ' ');
+  }
+  if (GENERIC_TAG.has(primary)) return false;
+  return q.includes(' ' + primary + ' ');
+}
+
+// Wrap the base lexical scorer: score original AND expanded, keep the higher; then a
+// distinctive direct tag match floors the result at HIGH. Never reduces a match.
 export function makeBoostedScorer(base) {
   return (query, entry) => {
     const a = base(query, entry);
     const exp = expandQuery(query);
-    if (exp === query) return a;                 // no expansion → single score (fast path)
-    const b = base(exp, entry);
-    return (b && a && b.semanticScore > a.semanticScore) ? b : a;
+    let best = a;
+    if (exp !== query) { const b = base(exp, entry); if (b && b.semanticScore > best.semanticScore) best = b; }
+    if (best.confidence !== 'HIGH' && (tagDirectHit(query, entry) || (exp !== query && tagDirectHit(exp, entry)))) {
+      return { semanticScore: Math.max(best.semanticScore, 60), confidence: 'HIGH' };
+    }
+    return best;
   };
 }

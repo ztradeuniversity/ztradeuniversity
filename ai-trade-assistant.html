@@ -1599,6 +1599,7 @@ async function sendMessage() {
         traderContext: getTraderContext(),
         chartAnalysis: pendingChart,
         sessionLang:   getSessionLang(),
+        uiLang:        getUiLang(),
       }),
     });
 
@@ -1786,6 +1787,7 @@ function initVoice() {
     langSel.addEventListener('change', () => {
       localStorage.setItem(VLANG_KEY, langSel.value);
       if (voiceRec) voiceRec.lang = langSel.value;
+      setSessionLang(voiceToReplyLang(langSel.value));   // PART 2: align reply language with the UI choice
     });
   }
 
@@ -2350,6 +2352,12 @@ function getStoredAcct() { return localStorage.getItem(ACCT_KEY) || ''; }
 const LANG_KEY = 'ztu_ai_lang';
 function getSessionLang() { return localStorage.getItem(LANG_KEY) || ''; }
 function setSessionLang(code) { if (code) localStorage.setItem(LANG_KEY, code); }
+// PART 2: the visible language dropdown is authoritative for the reply language.
+function voiceToReplyLang(v) {
+  const m = { 'en-US':'en', 'ur-PK':'ur', 'ar-SA':'ar', 'id-ID':'id', 'ms-MY':'ms', 'vi-VN':'vi', 'bn-BD':'bn', 'th-TH':'th' };
+  return m[v] || 'en';
+}
+function getUiLang() { const el = document.getElementById('voiceLang'); return el ? voiceToReplyLang(el.value) : 'en'; }
 
 // Mirror of the engine's language detection (returns a code)
 function detectLangCode(text) {

@@ -20,7 +20,7 @@ export const GETTING_STARTED_FAQ_CONCEPTS = [
     relevanceTags: ['small-account', 'capital', 'beginner'],
     commonMistakes: ['over-risking a $100 account trying to grow it fast'],
     misconceptions: ['that a small account must be traded aggressively to be worth it'],
-    prerequisites: [], nextSteps: ['one-percent-rule', 'account-types'], related: ['how-much-to-start', 'trading-goals-basics'],
+    prerequisites: [], nextSteps: ['one-percent-rule', 'account-types'], related: ['account-types', 'trading-goals-basics'],
     followups: ['one-percent-rule'],
     riskNote: 'A small account dies fastest from big risk — 1–2% per trade, always.',
   }),

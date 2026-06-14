@@ -26,7 +26,10 @@ import { buildConversationState, resolveReferences } from '../utils/conversation
 import { emotionalLead, levelMode } from '../utils/adaptive-response.js';
 import { knowledgeConfidence, planRetrieval, unknownResponse, lowConfidencePreface, detectContradiction, balancedNote, rankSources } from '../utils/knowledge-intelligence.js';
 import { detectUnderlyingNeed } from '../utils/underlying-need.js';
-import { retrieveBest, nextStepInvite, suggestQuestions } from '../utils/graph-retrieval.js';
+import { retrieveBest, nextStepInvite, suggestQuestions, setScorer } from '../utils/graph-retrieval.js';
+import { scoreEntry } from '../utils/semantic-retrieval.js';
+import { makeBoostedScorer } from '../utils/retrieval-boost.js';
+import { makeLexiconScorer } from '../utils/retrieval-lexicon.js';
 import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
@@ -34,6 +37,8 @@ import { llmConfigured, makeLLMComposer } from '../utils/composer-llm.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
 import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
+import { detectInstrumentQuery, buildInstrumentAnalysis } from '../utils/market-coverage.js';
+import { marketAwareness } from '../utils/awareness-router.js';
 import { recommendGuidance, complimentLine } from '../utils/guidance-recommender.js';
 import { relevanceEngine, enforceRelevance, applyEntityFilter } from '../utils/relevance-engine.js';
 import { decideMentorAction, detectLearnerState, getMentorPrefix, buildMentorDecision, buildProactiveGuidance } from '../utils/mentor-brain.js';
@@ -494,6 +499,17 @@ export async function onRequest(context) {
   // this is fully dormant + non-breaking until configured.
   if (llmConfigured(env)) { try { setComposer(makeLLMComposer(env)); } catch {} }
 
+  // ── ACTIVATION: boost lexical paraphrase matching when true embeddings aren't
+  // enabled — wraps the existing scorer to also try a canonical-expanded query and
+  // keep the HIGHER score (never reduces a match, HIGH gate + hallucination safety
+  // intact). When KB_EMBEDDINGS_ENABLED='true', retrieve() uses the hybrid vector
+  // scorer instead and this is ignored. Additive + dormant-compatible.
+  // The lexicon scorer adds the new hot-search synonym clusters (indicators/crypto/
+  // strategy/platforms/beginner) on top of the boost — replicating scoreEntry's
+  // EXACT formula + HIGH gate, taking max() so it never lowers a score. (When
+  // KB_EMBEDDINGS_ENABLED='true', retrieve() uses the hybrid vector scorer instead.)
+  if (env.KB_EMBEDDINGS_ENABLED !== 'true') { try { setScorer(makeLexiconScorer(scoreEntry)); } catch {} }
+
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: JSON_HEADERS });
   }
@@ -512,6 +528,7 @@ export async function onRequest(context) {
   const identityToken = typeof body?.identityToken === 'string' ? body.identityToken : null;  // Phase 9 session
   const bodyTz      = typeof body?.tz === 'string' ? body.tz.slice(0, 64) : null;          // browser timezone
   const bodyCountry = typeof body?.country === 'string' ? body.country.slice(0, 4).toUpperCase() : null;
+  const uiLang      = (typeof body?.uiLang === 'string' && body.uiLang.length <= 8) ? body.uiLang : null;   // PART 2: explicit UI language selection
   const traderContext = (body?.traderContext && typeof body.traderContext === 'object') ? body.traderContext : null; // Memory V2
   const chartAnalysis = (body?.chartAnalysis && typeof body.chartAnalysis === 'object') ? body.chartAnalysis : null; // Chart Vision
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
@@ -637,7 +654,8 @@ export async function onRequest(context) {
   const SUPPORTED = ['en', 'ur', 'ur-roman', 'ar', 'id', 'ms', 'vi', 'bn', 'th'];
   let lang;
   if (followup && followup.mode === 'lang')                  lang = followup.lang;   // explicit switch
-  else if (detLang !== 'en')                                 lang = detLang;          // typed in a language
+  else if (detLang !== 'en')                                 lang = detLang;          // typed in a non-English script
+  else if (uiLang && SUPPORTED.includes(uiLang))             lang = uiLang;           // PART 2: UI selection is authoritative over a STALE sessionLang
   else if (sessionLang && SUPPORTED.includes(sessionLang))   lang = sessionLang;      // persisted language
   else                                                       lang = 'en';
 
@@ -1068,6 +1086,19 @@ export async function onRequest(context) {
     waitUntil(logMissingKnowledge(env, { question: genText, intent: cls.intent, category: null, confidence: clarifyAnswer ? 'clarify' : 'low' }));
   }
 
+  // ── PART 1+6: BASIC AWARENESS (highest priority) — a clear live-price / market
+  // instrument query ("xauusd current price", "what is gold doing", "why is nasdaq
+  // falling") is NEVER ambiguous. Answer it from the market layer with a date/time
+  // header + related chips, and OVERRIDE any misfired clarification so a price ask
+  // can never be answered with a clarification menu or an unrelated concept.
+  let _awChips = [];
+  if (!chartAnalysis && !followup && !_unsupported) {
+    try {
+      const _aw = marketAwareness({ text: genText, marketData, calendarData, lang });
+      if (_aw && _aw.answer) { directAnswer = _aw.answer; clarifyAnswer = null; _awChips = _aw.chips || []; }
+    } catch { /* additive — never blocks the reply */ }
+  }
+
   // ── ACTIVATION: DETERMINISTIC CALCULATORS — when the user gives the numbers for a
   // lot-size / risk-reward / pip-value question, compute the EXACT answer (pure math,
   // never hallucinated) and short-circuit the engine. Highest content priority.
@@ -1112,6 +1143,19 @@ export async function onRequest(context) {
         const _bd = detectBroadDecision(genText);
         if (_bd) directAnswer = genericDecisionAnalysis(_bd.label, lang);
       }
+    } catch { /* additive — never blocks the reply */ }
+  }
+
+  // ── LIVE MARKET COVERAGE — extend educational analysis to the major FX pairs,
+  // indices, oil, and silver ("what is EURUSD doing", "why is NASDAQ falling",
+  // "what is driving USDJPY", "should I buy AUDUSD"). Gold/BTC reuse the live
+  // market-context engine; the rest get driver-based educational analysis with an
+  // honest "can't verify live price" (no invented prices, never a signal). Only
+  // when nothing confident was already produced. Additive.
+  if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported) {
+    try {
+      const _iq = detectInstrumentQuery(genText);
+      if (_iq) directAnswer = buildInstrumentAnalysis({ symbol: _iq.symbol, marketData, calendarData, lang, kind: _iq.kind });
     } catch { /* additive — never blocks the reply */ }
   }
 
@@ -1226,7 +1270,14 @@ export async function onRequest(context) {
   if (lang === 'en' && !chartAnalysis && !kbAnswer && !directAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
     try {
       const qs = await suggestQuestions(env, { lang, limit: 3, level: p10Level });
-      if (qs.length) answer = answer.trimEnd() + '\n\nYou can also ask me:\n' + qs.map(q => '• ' + q).join('\n');
+      if (qs.length) {
+        // PART 3: be honest when a question isn't fully covered, then offer 3 real,
+        // answerable next questions (gap logged via logMissingKnowledge above).
+        const _lead = (p10Intent === 'fallback' && lang === 'en')
+          ? "\n\n_I don't have that fully covered yet — but I can help with these:_\n"
+          : '\n\nYou can also ask me:\n';
+        answer = answer.trimEnd() + _lead + qs.map(q => '• ' + q).join('\n');
+      }
     } catch { /* engagement is additive; never blocks the reply */ }
   }
 
@@ -1280,6 +1331,8 @@ export async function onRequest(context) {
       });
     } catch { suggestionChips = []; }
   }
+  // PART 6: for a live-market answer, surface the related-question chips instead.
+  if (_awChips.length) suggestionChips = _awChips.slice(0, 5);
 
   // ── PHASE 23: CONTEXT-MENU ACTION CHIPS — concept-anchored clickable actions
   // (Learn more / Show example / Common mistakes / Practice / Next step), each GATED

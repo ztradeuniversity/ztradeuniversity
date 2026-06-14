@@ -86,6 +86,11 @@ import { PLATFORMS_CONCEPTS } from './platforms/concepts.js';   // ACTIVATION �
 import { PROP_FIRM_BASICS_CONCEPTS } from './prop-firms/basics-concepts.js';   // LIVE-PHASE — beginner prop-firm how-tos
 import { GETTING_STARTED_FAQ_CONCEPTS } from './getting-started/faq-concepts.js';   // FINAL-PHASE — high-search FAQs
 
+// ── HOT-SEARCH ARTICLE EXPANSION (additive; concept = auto-integrating article) ──
+import { INDICATORS_CONCEPTS } from './indicators/concepts.js';
+import { CRYPTO_CONCEPTS } from './crypto/concepts.js';
+import { STRATEGY_BASICS_CONCEPTS } from './strategy/basics-concepts.js';
+
 // category → concept[]  (a category MAY span multiple files; concat them here)
 export const CATEGORY_MODULES = Object.freeze({
   gold: [...GOLD_CONCEPTS, ...GOLD_SESSION_CONCEPTS],
@@ -103,7 +108,9 @@ export const CATEGORY_MODULES = Object.freeze({
   liquidity: LIQUIDITY_CONCEPTS,
   'smart-money': SMART_MONEY_CONCEPTS,
   'prop-firms': [...PROP_FIRM_CONCEPTS, ...PROP_FIRM_BASICS_CONCEPTS],
-  strategy: STRATEGY_CONCEPTS,
+  strategy: [...STRATEGY_CONCEPTS, ...STRATEGY_BASICS_CONCEPTS],
+  indicators: INDICATORS_CONCEPTS,
+  crypto: CRYPTO_CONCEPTS,
   planning: PLANNING_CONCEPTS,
   mistakes: MISTAKES_CONCEPTS,
   execution: EXECUTION_CONCEPTS,

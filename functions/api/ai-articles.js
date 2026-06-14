@@ -22,6 +22,14 @@ import {
 } from '../utils/article-store.js';
 import { searchArticles, relatedArticles, buildKnowledgeInjection, conceptFromArticle } from '../utils/article-knowledge.js';
 import { authorConcept, publishConcept } from '../utils/authoring-workflow.js';
+import { strengthenGraphConnections } from '../utils/graph-growth.js';
+import { getAnchorEntries } from '../utils/anchor-entries.js';
+import { suggestLinks, buildSeoSuggestion } from '../utils/article-enrich.js';
+import {
+  suggestRelatedArticles, buildInternalLinks, suggestSmartChips,
+  buildRecommendationWidget, buildSitemapEntry,
+} from '../utils/article-seo.js';
+import { isEmbeddingConfigured, embedText, embeddingText, cosineSim } from '../utils/embedding-provider.js';
 import { ARTICLE_SEED } from '../utils/article-seed.js';
 import {
   ARTICLE_CATEGORIES, ARTICLE_LANGUAGES, isValidCategory,
@@ -112,9 +120,23 @@ export async function onRequest(context) {
   if (action === 'create' || action === 'update') {
     const d = data || {};
     if (d.category && !isValidCategory(d.category)) return json({ error: 'invalid category' }, 400);
+
+    // Slug uniqueness — reuse getArticle's slug lookup. Append -2, -3, ... until
+    // the slug doesn't collide with a DIFFERENT article (a row keeping its own
+    // slug on update is not a collision).
+    const baseSlug = d.slug || slugify(d.title);
+    let slug = baseSlug;
+    let suffix = 1;
+    while (true) {
+      const existing = await getArticle(env, slug);
+      if (!existing || existing.id === d.id) break;
+      suffix += 1;
+      slug = `${baseSlug}-${suffix}`;
+    }
+
     const payload = {
       title:      d.title,
-      slug:       d.slug || slugify(d.title),
+      slug,
       summary:    d.summary || '',
       content:    d.content || '',
       category:   d.category || null,
@@ -133,19 +155,67 @@ export async function onRequest(context) {
 
   if (action === 'publish') {
     const article = await setArticleStatus(env, data?.id, true);
-    // ARTICLE → GRAPH (best-effort, non-blocking, draft-only). A published article
-    // contributes an ai_draft concept to kb_nodes via the EXISTING authoring pipeline
-    // (KOS gate → dedup → review). It is NOT auto-published — an operator promotes it
-    // in KB Admin — so this can never overwrite the live graph or break article saving.
+    // ARTICLE → ECOSYSTEM + GRAPH (best-effort; article is already live above either way).
+    // Reuses the SAME builders/pipeline as ai-kb-admin's ingest-article — no duplicate
+    // logic. KOS validation (draft + strict) and dedup-on-ingest are unchanged; the only
+    // behavior change vs before is that an operator-published article is promoted
+    // straight to the live graph (publishConcept) instead of sitting in the review
+    // queue, since the operator already reviewed it by clicking Publish.
+    let graph = null, ecosystem = null;
     if (article) {
       const kos = conceptFromArticle(article);
       if (kos) {
-        context.waitUntil(
-          authorConcept(env, kos, { origin: 'article', autoSubmit: true }).catch(() => {})
-        );
+        try {
+          const entries = getAnchorEntries();
+          const articles = await listArticles(env, { status: 'published', limit: 200 }).catch(() => []);
+
+          // PHASE E reuse (dormant unless KB_EMBEDDINGS_ENABLED + configured).
+          let embedScores = null;
+          if (env.KB_EMBEDDINGS_ENABLED === 'true' && isEmbeddingConfigured(env)) {
+            const draftVec = await embedText(env, embeddingText({ data: kos, ...kos })).catch(() => null);
+            if (draftVec) {
+              embedScores = {};
+              for (const e of [...entries, ...articles]) {
+                const vec = e.embedding || (e.data && e.data.embedding);
+                if (vec) embedScores[e.id] = cosineSim(draftVec, vec);
+              }
+            }
+          }
+
+          // STAGE 1 — auto-link into the existing graph (related/nextSteps/recommendedArticles).
+          const links = suggestLinks(kos, entries, { embedScores });
+          kos.related = links.related;
+          kos.nextSteps = links.nextSteps;
+          const relatedArticles = suggestRelatedArticles(kos, articles, { embedScores });
+          kos.recommendedArticles = relatedArticles.map(a => a.id);
+
+          // STAGE 2/3 — author (KOS gate + dedup, unchanged), then publish straight to
+          // the live graph (STRICT re-validation + syncEdges, unchanged). A 'merged'
+          // decision already upserted+synced the survivor — nothing further to publish.
+          const authored = await authorConcept(env, kos, { origin: 'article', autoSubmit: false });
+          let published = null, strengthen = null;
+          if (authored.ok && authored.action !== 'merged') {
+            published = await publishConcept(env, kos, 'article-publish');
+            // STAGE 4 — reciprocal edges so existing concepts point forward to this article.
+            if (published.ok) strengthen = await strengthenGraphConnections(env, kos);
+          }
+          graph = { authored, published, strengthen };
+
+          // STAGE 1 (cont.) — SEO/FAQ/smart chips/internal links/recommendation widget/
+          // sitemap entry, same builders + shapes as ai-kb-admin's ingest-article.
+          const linkedEntries = [...links.related, ...links.nextSteps]
+            .map(id => entries.find(e => e.id === id)).filter(Boolean);
+          const urlPath = article.slug ? `/articles/${article.slug}` : null;
+          const seoSuggestion = buildSeoSuggestion(kos, { urlPath });
+          const internalLinks = buildInternalLinks(kos, { conceptEntries: linkedEntries, relatedArticles });
+          const smartChips = suggestSmartChips(kos, { conceptEntries: linkedEntries, relatedArticles });
+          const recommendationWidget = buildRecommendationWidget(kos, internalLinks);
+          const sitemapEntry = buildSitemapEntry(kos, { urlPath });
+          ecosystem = { seoSuggestion, faqSchema: seoSuggestion.faqSchema, relatedArticles, internalLinks, smartChips, recommendationWidget, sitemapEntry };
+        } catch { /* article page/sitemap/citation are already live via is_active above */ }
       }
     }
-    return json({ configured: true, article, graphDraft: !!article });
+    return json({ configured: true, article, graph, ecosystem });
   }
   if (action === 'draft')   return json({ configured: true, article: await setArticleStatus(env, data?.id, false) });
   if (action === 'delete')  return json({ configured: true, deleted: await deleteArticle(env, data?.id) });

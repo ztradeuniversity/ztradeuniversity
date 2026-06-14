@@ -162,9 +162,23 @@ export async function logMissingKnowledge(env, { question, intent, category, con
 // Anonymous: only the (normalized) question, intent, category, and frequency. No user
 // data. Returns the most-frequently-missed topics so an operator can author the next
 // concept/article. Graceful: [] until configured + kb_missing exists.
-export async function getMissingKnowledge(env, { limit = 50 } = {}) {
+//
+// PHASE F (optional `since`): ISO timestamp — when provided, only rows whose
+// last_seen is on/after that time are returned (e.g. "asked today"). Omitted by
+// default, so existing callers are unaffected.
+export async function getMissingKnowledge(env, { limit = 50, since = null } = {}) {
+  const sinceFilter = since ? `&last_seen=gte.${encodeURIComponent(since)}` : '';
   const rows = await sb(env, 'GET', 'kb_missing',
-    `order=frequency.desc.nullslast,last_seen.desc&limit=${limit}`, null, null);
+    `order=frequency.desc.nullslast,last_seen.desc&limit=${limit}${sinceFilter}`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+
+// ── GRAPH ACTIVITY (Phase F) — recent edges of a given type, for "which
+// articles/concepts generate the most graph activity" analytics. Read-only over
+// the EXISTING kb_edges table; no new storage. Graceful: [] when unconfigured.
+export async function getEdgesByType(env, type, limit = 500) {
+  if (!isConfigured(env) || !type) return [];
+  const rows = await sb(env, 'GET', 'kb_edges', `type=eq.${encodeURIComponent(type)}&limit=${limit}`, null, null);
   return Array.isArray(rows) ? rows : [];
 }
 

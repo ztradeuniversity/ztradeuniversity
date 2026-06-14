@@ -216,7 +216,7 @@ function gather(isActive){
 }
 
 async function saveArticle(publish){
-  const data=gather(publish);
+  const data=gather(false);   // always save content as a row first; Publish is a separate step below
   if(!data.title){toast('Title required');return;}
   const action=data.id?'update':'create';
   const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action,data})});
@@ -224,15 +224,36 @@ async function saveArticle(publish){
   if(d.error){toast(d.error);return;}
   if(d.configured===false){toast('Supabase not connected');return;}
   if(d.article&&d.article.id)document.getElementById('artId').value=d.article.id;
-  toast(publish?'Saved & published ✓':'Draft saved ✓'); loadList();
+  if(!publish){toast('Draft saved ✓'); loadList(); return;}
+  await publishArticle();
+}
+
+// One click: makes the article live, then runs the full ecosystem pipeline (SEO, FAQ,
+// smart chips, internal links, related articles, recommendation widget, learning paths,
+// graph draft + publish + reciprocal edges) — same /api/ai-articles {action:'publish'}
+// call used by both "Save & Publish" and "Toggle Publish".
+async function publishArticle(){
+  const id=document.getElementById('artId').value; if(!id){toast('Save first');return;}
+  const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'publish',data:{id}})});
+  const d=await r.json();
+  if(d.error){toast(d.error);return;}
+  const g=d.graph||{};
+  const graphNote = g.published?.ok ? `graph ✓ (+${g.strengthen?.added||0} edges)`
+    : g.authored?.action==='merged' ? 'graph ✓ (merged)'
+    : g.authored ? 'graph: skipped' : '';
+  toast(['Published ✓', graphNote].filter(Boolean).join(' · '));
+  loadList();
 }
 
 async function togglePublish(){
   const id=document.getElementById('artId').value; if(!id){toast('Save first');return;}
   // flip based on current note
   const isPub=/Published/.test(document.getElementById('metaNote').textContent);
-  const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:isPub?'draft':'publish',data:{id}})});
-  await r.json(); toast(isPub?'Set to draft':'Published ✓'); loadList();
+  if(isPub){
+    const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'draft',data:{id}})});
+    await r.json(); toast('Set to draft'); loadList(); return;
+  }
+  await publishArticle();
 }
 
 async function removeArticle(){

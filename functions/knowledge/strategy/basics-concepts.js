@@ -1,0 +1,102 @@
+// functions/knowledge/strategy/basics-concepts.js
+// HOT-SEARCH ARTICLES — STRATEGY GUIDES (category: strategy)
+// Dedup note: breakout-trading, trend-trading, reversal-models, order-block,
+// fair-value-gap, liquidity-concepts already exist — these add the missing ones.
+
+const F = (o) => ({
+  level: 'beginner', responseObjective: 'educate', journeyStages: ['journey-foundation'],
+  status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en', ...o,
+});
+
+export const STRATEGY_BASICS_CONCEPTS = [
+  F({
+    id: 'scalping-strategy', category: 'strategy', topic: 'Scalping Strategy', title: 'Best Scalping Strategy (Beginner Guide)',
+    concepts: ['scalping', 'strategy', 'intraday'],
+    questionPatterns: ['what is the best scalping strategy', 'how to scalp trade', 'is scalping good for beginners', 'best scalping strategy for gold', 'how does scalping work'],
+    canonical: {
+      short: 'Scalping takes many small, quick trades for a few pips each, usually on the 1–5 minute charts during active sessions. It demands tight spreads, fast execution, and iron discipline — and it punishes beginners hardest because costs and emotions compound on every trade.',
+      deep: 'A simple scalping framework: trade only the high-liquidity London/New-York hours, take trades in the direction of the higher-timeframe trend, enter on a small pullback to a level (e.g. VWAP or a moving average), with a tight structure-based stop and a fixed small target (often 1:1 to 1:1.5). The maths is brutal — wide spreads, commissions, and one undisciplined revenge trade erase dozens of wins. Scalping suits experienced traders with the screen time and emotional control to execute mechanically; beginners usually do better learning on higher timeframes first.',
+    },
+    marketContext: 'Scalping Gold during the London open (tight spreads, real movement) works; scalping it in the thin Asian session bleeds the spread.',
+    desiredOutcome: 'understand scalping needs tight costs, active sessions, and discipline',
+    relevanceTags: ['scalping', 'strategy', 'intraday'],
+    commonMistakes: ['scalping in thin sessions where spread eats every trade'],
+    misconceptions: ['that scalping is the easiest, fastest way to grow a small account'],
+    prerequisites: ['trading-style-fit'], nextSteps: ['swing-trading-strategy', 'risk-management-basics'], related: ['trading-sessions-basics', 'vwap-indicator'],
+    followups: ['swing-trading-strategy'],
+    riskNote: 'Costs and emotions compound on every scalp — discipline is non-negotiable.',
+    seo: { title: 'Best Scalping Strategy for Beginners (2025)', description: 'A simple scalping framework, the sessions to trade, and why scalping is hard for beginners.', keywords: ['scalping strategy', 'best scalping strategy', 'how to scalp', 'scalping for beginners'] },
+  }),
+  F({
+    id: 'swing-trading-strategy', category: 'strategy', topic: 'Swing Trading Strategy', title: 'Best Swing Trading Strategy',
+    concepts: ['swing', 'strategy', 'trend'],
+    questionPatterns: ['what is the best swing trading strategy', 'how to swing trade', 'is swing trading good for beginners', 'swing trading strategy for gold', 'how does swing trading work'],
+    canonical: {
+      short: 'Swing trading holds positions for days to weeks to catch the bigger moves, using the daily and 4-hour charts. It suits beginners and busy people best — fewer trades, less screen time, less noise, and spreads barely matter on larger targets.',
+      deep: 'A clean swing approach: define the trend on the daily, mark key support/resistance, then wait for price to pull back into a level (often a 50–61.8% retracement or prior structure) in the trend direction, and enter on a confirmation candle with a stop beyond the level and a target at the next structure (aiming 1:2+). Because targets are large, spread/commission are negligible and a single trade can carry the week. Swing trading rewards patience over activity — its main risk is overnight news gaps, so size for them and respect the calendar.',
+    },
+    marketContext: 'A swing trader who buys a Gold pullback to daily support and holds for the next swing high needs only a few good trades a month.',
+    desiredOutcome: 'use daily-trend + pullback-to-level entries for larger, patient moves',
+    relevanceTags: ['swing', 'strategy', 'beginner'],
+    commonMistakes: ['closing a swing trade early at the first wobble, before the move develops'],
+    misconceptions: ['that more trades (scalping) makes more money than patient swings'],
+    prerequisites: ['trading-style-fit'], nextSteps: ['pullback-trading', 'trading-plan'], related: ['fibonacci-retracement', 'support-resistance'],
+    followups: ['pullback-trading'],
+    riskNote: 'Swing trades face overnight gaps — size for them and check the calendar.',
+    seo: { title: 'Best Swing Trading Strategy for Beginners', description: 'A daily-trend + pullback swing framework, why it suits beginners, and its risks.', keywords: ['swing trading strategy', 'best swing trading strategy', 'how to swing trade', 'swing trading for beginners'] },
+  }),
+  F({
+    id: 'pullback-trading', category: 'strategy', topic: 'Pullback Trading', title: 'Pullback Trading Strategy',
+    concepts: ['pullback', 'trend', 'strategy'],
+    questionPatterns: ['what is pullback trading', 'how to trade pullbacks', 'pullback vs breakout', 'how to enter on a pullback', 'is it better to buy pullbacks or breakouts'],
+    canonical: {
+      short: 'Pullback trading enters in the direction of the trend after price retraces against it to a level — buying the dip in an uptrend, selling the rally in a downtrend. It gives a better price and tighter stop than chasing, at the cost of sometimes missing trades that never pull back.',
+      deep: 'Instead of chasing a move, you wait for it to breathe: in an uptrend, let price retrace to support / a moving average / a fib zone, then enter on a confirmation that the trend is resuming, with a stop just beyond the level. The reward is a low-risk entry with great risk-to-reward; the trade-off is that strong moves sometimes run without pulling back, so you miss them. Pullback trading pairs perfectly with trend identification and is one of the most beginner-friendly, repeatable approaches — patience is the whole edge.',
+    },
+    marketContext: 'Rather than buying a Gold breakout candle, a pullback trader waits for the retest of the broken level and enters there with a tighter stop.',
+    desiredOutcome: 'enter with-trend on retracements to levels for better risk-to-reward',
+    relevanceTags: ['pullback', 'trend', 'beginner'],
+    commonMistakes: ['catching a falling knife — calling every dip a pullback against the real trend'],
+    misconceptions: ['that a pullback entry is "safer" even against the dominant trend'],
+    prerequisites: ['what-is-a-trend'], nextSteps: ['supply-demand-strategy'], related: ['retest', 'fibonacci-retracement'],
+    followups: ['supply-demand-strategy'],
+    riskNote: 'Only trade pullbacks WITH the higher-timeframe trend — not against it.',
+    seo: { title: 'Pullback Trading Strategy (Buy the Dip Properly)', description: 'How to trade pullbacks with the trend for better entries, and pullback vs breakout.', keywords: ['pullback trading', 'how to trade pullbacks', 'pullback vs breakout', 'buy the dip strategy'] },
+  }),
+  F({
+    id: 'supply-demand-strategy', category: 'strategy', topic: 'Supply & Demand Strategy', title: 'Supply and Demand Trading',
+    concepts: ['supply-demand', 'zones', 'strategy'],
+    questionPatterns: ['what is supply and demand trading', 'how to trade supply and demand', 'how to draw supply and demand zones', 'supply and demand strategy', 'what is a demand zone'],
+    canonical: {
+      short: 'Supply and demand trading marks zones where price previously moved sharply away — demand zones (where buyers stepped in) below price, supply zones (where sellers did) above. The idea is that price often reacts again when it returns to these areas. They are zones, not exact lines.',
+      deep: 'A supply/demand zone is drawn around the base (the small consolidation) from which price made a strong, impulsive move — the footprint of large orders. Traders watch for price to return to that zone and look for a reaction (rejection) to enter in the original direction, with a stop beyond the zone. It overlaps heavily with support/resistance and smart-money concepts; the edge is precision and confluence (zone + trend + level), not the lines themselves. The mistake is marking dozens of zones — keep only the clean, untested ones in line with the trend.',
+    },
+    marketContext: 'A fresh Gold demand zone — the base of a strong rally — that lines up with the uptrend is a high-quality area to watch for continuation.',
+    desiredOutcome: 'trade reactions at fresh, with-trend supply/demand zones (confluence)',
+    relevanceTags: ['supply-demand', 'zones', 'beginner'],
+    commonMistakes: ['marking too many zones and trading every touch'],
+    misconceptions: ['that price must reverse exactly at a drawn zone'],
+    prerequisites: ['supply-and-demand'], nextSteps: ['ict-explained'], related: ['order-block', 'support-resistance'],
+    followups: ['ict-explained'],
+    riskNote: 'Zones are areas of interest, not guarantees — demand confirmation + a stop.',
+    seo: { title: 'Supply and Demand Trading Explained', description: 'How to draw supply and demand zones, trade reactions, and avoid over-marking the chart.', keywords: ['supply and demand trading', 'demand zone', 'supply zone', 'supply demand strategy'] },
+  }),
+  F({
+    id: 'ict-explained', category: 'strategy', topic: 'ICT Trading', title: 'ICT Trading Explained (Beginner)',
+    concepts: ['ict', 'smart-money', 'strategy'],
+    questionPatterns: ['what is ict trading', 'what does ict mean in trading', 'how does ict work', 'is ict good for beginners', 'what are ict concepts'],
+    canonical: {
+      short: 'ICT (Inner Circle Trader) is a popular smart-money methodology focused on how institutions move price — liquidity grabs, order blocks, fair value gaps, and killzones (specific session times). It can be powerful but is complex and easy to over-complicate; beginners should master basic structure and risk first.',
+      deep: 'ICT concepts model price as engineered by large players: price runs "liquidity" (stops above highs / below lows), then reverses from an order block or fair value gap, often during specific session "killzones". Used well it is a precise, structure-based way to read intent. The danger is the depth and the cult-like complexity — many beginners drown in terminology, over-analyse, and still ignore risk management, which is what actually determines survival. Learn trend, support/resistance, and 1–2% risk first; layer ICT on once the basics are automatic, and keep it simple.',
+    },
+    marketContext: 'A classic ICT read on Gold: price sweeps the previous day\'s high (grabbing liquidity), then reverses from a fair value gap during the New York killzone.',
+    desiredOutcome: 'understand ICT as advanced smart-money structure; master basics + risk first',
+    relevanceTags: ['ict', 'smart-money', 'strategy'],
+    commonMistakes: ['drowning in ICT terminology while ignoring risk management'],
+    misconceptions: ['that ICT is a shortcut to guaranteed profits'],
+    prerequisites: ['market-structure', 'liquidity-concepts'], nextSteps: ['order-block', 'fair-value-gap'], related: ['liquidity-sweep', 'killzones'],
+    followups: ['order-block'],
+    riskNote: 'No methodology, ICT included, replaces risk management — basics first.',
+    seo: { title: 'ICT Trading Explained for Beginners', description: 'What ICT (Inner Circle Trader) is — liquidity, order blocks, FVGs, killzones — and the beginner trap.', keywords: ['ict trading', 'what is ict', 'ict concepts', 'inner circle trader'] },
+  }),
+];
