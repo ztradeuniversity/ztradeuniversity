@@ -33,8 +33,9 @@ import { makeLexiconScorer } from '../utils/retrieval-lexicon.js';
 import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
-import { llmConfigured, makeLLMComposer } from '../utils/composer-llm.js';
+import { llmConfigured, makeLLMComposer, generateEducationalAnswer } from '../utils/composer-llm.js';
 import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
+import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
 import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
@@ -1239,6 +1240,32 @@ export async function onRequest(context) {
         if (lang === 'en' && kl.append) answer = answer + kl.append;  // 4) pattern vault
       }
     } catch { /* knowledge layer is additive; never blocks the reply */ }
+  }
+
+  // ── LEVEL 3 (Part 7) — INTERNAL KNOWLEDGE MISSING → reviewable-draft learning ──
+  // Gated by AI_LEARN_ENABLED (default OFF → zero behavior change until verified).
+  // PRIORITY PRESERVED: runs ONLY after DB (kbAnswer) and live APIs (directAnswer) have
+  // already had their turn, and ONLY on a true 'fallback' (so dynamic-data intents like
+  // gold/btc/news/macro, which set directAnswer, are never replaced). English-only
+  // (Language Lock). A previously-learned DRAFT is reused (cache) before any new LLM
+  // call; new generations are stored as DRAFT only (never authoritative) and served with
+  // an honest low-confidence disclaimer. Anti-hallucination preserved by the strict
+  // generator (off-domain/signal/price guards); on any miss the existing safe reply stays.
+  if (learnEnabled(env) && lang === 'en' && !chartAnalysis && !_unsupported
+      && !kbAnswer && !directAnswer
+      && (p10Intent === 'fallback' || cls.intent === 'fallback')) {
+    try {
+      const cached = await recallLearned(env, aText);
+      if (cached && cached.content) {
+        answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
+      } else {
+        const gen = await generateEducationalAnswer(env, aText, lang);
+        if (gen) {
+          answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
+          waitUntil(learnFromAnswer(env, { question: aText, answer: gen, lang, confidence: 'MEDIUM' }));
+        }
+      }
+    } catch { /* additive — keep the existing safe reply on any failure */ }
   }
 
   // ── MODULES 1 & 4: persist device profile + scores (background, server-side) ─

@@ -99,6 +99,35 @@ async function callModel(env, system, user) {
   return '';
 }
 
+// ── LEVEL 3 — educational generation for an in-domain question the internal KB did
+// NOT cover. Reuses the SAME Workers-AI→OpenAI callModel chain (so DB/API priority is
+// untouched — this is only ever invoked AFTER both miss). English-only (Language Lock).
+// Anti-hallucination: a strict no-fabrication prompt + off-domain + signal guards.
+// Returns null when not configured / non-English / off-topic / unsafe / on any failure
+// → the caller keeps its existing safe reply (unknown never becomes obviously wrong).
+const EDU_SYSTEM = `You are the ZTU AI trading mentor teaching Gold (XAU/USD), Bitcoin and general trading concepts. A student asked something our internal library does not cover yet. Give a clear, accurate, EDUCATIONAL answer.
+STRICT RULES:
+1. Explain concepts only. NEVER invent specific prices, levels, dates, statistics or current market data — if a number is not general textbook knowledge, do not state it.
+2. NEVER give a buy/sell signal or a specific entry/exit.
+3. If the question is NOT about trading/markets/finance, reply with exactly: NOT_TRADING
+4. If you are not reasonably sure, state only what is generally known and note the limit — never guess facts.
+5. Be concise (under 120 words), simple and human. Output only the answer.`;
+
+export async function generateEducationalAnswer(env, question, lang = 'en') {
+  if (!llmConfigured(env)) return null;
+  if (lang && lang !== 'en') return null;                  // Language Lock — English only
+  const q = String(question || '').trim();
+  if (q.length < 6) return null;
+  try {
+    const out = await callModel(env, EDU_SYSTEM, q);
+    const text = (out && typeof out === 'string') ? out.trim() : '';
+    if (text.length < 12) return null;
+    if (/\bNOT_TRADING\b/i.test(text)) return null;        // model judged it off-domain → no answer
+    if (/\b(buy now|sell now|go long now|go short now|enter (now|here) at)\b/i.test(text)) return null; // safety
+    return text;
+  } catch { return null; }
+}
+
 // Returns a composer fn (parts, ctx) → string | null. null → rule-assembler fallback.
 export function makeLLMComposer(env) {
   return async (parts = {}, ctx = {}) => {

@@ -68,6 +68,10 @@ export function optimizeAnswer(answer, { detail = false } = {}) {
         acc += s; used += n;
       }
       joined = acc.trim() || joined;
+      // Hard guard: a single oversized sentence (or punctuation-less text / bullet block)
+      // would survive the sentence loop intact — force it down to the word budget.
+      const w = joined.split(/\s+/).filter(Boolean);
+      if (w.length > MAX_WORDS) joined = w.slice(0, MAX_WORDS).join(' ') + '…';
     }
 
     return [joined, ...protectedTail].filter(Boolean).join('\n\n').trim() || text;

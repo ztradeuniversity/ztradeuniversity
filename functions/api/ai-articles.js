@@ -36,6 +36,7 @@ import {
   slugify, estimateReadingTime,
 } from '../utils/article-categories.js';
 import { generateArticleMeta } from '../utils/article-autometa.js';
+import { syncArticleToGraph } from '../utils/article-graph-sync.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -174,60 +175,11 @@ export async function onRequest(context) {
     // behavior change vs before is that an operator-published article is promoted
     // straight to the live graph (publishConcept) instead of sitting in the review
     // queue, since the operator already reviewed it by clicking Publish.
+    // ARTICLE → GRAPH + SEO ECOSYSTEM via the shared single-source pipeline
+    // (the SAME function auto-promotion of learned drafts uses — no parallel path).
+    // Best-effort; the article is already live via is_active above either way.
     let graph = null, ecosystem = null;
-    if (article) {
-      const kos = conceptFromArticle(article);
-      if (kos) {
-        try {
-          const entries = getAnchorEntries();
-          const articles = await listArticles(env, { status: 'published', limit: 200 }).catch(() => []);
-
-          // PHASE E reuse (dormant unless KB_EMBEDDINGS_ENABLED + configured).
-          let embedScores = null;
-          if (env.KB_EMBEDDINGS_ENABLED === 'true' && isEmbeddingConfigured(env)) {
-            const draftVec = await embedText(env, embeddingText({ data: kos, ...kos })).catch(() => null);
-            if (draftVec) {
-              embedScores = {};
-              for (const e of [...entries, ...articles]) {
-                const vec = e.embedding || (e.data && e.data.embedding);
-                if (vec) embedScores[e.id] = cosineSim(draftVec, vec);
-              }
-            }
-          }
-
-          // STAGE 1 — auto-link into the existing graph (related/nextSteps/recommendedArticles).
-          const links = suggestLinks(kos, entries, { embedScores });
-          kos.related = links.related;
-          kos.nextSteps = links.nextSteps;
-          const relatedArticles = suggestRelatedArticles(kos, articles, { embedScores });
-          kos.recommendedArticles = relatedArticles.map(a => a.id);
-
-          // STAGE 2/3 — author (KOS gate + dedup, unchanged), then publish straight to
-          // the live graph (STRICT re-validation + syncEdges, unchanged). A 'merged'
-          // decision already upserted+synced the survivor — nothing further to publish.
-          const authored = await authorConcept(env, kos, { origin: 'article', autoSubmit: false });
-          let published = null, strengthen = null;
-          if (authored.ok && authored.action !== 'merged') {
-            published = await publishConcept(env, kos, 'article-publish');
-            // STAGE 4 — reciprocal edges so existing concepts point forward to this article.
-            if (published.ok) strengthen = await strengthenGraphConnections(env, kos);
-          }
-          graph = { authored, published, strengthen };
-
-          // STAGE 1 (cont.) — SEO/FAQ/smart chips/internal links/recommendation widget/
-          // sitemap entry, same builders + shapes as ai-kb-admin's ingest-article.
-          const linkedEntries = [...links.related, ...links.nextSteps]
-            .map(id => entries.find(e => e.id === id)).filter(Boolean);
-          const urlPath = article.slug ? `/articles/${article.slug}` : null;
-          const seoSuggestion = buildSeoSuggestion(kos, { urlPath });
-          const internalLinks = buildInternalLinks(kos, { conceptEntries: linkedEntries, relatedArticles });
-          const smartChips = suggestSmartChips(kos, { conceptEntries: linkedEntries, relatedArticles });
-          const recommendationWidget = buildRecommendationWidget(kos, internalLinks);
-          const sitemapEntry = buildSitemapEntry(kos, { urlPath });
-          ecosystem = { seoSuggestion, faqSchema: seoSuggestion.faqSchema, relatedArticles, internalLinks, smartChips, recommendationWidget, sitemapEntry };
-        } catch { /* article page/sitemap/citation are already live via is_active above */ }
-      }
-    }
+    if (article) ({ graph, ecosystem } = await syncArticleToGraph(env, article));
     return json({ configured: true, article, graph, ecosystem });
   }
   if (action === 'draft')   return json({ configured: true, article: await setArticleStatus(env, data?.id, false) });
