@@ -35,6 +35,7 @@ import {
   ARTICLE_CATEGORIES, ARTICLE_LANGUAGES, isValidCategory,
   slugify, estimateReadingTime,
 } from '../utils/article-categories.js';
+import { generateArticleMeta } from '../utils/article-autometa.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -116,6 +117,18 @@ export async function onRequest(context) {
   let body;
   try { body = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400); }
   const { action, data } = body;
+
+  // ── AUTO MODE (additive) — generate article metadata from pasted content. Returns
+  // the suggested fields ONLY; it does NOT persist. The client fills the existing form,
+  // then the unchanged create/publish path saves it. Workers AI when bound, deterministic
+  // fallback otherwise — so it works even with no AI binding. Manual mode is unaffected.
+  if (action === 'auto-meta') {
+    const meta = await generateArticleMeta(env, {
+      content: (data && data.content) || '',
+      overrides: (data && data.overrides) || {},
+    });
+    return json({ configured: true, meta });
+  }
 
   if (action === 'create' || action === 'update') {
     const d = data || {};

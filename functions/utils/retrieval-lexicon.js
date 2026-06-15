@@ -53,13 +53,20 @@ const CLUSTERS = {
   'gambling': ['gambling', 'just luck', 'same as gambling', 'is trading gambling'],
   // Strategy
   'ict': ['ict', 'inner circle', 'ict trading', 'ict concepts'],
-  'smart-money': ['smart money', 'smc', 'smart money concept'],
+  'smart-money': ['smart money', 'smc', 'smart money concept', 'smart money concepts', 'smart money trading', 'smart money method'],
   'order-block': ['order block', 'order blocks', 'ob trading'],
   'fair-value-gap': ['fvg', 'fair value gap', 'fair value gaps'],
   'supply-demand': ['supply demand', 'supply and demand', 'demand zone', 'supply zone'],
   'pullback': ['pullback', 'buy the dip', 'trade pullbacks', 'pullback trading'],
   'scalping': ['scalp', 'scalping', 'scalping strategy'],
   'swing': ['swing trade', 'swing trading', 'swing strategy'],
+  // Liquidity (ICT/SMC) — keys match the exact tag in each concept's concepts[].
+  // "liquidity grab" is how users say "liquidity sweep" → must NOT fall to risk mgmt.
+  'liquidity sweep': ['liquidity grab', 'liquidity grabs', 'grab liquidity', 'grabbing liquidity', 'liquidity sweep', 'liquidity sweeps', 'sweep liquidity', 'liquidity hunt', 'liquidity raid'],
+  'stop hunt': ['stop hunt', 'stop hunts', 'stop hunting', 'stop loss hunt', 'stop loss hunting', 'stop raid', 'hunt stops', 'stop run'],
+  'buy side liquidity': ['buy side liquidity', 'buyside liquidity', 'buy-side liquidity', 'liquidity above'],
+  'sell side liquidity': ['sell side liquidity', 'sellside liquidity', 'sell-side liquidity', 'liquidity below'],
+  'inducement': ['inducement', 'inducements', 'inducement trap', 'induce price'],
   // Platforms
   'mt5': ['mt5', 'metatrader 5', 'meta trader 5'],
   'mt4': ['mt4', 'metatrader 4', 'meta trader 4'],

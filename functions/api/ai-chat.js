@@ -34,6 +34,7 @@ import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
 import { llmConfigured, makeLLMComposer } from '../utils/composer-llm.js';
+import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
 import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
@@ -1360,6 +1361,18 @@ export async function onRequest(context) {
       suggestionChips = fallbackPathChips({ lang, level: p10Level });
     } catch { /* additive — never blocks the reply */ }
   }
+
+  // ── RESPONSE OPTIMIZATION LAYER (additive final pass) ─────────────────────
+  // Surgical, post-composition only: caps the answer to short form (unless the user
+  // asked for detail) while preserving the disclaimer + links, and tightens the
+  // follow-up chips to ≤3 contextual ≤4-word labels (no generics). Pure string
+  // transforms — no retrieval/routing/API/data/intent changes. Fully guarded.
+  try {
+    answer = optimizeAnswer(answer, { detail: wantsDetail(genText) });
+  } catch { /* additive — never blocks the reply */ }
+  try {
+    suggestionChips = optimizeChips(suggestionChips, { related: p10Related, nextStepTopic: p10NextStepTopic, lang });
+  } catch { /* additive — never blocks the reply */ }
 
   // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
   const encoder = new TextEncoder();
