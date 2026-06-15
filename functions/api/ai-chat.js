@@ -33,7 +33,7 @@ import { makeLexiconScorer } from '../utils/retrieval-lexicon.js';
 import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
-import { llmConfigured, makeLLMComposer, generateEducationalAnswer } from '../utils/composer-llm.js';
+import { llmConfigured, makeLLMComposer, generateEducationalAnswer, _llmDiag } from '../utils/composer-llm.js';
 import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
 import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
@@ -767,6 +767,7 @@ export async function onRequest(context) {
   let answerConfidence = null;       // ANALYTICS: retrieval confidence for ai_response_logs
   let answerGraphNodeId = null;      // ANALYTICS: graph concept id when the graph layer answered
   let answerArticleId = null;        // ANALYTICS: article id when an article was surfaced
+  let _llmTrace       = null;        // TEMP-DEBUG (remove after root-cause): OpenAI-fallback runtime trace
   let clarifyAnswer   = null;
   let p10Lead         = '';
   let p10Contradiction = '';
@@ -1281,9 +1282,19 @@ export async function onRequest(context) {
   // call; new generations are stored as DRAFT only (never authoritative) and served with
   // an honest low-confidence disclaimer. Anti-hallucination preserved by the strict
   // generator (off-domain/signal/price guards); on any miss the existing safe reply stays.
+  // TEMP-DEBUG (remove after root-cause): record the gate values so we can see whether
+  // the OpenAI-fallback block is even entered, and exactly why if not.
+  const _learnGate = {
+    learnEnabled: learnEnabled(env), langEn: lang === 'en', notChart: !chartAnalysis,
+    notUnsupported: !_unsupported, noKb: !kbAnswer, noDirect: !directAnswer,
+    fallbackIntent: (p10Intent === 'fallback' || cls.intent === 'fallback'),
+    llmConfigured: llmConfigured(env), p10Intent, clsIntent: cls.intent,
+  };
+  _llmTrace = { entered: false, gate: _learnGate };
   if (learnEnabled(env) && lang === 'en' && !chartAnalysis && !_unsupported
       && !kbAnswer && !directAnswer
       && (p10Intent === 'fallback' || cls.intent === 'fallback')) {
+    _llmTrace.entered = true;
     try {
       // STABILIZATION FIX: use the handler-scoped genText. `aText` is const-scoped to
       // the (!followup && !chartAnalysis) block above (closes ~L1091) and is OUT of
@@ -1294,15 +1305,19 @@ export async function onRequest(context) {
       if (cached && cached.content) {
         answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
         answerSource = 'openai';                     // LLM-generated draft (cached)
+        _llmTrace.path = 'cached';
       } else {
         const gen = await generateEducationalAnswer(env, genText, lang);
+        _llmTrace.genResult = gen ? `text(${gen.length})` : 'null';
+        _llmTrace.diag = _llmDiag();                  // exact engine/status/error from callModel
         if (gen) {
           answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
           answerSource = 'openai';                   // LLM fallback engine
           waitUntil(learnFromAnswer(env, { question: genText, answer: gen, lang, confidence: 'MEDIUM' }));
         }
       }
-    } catch { /* additive — keep the existing safe reply on any failure */ }
+    } catch (e) { _llmTrace.exception = String((e && e.message) || e); /* keep safe reply */ }
+    if (env.DEBUG === 'true') { try { console.error('[llm-fallback-trace]', JSON.stringify(_llmTrace)); } catch {} }
   }
 
   // ── MODULES 1 & 4: persist device profile + scores (background, server-side) ─
@@ -1474,6 +1489,7 @@ export async function onRequest(context) {
       },
       intent: p10Intent,
       lang,
+      llmTrace: _llmTrace,   // TEMP-DEBUG (remove after root-cause): OpenAI-fallback runtime trace
     } : null;
     sourceMeta = sourceBadge(answerSource, _dbg);
   } catch { sourceMeta = null; }

@@ -66,6 +66,10 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
 }
 
+// ── TEMP-DEBUG (remove after root-cause) — last LLM call outcome for runtime trace.
+let _DIAG = null;
+export function _llmDiag() { return _DIAG; }
+
 async function callOpenAI(oa, messages) {
   const res = await fetch(oa.endpoint, {
     method: 'POST',
@@ -73,29 +77,43 @@ async function callOpenAI(oa, messages) {
     body: JSON.stringify({ model: oa.model, messages, max_tokens: 700, temperature: 0.4 }),
     signal: AbortSignal.timeout(8000),
   });
+  if (_DIAG) _DIAG.oaStatus = res.status;                 // TEMP-DEBUG
+  if (!res.ok) {                                          // TEMP-DEBUG: surface non-2xx (was silently '')
+    const b = await res.text().catch(() => '');
+    if (_DIAG) _DIAG.oaErr = `http ${res.status}: ${b.slice(0, 160)}`;
+    return '';
+  }
   const j = await res.json().catch(() => null);
   return j?.choices?.[0]?.message?.content || '';
 }
 
 async function callModel(env, system, user) {
   const messages = [{ role: 'system', content: system }, { role: 'user', content: user }];
+  // TEMP-DEBUG (remove after root-cause): trace which engine ran and why it returned empty.
+  _DIAG = { hasAI: !!(env.AI && typeof env.AI.run === 'function'), cfTried: false, cfErr: null, cfLen: 0,
+            oaTried: false, oaUsable: false, oaFallback: false, oaStatus: null, oaErr: null, engine: null };
 
   // PRIMARY engine: Cloudflare Workers AI (default; free-tier, lowest cost). On a
   // non-empty success we return immediately so the paid OpenAI path is never touched.
   if (env.AI && typeof env.AI.run === 'function') {
     let cfText = '';
     try {
+      _DIAG.cfTried = true;
       const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct';
       // Workers AI has no built-in timeout — cap it so a hung binding never freezes the reply.
       const r = await withTimeout(env.AI.run(model, { messages, max_tokens: 700, temperature: 0.4 }), 8000, 'workers-ai');
       cfText = (r && (r.response || r.result || (typeof r === 'string' ? r : ''))) || '';
-    } catch { cfText = ''; }
-    if (cfText && cfText.trim()) return cfText;
+    } catch (e) { cfText = ''; _DIAG.cfErr = String((e && e.message) || e); }
+    _DIAG.cfLen = (cfText || '').trim().length;
+    if (cfText && cfText.trim()) { _DIAG.engine = 'workers-ai'; return cfText; }
     // Workers AI unavailable/empty → OpenAI ONLY as a last-resort fallback, and ONLY
     // when explicitly enabled (OPENAI_FALLBACK_ENABLED=true).
     const oa = resolveOpenAI(env);
+    _DIAG.oaUsable = oa.usable; _DIAG.oaFallback = oa.fallbackEnabled;
     if (oa.usable && oa.fallbackEnabled) {
-      try { return await callOpenAI(oa, messages); } catch { return ''; }
+      _DIAG.oaTried = true;
+      try { const t = await callOpenAI(oa, messages); if (t) _DIAG.engine = 'openai'; return t; }
+      catch (e) { _DIAG.oaErr = String((e && e.message) || e); return ''; }
     }
     return '';
   }
@@ -104,8 +122,11 @@ async function callModel(env, system, user) {
   // the legacy LLM_* path, preserved). The rule assembler in composer.js remains the
   // ultimate fallback if this returns empty.
   const oa = resolveOpenAI(env);
+  _DIAG.oaUsable = oa.usable; _DIAG.oaFallback = oa.fallbackEnabled;
   if (oa.usable) {
-    try { return await callOpenAI(oa, messages); } catch { return ''; }
+    _DIAG.oaTried = true;
+    try { const t = await callOpenAI(oa, messages); if (t) _DIAG.engine = 'openai'; return t; }
+    catch (e) { _DIAG.oaErr = String((e && e.message) || e); return ''; }
   }
   return '';
 }
