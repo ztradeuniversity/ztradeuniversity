@@ -56,6 +56,16 @@ function resolveOpenAI(env) {
   return { key, model, endpoint, usable, fallbackEnabled };
 }
 
+// Hard timeout wrapper so a slow/hung model call can never freeze the chat request.
+// Rejects after `ms`; every caller already treats a rejection as "no LLM text" and
+// falls back to the rule assembler / safe reply. Additive safety — no behavior change
+// on a fast success.
+function withTimeout(promise, ms, label) {
+  let t;
+  const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error(`${label} timeout ${ms}ms`)), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+}
+
 async function callOpenAI(oa, messages) {
   const res = await fetch(oa.endpoint, {
     method: 'POST',
@@ -76,7 +86,8 @@ async function callModel(env, system, user) {
     let cfText = '';
     try {
       const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct';
-      const r = await env.AI.run(model, { messages, max_tokens: 700, temperature: 0.4 });
+      // Workers AI has no built-in timeout — cap it so a hung binding never freezes the reply.
+      const r = await withTimeout(env.AI.run(model, { messages, max_tokens: 700, temperature: 0.4 }), 8000, 'workers-ai');
       cfText = (r && (r.response || r.result || (typeof r === 'string' ? r : ''))) || '';
     } catch { cfText = ''; }
     if (cfText && cfText.trim()) return cfText;

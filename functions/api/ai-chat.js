@@ -37,6 +37,7 @@ import { llmConfigured, makeLLMComposer, generateEducationalAnswer } from '../ut
 import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
 import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
+import { wrapConversational } from '../utils/conversational-wrapper.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
 import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
@@ -794,7 +795,12 @@ export async function onRequest(context) {
 
     const cognition  = analyzeCognition(aText, { memoryData, traderContext: mergedTraderContext });
     const confidence = assessConfidence(aText, cognition, lang);
-    if (confidence.requiresClarification) {
+    // FIX: a greeting / small-talk ("hi", "hello") is scored high-ambiguity by the
+    // cognition layer, which previously routed it to the clarify menu instead of a
+    // warm greeting. Greetings & small-talk must never be clarified — let them fall
+    // through to their proper reply. (Additive guard; genuine ambiguous asks still clarify.)
+    const _isGreet = ['greeting', 'smalltalk'].includes(aCls.intent);
+    if (confidence.requiresClarification && !_isGreet) {
       clarifyAnswer = confidence.clarificationQuestion;            // one short question, no long answer
     } else {
       const analysis = cognition._qa;
@@ -1437,6 +1443,18 @@ export async function onRequest(context) {
   } catch { /* additive — never blocks the reply */ }
   try {
     suggestionChips = optimizeChips(suggestionChips, { related: p10Related, nextStepTopic: p10NextStepTopic, lang });
+  } catch { /* additive — never blocks the reply */ }
+
+  // ── CONVERSATIONAL WRAPPER (additive, post-optimize) — give substantive educational
+  // answers (graph/database/openai) a human envelope: greeting (first turn) + question
+  // acknowledgement, around the answer. Follow-up chips + source badge already stream.
+  // Live/safe/clarify text is left byte-identical (priority preserved). Fully guarded.
+  try {
+    answer = wrapConversational(answer, {
+      messages, answerSource, lang,
+      topic: p10ConceptTitle || p10KbCat || '',
+      isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
+    });
   } catch { /* additive — never blocks the reply */ }
 
   // ── SOURCE BADGE — report which retrieval layer produced this answer so the user
