@@ -1585,6 +1585,7 @@ async function sendMessage() {
   let aiBub  = null;
   let suggestions = [];   // Phase 19: smart suggestion chips from the stream
   let actions = [];       // Phase 23: concept-anchored context-menu action chips
+  let sourceMeta = null;  // SOURCE BADGE: which retrieval layer produced the answer
 
   try {
     const res = await fetch(API, {
@@ -1600,6 +1601,7 @@ async function sendMessage() {
         chartAnalysis: pendingChart,
         sessionLang:   getSessionLang(),
         uiLang:        getUiLang(),
+        debug:         aiDebugOn(),   // ADMIN DEBUG MODE: request the source/stage details
       }),
     });
 
@@ -1653,6 +1655,7 @@ async function sendMessage() {
           if (ev.t) { aiText += ev.t; aiBub.innerHTML = md(aiText); scrollEnd(); }
           if (ev.suggestions && Array.isArray(ev.suggestions)) suggestions = ev.suggestions;  // Phase 19
           if (ev.actions && Array.isArray(ev.actions)) actions = ev.actions;                  // Phase 23
+          if (ev.source && typeof ev.source === 'object') sourceMeta = ev.source;             // SOURCE BADGE
         } catch (pe) { if (!pe.message?.includes('JSON')) throw pe; }
       }
     }
@@ -1664,6 +1667,8 @@ async function sendMessage() {
       // Phase 8D: speak the reply aloud when TTS is enabled (language-aware)
       speakReply(aiText);
     }
+    // SOURCE BADGE: show which retrieval layer produced the answer (small, unobtrusive).
+    if (sourceMeta && aiBub) renderSourceBadge(aiBub, sourceMeta);
     // Phase 19: render clickable suggestion chips under the answer (if any).
     if (suggestions.length && aiBub) renderSuggestChips(aiBub, suggestions);
     // Phase 23: render concept-anchored context-menu action chips (if any).
@@ -1732,6 +1737,60 @@ function renderActionChips(bub, list) {
     wrap.appendChild(b);
   });
   if (wrap.children.length) { bub.parentNode.appendChild(wrap); scrollEnd(); }
+}
+
+/* ─── SOURCE BADGE + ADMIN DEBUG MODE ────────────────────────────
+   Small, unobtrusive badge under each AI answer showing which retrieval layer
+   produced it (📚 Database / 🕸 Graph / 📡 Live API / 🧠 OpenAI / 🛟 Safe Reply).
+   Admin debug mode (localStorage 'ztu_ai_debug', ?debug=1, or aiDebug(true)) adds an
+   expandable panel showing the full Database→Graph→Live→OpenAI→Safe stage chain. */
+function aiDebugOn() {
+  try {
+    if (/[?&]debug=1\b/.test(location.search)) return true;
+    return localStorage.getItem('ztu_ai_debug') === '1';
+  } catch { return false; }
+}
+window.aiDebug = function (on) {
+  try { localStorage.setItem('ztu_ai_debug', on ? '1' : '0'); } catch {}
+  return 'AI debug mode ' + (on ? 'ON' : 'OFF') + ' — send a new message to see it.';
+};
+function renderSourceBadge(bub, src) {
+  if (!bub || !bub.parentNode || !src || !src.badge) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'src-badge-wrap';
+  wrap.style.cssText = 'margin-top:8px;font-size:11px;opacity:.7;display:flex;flex-wrap:wrap;align-items:center;gap:6px';
+  const tag = document.createElement('span');
+  tag.className = 'src-badge';
+  tag.textContent = src.badge;
+  tag.title = 'Answer source: ' + (src.label || src.layer || '');
+  tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:rgba(127,127,127,.14);white-space:nowrap';
+  wrap.appendChild(tag);
+
+  // Admin debug panel — only present when the server sent debug details.
+  if (src.debug && typeof src.debug === 'object') {
+    const det = document.createElement('details');
+    det.style.cssText = 'font-size:11px;opacity:.8';
+    const sum = document.createElement('summary');
+    sum.textContent = '🔍 debug';
+    sum.style.cssText = 'cursor:pointer;list-style:none';
+    det.appendChild(sum);
+    const d = src.debug;
+    const chain = Array.isArray(d.chain) ? d.chain.map(s =>
+      (s.active ? '▶ ' : '   ') + s.label + (s.active ? '  ← answered here' : '')).join('\n') : '';
+    const avail = d.available ? Object.entries(d.available)
+      .map(([k, v]) => `  ${v ? '✓' : '·'} ${k}`).join('\n') : '';
+    const pre = document.createElement('pre');
+    pre.style.cssText = 'margin:6px 0 0;padding:8px;border-radius:8px;background:rgba(127,127,127,.12);white-space:pre-wrap;overflow:auto';
+    pre.textContent =
+      `stage : ${d.stage || src.layer}\n` +
+      `intent: ${d.intent || '-'}   lang: ${d.lang || '-'}\n` +
+      (chain ? `\nPRIORITY CHAIN\n${chain}\n` : '') +
+      (avail ? `\nLAYERS AVAILABLE\n${avail}` : '');
+    det.appendChild(pre);
+    wrap.appendChild(det);
+  }
+  bub.parentNode.appendChild(wrap);
+  scrollEnd();
 }
 
 /* ─── INPUT ──────────────────────────────────────────────────── */

@@ -51,8 +51,19 @@ async function loadEntries(env, ctx) {
       const scoped = await getPublishedConcepts(env, { lang, category: ctx.category });
       if (scoped && scoped.length) return scoped;  // category-scoped candidates
     }
-    const rows = await getPublishedConcepts(env, { lang });
-    if (rows && rows.length) return rows;          // graph-backed (full)
+    const rows = await getPublishedConcepts(env, { lang }) || [];
+    const anchorsG = getAnchorEntries() || [];
+    // SAFETY FLOOR: if the live graph is fully populated (>= the authored library),
+    // use it as today (zero regression). If it is sparse (kb_nodes not fully
+    // backfilled yet — the publish-before-populate hazard), UNION the offline anchors
+    // so known concepts are never lost while the graph fills. Graph rows win on id.
+    if (rows.length >= anchorsG.length && rows.length) return rows;
+    if (anchorsG.length) {
+      const byId = new Map(anchorsG.map(a => [a.id, a]));
+      for (const r of rows) byId.set(r.id, r);     // graph overrides anchor of same id
+      return [...byId.values()];
+    }
+    if (rows.length) return rows;
   }
   // ACTIVATION: serve the AUTHORED concept library (349 KOS concepts + legacy
   // KB_SEED) when the graph DB isn't provisioned — no infra required. Falls back to
@@ -71,7 +82,17 @@ export async function retrieve(env, query, ctx = {}) {
     if (qv) scorer = makeHybridScorer(qv);
   }
   const ranked = scorer
-    ? entries.map(item => ({ item, ...scorer(query, item) })).sort((a, b) => b.semanticScore - a.semanticScore)
+    ? entries.map(item => {
+        // Blend the embedding/hybrid score with the installed LEXICAL FLOOR (lexicon
+        // cluster scorer). max() only ever raises — a strong exact/cluster match is
+        // preserved even when vectors are missing or weak. Never lowers a result.
+        const h = scorer(query, item) || {};
+        const l = _scorer(query, item) || {};
+        const semanticScore = Math.max(h.semanticScore || 0, l.semanticScore || 0);
+        const confidence = (h.confidence === 'HIGH' || l.confidence === 'HIGH') ? 'HIGH'
+          : (h.confidence === 'MEDIUM' || l.confidence === 'MEDIUM') ? 'MEDIUM' : 'LOW';
+        return { item, semanticScore, confidence };
+      }).sort((a, b) => b.semanticScore - a.semanticScore)
     : rank(query, entries);
   // attach graph context placeholders (filled by graph traversal once embeddings/
   // edges retrieval land; Composer 11B.3 consumes related/followups).

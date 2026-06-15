@@ -159,6 +159,28 @@ export async function incrementFreeMessages(env, deviceId) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ai_response_logs  (ANALYTICS ONLY — one row per completed response)
+// ⚠ Best-effort: no-ops when unconfigured, swallows all errors (sbFetch try/catch),
+//   always called via waitUntil. It must NEVER affect or block the user response.
+// ════════════════════════════════════════════════════════════════════════════
+export async function insertResponseLog(env, data = {}) {
+  if (!isConfigured(env)) return null;
+  const num = Number(data.responseTimeMs);
+  return sbFetch(env, 'POST', 'ai_response_logs', null, {
+    user_question:    data.userQuestion ? String(data.userQuestion).slice(0, 4000) : null,
+    answer_source:    data.answerSource || null,
+    confidence:       data.confidence || null,
+    response_time_ms: Number.isFinite(num) ? Math.max(0, Math.round(num)) : null,
+    topic:            data.topic ? String(data.topic).slice(0, 200) : null,
+    language:         data.language ? String(data.language).slice(0, 16) : null,
+    article_id:       data.articleId != null && data.articleId !== '' ? String(data.articleId).slice(0, 128) : null,
+    graph_node_id:    data.graphNodeId != null && data.graphNodeId !== '' ? String(data.graphNodeId).slice(0, 128) : null,
+    is_fallback:      !!data.isFallback,
+    created_at:       new Date().toISOString(),
+  }, 'return=minimal');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // ai_articles + ai_article_images  (Module 5)
 // ════════════════════════════════════════════════════════════════════════════
 export async function queryArticles(env, { query, tags, limit = 3 } = {}) {

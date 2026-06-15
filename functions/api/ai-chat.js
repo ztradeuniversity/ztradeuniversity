@@ -10,7 +10,7 @@
 
 import { detectLanguage, classifyIntent, generateResponse, resolveGeo, classifyFollowup } from '../utils/ai-engine.js';
 import { getKnowledgeEntries } from './ai-knowledge.js';
-import { isConfigured as aiSbConfigured, upsertProfile, updateScores } from '../utils/ai-supabase.js';
+import { isConfigured as aiSbConfigured, upsertProfile, updateScores, insertResponseLog } from '../utils/ai-supabase.js';
 import { detectStrengths, detectWeaknesses } from '../utils/trader-intelligence.js';
 import { buildKnowledgeLayer } from '../utils/knowledge-orchestrator.js';
 import { resolveTier } from '../utils/identity-session.js';
@@ -36,6 +36,7 @@ import { composeAnswer, setComposer } from '../utils/composer.js';
 import { llmConfigured, makeLLMComposer, generateEducationalAnswer } from '../utils/composer-llm.js';
 import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
 import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
+import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
 import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
@@ -510,7 +511,10 @@ export async function onRequest(context) {
   // strategy/platforms/beginner) on top of the boost — replicating scoreEntry's
   // EXACT formula + HIGH gate, taking max() so it never lowers a score. (When
   // KB_EMBEDDINGS_ENABLED='true', retrieve() uses the hybrid vector scorer instead.)
-  if (env.KB_EMBEDDINGS_ENABLED !== 'true') { try { setScorer(makeLexiconScorer(scoreEntry)); } catch {} }
+  // Always install the lexicon scorer as a LEXICAL FLOOR — even with embeddings on, so
+  // proven exact/cluster matches (e.g. "liquidity grab"→liquidity-sweep) are never lost
+  // if vectors are missing/incomplete. retrieve() blends max(hybrid, lexicon). Additive.
+  try { setScorer(makeLexiconScorer(scoreEntry)); } catch {}
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: JSON_HEADERS });
@@ -533,6 +537,10 @@ export async function onRequest(context) {
   const uiLang      = (typeof body?.uiLang === 'string' && body.uiLang.length <= 8) ? body.uiLang : null;   // PART 2: explicit UI language selection
   const traderContext = (body?.traderContext && typeof body.traderContext === 'object') ? body.traderContext : null; // Memory V2
   const chartAnalysis = (body?.chartAnalysis && typeof body.chartAnalysis === 'object') ? body.chartAnalysis : null; // Chart Vision
+  // ADMIN DEBUG MODE: client opt-in flag (or server-forced via AI_DEBUG) → the source
+  // event carries which stage answered + the full Database→Graph→Live→OpenAI→Safe chain.
+  const debugMode   = body?.debug === true || env.AI_DEBUG === 'true';
+  const _logT0      = Date.now();   // ANALYTICS: response-time baseline for ai_response_logs
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return new Response(JSON.stringify({ error: '`messages` array is required' }), { status: 400, headers: JSON_HEADERS });
   }
@@ -753,6 +761,11 @@ export async function onRequest(context) {
   let p10Depth       = 'STANDARD';
   let allowKnowledge = true;
   let directAnswer    = null;
+  let directSource    = null;        // SOURCE BADGE: which layer set directAnswer ('live'/'calc'/'safe')
+  let answerSource    = 'safe';      // SOURCE BADGE: final retrieval layer that produced the reply
+  let answerConfidence = null;       // ANALYTICS: retrieval confidence for ai_response_logs
+  let answerGraphNodeId = null;      // ANALYTICS: graph concept id when the graph layer answered
+  let answerArticleId = null;        // ANALYTICS: article id when an article was surfaced
   let clarifyAnswer   = null;
   let p10Lead         = '';
   let p10Contradiction = '';
@@ -817,6 +830,7 @@ export async function onRequest(context) {
         brokerKnown: !!aCls.broker,
       };
       const kConf     = knowledgeConfidence(kctx);
+      answerConfidence = kConf.level || null;   // ANALYTICS: baseline confidence (kb match overrides below)
       const retrieval = planRetrieval(kctx, kConf);
       allowKnowledge  = allowKnowledge && (retrieval.article || retrieval.pattern);
       // ── PHASE 11C.0B: relevance frame — decides what may / may not appear.
@@ -824,7 +838,7 @@ export async function onRequest(context) {
 
       if (kConf.level === 'UNKNOWN') {
         // Never invent facts we can't verify (e.g., unknown broker regulation).
-        directAnswer = unknownResponse(lang);
+        directAnswer = unknownResponse(lang); directSource = 'safe';
       } else if (analysis.multi && analysis.statusInstrument) {
         // MULTI: lead with the live status line, answer the advice side, no dump.
         p10Prefix = statusPrefix(analysis, marketData, lang);
@@ -841,7 +855,7 @@ export async function onRequest(context) {
         p10Followups   = singleFollowup(cognition, lang);
       } else if (plan.marketDump && (depth === 'MICRO' || depth === 'SHORT')) {
         // Explicit short status → one concise line + ONE natural follow-up.
-        directAnswer = shortStatusAnswer({ ...analysis, suggestedFollowups: [] }, marketData, lang, singleFollowup(cognition, lang));
+        directAnswer = shortStatusAnswer({ ...analysis, suggestedFollowups: [] }, marketData, lang, singleFollowup(cognition, lang)); directSource = 'live';
       } else if (!plan.marketDump) {
         // CTA intelligence: intents whose body already invites the user (or are
         // pure conversation) get NO extra offer — the Composer enforces a single
@@ -867,6 +881,8 @@ export async function onRequest(context) {
             // beginners always get the concise canonical so they are not overwhelmed.
             const wantDeep = (depth === 'DEEP' || p10Level === 'advanced') && p10Level !== 'beginner';
             kbAnswer = (wantDeep && m.item.deepAnswer) ? m.item.deepAnswer : m.item.shortAnswer;
+            answerConfidence  = m.confidence || answerConfidence;   // ANALYTICS: kb match confidence (HIGH)
+            answerGraphNodeId = m.item.id || null;                  // ANALYTICS: graph concept id used
             p10KbCat = m.item.category || null;   // Phase 5: drive article recommendation
             p10Related = [...(m.item.related || []), ...(m.item.nextSteps || [])];   // Phase 19: chip source
             // Phase 23/24: capture the concept's identity + which actions it can offer (graph-gated).
@@ -1097,7 +1113,7 @@ export async function onRequest(context) {
   if (!chartAnalysis && !followup && !_unsupported) {
     try {
       const _aw = marketAwareness({ text: genText, marketData, calendarData, lang });
-      if (_aw && _aw.answer) { directAnswer = _aw.answer; clarifyAnswer = null; _awChips = _aw.chips || []; }
+      if (_aw && _aw.answer) { directAnswer = _aw.answer; directSource = 'live'; clarifyAnswer = null; _awChips = _aw.chips || []; }
     } catch { /* additive — never blocks the reply */ }
   }
 
@@ -1107,7 +1123,7 @@ export async function onRequest(context) {
   if (!_unsupported && !chartAnalysis && !followup) {
     try {
       const _calc = detectCalcRequest(genText);
-      if (_calc.ready) { const _out = runCalculator(_calc, lang); if (_out) { directAnswer = _out; clarifyAnswer = null; } }
+      if (_calc.ready) { const _out = runCalculator(_calc, lang); if (_out) { directAnswer = _out; directSource = 'calc'; clarifyAnswer = null; } }
     } catch { /* additive — never blocks the reply */ }
   }
 
@@ -1122,9 +1138,11 @@ export async function onRequest(context) {
       const _pxAsk   = livePriceInstrument(genText);
       if (_decInst) {
         directAnswer = buildMarketContext({ marketData, calendarData, instrument: _decInst, lang });
+        directSource = 'live';
         clarifyAnswer = null;
       } else if (!directAnswer && _pxAsk && (!_pxAsk.supported || marketData?.status !== 'ok')) {
         directAnswer = priceUnavailable(_pxAsk.label, lang);
+        directSource = 'live';
         clarifyAnswer = null;
       }
     } catch { /* additive — never blocks the reply */ }
@@ -1140,10 +1158,10 @@ export async function onRequest(context) {
       const _why = detectMarketWhy(genText);
       if (_why.topic) {
         const _ex = buildWhyExplanation({ marketData, calendarData, topic: _why.topic, lang });
-        if (_ex) directAnswer = _ex;
+        if (_ex) { directAnswer = _ex; directSource = 'live'; }
       } else {
         const _bd = detectBroadDecision(genText);
-        if (_bd) directAnswer = genericDecisionAnalysis(_bd.label, lang);
+        if (_bd) { directAnswer = genericDecisionAnalysis(_bd.label, lang); directSource = 'live'; }
       }
     } catch { /* additive — never blocks the reply */ }
   }
@@ -1157,19 +1175,22 @@ export async function onRequest(context) {
   if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported) {
     try {
       const _iq = detectInstrumentQuery(genText);
-      if (_iq) directAnswer = buildInstrumentAnalysis({ symbol: _iq.symbol, marketData, calendarData, lang, kind: _iq.kind });
+      if (_iq) { directAnswer = buildInstrumentAnalysis({ symbol: _iq.symbol, marketData, calendarData, lang, kind: _iq.kind }); directSource = 'live'; }
     } catch { /* additive — never blocks the reply */ }
   }
 
   // ── PHASE 20: unsupported language → polite, honest reply (highest priority,
   // never hallucinate, never fake a translation). Clears any English clarify menu.
-  if (_unsupported) { directAnswer = unknownLanguageReply(_unsupported); clarifyAnswer = null; }
+  if (_unsupported) { directAnswer = unknownLanguageReply(_unsupported); directSource = 'safe'; clarifyAnswer = null; }
 
   if (clarifyAnswer) {
     answer = clarifyAnswer;
+    answerSource = 'safe';                          // clarify question = safe-reply tier
   } else if (directAnswer) {
     answer = directAnswer;
+    answerSource = directSource || 'live';          // live market / calculator / safe (set at source)
   } else if (kbAnswer) {
+    answerSource = 'graph';                          // knowledge-graph concept (kb_nodes live, else offline anchors)
     // PHASE 11A.4 + 11B.3: KB-grounded answer composed into one mentor reply.
     answer = await composeAnswer({
       lead: p10Lead,
@@ -1238,6 +1259,9 @@ export async function onRequest(context) {
         if (lang === 'en' && kl.prepend) head += kl.prepend + '\n\n'; // 2-3) articles + broker
         if (head) answer = head + answer;
         if (lang === 'en' && kl.append) answer = answer + kl.append;  // 4) pattern vault
+        // SOURCE BADGE: an injected Supabase article/broker body means the DB layer
+        // contributed the substantive content over the generic engine safe reply.
+        if (lang === 'en' && (kl.prepend || kl.append)) answerSource = 'database';
       }
     } catch { /* knowledge layer is additive; never blocks the reply */ }
   }
@@ -1255,14 +1279,21 @@ export async function onRequest(context) {
       && !kbAnswer && !directAnswer
       && (p10Intent === 'fallback' || cls.intent === 'fallback')) {
     try {
-      const cached = await recallLearned(env, aText);
+      // STABILIZATION FIX: use the handler-scoped genText. `aText` is const-scoped to
+      // the (!followup && !chartAnalysis) block above (closes ~L1091) and is OUT of
+      // scope here — referencing it threw ReferenceError that the try/catch silently
+      // swallowed, so this block never executed. genText is the correct in-scope
+      // equivalent (recovery/slang/multilang-normalized user text). No logic change.
+      const cached = await recallLearned(env, genText);
       if (cached && cached.content) {
         answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
+        answerSource = 'openai';                     // LLM-generated draft (cached)
       } else {
-        const gen = await generateEducationalAnswer(env, aText, lang);
+        const gen = await generateEducationalAnswer(env, genText, lang);
         if (gen) {
           answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
-          waitUntil(learnFromAnswer(env, { question: aText, answer: gen, lang, confidence: 'MEDIUM' }));
+          answerSource = 'openai';                   // LLM fallback engine
+          waitUntil(learnFromAnswer(env, { question: genText, answer: gen, lang, confidence: 'MEDIUM' }));
         }
       }
     } catch { /* additive — keep the existing safe reply on any failure */ }
@@ -1321,9 +1352,16 @@ export async function onRequest(context) {
       const seed = ((p10KbCat || '').length + (messages.length || 0)) % 4;   // 0..3
       const channel = ['article', 'reflect', 'none', 'article'][seed];
       if (channel === 'article' && aiSbConfigured(env)) {
-        const arts = await searchArticles(env, { q: aText, category: p10KbCat || undefined, limit: 1 });
+        // STABILIZATION FIX: genText (handler-scoped). `aText` is out of scope here
+        // (block-scoped above ~L1091) → its ReferenceError was swallowed by the
+        // try/catch, so the Related Article tail never ran. genText is the in-scope
+        // equivalent user query. No logic change.
+        const arts = await searchArticles(env, { q: genText, category: p10KbCat || undefined, limit: 1 });
         const a = arts && arts[0];
-        if (a && a.title) answer = answer.trimEnd() + `\n\n📖 Related article: ${a.slug ? `[${a.title}](${a.slug})` : a.title}`;
+        if (a && a.title) {
+          answer = answer.trimEnd() + `\n\n📖 Related article: ${a.slug ? `[${a.title}](${a.slug})` : a.title}`;
+          answerArticleId = a.id != null ? a.id : (a.slug || null);   // ANALYTICS: surfaced article id
+        }
       } else if (channel === 'reflect') {
         const topic = (rel && rel.primaryEntity) ? rel.primaryEntity : 'this';
         answer = answer.trimEnd() + `\n\n🧭 Try applying ${topic === 'this' ? 'this' : topic + ' analysis'} to your own chart or last trade — notice what you'd do differently.`;
@@ -1401,6 +1439,48 @@ export async function onRequest(context) {
     suggestionChips = optimizeChips(suggestionChips, { related: p10Related, nextStepTopic: p10NextStepTopic, lang });
   } catch { /* additive — never blocks the reply */ }
 
+  // ── SOURCE BADGE — report which retrieval layer produced this answer so the user
+  // (and, in admin debug mode, the operator) can see where it originated. Reports
+  // only; never changes routing or the Database→Graph→Live→OpenAI→Safe priority.
+  let sourceMeta = null;
+  try {
+    const _dbg = debugMode ? {
+      stage: answerSource,
+      chain: SOURCE_STAGES.map(s => ({ ...s, active: s.layer === answerSource })),
+      available: {
+        database: aiSbConfigured(env),
+        graph:    graphActive(env),
+        live:     !!(marketData && marketData.status === 'ok'),
+        openai:   llmConfigured(env) || learnEnabled(env),
+        safe:     true,
+      },
+      intent: p10Intent,
+      lang,
+    } : null;
+    sourceMeta = sourceBadge(answerSource, _dbg);
+  } catch { sourceMeta = null; }
+
+  // ── ANALYTICS (best-effort, non-blocking) — one row per completed response into
+  // ai_response_logs. ANALYTICS ONLY: it reads already-computed values and NEVER
+  // changes retrieval/routing. No-ops when Supabase is unconfigured, runs in the
+  // background via waitUntil, and the whole call is wrapped so a logging failure can
+  // never affect or block the user's reply (req 3/4/15).
+  try {
+    if (aiSbConfigured(env)) {
+      waitUntil(insertResponseLog(env, {
+        userQuestion:   genText,   // handler-scoped processed user text (aText is block-scoped above)
+        answerSource:   logSourceValue(answerSource),   // database|graph|live_api|openai|safe_reply (calc→calculator)
+        confidence:     answerConfidence,
+        responseTimeMs: Date.now() - _logT0,
+        topic:          p10KbCat || p10ConceptTitle || (rel && rel.primaryEntity) || null,
+        language:       lang,
+        articleId:      answerArticleId,
+        graphNodeId:    answerGraphNodeId,
+        isFallback:     answerSource === 'safe',
+      }));
+    }
+  } catch { /* analytics must never affect the response */ }
+
   // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
   const encoder = new TextEncoder();
   const { readable, writable } = new TransformStream();
@@ -1430,6 +1510,10 @@ export async function onRequest(context) {
       // PHASE 23: emit concept-anchored context-menu action chips.
       if (actionChips && actionChips.length) {
         await writer.write(encoder.encode(`data: ${JSON.stringify({ actions: actionChips })}\n\n`));
+      }
+      // SOURCE BADGE: emit which retrieval layer produced this answer (final event).
+      if (sourceMeta) {
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ source: sourceMeta })}\n\n`));
       }
       await writer.write(encoder.encode('data: [DONE]\n\n'));
     } catch {
