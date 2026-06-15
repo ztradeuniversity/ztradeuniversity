@@ -121,10 +121,10 @@
       <textarea id="content" placeholder="Full article body…"></textarea>
 
       <div class="btn-row">
-        <button class="btn-gold" onclick="saveArticle(false)">💾 Save Draft</button>
-        <button class="btn-gold" onclick="saveArticle(true)">🚀 Save &amp; Publish</button>
+        <button class="btn-gold" id="draftBtn" onclick="saveArticle(false)">💾 Save Draft</button>
+        <button class="btn-gold" id="pubSaveBtn" onclick="saveArticle(true)">🚀 Save &amp; Publish</button>
         <button class="btn-ghost" onclick="togglePublish()" id="pubBtn">Toggle Publish</button>
-        <button class="btn-danger" onclick="removeArticle()">🗑 Delete</button>
+        <button class="btn-danger" id="delBtn" onclick="removeArticle()">🗑 Delete</button>
       </div>
       <p class="note" id="metaNote"></p>
     </div>
@@ -173,9 +173,10 @@ async function loadCategories(){
 
 async function loadList(){
   const el=document.getElementById('list');
+  el.innerHTML='<p class="note">⏳ Loading…</p>';
   try{
     const r=await fetch(`${API}?action=list&status=all`,{headers:hdrs()});
-    const d=await r.json();
+    let d=null; try{ d=await r.json(); }catch{ el.innerHTML=`<p class="note">⚠️ List error: server returned ${r.status} (non-JSON). Check admin key / deployment.</p>`; return; }
     if(d.configured===false){el.innerHTML='<p class="note">⚠️ AI Supabase (ZTU Chatbot) is not connected yet. Add AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY in Cloudflare, then refresh.</p>';return;}
     if(d.error){el.innerHTML=`<p class="note">${d.error}</p>`;return;}
     const arts=d.articles||[];
@@ -261,58 +262,107 @@ async function autoGenerate(silent){
   finally{ btn.textContent=old; }
 }
 
-async function saveArticle(publish){
-  // AUTO mode: if the user only pasted content, generate metadata first (reuses the
-  // same save path below — no change to create/publish).
-  if(AUTO && !document.getElementById('title').value.trim()){
-    const ok=await autoGenerate(true);
-    if(!ok){toast('Paste content first');return;}
-  }
-  const data=gather(false);   // always save content as a row first; Publish is a separate step below
-  if(!data.title){toast('Title required');return;}
-  const action=data.id?'update':'create';
-  const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action,data})});
-  const d=await r.json();
-  if(d.error){toast(d.error);return;}
-  if(d.configured===false){toast('Supabase not connected');return;}
-  if(d.article&&d.article.id)document.getElementById('artId').value=d.article.id;
-  if(!publish){toast('Draft saved ✓'); loadList(); return;}
-  await publishArticle();
+// ── ROBUSTNESS LAYER (additive) — prevents silent failures, surfaces the real
+// server error, disables buttons + shows a spinner while a request runs, and stops
+// duplicate clicks. No API/schema change; only the existing actions are called. ──
+const $id = (id)=>document.getElementById(id);
+let UIBUSY=false;
+function actionButtons(){return ['draftBtn','pubSaveBtn','pubBtn','delBtn','autoBtn'].map($id).filter(Boolean);}
+function setBusy(on,btn,label){
+  UIBUSY=on;
+  actionButtons().forEach(b=>{ b.disabled=on; b.style.opacity=on?'0.55':''; b.style.cursor=on?'not-allowed':'pointer'; });
+  if(btn){ if(on){ btn.dataset.lbl=btn.textContent; btn.textContent='⏳ '+(label||'Working…'); }
+           else if(btn.dataset.lbl!=null){ btn.textContent=btn.dataset.lbl; delete btn.dataset.lbl; } }
+}
+// fetch + SAFE json parse → {ok,data,error}. Never throws (kills the silent-failure bug).
+async function apiPost(payload){
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify(payload)});
+    let d=null; try{ d=await r.json(); }
+    catch{ return {ok:false,error:`Server returned ${r.status} (non-JSON) — check admin key / that the latest code is deployed.`}; }
+    if(!r.ok)               return {ok:false,error:(d&&d.error)||`HTTP ${r.status}`,data:d};
+    if(d&&d.error)          return {ok:false,error:d.error,data:d};
+    if(d&&d.configured===false) return {ok:false,error:'Supabase not connected (AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY).',data:d};
+    return {ok:true,data:d};
+  }catch(e){ return {ok:false,error:'Network error: '+((e&&e.message)||e)}; }
+}
+// Single source of truth for the publish action (+ full graph/SEO ecosystem).
+async function doPublish(id){
+  const res=await apiPost({action:'publish',data:{id}});
+  if(!res.ok) return {ok:false,error:res.error};
+  const g=(res.data&&res.data.graph)||{};
+  const note = g.published&&g.published.ok ? `graph ✓ (+${(g.strengthen&&g.strengthen.added)||0} edges)`
+    : g.authored&&g.authored.action==='merged' ? 'graph ✓ (merged)' : '';
+  return {ok:true,note};
 }
 
-// One click: makes the article live, then runs the full ecosystem pipeline (SEO, FAQ,
-// smart chips, internal links, related articles, recommendation widget, learning paths,
-// graph draft + publish + reciprocal edges) — same /api/ai-articles {action:'publish'}
-// call used by both "Save & Publish" and "Toggle Publish".
+async function saveArticle(publish){
+  if(UIBUSY) return;
+  // AUTO mode: if the user only pasted content, generate metadata first (reuses the
+  // same save path below — never bypasses create/publish).
+  if(AUTO && !$id('title').value.trim()){
+    const ok=await autoGenerate(true);
+    if(!ok){ toast('Paste content first'); return; }
+  }
+  const data=gather(false);   // always save the row first; Publish is a separate step
+  if(!data.title){ toast('⚠️ Title required'+(AUTO?' — paste content so AUTO can generate it':'')); return; }
+  const action=data.id?'update':'create';
+  const btn=publish?$id('pubSaveBtn'):$id('draftBtn');
+  setBusy(true,btn,publish?'Publishing…':'Saving…');
+  try{
+    const res=await apiPost({action,data});
+    if(!res.ok){ toast('❌ '+res.error); return; }
+    const art=res.data&&res.data.article;
+    if(!art||!art.id){ toast('❌ Save failed — the insert was rejected (no article id returned). Set DEBUG=true in Cloudflare to log the exact Supabase error.'); return; }
+    $id('artId').value=art.id;                       // ← the id the publish/image steps need
+    if(!publish){ toast('✅ Draft Saved'); await loadList(); return; }
+    const p=await doPublish(art.id);
+    toast(p.ok ? ['✅ Article Published Successfully', p.note].filter(Boolean).join(' · ')
+               : '⚠️ Saved as draft, but publish failed: '+p.error);
+    await loadList();                                 // published article appears immediately
+  } finally { setBusy(false,btn); }
+}
+
+// "Toggle Publish" standalone button: publish a draft, or unpublish a live article.
 async function publishArticle(){
-  const id=document.getElementById('artId').value; if(!id){toast('Save first');return;}
-  const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'publish',data:{id}})});
-  const d=await r.json();
-  if(d.error){toast(d.error);return;}
-  const g=d.graph||{};
-  const graphNote = g.published?.ok ? `graph ✓ (+${g.strengthen?.added||0} edges)`
-    : g.authored?.action==='merged' ? 'graph ✓ (merged)'
-    : g.authored ? 'graph: skipped' : '';
-  toast(['Published ✓', graphNote].filter(Boolean).join(' · '));
-  loadList();
+  if(UIBUSY) return;
+  const id=$id('artId').value; if(!id){ toast('⚠️ Save the article first'); return; }
+  setBusy(true,$id('pubBtn'),'Publishing…');
+  try{
+    const p=await doPublish(id);
+    toast(p.ok ? ['✅ Article Published Successfully', p.note].filter(Boolean).join(' · ') : '❌ '+p.error);
+    if(p.ok) await loadList();
+  } finally { setBusy(false,$id('pubBtn')); }
 }
 
 async function togglePublish(){
-  const id=document.getElementById('artId').value; if(!id){toast('Save first');return;}
-  // flip based on current note
-  const isPub=/Published/.test(document.getElementById('metaNote').textContent);
-  if(isPub){
-    const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'draft',data:{id}})});
-    await r.json(); toast('Set to draft'); loadList(); return;
-  }
-  await publishArticle();
+  if(UIBUSY) return;
+  const id=$id('artId').value; if(!id){ toast('⚠️ Save the article first'); return; }
+  const isPub=/Published/.test($id('metaNote').textContent);
+  setBusy(true,$id('pubBtn'),isPub?'Unpublishing…':'Publishing…');
+  try{
+    if(isPub){
+      const res=await apiPost({action:'draft',data:{id}});
+      if(!res.ok){ toast('❌ '+res.error); return; }
+      toast('✅ Set to Draft'); $id('metaNote').textContent=$id('metaNote').textContent.replace('Published','Draft');
+      await loadList(); return;
+    }
+    const p=await doPublish(id);
+    toast(p.ok ? '✅ Article Published Successfully' : '❌ '+p.error);
+    if(p.ok) await loadList();
+  } finally { setBusy(false,$id('pubBtn')); }
 }
 
 async function removeArticle(){
-  const id=document.getElementById('artId').value; if(!id){toast('Nothing to delete');return;}
-  if(!confirm('Delete this article and its images?'))return;
-  const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'delete',data:{id}})});
-  await r.json(); toast('Deleted'); newArticle(); loadList();
+  if(UIBUSY) return;
+  const id=$id('artId').value; if(!id){ toast('Nothing to delete'); return; }
+  if(!confirm('Delete this article and its images?')) return;
+  setBusy(true,$id('delBtn'),'Deleting…');
+  try{
+    const res=await apiPost({action:'delete',data:{id}});
+    if(!res.ok){ toast('❌ '+res.error); return; }
+    toast('✅ Removed from list'); newArticle(); await loadList();
+  } finally { setBusy(false,$id('delBtn')); }
 }
 
 async function loadImages(id){
