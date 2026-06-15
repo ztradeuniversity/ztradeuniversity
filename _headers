@@ -16,3 +16,11 @@
 # Static assets (favicons, images): long cache, immutable URLs.
 /assets/*
   Cache-Control: public, max-age=2592000, immutable
+
+# JS modules are loaded by UNVERSIONED dynamic import() and evolve across deploys.
+# A more-specific rule (overrides the immutable rule above) so a redeploy is
+# picked up and a once-cached bad/missing response cannot stick for 30 days —
+# this is what otherwise breaks chart-vision-pro.js loading after a deploy.
+/assets/*.js
+  Cache-Control: public, max-age=3600, must-revalidate
+  X-Content-Type-Options: nosniff
