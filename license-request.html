@@ -1456,12 +1456,165 @@ form.addEventListener('submit', async function (e) {
 
     if (insertErr) throw new Error('Database error: ' + (insertErr.message || insertErr));
 
+    /* ════════════════════════════════════════════════════════════════════
+       Phase 18.3 — IMMEDIATE MATCH + IMMEDIATE ACK EMAIL
+       ────────────────────────────────────────────────────────────────────
+       Rule 1: probe broker_accounts right now (no waiting for the next
+               engine tick or broker upload).
+       Rule 2: if the account is already present in broker_accounts,
+               PATCH the license_request status='matched' so the engine
+               picks it up on the very next cycle (compile + delivery).
+       Rule 3: if NOT present, queue an acknowledgment email_outbox row
+               using the existing 'waiting' template so the engine sends
+               it on the next drain (~1 min via the trigger watcher).
+       Then insert an engine_triggers row to wake the engine within ~60s.
+       Every call is soft-fail — the license_requests row is already in
+       so the customer is never lost even if any of these probes glitch.
+    ════════════════════════════════════════════════════════════════════ */
+    const normAcct18_3 = String(account || '').trim();
+    let immediateMatch_18_3 = false;
+    let licenseRowId_18_3  = null;
+    try {
+      // 1. Find the license_request we just created so we can target the PATCH.
+      const { data: latestReq } = await supabaseClient
+        .from(TABLE_NAME)
+        .select('id, created_at')
+        .eq('account_number', normAcct18_3)
+        .eq('email', email)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (latestReq && latestReq[0]) licenseRowId_18_3 = latestReq[0].id;
+
+      // 2. Probe broker_accounts (the persistent registry populated on every
+      //    Broker File Intake — Phase 17D ensures this is always current).
+      const { data: brokerHits } = await supabaseClient
+        .from('broker_accounts')
+        .select('account_number')
+        .eq('account_number', normAcct18_3)
+        .limit(1);
+
+      if (brokerHits && brokerHits.length > 0 && licenseRowId_18_3) {
+        // RULE 2 — IMMEDIATE MATCH.  Flip to 'matched' so the engine's
+        // existing STEP 4-7 pipeline compiles + emails the EX5 file.
+        try {
+          await supabaseClient
+            .from(TABLE_NAME)
+            .update({ status: 'matched' })
+            .eq('id', licenseRowId_18_3);
+          immediateMatch_18_3 = true;
+          console.log('[Phase18.3] IMMEDIATE MATCH for', normAcct18_3, '→ status flipped to matched');
+        } catch (e) {
+          console.warn('[Phase18.3] immediate-match PATCH failed (non-fatal):', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[Phase18.3] broker_accounts probe failed (non-fatal):', e);
+    }
+
+    // RULE 3 — ACK email when not immediately matched.
+    if (!immediateMatch_18_3) {
+      /* Phase 18.4 — STATE-MACHINE DEDUP.
+         Each license_requests row may receive AT MOST one ack email.
+         We check the row's `ack_email_sent_at` flag first; only queue if
+         IS NULL.  Soft-fail when the column doesn't yet exist (pre-Phase-
+         18.4 schema) — the queue still runs once and never again because
+         the outbox-pending guard catches the second case. */
+      let ackAlreadyMarked_18_4 = false;
+      try {
+        if (licenseRowId_18_3) {
+          const { data: stateRow } = await supabaseClient
+            .from(TABLE_NAME)
+            .select('ack_email_sent_at')
+            .eq('id', licenseRowId_18_3)
+            .limit(1);
+          if (stateRow && stateRow[0] && stateRow[0].ack_email_sent_at) {
+            ackAlreadyMarked_18_4 = true;
+            console.log('[Phase18.4] ack_email_sent_at already set for id=' + licenseRowId_18_3 + ' — skipping duplicate queue.');
+          }
+        }
+      } catch (_) { /* column-missing fallback — proceed to queue */ }
+      try {
+        if (ackAlreadyMarked_18_4) { /* skip */ }
+        else {
+        // Dedupe: don't queue a second pending 'waiting' email for the same
+        // recipient within the last hour.
+        const { data: existing } = await supabaseClient
+          .from('email_outbox')
+          .select('id')
+          .eq('recipient_email', email)
+          .eq('template_type', 'waiting')
+          .eq('status', 'pending')
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          const ackBodyHtml =
+            '<p>Hi,</p>' +
+            '<p>Your license request has been received successfully.</p>' +
+            '<p>Your account number <strong>' + normAcct18_3 + '</strong> is not yet present in our latest broker report. ' +
+            'Our system will automatically re-check every new broker file upload for the next <strong>48 hours</strong>. ' +
+            'If your account appears in any future report, processing will continue automatically — no further action is required from you.</p>' +
+            '<p>If you have any questions, just reply to this email.</p>' +
+            '<p>Best regards,<br>Z Trade University Support</p>';
+          const ackBodyText =
+            'Your license request has been received successfully.\n\n' +
+            'Your account is not yet available in the latest broker report. ' +
+            'The system will automatically re-check future broker uploads for up to 48 hours. ' +
+            'If your account appears, processing will continue automatically. No further action is required.';
+          const ackRow = {
+            status:            'pending',
+            template_type:     'waiting',
+            recipient_email:   email,
+            recipient_account: normAcct18_3,
+            subject:           'License Request Received — Z Trade University',
+            body_html:         ackBodyHtml,
+            body_text:         ackBodyText,
+          };
+          if (licenseRowId_18_3) ackRow.request_id = String(licenseRowId_18_3);
+          await supabaseClient.from('email_outbox').insert([ackRow]);
+          console.log('[Phase18.3] ack email queued for', email);
+          /* Phase 18.4 — mark the license_request so future broker uploads
+             and dashboard sweeps cannot queue a duplicate ack.  Soft-fail
+             if the column hasn't been migrated yet. */
+          try {
+            if (licenseRowId_18_3) {
+              await supabaseClient
+                .from(TABLE_NAME)
+                .update({ ack_email_sent_at: new Date().toISOString() })
+                .eq('id', licenseRowId_18_3);
+            }
+          } catch (_) { /* column-missing soft-fail */ }
+        }
+        }
+      } catch (e) {
+        console.warn('[Phase18.3] ack email queue failed (non-fatal):', e);
+      }
+    }
+
+    // Always wake the engine so the pipeline (delivery email for matched,
+    // ack email for waiting) fires within ~60 seconds via the trigger watcher.
+    try {
+      await supabaseClient
+        .from('engine_triggers')
+        .insert([{ status: 'pending', requested_by: 'license-request-submit' }]);
+      console.log('[Phase18.3] engine_triggers nudge fired');
+    } catch (e) {
+      console.warn('[Phase18.3] engine_triggers nudge failed (non-fatal):', e);
+    }
+
     /* 3d. Success -------------------------------------- */
-    showToast(
-      'success',
-      'Your license request has been submitted successfully.',
-      'Our verification team will review your request and respond within 24–48 hours.'
-    );
+    if (immediateMatch_18_3) {
+      showToast(
+        'success',
+        'Account verified — your license is being prepared now.',
+        'Your account was found in our latest broker report. Your bot file will arrive in your inbox within minutes. Please check your Spam / Junk folder if you do not see it.'
+      );
+    } else {
+      showToast(
+        'success',
+        'Your license request has been submitted successfully.',
+        'You will receive a confirmation email shortly. Our system will automatically re-check future broker uploads for the next 48 hours and process your request as soon as your account appears.'
+      );
+    }
 
     /* Reset the form so the user sees a clean state if they close the toast. */
     form.reset();

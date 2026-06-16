@@ -33,7 +33,7 @@ import { makeLexiconScorer } from '../utils/retrieval-lexicon.js';
 import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
-import { llmConfigured, makeLLMComposer, generateEducationalAnswer, _llmDiag } from '../utils/composer-llm.js';
+import { llmConfigured, makeLLMComposer, generateEducationalAnswer } from '../utils/composer-llm.js';
 import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
 import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
@@ -767,7 +767,6 @@ export async function onRequest(context) {
   let answerConfidence = null;       // ANALYTICS: retrieval confidence for ai_response_logs
   let answerGraphNodeId = null;      // ANALYTICS: graph concept id when the graph layer answered
   let answerArticleId = null;        // ANALYTICS: article id when an article was surfaced
-  let _llmTrace       = null;        // TEMP-DEBUG (remove after root-cause): OpenAI-fallback runtime trace
   let clarifyAnswer   = null;
   let p10Lead         = '';
   let p10Contradiction = '';
@@ -1246,13 +1245,44 @@ export async function onRequest(context) {
     }
   }
 
+  // ── DATABASE LAYER — ANSWER *FROM* A PUBLISHED ARTICLE ────────────────────────
+  // When no graph concept / live-market / clarify answer was produced, a published
+  // ai_articles match must ANSWER the question — not merely be referenced under the
+  // generic engine template (the prior behavior buried the article and left the
+  // generic Technical-Analysis body as the "answer"). Reuses the EXISTING article
+  // search + composer (no new pipeline, retrieval unchanged). English-only (Language
+  // Lock). Relevance-gated by rankArticles (score>0 → off-topic returns nothing →
+  // safe reply stays). Runs BEFORE the OpenAI fallback so DB precedes OpenAI.
+  let _dbArticleAnswered = false;
+  if (aiSbConfigured(env) && lang === 'en' && !chartAnalysis && !_unsupported
+      && !directAnswer && !clarifyAnswer && !kbAnswer) {
+    try {
+      const _arts = await searchArticles(env, { q: genText, limit: 1 });
+      const _art  = _arts && _arts[0];
+      const _artBody = _art ? ((_art.summary && _art.summary.length > 40) ? _art.summary : String(_art.content || '').slice(0, 600)) : '';
+      if (_art && _artBody) {
+        const _src = _art.slug ? `\n\n📖 Source: [${_art.title}](${_art.slug})` : '';
+        answer = await composeAnswer({
+          lead: p10Lead,
+          body: `From the ZTU article **${_art.title}**:\n\n${_artBody}${_src}` + p10GuideAppend,
+          engagement: p10Followups,
+          disclaimer: '_⚠️ Educational only — not financial advice._',
+        }, { lang, intent: p10Intent });
+        answerSource    = 'database';
+        answerArticleId = (_art.id != null) ? _art.id : answerArticleId;
+        p10KbCat        = _art.category || p10KbCat;
+        _dbArticleAnswered = true;
+      }
+    } catch { /* additive — keep the existing reply on any failure */ }
+  }
+
   // ── PHASE 8: RESPONSE ORCHESTRATOR — Memory → Articles → Broker → Pattern ──
   // Weave the Knowledge Base layer around the engine answer (which already holds
   // live-market context). Fully graceful: no-ops when Supabase is unconfigured,
   // skipped for uploaded-chart turns, and English knowledge bodies are injected
   // ONLY for English so the Language Lock is never violated (localized memory
   // recall is safe in any language). Raw memory rows are never exposed.
-  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge) {
+  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge && !_dbArticleAnswered) {
     try {
       const kl = await buildKnowledgeLayer(env, {
         intent:  p10Intent,
@@ -1282,19 +1312,9 @@ export async function onRequest(context) {
   // call; new generations are stored as DRAFT only (never authoritative) and served with
   // an honest low-confidence disclaimer. Anti-hallucination preserved by the strict
   // generator (off-domain/signal/price guards); on any miss the existing safe reply stays.
-  // TEMP-DEBUG (remove after root-cause): record the gate values so we can see whether
-  // the OpenAI-fallback block is even entered, and exactly why if not.
-  const _learnGate = {
-    learnEnabled: learnEnabled(env), langEn: lang === 'en', notChart: !chartAnalysis,
-    notUnsupported: !_unsupported, noKb: !kbAnswer, noDirect: !directAnswer,
-    fallbackIntent: (p10Intent === 'fallback' || cls.intent === 'fallback'),
-    llmConfigured: llmConfigured(env), p10Intent, clsIntent: cls.intent,
-  };
-  _llmTrace = { entered: false, gate: _learnGate };
   if (learnEnabled(env) && lang === 'en' && !chartAnalysis && !_unsupported
-      && !kbAnswer && !directAnswer
+      && !kbAnswer && !directAnswer && !_dbArticleAnswered
       && (p10Intent === 'fallback' || cls.intent === 'fallback')) {
-    _llmTrace.entered = true;
     try {
       // STABILIZATION FIX: use the handler-scoped genText. `aText` is const-scoped to
       // the (!followup && !chartAnalysis) block above (closes ~L1091) and is OUT of
@@ -1305,19 +1325,15 @@ export async function onRequest(context) {
       if (cached && cached.content) {
         answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
         answerSource = 'openai';                     // LLM-generated draft (cached)
-        _llmTrace.path = 'cached';
       } else {
         const gen = await generateEducationalAnswer(env, genText, lang);
-        _llmTrace.genResult = gen ? `text(${gen.length})` : 'null';
-        _llmTrace.diag = _llmDiag();                  // exact engine/status/error from callModel
         if (gen) {
           answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
           answerSource = 'openai';                   // LLM fallback engine
           waitUntil(learnFromAnswer(env, { question: genText, answer: gen, lang, confidence: 'MEDIUM' }));
         }
       }
-    } catch (e) { _llmTrace.exception = String((e && e.message) || e); /* keep safe reply */ }
-    if (env.DEBUG === 'true') { try { console.error('[llm-fallback-trace]', JSON.stringify(_llmTrace)); } catch {} }
+    } catch { /* additive — keep the existing safe reply on any failure */ }
   }
 
   // ── MODULES 1 & 4: persist device profile + scores (background, server-side) ─
@@ -1489,7 +1505,6 @@ export async function onRequest(context) {
       },
       intent: p10Intent,
       lang,
-      llmTrace: _llmTrace,   // TEMP-DEBUG (remove after root-cause): OpenAI-fallback runtime trace
     } : null;
     sourceMeta = sourceBadge(answerSource, _dbg);
   } catch { sourceMeta = null; }

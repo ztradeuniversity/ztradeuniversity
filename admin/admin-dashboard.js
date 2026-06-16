@@ -2375,21 +2375,42 @@ const AdminDashboard = (() => {
        miss the auto-match against accounts the admin had already imported.
        Fire-and-forget; runs in the background so parse UI is never blocked.
        The async upsert chunks 500 rows at a time inside _persistBrokerAccounts
-       so even thousands of rows stay responsive. */
+       so even thousands of rows stay responsive.
+
+       Phase 18.3 — after the persist + auto-match, also wake the engine via
+       engine_triggers so every now-matched license_request enters the compile
+       + delivery pipeline within ~60 seconds (Rule 4).  Without this nudge,
+       newly-matched rows wait for the engine's 15-min Scheduled Task. */
     try {
       if (typeof _persistBrokerAccounts === 'function' && IntakeState.parsedRows && IntakeState.parsedRows.length > 0) {
         _persistBrokerAccounts(
           IntakeState.parsedRows,
           IntakeState.columns || [],
           IntakeState.file ? IntakeState.file.name : null
-        ).then(res => {
+        ).then(async res => {
           console.log('[Phase17D] broker_accounts persisted on PARSE — upserted=' + (res && res.upserted) + ', errors=' + (res && res.errors));
           // Refresh license_requests auto-match against the freshly-persisted
           // registry so any pending row submitted while waiting for this broker
           // file gets matched right away.
+          let matchedNow = 0;
           try {
-            if (typeof _autoMatchPendingViaBroker === 'function') _autoMatchPendingViaBroker();
+            if (typeof _autoMatchPendingViaBroker === 'function') {
+              const am = await _autoMatchPendingViaBroker();
+              matchedNow = (am && am.matchedNow) || 0;
+              if (matchedNow > 0) console.log('[Phase18.3] broker-upload auto-match flipped ' + matchedNow + ' pending → matched');
+            }
           } catch (_) {}
+          // Phase 18.3 — nudge the engine so newly-matched rows hit compile
+          // + delivery on the next watcher tick (~60s) instead of waiting
+          // for the 15-min Scheduled Task.
+          try {
+            if (supabaseClient && DataLayer && DataLayer.isLive) {
+              await supabaseClient
+                .from('engine_triggers')
+                .insert([{ status: 'pending', requested_by: 'broker-file-upload' }]);
+              console.log('[Phase18.3] engine_triggers nudge fired after broker file upload');
+            }
+          } catch (e) { console.warn('[Phase18.3] engine_triggers nudge after upload failed:', e); }
         }).catch(e => console.warn('[Phase17D] broker_accounts persist on parse failed (non-fatal):', e));
       }
     } catch (e) {
@@ -3416,9 +3437,24 @@ const AdminDashboard = (() => {
         // every archived entry regardless of canonical status, which would
         // send rejection emails to already-matched customers.
         if (dbWritten) {
+          /* Phase 18.4 — single-shot guard.  If this license_request was
+             already marked not_found_email_sent_at by a previous sweep,
+             do not queue a second one.  Soft-fail (treat as not sent) if
+             the column hasn't been migrated yet. */
+          let _alreadySentNF_184 = false;
+          try {
+            const { data: nfFlag } = await supabaseClient
+              .from(DB_SCHEMA.TABLE)
+              .select('not_found_email_sent_at')
+              .eq('id', entry.id)
+              .limit(1);
+            if (nfFlag && nfFlag[0] && nfFlag[0].not_found_email_sent_at) _alreadySentNF_184 = true;
+          } catch (_) {}
           const name = (req && (req.name || req.email)) || entry.email || 'there';
           const tmpl = AUTO_MSG.not_found;
-          if (entry.email && tmpl) {
+          if (_alreadySentNF_184) {
+            console.log(`[RetryPool] ${entry.account}: not_found already sent — skipping duplicate (Phase 18.4 dedup).`);
+          } else if (entry.email && tmpl) {
             notFoundEmailItems.push({
               id:         _autoId(),
               type:       'not_found',
@@ -3431,6 +3467,16 @@ const AdminDashboard = (() => {
               queued_at:  new Date().toISOString(),
             });
             console.log(`[RetryPool] queued not_found email for ${entry.account} → ${entry.email}`);
+            /* Phase 18.4 — PATCH the marker now so any concurrent sweep
+               sees the row as already sent.  Soft-fail. */
+            try {
+              if (entry.id) {
+                await supabaseClient
+                  .from(DB_SCHEMA.TABLE)
+                  .update({ not_found_email_sent_at: new Date().toISOString() })
+                  .eq('id', entry.id);
+              }
+            } catch (_) { /* column-missing soft-fail */ }
           } else if (!entry.email) {
             console.warn(`[RetryPool] ${entry.account}: writeUnmatched succeeded but pool entry has no email — cannot queue not_found message.`);
           }
@@ -3640,6 +3686,30 @@ const AdminDashboard = (() => {
       return { staleFound: 0, marked: 0, emailed: 0 };
     }
 
+    /* Phase 18.4 — STATE-MACHINE DEDUP for not_found emails.
+       Pull the not_found_email_sent_at flag for the stale ids and skip any
+       row that already has it set.  Soft-fails (returns empty Set) if the
+       column hasn't been migrated yet — behavior reverts to pre-Phase-18.4
+       (no dedup), which matches today. */
+    const _alreadyNotFoundSent = new Set();
+    try {
+      if (staleRows.length > 0) {
+        const ids = staleRows.map(r => r.id).filter(Boolean);
+        if (ids.length > 0) {
+          const { data: flags } = await supabaseClient
+            .from(DB_SCHEMA.TABLE)
+            .select('id, not_found_email_sent_at')
+            .in('id', ids);
+          (flags || []).forEach(f => {
+            if (f && f.not_found_email_sent_at) _alreadyNotFoundSent.add(f.id);
+          });
+        }
+      }
+    } catch (_) { /* column-missing soft-fail */ }
+    if (_alreadyNotFoundSent.size > 0) {
+      console.log('[NotFoundSweep] dedup — skipping ' + _alreadyNotFoundSent.size + ' row(s) already marked not_found_email_sent_at.');
+    }
+
     console.log(`[NotFoundSweep] stale-pending scan — found ${staleRows.length} pending license_request(s) older than ${RETRY_POOL_MAX_DAYS}-day window.`);
     if (staleRows.length === 0) return { staleFound: 0, marked: 0, emailed: 0 };
 
@@ -3667,6 +3737,7 @@ const AdminDashboard = (() => {
     const emailItems = [];
     let marked = 0;
 
+    const _patchNotFoundIds = [];   // Phase 18.4 — PATCH after queue succeeds
     for (const row of staleRows) {
       const acct = normalizeAccountId(row.account_number);
       if (!acct) continue;
@@ -3674,6 +3745,8 @@ const AdminDashboard = (() => {
       // the Phase 16 STEP 2.5 in master_engine.ps1 will auto-match it
       // on its next 15-min tick.  Leave it for the engine to handle.
       if (brokerSet.has(acct)) continue;
+      // Phase 18.4 — never queue a second not_found for the same id.
+      if (_alreadyNotFoundSent.has(row.id)) continue;
 
       try {
         await writeUnmatched(row.id);
@@ -3697,8 +3770,13 @@ const AdminDashboard = (() => {
           status:     'queued',
           queued_at:  new Date().toISOString(),
         });
+        _patchNotFoundIds.push(row.id);   // Phase 18.4 — earmark for PATCH
       }
     }
+
+    /* Phase 18.4 — PATCH not_found_email_sent_at for every row we just queued.
+       Runs AFTER the email_outbox INSERT call below so any failure there can
+       still be observed, but the PATCH itself is soft-fail (column-missing-safe). */
 
     // Step 4 — push the not_found emails to email_outbox
     let emailedCount = 0;
@@ -3707,6 +3785,17 @@ const AdminDashboard = (() => {
         const res = await _insertEmailOutbox(emailItems);
         emailedCount = res.inserted ? res.inserted.length : 0;
         console.log(`[NotFoundSweep] email_outbox: inserted ${emailedCount} not_found row(s).`);
+        /* Phase 18.4 — single-shot mark.  Per-id PATCH so partial failures
+           don't poison the rest.  Soft-fail when column doesn't exist. */
+        const _nowIso_184 = new Date().toISOString();
+        for (const lid of _patchNotFoundIds) {
+          try {
+            await supabaseClient
+              .from(DB_SCHEMA.TABLE)
+              .update({ not_found_email_sent_at: _nowIso_184 })
+              .eq('id', lid);
+          } catch (_) { /* column-missing soft-fail */ }
+        }
       } catch (e) {
         console.warn('[NotFoundSweep] email_outbox insert failed:', e);
       }
@@ -7292,7 +7381,104 @@ const AdminDashboard = (() => {
       } catch (_) { /* non-fatal */ }
     }
 
-    showToast('✓ License request submitted on behalf of customer' + (insertedId ? ' — id=' + insertedId : '') + '. Entering the standard pipeline.', 'success', 6000);
+    /* Phase 18.3 — IMMEDIATE MATCH + IMMEDIATE ACK EMAIL (admin path).
+       Mirrors the public license-request.html flow so the admin-created row
+       gets the same Rule 1/2/3 treatment within seconds. */
+    let immediateMatch_admin_18_3 = false;
+    try {
+      if (insertedId) {
+        const { data: brokerHits } = await supabaseClient
+          .from('broker_accounts')
+          .select('account_number')
+          .eq('account_number', normAcct)
+          .limit(1);
+        if (brokerHits && brokerHits.length > 0) {
+          try {
+            await supabaseClient
+              .from(DB_SCHEMA.TABLE)
+              .update({ status: 'matched' })
+              .eq('id', insertedId);
+            immediateMatch_admin_18_3 = true;
+            console.log('[Phase18.3 admin] IMMEDIATE MATCH for', normAcct);
+          } catch (e) { console.warn('[Phase18.3 admin] PATCH matched failed:', e); }
+        }
+      }
+    } catch (e) { console.warn('[Phase18.3 admin] broker probe failed:', e); }
+
+    if (!immediateMatch_admin_18_3) {
+      /* Phase 18.4 — STATE-MACHINE DEDUP (admin path).  Same single-shot
+         rule as the public form: check license_requests.ack_email_sent_at
+         first; only queue if NULL.  Soft-fail on missing column. */
+      let ackAlreadyMarked_admin_18_4 = false;
+      try {
+        if (insertedId) {
+          const { data: stateRow } = await supabaseClient
+            .from(DB_SCHEMA.TABLE)
+            .select('ack_email_sent_at')
+            .eq('id', insertedId)
+            .limit(1);
+          if (stateRow && stateRow[0] && stateRow[0].ack_email_sent_at) {
+            ackAlreadyMarked_admin_18_4 = true;
+          }
+        }
+      } catch (_) {}
+      if (!ackAlreadyMarked_admin_18_4) try {
+        const { data: existing } = await supabaseClient
+          .from('email_outbox')
+          .select('id')
+          .eq('recipient_email', email)
+          .eq('template_type', 'waiting')
+          .eq('status', 'pending')
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          const ackBodyHtml =
+            '<p>Hi,</p>' +
+            '<p>Your license request has been received successfully.</p>' +
+            '<p>Your account number <strong>' + esc(normAcct) + '</strong> is not yet present in our latest broker report. ' +
+            'Our system will automatically re-check every new broker file upload for the next <strong>48 hours</strong>. ' +
+            'If your account appears in any future report, processing will continue automatically — no further action is required from you.</p>' +
+            '<p>If you have any questions, just reply to this email.</p>' +
+            '<p>Best regards,<br>Z Trade University Support</p>';
+          const ackRow = {
+            status:            'pending',
+            template_type:     'waiting',
+            recipient_email:   email,
+            recipient_account: normAcct,
+            subject:           'License Request Received — Z Trade University',
+            body_html:         ackBodyHtml,
+            body_text:         'Your license request has been received successfully. Your account is not yet present in our latest broker report. The system will automatically re-check future broker uploads for up to 48 hours.',
+          };
+          if (insertedId) ackRow.request_id = String(insertedId);
+          await supabaseClient.from('email_outbox').insert([ackRow]);
+          console.log('[Phase18.3 admin] ack email queued for', email);
+          // Phase 18.4 — mark single-shot.
+          try {
+            if (insertedId) {
+              await supabaseClient
+                .from(DB_SCHEMA.TABLE)
+                .update({ ack_email_sent_at: new Date().toISOString() })
+                .eq('id', insertedId);
+            }
+          } catch (_) { /* column-missing soft-fail */ }
+        }
+      } catch (e) { console.warn('[Phase18.3 admin] ack email queue failed:', e); }
+    }
+
+    // Always wake the engine so the pipeline fires within ~60 seconds.
+    try {
+      await supabaseClient
+        .from('engine_triggers')
+        .insert([{ status: 'pending', requested_by: 'admin-create-license' }]);
+    } catch (e) { console.warn('[Phase18.3 admin] engine_triggers nudge failed:', e); }
+
+    showToast(
+      (immediateMatch_admin_18_3
+        ? '✓ Account verified — license is being prepared now'
+        : '✓ License request submitted on behalf of customer') +
+      (insertedId ? ' — id=' + insertedId : '') +
+      (immediateMatch_admin_18_3 ? '. Engine compile + email queued.' : '. Acknowledgment email queued; will auto-match on next broker upload.'),
+      'success', 7000
+    );
     _closeCreateLicenseModal();
 
     // 6. Pull the fresh row into State.requests + propagate, then fire the

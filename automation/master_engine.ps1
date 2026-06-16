@@ -267,6 +267,68 @@ function Get-RequestsByStatus([string]$StatusOrFilter) {
     return @(Invoke-SupabaseRequest -Path $path)
 }
 
+function Test-EmailMarker {
+    # Phase 18.4 — returns $true if the named timestamp column on the
+    # license_requests row is already populated (i.e. email already sent).
+    # Returns $false on any failure (column missing, network error, RLS
+    # denial) so the caller proceeds to send.  Single-shot dedup guard.
+    param(
+        [Parameter(Mandatory)] [string]$Id,
+        [Parameter(Mandatory)] [ValidateSet('ack_email_sent_at','delivery_email_sent_at','not_found_email_sent_at')]
+        [string]$Column
+    )
+    try {
+        $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/' + $script:Table + '?id=eq.' + $Id + '&select=' + $Column + '&limit=1'
+        $headers = @{
+            'apikey'        = $script:SupabaseAuthKey
+            'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
+            'Accept'        = 'application/json'
+        }
+        $resp = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers `
+                  -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json) -or $json -eq '[]') { return $false }
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction SilentlyContinue
+        $jss = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $parsed = $jss.DeserializeObject($json)
+        if (-not $parsed -or $parsed.Count -eq 0) { return $false }
+        $v = $parsed[0][$Column]
+        return ($null -ne $v -and -not [string]::IsNullOrWhiteSpace([string]$v))
+    } catch {
+        # Column-missing (PGRST204) or transient error → behave as "not set" so
+        # the engine proceeds and the next layer (CSV dedup) still protects.
+        return $false
+    }
+}
+
+function Set-EmailMarker {
+    # Phase 18.4 — stamps now() into the named license_requests timestamp
+    # column.  Soft-fails on any error so SMTP success is never reverted.
+    param(
+        [Parameter(Mandatory)] [string]$Id,
+        [Parameter(Mandatory)] [ValidateSet('ack_email_sent_at','delivery_email_sent_at','not_found_email_sent_at')]
+        [string]$Column
+    )
+    try {
+        $uri = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1/' + $script:Table + '?id=eq.' + $Id
+        $headers = @{
+            'apikey'        = $script:SupabaseAuthKey
+            'Authorization' = 'Bearer ' + $script:SupabaseAuthKey
+            'Content-Type'  = 'application/json'
+            'Prefer'        = 'return=minimal'
+        }
+        $nowIso = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $bodyMap = @{ $Column = $nowIso }
+        $body = ($bodyMap | ConvertTo-Json -Compress)
+        [void](Invoke-WebRequest -Uri $uri -Method PATCH -Headers $headers -Body $body `
+                 -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop)
+        return $true
+    } catch {
+        Write-Warn2 ("Phase 18.4 Set-EmailMarker failed for id={0} col={1}: {2}" -f $Id, $Column, $_.Exception.Message)
+        return $false
+    }
+}
+
 function Update-RequestStatus {
     param(
         [Parameter(Mandatory)] [string]$Id,
@@ -1276,6 +1338,14 @@ try {
             continue
         }
 
+        # Phase 18.4 — single-shot delivery email guard.  If this license_request
+        # already has delivery_email_sent_at, skip sending entirely.  This is
+        # a SECOND layer on top of the CSV Test-AlreadyApproved dedup so even
+        # if approved_clients.csv is wiped, the engine still won't double-send.
+        if (Test-EmailMarker -Id ([string]$r.id) -Column 'delivery_email_sent_at') {
+            Write-Info ("Phase 18.4 — delivery_email_sent_at already set for id={0} ({1}); skipping duplicate send." -f $r.id, $r.email)
+            continue
+        }
         Write-Step "Sending success email to $($r.email)..."
         try {
             Send-HtmlEmail -From $SenderEmail -FromName 'Z Trade University' `
@@ -1283,6 +1353,9 @@ try {
                            -To $r.email -Subject $renderedSubject `
                            -HtmlBody $renderedHtml -AttachmentPath $zip
             Write-Ok "Email accepted by Gmail SMTP."
+            # Phase 18.4 — mark single-shot before status flip so any concurrent
+            # cycle of the engine sees the marker.
+            [void](Set-EmailMarker -Id ([string]$r.id) -Column 'delivery_email_sent_at')
         } catch {
             Write-Err2 "SMTP send failed for $($r.email): $($_.Exception.Message)"
             $stat_emailFailed++
@@ -1362,6 +1435,11 @@ try {
             continue
         }
 
+        # Phase 18.4 — single-shot not_found / mismatch guard.
+        if (Test-EmailMarker -Id ([string]$r.id) -Column 'not_found_email_sent_at') {
+            Write-Info ("Phase 18.4 — not_found_email_sent_at already set for id={0} ({1}); skipping duplicate mismatch send." -f $r.id, $r.email)
+            continue
+        }
         Write-Step "Sending mismatch email to $($r.email)..."
         try {
             Send-HtmlEmail -From $SenderEmail -FromName 'Z Trade University' `
@@ -1369,6 +1447,8 @@ try {
                            -To $r.email -Subject $renderedSubject `
                            -HtmlBody $renderedHtml
             Write-Ok 'Mismatch email accepted by Gmail SMTP.'
+            # Phase 18.4 — mark single-shot.
+            [void](Set-EmailMarker -Id ([string]$r.id) -Column 'not_found_email_sent_at')
             $stat_rejectSent++
         } catch {
             Write-Err2 "Mismatch SMTP failed for $($r.email): $($_.Exception.Message)"
@@ -1602,6 +1682,18 @@ try {
                 if ($markSent.ok) {
                     Write-Ok ("Outbox sent: #{0} -> {1} ({2})" -f $rowId, $row.recipient_email, $row.template_type)
                     $stat_outboxSent++
+                    # Phase 18.4 — when this outbox row was a 'waiting' (i.e. ack)
+                    # template AND carries a request_id, stamp ack_email_sent_at on
+                    # the underlying license_requests row so no second ack ever fires.
+                    # Soft-fails on missing column or malformed id.
+                    $tplType = if ($row.template_type) { [string]$row.template_type } else { '' }
+                    $reqIdRaw = if ($row.request_id) { [string]$row.request_id } else { '' }
+                    if ($tplType -eq 'waiting' -and -not [string]::IsNullOrWhiteSpace($reqIdRaw)) {
+                        try {
+                            [void](Set-EmailMarker -Id $reqIdRaw -Column 'ack_email_sent_at')
+                            Write-Info ("Phase 18.4 — stamped ack_email_sent_at for license_requests.id={0}" -f $reqIdRaw)
+                        } catch { Write-Warn2 ("Phase 18.4 ack mark failed: {0}" -f $_.Exception.Message) }
+                    }
                 } else {
                     # Email DID go out, but DB writeback failed — record loudly and continue.
                     Write-Err2 ("Outbox #{0}: email sent but mark-sent failed (HTTP {1}): {2}" -f $rowId, $markSent.statusCode, $markSent.errorMessage)
