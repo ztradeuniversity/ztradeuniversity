@@ -1259,8 +1259,24 @@ export async function onRequest(context) {
     try {
       const _arts = await searchArticles(env, { q: genText, limit: 1 });
       const _art  = _arts && _arts[0];
-      const _artBody = _art ? ((_art.summary && _art.summary.length > 40) ? _art.summary : String(_art.content || '').slice(0, 600)) : '';
-      if (_art && _artBody) {
+      // Feed the composer the article's actual BODY (summary + content), not just the
+      // summary metadata — the answer-bearing facts/bullets (e.g. "price may revisit
+      // the area later") live in content. Summary leads (orients), content follows;
+      // capped so the reply stays concise. This is what makes the article ANSWER the
+      // question instead of the engine's generic Technical-Analysis template.
+      const _sum = (_art && _art.summary && _art.summary.trim().length > 40) ? _art.summary.trim() : '';
+      const _con = (_art && _art.content) ? String(_art.content).trim() : '';
+      const _artBody = [_sum, _con].filter(Boolean).join('\n\n').slice(0, 1200);
+      // RELEVANCE GUARD — only let the top article ANSWER when the question shares a
+      // DISTINCTIVE term with its title/tags. rankArticles' score>0 is too loose (a
+      // generic title word like "explained"/"simple" matches unrelated queries, e.g.
+      // "elliott wave … in simple terms" wrongly hit the Liquidity Void article). A
+      // weak match falls through to the OpenAI fallback instead of answering wrong.
+      const _GENERIC = new Set(['explain','explained','explaining','simple','words','word','trading','trade','trades','trader','traders','price','prices','market','markets','area','areas','zone','zones','later','happens','because','about','into','from','this','that','with','your','what','when','where','does','term','terms','watch','return']);
+      const _sig = (s) => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length > 3 && !_GENERIC.has(w));
+      const _aTok = new Set([..._sig(_art && _art.title), ...((_art && _art.tags) || []).flatMap(t => _sig(t))]);
+      const _relevant = _sig(genText).some(t => _aTok.has(t));
+      if (_art && _artBody && _relevant) {
         const _src = _art.slug ? `\n\n📖 Source: [${_art.title}](${_art.slug})` : '';
         answer = await composeAnswer({
           lead: p10Lead,
