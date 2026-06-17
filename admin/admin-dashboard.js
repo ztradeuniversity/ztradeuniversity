@@ -2400,6 +2400,39 @@ const AdminDashboard = (() => {
               if (matchedNow > 0) console.log('[Phase18.3] broker-upload auto-match flipped ' + matchedNow + ' pending → matched');
             }
           } catch (_) {}
+
+          /* ════════════════════════════════════════════════════════════════
+             Phase 18.5 CRITICAL TIMER RULE — start the 48-hour retry window
+             only when the FIRST Broker File Intake checks the account.
+             ────────────────────────────────────────────────────────────────
+             For every license_request that REMAINED pending after the auto-
+             match step (i.e. this broker file did NOT contain its account),
+             stamp `first_broker_check_at = now()` IF NULL.  This is the
+             timestamp the not-found sweep uses to count 48 hours.  The
+             original `created_at`-based cutoff is abandoned because the
+             customer must not be on the clock before their account has
+             ever been checked.
+             Matched rows in this cycle have status='matched' already and
+             are excluded by the `status=eq.pending` filter — they bypass
+             the timer entirely (Scenarios D and E). */
+          try {
+            if (supabaseClient && DataLayer && DataLayer.isLive) {
+              const nowIso_185 = new Date().toISOString();
+              const stampResp = await supabaseClient
+                .from(DB_SCHEMA.TABLE)
+                .update({ first_broker_check_at: nowIso_185 })
+                .eq('status', 'pending')
+                .is('first_broker_check_at', null)
+                .select('id');
+              const stampedCount = (stampResp && stampResp.data) ? stampResp.data.length : 0;
+              if (stampedCount > 0) {
+                console.log('[Phase18.5] timer-start — stamped first_broker_check_at on ' + stampedCount + ' pending row(s).');
+              }
+            }
+          } catch (e) {
+            console.warn('[Phase18.5] first_broker_check_at stamp failed (column missing? non-fatal):', e);
+          }
+
           // Phase 18.3 — nudge the engine so newly-matched rows hit compile
           // + delivery on the next watcher tick (~60s) instead of waiting
           // for the 15-min Scheduled Task.
@@ -3544,13 +3577,18 @@ const AdminDashboard = (() => {
     if (!supabaseClient || !DataLayer.isLive) {
       return { scanned: 0, matchedNow: 0, errors: 0, skipped: 'not-live' };
     }
-    let scanned = 0, matchedNow = 0, errors = 0;
+    let scanned = 0, matchedNow = 0, errors = 0, recoveredFromUnmatched = 0;
     try {
-      // 1) Pull all currently-pending license_requests
+      // 1) Pull all currently-pending OR previously-unmatched license_requests.
+      //    Phase 18.5 Scenario C — accounts that received a Not Found email
+      //    can still be auto-recovered if their account appears in a later
+      //    broker file.  The engine STEP 7 detects the recovery via
+      //    not_found_email_sent_at and prepends a "previously not found,
+      //    now appearing" banner to the delivery email.
       const { data: pendingRows, error: pendErr } = await supabaseClient
         .from('license_requests')
-        .select('id, account_number, status, created_at')
-        .eq('status', 'pending');
+        .select('id, account_number, status, created_at, not_found_email_sent_at')
+        .in('status', ['pending', 'unmatched']);
       if (pendErr) {
         console.warn('[AutoMatch] pending fetch error:', pendErr);
         return { scanned: 0, matchedNow: 0, errors: 1 };
@@ -3622,6 +3660,7 @@ const AdminDashboard = (() => {
           }
         } catch (e) { console.warn('[AutoMatch] recover hook failed:', e); }
         try {
+          const wasUnmatched_185 = (row.status === 'unmatched');
           const { error: updErr } = await supabaseClient
             .from('license_requests')
             .update({ status: 'matched', updated_at: nowIso })
@@ -3631,6 +3670,10 @@ const AdminDashboard = (() => {
             console.warn('[AutoMatch] update error for id=' + row.id + ':', updErr);
           } else {
             matchedNow++;
+            if (wasUnmatched_185) {
+              recoveredFromUnmatched++;
+              console.log('[AutoMatch] Scenario C recovery — unmatched → matched: id=' + row.id + ' account=' + acct);
+            }
           }
         } catch (e) {
           errors++;
@@ -3638,7 +3681,10 @@ const AdminDashboard = (() => {
         }
       }
       if (matchedNow > 0) {
-        console.log('[AutoMatch] flipped ' + matchedNow + ' of ' + scanned + ' pending → matched (broker_accounts hit).');
+        console.log('[AutoMatch] flipped ' + matchedNow + ' of ' + scanned + ' pending/unmatched → matched (broker_accounts hit).');
+      }
+      if (recoveredFromUnmatched > 0) {
+        console.log('[Phase18.5] ' + recoveredFromUnmatched + ' license_request(s) recovered from unmatched. Engine STEP 7 will use the "previously not found" delivery banner for these.');
       }
       if (ibBlocked > 0) {
         console.warn('[AutoMatch] ' + ibBlocked + ' pending request(s) NOT auto-matched — flagged IB Changed.');
@@ -3663,7 +3709,12 @@ const AdminDashboard = (() => {
       return { staleFound: 0, marked: 0, emailed: 0 };
     }
 
-    // Step 1 — fetch pending license_requests older than the 48h window
+    /* Phase 18.5 CRITICAL TIMER RULE — the 48-hour window starts when the
+       FIRST Broker File Intake checked the account, NOT at license_request
+       submit time.  Rows whose `first_broker_check_at` is NULL have not yet
+       been checked against any broker file and MUST NOT be considered
+       stale — their timer hasn't started.  Rows whose first_broker_check_at
+       is < (now - 48h) are eligible for the Not Found sweep. */
     const cutoffMs  = Date.now() - RETRY_POOL_MAX_DAYS * RETRY_POOL_DAY_MS;
     const cutoffIso = new Date(cutoffMs).toISOString();
 
@@ -3671,16 +3722,32 @@ const AdminDashboard = (() => {
     try {
       const { data, error } = await supabaseClient
         .from(DB_SCHEMA.TABLE)
-        .select(DB_SCHEMA.SELECT)
+        .select(DB_SCHEMA.SELECT + ', first_broker_check_at, not_found_email_sent_at')
         .eq('status', 'pending')
-        .lt('created_at', cutoffIso)
-        .order('created_at', { ascending: true })
+        .not('first_broker_check_at', 'is', null)
+        .lt('first_broker_check_at', cutoffIso)
+        .order('first_broker_check_at', { ascending: true })
         .limit(500);
       if (error) {
-        console.warn('[NotFoundSweep] license_requests stale-pending fetch failed:', error.message);
-        return { staleFound: 0, marked: 0, emailed: 0 };
+        // If the new column isn't migrated yet, PostgREST returns 42703.  Fall
+        // back to the legacy created_at gate so the system keeps running — but
+        // log loudly so the migration gets attention.
+        console.warn('[NotFoundSweep] first_broker_check_at-based fetch failed (run the Phase 18.5 SQL migration to fix):', error.message);
+        const legacyResp = await supabaseClient
+          .from(DB_SCHEMA.TABLE)
+          .select(DB_SCHEMA.SELECT)
+          .eq('status', 'pending')
+          .lt('created_at', cutoffIso)
+          .order('created_at', { ascending: true })
+          .limit(500);
+        if (legacyResp.error) {
+          console.warn('[NotFoundSweep] legacy fallback also failed:', legacyResp.error.message);
+          return { staleFound: 0, marked: 0, emailed: 0 };
+        }
+        staleRows = legacyResp.data || [];
+      } else {
+        staleRows = data || [];
       }
-      staleRows = data || [];
     } catch (e) {
       console.warn('[NotFoundSweep] license_requests fetch exception:', e);
       return { staleFound: 0, marked: 0, emailed: 0 };
@@ -8057,18 +8124,21 @@ const AdminDashboard = (() => {
         `⏳ *ZTU Bot — Not Matched Yet*\n\nHi ${name || 'there'}, account *${acct}* hasn't matched yet. We'll keep checking for up to 48 hours. If matched, delivery is automatic.`,
     },
     not_found: {
+      // Phase 18.5 Scenario B — final not-found wording. Sent at most once
+      // per license_request (guard: license_requests.not_found_email_sent_at).
       subject: 'Your ZTU Bot Account — Not Matched After 48 Hours',
       body: (name) =>
         `Hi ${name || 'there'},\n\n` +
-        `Your account has not matched after the 48-hour review window.\n\n` +
-        `Likely cause:\n` +
-        `• referral / IB code missing on registration\n` +
-        `• broker account not created through our referral link\n` +
-        `• existing broker account used instead of a new account\n` +
-        `• registration did not complete fully\n\n` +
-        `Please re-check the steps above, or contact support and we'll help.\n\nBest regards,\nZTU Support Team`,
+        `We have completed the 48-hour review window for your license request and your account was not found in our broker partner reports.\n\n` +
+        `Before contacting support, please verify the following on your side:\n\n` +
+        `1. Broker account number — make sure the number you submitted matches the number on your MT5 platform exactly (no missing or extra digits).\n` +
+        `2. Registration email — confirm the email you used on this form is the same email registered with your broker.\n` +
+        `3. IB registration — confirm your broker account was opened through our official referral / IB link. Accounts opened without our IB link do not appear in our broker partner reports and cannot be matched.\n` +
+        `4. Account creation — confirm the broker account creation was completed in full (KYC / verification steps finished).\n\n` +
+        `If you have re-checked the four points above and you are absolutely certain your account was opened under our IB, please contact support and we will help you investigate.\n\n` +
+        `Best regards,\nZTU Support Team`,
       wa: (name, acct) =>
-        `❌ *ZTU Bot — Not Matched*\n\nHi ${name || 'there'}, after 48 hours of checks, account *${acct}* could not be confirmed under our IB referral. Please re-register using our official link or contact support.`,
+        `❌ *ZTU Bot — Not Matched*\n\nHi ${name || 'there'}, after 48 hours of checks, account *${acct}* could not be confirmed under our IB referral. Please re-verify your account number, registration email, and that your account was opened via our official IB link. Contact support only if certain.`,
     },
     // Phase 16.1 — Issue 2 + 6 new template: once-only "already processed".
     already_processed: {

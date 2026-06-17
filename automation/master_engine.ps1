@@ -547,8 +547,12 @@ function Get-IbChangedAccountSet([int]$Limit = 5000) {
 }
 
 function Get-PendingLicenseRequests([int]$Limit = 500) {
-    # Per-row emit. Returns id + account_number for each pending license_request.
-    $path = "/$script:Table" + "?status=eq.pending&select=id,account_number&order=created_at.asc&limit=$Limit"
+    # Phase 18.5 Scenario C — also return rows previously marked `unmatched`
+    # so STEP 2.5 can auto-recover them when a later broker file contains
+    # their account.  STEP 7's recovery banner is selected based on
+    # not_found_email_sent_at, so we include that column here.
+    # Per-row emit. Returns id + account_number + status + not_found_email_sent_at.
+    $path = "/$script:Table" + "?status=in.(pending,unmatched)&select=id,account_number,status,not_found_email_sent_at&order=created_at.asc&limit=$Limit"
     $uri  = $script:SupabaseUrl.TrimEnd('/') + '/rest/v1' + $path
     $headers = @{
         'apikey'        = $script:SupabaseAuthKey
@@ -947,6 +951,59 @@ Write-Host '|   ZTU MASTER ENGINE                                  |' -Foregroun
 Write-Host '+======================================================+' -ForegroundColor DarkYellow
 Write-Host ''
 
+# ═══════════════════════════════════════════════════════════════════════════
+#  Phase 18.5 AUDIT 2 — startup mutex to prevent concurrent engine runs.
+#  Both `ZTU_MasterEngine` (15-min Scheduled Task, invokes this script
+#  directly) and `ZTU_TriggerWatcher` (1-min Scheduled Task, invokes this
+#  script via trigger_watcher.ps1) can fire at the same minute.  Without
+#  this lock, two engine instances would race through STEPs 3-7 and pass
+#  the Test-EmailMarker check before either could call Set-EmailMarker,
+#  producing duplicate delivery / mismatch / outbox emails.
+#
+#  Convention:
+#    • Lock file location:  D:\ZTU_AUTOMATION\logs\master_engine.lock
+#    • Held value:           startedAt timestamp (ISO 8601)
+#    • Stale threshold:      30 min (engine runs typically take 30-90 s)
+#    • On stale: the lock is reclaimed and a warning is printed.
+#    • On clean exit / unhandled error: the lock is released in the
+#      outer finally block at the bottom of the script.
+# ═══════════════════════════════════════════════════════════════════════════
+$script:MasterEngineLockFile = Join-Path $Root 'logs\master_engine.lock'
+$script:MasterEngineLockHeld = $false
+
+function Release-EngineLock {
+    # Phase 18.5 AUDIT 2 — single point of release for master_engine.lock.
+    # Called from every exit path so the next scheduled run is never blocked
+    # by a stale lock left behind by an early-return code path.
+    if ($script:MasterEngineLockHeld -and (Test-Path -LiteralPath $script:MasterEngineLockFile)) {
+        Remove-Item -LiteralPath $script:MasterEngineLockFile -Force -ErrorAction SilentlyContinue
+        $script:MasterEngineLockHeld = $false
+        Write-Host '[Phase18.5] master_engine.lock released.' -ForegroundColor Cyan
+    }
+}
+
+try {
+    $lockDir = Split-Path -Parent $script:MasterEngineLockFile
+    if (-not (Test-Path -LiteralPath $lockDir)) {
+        New-Item -ItemType Directory -Path $lockDir -Force | Out-Null
+    }
+    if (Test-Path -LiteralPath $script:MasterEngineLockFile) {
+        $existingAge = (Get-Date) - (Get-Item -LiteralPath $script:MasterEngineLockFile).LastWriteTime
+        if ($existingAge.TotalMinutes -lt 30) {
+            Write-Host ('[Phase18.5] master_engine.lock held (age {0:N1} min) — another engine instance is running. Exiting cleanly.' -f $existingAge.TotalMinutes) -ForegroundColor Yellow
+            exit 0
+        }
+        Write-Host ('[Phase18.5] master_engine.lock is STALE (age {0:N1} min) — reclaiming and proceeding.' -f $existingAge.TotalMinutes) -ForegroundColor Yellow
+        Remove-Item -LiteralPath $script:MasterEngineLockFile -Force -ErrorAction SilentlyContinue
+    }
+    Set-Content -LiteralPath $script:MasterEngineLockFile -Value $startedAt.ToString('o') -Encoding utf8
+    $script:MasterEngineLockHeld = $true
+    Write-Host ('[Phase18.5] master_engine.lock acquired at {0}' -f $startedAt.ToString('o')) -ForegroundColor Cyan
+} catch {
+    Write-Host ('[Phase18.5] master_engine.lock setup failed (non-fatal — proceeding without lock): {0}' -f $_.Exception.Message) -ForegroundColor Yellow
+    $script:MasterEngineLockHeld = $false
+}
+
 try {
     # ── 0. Resolve paths + validate environment ────────────────────────────
     Write-Step 'Validating environment...'
@@ -987,6 +1044,7 @@ try {
     foreach ($p in $required) {
         if (-not (Test-Path -LiteralPath $p)) {
             Write-Err2 "Required path missing: $p"
+            Release-EngineLock   # Phase 18.5 AUDIT 2
             exit 2
         }
     }
@@ -997,12 +1055,15 @@ try {
     if (-not (Test-Path -LiteralPath $credFile -PathType Leaf)) {
         Write-Err2 "SMTP credential file not found: $credFile"
         Write-Err2 "Run once to create it: Get-Credential -UserName 'ztu.automation@gmail.com' | Export-Clixml -Path '$credFile'"
+        Release-EngineLock   # Phase 18.5 AUDIT 2
         exit 6
     }
     $smtpCred    = Import-Clixml -LiteralPath $credFile
     $SenderEmail = $smtpCred.UserName
     if ($SenderEmail -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$') {
-        Write-Err2 "Sender email in credential file is malformed: $SenderEmail"; exit 1
+        Write-Err2 "Sender email in credential file is malformed: $SenderEmail"
+        Release-EngineLock   # Phase 18.5 AUDIT 2
+        exit 1
     }
     if ($DryRun) { Write-Info 'DRY-RUN MODE: no SMTP send, no Supabase status update will be performed.' }
 
@@ -1085,27 +1146,37 @@ try {
         Write-Info "broker_accounts loaded: $brokerCount unique account number(s)"
 
         if ($brokerCount -gt 0) {
-            $pendingCount = 0
-            $matched      = 0
+            $pendingCount  = 0
+            $matched       = 0
+            $recoveredC    = 0
+            # Phase 18.5 Scenario C — the recall set now includes 'unmatched'
+            # rows so accounts that received the Not Found email can still be
+            # automatically recovered when a later broker file contains them.
             foreach ($req in (Get-PendingLicenseRequests -Limit 500)) {
                 $pendingCount++
                 $reqAcct = Normalize-AccountId ([string]$req.account_number)
                 if (-not $reqAcct) { continue }
                 if ($brokerSet.ContainsKey($reqAcct)) {
+                    $wasUnmatched = (([string]$req.status) -eq 'unmatched')
                     try {
                         $upd = Update-RequestStatus -Id ([string]$req.id) -NewStatus 'matched' `
-                                 -AllowedFromStatuses @('pending')
+                                 -AllowedFromStatuses @('pending','unmatched')
                         if ($upd) {
                             $matched++
                             $stat_autoMatched++
-                            Write-Ok ("Auto-matched: license_requests.id={0} | account={1} -> 'matched'" -f $req.id, $reqAcct)
+                            if ($wasUnmatched) {
+                                $recoveredC++
+                                Write-Ok ("[Phase18.5] Scenario C RECOVERY: license_requests.id={0} | account={1} | unmatched -> matched (Not Found email previously sent; STEP 7 will use recovery banner)" -f $req.id, $reqAcct)
+                            } else {
+                                Write-Ok ("Auto-matched: license_requests.id={0} | account={1} -> 'matched'" -f $req.id, $reqAcct)
+                            }
                         }
                     } catch {
                         Write-Warn2 ("Auto-match PATCH failed for id={0}: {1}" -f $req.id, $_.Exception.Message)
                     }
                 }
             }
-            Write-Ok ("Phase 16 auto-match: scanned {0} pending request(s), matched {1}." -f $pendingCount, $matched)
+            Write-Ok ("Phase 16 auto-match: scanned {0} pending/unmatched request(s), matched {1}, recovered (Scenario C) {2}." -f $pendingCount, $matched, $recoveredC)
         } else {
             Write-Info 'broker_accounts empty (migration may not be run yet) — auto-match skipped.'
         }
@@ -1126,6 +1197,7 @@ try {
         }
     } catch {
         Write-Err2 "Supabase fetch failed: $($_.Exception.Message)"
+        Release-EngineLock   # Phase 18.5 AUDIT 2
         exit 3
     }
     Write-Ok ("compile_ready/matched: {0}  |  compiled retry: {1}  |  rejected: {2}" -f $compileReadyRows.Count, $compiledRetryRows.Count, $rejectedRows.Count)
@@ -1346,6 +1418,36 @@ try {
             Write-Info ("Phase 18.4 — delivery_email_sent_at already set for id={0} ({1}); skipping duplicate send." -f $r.id, $r.email)
             continue
         }
+
+        # ──────────────────────────────────────────────────────────────────
+        # Phase 18.5 — Scenario-aware delivery banner.
+        #   Scenario C (was Not Found, now appearing) → red/amber banner
+        #     "Your account was not present in a previous broker report.
+        #      It has now appeared in a newer broker report and your
+        #      license is now being delivered."
+        #   Scenario E (Ack was sent, no Not Found, now appearing) → green
+        #     "Your account has now been located in the latest broker
+        #      report and your license is being delivered."
+        #   Scenario D (immediate match at submit, no prior emails) → no
+        #     banner; the standard success template stands alone.
+        # The banner is prepended to $renderedHtml so the rest of the
+        # template stays unchanged.  Test-EmailMarker reads the relevant
+        # license_requests timestamp column; both calls soft-fail (return
+        # $false) when the column hasn't been migrated yet, which makes the
+        # banner a no-op rather than a hard failure pre-migration.
+        # ──────────────────────────────────────────────────────────────────
+        $wasNotFound = Test-EmailMarker -Id ([string]$r.id) -Column 'not_found_email_sent_at'
+        $wasAcked    = Test-EmailMarker -Id ([string]$r.id) -Column 'ack_email_sent_at'
+        if ($wasNotFound) {
+            $bannerHtml = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:14px 18px;margin:0 0 22px;color:#78350f;font-size:14.5px;line-height:1.55"><strong>Account recovered.</strong> Your account was not present in a previous broker report. It has now appeared in a newer broker report and your license is now being delivered. This message supersedes the earlier Not Found notification.</div>'
+            $renderedHtml = $bannerHtml + $renderedHtml
+            Write-Info ("[Phase18.5] Scenario C delivery — prepending recovery banner for id={0}" -f $r.id)
+        } elseif ($wasAcked) {
+            $bannerHtml = '<div style="background:#dcfce7;border:1px solid #22c55e;border-radius:8px;padding:14px 18px;margin:0 0 22px;color:#14532d;font-size:14.5px;line-height:1.55"><strong>Good news!</strong> Your account has now been located in the latest broker report and your license is being delivered.</div>'
+            $renderedHtml = $bannerHtml + $renderedHtml
+            Write-Info ("[Phase18.5] Scenario E delivery — prepending now-found banner for id={0}" -f $r.id)
+        }
+
         Write-Step "Sending success email to $($r.email)..."
         try {
             Send-HtmlEmail -From $SenderEmail -FromName 'Z Trade University' `
@@ -1780,6 +1882,7 @@ try {
     Add-Content -LiteralPath (Join-Path $paths.LogsDir 'master_engine_history.jsonl') -Value ($summary | ConvertTo-Json -Depth 6 -Compress) -Encoding utf8
 
     Write-Info "Log: $logFile"
+    Release-EngineLock   # Phase 18.5 AUDIT 2 — clean exit
     exit 0
 
 } catch {
@@ -1788,5 +1891,6 @@ try {
     if ($_.InvocationInfo -and $_.InvocationInfo.ScriptLineNumber) {
         Write-Info "At line $($_.InvocationInfo.ScriptLineNumber)"
     }
+    Release-EngineLock   # Phase 18.5 AUDIT 2 — release after unhandled error
     exit 99
 }
