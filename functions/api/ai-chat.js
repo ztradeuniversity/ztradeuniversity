@@ -1272,7 +1272,10 @@ export async function onRequest(context) {
       // generic title word like "explained"/"simple" matches unrelated queries, e.g.
       // "elliott wave … in simple terms" wrongly hit the Liquidity Void article). A
       // weak match falls through to the OpenAI fallback instead of answering wrong.
-      const _GENERIC = new Set(['explain','explained','explaining','simple','words','word','trading','trade','trades','trader','traders','price','prices','market','markets','area','areas','zone','zones','later','happens','because','about','into','from','this','that','with','your','what','when','where','does','term','terms','watch','return']);
+      const _GENERIC = new Set(['explain','explained','explaining','simple','words','word','trading','trade','trades','trader','traders','price','prices','market','markets','area','areas','zone','zones','later','happens','because','about','into','from','this','that','with','your','what','when','where','does','term','terms','watch','return',
+        // Domain DESCRIPTORS (not the distinctive SUBJECT) — prevent an unrelated query
+        // matching an article on a shared generic word like "indicator"/"stop".
+        'indicator','indicators','oscillator','oscillators','signal','signals','strategy','strategies','system','systems','method','methods','tool','tools','setup','setups','study','studies','technique','techniques','stop','stops']);
       const _sig = (s) => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length > 3 && !_GENERIC.has(w));
       const _aTok = new Set([..._sig(_art && _art.title), ...((_art && _art.tags) || []).flatMap(t => _sig(t))]);
       const _relevant = _sig(genText).some(t => _aTok.has(t));

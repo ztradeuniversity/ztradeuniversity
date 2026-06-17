@@ -66,7 +66,11 @@ function withCount(tags, n) {
 // Generic/filler words that must NOT, on their own, justify reusing a stored draft —
 // so a SIMILAR-question match requires a DISTINCTIVE shared term (e.g. "elliott"),
 // never just filler ("explain"/"simple"/"what"). Preserves the no-wrong-answer safeguard.
-const SIM_GENERIC = new Set(['explain','explained','explaining','simple','words','word','what','whats','when','where','which','does','about','into','from','this','that','with','your','tell','define','definition','meaning','mean','trading','trade','trades','trader','traders','market','markets','price','prices','term','terms','basics','beginner','beginners','please','give','show','work','works','using','used']);
+const SIM_GENERIC = new Set(['explain','explained','explaining','simple','words','word','what','whats','when','where','which','does','about','into','from','this','that','with','your','tell','define','definition','meaning','mean','trading','trade','trades','trader','traders','market','markets','price','prices','term','terms','basics','beginner','beginners','please','give','show','work','works','using','used',
+  // Domain DESCRIPTORS (never the distinctive SUBJECT) — without these, every indicator
+  // question shares "indicator"/"oscillator"/"stop" with any stored indicator draft and
+  // false-matches (e.g. "Vortex Indicator" wrongly reused "Schaff Trend Cycle indicator").
+  'indicator','indicators','oscillator','oscillators','signal','signals','strategy','strategies','system','systems','method','methods','tool','tools','setup','setups','study','studies','technique','techniques','stop','stops']);
 function simTokens(s) {
   return (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length > 3 && !SIM_GENERIC.has(w));
 }
