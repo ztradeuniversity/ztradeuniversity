@@ -85,29 +85,36 @@ export async function onRequest(context) {
     if (_u.searchParams.get('diag') === 'fred') {
       const _k = env.FRED_API_KEY;
       const _present = typeof _k === 'string' && _k.length > 0;
+      const _kt = _present ? _k.trim() : '';
       const _mask = _present ? `${_k.slice(0, 2)}…${_k.slice(-2)} (len ${_k.length})` : '(missing/empty)';
-      const _series = ['DGS10', 'DFII10', 'VIXCLS'];
-      const _results = [];
-      for (const sid of _series) {
-        const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${encodeURIComponent(_k ?? '')}&limit=1&sort_order=desc&file_type=json`;
-        let status = null, ok = false, error_message = null, sampleValue = null;
+      // Probe one series with a given key; capture status + FRED error_message OR raw body.
+      const probe = async (sid, key) => {
+        const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${encodeURIComponent(key)}&limit=1&sort_order=desc&file_type=json`;
         try {
           const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-          status = r.status; ok = r.ok;
-          const body = await r.json().catch(() => null);
-          if (ok) sampleValue = body?.observations?.[0]?.value ?? null;
-          else error_message = body?.error_message || `HTTP ${status}`;
-        } catch (e) { error_message = String((e && e.message) || e); }
-        _results.push({ series_id: sid, status, ok, error_message, sampleValue });
+          const txt = await r.text().catch(() => '');
+          let error_message = null, sampleValue = null;
+          try { const j = JSON.parse(txt); if (r.ok) sampleValue = j?.observations?.[0]?.value ?? null; else error_message = j?.error_message || null; }
+          catch { error_message = txt ? txt.slice(0, 200) : `HTTP ${r.status}`; }
+          return { status: r.status, ok: r.ok, error_message, sampleValue };
+        } catch (e) { return { status: null, ok: false, error_message: String((e && e.message) || e), sampleValue: null }; }
+      };
+      const results = [];
+      for (const sid of ['DGS10', 'DFII10', 'VIXCLS']) {
+        results.push({ series_id: sid, raw: await probe(sid, _k ?? ''), trimmed: await probe(sid, _kt) });
       }
-      const fredAny = _results.some(r => r.ok);
       return new Response(JSON.stringify({
         diag: 'fred',
-        keyPresent: _present, keyFingerprint: _mask,
-        requestUrlTemplate: 'https://api.stlouisfed.org/fred/series/observations?series_id=<SID>&api_key=<KEY>&limit=1&sort_order=desc&file_type=json',
-        results: _results,
-        fredAny,
-        sourceStatus: { fred: fredAny ? 'ok' : 'error' },
+        keyPresent: _present,
+        keyFingerprint: _mask,
+        keyLenRaw: _present ? _k.length : 0,
+        keyLenTrimmed: _kt.length,
+        trimChangesValue: _present ? (_k !== _kt) : false,
+        trailingCharCodes: _present ? [..._k.slice(-3)].map(c => c.charCodeAt(0)) : [],   // e.g. [...,50,10] → trailing \n
+        results,
+        fredAnyRaw: results.some(r => r.raw.ok),
+        fredAnyTrimmed: results.some(r => r.trimmed.ok),
+        sourceStatus: { fred: results.some(r => r.trimmed.ok) ? 'ok(after-trim)' : 'error' },
       }, null, 2), { headers: { ...CORS_HEADERS, 'Cache-Control': 'no-store' } });
     }
   } catch (e) {

@@ -80,10 +80,14 @@ async function fetchJSON(url, timeoutMs = FETCH_TIMEOUT_MS, _attempt = 1) {
  * @returns {Promise<{ value: number, date: string }>}
  */
 export async function fetchFRED(seriesId, apiKey) {
+  // Defensive: strip stray surrounding whitespace/newline from the stored secret.
+  // A trailing newline (key length 33 instead of 32) makes FRED reject the request
+  // (and surfaces as HTTP 520 in the Workers fetch runtime). trim() makes it robust.
+  const key = String(apiKey || '').trim();
   const url = [
     'https://api.stlouisfed.org/fred/series/observations',
     `?series_id=${encodeURIComponent(seriesId)}`,
-    `&api_key=${encodeURIComponent(apiKey)}`,
+    `&api_key=${encodeURIComponent(key)}`,
     '&limit=5',
     '&sort_order=desc',
     '&file_type=json',
