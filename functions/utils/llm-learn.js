@@ -21,8 +21,8 @@
 // existing functions; every DB call is best-effort and swallowed (never blocks chat).
 // ════════════════════════════════════════════════════════════════════════════
 
-import { getArticle, createArticle, updateArticle, setArticleStatus } from './article-store.js';
-import { inferCategory, estimateReadingTime } from './article-categories.js';
+import { getArticle, createArticle, updateArticle, setArticleStatus, listArticles } from './article-store.js';
+import { inferCategory, estimateReadingTime, rankArticles } from './article-categories.js';
 import { syncArticleToGraph } from './article-graph-sync.js';
 import { graphActive } from './kb-store.js';
 
@@ -63,11 +63,42 @@ function withCount(tags, n) {
   return out;
 }
 
-// Look up a previously-learned draft for this question (cache). Returns the row or null.
-// Lets the caller reuse a stored answer instead of paying for another LLM call.
+// Generic/filler words that must NOT, on their own, justify reusing a stored draft —
+// so a SIMILAR-question match requires a DISTINCTIVE shared term (e.g. "elliott"),
+// never just filler ("explain"/"simple"/"what"). Preserves the no-wrong-answer safeguard.
+const SIM_GENERIC = new Set(['explain','explained','explaining','simple','words','word','what','whats','when','where','which','does','about','into','from','this','that','with','your','tell','define','definition','meaning','mean','trading','trade','trades','trader','traders','market','markets','price','prices','term','terms','basics','beginner','beginners','please','give','show','work','works','using','used']);
+function simTokens(s) {
+  return (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length > 3 && !SIM_GENERIC.has(w));
+}
+
+// Look up a previously-learned answer for THIS question so we can reuse it instead of
+// paying for another LLM call. Two stages, both over the EXISTING ai_articles store
+// (ai-draft namespace — no new storage, no promotion):
+//   1) EXACT — normalized-question key (fast path; unchanged behavior).
+//   2) SIMILAR — fuzzy match over stored AI drafts via the existing rankArticles, gated
+//      by DISTINCTIVE-term overlap with the draft's original question (title/tags) so a
+//      paraphrase ("Elliott Wave Theory" ≈ "Elliott Wave Principle") reuses the stored
+//      answer, while an unrelated question can never reuse the wrong draft.
+// Returns the article row (its .content is the stored answer) or null.
 export async function recallLearned(env, question) {
   if (!learnEnabled(env) || !question) return null;
-  try { return await getArticle(env, `ai-draft-${keyOf(question)}`); } catch { return null; }
+  try {
+    const exact = await getArticle(env, `ai-draft-${keyOf(question)}`);
+    if (exact && exact.content) return exact;
+    // SIMILAR-question reuse
+    const qSig = simTokens(question);
+    if (!qSig.length) return null;                                   // nothing distinctive to match on
+    const drafts = (await listArticles(env, { status: 'draft', limit: 100 }) || [])
+      .filter(a => a && a.content && Array.isArray(a.tags) && a.tags.includes('ai-draft'));
+    if (!drafts.length) return null;
+    const top = (rankArticles(question, drafts, 1) || [])[0];        // reuse existing fuzzyScore ranking
+    if (!top || !top.content) return null;
+    const dSig = new Set([...simTokens(top.title), ...((top.tags || []).flatMap(t => simTokens(t)))]);
+    const overlap = qSig.filter(t => dSig.has(t)).length;
+    // Require a distinctive shared term AND a non-trivial score → no wrong-draft reuse.
+    if (overlap >= 1 && (top._score || 0) >= 10) return top;
+    return null;
+  } catch { return null; }
 }
 
 // Capture / reinforce a generated answer as a reviewable draft. Idempotent by slug.

@@ -1340,13 +1340,17 @@ export async function onRequest(context) {
       const cached = await recallLearned(env, genText);
       if (cached && cached.content) {
         answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
-        answerSource = 'openai';                     // LLM-generated draft (cached)
+        answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
         const gen = await generateEducationalAnswer(env, genText, lang);
         if (gen) {
           answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
-          answerSource = 'openai';                   // LLM fallback engine
-          waitUntil(learnFromAnswer(env, { question: genText, answer: gen, lang, confidence: 'MEDIUM' }));
+          answerSource = 'openai';                   // LLM fallback engine (fresh generation)
+          // STORE BEFORE RETURNING (await, not waitUntil) so the draft is committed by the
+          // time the reply is sent — guarantees the very next identical question (even an
+          // immediate repeat) is served from storage and does NOT call the LLM again.
+          // learnFromAnswer is best-effort/never-throws, so awaiting it can't break the reply.
+          await learnFromAnswer(env, { question: genText, answer: gen, lang, confidence: 'MEDIUM' });
         }
       }
     } catch { /* additive — keep the existing safe reply on any failure */ }
