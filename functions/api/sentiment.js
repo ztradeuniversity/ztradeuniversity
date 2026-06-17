@@ -75,6 +75,45 @@ export async function onRequest(context) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
+  // ── TEMP-DIAG (remove after FRED root-cause) — GET /api/sentiment?diag=fred
+  // Performs the REAL FRED calls with the production env.FRED_API_KEY and returns the
+  // raw HTTP status + FRED error_message per series (which the normal path discards),
+  // plus a masked key fingerprint so we can confirm the running deployment reads the
+  // NEW key. Not cached. Exposes only masked key info (never the secret).
+  try {
+    const _u = new URL(request.url);
+    if (_u.searchParams.get('diag') === 'fred') {
+      const _k = env.FRED_API_KEY;
+      const _present = typeof _k === 'string' && _k.length > 0;
+      const _mask = _present ? `${_k.slice(0, 2)}…${_k.slice(-2)} (len ${_k.length})` : '(missing/empty)';
+      const _series = ['DGS10', 'DFII10', 'VIXCLS'];
+      const _results = [];
+      for (const sid of _series) {
+        const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${encodeURIComponent(_k ?? '')}&limit=1&sort_order=desc&file_type=json`;
+        let status = null, ok = false, error_message = null, sampleValue = null;
+        try {
+          const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          status = r.status; ok = r.ok;
+          const body = await r.json().catch(() => null);
+          if (ok) sampleValue = body?.observations?.[0]?.value ?? null;
+          else error_message = body?.error_message || `HTTP ${status}`;
+        } catch (e) { error_message = String((e && e.message) || e); }
+        _results.push({ series_id: sid, status, ok, error_message, sampleValue });
+      }
+      const fredAny = _results.some(r => r.ok);
+      return new Response(JSON.stringify({
+        diag: 'fred',
+        keyPresent: _present, keyFingerprint: _mask,
+        requestUrlTemplate: 'https://api.stlouisfed.org/fred/series/observations?series_id=<SID>&api_key=<KEY>&limit=1&sort_order=desc&file_type=json',
+        results: _results,
+        fredAny,
+        sourceStatus: { fred: fredAny ? 'ok' : 'error' },
+      }, null, 2), { headers: { ...CORS_HEADERS, 'Cache-Control': 'no-store' } });
+    }
+  } catch (e) {
+    return new Response(JSON.stringify({ diag: 'fred', fatal: String((e && e.message) || e) }), { headers: CORS_HEADERS });
+  }
+
   const cached = await cacheGet(request);
   if (cached) return cached;
 
