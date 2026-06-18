@@ -29,6 +29,7 @@ import { cacheGet, cachePut }                      from '../utils/cache.js';
 import { fetchFRED, fetchTwelveDataQuote,
          fetchGoldAPIPrice }                        from '../utils/fetchers.js';
 import { toPrice, toPct, round, buildSourceStatus } from '../utils/normalizers.js';
+import { classifyApiError }                        from '../utils/api-error.js';
 
 const CACHE_TTL_SECONDS = 90;
 
@@ -104,7 +105,7 @@ export async function onRequest(context) {
     yields.us10y_date = fredUS10Y.value.date;
     fredAny = true;
   } else {
-    if (env.DEBUG === 'true') { console.error('[/api/sentiment] FRED DGS10 failed:', fredUS10Y.reason?.message); }
+    if (env.DEBUG === 'true') { console.error('[/api/sentiment] FRED DGS10 failed:', JSON.stringify(classifyApiError('FRED', fredUS10Y.reason))); }
   }
 
   if (fredRealYield.status === 'fulfilled' && fredRealYield.value) {
@@ -112,14 +113,14 @@ export async function onRequest(context) {
     yields.real10y_date = fredRealYield.value.date;
     fredAny = true;
   } else {
-    if (env.DEBUG === 'true') { console.error('[/api/sentiment] FRED DFII10 failed:', fredRealYield.reason?.message); }
+    if (env.DEBUG === 'true') { console.error('[/api/sentiment] FRED DFII10 failed:', JSON.stringify(classifyApiError('FRED', fredRealYield.reason))); }
   }
 
   if (fredVIX.status === 'fulfilled' && fredVIX.value) {
     vix.value = round(fredVIX.value.value, 2);
     fredAny   = true;
   } else {
-    if (env.DEBUG === 'true') { console.error('[/api/sentiment] FRED VIXCLS failed:', fredVIX.reason?.message); }
+    if (env.DEBUG === 'true') { console.error('[/api/sentiment] FRED VIXCLS failed:', JSON.stringify(classifyApiError('FRED', fredVIX.reason))); }
   }
 
   if (yields.us10y !== null && yields.real10y !== null) {
@@ -140,7 +141,7 @@ export async function onRequest(context) {
     gold.low       = toPrice(g.low);
     sourceStatus.twelvedata_gold = 'ok';
   } else {
-    if (env.DEBUG === 'true') { console.error('[/api/sentiment] TwelveData XAU/USD failed:', tdGold.reason?.message); }
+    if (env.DEBUG === 'true') { console.error('[/api/sentiment] TwelveData XAU/USD failed:', JSON.stringify(classifyApiError('TwelveData', tdGold.reason))); }
     sourceStatus.twelvedata_gold = 'error';
     try {
       const ga       = await fetchGoldAPIPrice('XAU');
@@ -149,7 +150,7 @@ export async function onRequest(context) {
       gold.changePct = toPct(ga.changePct);
       sourceStatus.twelvedata_gold = 'fallback';
     } catch (err) {
-      if (env.DEBUG === 'true') { console.error('[/api/sentiment] gold-api.com XAU failed:', err.message); }
+      if (env.DEBUG === 'true') { console.error('[/api/sentiment] gold-api.com XAU failed:', JSON.stringify(classifyApiError('GoldAPI', err))); }
     }
   }
 
@@ -165,7 +166,7 @@ export async function onRequest(context) {
     btc.low        = toPrice(b.low);
     sourceStatus.twelvedata_btc = 'ok';
   } else {
-    if (env.DEBUG === 'true') { console.error('[/api/sentiment] TwelveData BTC/USD failed:', tdBTC.reason?.message); }
+    if (env.DEBUG === 'true') { console.error('[/api/sentiment] TwelveData BTC/USD failed:', JSON.stringify(classifyApiError('TwelveData', tdBTC.reason))); }
     sourceStatus.twelvedata_btc = 'error';
     try {
       const ga       = await fetchGoldAPIPrice('BTC');
@@ -174,7 +175,7 @@ export async function onRequest(context) {
       btc.changePct  = toPct(ga.changePct);
       sourceStatus.twelvedata_btc = 'fallback';
     } catch (err) {
-      if (env.DEBUG === 'true') { console.error('[/api/sentiment] gold-api.com BTC failed:', err.message); }
+      if (env.DEBUG === 'true') { console.error('[/api/sentiment] gold-api.com BTC failed:', JSON.stringify(classifyApiError('GoldAPI', err))); }
     }
   }
 
