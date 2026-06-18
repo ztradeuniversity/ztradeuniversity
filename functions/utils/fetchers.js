@@ -32,28 +32,35 @@ const FETCH_TIMEOUT_MS = 5000; // Hard timeout for every upstream API call
  * @param {number} [_attempt]  - internal retry counter, do not pass externally
  * @returns {Promise<object>}
  */
+const MAX_ATTEMPTS = 3;             // total tries (was effectively 2); transient edge 5xx needs a few
 async function fetchJSON(url, timeoutMs = FETCH_TIMEOUT_MS, _attempt = 1) {
   const controller = new AbortController();
   const timer      = setTimeout(() => controller.abort(), timeoutMs);
   let hostname;
   try { hostname = new URL(url).hostname; } catch { hostname = 'unknown'; }
+  const backoff = () => new Promise(r => setTimeout(r, 250 * _attempt));   // 250ms, 500ms
 
   try {
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) {
+      // ROOT-CAUSE FIX: a TRANSIENT upstream/edge error (5xx — including the Cloudflare
+      // 520–526 family seen intermittently from FRED's Akamai edge to Workers egress) is
+      // RETRIED with backoff. Cloudflare rotates egress IPs across attempts, so a retry
+      // usually lands on an accepted path. 4xx (bad key / quota / not-found) is NOT retried.
+      if (res.status >= 500 && _attempt < MAX_ATTEMPTS) { await backoff(); return fetchJSON(url, timeoutMs, _attempt + 1); }
       throw new Error(`HTTP ${res.status} ${res.statusText} from ${hostname}`);
     }
     return await res.json();
   } catch (err) {
     clearTimeout(timer);
     if (err.name === 'AbortError') {
-      if (_attempt < 2) return fetchJSON(url, timeoutMs, 2);
+      if (_attempt < MAX_ATTEMPTS) { await backoff(); return fetchJSON(url, timeoutMs, _attempt + 1); }
       throw new Error(`Timeout (${timeoutMs}ms) fetching ${hostname}`);
     }
-    // Retry once on network-level errors only (not HTTP status errors)
+    // Retry network-level errors (not already-handled HTTP status errors).
     const isHttpError = /^HTTP \d{3}/.test(err.message);
-    if (!isHttpError && _attempt < 2) return fetchJSON(url, timeoutMs, 2);
+    if (!isHttpError && _attempt < MAX_ATTEMPTS) { await backoff(); return fetchJSON(url, timeoutMs, _attempt + 1); }
     // Re-throw with host context but strip URL (which may contain API key)
     if (!err.message.includes(hostname)) {
       throw new Error(`${hostname}: ${err.message}`);
