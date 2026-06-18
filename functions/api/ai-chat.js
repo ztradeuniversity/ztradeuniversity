@@ -38,7 +38,7 @@ import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-op
 import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
 import { wrapConversational } from '../utils/conversational-wrapper.js';
-import { buildSafeReply } from '../utils/safe-reply.js';
+import { buildSafeReply, buildSmallTalkReply } from '../utils/safe-reply.js';
 import { TELEGRAM, WHATSAPP } from '../utils/response-engine.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
@@ -1384,16 +1384,19 @@ export async function onRequest(context) {
     ]));
   }
 
-  // ── SAFE REPLY UPGRADE — for a genuine unknown/off-topic turn (the answer came from
-  // the SAFE tier, not DB/Graph/Live/OpenAI), replace any rambling engine fallback with
-  // a concise, professional message stating what we CAN and CAN'T help with. The graph
-  // suggestion chips below still append a "try these" list. Skips greetings/small-talk/
-  // clarify (their own replies), chart + unsupported-language turns. Localized langs only.
+  // ── SAFE REPLY UPGRADE — when the reply came from the SAFE tier (no DB/Graph/Live/
+  // OpenAI answer was produced, and not an intentional direct message), replace the
+  // rambling engine fallback: small-talk gets a brief human reply; everything else
+  // (off-topic, fallback, or an unanswered/misclassified question — e.g. "football" was
+  // labelled 'knowledge') gets a concise "what I can / can't help with". The graph
+  // suggestion chips below still append "try these". Greeting keeps its own warm reply;
+  // clarify / chart / unsupported-language / direct-message turns are untouched. Localized langs only.
   if (answerSource === 'safe' && ['en', 'ur', 'ur-roman', 'ar'].includes(lang)
-      && !clarifyAnswer && !chartAnalysis && !_unsupported
-      && (p10Intent === 'fallback' || p10Intent === 'offtopic' || cls.intent === 'fallback')
-      && !['greeting', 'smalltalk'].includes(p10Intent)) {
-    try { answer = buildSafeReply(lang); } catch { /* keep existing reply on any failure */ }
+      && !clarifyAnswer && !chartAnalysis && !_unsupported && !directAnswer
+      && p10Intent !== 'greeting') {
+    try {
+      answer = (p10Intent === 'smalltalk') ? buildSmallTalkReply(lang) : buildSafeReply(lang);
+    } catch { /* keep existing reply on any failure */ }
   }
 
   // ── PHASE 2: USER ENGAGEMENT — when the turn was vague/unmatched (clarify or
