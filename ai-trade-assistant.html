@@ -3222,9 +3222,15 @@ async function verifyOtp(e) {
   if (isVerifiedLocal()) { accessState.verified = true; }
   checkAccess();
 
-  // Pre-fill from URL ?q= param
-  const q = new URLSearchParams(window.location.search).get('q');
-  if (q) setTimeout(() => { chatIn.value = decodeURIComponent(q); resize(); updateCount(); }, 400);
+  // Pre-fill from URL ?q= param (and optionally auto-send when &send=1)
+  const _params = new URLSearchParams(window.location.search);
+  const q = _params.get('q');
+  if (q) setTimeout(() => {
+    chatIn.value = decodeURIComponent(q); resize(); updateCount();
+    if (_params.get('send') === '1' && chatIn.value.trim() && !streaming) {
+      try { sendMessage(); } catch (e) {}
+    }
+  }, 400);
 })();
 </script>
 </body>
