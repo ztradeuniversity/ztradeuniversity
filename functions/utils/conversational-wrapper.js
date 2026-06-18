@@ -24,7 +24,7 @@ const GREET = {
   ar:         ['أهلاً بك! 👋', 'مرحباً! 👋'],
 };
 const ACK = {
-  en:         ['Great question', 'Good one', 'Love this question', 'Glad you asked'],
+  en:         ['Good question', 'Good one', 'Glad you asked'],   // trimmed effusive praise (no "Love this question")
   ur:         ['اچھا سوال', 'بہترین سوال'],
   'ur-roman': ['Achha sawal', 'Behtareen sawal'],
   ar:         ['سؤال ممتاز', 'سؤال جيد'],
@@ -53,11 +53,17 @@ export function wrapConversational(answer, { messages = [], answerSource = 'safe
 
   const seed = body.slice(0, 40);
   const t = String(topic || '').trim();
-  const ackOpener = vary(pick(ACK, lang), seed);
-  const ack = t ? `${ackOpener} ${pick(ABOUT, lang)} ${t} —` : `${ackOpener} —`;
 
-  const firstTurn = isFirstMessage || (messages.filter(m => m && m.role === 'user').length <= 1);
+  const userTurns = messages.filter(m => m && m.role === 'user').length;
+  const firstTurn = isFirstMessage || userTurns <= 1;
   const greet = firstTurn ? vary(pick(GREET, lang), seed) : '';
+
+  // ANTI-OVERUSE: a warm acknowledgement on the first turn, then only OCCASIONALLY
+  // (every ~3rd turn) — never on every reply — so it doesn't become repetitive praise.
+  // Deterministic by turn count; most later turns open straight with the answer (more
+  // expert-like). Greeting stays first-turn-only.
+  const wantAck = firstTurn || (userTurns % 3 === 0);
+  const ack = wantAck ? (t ? `${vary(pick(ACK, lang), seed)} ${pick(ABOUT, lang)} ${t} —` : `${vary(pick(ACK, lang), seed)} —`) : '';
 
   const opener = [greet, ack].filter(Boolean).join(' ');
   return opener ? `${opener} ${body}` : body;

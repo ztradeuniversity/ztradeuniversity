@@ -38,6 +38,8 @@ import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-op
 import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
 import { wrapConversational } from '../utils/conversational-wrapper.js';
+import { buildSafeReply } from '../utils/safe-reply.js';
+import { TELEGRAM, WHATSAPP } from '../utils/response-engine.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
 import { detectMarketWhy, buildWhyExplanation, detectBroadDecision, genericDecisionAnalysis } from '../utils/market-explain.js';
@@ -1382,6 +1384,18 @@ export async function onRequest(context) {
     ]));
   }
 
+  // ── SAFE REPLY UPGRADE — for a genuine unknown/off-topic turn (the answer came from
+  // the SAFE tier, not DB/Graph/Live/OpenAI), replace any rambling engine fallback with
+  // a concise, professional message stating what we CAN and CAN'T help with. The graph
+  // suggestion chips below still append a "try these" list. Skips greetings/small-talk/
+  // clarify (their own replies), chart + unsupported-language turns. Localized langs only.
+  if (answerSource === 'safe' && ['en', 'ur', 'ur-roman', 'ar'].includes(lang)
+      && !clarifyAnswer && !chartAnalysis && !_unsupported
+      && (p10Intent === 'fallback' || p10Intent === 'offtopic' || cls.intent === 'fallback')
+      && !['greeting', 'smalltalk'].includes(p10Intent)) {
+    try { answer = buildSafeReply(lang); } catch { /* keep existing reply on any failure */ }
+  }
+
   // ── PHASE 2: USER ENGAGEMENT — when the turn was vague/unmatched (clarify or
   // fallback), guide the user with real, answerable questions pulled live from the
   // graph (basic→advanced). English-only (Language-Lock safe); graceful when the
@@ -1509,6 +1523,19 @@ export async function onRequest(context) {
       topic: p10ConceptTitle || p10KbCat || '',
       isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
     });
+  } catch { /* additive — never blocks the reply */ }
+
+  // ── GLOBAL CONTACT FOOTER — single append point covering ALL sources (Database/
+  // Graph/Live/OpenAI/Safe) since they all converge into `answer` here. Reuses the
+  // EXISTING Telegram/WhatsApp constants (response-engine.js) — no hard-coded values,
+  // no new env var. DEDUP GUARD: skip when the answer already contains a t.me/wa.me
+  // link (e.g. market/signal replies) so the contact never appears twice. Runs after
+  // optimize so it isn't trimmed; before the SSE stream so it streams normally.
+  try {
+    if (typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)) {
+      answer = answer.trimEnd() +
+        `\n\n_For research-based learning, training, and trading guidance, reach us on [Telegram](${TELEGRAM}) or [WhatsApp](${WHATSAPP})._`;
+    }
   } catch { /* additive — never blocks the reply */ }
 
   // ── SOURCE BADGE — report which retrieval layer produced this answer so the user
