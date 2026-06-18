@@ -30,7 +30,8 @@
 // }
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { cacheGet, cachePut } from '../utils/cache.js';
+import { cacheGet, cachePut }   from '../utils/cache.js';
+import { classifyApiError }     from '../utils/api-error.js';
 
 const CACHE_TTL_SECONDS = 60 * 60; // 1 hour
 
@@ -96,8 +97,9 @@ export async function onRequest(context) {
   const now    = new Date();
   const future = new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000);
 
-  let events = [];
-  let status = 'error';
+  let events        = [];
+  let status        = 'error';
+  let _finnhubDiag  = undefined;
 
   try {
     if (!env.FINNHUB_API_KEY) throw new Error('FINNHUB_API_KEY missing');
@@ -141,6 +143,36 @@ export async function onRequest(context) {
     if (env.DEBUG === 'true') {
       console.error('[/api/calendar] Finnhub failed:', err.message);
     }
+    // ── FINNHUB DIAGNOSTIC — exposed in response when finnhub:'error' ────────
+    // Captures HTTP status, category, and fix for the calendar endpoint.
+    // Remove this block once Finnhub root cause is confirmed and fixed.
+    const classified = classifyApiError('Finnhub/calendar', err);
+    const keyPresent = !!(env.FINNHUB_API_KEY && String(env.FINNHUB_API_KEY).trim().length > 0);
+    const httpMatch  = err.message.match(/HTTP (\d+)/);
+    const httpStatus = httpMatch ? Number(httpMatch[1]) : null;
+    let planNote     = '';
+    if (httpStatus === 403) {
+      planNote = 'Finnhub /calendar/economic requires a paid plan. Free tier returns HTTP 403. Upgrade at finnhub.io or replace with an alternative data source.';
+    }
+    _finnhubDiag = {
+      endpoint:       'calendar/economic',
+      keyPresent,
+      keyLength:      String(env.FINNHUB_API_KEY || '').trim().length,
+      httpStatus,
+      errorCategory:  keyPresent ? classified.category : 'Missing API key',
+      rootCause:      !keyPresent
+        ? 'env.FINNHUB_API_KEY is not set in Cloudflare Pages environment variables.'
+        : httpStatus === 403
+          ? 'Plan restriction — /calendar/economic is not available on the Finnhub free plan.'
+          : httpStatus === 401
+            ? 'Invalid or revoked API key.'
+            : classified.category,
+      planNote:       planNote || undefined,
+      recommendedFix: planNote || classified.recommended_fix,
+      rawError:       err.message.slice(0, 200),
+      timestamp:      new Date().toISOString(),
+    };
+    // ── END FINNHUB DIAGNOSTIC ───────────────────────────────────────────────
   }
 
   const result = {
@@ -148,6 +180,7 @@ export async function onRequest(context) {
     updatedAt:    new Date().toISOString(),
     sourceStatus: { finnhub: status },
     events,
+    _finnhubDiag,
   };
 
   await cachePut(request, result, CACHE_TTL_SECONDS);

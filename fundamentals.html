@@ -910,6 +910,20 @@
       </div>
     </div>
 
+    <!-- API ERROR PANEL — shown only when a provider fails -->
+    <div id="apiErrorPanel" style="display:none;margin-bottom:16px;"></div>
+    <style>
+      .api-err-panel { background:#fff3f3; border:1px solid rgba(239,68,68,0.25); border-radius:12px; padding:14px 18px; }
+      .api-err-row   { display:flex; flex-wrap:wrap; gap:8px 24px; margin-bottom:6px; font-size:12.5px; }
+      .api-err-row:last-child { margin-bottom:0; }
+      .api-err-svc   { font-weight:800; color:#b91c1c; min-width:60px; }
+      .api-err-kv    { display:flex; gap:5px; align-items:baseline; }
+      .api-err-key   { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:.6px; }
+      .api-err-val   { font-size:12px; font-weight:600; color:#374151; }
+      .api-err-fix   { font-size:11.5px; color:#6b7280; margin-top:4px; line-height:1.5; }
+      .api-err-head  { font-size:11px; font-weight:800; color:#b91c1c; letter-spacing:.8px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:7px; }
+    </style>
+
     <!-- ── CAUSE → EFFECT SUMMARY ── -->
     <div class="summary-card" id="summaryCard" aria-label="Cause and effect market summary">
       <div class="summary-header">
@@ -1391,6 +1405,69 @@
       var badge  = status === 'fallback' ? 'FALLBACK' : status === 'ok' ? 'OK' : status === 'error' ? 'ERROR' : '…';
       return '<span class="src-pill ' + cls + '"><span class="sp-dot"></span>' + it.label + ': ' + badge + '</span>';
     }).join('');
+
+    /* show API error panel for any failing provider */
+    renderApiErrors();
+  }
+
+  /* ─── API ERROR PANEL ────────────────────────────────────────────────── */
+  function renderApiErrors() {
+    var panel = $('apiErrorPanel');
+    if (!panel) return;
+
+    var ms        = (state.market.data   && state.market.data.sourceStatus)   || {};
+    var cs        = (state.calendar.data && state.calendar.data.sourceStatus) || {};
+    var fredDiag  = state.market.data   && state.market.data._fredDiag;
+    var finnDiag  = state.calendar.data && state.calendar.data._finnhubDiag;
+    var fredErr   = ms.fred     === 'error';
+    var finnErr   = cs.finnhub  === 'error';
+
+    if (!fredErr && !finnErr) { panel.style.display = 'none'; return; }
+
+    var ts    = new Date().toUTCString().replace(' GMT', ' UTC');
+    var parts = [];
+
+    if (fredErr) {
+      var firstErr = fredDiag && (fredDiag.DGS10 || fredDiag.DFII10 || fredDiag.VIXCLS);
+      var statusVal = firstErr && firstErr.status ? 'HTTP ' + firstErr.status : (fredDiag && fredDiag.keyPresent === false ? 'Key Missing' : 'Unknown');
+      var category  = firstErr ? firstErr.category : 'Unknown';
+      var fix       = firstErr ? firstErr.recommended_fix : '';
+      if (!fix && fredDiag && fredDiag.keyLength === 0) fix = 'Set FRED_API_KEY in Cloudflare Pages → Settings → Environment Variables, then redeploy.';
+      parts.push(
+        '<div class="api-err-row">'
+        + '<span class="api-err-svc">FRED</span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Status</span><span class="api-err-val">' + statusVal + '</span></span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Error Type</span><span class="api-err-val">' + category + '</span></span>'
+        + (fredDiag ? '<span class="api-err-kv"><span class="api-err-key">Key</span><span class="api-err-val">' + (fredDiag.keyPresent ? 'Present (' + fredDiag.keyLength + ' chars)' : 'MISSING') + '</span></span>' : '')
+        + '<span class="api-err-kv"><span class="api-err-key">Endpoint</span><span class="api-err-val">series/observations</span></span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Time</span><span class="api-err-val">' + ts + '</span></span>'
+        + '</div>'
+        + (fix ? '<div class="api-err-fix"><b>Fix:</b> ' + fix + '</div>' : '')
+      );
+    }
+
+    if (finnErr) {
+      var fd = finnDiag || {};
+      var fStatus = fd.httpStatus ? 'HTTP ' + fd.httpStatus : (fd.keyPresent === false ? 'Key Missing' : 'Unknown');
+      var fFix    = fd.planNote || fd.recommendedFix || '';
+      if (!fFix && !fd.keyPresent) fFix = 'Set FINNHUB_API_KEY in Cloudflare Pages → Settings → Environment Variables, then redeploy.';
+      if (parts.length > 0) parts.push('<div style="width:100%;height:1px;background:rgba(239,68,68,0.12);margin:10px 0;"></div>');
+      parts.push(
+        '<div class="api-err-row">'
+        + '<span class="api-err-svc">FINNHUB</span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Status</span><span class="api-err-val">' + fStatus + '</span></span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Error Type</span><span class="api-err-val">' + (fd.errorCategory || 'Unknown') + '</span></span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Key</span><span class="api-err-val">' + (fd.keyPresent ? 'Present (' + fd.keyLength + ' chars)' : 'MISSING') + '</span></span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Endpoint</span><span class="api-err-val">calendar/economic</span></span>'
+        + '<span class="api-err-kv"><span class="api-err-key">Time</span><span class="api-err-val">' + ts + '</span></span>'
+        + '</div>'
+        + (fd.rootCause ? '<div class="api-err-fix"><b>Root Cause:</b> ' + fd.rootCause + '</div>' : '')
+        + (fFix ? '<div class="api-err-fix" style="margin-top:4px;"><b>Fix:</b> ' + fFix + '</div>' : '')
+      );
+    }
+
+    panel.innerHTML  = '<div class="api-err-panel"><div class="api-err-head">&#9888; API Failure Details</div>' + parts.join('') + '<div class="api-err-fix" style="margin-top:8px;color:#9ca3af;">For complete diagnostics call <code>/api/diagnose</code></div></div>';
+    panel.style.display = 'block';
   }
 
   /* ─── AGE TICK ────────────────────────────────────────────────────────── */

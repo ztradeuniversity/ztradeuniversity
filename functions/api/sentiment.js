@@ -129,6 +129,18 @@ export async function onRequest(context) {
 
   sourceStatus.fred = fredAny ? 'ok' : 'error';
 
+  // ── TEMP DIAGNOSTIC: expose FRED failure details in response ──────────────
+  // Remove this block once the root cause of fred:"error" is confirmed.
+  // Hit /api/sentiment and read _fredDiag in the JSON response.
+  // It exposes: HTTP status, error message, phase, category, recommended_fix
+  // for each of the 3 FRED series independently.
+  const _fredDiag = sourceStatus.fred === 'error' ? {
+    DGS10:  classifyApiError('FRED/DGS10',  fredUS10Y.reason),
+    DFII10: classifyApiError('FRED/DFII10', fredRealYield.reason),
+    VIXCLS: classifyApiError('FRED/VIXCLS', fredVIX.reason),
+  } : undefined;
+  // ── END TEMP DIAGNOSTIC ───────────────────────────────────────────────────
+
   // ── TwelveData: Gold ──────────────────────────────────────────────────────
   let gold = { price: null, change: null, changePct: null, high: null, low: null };
 
@@ -200,6 +212,7 @@ export async function onRequest(context) {
     btc,
     vix,
     yields,
+    _fredDiag,
   };
 
   await cachePut(request, result, CACHE_TTL_SECONDS);

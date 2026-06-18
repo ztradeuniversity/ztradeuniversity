@@ -28,6 +28,7 @@ import { cacheGet, cachePut }                      from '../utils/cache.js';
 import { fetchFRED, fetchTwelveDataQuote,
          fetchGoldAPIPrice }                        from '../utils/fetchers.js';
 import { toPrice, toPct, round, buildSourceStatus } from '../utils/normalizers.js';
+import { classifyApiError }                        from '../utils/api-error.js';
 
 const CACHE_TTL_SECONDS = 45;
 
@@ -92,6 +93,18 @@ export async function onRequest(context) {
   }
 
   sourceStatus.fred = fredAny ? 'ok' : 'error';
+
+  // ── FRED diagnostic — exposed in response when fred:'error' ───────────────
+  // Captures HTTP status, error category, and recommended fix for each series.
+  // Remove this block once FRED root cause is confirmed and fixed.
+  const _fredDiag = sourceStatus.fred === 'error' ? {
+    DGS10:  classifyApiError('FRED/DGS10',  fredUS10Y.reason),
+    DFII10: classifyApiError('FRED/DFII10', fredRealYield.reason),
+    VIXCLS: classifyApiError('FRED/VIXCLS', fredVIX.reason),
+    keyPresent: !!(env.FRED_API_KEY && String(env.FRED_API_KEY).trim().length > 0),
+    keyLength:  String(env.FRED_API_KEY || '').trim().length,
+  } : undefined;
+  // ── END FRED DIAGNOSTIC ───────────────────────────────────────────────────
 
   // ── TwelveData: Gold ──────────────────────────────────────────────────────
   let gold = { price: null, change: null, changePct: null, high: null, low: null };
@@ -160,6 +173,7 @@ export async function onRequest(context) {
     btc,
     vix,
     yields,
+    _fredDiag,
   };
 
   await cachePut(request, result, CACHE_TTL_SECONDS);
