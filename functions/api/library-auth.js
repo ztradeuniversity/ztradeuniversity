@@ -184,12 +184,70 @@ async function handleVerifySession({ account }, env) {
 }
 
 // =============================================================================
-// IB STARS LOOKUP  (System A - ib_stars_active, read-only)
+// ACCOUNT ELIGIBILITY  (PATH 1 = IB Stars Active · PATH 2 = Special Access)
+// =============================================================================
+// SINGLE eligibility entry point used by request-otp, resend-otp AND
+// verify-session — so the OTP, token, session and re-validation pipelines are
+// reused unchanged for BOTH paths. Lookup order (per spec):
+//   Step 1 — IB Stars Active (broker_accounts). If FOUND & ACTIVE → STOP here.
+//   Step 2 — only if Path 1 did NOT grant, check the special_access table.
+// Path 1 logic is byte-for-byte the original lookupIbStarsRaw() below; this
+// wrapper never alters an IB-Stars grant, it only ADDS a fallback.
+// Returns the same shape Path 1 always returned:
+//   { found:false } | { found:true, active:false } | { found:true, active:true, email }
+//   (special grants additionally carry source:'special' for log/debug only)
+async function lookupIbStars(acct, env) {
+  const ib = await lookupIbStarsRaw(acct, env);
+  if (ib.found && ib.active && ib.email) return ib;          // Path 1 grant → STOP
+  const special = await lookupSpecialAccess(acct, env);       // Path 2 fallback
+  if (special && special.email) {
+    console.log(`[library-auth] Special Access grant for code="${acct}"`);
+    return { found: true, active: true, email: special.email, source: 'special' };
+  }
+  return ib;                                                  // preserve Path 1 result
+}
+
+// PATH 2 — Special Access lookup. Reads the special_access table from the SAME
+// EA/Library Supabase project (EA_SUPABASE_URL) that holds broker_accounts. Only
+// rows with is_active=true and a non-empty email can grant access. Returns
+// { email } or null. Graceful null on any failure or when the table is absent —
+// so an un-provisioned special_access never affects the existing Path 1 flow.
+async function lookupSpecialAccess(codeRaw, env) {
+  const supabaseUrl = env.EA_SUPABASE_URL;
+  const serviceKey  = env.EA_SUPABASE_SERVICE_KEY;
+  if (!supabaseUrl || !serviceKey) return null;          // demo / unconfigured → Path 1 only
+  const code = String(codeRaw || '').trim();
+  if (!code) return null;
+  try {
+    const qs = `special_code=eq.${encodeURIComponent(code)}&is_active=eq.true&select=special_code,email,valid_until&limit=1`;
+    const res = await fetch(`${supabaseUrl}/rest/v1/special_access?${qs}`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' },
+    });
+    if (!res.ok) return null;   // table missing / RLS / outage → graceful no-op
+    const rows = await res.json().catch(() => null);
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const row = rows[0];
+    // Expiry: valid_until NULL = never expires; otherwise must be in the FUTURE.
+    // Expired ⇒ deny (no OTP sent, no grant) exactly like a disabled/absent code.
+    if (row.valid_until && new Date(row.valid_until).getTime() <= Date.now()) {
+      console.log(`[library-auth] special code "${code}" expired at ${row.valid_until}`);
+      return null;
+    }
+    const email = row.email && String(row.email).includes('@') ? String(row.email).trim() : null;
+    return email ? { email } : null;
+  } catch (e) {
+    console.error('[library-auth] special_access lookup exception:', e?.message);
+    return null;
+  }
+}
+
+// =============================================================================
+// IB STARS LOOKUP  (System A - ib_stars_active, read-only) — PATH 1, UNCHANGED
 // =============================================================================
 // Returns: { found: false }
 //          { found: true, active: false }
 //          { found: true, active: true, email: string }
-async function lookupIbStars(acct, env) {
+async function lookupIbStarsRaw(acct, env) {
   const supabaseUrl = env.EA_SUPABASE_URL;
   const serviceKey  = env.EA_SUPABASE_SERVICE_KEY;
   // Phase 16.9 — default points at broker_accounts (the table the admin
@@ -234,8 +292,6 @@ async function lookupIbStars(acct, env) {
   catch { return { found: false }; }
 
   if (!Array.isArray(rows) || rows.length === 0) {
-    const override = await checkAccessOverride(supabaseUrl, serviceKey, acct);
-    if (override) return { found: true, active: true, email: override.email || null };
     return { found: false };
   }
 
@@ -257,13 +313,6 @@ async function lookupIbStars(acct, env) {
   }
 
   if (!isActive) {
-    // Admin-only manual override (admin-dashboard.html "Grant Access Override" on a
-    // license_requests row). Single source of truth stays this function — Library
-    // and AI both call it — this is just an additional fallback condition, never a
-    // parallel verification path. Graceful no-op if the override column isn't
-    // provisioned yet (see _setAccessOverride() in admin-dashboard.js for the SQL).
-    const override = await checkAccessOverride(supabaseUrl, serviceKey, acct);
-    if (override) return { found: true, active: true, email: override.email || null };
     return { found: true, active: false };
   }
 
@@ -279,32 +328,6 @@ async function lookupIbStars(acct, env) {
   console.log(`[library-auth] lookup acct="${decodeURIComponent(acctEncoded)}" found=true active=true email=${email ? maskEmail(email) : 'NONE'}`);
 
   return { found: true, active: true, email: email || null };
-}
-
-// Admin-only manual access override (license_requests.access_override = true,
-// set exclusively via the "Grant Access Override" button in admin-dashboard.html
-// after an admin personally reviews a license request). Returns null on any
-// failure or when the override column doesn't exist yet — graceful no-op.
-async function checkAccessOverride(supabaseUrl, serviceKey, acctRaw) {
-  const norm = normAcct(acctRaw);
-  if (!norm) return null;
-  try {
-    const forms = [...new Set([String(acctRaw).trim(), norm, `${norm}.0`, `${norm}.00`])].filter(Boolean);
-    const orEq  = forms.map(v => `account_number.eq.${encodeURIComponent(v)}`).join(',');
-    const res = await fetch(
-      `${supabaseUrl}/rest/v1/license_requests?or=(${orEq})&access_override=eq.true&select=account_number,email&limit=5`,
-      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' } }
-    );
-    if (!res.ok) return null;   // e.g. column missing — not provisioned yet
-    const rows = await res.json().catch(() => null);
-    if (!Array.isArray(rows) || rows.length === 0) return null;
-    const row = rows.find(r => normAcct(r.account_number) === norm) || rows[0];
-    console.log(`[library-auth] manual access override active for acct="${norm}"`);
-    return { email: row.email || null };
-  } catch (e) {
-    console.error('[library-auth] checkAccessOverride exception:', e?.message);
-    return null;
-  }
 }
 
 // Fetch an email for an account from a given table.

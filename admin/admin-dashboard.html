@@ -191,6 +191,16 @@
           <span class="nav-item-badge nav-item-badge--danger" id="ibChangedNavCount" hidden>0</span>
         </a>
 
+        <!-- Special Access (Path 2) — manual grant by code, separate from IB Stars -->
+        <div class="nav-section-label">Special Access</div>
+
+        <a href="#" class="nav-item" data-section="special-access" data-label="Special Access">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="8.5" width="14" height="8.5" rx="1.6"/><path d="M6.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/>
+          </svg>
+          Special Access
+        </a>
+
         <div class="nav-divider"></div>
 
         <a href="#" class="nav-item" data-section="templates" data-label="Templates">
@@ -1172,6 +1182,53 @@
 
 
         <!-- ═══════════════════════════════════════════════════════
+             SPECIAL ACCESS (PATH 2) — manual code → OTP → Library + AI
+             Separate source from IB Stars Active. Reuses the SAME OTP /
+             token / session pipeline (functions/api/library-auth.js →
+             lookupSpecialAccess). Table: special_access (EA/Library project).
+        ═══════════════════════════════════════════════════════════ -->
+        <section class="dash-section" id="section-special-access">
+          <div class="section-intro">
+            <h2 class="section-heading">Special Access</h2>
+            <p class="section-sub">Manual access codes for premium guests who are <strong>not</strong> IB Stars. A user enters the code in the normal Account Number field; if it isn't an active IB Star, the system checks <code>special_access</code>, sends an OTP to the email below, and on verification unlocks <strong>both Library and Unlimited AI</strong> — using the exact same OTP/token/session as IB Stars. Disable or delete to revoke (takes effect on the user's next session re-check).</p>
+          </div>
+
+          <div class="ib-changed-search">
+            <div class="ib-changed-search-hdr">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+                <rect x="3" y="8.5" width="14" height="8.5" rx="1.6"/><path d="M6.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/>
+              </svg>
+              <span>Add Special Access Code</span>
+            </div>
+            <div class="ib-changed-search-row" style="flex-wrap:wrap;gap:8px">
+              <input type="text"          id="saCodeInput"   placeholder="special code (e.g. 11325)" class="ib-changed-search-input" autocomplete="off" style="flex:1 1 140px" />
+              <input type="email"         id="saEmailInput"  placeholder="email to receive the OTP"  class="ib-changed-search-input" autocomplete="off" style="flex:2 1 200px" />
+              <input type="datetime-local" id="saExpiryInput" title="Expires (optional — leave blank for never)" class="ib-changed-search-input" autocomplete="off" style="flex:1 1 180px" />
+              <input type="text"          id="saNotesInput"  placeholder="notes (optional)"          class="ib-changed-search-input" autocomplete="off" style="flex:2 1 160px" />
+              <button class="ib-changed-search-btn" id="saAddBtn" type="button">Add</button>
+            </div>
+            <div class="ib-changed-search-result" id="saAddResult" hidden></div>
+          </div>
+
+          <div class="intake-queue" id="specialAccessWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Special Access Codes</h3>
+              <span class="intake-queue-count" id="saListCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="saListRefresh" type="button">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="ib-changed-col-labels" aria-hidden="true">
+                <span>Code</span><span>Email</span><span>Status</span><span>Created</span><span>Notes</span><span>Actions</span>
+              </div>
+              <div class="ib-changed-rows" id="saListBody"></div>
+              <p class="intake-queue-empty" id="saListEmpty" hidden>No special access codes yet. Add one above.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════
              Phase 15.6 Task 6 — IB Changed Accounts
         ═══════════════════════════════════════════════════════════ -->
         <!-- Phase 16.2 Issue 4 — Blocked Clients section -->
@@ -1390,16 +1447,6 @@
                   <div class="iq-info-label" style="color:#22c55e">Recovery Status</div>
                   <div id="iqInfoRecoveryNote" style="font-size:12.5px;color:#22c55e;background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.30);border-radius:4px;padding:8px 10px;line-height:1.45">—</div>
                 </div>
-                <!-- Manual access override block — admin-only exception to the EA
-                     active-check; library-auth.js (single verification source for
-                     both Library and AI) honors this for the account. -->
-                <div class="iq-info-section" id="iqInfoOverrideSection">
-                  <div class="iq-info-label" style="color:#fbbf24">Manual Access Override</div>
-                  <div class="iq-info-grid">
-                    <span class="iq-info-k">Status</span><span class="iq-info-v" id="iqInfoOverrideStatus">Not granted</span>
-                  </div>
-                  <p style="font-size:11.5px;color:#9ca3af;margin:6px 0 0">Manually grants Library + unlimited AI access for this account number even though it hasn't appeared as active in the EA broker file yet. Logged with admin + timestamp. Use only after you've personally confirmed this client's eligibility.</p>
-                </div>
                 <!-- Duplicate detection block -->
                 <div class="iq-info-section" id="iqInfoDuplicateSection" hidden>
                   <div class="iq-info-label" style="color:#fca5a5">Duplicate Detection</div>
@@ -1416,7 +1463,6 @@
                 <button class="btn-ghost" id="iqInfoCloseBtn" type="button">Close</button>
                 <span class="clear-cache-spacer"></span>
                 <button class="iq-btn iq-btn--action" id="iqInfoResendBtn" type="button" hidden title="Re-send delivery email">RESEND</button>
-                <button class="iq-btn iq-btn--action" id="iqInfoOverrideBtn" type="button" title="Manually grant Library + AI access for this account number">Grant Access Override</button>
                 <button class="iq-btn iq-btn--danger" id="iqInfoRemoveBtn" type="button" title="Remove this row from the queue (status -> rejected)">Remove from Queue</button>
               </div>
             </div>

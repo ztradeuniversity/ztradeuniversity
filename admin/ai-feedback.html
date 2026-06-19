@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Feedback Analytics | Z Trade University</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/png" href="../assets/ztu-logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0d0902;--bg2:#1a1410;--bg3:#221c15;--bg4:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;
+      --text:rgba(255,255,255,.92);--muted:rgba(255,255,255,.55);--mut2:rgba(255,255,255,.34);--brd:rgba(200,156,63,.16);--brs:rgba(200,156,63,.32);
+      --bull:#10b981;--bear:#ef4444;--amber:#f59e0b}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+    a{color:var(--gold2)}
+    header{position:sticky;top:0;z-index:10;background:rgba(13,9,2,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--brd);padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+    .brand{font-family:'Manrope',sans-serif;font-weight:900;font-size:16px;letter-spacing:-.3px}
+    .brand small{display:block;font-size:9px;font-weight:700;color:var(--gold2);letter-spacing:2px;text-transform:uppercase}
+    .wrap{max-width:1100px;margin:0 auto;padding:22px}
+    .card{background:var(--bg2);border:1px solid var(--brd);border-radius:14px;padding:16px;margin-bottom:16px}
+    .card h2{font-family:'Manrope',sans-serif;font-size:14px;font-weight:800;color:var(--gold3);margin-bottom:12px;letter-spacing:-.2px}
+    label{display:block;font-size:11px;font-weight:700;color:var(--gold2);margin:10px 0 4px;letter-spacing:.2px}
+    input,select{width:100%;padding:10px 12px;background:var(--bg4);border:1px solid var(--brd);border-radius:9px;color:var(--text);
+      font-family:'Inter',sans-serif;font-size:13.5px;outline:none;transition:border-color .15s}
+    input:focus,select:focus{border-color:var(--brs)}
+    button{cursor:pointer;border:0;border-radius:9px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;padding:10px 14px;transition:opacity .15s,transform .15s}
+    button:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-gold{background:linear-gradient(135deg,#e6c987,#c89c3f 55%,#8c6c1f);color:#fff}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .hidden{display:none!important}
+    .note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5}
+    .gate{display:flex;align-items:center;justify-content:center;min-height:70vh;padding:20px}
+    .gate .card{max-width:380px;width:100%}
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+    .stat{background:var(--bg3);border:1px solid var(--brd);border-radius:12px;padding:14px;text-align:center}
+    .stat .v{font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:var(--gold3)}
+    .stat .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+    .stat.bull .v{color:var(--bull)} .stat.bear .v{color:var(--bear)}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    th{text-align:left;font-size:10.5px;color:var(--gold2);text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--brd)}
+    td{padding:9px 10px;border-bottom:1px solid rgba(200,156,63,.08);vertical-align:top}
+    tr:hover td{background:rgba(200,156,63,.05)}
+    .q{color:var(--gold2);font-weight:600;max-width:260px}
+    .a{color:var(--text);max-width:360px;white-space:pre-wrap;word-break:break-word}
+    .pill{font-size:9px;font-weight:800;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px;display:inline-block}
+    .pill.like{background:rgba(16,185,129,.14);color:var(--bull)}
+    .pill.dislike{background:rgba(239,68,68,.14);color:var(--bear)}
+    .num{font-weight:700}
+    .num.bull{color:var(--bull)} .num.bear{color:var(--bear)}
+    .muted-cell{color:var(--mut2);font-size:11px;white-space:nowrap}
+    .empty{font-size:12px;color:var(--muted);padding:14px 0;text-align:center}
+    .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+    .tab{background:var(--bg4);border:1px solid var(--brd);color:var(--text);padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+    .tab.active{background:linear-gradient(135deg,#e6c987,#c89c3f 55%,#8c6c1f);color:#fff;border-color:transparent}
+    .toast{position:fixed;bottom:18px;right:18px;background:var(--bg3);border:1px solid var(--brd);color:var(--text);padding:10px 16px;border-radius:10px;font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">AI Feedback Analytics <small>Z Trade University · Like / Dislike</small></div>
+  <a href="../ai-trade-assistant.html">← AI Assistant</a>
+</header>
+
+<!-- ADMIN KEY GATE -->
+<div class="gate" id="gate">
+  <div class="card">
+    <h2>🔐 Admin Access</h2>
+    <label for="adminKey">Admin Key</label>
+    <input id="adminKey" type="password" placeholder="Enter AI_ADMIN_KEY" autocomplete="off" />
+    <div class="btn-row"><button class="btn-gold" style="flex:1" onclick="unlock()">Unlock Dashboard</button></div>
+    <p class="note">The key is compared server-side (header <code>x-admin-key</code>) against the Cloudflare env var <b>AI_ADMIN_KEY</b> — the SAME key used by the AI Article Manager / KB Admin. It is never stored in the page source.</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap hidden" id="dash">
+  <div class="card">
+    <h2>📊 Overview</h2>
+    <div class="stats-row" id="stats"></div>
+    <button class="btn-gold" onclick="load()">🔄 Refresh</button>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" data-tab="disliked" onclick="showTab('disliked')">👎 Most Disliked</button>
+      <button class="tab" data-tab="liked" onclick="showTab('liked')">👍 Most Liked</button>
+      <button class="tab" data-tab="recent" onclick="showTab('recent')">🕐 Recent Feedback</button>
+      <button class="tab" data-tab="topics" onclick="showTab('topics')">⚠️ Failing Topics</button>
+    </div>
+
+    <div id="panel-disliked">
+      <table><thead><tr><th>Question</th><th>Answer</th><th>Topic</th><th>Lang</th><th>👍</th><th>👎</th><th>Approval</th></tr></thead>
+        <tbody id="tblDisliked"></tbody></table>
+    </div>
+    <div id="panel-liked" class="hidden">
+      <table><thead><tr><th>Question</th><th>Answer</th><th>Topic</th><th>Lang</th><th>👍</th><th>👎</th><th>Approval</th></tr></thead>
+        <tbody id="tblLiked"></tbody></table>
+    </div>
+    <div id="panel-recent" class="hidden">
+      <table><thead><tr><th>Rating</th><th>Question</th><th>Answer</th><th>Lang</th><th>Date</th></tr></thead>
+        <tbody id="tblRecent"></tbody></table>
+    </div>
+    <div id="panel-topics" class="hidden">
+      <table><thead><tr><th>Topic</th><th>Lang</th><th>Dislikes</th></tr></thead>
+        <tbody id="tblTopics"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/ai-feedback';
+let KEY = '';
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function trunc(s,n){s=String(s||'');return s.length>n? s.slice(0,n)+'…' : s;}
+function fmtDate(iso){ if(!iso) return '—'; try{ return new Date(iso).toLocaleString(); }catch{ return iso; } }
+
+async function unlock(){
+  KEY=document.getElementById('adminKey').value.trim();
+  if(!KEY){toast('Enter the admin key');return;}
+  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin / Article Manager)
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('dash').classList.remove('hidden');
+  await load();
+}
+
+function showTab(name){
+  ['disliked','liked','recent','topics'].forEach(t=>{
+    document.getElementById('panel-'+t).classList.toggle('hidden', t!==name);
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+}
+
+async function load(){
+  try{
+    const r=await fetch(`${API}?limit=500`,{headers:{'x-admin-key':KEY}});
+    if(r.status===401){ toast('❌ Invalid admin key'); return; }
+    const d=await r.json().catch(()=>null);
+    if(!d){ toast('⚠️ Server returned an unreadable response'); return; }
+    if(d.configured===false){
+      document.getElementById('stats').innerHTML='<p class="empty">⚠️ AI Supabase not connected yet — add AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY in Cloudflare, then create the ai_chat_feedback table.</p>';
+      return;
+    }
+    renderStats(d.totals, d.scanned);
+    renderTable('tblDisliked', d.mostDisliked||[], true);
+    renderTable('tblLiked', d.mostLiked||[], false);
+    renderRecent(d.recent||[]);
+    renderTopics(d.failingTopics||[]);
+  }catch(e){ toast('Network error: '+(e&&e.message||e)); }
+}
+
+function renderStats(t,scanned){
+  t = t || {likes:0,dislikes:0,approval:null};
+  document.getElementById('stats').innerHTML = `
+    <div class="stat bull"><div class="v">${t.likes||0}</div><div class="l">Likes</div></div>
+    <div class="stat bear"><div class="v">${t.dislikes||0}</div><div class="l">Dislikes</div></div>
+    <div class="stat"><div class="v">${t.approval==null?'—':t.approval+'%'}</div><div class="l">Approval Rate</div></div>
+    <div class="stat"><div class="v">${scanned||0}</div><div class="l">Events Scanned</div></div>`;
+}
+
+function renderTable(tbodyId, items, sortByDislikes){
+  const tb=document.getElementById(tbodyId);
+  if(!items.length){ tb.innerHTML='<tr><td colspan="7" class="empty">No feedback yet.</td></tr>'; return; }
+  tb.innerHTML = items.map(i=>`<tr>
+    <td class="q">${esc(trunc(i.question,80))}</td>
+    <td class="a">${esc(trunc(i.answer,220))}</td>
+    <td class="muted-cell">${esc(i.topic||'—')}</td>
+    <td class="muted-cell">${esc(i.lang||'en')}</td>
+    <td class="num bull">${i.likes||0}</td>
+    <td class="num bear">${i.dislikes||0}</td>
+    <td class="muted-cell">${i.approval==null?'—':i.approval+'%'}</td>
+  </tr>`).join('');
+}
+
+function renderRecent(rows){
+  const tb=document.getElementById('tblRecent');
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No feedback yet.</td></tr>'; return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td><span class="pill ${r.rating==='like'?'like':'dislike'}">${r.rating==='like'?'👍 Like':'👎 Dislike'}</span></td>
+    <td class="q">${esc(trunc(r.question,80))}</td>
+    <td class="a">${esc(trunc(r.answer,220))}</td>
+    <td class="muted-cell">${esc(r.lang||'en')}</td>
+    <td class="muted-cell">${esc(fmtDate(r.createdAt))}</td>
+  </tr>`).join('');
+}
+
+function renderTopics(items){
+  const tb=document.getElementById('tblTopics');
+  if(!items.length){ tb.innerHTML='<tr><td colspan="3" class="empty">No dislikes logged yet.</td></tr>'; return; }
+  tb.innerHTML = items.map(i=>`<tr>
+    <td class="q">${esc(i.topic||'uncategorized')}</td>
+    <td class="muted-cell">${esc(i.lang||'en')}</td>
+    <td class="num bear">${i.dislikes||0}</td>
+  </tr>`).join('');
+}
+
+// Auto-unlock if a key was already entered on another admin page this session.
+(function(){
+  const k=sessionStorage.getItem('ztu_kb_admin_key');
+  if(k){ document.getElementById('adminKey').value=k; unlock(); }
+})();
+</script>
+</body>
+</html>

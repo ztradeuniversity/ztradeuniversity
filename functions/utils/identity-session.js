@@ -67,3 +67,36 @@ export async function resolveTier(env, token) {
   const stale = !!(p.elig_exp && Date.now() > p.elig_exp);
   return { tier: stale ? 'visitor' : (p.tier || 'visitor'), identity: p, stale };
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// GUEST MESSAGE COUNTER (stateless, signed cookie) — NO database, NO AI profile.
+// The count of free messages a not-yet-verified visitor has used is held entirely
+// in an HMAC-signed cookie (same LIBRARY_OTP_SECRET, no new secret, no second
+// membership system). The signature makes the count tamper-evident: editing the
+// cookie invalidates it and resets the visitor to 0 — never grants extra messages.
+// Verified users never reach this path (their signed identity token = unlimited).
+// ════════════════════════════════════════════════════════════════════════════
+const GUEST_COOKIE   = 'ztu_ai_guest';
+const GUEST_MAX_AGE  = 60 * 60 * 24 * 30;   // 30 days
+
+// Read the current guest count from the request's Cookie header. Returns 0 when
+// absent, malformed, tampered (bad signature), or expired — i.e. fail-safe to a
+// fresh visitor, never to "already over the limit" and never to "unlimited".
+export async function readGuestCount(env, request) {
+  try {
+    const raw = request.headers.get('Cookie') || '';
+    const m = raw.match(/(?:^|;\s*)ztu_ai_guest=([^;]+)/);
+    if (!m) return 0;
+    const payload = await verifySession(env, decodeURIComponent(m[1]));
+    if (!payload || typeof payload.gc !== 'number' || payload.gc < 0) return 0;
+    return Math.floor(payload.gc);
+  } catch { return 0; }
+}
+
+// Build a Set-Cookie header string carrying the new signed guest count.
+// Returns null if signing is unavailable (no secret) — caller then fails open.
+export async function buildGuestCookie(env, count) {
+  const token = await signSession(env, { gc: Math.max(0, Math.floor(count)), exp: Date.now() + GUEST_MAX_AGE * 1000 });
+  if (!token) return null;
+  return `${GUEST_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=${GUEST_MAX_AGE}; SameSite=Lax; Secure; HttpOnly`;
+}

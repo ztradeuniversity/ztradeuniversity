@@ -92,7 +92,8 @@ export async function localizeFinalAnswer(env, text, lang) {
     // Strip a previously-appended honest note (if present) before translating —
     // it would otherwise be translated into a now-false "not yet supported" claim.
     const note = partialLanguageNote(lang);
-    const source = note && text.includes(note) ? text.replace(`\n\n${note}`, '').trim() : String(text || '');
+    const rawText = String(text || '');
+    const source = note && rawText.includes(note) ? rawText.replace(`\n\n${note}`, '').trim() : rawText;
     const translated = await translateAnswer(env, source, lang);
     if (!translated) return null;
     const check = validateTranslation(source, translated, lang);

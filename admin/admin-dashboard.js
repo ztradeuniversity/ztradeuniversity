@@ -667,6 +667,7 @@ const AdminDashboard = (() => {
     if (sectionId === 'ib-stars-inactive') _renderIbStarsInactive();
     if (sectionId === 'ib-changed')        _renderIbChangedList();
     if (sectionId === 'blocked-clients')   _renderBlockedList();   // Phase 16.2 Issue 4
+    if (sectionId === 'special-access')    _renderSpecialAccess(); // Path 2 — Special Access
     // Phase 13 — CRM sections
     if (sectionId === 'crm-active')    renderCrmActive();
     if (sectionId === 'crm-inactive')  renderCrmInactive();
@@ -5335,62 +5336,6 @@ const AdminDashboard = (() => {
     }
   }
 
-  /* ─── _setAccessOverride — admin manual override ──────────────
-   *
-   * license_requests tracks bot-delivery state only (pending/matched/
-   * compiled/emailed/...) — it has no relationship to Library/AI access,
-   * which is decided purely by EA broker_accounts activity in
-   * functions/api/library-auth.js (lookupIbStars). That stays the single
-   * source of truth for everyone (Library + AI both call it).
-   *
-   * This is the one explicit, admin-only exception: an admin who has
-   * personally reviewed a license request can flag the account so
-   * lookupIbStars treats it as active even before the EA reports it.
-   * It is NEVER automatic from status fields like 'matched'/'delivered' —
-   * only this button, clicked by a logged-in admin, sets it.
-   *
-   * REQUIRED Supabase SQL (run once in SQL editor, same EA project as
-   * license_requests / broker_accounts):
-   *   ALTER TABLE license_requests
-   *     ADD COLUMN IF NOT EXISTS access_override     BOOLEAN NOT NULL DEFAULT false,
-   *     ADD COLUMN IF NOT EXISTS access_override_by  TEXT,
-   *     ADD COLUMN IF NOT EXISTS access_override_at  TIMESTAMPTZ;
-   *
-   * Returns true on success, false on failure (toast already shown).
-   */
-  async function _setAccessOverride(licenseRequestId, accountNumber, grant) {
-    if (!supabaseClient || !DataLayer.isLive) {
-      showToast('Access override unavailable — Supabase is not live.', 'error', 4000);
-      return false;
-    }
-    try {
-      const patch = grant
-        ? { access_override: true,  access_override_by: ((typeof ADMIN_CONFIG !== 'undefined' && ADMIN_CONFIG && ADMIN_CONFIG.username) || 'admin'), access_override_at: new Date().toISOString() }
-        : { access_override: false, access_override_by: null, access_override_at: null };
-      const resp = await supabaseClient
-        .from('license_requests')
-        .update(patch)
-        .eq('id', licenseRequestId);
-      if (resp.error) {
-        const code = resp.error.code ? ' [' + resp.error.code + ']' : '';
-        const msg  = resp.error.message || 'unknown error';
-        console.error('[AccessOverride] update failed:', resp.error);
-        if (resp.error.code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
-          showToast('access_override column missing — run the SQL in _setAccessOverride() comment. See console.', 'error', 9000);
-        } else {
-          showToast('Access override failed: ' + msg + code, 'error', 7000);
-        }
-        return false;
-      }
-      console.log(`[AccessOverride] account=${accountNumber} license_request.id=${licenseRequestId} → ${grant ? 'GRANTED' : 'revoked'}`);
-      return true;
-    } catch (e) {
-      console.error('[AccessOverride] exception:', e);
-      showToast('Access override exception: ' + (e.message || e), 'error', 5000);
-      return false;
-    }
-  }
-
   /* ═══════════════════════════════════════════════════════════
      Phase 16.6 — Compile Queue row diagnostic modal
      ───────────────────────────────────────────────────────────
@@ -5459,14 +5404,6 @@ const AdminDashboard = (() => {
               .limit(1);
             if (!optSel.error && optSel.data && optSel.data[0]) Object.assign(row, optSel.data[0]);
           } catch (_) { /* optional columns may not exist */ }
-          try {
-            const ovSel = await supabaseClient
-              .from('license_requests')
-              .select('access_override, access_override_by, access_override_at')
-              .eq('id', licenseRequestId)
-              .limit(1);
-            if (!ovSel.error && ovSel.data && ovSel.data[0]) Object.assign(row, ovSel.data[0]);
-          } catch (_) { /* access_override columns may not exist yet — run the SQL in _setAccessOverride() */ }
         }
       }
       if (!row) {
@@ -5569,20 +5506,6 @@ const AdminDashboard = (() => {
       // 7) Actions — Resend visible only on compiled / emailed / delivered
       if (['compiled', 'emailed', 'delivered'].includes(s)) {
         $('iqInfoResendBtn').hidden = false;
-      }
-
-      // 7b) Manual access override — current state + button label
-      const overrideBtn = $('iqInfoOverrideBtn');
-      if (row.access_override) {
-        $('iqInfoOverrideStatus').textContent =
-          'GRANTED' + (row.access_override_by ? ' by ' + row.access_override_by : '') +
-          (row.access_override_at ? ' on ' + fmtDateTime(row.access_override_at) : '');
-        $('iqInfoOverrideStatus').style.color = '#22c55e';
-        if (overrideBtn) { overrideBtn.textContent = 'Revoke Access Override'; overrideBtn.classList.add('iq-btn--danger'); }
-      } else {
-        $('iqInfoOverrideStatus').textContent = 'Not granted';
-        $('iqInfoOverrideStatus').style.color = '';
-        if (overrideBtn) { overrideBtn.textContent = 'Grant Access Override'; overrideBtn.classList.remove('iq-btn--danger'); }
       }
 
       // 8) Phase 16.7 Issue 3 — if a RetryPool entry exists for this id,
@@ -5706,30 +5629,6 @@ const AdminDashboard = (() => {
           if (typeof renderDeliveredSection    === 'function') renderDeliveredSection();
         }
       } finally { btn.disabled = false; }
-    });
-
-    document.getElementById('iqInfoOverrideBtn')?.addEventListener('click', async () => {
-      if (!_iqInfoActive) return;
-      const btn = document.getElementById('iqInfoOverrideBtn');
-      const granting = !/Revoke/i.test(btn.textContent);
-      const confirmed = window.confirm(
-        (granting
-          ? 'Manually grant Library + AI unlimited access for this account?\n\n'
-          : 'Revoke the manual access override for this account?\n\n') +
-        'Account: ' + _iqInfoActive.acct + '\n' +
-        'Request ID: ' + _iqInfoActive.id + '\n\n' +
-        (granting
-          ? 'Only do this after you have personally confirmed this client is eligible — this bypasses the normal EA active-account check.'
-          : 'The account will need to be EA-active or re-granted to regain access.')
-      );
-      if (!confirmed) return;
-      btn.disabled = true;
-      const ok = await _setAccessOverride(_iqInfoActive.id, _iqInfoActive.acct, granting);
-      btn.disabled = false;
-      if (ok) {
-        showToast(granting ? 'Access override granted.' : 'Access override revoked.', 'success', 4000);
-        await _openIqInfoModal(_iqInfoActive.id, _iqInfoActive.acct);   // refresh modal state
-      }
     });
 
     document.getElementById('iqInfoRemoveBtn')?.addEventListener('click', async () => {
@@ -7096,6 +6995,169 @@ const AdminDashboard = (() => {
     });
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     SPECIAL ACCESS (PATH 2) — CRUD over the special_access table
+     ───────────────────────────────────────────────────────────
+     Same EA/Library Supabase project as broker_accounts / license_requests
+     (supabaseClient). The OTP / token / session that grants Library + AI is
+     entirely handled server-side by functions/api/library-auth.js
+     (lookupSpecialAccess) — this UI only manages the code↔email rows.
+     Columns: id, special_code, email, is_active, notes, created_at.
+                                                                     */
+  async function _renderSpecialAccess() {
+    const bodyEl = document.getElementById('saListBody');
+    const cntEl  = document.getElementById('saListCount');
+    const empEl  = document.getElementById('saListEmpty');
+    if (!bodyEl) return;
+    if (!supabaseClient || !DataLayer.isLive) {
+      bodyEl.innerHTML = '';
+      if (empEl) { empEl.hidden = false; empEl.textContent = 'Supabase is not live — cannot load special access codes.'; }
+      return;
+    }
+    bodyEl.innerHTML = '<div class="ib-changed-row" style="opacity:.6"><span>Loading…</span></div>';
+    let rows = [];
+    try {
+      const resp = await supabaseClient
+        .from('special_access')
+        .select('id, special_code, email, is_active, notes, created_at, valid_until')
+        .order('created_at', { ascending: false });
+      if (resp.error) {
+        const msg = resp.error.message || 'unknown error';
+        bodyEl.innerHTML = '';
+        if (empEl) {
+          empEl.hidden = false;
+          empEl.textContent = (resp.error.code === 'PGRST205' || /relation .* does not exist/i.test(msg))
+            ? 'special_access table missing — run the SQL from the Special Access deployment notes.'
+            : 'Load failed: ' + msg;
+        }
+        console.error('[SpecialAccess] load failed:', resp.error);
+        return;
+      }
+      rows = Array.isArray(resp.data) ? resp.data : [];
+    } catch (e) {
+      bodyEl.innerHTML = '';
+      if (empEl) { empEl.hidden = false; empEl.textContent = 'Load exception: ' + (e.message || e); }
+      return;
+    }
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (rows.length === 0) { bodyEl.innerHTML = ''; if (empEl) { empEl.hidden = false; empEl.textContent = 'No special access codes yet. Add one above.'; } return; }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const dt = r.created_at ? new Date(r.created_at).toLocaleString() : '—';
+      const active = !!r.is_active;
+      // Combined status: Disabled (manual) > Expired (valid_until passed) > Active(+expiry).
+      const expMs = r.valid_until ? new Date(r.valid_until).getTime() : null;
+      const isExpired = expMs != null && expMs <= Date.now();
+      let statusPill;
+      if (!active) {
+        statusPill = '<span style="color:#9ca3af;font-weight:700">○ Disabled</span>';
+      } else if (isExpired) {
+        statusPill = `<span style="color:#f59e0b;font-weight:700" title="Expired ${esc(new Date(expMs).toLocaleString())}">✕ Expired</span>`;
+      } else if (expMs != null) {
+        statusPill = `<span style="color:#22c55e;font-weight:700">● Active</span> <span style="color:#9ca3af;font-size:11px">(Expires ${esc(new Date(expMs).toLocaleDateString())})</span>`;
+      } else {
+        statusPill = '<span style="color:#22c55e;font-weight:700">● Active</span> <span style="color:#9ca3af;font-size:11px">(Never Expires)</span>';
+      }
+      const toggleBtn = active
+        ? `<button class="iq-btn iq-btn--action" data-sa-toggle="${esc(r.id)}" data-sa-to="0" type="button" title="Disable this code" style="background:rgba(156,163,175,0.16);border-color:rgba(156,163,175,0.45);color:#9ca3af">Disable</button>`
+        : `<button class="iq-btn iq-btn--action" data-sa-toggle="${esc(r.id)}" data-sa-to="1" type="button" title="Enable this code" style="background:rgba(34,197,94,0.16);border-color:rgba(34,197,94,0.45);color:#22c55e">Enable</button>`;
+      const delBtn = `<button class="iq-btn iq-btn--danger" data-sa-del="${esc(r.id)}" data-sa-code="${esc(r.special_code)}" type="button" title="Delete this code">Delete</button>`;
+      return `<div class="ib-changed-row">
+        <span class="ib-changed-acct">${esc(r.special_code)}</span>
+        <span>${esc(r.email || '—')}</span>
+        <span>${statusPill}</span>
+        <span>${esc(dt)}</span>
+        <span>${esc(r.notes || '—')}</span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">${toggleBtn} ${delBtn}</span>
+      </div>`;
+    }).join('');
+    bodyEl.querySelectorAll('[data-sa-toggle]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const ok = await _toggleSpecialAccess(btn.dataset.saToggle, btn.dataset.saTo === '1');
+        if (ok) _renderSpecialAccess(); else btn.disabled = false;
+      });
+    });
+    bodyEl.querySelectorAll('[data-sa-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!window.confirm('Delete special code "' + btn.dataset.saCode + '"? The user will lose access on their next session re-check.')) return;
+        btn.disabled = true;
+        const ok = await _deleteSpecialAccess(btn.dataset.saDel);
+        if (ok) _renderSpecialAccess(); else btn.disabled = false;
+      });
+    });
+  }
+
+  async function _addSpecialAccess() {
+    const codeEl   = document.getElementById('saCodeInput');
+    const emailEl  = document.getElementById('saEmailInput');
+    const notesEl  = document.getElementById('saNotesInput');
+    const expiryEl = document.getElementById('saExpiryInput');
+    const resEl    = document.getElementById('saAddResult');
+    const btn      = document.getElementById('saAddBtn');
+    const code  = (codeEl?.value  || '').trim();
+    const email = (emailEl?.value || '').trim();
+    const notes = (notesEl?.value || '').trim();
+    const showRes = (msg, ok) => { if (resEl) { resEl.hidden = false; resEl.textContent = msg; resEl.style.color = ok ? '#22c55e' : '#fca5a5'; } };
+    if (!code)  return showRes('Enter a special code.', false);
+    if (!/^\S+@\S+\.\S+$/.test(email)) return showRes('Enter a valid email for the OTP.', false);
+    // Optional expiry. Blank = never expires. A datetime-local value is local time;
+    // convert to a UTC ISO string. Reject a past time so an already-expired code
+    // can't be created by accident.
+    let validUntil = null;
+    const rawExp = (expiryEl?.value || '').trim();
+    if (rawExp) {
+      const d = new Date(rawExp);
+      if (isNaN(d.getTime())) return showRes('Invalid expiry date.', false);
+      if (d.getTime() <= Date.now()) return showRes('Expiry must be in the future (or leave blank for never).', false);
+      validUntil = d.toISOString();
+    }
+    if (!supabaseClient || !DataLayer.isLive) return showRes('Supabase is not live.', false);
+    btn.disabled = true;
+    try {
+      const resp = await supabaseClient
+        .from('special_access')
+        .insert([{ special_code: code, email, is_active: true, notes: notes || null, valid_until: validUntil }])
+        .select('id');
+      if (resp.error) {
+        const msg = resp.error.message || 'unknown error';
+        if (resp.error.code === '23505' || /duplicate key/i.test(msg)) showRes('That code already exists. Use a different code or edit the existing one.', false);
+        else if (resp.error.code === 'PGRST205' || /relation .* does not exist/i.test(msg)) showRes('special_access table missing — run the deployment SQL first.', false);
+        else showRes('Add failed: ' + msg, false);
+        console.error('[SpecialAccess] insert failed:', resp.error);
+        return;
+      }
+      console.log(`[SpecialAccess] added code="${code}" email=${email}`);
+      showRes('✓ Added. Give the code "' + code + '" to the user.', true);
+      if (codeEl) codeEl.value = ''; if (emailEl) emailEl.value = ''; if (notesEl) notesEl.value = ''; if (expiryEl) expiryEl.value = '';
+      _renderSpecialAccess();
+    } catch (e) {
+      showRes('Add exception: ' + (e.message || e), false);
+    } finally { btn.disabled = false; }
+  }
+
+  async function _toggleSpecialAccess(id, enable) {
+    if (!supabaseClient || !DataLayer.isLive) { showToast('Supabase is not live.', 'error', 4000); return false; }
+    try {
+      const resp = await supabaseClient.from('special_access').update({ is_active: !!enable }).eq('id', id);
+      if (resp.error) { showToast('Update failed: ' + (resp.error.message || 'unknown'), 'error', 5000); return false; }
+      console.log(`[SpecialAccess] id=${id} → ${enable ? 'enabled' : 'disabled'}`);
+      showToast(enable ? 'Code enabled.' : 'Code disabled — access revoked on next re-check.', 'success', 3500);
+      return true;
+    } catch (e) { showToast('Update exception: ' + (e.message || e), 'error', 5000); return false; }
+  }
+
+  async function _deleteSpecialAccess(id) {
+    if (!supabaseClient || !DataLayer.isLive) { showToast('Supabase is not live.', 'error', 4000); return false; }
+    try {
+      const resp = await supabaseClient.from('special_access').delete().eq('id', id);
+      if (resp.error) { showToast('Delete failed: ' + (resp.error.message || 'unknown'), 'error', 5000); return false; }
+      console.log(`[SpecialAccess] id=${id} deleted`);
+      showToast('Special code deleted.', 'success', 3000);
+      return true;
+    } catch (e) { showToast('Delete exception: ' + (e.message || e), 'error', 5000); return false; }
+  }
+
   /* ── Edit Client modal ─────────────────────────────────── */
   let _editClientState = { account: null, currentRow: null };
   async function _openEditClientModal(account) {
@@ -8016,6 +8078,16 @@ const AdminDashboard = (() => {
     _bindCreateLicense();
     // Phase 17E — wire Development Toolkit reset buttons + confirmation modal
     if (typeof _bindDevToolkit === 'function') _bindDevToolkit();
+
+    // Special Access (Path 2) — Add + Refresh + Enter-to-add
+    const saAdd = document.getElementById('saAddBtn');
+    const saRef = document.getElementById('saListRefresh');
+    if (saAdd) saAdd.addEventListener('click', _addSpecialAccess);
+    if (saRef) saRef.addEventListener('click', _renderSpecialAccess);
+    ['saCodeInput', 'saEmailInput', 'saExpiryInput', 'saNotesInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); _addSpecialAccess(); } });
+    });
 
     // Blocked-Clients search + refresh
     const bsBtn = document.getElementById('blockedSearchBtn');

@@ -13,7 +13,7 @@ import { getKnowledgeEntries } from './ai-knowledge.js';
 import { isConfigured as aiSbConfigured, upsertProfile, updateScores, insertResponseLog } from '../utils/ai-supabase.js';
 import { detectStrengths, detectWeaknesses } from '../utils/trader-intelligence.js';
 import { buildKnowledgeLayer } from '../utils/knowledge-orchestrator.js';
-import { resolveTier } from '../utils/identity-session.js';
+import { resolveTier, readGuestCount, buildGuestCookie } from '../utils/identity-session.js';
 import { limitReachedPayload } from '../utils/access-copy.js';
 import { analyzeQuestion } from '../utils/question-awareness.js';
 import { planIntent, shortStatusAnswer, followupBlock, statusPrefix } from '../utils/answer-planner.js';
@@ -58,7 +58,7 @@ import { interpretIndirect, needContextLine } from '../utils/dialogue-understand
 import { detectEmotion, readBetweenLines, emotionLead, betweenLinesLead } from '../utils/emotion-layer.js';
 import { detectLearningStyle, learningStyleNote } from '../utils/learning-style.js';
 import { buildSuggestionChips } from '../utils/suggestion-chips.js';
-import { detectUnsupportedScript, unknownLanguageReply } from '../utils/language-intel.js';
+import { detectUnsupportedScript, unknownLanguageReply, PARTIAL_LANGS, partialLanguageNote, localizeFinalAnswer } from '../utils/language-intel.js';
 import { normalizeSlang } from '../utils/slang-normalizer.js';
 import { buildContextActions } from '../utils/concept-actions.js';
 import { detectExplanationRequest, explanationLead } from '../utils/explanation-engine.js';
@@ -689,24 +689,27 @@ export async function onRequest(context) {
   // Chart Vision: an uploaded-chart analysis forces the chart intent
   if (chartAnalysis) cls.intent = 'chart';
 
-  // ── PHASE 9: IDENTITY-BASED ACCESS GATING ─────────────────────────────────
-  // Tier comes from the signed identity session (issued after Account+Email+OTP
-  // against EA ib_stars_active). Unlimited tier bypasses all gating. Visitors get
-  // AI_VISITOR_MESSAGE_LIMIT (default 5) free messages — and ONLY at the limit do
-  // we surface the access/conversion screen (no tier labels or warnings before).
-  // Gating stays dormant until the AI Supabase project is configured.
+  // ── IDENTITY-BASED ACCESS GATING — SINGLE SOURCE OF TRUTH = LIBRARY PIPELINE ──
+  // Tier comes from the signed identity session, which is minted ONLY after the
+  // existing Library OTP flow succeeds (/api/ai-access → /api/library-auth →
+  // EA broker_accounts). tier==='unlimited' ⇒ verified Library user ⇒ no limit.
+  //
+  // Everyone else is a guest: exactly AI_VISITOR_MESSAGE_LIMIT (default 5) free
+  // messages, counted in a stateless HMAC-signed cookie (NO AI Supabase, NO
+  // profile table, NO is_verified flag, NO second membership system). On the
+  // (limit+1)-th message we block BEFORE any AI work and return the localized
+  // limit-reached card, which the client renders + opens the existing modal.
   const { tier } = await resolveTier(env, identityToken);
-  const gatingEnabled = !!memoryData?.configured;
-  if (tier !== 'unlimited' && gatingEnabled && memoryData?.profile) {
-    const profile     = memoryData.profile;
-    const visitorLimit = parseInt(env.AI_VISITOR_MESSAGE_LIMIT ?? '5', 10) || 5;
-    const freeUsed    = profile.free_messages_used ?? 0;
-    const legacyVerified = !!profile.is_verified;   // grandfather previously-verified users
-
-    if (!legacyVerified && freeUsed >= visitorLimit) {
-      // Structured, localized limit-reached card (client renders + opens verify flow).
+  const visitorLimit = parseInt(env.AI_VISITOR_MESSAGE_LIMIT ?? '5', 10) || 5;
+  let guestSetCookie = null;
+  if (tier !== 'unlimited') {
+    const used = await readGuestCount(env, request);
+    if (used >= visitorLimit) {
+      // 6th message → block. Do not call the AI; do not increment further.
       return new Response(JSON.stringify(limitReachedPayload(env, lang)), { status: 200, headers: JSON_HEADERS });
     }
+    // Allowed (messages 1..limit): record this use on the response cookie.
+    guestSetCookie = await buildGuestCookie(env, used + 1);
   }
 
   // ── KNOWLEDGE RETRIEVAL (in-process, Priority 1) ──────────────────────────
@@ -1601,6 +1604,30 @@ export async function onRequest(context) {
     }
   } catch { /* analytics must never affect the response */ }
 
+  // ── PRODUCTION UPGRADE — FULL TRANSLATION LAYER (Part 1) ───────────────────
+  // Single late hook: `answer` is fully finalized by every path above (clarify /
+  // direct-live / kb / engine / article / knowledge-layer / Level-3 learn) by
+  // this point, so translating exactly ONCE here can never double-translate and
+  // covers every source uniformly. Only fires for the 5 partial languages
+  // (id/ms/vi/bn/th); en/ur/ur-roman/ar are already fully handled upstream and
+  // this is a no-op for them. On any failure/unconfigured-LLM, `answer` is left
+  // completely unchanged (existing Phase-34 English+honest-note behavior).
+  if (PARTIAL_LANGS.has(lang)) {
+    try {
+      const _ansStr = String(answer || '');
+      const localized = await localizeFinalAnswer(env, _ansStr, lang);
+      if (localized) {
+        answer = localized;
+      } else if (!_ansStr.includes(partialLanguageNote(lang))) {
+        // Direct/live-market answers never pass through generateResponse(), so
+        // they never got the Phase-34 honest note — ensure it's present here so
+        // EVERY partial-language reply explains the gap when translation didn't
+        // happen, not just the ones that went through the engine path.
+        answer = `${_ansStr}\n\n${partialLanguageNote(lang)}`;
+      }
+    } catch { /* translation is additive — never blocks the existing reply */ }
+  }
+
   // ── STREAM the answer as SSE (preserves the existing typing animation) ─────
   const encoder = new TextEncoder();
   const { readable, writable } = new TransformStream();
@@ -1643,5 +1670,8 @@ export async function onRequest(context) {
     }
   })();
 
-  return new Response(readable, { headers: SSE_HEADERS });
+  // Guest message counter: stamp the incremented signed-cookie count on the
+  // streamed reply (verified/unlimited users get no cookie — guestSetCookie stays null).
+  const responseHeaders = guestSetCookie ? { ...SSE_HEADERS, 'Set-Cookie': guestSetCookie } : SSE_HEADERS;
+  return new Response(readable, { headers: responseHeaders });
 }

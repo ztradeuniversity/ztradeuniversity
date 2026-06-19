@@ -112,11 +112,20 @@ export async function onRequest({ request, env }) {
       .map(([key, count]) => { const [topic, lang] = key.split('::'); return { topic, lang, dislikes: count }; })
       .sort((a, b) => b.dislikes - a.dislikes).slice(0, 10);
 
+    // PRODUCTION FIX — per-event feed with the exact timestamp of each like/dislike
+    // (the aggregated mostLiked/mostDisliked above intentionally group by answer
+    // text and never exposed `created_at`, so admin had no way to see WHEN a
+    // specific rating happened). Capped + most-recent-first, raw rows untouched.
+    const recent = rows.slice(0, 200).map(r => ({
+      question: r.question, answer: r.answer, rating: r.rating,
+      lang: r.lang, topic: r.topic, createdAt: r.created_at,
+    }));
+
     return json({
       configured: true,
       scanned: rows.length,
       totals: { likes, dislikes, approval: (likes + dislikes) ? Math.round((likes / (likes + dislikes)) * 100) : null },
-      mostLiked, mostDisliked, failingTopics,
+      mostLiked, mostDisliked, failingTopics, recent,
     });
   }
 
