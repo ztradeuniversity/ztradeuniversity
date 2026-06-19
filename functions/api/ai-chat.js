@@ -30,6 +30,8 @@ import { retrieveBest, nextStepInvite, suggestQuestions, setScorer } from '../ut
 import { scoreEntry } from '../utils/semantic-retrieval.js';
 import { makeBoostedScorer } from '../utils/retrieval-boost.js';
 import { makeLexiconScorer } from '../utils/retrieval-lexicon.js';
+import { makeMacroScorer } from '../utils/macro-lexicon.js';
+import { detectQuestionForm } from '../utils/intent-form.js';
 import { searchArticles } from '../utils/article-knowledge.js';
 import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
@@ -517,7 +519,10 @@ export async function onRequest(context) {
   // Always install the lexicon scorer as a LEXICAL FLOOR — even with embeddings on, so
   // proven exact/cluster matches (e.g. "liquidity grab"→liquidity-sweep) are never lost
   // if vectors are missing/incomplete. retrieve() blends max(hybrid, lexicon). Additive.
-  try { setScorer(makeLexiconScorer(scoreEntry)); } catch {}
+  // PRODUCTION UPGRADE — macro-acronym (GDP/PMI/ISM/ADP/ECB/FED/NFP/CPI/BOS…) +
+  // cross-asset ticker synonym (gold/XAUUSD, silver/XAGUSD, bitcoin/BTC,
+  // ethereum/ETH) layer on top of the lexicon scorer. Additive, never lowers a score.
+  try { setScorer(makeMacroScorer(makeLexiconScorer(scoreEntry))); } catch {}
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: JSON_HEADERS });
@@ -1191,6 +1196,11 @@ export async function onRequest(context) {
   // never hallucinate, never fake a translation). Clears any English clarify menu.
   if (_unsupported) { directAnswer = unknownLanguageReply(_unsupported); directSource = 'safe'; clarifyAnswer = null; }
 
+  // PRODUCTION UPGRADE — question FORM (what-is/how-to/example/comparison/why),
+  // orthogonal to topic intent (p10Intent). Passed to the LLM composer as a
+  // presentation hint only — additive, never changes which facts are used.
+  const p10Form = detectQuestionForm(genText);
+
   if (clarifyAnswer) {
     answer = clarifyAnswer;
     answerSource = 'safe';                          // clarify question = safe-reply tier
@@ -1205,7 +1215,7 @@ export async function onRequest(context) {
       body: compress(kbAnswer, p10Depth) + p10GuideAppend,
       engagement: p10Followups,
       disclaimer: '_⚠️ Educational only — not financial advice._',
-    }, { lang, intent: p10Intent });
+    }, { lang, intent: p10Intent, form: p10Form });
   } else {
     try {
       answer = generateResponse({
@@ -1239,7 +1249,7 @@ export async function onRequest(context) {
         body: compress(answer, p10Depth) + p10GuideAppend,
         contradiction: p10Contradiction,
         engagement: p10Followups,
-      }, { lang, intent: p10Intent });
+      }, { lang, intent: p10Intent, form: p10Form });
     } catch (err) {
       answer = (env.DEBUG === 'true')
         ? `Engine error: ${err.message}`
@@ -1288,7 +1298,7 @@ export async function onRequest(context) {
           body: `From the ZTU article **${_art.title}**:\n\n${_artBody}${_src}` + p10GuideAppend,
           engagement: p10Followups,
           disclaimer: '_⚠️ Educational only — not financial advice._',
-        }, { lang, intent: p10Intent });
+        }, { lang, intent: p10Intent, form: p10Form });
         answerSource    = 'database';
         answerArticleId = (_art.id != null) ? _art.id : answerArticleId;
         p10KbCat        = _art.category || p10KbCat;
@@ -1347,7 +1357,7 @@ export async function onRequest(context) {
         answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
         answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
-        const gen = await generateEducationalAnswer(env, genText, lang);
+        const gen = await generateEducationalAnswer(env, genText, lang, p10Form);
         if (gen) {
           answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
           answerSource = 'openai';                   // LLM fallback engine (fresh generation)

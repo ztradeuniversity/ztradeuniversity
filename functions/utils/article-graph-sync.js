@@ -23,6 +23,8 @@ import {
 } from './article-seo.js';
 import { authorConcept, publishConcept } from './authoring-workflow.js';
 import { strengthenGraphConnections } from './graph-growth.js';
+import { chunkConceptsFromArticle } from './article-chunker.js';
+import { logSystemEvent } from './system-log.js';
 
 export async function syncArticleToGraph(env, article) {
   let graph = null, ecosystem = null;
@@ -76,6 +78,31 @@ export async function syncArticleToGraph(env, article) {
     const recommendationWidget = buildRecommendationWidget(kos, internalLinks);
     const sitemapEntry = buildSitemapEntry(kos, { urlPath });
     ecosystem = { seoSuggestion, faqSchema: seoSuggestion.faqSchema, relatedArticles, internalLinks, smartChips, recommendationWidget, sitemapEntry };
-  } catch { /* article page/sitemap/citation are already live via is_active */ }
+  } catch (e) {
+    /* article page/sitemap/citation are already live via is_active */
+    logSystemEvent(env, { kind: 'graph-sync', level: 'error', message: 'syncArticleToGraph failed', meta: { articleId: article?.id, error: String(e?.message || e) } }).catch(() => {});
+  }
+
+  // PRODUCTION UPGRADE — ARTICLE CHUNKING: publish the FULL article body as
+  // additional retrievable chunk concepts (not just the first ~1200 chars used
+  // by the main concept's canonical.deep). Best-effort, non-fatal — the main
+  // concept above is already published; a chunking failure never blocks that.
+  if (graph?.published?.ok) {
+    try {
+      const chunkKos = chunkConceptsFromArticle(article, kos);
+      const chunkResults = [];
+      for (const ck of chunkKos) {
+        const authoredChunk = await authorConcept(env, ck, { origin: 'article', autoSubmit: false });
+        let publishedChunk = null;
+        if (authoredChunk.ok && authoredChunk.action !== 'merged') {
+          publishedChunk = await publishConcept(env, ck, 'article-publish-chunk');
+        }
+        chunkResults.push({ id: ck.id, authored: authoredChunk.ok, published: !!publishedChunk?.ok });
+      }
+      graph.chunks = { total: chunkKos.length, results: chunkResults };
+    } catch (e) {
+      logSystemEvent(env, { kind: 'chunking', level: 'error', message: 'article chunking failed', meta: { articleId: article?.id, error: String(e?.message || e) } }).catch(() => {});
+    }
+  }
   return { graph, ecosystem };
 }

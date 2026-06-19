@@ -37,6 +37,7 @@ import { embedText, embeddingText, cosineSim, isEmbeddingConfigured } from '../u
 import { buildIntelligenceReport } from '../utils/intelligence-dashboard.js';
 import { buildFeedbackRecommendations } from '../utils/feedback-loop.js';
 import { buildHealthReport } from '../utils/health-report.js';
+import { systemLogSummary } from '../utils/system-log.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -169,6 +170,13 @@ export async function onRequest(context) {
     // Recommendations only (concepts/articles/missions/practice/exams) — never auto-written.
     if (action === 'evolution') {
       return json(await buildEvolutionReport(env, { limit: 100, topN: 8 }));
+    }
+    // PRODUCTION UPGRADE — SYSTEM LOG: admin-visible embedding/graph-sync/article-
+    // ingestion/LLM-fallback failure trail (Part A.6). Graceful: empty until the
+    // AI Supabase + kb_system_log table exist.
+    if (action === 'system-log') {
+      const u = new URL(request.url);
+      return json(await systemLogSummary(env, { limit: parseInt(u.searchParams.get('limit') || '200', 10) || 200 }));
     }
     // PART 5 — AUTHOR ASSISTANT / CONTENT DEMAND ENGINE: tells the admin exactly what
     // to write next, from real demand (logged gaps + missed retrievals). Reuses the

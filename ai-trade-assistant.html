@@ -219,6 +219,30 @@
   .msg-u .msg-time{ display:inline-flex; align-items:center; gap:4px; }
   .msg-u .msg-time::after{ content:'✓✓'; color:var(--orange); font-size:10px; letter-spacing:-1px; }
 
+  /* ── MULTI-LANGUAGE FONTS + RTL (Part C) ──────────────────────────────────
+     Per-language font stacks so non-Latin scripts render with proper glyphs
+     instead of falling back to missing/blocky tofu, plus automatic RTL for
+     Urdu/Arabic. Scoped to [lang] so older messages in a different language
+     are unaffected. Applied via JS (renderMsg) setting wrap.lang/wrap.dir. */
+  .msg[lang="ur"] .msg-bub, .msg[lang="ar"] .msg-bub{
+    font-family:'Noto Naskh Arabic','Noto Sans Arabic','Segoe UI',Tahoma,Geneva,sans-serif;
+    font-size:15.5px; line-height:1.9;
+  }
+  .msg[lang="ur-roman"] .msg-bub{ font-family:'Inter','Poppins',system-ui,sans-serif; }
+  .msg[lang="hi"] .msg-bub, .msg[lang="bn"] .msg-bub{
+    font-family:'Noto Sans Devanagari','Nirmala UI','Segoe UI',sans-serif;
+  }
+  .msg[lang="zh"] .msg-bub{ font-family:'Noto Sans SC','Microsoft YaHei','PingFang SC',sans-serif; }
+  .msg[lang="ja"] .msg-bub{ font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic',sans-serif; }
+  .msg[lang="ko"] .msg-bub{ font-family:'Noto Sans KR','Malgun Gothic',sans-serif; }
+  .msg[lang="th"] .msg-bub{ font-family:'Noto Sans Thai','Leelawadee UI',sans-serif; }
+  .msg[lang="fr"] .msg-bub{ font-family:'Inter','Poppins',system-ui,sans-serif; }
+  .msg[dir="rtl"]{ text-align:right; }
+  .msg[dir="rtl"] .msg-body{ align-items:flex-end; }
+  .msg[dir="rtl"].msg-a .msg-bub{ border-top-left-radius:16px; border-top-right-radius:5px; }
+  .msg[dir="rtl"] .msg-bub ul, .msg[dir="rtl"] .msg-bub ol{ padding-right:1.3em; padding-left:0; }
+  .msg[dir="rtl"] .msg-actions{ flex-direction:row-reverse; }
+
   /* Markdown inside AI bubble */
   .msg-bub p{ margin:0 0 9px; } .msg-bub p:last-child{ margin-bottom:0; }
   .msg-bub h2{ font-size:16px; margin:12px 0 7px; font-weight:800; color:var(--heading); }
@@ -422,7 +446,7 @@
       <svg class="sun" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       <svg class="moon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
-    <a href="library.html" class="ax-signin" aria-label="Sign in">
+    <a href="library.html" class="ax-signin" aria-label="Sign in" onclick="return openLoginChoice(event)">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Sign In
     </a>
@@ -1081,6 +1105,32 @@
   </div>
 </div>
 
+<!-- ════════ LOGIN CHOICE MODAL — routes to the existing verify modal or the
+     existing license-request page; no new verification logic, no duplicate
+     systems. ════════ -->
+<div class="modal-ov" id="loginChoiceModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lcTitle">
+    <button class="modal-x" onclick="closeModal('loginChoiceModal')" aria-label="Close">✕</button>
+    <div class="modal-icon" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <div class="modal-title" id="lcTitle">Sign In</div>
+    <div class="modal-sub">Choose how you'd like to continue.</div>
+
+    <button type="button" class="vf-submit" style="margin-top:6px" onclick="closeModal('loginChoiceModal'); openVerifyModal(false);">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      Verify Trading Account Number
+    </button>
+    <p class="vf-free-note" style="margin-top:6px">Already have an account under our IB? Enter your trading account number and verify access.</p>
+
+    <a class="vf-cta ib" href="license-request.html" style="margin-top:14px;width:100%">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Submit License Request
+    </a>
+    <p class="vf-free-note" style="margin-top:6px">Not verified yet? Submit a License Request for review. After approval, Library and AI access will unlock automatically.</p>
+  </div>
+</div>
+
 <!-- ════════ PHASE 8: STRATEGY MATCH FINDER MODAL ════════ -->
 <div class="modal-ov" id="strategyModal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sfTitle">
@@ -1290,6 +1340,13 @@ function renderMsg(role, content, time, batch = false) {
 
   const wrap = document.createElement('div');
   wrap.className = `msg msg-${role === 'user' ? 'u' : 'a'}`;
+  // MULTI-LANGUAGE (Part C): tag this message with its language so the
+  // [lang="..."]/[dir="rtl"] CSS above picks the right font/direction.
+  // User bubbles: detect from what they typed. AI bubbles: the reply follows
+  // the locked session language (Language Lock on the server).
+  const msgLang = role === 'user' ? detectLangCode(content) : (getSessionLang() || detectLangCode(content) || 'en');
+  if (msgLang) wrap.lang = msgLang;
+  wrap.dir = (msgLang === 'ur' || msgLang === 'ar') ? 'rtl' : 'ltr';
 
   const av = document.createElement('div');
   av.className = 'msg-av'; av.setAttribute('aria-hidden','true');
@@ -1405,8 +1462,11 @@ async function sendMessage() {
     }
 
     think.remove();
-    const { bub } = renderMsg('ai', '', Date.now());
+    const { bub, wrap: aiWrap } = renderMsg('ai', '', Date.now());
     aiBub = bub;
+    // FEEDBACK ANALYTICS: stash the question on the answer bubble's message
+    // wrapper so the like/dislike buttons (addActions) can report {question,answer}.
+    if (aiWrap) aiWrap.dataset.userQ = text;
 
     const reader  = res.body.getReader();
     const decoder = new TextDecoder();
@@ -2623,6 +2683,13 @@ function closeModal(id) {
   m.classList.remove('open');
   document.body.style.overflow = '';
 }
+// "Sign In" header link — show the two existing paths (verify account / submit
+// license request) instead of jumping straight to library.html.
+function openLoginChoice(e) {
+  if (e) e.preventDefault();
+  openModal('loginChoiceModal');
+  return false;
+}
 // Close modal on overlay click
 document.querySelectorAll('.modal-ov').forEach(ov => {
   ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); });
@@ -3075,14 +3142,38 @@ async function verifyOtp(e) {
     var down = document.createElement('button');
     down.type = 'button'; down.className = 'msg-act down'; down.title = 'Bad response'; down.setAttribute('aria-label', 'Dislike'); down.innerHTML = ICON.down;
 
-    up.addEventListener('click', function () { var on = up.classList.toggle('on'); if (on) down.classList.remove('on'); });
-    down.addEventListener('click', function () { var on = down.classList.toggle('on'); if (on) up.classList.remove('on'); });
+    up.addEventListener('click', function () {
+      var on = up.classList.toggle('on'); if (on) down.classList.remove('on');
+      if (on) sendFeedback(msg, bub, 'like');
+    });
+    down.addEventListener('click', function () {
+      var on = down.classList.toggle('on'); if (on) up.classList.remove('on');
+      if (on) sendFeedback(msg, bub, 'dislike');
+    });
 
     row.appendChild(copy); row.appendChild(up); row.appendChild(down);
 
     var time = body.querySelector('.msg-time');
     if (time && time.nextSibling) body.insertBefore(row, time.nextSibling);
     else body.appendChild(row);
+  }
+  /* ── ANSWER RATING SYSTEM (Part B) — POST to /api/ai-feedback, best-effort.
+     Never blocks the UI; the toggle visual state already happened before this runs. */
+  function sendFeedback(msg, bub, rating) {
+    try {
+      var question = (msg && msg.dataset && msg.dataset.userQ) || '';
+      var answer = (bub && (bub.innerText || bub.textContent)) || '';
+      if (!answer) return;
+      fetch('/api/ai-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: question, answer: answer, rating: rating,
+          lang: (typeof getSessionLang === 'function' ? getSessionLang() : '') || 'en',
+          userId: (typeof getOrCreateUserId === 'function' ? getOrCreateUserId() : null),
+        }),
+      }).catch(function () {});
+    } catch (e) {}
   }
   function legacyCopy(txt) {
     try { var ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch (e) {}

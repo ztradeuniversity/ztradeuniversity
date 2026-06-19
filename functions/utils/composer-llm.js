@@ -13,6 +13,8 @@
 // persona is the system prompt. Pure logic + one optional model call.
 // ════════════════════════════════════════════════════════════════════════════
 
+import { formInstruction } from './intent-form.js';
+
 // Configured when a Cloudflare Workers AI binding (env.AI) exists, OR a legacy
 // OpenAI-compatible endpoint (LLM_ENDPOINT + LLM_API_KEY) is provided, OR the new
 // OPENAI_* adapter is switched on (OPENAI_ENABLED=true + OPENAI_API_KEY). Dormant otherwise.
@@ -68,15 +70,50 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
 }
 
-async function callOpenAI(oa, messages) {
+async function callOpenAIOnce(oa, messages) {
   const res = await fetch(oa.endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${oa.key}` },
     body: JSON.stringify({ model: oa.model, messages, max_tokens: 700, temperature: 0.4 }),
     signal: AbortSignal.timeout(8000),
   });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    const e = new Error(`openai http ${res.status}: ${errBody.slice(0, 200)}`);
+    e.status = res.status;
+    throw e;
+  }
   const j = await res.json().catch(() => null);
   return j?.choices?.[0]?.message?.content || '';
+}
+
+// PRODUCTION UPGRADE — "OpenAI must not be skipped unnecessarily": retry once on a
+// transient failure (timeout, 429, 5xx) before giving up, and surface the failure
+// via system-log so admins can see it instead of it disappearing into a silent
+// fallback. Never throws — callers already treat a thrown error as "no LLM text".
+async function callOpenAI(oa, messages, env) {
+  try {
+    return await callOpenAIOnce(oa, messages);
+  } catch (e1) {
+    const retryable = !e1.status || e1.status === 429 || e1.status >= 500;
+    if (!retryable) {
+      logLLMFailure(env, 'openai', e1);
+      throw e1;
+    }
+    try {
+      return await callOpenAIOnce(oa, messages);
+    } catch (e2) {
+      logLLMFailure(env, 'openai', e2);
+      throw e2;
+    }
+  }
+}
+
+function logLLMFailure(env, engine, err) {
+  if (!env) return;
+  import('./system-log.js').then(({ logSystemEvent }) =>
+    logSystemEvent(env, { kind: 'llm-fallback', level: 'error', message: `${engine} call failed`, meta: { error: String(err?.message || err) } })
+  ).catch(() => {});
 }
 
 async function callModel(env, system, user) {
@@ -95,11 +132,12 @@ async function callModel(env, system, user) {
       cfText = (r && (r.response || r.result || (typeof r === 'string' ? r : ''))) || '';
     } catch { cfText = ''; }
     if (cfText && cfText.trim()) return cfText;
+    if (!cfText) logLLMFailure(env, 'workers-ai', new Error('empty/failed response'));
     // Workers AI unavailable/empty → OpenAI ONLY as a last-resort fallback, and ONLY
     // when explicitly enabled (OPENAI_FALLBACK_ENABLED=true).
     const oa = resolveOpenAI(env);
     if (oa.usable && oa.fallbackEnabled) {
-      try { return await callOpenAI(oa, messages); } catch { return ''; }
+      try { return await callOpenAI(oa, messages, env); } catch { return ''; }
     }
     return '';
   }
@@ -109,7 +147,7 @@ async function callModel(env, system, user) {
   // ultimate fallback if this returns empty.
   const oa = resolveOpenAI(env);
   if (oa.usable) {
-    try { return await callOpenAI(oa, messages); } catch { return ''; }
+    try { return await callOpenAI(oa, messages, env); } catch { return ''; }
   }
   return '';
 }
@@ -130,13 +168,15 @@ STRICT RULES:
 5. Be concise (under 120 words), direct and human — like an experienced trader explaining to a peer. No motivational filler, no clichés, no preamble; lead with the answer.
 6. Output only the answer — no chain-of-thought.`;
 
-export async function generateEducationalAnswer(env, question, lang = 'en') {
+export async function generateEducationalAnswer(env, question, lang = 'en', form = null) {
   if (!llmConfigured(env)) return null;
   if (lang && lang !== 'en') return null;                  // Language Lock — English only
   const q = String(question || '').trim();
   if (q.length < 6) return null;
+  const formLine = form ? formInstruction(form) : '';
+  const system = formLine ? `${EDU_SYSTEM}\n7. ${formLine}` : EDU_SYSTEM;
   try {
-    const out = await callModel(env, EDU_SYSTEM, q);
+    const out = await callModel(env, system, q);
     const text = (out && typeof out === 'string') ? out.trim() : '';
     if (text.length < 12) return null;
     if (/\bNOT_TRADING\b/i.test(text)) return null;        // model judged it off-domain → no answer
@@ -153,8 +193,13 @@ export function makeLLMComposer(env) {
     if (ctx.lang && ctx.lang !== 'en') return null;
     const draft = assembleDraft(parts);
     if (draft.length < 24) return null;                 // too short to bother
+    // PRODUCTION UPGRADE — question-FORM awareness (what-is vs how-to vs example vs
+    // comparison vs why): shapes presentation only, never adds facts. ctx.form is
+    // optional — when a caller doesn't pass it, behavior is byte-for-byte unchanged.
+    const formLine = ctx.form ? formInstruction(ctx.form) : '';
+    const system = formLine ? `${SYSTEM}\n7. ${formLine}` : SYSTEM;
     try {
-      const out = await callModel(env, SYSTEM, draft);
+      const out = await callModel(env, system, draft);
       let text = (out && typeof out === 'string') ? out.trim() : '';
       if (text.length < 12) return null;
       // Grounding guards: re-append a dropped disclaimer; never let signals slip in.

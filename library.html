@@ -1321,8 +1321,9 @@ const LIBRARY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
 
 /* ── Access gate settings ── */
 const IB_ACCOUNT_URL        = '#';                    /* TODO: IB account guide URL    */
-const SESSION_STORE_KEY     = 'ztu_lib_v2';           /* v2 = OTP-verified sessions    */
-const SESSION_TTL_MS        = 24 * 60 * 60 * 1000;   /* 24 hours                      */
+const SESSION_STORE_KEY     = 'ztu_lib_v3';           /* v3 = 15-day hard-expiry sessions (Phase 18A) */
+const SESSION_TTL_MS        = 15 * 24 * 60 * 60 * 1000; /* 15 days — HARD expiry from OTP login (not sliding) */
+const REVALIDATE_FRESH_MS   = 30 * 1000;             /* protected requests re-validate at most once / 30 s */
 const RESEND_COOLDOWN_MS    = 60  * 1000;             /* 60 s between resend requests  */
 const OTP_TTL_CLIENT_MS     = 10  * 60 * 1000;        /* 10 min client-side countdown  */
 const AUTH_ENDPOINT         = '/api/library-auth';    /* Cloudflare Pages Function     */
@@ -1432,7 +1433,7 @@ const DEMO_BOOKS = [
    PAGE STATE
 ────────────────────────────────────────────────────────── */
 const LIB = {
-  session:         null,   /* { account: string, verifiedAt: number } */
+  session:         null,   /* { account: string, createdAt: number } — 15-day hard expiry */
   activeAudio:     null,   /* { id: string, el: HTMLAudioElement }    */
   pendingCb:       null,   /* callback to fire after gate approval    */
   gateAttempts:    0,
@@ -1499,15 +1500,21 @@ async function callAuth(body) {
    Always re-verifies with Supabase on page load —
    never trusts localStorage alone.
 ────────────────────────────────────────────────────────── */
+/* Called ONLY on a fresh OTP verification — starts the 15-day hard-expiry clock.
+   createdAt is never reset afterwards, so the session expires 15 days after login
+   regardless of activity (true hard expiry, not a sliding window). */
 function saveSession(acct) {
-  const s = { account: acct.trim(), verifiedAt: Date.now() };
+  const s = { account: acct.trim(), createdAt: Date.now() };
   try { localStorage.setItem(SESSION_STORE_KEY, JSON.stringify(s)); } catch {}
   LIB.session = s;
+  LIB._lastValidatedAt = Date.now();   /* OTP verify counts as a fresh server validation */
+  LIB._lastValidatedOk = true;
 }
 
 function clearSessionData() {
   try { localStorage.removeItem(SESSION_STORE_KEY); } catch {}
   LIB.session = null;
+  LIB._lastValidatedOk = false;
 }
 
 function readStoredSession() {
@@ -1515,8 +1522,9 @@ function readStoredSession() {
     const raw = localStorage.getItem(SESSION_STORE_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw);
-    if (!s || !s.account || !s.verifiedAt) return null;
-    if (Date.now() - s.verifiedAt > SESSION_TTL_MS) { clearSessionData(); return null; }
+    if (!s || !s.account || !s.createdAt) return null;
+    /* 15-day HARD expiry from login */
+    if (Date.now() - s.createdAt > SESSION_TTL_MS) { clearSessionData(); return null; }
     return s;
   } catch { return null; }
 }
@@ -1546,7 +1554,11 @@ async function hydrateSession() {
   }
 
   if (!valid) { clearSessionData(); updateAccessUI(false); return; }
-  saveSession(stored.account); /* refresh timestamp */
+  /* Keep the ORIGINAL createdAt (15-day hard expiry) — do NOT call saveSession,
+     which would restart the clock and turn it into a sliding window. */
+  LIB.session = stored;
+  LIB._lastValidatedAt = Date.now();
+  LIB._lastValidatedOk = true;
   updateAccessUI(true);
 }
 
@@ -1616,9 +1628,54 @@ function closeGate() {
   stopTimers();
 }
 
-/* ── Guard helper — called on every content click ── */
-function withAccess(fn) {
-  if (LIB.session) { fn(); } else { openGate(fn); }
+/* ── PHASE 18A — SESSION SECURITY ENGINE ───────────────────
+   Re-validates the session against the server before every protected
+   request: (a) 15-day hard expiry, (b) account still found in IB Stars
+   Active. A 30 s freshness window collapses bursts of clicks so the
+   server isn't hammered, while every genuine action re-validates.
+   Returns true if the session is still valid.
+────────────────────────────────────────────────────────── */
+async function ensureValidSession() {
+  const stored = readStoredSession();           /* enforces 15-day hard expiry */
+  if (!stored) { clearSessionData(); return false; }
+  LIB.session = stored;
+
+  const now = Date.now();
+  if (LIB._lastValidatedOk && LIB._lastValidatedAt &&
+      (now - LIB._lastValidatedAt) < REVALIDATE_FRESH_MS) {
+    return true;                                /* validated very recently — trust briefly */
+  }
+
+  let valid = false;
+  try {
+    const res = await callAuth({ action: 'verify-session', account: stored.account });
+    valid = res.valid === true;                 /* server: account exists AND still IB Star Active */
+  } catch {
+    /* Transient network error → fail-open within the 15-day TTL (avoids lockout
+       on flaky connections; the next successful check still enforces). */
+    valid = true;
+  }
+  LIB._lastValidatedAt = now;
+  LIB._lastValidatedOk = valid;
+  if (!valid) { clearSessionData(); return false; }
+  return true;
+}
+
+/* ── Guard — called on every protected content request ──
+   Validates the session server-side BEFORE opening any video / audio / PDF.
+   On failure (expired OR removed from IB Stars Active): clear session, force
+   logout, and show the existing Members-Only popup. */
+async function withAccess(fn, onDeny) {
+  /* No session at all → straight to the gate (existing flow). */
+  if (!LIB.session && !readStoredSession()) { openGate(fn); return; }
+
+  const ok = await ensureValidSession();
+  if (ok) { fn(); return; }
+
+  /* Session revoked → force logout + existing popup. */
+  if (typeof onDeny === 'function') onDeny();
+  revokeAccess();        /* clears session + re-locks all content (existing) */
+  openGate(fn);          /* existing Members-Only popup, unchanged */
 }
 
 /* ── Reset button states ── */
@@ -2334,6 +2391,15 @@ async function init() {
   /* 5 — Wire search & filter */
   document.getElementById('searchInput').addEventListener('input',  applyFilters);
   document.getElementById('langSelect').addEventListener('change', applyFilters);
+
+  /* 6 — Phase 18A: automatic revocation when the tab regains focus, so an
+     account removed from IB Stars Active loses access without needing a click. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && readStoredSession()) {
+      LIB._lastValidatedAt = 0;                 /* force a fresh server check */
+      ensureValidSession().then(ok => { if (!ok) revokeAccess(); });
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

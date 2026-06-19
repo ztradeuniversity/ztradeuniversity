@@ -58,6 +58,14 @@ export async function attachEmbedding(env, node) {
   if (!node || env?.KB_EMBEDDINGS_ENABLED !== 'true' || !isEmbeddingConfigured(env)) return node;
   const vec = await embedText(env, embeddingText(node)).catch(() => null);
   if (vec) { node.data = node.data || {}; node.data.embedding = vec; }
+  else {
+    // ACTIVATION-FAILURE VISIBILITY: embeddings are enabled+configured but the
+    // call returned nothing — log it so admins can see degraded retrieval
+    // instead of it failing silently. Best-effort; never blocks ingestion.
+    import('./system-log.js').then(({ logSystemEvent }) =>
+      logSystemEvent(env, { kind: 'embedding', level: 'error', message: 'embedText returned null for node', meta: { id: node.id || node?.data?.id || null } })
+    ).catch(() => {});
+  }
   return node;
 }
 

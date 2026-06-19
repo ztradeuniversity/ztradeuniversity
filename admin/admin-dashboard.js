@@ -5335,6 +5335,62 @@ const AdminDashboard = (() => {
     }
   }
 
+  /* ─── _setAccessOverride — admin manual override ──────────────
+   *
+   * license_requests tracks bot-delivery state only (pending/matched/
+   * compiled/emailed/...) — it has no relationship to Library/AI access,
+   * which is decided purely by EA broker_accounts activity in
+   * functions/api/library-auth.js (lookupIbStars). That stays the single
+   * source of truth for everyone (Library + AI both call it).
+   *
+   * This is the one explicit, admin-only exception: an admin who has
+   * personally reviewed a license request can flag the account so
+   * lookupIbStars treats it as active even before the EA reports it.
+   * It is NEVER automatic from status fields like 'matched'/'delivered' —
+   * only this button, clicked by a logged-in admin, sets it.
+   *
+   * REQUIRED Supabase SQL (run once in SQL editor, same EA project as
+   * license_requests / broker_accounts):
+   *   ALTER TABLE license_requests
+   *     ADD COLUMN IF NOT EXISTS access_override     BOOLEAN NOT NULL DEFAULT false,
+   *     ADD COLUMN IF NOT EXISTS access_override_by  TEXT,
+   *     ADD COLUMN IF NOT EXISTS access_override_at  TIMESTAMPTZ;
+   *
+   * Returns true on success, false on failure (toast already shown).
+   */
+  async function _setAccessOverride(licenseRequestId, accountNumber, grant) {
+    if (!supabaseClient || !DataLayer.isLive) {
+      showToast('Access override unavailable — Supabase is not live.', 'error', 4000);
+      return false;
+    }
+    try {
+      const patch = grant
+        ? { access_override: true,  access_override_by: ((typeof ADMIN_CONFIG !== 'undefined' && ADMIN_CONFIG && ADMIN_CONFIG.username) || 'admin'), access_override_at: new Date().toISOString() }
+        : { access_override: false, access_override_by: null, access_override_at: null };
+      const resp = await supabaseClient
+        .from('license_requests')
+        .update(patch)
+        .eq('id', licenseRequestId);
+      if (resp.error) {
+        const code = resp.error.code ? ' [' + resp.error.code + ']' : '';
+        const msg  = resp.error.message || 'unknown error';
+        console.error('[AccessOverride] update failed:', resp.error);
+        if (resp.error.code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
+          showToast('access_override column missing — run the SQL in _setAccessOverride() comment. See console.', 'error', 9000);
+        } else {
+          showToast('Access override failed: ' + msg + code, 'error', 7000);
+        }
+        return false;
+      }
+      console.log(`[AccessOverride] account=${accountNumber} license_request.id=${licenseRequestId} → ${grant ? 'GRANTED' : 'revoked'}`);
+      return true;
+    } catch (e) {
+      console.error('[AccessOverride] exception:', e);
+      showToast('Access override exception: ' + (e.message || e), 'error', 5000);
+      return false;
+    }
+  }
+
   /* ═══════════════════════════════════════════════════════════
      Phase 16.6 — Compile Queue row diagnostic modal
      ───────────────────────────────────────────────────────────
@@ -5403,6 +5459,14 @@ const AdminDashboard = (() => {
               .limit(1);
             if (!optSel.error && optSel.data && optSel.data[0]) Object.assign(row, optSel.data[0]);
           } catch (_) { /* optional columns may not exist */ }
+          try {
+            const ovSel = await supabaseClient
+              .from('license_requests')
+              .select('access_override, access_override_by, access_override_at')
+              .eq('id', licenseRequestId)
+              .limit(1);
+            if (!ovSel.error && ovSel.data && ovSel.data[0]) Object.assign(row, ovSel.data[0]);
+          } catch (_) { /* access_override columns may not exist yet — run the SQL in _setAccessOverride() */ }
         }
       }
       if (!row) {
@@ -5505,6 +5569,20 @@ const AdminDashboard = (() => {
       // 7) Actions — Resend visible only on compiled / emailed / delivered
       if (['compiled', 'emailed', 'delivered'].includes(s)) {
         $('iqInfoResendBtn').hidden = false;
+      }
+
+      // 7b) Manual access override — current state + button label
+      const overrideBtn = $('iqInfoOverrideBtn');
+      if (row.access_override) {
+        $('iqInfoOverrideStatus').textContent =
+          'GRANTED' + (row.access_override_by ? ' by ' + row.access_override_by : '') +
+          (row.access_override_at ? ' on ' + fmtDateTime(row.access_override_at) : '');
+        $('iqInfoOverrideStatus').style.color = '#22c55e';
+        if (overrideBtn) { overrideBtn.textContent = 'Revoke Access Override'; overrideBtn.classList.add('iq-btn--danger'); }
+      } else {
+        $('iqInfoOverrideStatus').textContent = 'Not granted';
+        $('iqInfoOverrideStatus').style.color = '';
+        if (overrideBtn) { overrideBtn.textContent = 'Grant Access Override'; overrideBtn.classList.remove('iq-btn--danger'); }
       }
 
       // 8) Phase 16.7 Issue 3 — if a RetryPool entry exists for this id,
@@ -5628,6 +5706,30 @@ const AdminDashboard = (() => {
           if (typeof renderDeliveredSection    === 'function') renderDeliveredSection();
         }
       } finally { btn.disabled = false; }
+    });
+
+    document.getElementById('iqInfoOverrideBtn')?.addEventListener('click', async () => {
+      if (!_iqInfoActive) return;
+      const btn = document.getElementById('iqInfoOverrideBtn');
+      const granting = !/Revoke/i.test(btn.textContent);
+      const confirmed = window.confirm(
+        (granting
+          ? 'Manually grant Library + AI unlimited access for this account?\n\n'
+          : 'Revoke the manual access override for this account?\n\n') +
+        'Account: ' + _iqInfoActive.acct + '\n' +
+        'Request ID: ' + _iqInfoActive.id + '\n\n' +
+        (granting
+          ? 'Only do this after you have personally confirmed this client is eligible — this bypasses the normal EA active-account check.'
+          : 'The account will need to be EA-active or re-granted to regain access.')
+      );
+      if (!confirmed) return;
+      btn.disabled = true;
+      const ok = await _setAccessOverride(_iqInfoActive.id, _iqInfoActive.acct, granting);
+      btn.disabled = false;
+      if (ok) {
+        showToast(granting ? 'Access override granted.' : 'Access override revoked.', 'success', 4000);
+        await _openIqInfoModal(_iqInfoActive.id, _iqInfoActive.acct);   // refresh modal state
+      }
     });
 
     document.getElementById('iqInfoRemoveBtn')?.addEventListener('click', async () => {

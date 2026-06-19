@@ -1390,6 +1390,16 @@
                   <div class="iq-info-label" style="color:#22c55e">Recovery Status</div>
                   <div id="iqInfoRecoveryNote" style="font-size:12.5px;color:#22c55e;background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.30);border-radius:4px;padding:8px 10px;line-height:1.45">—</div>
                 </div>
+                <!-- Manual access override block — admin-only exception to the EA
+                     active-check; library-auth.js (single verification source for
+                     both Library and AI) honors this for the account. -->
+                <div class="iq-info-section" id="iqInfoOverrideSection">
+                  <div class="iq-info-label" style="color:#fbbf24">Manual Access Override</div>
+                  <div class="iq-info-grid">
+                    <span class="iq-info-k">Status</span><span class="iq-info-v" id="iqInfoOverrideStatus">Not granted</span>
+                  </div>
+                  <p style="font-size:11.5px;color:#9ca3af;margin:6px 0 0">Manually grants Library + unlimited AI access for this account number even though it hasn't appeared as active in the EA broker file yet. Logged with admin + timestamp. Use only after you've personally confirmed this client's eligibility.</p>
+                </div>
                 <!-- Duplicate detection block -->
                 <div class="iq-info-section" id="iqInfoDuplicateSection" hidden>
                   <div class="iq-info-label" style="color:#fca5a5">Duplicate Detection</div>
@@ -1406,6 +1416,7 @@
                 <button class="btn-ghost" id="iqInfoCloseBtn" type="button">Close</button>
                 <span class="clear-cache-spacer"></span>
                 <button class="iq-btn iq-btn--action" id="iqInfoResendBtn" type="button" hidden title="Re-send delivery email">RESEND</button>
+                <button class="iq-btn iq-btn--action" id="iqInfoOverrideBtn" type="button" title="Manually grant Library + AI access for this account number">Grant Access Override</button>
                 <button class="iq-btn iq-btn--danger" id="iqInfoRemoveBtn" type="button" title="Remove this row from the queue (status -> rejected)">Remove from Queue</button>
               </div>
             </div>

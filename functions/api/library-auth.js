@@ -234,6 +234,8 @@ async function lookupIbStars(acct, env) {
   catch { return { found: false }; }
 
   if (!Array.isArray(rows) || rows.length === 0) {
+    const override = await checkAccessOverride(supabaseUrl, serviceKey, acct);
+    if (override) return { found: true, active: true, email: override.email || null };
     return { found: false };
   }
 
@@ -255,6 +257,13 @@ async function lookupIbStars(acct, env) {
   }
 
   if (!isActive) {
+    // Admin-only manual override (admin-dashboard.html "Grant Access Override" on a
+    // license_requests row). Single source of truth stays this function — Library
+    // and AI both call it — this is just an additional fallback condition, never a
+    // parallel verification path. Graceful no-op if the override column isn't
+    // provisioned yet (see _setAccessOverride() in admin-dashboard.js for the SQL).
+    const override = await checkAccessOverride(supabaseUrl, serviceKey, acct);
+    if (override) return { found: true, active: true, email: override.email || null };
     return { found: true, active: false };
   }
 
@@ -270,6 +279,32 @@ async function lookupIbStars(acct, env) {
   console.log(`[library-auth] lookup acct="${decodeURIComponent(acctEncoded)}" found=true active=true email=${email ? maskEmail(email) : 'NONE'}`);
 
   return { found: true, active: true, email: email || null };
+}
+
+// Admin-only manual access override (license_requests.access_override = true,
+// set exclusively via the "Grant Access Override" button in admin-dashboard.html
+// after an admin personally reviews a license request). Returns null on any
+// failure or when the override column doesn't exist yet — graceful no-op.
+async function checkAccessOverride(supabaseUrl, serviceKey, acctRaw) {
+  const norm = normAcct(acctRaw);
+  if (!norm) return null;
+  try {
+    const forms = [...new Set([String(acctRaw).trim(), norm, `${norm}.0`, `${norm}.00`])].filter(Boolean);
+    const orEq  = forms.map(v => `account_number.eq.${encodeURIComponent(v)}`).join(',');
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/license_requests?or=(${orEq})&access_override=eq.true&select=account_number,email&limit=5`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Accept: 'application/json' } }
+    );
+    if (!res.ok) return null;   // e.g. column missing — not provisioned yet
+    const rows = await res.json().catch(() => null);
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const row = rows.find(r => normAcct(r.account_number) === norm) || rows[0];
+    console.log(`[library-auth] manual access override active for acct="${norm}"`);
+    return { email: row.email || null };
+  } catch (e) {
+    console.error('[library-auth] checkAccessOverride exception:', e?.message);
+    return null;
+  }
 }
 
 // Fetch an email for an account from a given table.
