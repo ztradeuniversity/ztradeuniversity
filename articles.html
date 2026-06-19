@@ -1706,6 +1706,17 @@
   </div>
 </section>
 
+<!-- ── LATEST FROM THE KNOWLEDGE BASE (auto-populated from admin/ai-articles.html publishes) ── -->
+<section class="articles-section" id="liveArticlesSection" style="display:none;">
+  <div class="container">
+    <div class="articles-header">
+      <h2>Latest Articles</h2>
+      <span class="articles-count" id="liveArticleCount"></span>
+    </div>
+    <div class="articles-grid" id="liveArticlesGrid"></div>
+  </div>
+</section>
+
 <!-- ── SOFT CTA ── -->
 <section class="articles-cta">
   <div class="container">
@@ -1846,6 +1857,57 @@
       toggle.setAttribute('aria-expanded', String(expanded));
       toggle.querySelector('.cats-toggle-text').textContent = expanded ? 'See Less' : 'See More Articles';
     });
+  })();
+
+  // Latest Articles — published via admin/ai-articles.html appear here automatically,
+  // no manual HTML edit. Public, published-only (article-store.searchCandidates always
+  // filters is_active=true), no admin key needed. Hidden entirely if unconfigured/empty.
+  (function loadLiveArticles() {
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    const VARIANTS = ['gold','purple','navy','teal','indigo','green','amber','rose'];
+    function variantFor(cat) {
+      let h = 0;
+      for (const ch of String(cat || '')) h = (h * 31 + ch.charCodeAt(0)) % VARIANTS.length;
+      return VARIANTS[h];
+    }
+    fetch('/api/ai-articles?action=search&limit=20')
+      .then(r => r.json())
+      .then(data => {
+        if (!data || !data.configured || !Array.isArray(data.results) || !data.results.length) return;
+        const grid = document.getElementById('liveArticlesGrid');
+        const frag = document.createDocumentFragment();
+        data.results.forEach(a => {
+          if (!a || !a.slug) return; // no public page without a slug
+          const v = variantFor(a.category);
+          const card = document.createElement('article');
+          card.className = 'ac';
+          card.innerHTML =
+            '<div class="ac-visual v-' + v + '">' +
+              '<span class="ac-visual-label">' + escapeHtml(a.category || 'Trading') + '</span>' +
+            '</div>' +
+            '<div class="ac-body">' +
+              '<span class="ac-cat c-' + v + '">' + escapeHtml(a.category || 'Article') + '</span>' +
+              '<h2 class="ac-title">' + escapeHtml(a.title || '') + '</h2>' +
+              '<p class="ac-excerpt">' + escapeHtml(a.summary || '') + '</p>' +
+              '<div class="ac-footer">' +
+                '<a href="/articles/' + encodeURIComponent(a.slug) + '" class="ac-read">Read Article ' +
+                  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+                '</a>' +
+                '<span class="ac-date">' + escapeHtml(a.difficulty ? a.difficulty.charAt(0).toUpperCase() + a.difficulty.slice(1) : '') + '</span>' +
+              '</div>' +
+            '</div>';
+          frag.appendChild(card);
+        });
+        const count = frag.childNodes.length;
+        if (!count) return;
+        grid.appendChild(frag);
+        document.getElementById('liveArticleCount').textContent =
+          count + ' article' + (count !== 1 ? 's' : '');
+        document.getElementById('liveArticlesSection').style.display = '';
+      })
+      .catch(() => { /* graceful: section stays hidden if API unreachable */ });
   })();
 </script>
 

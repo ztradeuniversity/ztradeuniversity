@@ -58,6 +58,9 @@ import { MACRO_CONCEPTS } from './macro/concepts.js';
 // ── Phase-8 expansion (additive only; new category) ──
 import { RESEARCH_CONCEPTS } from './research/concepts.js';
 
+// ── PRODUCTION UPGRADE — acronym coverage gap fix (additive only) ──
+import { MACRO_DATA_CONCEPTS } from './research/macro-data-concepts.js';
+
 // ── Phase-9 expansion (additive only; new category) ──
 import { ADVANCED_CONCEPTS } from './advanced/concepts.js';
 
@@ -122,7 +125,7 @@ export const CATEGORY_MODULES = Object.freeze({
   institutional: INSTITUTIONAL_CONCEPTS,
   coaching: COACHING_CONCEPTS,
   macro: MACRO_CONCEPTS,
-  research: RESEARCH_CONCEPTS,
+  research: [...RESEARCH_CONCEPTS, ...MACRO_DATA_CONCEPTS],
   advanced: ADVANCED_CONCEPTS,
   professional: PROFESSIONAL_CONCEPTS,
   desk: DESK_CONCEPTS,
