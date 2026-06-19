@@ -168,6 +168,42 @@ STRICT RULES:
 5. Be concise (under 120 words), direct and human — like an experienced trader explaining to a peer. No motivational filler, no clichés, no preamble; lead with the answer.
 6. Output only the answer — no chain-of-thought.`;
 
+// ── TRANSLATION LAYER (Production Upgrade — Part 1) ─────────────────────────
+// Closes the real gap found in Phase 34: id/ms/vi/bn/th are detected/answered
+// correctly but only got an English body + an honest "not yet translated"
+// note (no fabricated translation). This translates the ALREADY-GROUNDED final
+// English answer into the target language — it does not generate new content,
+// so the no-fabrication guarantee holds (translation only, never invention).
+// Reuses the EXACT SAME Workers-AI→OpenAI callModel chain (retry + failure
+// logging already built) — no parallel LLM-calling path. Returns null when the
+// LLM isn't configured or the call fails; the caller (ai-chat.js) then keeps
+// the existing Phase-34 English-plus-honest-note behavior — zero regression.
+const LANG_NAMES = {
+  id: 'Bahasa Indonesia', ms: 'Bahasa Melayu', vi: 'Tiếng Việt (Vietnamese)',
+  bn: 'বাংলা (Bengali)', th: 'ภาษาไทย (Thai)',
+};
+function translateSystemPrompt(lang) {
+  const name = LANG_NAMES[lang] || lang;
+  return `You are a professional financial/trading translator. Translate the MESSAGE below into ${name}, exactly the way a native-speaking trading mentor would naturally write it — correct grammar, natural sentence order, no literal word-for-word phrasing.
+STRICT RULES:
+1. Translate ONLY. Do not add, remove, summarize, or explain anything. Do not answer a different question.
+2. Preserve every fact, number, price, percentage, date, and name EXACTLY as given — never alter, round, or invent any value.
+3. Preserve Markdown formatting exactly (**bold**, bullet lists, links like [text](url), line breaks) — translate the visible text inside them, never the markup syntax itself.
+4. Keep these terms in their original form (do not translate): Gold, BTC, Bitcoin, XAU/USD, BTC/USD, stop loss, take profit, NFP, CPI, FOMC, GDP, PMI, ISM, ADP, ECB, RSI, ATR.
+5. Output ONLY the translated message in ${name} — no preamble, no notes, no chain-of-thought, no English commentary.`;
+}
+
+export async function translateAnswer(env, text, lang) {
+  if (!llmConfigured(env)) return null;
+  const body = String(text || '').trim();
+  if (!body || body.length < 4) return null;
+  try {
+    const out = await callModel(env, translateSystemPrompt(lang), body);
+    const translated = (out && typeof out === 'string') ? out.trim() : '';
+    return translated.length >= 4 ? translated : null;
+  } catch { return null; }
+}
+
 export async function generateEducationalAnswer(env, question, lang = 'en', form = null) {
   if (!llmConfigured(env)) return null;
   if (lang && lang !== 'en') return null;                  // Language Lock — English only

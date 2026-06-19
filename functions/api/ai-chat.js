@@ -807,7 +807,15 @@ export async function onRequest(context) {
     // warm greeting. Greetings & small-talk must never be clarified — let them fall
     // through to their proper reply. (Additive guard; genuine ambiguous asks still clarify.)
     const _isGreet = ['greeting', 'smalltalk'].includes(aCls.intent);
-    if (confidence.requiresClarification && !_isGreet) {
+    // FIX (news-timing bug): concrete market-data intents (events/news, brief,
+    // gold, btc, macro, mood, session) have deterministic handlers that ALWAYS
+    // return a real answer — buildEvents() renders the live economic calendar in
+    // the user's own timezone with Gold/USD/BTC impact. A short query like
+    // "today news timing" was being intercepted by the clarification menu and
+    // answered with a generic "what would you like to focus on?" instead. These
+    // intents must never be clarified — let them flow to their handler.
+    const _isData = MARKET_DUMP_INTENTS.has(aCls.intent);
+    if (confidence.requiresClarification && !_isGreet && !_isData) {
       clarifyAnswer = confidence.clarificationQuestion;            // one short question, no long answer
     } else {
       const analysis = cognition._qa;

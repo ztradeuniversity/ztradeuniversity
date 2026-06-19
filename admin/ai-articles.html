@@ -33,10 +33,17 @@
     .btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--brd)}
     .btn-danger{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
     .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-    .list-item{padding:10px 12px;border-radius:9px;border:1px solid var(--brd);background:var(--bg3);margin-bottom:8px;cursor:pointer;transition:background .15s}
+    .list-item{padding:10px 12px;border-radius:9px;border:1px solid var(--brd);background:var(--bg3);margin-bottom:8px;transition:background .15s;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .list-item:hover{background:rgba(200,156,63,.08)}
+    .li-main{flex:1;min-width:140px;cursor:pointer}
     .list-item .t{font-weight:700;font-size:13px}
-    .list-item .m{font-size:10.5px;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+    .list-item .m{font-size:10.5px;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .li-acts{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+    .row-btn{font-size:10.5px;font-weight:700;padding:5px 9px;border-radius:7px;border:1px solid var(--brd);background:var(--bg4);color:var(--text);cursor:pointer;white-space:nowrap;transition:opacity .15s,transform .15s}
+    .row-btn:hover{opacity:.9;transform:translateY(-1px)}
+    .row-btn.ok{border-color:rgba(16,185,129,.4);color:var(--bull);background:rgba(16,185,129,.12)}
+    .row-btn.warn{border-color:rgba(245,158,11,.4);color:var(--amber);background:rgba(245,158,11,.12)}
+    .row-btn.danger{border-color:rgba(239,68,68,.4);color:#fca5a5;background:rgba(239,68,68,.12)}
     .pill{font-size:9px;font-weight:800;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px}
     .pill.pub{background:rgba(16,185,129,.14);color:var(--bull)}
     .pill.draft{background:rgba(245,158,11,.14);color:var(--amber)}
@@ -181,10 +188,28 @@ async function loadList(){
     if(d.error){el.innerHTML=`<p class="note">${d.error}</p>`;return;}
     const arts=d.articles||[];
     if(!arts.length){el.innerHTML='<p class="note">No articles yet. Create your first one →</p>';return;}
-    el.innerHTML=arts.map(a=>`<div class="list-item" onclick='editArticle(${JSON.stringify(a).replace(/'/g,"&#39;")})'>
-      <div class="t">${esc(a.title||'(untitled)')}</div>
-      <div class="m"><span class="pill ${a.is_active?'pub':'draft'}">${a.is_active?'Published':'Draft'}</span>
-        <span>${esc(a.category||'—')}</span><span>${esc((a.language||'en'))}</span></div></div>`).join('');
+    el.innerHTML=arts.map(a=>{
+      const aj=JSON.stringify(a).replace(/'/g,"&#39;");
+      const id=String(a.id);
+      // Inline quick actions per row (Edit · Publish/Unpublish · Delete) — no need
+      // to open the editor. Each calls the SAME backend actions used by the editor
+      // (publish / draft / delete), then refreshes the list.
+      const pubUnpub = a.is_active
+        ? `<button class="row-btn warn" title="Unpublish (set to Draft)" onclick="rowUnpublish('${id}',event)">⏸ Unpublish</button>`
+        : `<button class="row-btn ok" title="Publish now (KB + graph sync)" onclick="rowPublish('${id}',event)">🚀 Publish</button>`;
+      return `<div class="list-item">
+        <div class="li-main" onclick='editArticle(${aj})'>
+          <div class="t">${esc(a.title||'(untitled)')}</div>
+          <div class="m"><span class="pill ${a.is_active?'pub':'draft'}">${a.is_active?'Published':'Draft'}</span>
+            <span>${esc(a.category||'—')}</span><span>${esc((a.language||'en'))}</span></div>
+        </div>
+        <div class="li-acts">
+          <button class="row-btn" title="Edit" onclick='editArticle(${aj})'>✏️ Edit</button>
+          ${pubUnpub}
+          <button class="row-btn danger" title="Delete" onclick="rowDelete('${id}',event)">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
   }catch{ el.innerHTML='<p class="note">Failed to load.</p>'; }
 }
 
@@ -295,6 +320,30 @@ async function doPublish(id){
     : g.authored&&g.authored.action==='merged' ? 'graph ✓ (merged)' : '';
   return {ok:true,note};
 }
+
+// ── INLINE LIST ROW ACTIONS (no editor needed) ──────────────────────────────
+// Reuse the exact same backend actions as the editor buttons. stopPropagation so
+// the row's edit-on-click doesn't also fire. loadList() refreshes status pills.
+async function rowPublish(id,ev){ if(ev){ev.stopPropagation();} if(UIBUSY) return;
+  const btn=ev&&ev.currentTarget; setBusy(true,btn,'Publishing…');
+  try{ const p=await doPublish(id);
+    toast(p.ok ? ['🚀 Published',p.note].filter(Boolean).join(' · ') : '❌ '+p.error);
+    await loadList();
+  } finally { setBusy(false,btn); } }
+async function rowUnpublish(id,ev){ if(ev){ev.stopPropagation();} if(UIBUSY) return;
+  const btn=ev&&ev.currentTarget; setBusy(true,btn,'Unpublishing…');
+  try{ const res=await apiPost({action:'draft',data:{id}});
+    toast(res.ok ? '✅ Set to Draft' : '❌ '+res.error);
+    await loadList();
+  } finally { setBusy(false,btn); } }
+async function rowDelete(id,ev){ if(ev){ev.stopPropagation();} if(UIBUSY) return;
+  if(!confirm('Delete this article and its images?')) return;
+  const btn=ev&&ev.currentTarget; setBusy(true,btn,'Deleting…');
+  try{ const res=await apiPost({action:'delete',data:{id}});
+    toast(res.ok ? '🗑 Deleted' : '❌ '+res.error);
+    if($id('artId').value===String(id)) newArticle();   // clear editor if it held this row
+    await loadList();
+  } finally { setBusy(false,btn); } }
 
 async function saveArticle(publish){
   if(UIBUSY) return;

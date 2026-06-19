@@ -35,6 +35,9 @@ import { buildCoachIntro } from './psychology-engine.js';
 import { route }           from './specialist-router.js';
 // Language Lock — fully-localized bodies (prevents English/Urdu mixing)
 import { hasLocale, localizedBody, localizedExpand } from './engine-i18n.js';
+// Production Upgrade — honest disclosure for selectable languages that are
+// detected/answered correctly but not yet fully translated (id/ms/vi/bn/th).
+import { partialLanguageNote, PARTIAL_LANGS } from './language-intel.js';
 
 // Trader Intelligence (read-only consumers — these modules are unchanged)
 import {
@@ -136,5 +139,12 @@ export function generateResponse(ctx) {
   // Trader Journey + Conversion Engine (tool recommendation) — skipped on summaries
   const extra = ctx.mode === 'short' ? '' : (levelNote(ctx.traderContext, ctx.intent) + conversionCTA(ctx.intent));
 
-  return coach + body + intel + extra;
+  // PRODUCTION UPGRADE — honest partial-language disclosure. Only fires for the
+  // 5 selectable-but-not-yet-translated languages; never for en/ur/ur-roman/ar
+  // (those are handled above or need no note). Additive: when ctx.lang is
+  // anything else (undetected/legacy callers), PARTIAL_LANGS.has() is false and
+  // this is a no-op — byte-for-byte unchanged behavior.
+  const partialNote = PARTIAL_LANGS.has(ctx.lang) ? `\n\n${partialLanguageNote(ctx.lang)}` : '';
+
+  return coach + body + intel + extra + partialNote;
 }

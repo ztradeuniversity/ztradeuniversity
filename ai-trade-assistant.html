@@ -103,7 +103,13 @@
     position:fixed; top:var(--head); left:0; bottom:0; width:var(--rail-w); z-index:120;
     background:var(--rail); border-right:1px solid var(--border);
     display:flex; flex-direction:column; align-items:center; gap:6px;
-    padding:16px 0; overflow-y:auto;
+    padding:16px 0;
+    /* FIX: overflow-y:auto forced overflow-x to auto (CSS spec), which CLIPPED the
+       hover tooltip — positioned outside the 88px rail — into an ugly dark sliver
+       ("black hover artifact"). overflow:visible lets the tooltip escape cleanly;
+       the ~11 icons fit within the viewport height on desktop (rail is hidden on
+       mobile), so no scrollbar is needed. */
+    overflow:visible;
   }
   .ax-rail::-webkit-scrollbar{ width:0; }
   .ax-ic{
@@ -120,12 +126,18 @@
   .ax-ic.fb:hover{ color:#1877F2; } .ax-ic.x:hover{ color:var(--heading); }
   .ax-ic.nav:hover{ color:var(--orange); border-color:rgba(247,147,26,.25); }
   .ax-ic .ax-tip{
-    position:absolute; left:calc(100% + 8px); top:50%; transform:translateY(-50%) scale(.95);
-    background:var(--navy); color:#fff; font-size:11px; font-weight:600; white-space:nowrap;
-    padding:5px 9px; border-radius:7px; opacity:0; pointer-events:none; transition:opacity .15s; z-index:5;
+    position:absolute; left:calc(100% + 11px); top:50%; transform:translateY(-50%) scale(.96);
+    background:var(--surface); color:var(--heading); font-size:11.5px; font-weight:600; white-space:nowrap;
+    padding:6px 11px; border-radius:8px; border:1px solid var(--border);
+    box-shadow:0 6px 20px rgba(8,12,22,.18);
+    opacity:0; pointer-events:none; transition:opacity .16s ease, transform .16s ease; z-index:200;
   }
-  [data-theme="dark"] .ax-ic .ax-tip{ background:#000; }
-  .ax-ic:hover .ax-tip{ opacity:1; }
+  /* little arrow pointing back at the icon (border + fill, theme-aware) */
+  .ax-ic .ax-tip::before{ content:''; position:absolute; right:100%; top:50%; transform:translateY(-50%);
+    border:5px solid transparent; border-right-color:var(--border); }
+  .ax-ic .ax-tip::after{ content:''; position:absolute; right:100%; top:50%; transform:translateY(-50%) translateX(1px);
+    border:5px solid transparent; border-right-color:var(--surface); }
+  .ax-ic:hover .ax-tip, .ax-ic:focus-visible .ax-tip{ opacity:1; transform:translateY(-50%) scale(1); }
   .ax-rail-div{ width:38px; height:1px; background:var(--border); margin:8px 0; flex-shrink:0; }
   .ax-rail-nav{ color:var(--orange); }
 
@@ -219,16 +231,16 @@
   .msg-u .msg-time{ display:inline-flex; align-items:center; gap:4px; }
   .msg-u .msg-time::after{ content:'✓✓'; color:var(--orange); font-size:10px; letter-spacing:-1px; }
 
-  /* ── MULTI-LANGUAGE FONTS + RTL (Part C) ──────────────────────────────────
+  /* ── MULTI-LANGUAGE FONTS + RTL (Part C, FIXED) ───────────────────────────
      Per-language font stacks so non-Latin scripts render with proper glyphs
-     instead of falling back to missing/blocky tofu, plus automatic RTL for
-     Urdu/Arabic. Scoped to [lang] so older messages in a different language
-     are unaffected. Applied via JS (renderMsg) setting wrap.lang/wrap.dir. */
+     instead of tofu. DIRECTION is NOT forced here — the bubble carries
+     dir="auto", so the browser flows each message by its own content (English
+     stays LTR even in an Urdu/Arabic session). The :dir(rtl) rules below are a
+     progressive enhancement for the resolved RTL case only. */
   .msg[lang="ur"] .msg-bub, .msg[lang="ar"] .msg-bub{
     font-family:'Noto Naskh Arabic','Noto Sans Arabic','Segoe UI',Tahoma,Geneva,sans-serif;
     font-size:15.5px; line-height:1.9;
   }
-  .msg[lang="ur-roman"] .msg-bub{ font-family:'Inter','Poppins',system-ui,sans-serif; }
   .msg[lang="hi"] .msg-bub, .msg[lang="bn"] .msg-bub{
     font-family:'Noto Sans Devanagari','Nirmala UI','Segoe UI',sans-serif;
   }
@@ -236,12 +248,9 @@
   .msg[lang="ja"] .msg-bub{ font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic',sans-serif; }
   .msg[lang="ko"] .msg-bub{ font-family:'Noto Sans KR','Malgun Gothic',sans-serif; }
   .msg[lang="th"] .msg-bub{ font-family:'Noto Sans Thai','Leelawadee UI',sans-serif; }
-  .msg[lang="fr"] .msg-bub{ font-family:'Inter','Poppins',system-ui,sans-serif; }
-  .msg[dir="rtl"]{ text-align:right; }
-  .msg[dir="rtl"] .msg-body{ align-items:flex-end; }
-  .msg[dir="rtl"].msg-a .msg-bub{ border-top-left-radius:16px; border-top-right-radius:5px; }
-  .msg[dir="rtl"] .msg-bub ul, .msg[dir="rtl"] .msg-bub ol{ padding-right:1.3em; padding-left:0; }
-  .msg[dir="rtl"] .msg-actions{ flex-direction:row-reverse; }
+  /* Resolved-RTL polish (only matches when dir="auto" actually resolves to RTL). */
+  .msg-bub:dir(rtl){ text-align:right; }
+  .msg-a .msg-bub:dir(rtl){ border-top-left-radius:16px; border-top-right-radius:5px; }
 
   /* Markdown inside AI bubble */
   .msg-bub p{ margin:0 0 9px; } .msg-bub p:last-child{ margin-bottom:0; }
@@ -363,6 +372,45 @@
   .ax-mnav a.ax-mnav-link svg{ width:18px; height:18px; color:var(--orange); flex-shrink:0; }
   .ax-mnav a.ax-mnav-link:hover{ background:var(--orange-soft); color:var(--orange); }
 
+  /* ════════ HISTORY / MARKET DRAWER (slide-in from right) ════════
+     FIX: this drawer (#drawer, opened by the header history button) previously
+     had NO CSS at all, so the browser laid its content out in normal document
+     flow — dumping the New-Conversation button, Live-Market rows, conversation
+     history list, and the Telegram/WhatsApp/Self-Assessment links at the very
+     bottom of the page (the "stray text / broken layout" corruption). These
+     rules make it a proper fixed, off-screen slide-in panel. */
+  .drawer-ov{ position:fixed; inset:0; z-index:340; background:rgba(8,12,22,.5); backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .25s; }
+  .drawer-ov.open{ opacity:1; pointer-events:auto; }
+  .drawer{
+    position:fixed; top:0; right:0; bottom:0; width:min(340px,86vw); z-index:350;
+    background:var(--surface); border-left:1px solid var(--border);
+    box-shadow:-14px 0 40px rgba(8,12,22,.22);
+    display:flex; flex-direction:column; gap:14px; padding:18px 16px;
+    transform:translateX(100%); transition:transform .28s ease; overflow-y:auto;
+  }
+  .drawer.open{ transform:translateX(0); }
+  .drawer-x{ align-self:flex-end; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:15px; cursor:pointer; flex-shrink:0; }
+  .drawer-x:hover{ color:var(--heading); background:var(--orange-soft); }
+  .sb-new{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:11px; border-radius:11px; border:1px solid var(--orange); background:var(--orange-soft); color:var(--orange); font-weight:700; font-size:13.5px; cursor:pointer; flex-shrink:0; }
+  .sb-new:hover{ background:var(--orange); color:#fff; }
+  .drawer .sc-ttl{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:8px; }
+  .mrow{ display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:10px; border:1px solid var(--border); background:var(--ai-bub); margin-bottom:6px; }
+  .mrow-asset{ font-size:13px; font-weight:700; color:var(--heading); } .mrow-asset small{ color:var(--muted); font-weight:600; margin-left:4px; }
+  .mrow-r{ text-align:right; } .mrow-price{ font-size:13px; font-weight:700; } .mrow-pct{ font-size:11px; font-weight:700; }
+  .cnu{ color:var(--muted); } .mrow-pct.up{ color:var(--green); } .mrow-pct.down{ color:#ef4444; }
+  .regime-bar{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text); }
+  .regime-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .hist-list{ display:flex; flex-direction:column; gap:6px; }
+  .hist-empty{ font-size:12px; color:var(--muted); }
+  .hist-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; text-align:left; padding:9px 11px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; font-size:12.5px; }
+  .hist-item:hover{ background:var(--orange-soft); border-color:rgba(247,147,26,.25); }
+  .hist-item.active{ border-color:var(--orange); background:var(--orange-soft); }
+  .hist-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  .hist-del{ flex-shrink:0; width:22px; height:22px; border-radius:6px; border:none; background:transparent; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .hist-del:hover{ color:#ef4444; background:rgba(239,68,68,.12); }
+  .sig-link{ display:flex; align-items:center; gap:9px; font-weight:600; color:#fff; text-decoration:none; }
+  .sig-tg{ background:#229ED9; } .sig-wa{ background:#25D366; }
+
   /* ════════ MODALS (preserved — verify / strategy / gallery) ════════ */
   .modal-ov{ position:fixed; inset:0; z-index:400; background:rgba(8,12,22,.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .22s; }
   .modal-ov.open{ opacity:1; pointer-events:auto; }
@@ -455,20 +503,20 @@
 
 <!-- NEW LEFT ICON RAIL (desktop) — existing social + page links -->
 <aside class="ax-rail" aria-label="Quick links">
-  <a class="ax-ic yt" href="https://youtube.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.3-1C16.6 3.5 12 3.5 12 3.5s-4.6 0-7.8.2c-.4.1-1.4.1-2.3 1C1.2 5.4 1 7 1 7S.8 8.9.8 10.8v1.4c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.5 1 1.8.2 7.6.2 7.6.2s4.6 0 7.8-.2c.4-.1 1.4-.1 2.3-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8v-1.4C23.2 8.9 23 7 23 7zM9.7 14.6V8.9l6 2.9-6 2.8z"/></svg><span class="ax-tip">YouTube</span></a>
-  <a class="ax-ic tt" href="https://www.tiktok.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.8a4.3 4.3 0 0 1-1-2.8h-3v12a2.4 2.4 0 1 1-2.4-2.4c.2 0 .5 0 .7.1V9.6a5.6 5.6 0 0 0-.7-.1 5.4 5.4 0 1 0 5.4 5.4V8.7a7.2 7.2 0 0 0 4.2 1.3V7a4.3 4.3 0 0 1-3.2-1.2z"/></svg><span class="ax-tip">TikTok</span></a>
-  <a class="ax-ic tg" href="https://t.me/ztradeuniversity" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg><span class="ax-tip">Telegram</span></a>
-  <a class="ax-ic ig" href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5.5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg><span class="ax-tip">Instagram</span></a>
-  <a class="ax-ic fb" href="https://www.facebook.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span class="ax-tip">Facebook</span></a>
-  <a class="ax-ic x" href="https://x.com/Ztradeuni" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="ax-tip">X (Twitter)</span></a>
+  <a class="ax-ic yt" href="https://youtube.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.3-1C16.6 3.5 12 3.5 12 3.5s-4.6 0-7.8.2c-.4.1-1.4.1-2.3 1C1.2 5.4 1 7 1 7S.8 8.9.8 10.8v1.4c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.5 1 1.8.2 7.6.2 7.6.2s4.6 0 7.8-.2c.4-.1 1.4-.1 2.3-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8v-1.4C23.2 8.9 23 7 23 7zM9.7 14.6V8.9l6 2.9-6 2.8z"/></svg><span class="ax-tip">Open YouTube Channel</span></a>
+  <a class="ax-ic tt" href="https://www.tiktok.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.8a4.3 4.3 0 0 1-1-2.8h-3v12a2.4 2.4 0 1 1-2.4-2.4c.2 0 .5 0 .7.1V9.6a5.6 5.6 0 0 0-.7-.1 5.4 5.4 0 1 0 5.4 5.4V8.7a7.2 7.2 0 0 0 4.2 1.3V7a4.3 4.3 0 0 1-3.2-1.2z"/></svg><span class="ax-tip">Open TikTok</span></a>
+  <a class="ax-ic tg" href="https://t.me/ztradeuniversity" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg><span class="ax-tip">Open Telegram Community</span></a>
+  <a class="ax-ic ig" href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5.5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg><span class="ax-tip">Open Instagram</span></a>
+  <a class="ax-ic fb" href="https://www.facebook.com/@ztradeuniversity" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span class="ax-tip">Open Facebook Page</span></a>
+  <a class="ax-ic x" href="https://x.com/Ztradeuni" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="ax-tip">Open X (Twitter)</span></a>
 
   <div class="ax-rail-div"></div>
 
-  <a class="ax-ic nav ax-rail-nav" href="articles.html" aria-label="Read Articles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span class="ax-tip">Read Articles</span></a>
-  <a class="ax-ic nav ax-rail-nav" href="create-account-with-us.html" aria-label="How To Join Us"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ax-tip">How To Join Us</span></a>
-  <a class="ax-ic nav ax-rail-nav" href="library.html" aria-label="Library Access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg><span class="ax-tip">Library Access</span></a>
-  <a class="ax-ic nav ax-rail-nav" href="trading-tools.html" aria-label="Trading Tools (Free)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg><span class="ax-tip">Trading Tools (Free)</span></a>
-  <a class="ax-ic nav ax-rail-nav" href="license-request.html" aria-label="License Request For Bot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg><span class="ax-tip">License Request For Bot</span></a>
+  <a class="ax-ic nav ax-rail-nav" href="articles.html" aria-label="Read Articles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span class="ax-tip">Open Articles</span></a>
+  <a class="ax-ic nav ax-rail-nav" href="create-account-with-us.html" aria-label="How To Join Us"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ax-tip">How to Join Us</span></a>
+  <a class="ax-ic nav ax-rail-nav" href="library.html" aria-label="Library Access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg><span class="ax-tip">Open Trading Library</span></a>
+  <a class="ax-ic nav ax-rail-nav" href="trading-tools.html" aria-label="Trading Tools (Free)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg><span class="ax-tip">Open Free Trading Tools</span></a>
+  <a class="ax-ic nav ax-rail-nav" href="license-request.html" aria-label="License Request For Bot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg><span class="ax-tip">Request Bot License</span></a>
 </aside>
 
 <!-- NEW MOBILE NAV (slide-in) -->
@@ -1340,13 +1388,15 @@ function renderMsg(role, content, time, batch = false) {
 
   const wrap = document.createElement('div');
   wrap.className = `msg msg-${role === 'user' ? 'u' : 'a'}`;
-  // MULTI-LANGUAGE (Part C): tag this message with its language so the
-  // [lang="..."]/[dir="rtl"] CSS above picks the right font/direction.
-  // User bubbles: detect from what they typed. AI bubbles: the reply follows
-  // the locked session language (Language Lock on the server).
-  const msgLang = role === 'user' ? detectLangCode(content) : (getSessionLang() || detectLangCode(content) || 'en');
-  if (msgLang) wrap.lang = msgLang;
-  wrap.dir = (msgLang === 'ur' || msgLang === 'ar') ? 'rtl' : 'ltr';
+  // MULTI-LANGUAGE (Part C, FIXED): direction + font follow the MESSAGE'S OWN
+  // content — never the session language. The old code forced rtl whenever the
+  // session language was Urdu/Arabic, so an English reply rendered during an
+  // Urdu/Arabic session flipped to right-to-left (corrupting punctuation, e.g.
+  // "?psychology", "PM 12:58"). Now: tag lang only for non-English content (for
+  // the correct script font), and let dir="auto" on the bubble pick direction
+  // live from the actual text — English always stays LTR.
+  const msgLang = detectLangCode(content || '');
+  if (content && msgLang && msgLang !== 'en' && msgLang !== 'ur-roman') wrap.lang = msgLang;
 
   const av = document.createElement('div');
   av.className = 'msg-av'; av.setAttribute('aria-hidden','true');
@@ -1359,6 +1409,10 @@ function renderMsg(role, content, time, batch = false) {
 
   const bub = document.createElement('div');
   bub.className = 'msg-bub';
+  // dir="auto" → the browser resolves direction from the bubble's own text and
+  // re-evaluates as the AI streams, so LTR (English) content can never be forced
+  // RTL by a previous Urdu/Arabic turn, while genuine Arabic/Urdu still flows RTL.
+  bub.setAttribute('dir', 'auto');
   if (role === 'user') bub.textContent = content;
   else bub.innerHTML = md(content);
 
@@ -1495,6 +1549,13 @@ async function sendMessage() {
 
     if (aiText) {
       pushMsg('ai', aiText);
+      // MULTI-LANGUAGE: now that the full reply is known, tag the message's
+      // language for the correct script font (direction is already handled live
+      // by dir="auto" on the bubble). English/Roman-Urdu keep the default font.
+      try {
+        const L = detectLangCode(aiText);
+        if (L && L !== 'en' && L !== 'ur-roman' && aiWrap) aiWrap.lang = L;
+      } catch (e) {}
       // Phase 5: save interaction + detect psychology (non-blocking)
       saveInteraction(text, aiText);
       // Phase 8D: speak the reply aloud when TTS is enabled (language-aware)
