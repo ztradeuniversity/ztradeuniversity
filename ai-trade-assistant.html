@@ -100,6 +100,12 @@
   /* Verified state — green success (Issue #1) */
   .ax-signin.verified{ border-color:#22c55e; color:#16a34a; background:rgba(34,197,94,.10); cursor:default; }
   .ax-signin.verified:hover{ background:rgba(34,197,94,.14); color:#16a34a; transform:none; box-shadow:none; }
+  /* Phase 4C — unified Sign Out button */
+  .ax-logout{ display:inline-flex; align-items:center; gap:6px; height:40px; padding:0 14px; border-radius:100px;
+    border:1.5px solid var(--border); background:transparent; color:var(--muted); font-size:13.5px; font-weight:700;
+    cursor:pointer; transition:border-color .2s,color .2s,background .2s; }
+  .ax-logout:hover{ border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,.07); }
+  @media(max-width:560px){ .ax-logout{ height:36px; padding:0 11px; font-size:12.5px; } .ax-logout svg{ width:14px; height:14px; } }
 
   /* ════════ LEFT ICON RAIL (desktop) ════════ */
   .ax-rail{
@@ -503,6 +509,11 @@
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Sign In
     </a>
+    <!-- Phase 4C — unified logout (visible only when verified) -->
+    <button class="ax-logout" id="axLogout" type="button" onclick="ztuLogout()" aria-label="Sign out" style="display:none;">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
   </div>
 </header>
 
@@ -3073,6 +3084,17 @@ function updateAccessBadge(unlimited) {
       signIn.removeAttribute('aria-disabled');
     }
   }
+  // Phase 4C — show the unified Sign Out button only when verified.
+  const logoutBtn = document.getElementById('axLogout');
+  if (logoutBtn) logoutBtn.style.display = unlimited ? 'inline-flex' : 'none';
+}
+
+// Phase 4C — UNIFIED logout for the AI surface (Journal + Library + AI cleared).
+function ztuLogout() {
+  if (window.ZTUPremiumCard) { ZTUPremiumCard.logout(); return; }
+  try { clearIdentityToken(); localStorage.removeItem(VERIFIED_KEY); clearLibrarySession();
+        localStorage.removeItem('ztu_journal_v1'); } catch (e) {}
+  location.reload();
 }
 
 function openVerifyModal(fromGate) {

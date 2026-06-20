@@ -1583,6 +1583,16 @@ function updateAccessUI(granted) {
 function revokeAccess() {
   if (LIB.activeAudio) { LIB.activeAudio.el.pause(); LIB.activeAudio = null; }
   clearSessionData();
+  // Phase 4C — UNIFIED logout: also clear the Journal + AI unified session keys
+  // and refresh the shared premium badge, so logout here signs the member out of
+  // all three products (not just the Library).
+  try {
+    localStorage.removeItem('ztu_journal_v1');
+    localStorage.removeItem('ztu_ai_verified');
+    localStorage.removeItem('ztu_ai_identity');
+    localStorage.removeItem('ztu_ai_acct');
+  } catch (e) {}
+  if (window.ZTUPremiumBadge) { try { window.ZTUPremiumBadge.refresh(); } catch (e) {} }
   updateAccessUI(false);
   toast('Signed out — content locked.', '#ef4444');
 }

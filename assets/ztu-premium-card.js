@@ -59,68 +59,75 @@
     + 'background:rgba(6,5,2,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);'
     + 'font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;}'
     + '.zpc-overlay.on{display:flex;}'
-    // Bug-fix phase: WIDER 2-column layout so the whole card fits one viewport
-    // (no internal scroll on desktop), with brighter gold + stronger contrast.
-    + '.zpc-card{width:100%;max-width:900px;max-height:96vh;overflow-y:auto;position:relative;'
-    + 'background:linear-gradient(165deg,#1c160c 0%,#120d06 100%);border:1px solid rgba(214,176,90,0.45);'
-    + 'border-radius:20px;padding:24px 28px;color:#fff;'
-    + 'box-shadow:0 30px 80px rgba(0,0,0,0.65),0 0 0 1px rgba(230,201,135,0.08) inset,0 -2px 36px rgba(200,156,63,0.12) inset;}'
-    + '.zpc-card::before{content:"";position:absolute;top:-100px;right:-70px;width:300px;height:300px;'
-    + 'background:radial-gradient(circle,rgba(230,201,135,0.18) 0%,transparent 70%);pointer-events:none;}'
-    + '.zpc-close{position:absolute;top:13px;right:15px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(214,176,90,0.3);'
-    + 'background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:18px;line-height:1;cursor:pointer;z-index:3;}'
-    + '.zpc-close:hover{color:#fff;border-color:rgba(230,201,135,0.6);background:rgba(230,201,135,0.12);}'
-    + '.zpc-eyebrow{position:relative;font-size:10.5px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;color:#f0d488;}'
-    + '.zpc-title{position:relative;font-family:Manrope,Inter,sans-serif;font-size:26px;font-weight:900;color:#fff;letter-spacing:-.6px;margin:5px 0 4px;line-height:1.08;}'
-    + '.zpc-title span{background:linear-gradient(135deg,#f7e7b4,#e6c987 50%,#c89c3f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}'
-    + '.zpc-sub{position:relative;font-size:13px;color:rgba(255,255,255,0.66);line-height:1.5;margin-bottom:16px;}'
-    + '.zpc-grid2{position:relative;display:grid;grid-template-columns:1.05fr 0.95fr;gap:22px;align-items:start;}'
-    + '.zpc-left{display:flex;flex-direction:column;gap:9px;}'
-    + '.zpc-bgroup{background:rgba(255,255,255,0.04);border:1px solid rgba(214,176,90,0.2);border-radius:12px;padding:10px 13px;}'
-    + '.zpc-bgroup h4{font-size:10.5px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:#f0d488;margin:0 0 7px;}'
-    + '.zpc-bitems{display:flex;flex-direction:column;gap:5px;}'
-    + '.zpc-bitem{display:flex;gap:7px;align-items:center;font-size:12.5px;color:rgba(255,255,255,0.9);line-height:1.3;}'
-    + '.zpc-tick{color:#34d399;font-weight:900;font-size:12px;flex-shrink:0;}'
-    + '.zpc-req{background:linear-gradient(135deg,rgba(230,201,135,0.16),rgba(200,156,63,0.06));'
-    + 'border:1px solid rgba(214,176,90,0.4);border-radius:12px;padding:11px 14px;}'
-    + '.zpc-req-badge{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:.8px;color:#1a1410;'
-    + 'background:linear-gradient(135deg,#f7e7b4,#d4ae5e);padding:4px 11px;border-radius:100px;margin-bottom:7px;}'
-    + '.zpc-req p{font-size:12px;color:rgba(255,255,255,0.86);line-height:1.5;margin:0;}'
-    + '.zpc-req b{color:#f0d488;}'
-    + '.zpc-right{display:flex;flex-direction:column;gap:13px;}'
-    + '.zpc-vtitle{font-family:Manrope,Inter,sans-serif;font-size:15px;font-weight:800;color:#fff;margin:0 0 9px;}'
-    + '.zpc-label{display:block;font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.78);margin-bottom:6px;}'
-    + '.zpc-input{width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.06);'
-    + 'border:1.5px solid rgba(214,176,90,0.32);color:#fff;font-size:14.5px;font-family:inherit;box-sizing:border-box;}'
-    + '.zpc-input::placeholder{color:rgba(255,255,255,0.4);}'
-    + '.zpc-input:focus{outline:none;border-color:#e6c987;box-shadow:0 0 0 3px rgba(230,201,135,0.2);background:rgba(255,255,255,0.09);}'
-    + '.zpc-btn{width:100%;margin-top:10px;padding:13px 18px;border-radius:11px;border:0;cursor:pointer;'
-    + 'background:linear-gradient(135deg,#f7e7b4 0%,#e6c987 45%,#c89c3f 100%);color:#3a2c08;font-size:14.5px;font-weight:900;letter-spacing:.2px;'
-    + 'box-shadow:0 10px 26px rgba(200,156,63,0.45);transition:transform .15s,box-shadow .15s,filter .15s;}'
-    + '.zpc-btn:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(230,201,135,0.6);filter:brightness(1.05);}'
+    // Phase 4C: NO internal scroll (no max-height / no overflow). The whole card
+    // is sized to fit one viewport at every breakpoint, with prominent icon-led
+    // benefit cards and stronger typography. Priority order top→bottom:
+    // benefits → Verify Access → Join IB → Submit Record → WhatsApp.
+    + '.zpc-card{width:100%;max-width:980px;position:relative;'
+    + 'background:linear-gradient(165deg,#1d170d 0%,#120d06 100%);border:1px solid rgba(214,176,90,0.5);'
+    + 'border-radius:22px;padding:24px 30px;color:#fff;'
+    + 'box-shadow:0 30px 80px rgba(0,0,0,0.66),0 0 0 1px rgba(230,201,135,0.1) inset,0 -2px 44px rgba(200,156,63,0.14) inset;}'
+    + '.zpc-card::before{content:"";position:absolute;top:-110px;right:-80px;width:340px;height:340px;'
+    + 'background:radial-gradient(circle,rgba(230,201,135,0.2) 0%,transparent 70%);pointer-events:none;}'
+    + '.zpc-close{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(214,176,90,0.35);'
+    + 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75);font-size:19px;line-height:1;cursor:pointer;z-index:3;}'
+    + '.zpc-close:hover{color:#fff;border-color:rgba(230,201,135,0.7);background:rgba(230,201,135,0.14);}'
+    + '.zpc-eyebrow{position:relative;font-size:11px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;color:#f0d488;}'
+    + '.zpc-title{position:relative;font-family:Manrope,Inter,sans-serif;font-size:29px;font-weight:900;color:#fff;letter-spacing:-.7px;margin:5px 0 4px;line-height:1.05;}'
+    + '.zpc-title span{background:linear-gradient(135deg,#f9ecc4,#e6c987 50%,#c89c3f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}'
+    + '.zpc-sub{position:relative;font-size:14px;color:rgba(255,255,255,0.72);line-height:1.45;margin-bottom:16px;}'
+    // benefits — 3 prominent icon-led product cards
+    + '.zpc-benefits3{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:15px;}'
+    + '.zpc-pcard{background:rgba(255,255,255,0.05);border:1px solid rgba(214,176,90,0.26);border-radius:14px;padding:13px 14px;}'
+    + '.zpc-pcard h4{font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#f0d488;'
+    + 'margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(214,176,90,0.22);}'
+    + '.zpc-feat{display:flex;gap:9px;align-items:center;margin-bottom:8px;}'
+    + '.zpc-feat:last-child{margin-bottom:0;}'
+    + '.zpc-feat .ic{font-size:16px;line-height:1;flex-shrink:0;width:20px;text-align:center;}'
+    + '.zpc-feat .lbl{font-size:13px;font-weight:600;color:rgba(255,255,255,0.93);line-height:1.25;}'
+    // middle — verify (primary) | side (requirement + join/submit + whatsapp)
+    + '.zpc-mid{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;}'
+    + '.zpc-verify{background:rgba(230,201,135,0.07);border:1px solid rgba(214,176,90,0.3);border-radius:14px;padding:15px 16px;}'
+    + '.zpc-vtitle{font-family:Manrope,Inter,sans-serif;font-size:16px;font-weight:800;color:#fff;margin:0 0 11px;}'
+    + '.zpc-label{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,0.8);margin-bottom:7px;}'
+    + '.zpc-input{width:100%;padding:13px 14px;border-radius:10px;background:rgba(255,255,255,0.08);'
+    + 'border:1.5px solid rgba(214,176,90,0.38);color:#fff;font-size:15px;font-family:inherit;box-sizing:border-box;}'
+    + '.zpc-input::placeholder{color:rgba(255,255,255,0.42);}'
+    + '.zpc-input:focus{outline:none;border-color:#e6c987;box-shadow:0 0 0 3px rgba(230,201,135,0.22);background:rgba(255,255,255,0.11);}'
+    + '.zpc-btn{width:100%;margin-top:11px;padding:14px 18px;border-radius:11px;border:0;cursor:pointer;'
+    + 'background:linear-gradient(135deg,#f9ecc4 0%,#e6c987 45%,#c89c3f 100%);color:#3a2c08;font-size:15px;font-weight:900;letter-spacing:.2px;'
+    + 'box-shadow:0 12px 28px rgba(200,156,63,0.5);transition:transform .15s,box-shadow .15s,filter .15s;}'
+    + '.zpc-btn:hover{transform:translateY(-1px);box-shadow:0 16px 34px rgba(230,201,135,0.62);filter:brightness(1.04);}'
     + '.zpc-btn:disabled{opacity:.55;cursor:default;transform:none;}'
-    + '.zpc-msg{font-size:12px;padding:9px 12px;border-radius:9px;margin-top:10px;display:none;}'
-    + '.zpc-msg.err{display:block;background:rgba(239,68,68,0.14);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}'
-    + '.zpc-msg.ok{display:block;background:rgba(16,185,129,0.14);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3);}'
-    + '.zpc-links{font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:9px;text-align:center;}'
+    + '.zpc-msg{font-size:12.5px;padding:9px 12px;border-radius:9px;margin-top:10px;display:none;}'
+    + '.zpc-msg.err{display:block;background:rgba(239,68,68,0.16);color:#fca5a5;border:1px solid rgba(239,68,68,0.32);}'
+    + '.zpc-msg.ok{display:block;background:rgba(16,185,129,0.16);color:#6ee7b7;border:1px solid rgba(16,185,129,0.32);}'
+    + '.zpc-links{font-size:12px;color:rgba(255,255,255,0.58);margin-top:10px;text-align:center;}'
     + '.zpc-links a{color:#f0d488;font-weight:700;cursor:pointer;text-decoration:none;}'
     + '.zpc-links a:hover{text-decoration:underline;}'
+    + '.zpc-side{display:flex;flex-direction:column;gap:10px;}'
+    + '.zpc-req{background:linear-gradient(135deg,rgba(230,201,135,0.18),rgba(200,156,63,0.06));'
+    + 'border:1px solid rgba(214,176,90,0.45);border-radius:12px;padding:12px 14px;}'
+    + '.zpc-req-badge{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.8px;color:#1a1410;'
+    + 'background:linear-gradient(135deg,#f9ecc4,#d4ae5e);padding:4px 11px;border-radius:100px;margin-bottom:7px;}'
+    + '.zpc-req p{font-size:12.5px;color:rgba(255,255,255,0.88);line-height:1.45;margin:0;}'
+    + '.zpc-req b{color:#f0d488;}'
     + '.zpc-alt{display:flex;gap:10px;}'
     + '.zpc-alt-col{flex:1;display:flex;flex-direction:column;gap:6px;}'
-    + '.zpc-alt-label{font-size:10.5px;color:rgba(255,255,255,0.58);line-height:1.35;}'
-    + '.zpc-link-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:auto;padding:10px 14px;border-radius:9px;'
-    + 'text-decoration:none;background:linear-gradient(135deg,#f7e7b4,#e6c987 50%,#c89c3f);color:#3a2c08;font-size:12.5px;font-weight:900;'
-    + 'box-shadow:0 8px 18px rgba(200,156,63,0.4);}'
-    + '.zpc-link-btn:hover{filter:brightness(1.05);}'
-    + '.zpc-ghost-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:auto;padding:10px 14px;border-radius:9px;'
-    + 'text-decoration:none;background:rgba(255,255,255,0.05);border:1px solid rgba(214,176,90,0.4);color:#f0d488;font-size:12.5px;font-weight:800;}'
-    + '.zpc-ghost-btn:hover{background:rgba(230,201,135,0.14);}'
+    + '.zpc-alt-label{font-size:11px;color:rgba(255,255,255,0.6);line-height:1.3;}'
+    + '.zpc-link-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:auto;padding:11px 14px;border-radius:10px;'
+    + 'text-decoration:none;background:linear-gradient(135deg,#f9ecc4,#e6c987 50%,#c89c3f);color:#3a2c08;font-size:13px;font-weight:900;'
+    + 'box-shadow:0 8px 18px rgba(200,156,63,0.42);}'
+    + '.zpc-link-btn:hover{filter:brightness(1.04);}'
+    + '.zpc-ghost-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:auto;padding:11px 14px;border-radius:10px;'
+    + 'text-decoration:none;background:rgba(255,255,255,0.06);border:1px solid rgba(214,176,90,0.45);color:#f0d488;font-size:13px;font-weight:800;}'
+    + '.zpc-ghost-btn:hover{background:rgba(230,201,135,0.16);}'
     + '.zpc-support{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;'
-    + 'padding-top:11px;border-top:1px solid rgba(214,176,90,0.2);}'
-    + '.zpc-support span{font-size:12px;color:rgba(255,255,255,0.6);}'
-    + '.zpc-wa{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:100px;text-decoration:none;'
-    + 'background:linear-gradient(135deg,#25d366,#1aa84f);color:#fff;font-size:12.5px;font-weight:800;box-shadow:0 8px 18px rgba(37,211,102,0.35);}'
-    + '.zpc-wa svg{width:15px;height:15px;}'
+    + 'margin-top:auto;padding-top:10px;border-top:1px solid rgba(214,176,90,0.22);}'
+    + '.zpc-support span{font-size:12px;color:rgba(255,255,255,0.62);}'
+    + '.zpc-wa{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:100px;text-decoration:none;'
+    + 'background:linear-gradient(135deg,#25d366,#1aa84f);color:#fff;font-size:13px;font-weight:800;box-shadow:0 8px 18px rgba(37,211,102,0.38);}'
+    + '.zpc-wa svg{width:16px;height:16px;}'
     /* approved modal */
     + '.zpc-approved .zpc-card{max-width:430px;text-align:center;}'
     + '.zpc-ac-ico{width:62px;height:62px;border-radius:50%;margin:0 auto 15px;background:rgba(16,185,129,0.14);'
@@ -132,8 +139,29 @@
     + 'font-weight:600;color:rgba(255,255,255,0.9);padding:8px 0;}'
     + '.zpc-grant i{width:21px;height:21px;border-radius:50%;background:rgba(16,185,129,0.14);color:#10b981;'
     + 'display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:900;font-size:12px;flex-shrink:0;}'
-    + '@media(max-width:760px){.zpc-grid2{grid-template-columns:1fr;gap:14px;}.zpc-card{padding:22px 18px;max-height:94vh;}.zpc-title{font-size:23px;}}'
-    + '@media(max-width:420px){.zpc-alt{flex-direction:column;}}';
+    // ── responsive: collapse to single column, compact to keep NO scroll ──
+    // Tablet/large-phone: 2-col benefits, single-col mid.
+    + '@media(max-width:880px){.zpc-benefits3{grid-template-columns:repeat(2,1fr);gap:9px;}.zpc-mid{grid-template-columns:1fr;gap:11px;}'
+    + '.zpc-card{padding:20px 18px;}.zpc-title{font-size:24px;}.zpc-sub{margin-bottom:12px;font-size:13px;}'
+    + '.zpc-pcard{padding:10px 13px;}.zpc-pcard h4{margin:0 0 7px;padding-bottom:6px;}.zpc-feat{margin-bottom:7px;}}'
+    // Phone: benefits become a compact 3-column icon-over-label feature grid
+    // (cards side by side), helper sub-labels hidden (buttons stay), everything
+    // ultra-compact so the whole card fits with NO scroll on small phones.
+    + '@media(max-width:560px){.zpc-card{padding:11px 12px;}.zpc-title{font-size:19px;margin:2px 0;}.zpc-sub{font-size:11.5px;line-height:1.3;margin-bottom:8px;}'
+    + '.zpc-eyebrow{font-size:9.5px;letter-spacing:1.8px;}.zpc-overlay{padding:7px;}'
+    + '.zpc-benefits3{grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;}'
+    + '.zpc-pcard{padding:8px 5px;}.zpc-pcard h4{font-size:9px;letter-spacing:.4px;text-align:center;margin:0 0 6px;padding-bottom:5px;}'
+    + '.zpc-pcard .feats{display:flex;flex-direction:column;gap:6px;}'
+    + '.zpc-feat{flex-direction:column;align-items:center;text-align:center;gap:3px;margin:0;background:none;border:0;padding:0;}'
+    + '.zpc-feat .ic{width:auto;font-size:15px;}.zpc-feat .lbl{font-size:9.5px;font-weight:600;line-height:1.12;}'
+    + '.zpc-mid{gap:8px;}.zpc-side{gap:6px;}'
+    + '.zpc-verify{padding:10px 12px;}.zpc-vtitle{font-size:14px;margin-bottom:7px;}.zpc-label{margin-bottom:5px;font-size:11.5px;}'
+    + '.zpc-input{padding:10px 12px;font-size:14px;}.zpc-btn{margin-top:7px;padding:11px;font-size:14px;}'
+    + '.zpc-req{padding:7px 11px;}.zpc-req-badge{margin-bottom:4px;font-size:9px;}.zpc-req p{font-size:11.5px;line-height:1.28;}'
+    + '.zpc-alt-label{display:none;}'                                  /* hide helper text, keep buttons */
+    + '.zpc-alt{gap:7px;}.zpc-link-btn,.zpc-ghost-btn{padding:9px 11px;font-size:12.5px;}'
+    + '.zpc-support{padding-top:7px;justify-content:center;}.zpc-support span{display:none;}'  /* keep WhatsApp button */
+    + '.zpc-wa{padding:9px 16px;}}';
     var el = document.createElement('style');
     el.id = STYLE_ID; el.textContent = css;
     document.head.appendChild(el);
@@ -158,46 +186,47 @@
     + '<h2 class="zpc-title">' + h[0] + '</h2>'
     + '<p class="zpc-sub">' + h[1] + '</p>'
 
-    + '<div class="zpc-grid2">'
+    // ── BENEFITS — 3 prominent icon-led product cards ──
+    + '<div class="zpc-benefits3">'
+    +   '<div class="zpc-pcard"><h4>Library Access</h4><div class="feats">'
+    +     '<div class="zpc-feat"><span class="ic">📚</span><span class="lbl">Premium Books</span></div>'
+    +     '<div class="zpc-feat"><span class="ic">🎧</span><span class="lbl">Audio Lessons</span></div>'
+    +     '<div class="zpc-feat"><span class="ic">🎥</span><span class="lbl">Video Courses</span></div>'
+    +   '</div></div>'
+    +   '<div class="zpc-pcard"><h4>Trading Journal</h4><div class="feats">'
+    +     '<div class="zpc-feat"><span class="ic">📈</span><span class="lbl">Track Every Trade</span></div>'
+    +     '<div class="zpc-feat"><span class="ic">🧠</span><span class="lbl">Psychology Analysis</span></div>'
+    +     '<div class="zpc-feat"><span class="ic">📊</span><span class="lbl">Performance Reports</span></div>'
+    +   '</div></div>'
+    +   '<div class="zpc-pcard"><h4>AI Assistant</h4><div class="feats">'
+    +     '<div class="zpc-feat"><span class="ic">🤖</span><span class="lbl">Unlimited AI</span></div>'
+    +     '<div class="zpc-feat"><span class="ic">🎯</span><span class="lbl">Trade Guidance</span></div>'
+    +     '<div class="zpc-feat"><span class="ic">📚</span><span class="lbl">Market Learning</span></div>'
+    +   '</div></div>'
+    + '</div>'
 
-    // ── LEFT: benefits (compact groups) + requirement ──
-    +   '<div class="zpc-left">'
-    +     '<div class="zpc-bgroup"><h4>Library</h4><div class="zpc-bitems">'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Thousands of books</div>'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Premium educational videos</div>'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Premium audio content</div>'
-    +     '</div></div>'
-    +     '<div class="zpc-bgroup"><h4>Trading Journal</h4><div class="zpc-bitems">'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>AI Trading Mentor</div>'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Psychology tracking</div>'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Performance reports</div>'
-    +     '</div></div>'
-    +     '<div class="zpc-bgroup"><h4>AI Assistant</h4><div class="zpc-bitems">'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Unlimited AI questions</div>'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Trading guidance</div>'
-    +       '<div class="zpc-bitem"><span class="zpc-tick">✓</span>Market learning support</div>'
-    +     '</div></div>'
-    +     '<div class="zpc-req"><div class="zpc-req-badge">FREE FOR IB MEMBERS</div>'
-    +       '<p><b>FREE for approved Z Trade University IB members.</b> No additional cost — no subscription, no separate fee.</p></div>'
+    // ── MIDDLE — Verify (primary) | requirement + Join/Submit + WhatsApp ──
+    + '<div class="zpc-mid">'
+
+    +   '<div class="zpc-verify">'
+    +     '<h3 class="zpc-vtitle">Already joined our IB?</h3>'
+    +     '<form data-zpc-acct-form>'
+    +       '<label class="zpc-label">Account Number</label>'
+    +       '<input class="zpc-input" data-zpc-account type="text" placeholder="e.g. 171929726" autocomplete="off" maxlength="64" required />'
+    +       '<button class="zpc-btn" data-zpc-request type="submit">Verify Access</button>'
+    +     '</form>'
+    +     '<form data-zpc-code-form style="display:none;">'
+    +       '<label class="zpc-label">Verification Code <span data-zpc-mask style="color:rgba(255,255,255,0.5);font-weight:500;"></span></label>'
+    +       '<input class="zpc-input" data-zpc-code type="text" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required />'
+    +       '<button class="zpc-btn" data-zpc-verify type="submit">Verify &amp; Unlock</button>'
+    +       '<p class="zpc-links">Didn\'t get it? <a data-zpc-resend>Resend code</a> · <a data-zpc-change>Change account</a></p>'
+    +     '</form>'
+    +     '<div class="zpc-msg" data-zpc-msg></div>'
     +   '</div>'
 
-    // ── RIGHT: verify + join/submit + WhatsApp ──
-    +   '<div class="zpc-right">'
-    +     '<div>'
-    +       '<h3 class="zpc-vtitle">Already joined our IB?</h3>'
-    +       '<form data-zpc-acct-form>'
-    +         '<label class="zpc-label">Account Number</label>'
-    +         '<input class="zpc-input" data-zpc-account type="text" placeholder="e.g. 171929726" autocomplete="off" maxlength="64" required />'
-    +         '<button class="zpc-btn" data-zpc-request type="submit">Verify Access</button>'
-    +       '</form>'
-    +       '<form data-zpc-code-form style="display:none;">'
-    +         '<label class="zpc-label">Verification Code <span data-zpc-mask style="color:rgba(255,255,255,0.5);font-weight:500;"></span></label>'
-    +         '<input class="zpc-input" data-zpc-code type="text" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required />'
-    +         '<button class="zpc-btn" data-zpc-verify type="submit">Verify &amp; Unlock</button>'
-    +         '<p class="zpc-links">Didn\'t get it? <a data-zpc-resend>Resend code</a> · <a data-zpc-change>Change account</a></p>'
-    +       '</form>'
-    +       '<div class="zpc-msg" data-zpc-msg></div>'
-    +     '</div>'
+    +   '<div class="zpc-side">'
+    +     '<div class="zpc-req"><div class="zpc-req-badge">FREE FOR IB MEMBERS</div>'
+    +       '<p><b>FREE for approved ZTU IB members.</b> No subscription, no fees.</p></div>'
     +     '<div class="zpc-alt">'
     +       '<div class="zpc-alt-col"><span class="zpc-alt-label">Not an IB member yet?</span>'
     +         '<a class="zpc-link-btn" href="' + CFG.JOIN_URL + '">Join IB Now</a></div>'
@@ -357,5 +386,27 @@
     state.opts = null; state.otpToken = null;
   }
 
-  window.ZTUPremiumCard = { open: open, close: close, config: CFG, _persistSessions: persistSessions };
+  // ── UNIFIED LOGOUT (Phase 4C) ──
+  // One logout flow shared by Journal + AI + Library. Clears EVERY unified
+  // access session key so the premium badge disappears, verified state clears,
+  // and all three products re-gate. opts.onLogout runs surface-specific cleanup
+  // before the (default) reload, which re-gates the current page.
+  var SESSION_KEYS = [
+    'ztu_journal_v1',   // Trading Journal unified session
+    'ztu_lib_v3',       // Library shared session
+    'ztu_ai_verified',  // AI verified flag
+    'ztu_ai_identity',  // AI access (gating) token
+    'ztu_ai_acct',      // AI verified account number
+  ];
+  function logout(opts) {
+    opts = opts || {};
+    SESSION_KEYS.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    if (cardOv) cardOv.classList.remove('on');
+    if (approvedOv) approvedOv.classList.remove('on');
+    if (window.ZTUPremiumBadge) { try { window.ZTUPremiumBadge.refresh(); } catch (e) {} }
+    if (typeof opts.onLogout === 'function') { try { opts.onLogout(); } catch (e) {} }
+    if (opts.reload !== false) { try { location.reload(); } catch (e) {} }
+  }
+
+  window.ZTUPremiumCard = { open: open, close: close, logout: logout, config: CFG, _persistSessions: persistSessions };
 })();

@@ -1016,17 +1016,16 @@
     });
 
     $('btnLogout').addEventListener('click', async () => {
-      if (journalIdentity) {
-        // Unified access: drop the JWT-authed client, clear the stored session,
-        // and reset to an anonymous client + the unified auth screen.
-        clearStoredAccess();
-        journalIdentity = null;
-        trades = [];
-        supabase = window.supabase.createClient(CONFIG.JOURNAL_SUPABASE_URL, CONFIG.JOURNAL_SUPABASE_ANON_KEY);
-        showUnifiedAuth();
-      } else {
-        await supabase.auth.signOut();   // legacy fallback
+      // Phase 4C — UNIFIED logout: clears Journal + Library + AI sessions, hides
+      // the premium badge, and reloads so the page re-gates (shared component).
+      if (window.ZTUPremiumCard) {
+        ZTUPremiumCard.logout();   // clears all keys, refreshes badge, reloads
+        return;
       }
+      // Fallback if the shared component failed to load.
+      try { localStorage.removeItem('ztu_journal_v1'); localStorage.removeItem('ztu_lib_v3'); } catch (e) {}
+      if (!journalIdentity) { try { await supabase.auth.signOut(); } catch (e) {} }
+      location.reload();
     });
 
     function hideAllScreens() {
