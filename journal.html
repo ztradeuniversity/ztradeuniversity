@@ -532,10 +532,13 @@
 
     <!-- ════════════════ CONFIG WARNING (shown if Supabase keys missing) ════════════════ -->
     <div class="config-warn" id="configWarn">
-      <b>Setup required:</b> this journal isn't connected to a Supabase project yet.
-      Open <code>journal.html</code> and fill in <code>JOURNAL_SUPABASE_URL</code> and
-      <code>JOURNAL_SUPABASE_ANON_KEY</code> in the <code>CONFIG</code> block near the bottom
-      of the file (see <code>/supabase/journal-schema.sql</code> for the setup steps).
+      <b>Trade saving is not connected yet.</b> Sign-in works, but trades won't save until the
+      database keys are filled in. This is a <b>static page</b> — it cannot read Cloudflare
+      environment variables, so the values must be pasted directly into the <code>CONFIG</code>
+      block near the bottom of <code>journal.html</code>:
+      <code>JOURNAL_SUPABASE_URL</code> and <code>JOURNAL_SUPABASE_ANON_KEY</code>
+      (Supabase → Project Settings → API). The <code>JOURNAL_SUPABASE_JWT_SECRET</code> env var
+      is separate and stays server-side. Once both client values are pasted, this notice disappears.
     </div>
 
     <!-- ════════════════ DISABLED SCREEN (TRADING_JOURNAL_ENABLED = false) ════════════════ -->
@@ -845,14 +848,20 @@
     // guarantees every user can only ever read/write their own trades.
     // ════════════════════════════════════════════════════════════════════
     const CONFIG = {
-      JOURNAL_SUPABASE_URL: 'https://YOUR-PROJECT-REF.supabase.co',
-      JOURNAL_SUPABASE_ANON_KEY: 'YOUR-ANON-PUBLIC-KEY',
+      JOURNAL_SUPABASE_URL: 'https://pfsgaxqagpbptmjaeblc.supabase.co',
+      JOURNAL_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmc2dheHFhZ3BicHRtamFlYmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NzU2MjUsImV4cCI6MjA5NzQ1MTYyNX0.rWCHPT9Wbc5MdXdEt6Z25SeOEaWc1UH9MEFMcZteQYE',
       // Phase 4A — which surface the user entered from, so the "Access Approved"
       // notification can adapt its headline. ('journal' | 'library' | 'ai')
       JOURNAL_ACCESS_ENTRY: 'journal',
     };
 
-    const isConfigured = !CONFIG.JOURNAL_SUPABASE_URL.includes('YOUR-PROJECT-REF');
+    // Configured only when BOTH the URL and the anon key have been filled in
+    // (a static page cannot read Cloudflare env vars — these must be pasted
+    // into this CONFIG block). Bug-fix phase: also check the anon-key
+    // placeholder so a half-filled config is still flagged.
+    const isConfigured =
+      !CONFIG.JOURNAL_SUPABASE_URL.includes('YOUR-PROJECT-REF') &&
+      !CONFIG.JOURNAL_SUPABASE_ANON_KEY.includes('YOUR-ANON');
     if (!isConfigured) {
       document.getElementById('configWarn').style.display = 'block';
     }
