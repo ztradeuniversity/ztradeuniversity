@@ -8,6 +8,9 @@
   const SS_KEY = 'ztu_kb_admin_key';
   const $ = (id) => document.getElementById(id);
   const out = $('out');
+  // True only after the server has confirmed the currently-typed key (a non-403
+  // response). Gates writes to the SHARED sessionStorage slot (see BUG FIX below).
+  let keyConfirmedValid = false;
 
   // GET actions read; the rest are POST. Writes require a confirm.
   const META = {
@@ -68,7 +71,12 @@
         if (offset >= (total || 9999)) break;
         continue;
       }
-      if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
+      if (res.status === 403) {
+        render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err');
+        try { if (sessionStorage.getItem(SS_KEY) === key) sessionStorage.removeItem(SS_KEY); } catch (_) {}
+        return;
+      }
+      keyConfirmedValid = true;
       if (!res.ok) {
         // Server error on this chunk — retry the SAME offset; only advance (skip) after RETRY_MAX.
         if (++attempt <= RETRY_MAX) { continue; }
@@ -143,7 +151,12 @@
         batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
         batchErrors++; offset += LIMIT; continue;
       } finally { clearTimeout(tmo); }
-      if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
+      if (res.status === 403) {
+        render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err');
+        try { if (sessionStorage.getItem(SS_KEY) === key) sessionStorage.removeItem(SS_KEY); } catch (_) {}
+        return;
+      }
+      keyConfirmedValid = true;
       if (!res.ok) {
         if (++attempt <= RETRY_MAX) { continue; }
         batchErrs.push({ offset, httpStatus: res.status, error: JSON.stringify(body).slice(0, 300) });
@@ -168,8 +181,16 @@
     if (!key) return;
     if (meta.write && !window.confirm(meta.warn)) return;
 
-    if (action === 'populate-anchors') { setBusy(true); try { await runPopulate(key); } finally { setBusy(false); } return; }
-    if (action === 'sync-edges')       { setBusy(true); try { await runSyncEdges(key); } finally { setBusy(false); } return; }
+    if (action === 'populate-anchors') {
+      setBusy(true); try { await runPopulate(key); } finally { setBusy(false); }
+      if (keyConfirmedValid && $('remember').checked) { try { sessionStorage.setItem(SS_KEY, key); } catch (_) {} }
+      return;
+    }
+    if (action === 'sync-edges') {
+      setBusy(true); try { await runSyncEdges(key); } finally { setBusy(false); }
+      if (keyConfirmedValid && $('remember').checked) { try { sessionStorage.setItem(SS_KEY, key); } catch (_) {} }
+      return;
+    }
 
     setBusy(true);
     render('… running ' + action + ' …');
@@ -180,8 +201,23 @@
       const res = await fetch(url, init);
       const body = await res.json().catch(() => ({ error: 'non-JSON response', status: res.status }));
 
-      if (res.status === 403) { render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err'); return; }
+      // BUG FIX: this key is also written into the SHARED sessionStorage slot
+      // ('ztu_kb_admin_key', read by admin/ai-feedback.html and admin/ai-articles.html
+      // too) — but a previous version wrote it on every raw keystroke whenever
+      // "remember" was checked, with NO server validation. An incomplete or wrong
+      // key typed here silently poisoned the shared slot, so the OTHER admin pages
+      // then auto-failed with "Invalid admin key" using a key that was never right.
+      // Fix: only ever persist a key to the shared slot once the SERVER has
+      // confirmed it (a non-403 response, right here); clear it on a confirmed 403.
+      if (res.status === 403) {
+        render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err');
+        try { if (sessionStorage.getItem(SS_KEY) === key) sessionStorage.removeItem(SS_KEY); } catch (_) {}
+        return;
+      }
       if (!res.ok) { render('❌ HTTP ' + res.status + '\n' + JSON.stringify(body, null, 2), 'err'); return; }
+
+      keyConfirmedValid = true;
+      if ($('remember').checked) { try { sessionStorage.setItem(SS_KEY, key); } catch (_) {} }
 
       // Friendly one-line summary + full payload.
       let head = '✅ ' + action + ' OK';
@@ -214,13 +250,18 @@
     el.addEventListener('click', () => run(el.getAttribute('data-act')));
   });
   $('show').addEventListener('change', (e) => { $('key').type = e.target.checked ? 'text' : 'password'; });
+  // BUG FIX: "remember" + every keystroke used to write the RAW, unvalidated key
+  // straight into the SHARED sessionStorage slot ('ztu_kb_admin_key' — also read
+  // by admin/ai-feedback.html and admin/ai-articles.html). A wrong or half-typed
+  // key here silently poisoned the shared slot, so the OTHER admin pages then
+  // auto-failed with "Invalid admin key" using a key that was never actually
+  // correct. Fix: only persist once the server has confirmed THIS key (run() sets
+  // keyConfirmedValid = true on a non-403 response) — never on a raw keystroke.
   $('remember').addEventListener('change', (e) => {
-    if (e.target.checked) { try { sessionStorage.setItem(SS_KEY, $('key').value.trim()); } catch (_) {} }
-    else { try { sessionStorage.removeItem(SS_KEY); } catch (_) {} }
+    if (e.target.checked && keyConfirmedValid) { try { sessionStorage.setItem(SS_KEY, $('key').value.trim()); } catch (_) {} }
+    else if (!e.target.checked) { try { sessionStorage.removeItem(SS_KEY); } catch (_) {} }
   });
-  $('key').addEventListener('input', () => {
-    if ($('remember').checked) { try { sessionStorage.setItem(SS_KEY, $('key').value.trim()); } catch (_) {} }
-  });
+  $('key').addEventListener('input', () => { keyConfirmedValid = false; });   // any edit invalidates the prior confirmation
   // Prefill from this tab's session (if previously remembered)
   try {
     const saved = sessionStorage.getItem(SS_KEY);

@@ -73,8 +73,14 @@ export async function onRequest({ request, env }) {
 
   // ── GET — admin analytics (most liked/disliked, counts, approval %) ──────
   if (request.method === 'GET') {
-    if (!env.AI_ADMIN_KEY || request.headers.get('x-admin-key') !== env.AI_ADMIN_KEY) {
-      return json({ error: 'unauthorized' }, 401);
+    // Distinguish WHY a 401 happened — never reveals the actual key value, only
+    // which misconfiguration to look at, so a future admin-key issue is
+    // self-diagnosable from the dashboard instead of an opaque "Invalid admin key".
+    if (!env.AI_ADMIN_KEY) {
+      return json({ error: 'unauthorized', reason: 'admin_key_not_configured' }, 401);
+    }
+    if (request.headers.get('x-admin-key') !== env.AI_ADMIN_KEY) {
+      return json({ error: 'unauthorized', reason: 'key_mismatch' }, 401);
     }
     if (!isConfigured(env)) return json({ configured: false, items: [], totals: { likes: 0, dislikes: 0, approval: null } });
 

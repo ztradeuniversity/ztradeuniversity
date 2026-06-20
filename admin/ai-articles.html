@@ -159,14 +159,29 @@ let CATS = [], LANGS = [];
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 function hdrs(){return {'Content-Type':'application/json','x-admin-key':KEY};}
 
+// BUG FIX: this previously hid the gate + wrote the typed key into the SHARED
+// sessionStorage slot ('ztu_kb_admin_key', also read by admin/ai-feedback.html
+// and admin/kb-admin.js) UNCONDITIONALLY — loadCategories() never even sends
+// the key, so an unvalidated/wrong key still "unlocked" this page AND poisoned
+// the shared slot for the other admin pages, which then auto-failed with
+// "Invalid admin key" using a key that was never actually correct. Fix:
+// validate first via the REAL authenticated call (loadList()), only commit
+// (hide gate, persist to the shared slot) on confirmed success.
 async function unlock(){
   KEY=document.getElementById('adminKey').value.trim();
   if(!KEY){toast('Enter the admin key');return;}
-  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin)
-  await loadCategories();
+  await loadCategories();   // unauthenticated metadata only — never used to validate
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('manager').classList.remove('hidden');
-  loadList();
+  const ok = await loadList();
+  if(ok === false){
+    sessionStorage.removeItem('ztu_kb_admin_key');   // never poison the shared slot with a bad key
+    document.getElementById('gate').classList.remove('hidden');
+    document.getElementById('manager').classList.add('hidden');
+    toast('❌ Invalid admin key — check AI_ADMIN_KEY in Cloudflare and retry');
+    return;
+  }
+  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin) — only stored once confirmed valid
 }
 
 async function loadCategories(){
@@ -178,16 +193,21 @@ async function loadCategories(){
   }catch{ toast('Could not load categories'); }
 }
 
+// Returns true once a real authenticated list load succeeds, false on a
+// confirmed 403 (bad/missing admin key), undefined on any other failure
+// (network/parse/Supabase-not-configured) — mirrors the ai-feedback.html fix
+// so unlock() can tell "wrong key" apart from "key fine, something else failed".
 async function loadList(){
   const el=document.getElementById('list');
   el.innerHTML='<p class="note">⏳ Loading…</p>';
   try{
     const r=await fetch(`${API}?action=list&status=all`,{headers:hdrs()});
+    if(r.status===403){ el.innerHTML='<p class="note">🔐 Admin key rejected by the server — re-enter it.</p>'; return false; }
     let d=null; try{ d=await r.json(); }catch{ el.innerHTML=`<p class="note">⚠️ List error: server returned ${r.status} (non-JSON). Check admin key / deployment.</p>`; return; }
-    if(d.configured===false){el.innerHTML='<p class="note">⚠️ AI Supabase (ZTU Chatbot) is not connected yet. Add AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY in Cloudflare, then refresh.</p>';return;}
+    if(d.configured===false){el.innerHTML='<p class="note">⚠️ AI Supabase (ZTU Chatbot) is not connected yet. Add AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY in Cloudflare, then refresh.</p>';return true;}
     if(d.error){el.innerHTML=`<p class="note">${d.error}</p>`;return;}
     const arts=d.articles||[];
-    if(!arts.length){el.innerHTML='<p class="note">No articles yet. Create your first one →</p>';return;}
+    if(!arts.length){el.innerHTML='<p class="note">No articles yet. Create your first one →</p>';return true;}
     el.innerHTML=arts.map(a=>{
       const aj=JSON.stringify(a).replace(/'/g,"&#39;");
       const id=String(a.id);
@@ -210,6 +230,7 @@ async function loadList(){
         </div>
       </div>`;
     }).join('');
+    return true;
   }catch{ el.innerHTML='<p class="note">Failed to load.</p>'; }
 }
 

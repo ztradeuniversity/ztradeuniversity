@@ -914,6 +914,8 @@
       </ul>
 
       <div class="nav-right">
+        <!-- ZTU Premium badge (Phase 4B) — auto-shows only for approved members -->
+        <span data-ztu-premium-badge style="margin-right:4px;"></span>
         <a href="license-request.html" class="nav-join">
           Request License
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -1604,8 +1606,32 @@ function stopTimers() {
   clearInterval(LIB.expiryTimer); LIB.expiryTimer = null;
 }
 
-/* ── Open / close gate ── */
+/* ── Open / close gate ──
+   Phase 4B Ext.: the Library access wall is now the SHARED unified premium
+   card (assets/ztu-premium-card.js), so all three surfaces use ONE component.
+   On approval we reuse the Library's existing grant path (saveSession +
+   updateAccessUI + pending callback). The legacy gate popup is retained as a
+   fallback only if the shared component fails to load. */
 function openGate(cb) {
+  LIB.pendingCb = cb;
+  if (window.ZTUPremiumCard) {
+    ZTUPremiumCard.open({
+      entry: 'library',
+      dismissible: true,
+      onApproved: (result) => {
+        saveSession(result.account);
+        updateAccessUI(true);
+        const pend = LIB.pendingCb; LIB.pendingCb = null;
+        if (typeof pend === 'function') { try { pend(); } catch (e) {} }
+        try { toast(`Access granted — ${result.account}`, '#acd400'); } catch (e) {}
+      },
+    });
+    return;
+  }
+  legacyOpenGate(cb);   /* fallback */
+}
+
+function legacyOpenGate(cb) {
   LIB.pendingCb    = cb;
   LIB.gateAttempts = 0;
   LIB.otpToken     = null;
@@ -1623,6 +1649,7 @@ function openGate(cb) {
 
 function closeGate() {
   document.getElementById('gateBg').classList.remove('on');
+  if (window.ZTUPremiumCard) { try { ZTUPremiumCard.close(); } catch (e) {} }
   LIB.pendingCb = null;
   LIB.otpToken  = null;
   stopTimers();
@@ -2419,6 +2446,11 @@ document.addEventListener('DOMContentLoaded', init);
    All admin logic is intentionally kept out of this file.
 ────────────────────────────────────────────────────────── */
 </script>
+
+<!-- ZTU Premium badge (Phase 4B) — reusable shared component, self-hiding -->
+<script src="/assets/ztu-premium-badge.js" defer></script>
+<!-- Shared ZTU unified premium access card (Phase 4B extension) -->
+<script src="/assets/ztu-premium-card.js" defer></script>
 
 </body>
 </html>

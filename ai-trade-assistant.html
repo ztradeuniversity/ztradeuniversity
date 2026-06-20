@@ -97,6 +97,9 @@
     transition:background .2s,color .2s,transform .2s,box-shadow .2s;
   }
   .ax-signin:hover{ background:var(--orange); color:#fff; transform:translateY(-1px); box-shadow:0 8px 18px rgba(247,147,26,.30); }
+  /* Verified state — green success (Issue #1) */
+  .ax-signin.verified{ border-color:#22c55e; color:#16a34a; background:rgba(34,197,94,.10); cursor:default; }
+  .ax-signin.verified:hover{ background:rgba(34,197,94,.14); color:#16a34a; transform:none; box-shadow:none; }
 
   /* ════════ LEFT ICON RAIL (desktop) ════════ */
   .ax-rail{
@@ -490,6 +493,8 @@
     </a>
   </div>
   <div class="ax-head-right">
+    <!-- ZTU Premium badge (Phase 4B) — auto-shows only for approved members -->
+    <span data-ztu-premium-badge style="margin-right:2px;"></span>
     <button class="ax-tt" type="button" onclick="axToggleTheme()" aria-label="Toggle theme">
       <svg class="sun" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       <svg class="moon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -929,11 +934,11 @@
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
         </span>
         <span class="ax-bn-txt">
-          <b>You Have Free Premium Access</b>
-          <span>Thank you for joining our IB. Enjoy unlimited AI assistance.</span>
+          <b>✓ Successfully Verified</b>
+          <span>✓ Unlimited AI Access Active — enjoy unlimited AI assistance.</span>
         </span>
         <button class="ax-bn-btn" type="button" disabled style="cursor:default">
-          IB Joined
+          Access Active
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
         </button>
       </div>
@@ -1500,11 +1505,16 @@ async function sendMessage() {
       const data = await res.json().catch(() => ({}));
       think.remove();
       if (data.gated) {
-        // Phase 9: render the localized limit-reached card, then open verify flow.
-        renderGatedCard(data);
+        // Phase 4B Ext.: the old limit card + verify modal are replaced by the
+        // SHARED unified premium access card (assets/ztu-premium-card.js).
         chatIn.value = text; resize(); updateCount();   // keep the user's message
         if (data.cta?.url) lastJoinUrl = data.cta.url;
-        openVerifyModal(true);
+        if (window.ZTUPremiumCard) {
+          ZTUPremiumCard.open({ entry: 'ai', onApproved: aiUnlockFromCard });
+        } else {
+          // Fallback to the legacy flow if the shared component failed to load.
+          renderGatedCard(data); openVerifyModal(true);
+        }
         streaming = false; sendBtn.disabled = false; chatIn.disabled = false;
         return;
       }
@@ -2933,6 +2943,37 @@ let accessState = { gatingEnabled: false, verified: true, freeUsed: 0, freeLimit
 
 function isVerifiedLocal() { return localStorage.getItem(VERIFIED_KEY) === '1'; }
 
+/* ─── SHARED SESSION (Library ↔ AI) ──────────────────────────────
+   library.html and this page are the SAME ORIGIN, so they share localStorage.
+   The Library session lives in 'ztu_lib_v3' = { account, createdAt } with a
+   15-day hard expiry. We READ it to inherit a Library verification (Library→AI)
+   and WRITE it on AI verification (AI→Library) so neither side asks twice.
+   This is the single shared access state — no second session system. */
+const LIB_SESSION_KEY = 'ztu_lib_v3';
+const LIB_SESSION_TTL  = 15 * 24 * 60 * 60 * 1000;   // == library.html SESSION_TTL_MS
+
+function readLibrarySession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LIB_SESSION_KEY) || 'null');
+    if (!s || !s.account || !s.createdAt) return null;
+    if (Date.now() - s.createdAt > LIB_SESSION_TTL) { localStorage.removeItem(LIB_SESSION_KEY); return null; }
+    return s;
+  } catch { return null; }
+}
+// Mirror the AI verification into the shared Library session so Library recognizes
+// it without a second OTP. Preserves an existing (earlier) createdAt so the shared
+// 15-day clock is never extended.
+function writeLibrarySession(account) {
+  const acct = String(account || '').trim();
+  if (!acct) return;
+  try {
+    const existing = readLibrarySession();
+    if (existing && existing.account === acct) return;   // keep original createdAt
+    localStorage.setItem(LIB_SESSION_KEY, JSON.stringify({ account: acct, createdAt: Date.now() }));
+  } catch {}
+}
+function clearLibrarySession() { try { localStorage.removeItem(LIB_SESSION_KEY); } catch {} }
+
 let lastJoinUrl = '';
 
 // Render the localized limit-reached card as an assistant message.
@@ -2948,8 +2989,35 @@ function renderGatedCard(data) {
 }
 
 // Phase 9: validate the identity session on load; handle removal (revalidation).
+// Also performs Library→AI sync: if there's no AI token but a valid shared Library
+// session exists, bridge-mint an AI token (re-validated against the SAME EA source).
 async function checkAccess() {
-  const token = getIdentityToken();
+  let token = getIdentityToken();
+
+  // LIBRARY → AI: inherit an existing Library verification (no second OTP).
+  if (!token) {
+    const lib = readLibrarySession();
+    if (lib) {
+      try {
+        const r = await fetch('/api/ai-access', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'bridge', account: lib.account, sessionStart: lib.createdAt }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (d.joinUrl) lastJoinUrl = d.joinUrl;
+        if (d.valid && d.token) {
+          setIdentityToken(d.token);
+          localStorage.setItem(ACCT_KEY, lib.account);
+          localStorage.setItem(VERIFIED_KEY, '1');
+          token = d.token;
+        } else if (d.valid === false) {
+          // Library session no longer eligible → clear it so Library relocks too.
+          clearLibrarySession();
+        }
+      } catch { /* offline — leave as guest for now */ }
+    }
+  }
+
   if (!token) { updateAccessBadge(false); return; }
   try {
     const res = await fetch('/api/ai-access', {
@@ -2960,10 +3028,15 @@ async function checkAccess() {
     if (data.joinUrl) lastJoinUrl = data.joinUrl;
     if (data.valid && data.tier === 'unlimited') {
       if (data.token) setIdentityToken(data.token);   // refreshed eligibility window
+      localStorage.setItem(VERIFIED_KEY, '1');
+      writeLibrarySession(getStoredAcct());            // AI → Library mirror (keeps both in sync)
       updateAccessBadge(true);
     } else {
       if (data.removed) renderMsg('ai', (data.message || 'Your account is no longer active.'));
+      // Definitive expiry/removal → clear BOTH sides so Library relocks too (Issue #3).
       clearIdentityToken();
+      localStorage.removeItem(VERIFIED_KEY);
+      clearLibrarySession();
       updateAccessBadge(false);
     }
   } catch { /* keep current token; offline */ }
@@ -2973,13 +3046,32 @@ async function checkAccess() {
 // positive "Unlimited" badge once verified; otherwise the badge stays hidden.
 function updateAccessBadge(unlimited) {
   const badge = document.getElementById('accessBadge');
-  if (!badge) return;
-  if (unlimited) {
-    badge.classList.remove('hidden');
-    badge.className = 'access-badge';
-    badge.innerHTML = '✓ Unlimited';
-  } else {
-    badge.classList.add('hidden');
+  if (badge) {
+    if (unlimited) {
+      badge.classList.remove('hidden');
+      badge.className = 'access-badge';
+      badge.innerHTML = '✓ Unlimited';
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+  // ISSUE #1 — flip the membership banner: orange "Unlock / Join Our IB" (locked)
+  // ↔ green "Successfully Verified" (success). No locked-state copy stays visible.
+  if (window.ztuSetMembership) window.ztuSetMembership(unlimited ? 'verified' : 'free');
+  // Header "Sign In" → green "Verified" once unlimited; restore otherwise.
+  const signIn = document.querySelector('.ax-signin');
+  if (signIn) {
+    if (unlimited) {
+      signIn.classList.add('verified');
+      signIn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Verified';
+      signIn.style.pointerEvents = 'none';
+      signIn.setAttribute('aria-disabled', 'true');
+    } else if (signIn.classList.contains('verified')) {
+      signIn.classList.remove('verified');
+      signIn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Sign In';
+      signIn.style.pointerEvents = '';
+      signIn.removeAttribute('aria-disabled');
+    }
   }
 }
 
@@ -3050,7 +3142,7 @@ async function verifyOtp(e) {
     const data = await res.json().catch(() => ({}));
     if (data.ok && data.token) {
       setIdentityToken(data.token);
-      if (_vfAccount) localStorage.setItem(ACCT_KEY, _vfAccount);
+      if (_vfAccount) { localStorage.setItem(ACCT_KEY, _vfAccount); writeLibrarySession(_vfAccount); }  // AI → Library sync
       localStorage.setItem(VERIFIED_KEY, '1');
       updateAccessBadge(true);
       result.className = 'vf-result ok'; result.textContent = data.message || '✅ Verified! Unlimited AI access unlocked.';
@@ -3063,6 +3155,26 @@ async function verifyOtp(e) {
   } catch {
     result.className = 'vf-result info'; result.textContent = 'Could not reach the verification service. Please try again shortly.';
   } finally { btn.disabled = false; btn.innerHTML = lbl; }
+}
+
+/* ─── Phase 4B Ext. — unlock AI after the SHARED premium card approves ───
+   The shared card verifies via /api/journal-access (same library-auth gate).
+   To grant UNLIMITED here we mint the AI token via the existing ai-access
+   'bridge' action (no second OTP), then reuse the existing unlock primitives. */
+async function aiUnlockFromCard(result) {
+  try {
+    const r = await fetch('/api/ai-access', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bridge', account: result.account, sessionStart: Date.now() }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.valid && d.token) {
+      setIdentityToken(d.token);
+      if (result.account) { localStorage.setItem(ACCT_KEY, result.account); writeLibrarySession(result.account); }
+      localStorage.setItem(VERIFIED_KEY, '1');
+      updateAccessBadge(true);
+    }
+  } catch (e) { /* non-fatal — the card still wrote the shared session */ }
 }
 
 /* ─── BOOT ───────────────────────────────────────────────────── */
@@ -3219,7 +3331,12 @@ async function verifyOtp(e) {
     else body.appendChild(row);
   }
   /* ── ANSWER RATING SYSTEM (Part B) — POST to /api/ai-feedback, best-effort.
-     Never blocks the UI; the toggle visual state already happened before this runs. */
+     Never blocks the UI; the toggle visual state already happened before this runs.
+     DIAGNOSTIC FIX: previously fully fire-and-forget (.catch(()=>{}), response never
+     read) — a silent insert failure (Supabase unconfigured, table missing, etc.) was
+     indistinguishable from success, so testing "did my like/dislike actually save?"
+     was impossible without this. Now logs the outcome to console (never alerts/blocks
+     the UI) so an admin running DevTools while testing can see the real cause. */
   function sendFeedback(msg, bub, rating) {
     try {
       var question = (msg && msg.dataset && msg.dataset.userQ) || '';
@@ -3233,7 +3350,12 @@ async function verifyOtp(e) {
           lang: (typeof getSessionLang === 'function' ? getSessionLang() : '') || 'en',
           userId: (typeof getOrCreateUserId === 'function' ? getOrCreateUserId() : null),
         }),
-      }).catch(function () {});
+      }).then(function (res) {
+        return res.json().catch(function () { return null; }).then(function (d) {
+          if (!d || !d.ok) console.warn('[ai-feedback] not saved:', d && d.note || d || ('HTTP ' + res.status));
+          else console.debug('[ai-feedback] saved:', rating);
+        });
+      }).catch(function (e) { console.warn('[ai-feedback] network error:', e && e.message); });
     } catch (e) {}
   }
   function legacyCopy(txt) {
@@ -3255,5 +3377,9 @@ async function verifyOtp(e) {
   }
 })();
 </script>
+<!-- ZTU Premium badge (Phase 4B) — reusable shared component, self-hiding -->
+<script src="/assets/ztu-premium-badge.js" defer></script>
+<!-- Shared ZTU unified premium access card (Phase 4B extension) -->
+<script src="/assets/ztu-premium-card.js" defer></script>
 </body>
 </html>

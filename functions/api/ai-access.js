@@ -30,7 +30,10 @@ const CORS = {
 const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;  // 30-day token life
+// SINGLE SHARED EXPIRY: matches library.html SESSION_STORE_KEY ('ztu_lib_v3'),
+// which is a 15-day hard expiry from login. AI and Library therefore expire
+// together — no independent AI session lifetime.
+const SESSION_TTL_MS = 15 * 24 * 60 * 60 * 1000;  // 15-day token life (== Library)
 const ELIG_TTL_MS    = 24 * 60 * 60 * 1000;        // re-validate eligibility daily
 
 // Same-origin proxy to the untouched Library auth endpoint.
@@ -46,9 +49,13 @@ async function lib(origin, payload) {
   }
 }
 
-async function mintToken(env, account) {
-  const now = Date.now();
-  return signSession(env, { acct: String(account), tier: 'unlimited', exp: now + SESSION_TTL_MS, elig_exp: now + ELIG_TTL_MS });
+// sessionStart = the moment the SHARED session began (library.html createdAt).
+// The token expires exactly when the Library session does, so the two stay in
+// lockstep. Omitted ⇒ a brand-new session starting now (fresh OTP verification).
+async function mintToken(env, account, sessionStart) {
+  const now   = Date.now();
+  const start = (typeof sessionStart === 'number' && sessionStart > 0) ? sessionStart : now;
+  return signSession(env, { acct: String(account), tier: 'unlimited', exp: start + SESSION_TTL_MS, elig_exp: now + ELIG_TTL_MS, ss: start });
 }
 
 export async function onRequest(context) {
@@ -128,10 +135,30 @@ export async function onRequest(context) {
     // Eligibility window lapsed → re-check the SAME EA source via Library.
     const vs = await lib(origin, { action: 'verify-session', account: p.acct });
     if (vs.ok && vs.valid) {
-      const fresh = await mintToken(env, p.acct);
+      // Preserve the ORIGINAL session start (p.ss) so re-validation refreshes the
+      // eligibility window WITHOUT extending the shared 15-day hard expiry.
+      const fresh = await mintToken(env, p.acct, p.ss);
       return json({ valid: true, tier: 'unlimited', token: fresh, joinUrl: joinUrl(env) });
     }
     return json({ valid: false, tier: 'visitor', removed: true, message: revalidationRemovedMsg(lang), joinUrl: joinUrl(env) });
+  }
+
+  // ── BRIDGE — LIBRARY → AI single-session sync (NO new OTP, NO new pipeline) ──
+  // The AI page calls this when it has a valid shared Library session (ztu_lib_v3)
+  // but no AI token yet. It re-validates the account against the SAME EA source via
+  // Library verify-session — identical trust to library.html's own hydrateSession —
+  // and, only if still eligible, mints the standard AI token tied to the SAME
+  // session start so both surfaces expire together. No password/OTP is bypassed:
+  // the Library session it mirrors was itself established by an OTP verification.
+  if (action === 'bridge') {
+    const account = String(body?.account || '').trim().slice(0, 64);
+    const ss      = Number(body?.sessionStart) || 0;   // library session createdAt
+    if (!account) return json({ valid: false, tier: 'visitor' });
+    const vs = await lib(origin, { action: 'verify-session', account });
+    if (!(vs.ok && vs.valid)) return json({ valid: false, tier: 'visitor', joinUrl: joinUrl(env) });
+    const token = await mintToken(env, account, ss);
+    if (!token) return json({ valid: false, tier: 'visitor' });
+    return json({ valid: true, tier: 'unlimited', token, account });
   }
 
   if (action === 'logout') return json({ ok: true });
