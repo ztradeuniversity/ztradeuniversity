@@ -684,6 +684,9 @@
       <div class="section-card" id="mentorFeedbackSection">
         <div class="section-head"><h2>Mentor Feedback</h2></div>
         <p class="coach-disclaimer" style="margin-top:0;margin-bottom:14px;">Human feedback written by a ZTU mentor — kept separate from the AI Coach analysis above. Only your own mentor's reviews appear here.</p>
+        <div id="mentorScorecard"></div>
+        <div id="mentorGrades"></div>
+        <h4 style="font-size:13px;font-weight:800;color:var(--gold3);margin:6px 0 10px;">Mentor Reviews</h4>
         <div id="mentorFeedbackList"></div>
       </div>
 
@@ -2179,42 +2182,114 @@
     // RLS (mentor_reviews_select_own) returns only this user's rows. The user
     // can never write here — mentor reviews are created server-side only.
     // ════════════════════════════════════════════════════════════════════
+    let mentorAcks = {};   // review_id -> { read_at, acknowledged_at }
     async function loadMentorFeedback() {
-      const el = $('mentorFeedbackList');
-      if (!el || !currentUserId()) return;
-      try {
-        const { data, error } = await supabase
-          .from('mentor_reviews')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        if (error) {
-          // table may not exist yet (migration not run) — degrade silently
-          el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;">No mentor feedback yet.</p>`;
-          return;
-        }
-        renderMentorFeedback(data || []);
-      } catch (err) {
-        el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;">No mentor feedback yet.</p>`;
-      }
+      if (!$('mentorFeedbackList') || !currentUserId()) return;
+      // Each table may not exist yet on older deployments — read defensively.
+      const safe = async (q) => { try { const { data, error } = await q; return error ? [] : (data || []); } catch (e) { return []; } };
+      const [reviews, grades, scards, acks] = await Promise.all([
+        safe(supabase.from('mentor_reviews').select('*').order('created_at', { ascending: false }).limit(50)),
+        safe(supabase.from('trade_grades').select('*').order('created_at', { ascending: false }).limit(50)),
+        safe(supabase.from('mentor_scorecards').select('*').limit(1)),
+        safe(supabase.from('mentor_review_acks').select('*')),
+      ]);
+      mentorAcks = {};
+      acks.forEach((a) => { mentorAcks[a.review_id] = a; });
+      renderMentorScorecard(scards[0] || null);
+      renderMentorGrades(grades);
+      renderMentorFeedback(reviews);
     }
+
+    // 5B.3 — Personal Improvement Scorecard (mentor-generated; separate from AI)
+    function renderMentorScorecard(sc) {
+      const el = $('mentorScorecard');
+      if (!sc) { el.innerHTML = ''; return; }
+      const list = (arr, color) => (arr && arr.length)
+        ? arr.map((s) => `<div class="insight-card"><span class="ic-dot" style="background:${color};"></span><p>${escapeHtml(s)}</p></div>`).join('')
+        : `<p style="color:var(--muted);font-size:12px;">—</p>`;
+      const scoreRow = (lbl, v) => `<div class="stat-card" style="padding:12px 14px;"><div class="stat-label">${lbl}</div><div class="stat-value" style="font-size:20px;">${v != null ? v : '—'}</div></div>`;
+      el.innerHTML = `
+        <div class="insight-card" style="display:block;border-color:var(--line2);margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap;">
+            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:900;color:var(--gold3);">${sc.overall_score != null ? sc.overall_score : '—'}</div>
+            <div style="font-size:12.5px;color:var(--muted);">Overall Trader Score — your mentor's personal improvement scorecard (separate from AI).</div>
+          </div>
+          <div class="stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px;">
+            ${scoreRow('Discipline', sc.discipline_score)}${scoreRow('Risk Mgmt', sc.risk_score)}${scoreRow('Psychology', sc.psychology_score)}${scoreRow('Execution', sc.execution_score)}${scoreRow('Consistency', sc.consistency_score)}
+          </div>
+          <div class="psych-grid">
+            <div class="psych-block"><h4>Strengths</h4>${list(sc.strengths, 'var(--win)')}</div>
+            <div class="psych-block"><h4>Weaknesses</h4>${list(sc.weaknesses, 'var(--loss)')}</div>
+            <div class="psych-block"><h4>Areas to Improve</h4>${list(sc.areas_to_improve, 'var(--gold)')}</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;">— ${escapeHtml(sc.mentor_name || 'ZTU Mentor')}</div>
+        </div>`;
+    }
+
+    // 5B.2 — Trade grades from the mentor
+    function renderMentorGrades(rows) {
+      const el = $('mentorGrades');
+      if (!rows || !rows.length) { el.innerHTML = ''; return; }
+      el.innerHTML = `<h4 style="font-size:13px;font-weight:800;color:var(--gold3);margin:6px 0 10px;">Trade Grades</h4>` +
+        rows.map((g) => `
+          <div class="insight-card">
+            <span class="ic-dot" style="background:${g.score >= 4 ? 'var(--win)' : g.score >= 3 ? 'var(--gold)' : 'var(--loss)'};"></span>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:var(--gold3);">${escapeHtml(g.grade)}${g.score != null ? ` · ${g.score}/5` : ''}${g.trade_id ? ` · ${escapeHtml(g.trade_id)}` : ''}</div>
+              ${g.comment ? `<p>${escapeHtml(g.comment)}</p>` : ''}
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">— ${escapeHtml(g.mentor_name || 'ZTU Mentor')} · ${fmtDate(g.created_at)}</div>
+            </div>
+          </div>`).join('');
+    }
+
     function renderMentorFeedback(rows) {
       const el = $('mentorFeedbackList');
       if (!rows.length) {
         el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;">No mentor feedback yet. Your mentor's reviews will appear here once posted.</p>`;
         return;
       }
-      el.innerHTML = rows.map((r) => `
-        <div class="insight-card">
-          <span class="ic-dot"></span>
-          <div>
-            <div style="font-size:11px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">
+      el.innerHTML = rows.map((r) => {
+        const a = mentorAcks[r.id] || {};
+        const st = a.acknowledged_at ? 'Acknowledged' : (a.read_at ? 'Read' : 'New');
+        const stColor = a.acknowledged_at ? 'var(--win)' : (a.read_at ? 'var(--gold3)' : 'var(--muted)');
+        return `
+        <div class="insight-card" style="display:block;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+            <div style="font-size:11px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:.4px;">
               ${escapeHtml(r.category)}${r.trade_id ? ` · ${escapeHtml(r.trade_id)}` : ''}
             </div>
-            <p>${escapeHtml(r.comment)}</p>
-            <div style="font-size:11px;color:var(--muted);margin-top:5px;">— ${escapeHtml(r.mentor_name || 'ZTU Mentor')} · ${fmtDate(r.created_at)}</div>
+            <span style="font-size:10px;font-weight:800;color:${stColor};">${st}</span>
           </div>
-        </div>`).join('');
+          <p>${escapeHtml(r.comment)}</p>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">— ${escapeHtml(r.mentor_name || 'ZTU Mentor')} · ${fmtDate(r.created_at)}</div>
+          <div style="display:flex;gap:8px;margin-top:9px;">
+            <button class="btn-sm" data-mr-read="${r.id}" ${a.read_at ? 'disabled style="opacity:.5;"' : ''}>Mark Read</button>
+            <button class="btn-sm primary" data-mr-ack="${r.id}" ${a.acknowledged_at ? 'disabled style="opacity:.5;"' : ''}>Mark Acknowledged</button>
+          </div>
+        </div>`;
+      }).join('');
+      el.querySelectorAll('[data-mr-read]').forEach((b) => b.addEventListener('click', () => markReview(b.dataset.mrRead, 'read')));
+      el.querySelectorAll('[data-mr-ack]').forEach((b) => b.addEventListener('click', () => markReview(b.dataset.mrAck, 'ack')));
+    }
+
+    // 5B.4 — trader marks a review read / acknowledged (writes own ack row via JWT RLS)
+    async function markReview(reviewId, kind) {
+      const uid = currentUserId();
+      if (!uid) return;
+      const now = new Date().toISOString();
+      const existing = mentorAcks[reviewId] || {};
+      const row = {
+        review_id: reviewId, user_id: uid,
+        read_at: existing.read_at || now,                          // acknowledging implies read
+        acknowledged_at: kind === 'ack' ? now : (existing.acknowledged_at || null),
+      };
+      try {
+        const { error } = await supabase.from('mentor_review_acks').upsert(row, { onConflict: 'review_id' });
+        if (error) { toast('Could not update — please try again.', true); return; }
+        mentorAcks[reviewId] = row;
+        toast(kind === 'ack' ? 'Marked acknowledged.' : 'Marked read.');
+        await loadMentorFeedback();
+      } catch (e) { toast('Network error.', true); }
     }
 
     function renderReportHistory(reports) {
