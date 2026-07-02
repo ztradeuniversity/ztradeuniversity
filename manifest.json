@@ -1,0 +1,30 @@
+{
+  "name": "Z Trade University — Trade Like a Pro",
+  "short_name": "Z Trade University",
+  "description": "Research-based Forex, Gold, and Crypto education with live market sentiment, fundamentals & technical intelligence, and weekly market intelligence.",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait-primary",
+  "theme_color": "#1a1410",
+  "background_color": "#1a1410",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "finance", "business"],
+  "icons": [
+    {
+      "src": "/assets/ztu-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/ztu-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

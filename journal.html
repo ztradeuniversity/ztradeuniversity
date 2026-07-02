@@ -1,0 +1,2481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Journal — Z Trade University</title>
+  <meta name="description" content="Digital trading journal — log trades, auto-calculated win rate, profit factor, RR ratio, streaks and pair analytics. No Excel, no manual math." />
+  <meta name="robots" content="noindex, nofollow" />
+  <!-- BIG PHASE 3C — page-scoped defense-in-depth on top of the escapeHtml()
+       fix: even if a future bug reintroduced unescaped output, this blocks
+       loading attacker-hosted scripts and exfiltrating data to arbitrary
+       hosts. 'unsafe-inline' is required because this page's logic and
+       styles are inline (no separate .js/.css build step exists for this
+       static site) — it does not defend against inline-script injection,
+       but script-src/connect-src host allowlisting still meaningfully
+       narrows the blast radius of any future XSS. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com; base-uri 'self'; frame-ancestors 'none';" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1a1410" />
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS client (anon key only — safe for browser, protected by RLS) -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- SheetJS — client-side Excel (.xlsx) export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- jsPDF — client-side PDF report generation, no backend required -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Shared ZTU unified premium access card (Phase 4B extension) -->
+  <script src="/assets/ztu-premium-card.js" defer></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0d0902;
+      --ink: #1a1410;
+      --ink2: #2b2520;
+      --gold: #c89c3f;
+      --gold2: #d4ae5e;
+      --gold3: #e6c987;
+      --gold-deep: #8c6c1f;
+      --white: #ffffff;
+      --text: rgba(255,255,255,0.88);
+      --muted: rgba(255,255,255,0.56);
+      --line: rgba(200,156,63,0.18);
+      --line2: rgba(200,156,63,0.32);
+      --card: #15110a;
+      --card2: #1d160a;
+      --win: #10b981;
+      --win-bg: rgba(16,185,129,0.12);
+      --loss: #ef4444;
+      --loss-bg: rgba(239,68,68,0.12);
+      --be: #a8a29e;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(180deg, var(--navy) 0%, var(--ink) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+    a { color: inherit; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+    @media (max-width: 640px) { .container { padding: 0 16px; } }
+
+    /* ── HEADER ── */
+    header.site-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,9,2,0.92);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 70px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+    }
+    .logo-shield span { font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 900; color: var(--gold3); letter-spacing: -1px; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.15; }
+    .logo-text b { font-size: 14.5px; font-weight: 800; color: var(--white); letter-spacing: -.2px; }
+    .logo-text small { font-size: 9px; font-weight: 700; color: var(--gold3); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-link-back {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 600; color: var(--muted);
+      text-decoration: none; padding: 9px 14px; border-radius: 8px; transition: color .18s, background .18s;
+    }
+    .nav-link-back:hover { color: var(--gold3); background: rgba(200,156,63,0.08); }
+    .nav-link-back svg { width: 15px; height: 15px; }
+    .nav-user { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+    .nav-user b { color: var(--white); font-weight: 700; }
+    .btn-logout {
+      font-size: 12.5px; font-weight: 700; color: var(--gold3);
+      background: rgba(200,156,63,0.10); border: 1px solid var(--line2);
+      padding: 8px 14px; border-radius: 100px; cursor: pointer; transition: background .18s;
+    }
+    .btn-logout:hover { background: rgba(200,156,63,0.20); }
+
+    main { padding: 32px 0 80px; }
+
+    /* ── AUTH SCREEN ── */
+    #authScreen, #unifiedAuthScreen { display: flex; align-items: center; justify-content: center; min-height: 72vh; padding: 20px; }
+    .auth-card {
+      width: 100%; max-width: 420px;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 20px; padding: 34px 30px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    }
+
+    /* ── PHASE 4B — PREMIUM ONBOARDING POPUP (luxury black/gold) ── */
+    .onboard-card {
+      width: 100%; max-width: 560px;
+      background: linear-gradient(180deg, #15110a 0%, #100c06 100%);
+      border: 1px solid var(--line2); border-radius: 22px;
+      padding: 36px 34px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(200,156,63,0.06) inset;
+      position: relative; overflow: hidden;
+    }
+    .onboard-card::before {
+      content: ''; position: absolute; top: -120px; right: -90px; width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(200,156,63,0.14) 0%, transparent 70%); pointer-events: none;
+    }
+    .onboard-head { position: relative; margin-bottom: 22px; }
+    .onboard-head h1 {
+      font-family: 'Manrope', sans-serif; font-size: 30px; font-weight: 900;
+      color: var(--white); letter-spacing: -.8px; margin: 6px 0 8px;
+    }
+    .onboard-gold {
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 60%, var(--gold-deep) 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .onboard-lead { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 460px; }
+
+    /* Section 1 — benefits */
+    .onboard-benefits {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 11px 18px;
+      margin-bottom: 22px; position: relative;
+    }
+    .ob-benefit { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--text); line-height: 1.45; }
+    .ob-check {
+      flex-shrink: 0; width: 19px; height: 19px; border-radius: 50%; margin-top: 1px;
+      background: var(--win-bg); color: var(--win); border: 1px solid rgba(16,185,129,0.34);
+      display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900;
+    }
+
+    /* Section 2 — requirement banner */
+    .onboard-requirement {
+      background: linear-gradient(135deg, rgba(200,156,63,0.12) 0%, rgba(200,156,63,0.05) 100%);
+      border: 1px solid var(--line2); border-radius: 14px; padding: 16px 18px; margin-bottom: 20px;
+      position: relative;
+    }
+    .ob-req-badge {
+      display: inline-block; font-size: 10px; font-weight: 900; letter-spacing: 1.2px;
+      color: #1a1410; background: linear-gradient(135deg, var(--gold3), var(--gold));
+      padding: 4px 11px; border-radius: 100px; margin-bottom: 9px;
+    }
+    .onboard-requirement p { font-size: 13px; color: var(--text); line-height: 1.6; }
+    .onboard-requirement b { color: var(--gold3); }
+
+    /* Section 4 — verify */
+    .onboard-verify { position: relative; margin-bottom: 8px; }
+    .ob-section-title { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+    .ob-section-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+    /* Sections 3 & 5 — alternatives */
+    .onboard-alt {
+      display: flex; gap: 16px; align-items: stretch; margin-top: 22px;
+      padding-top: 22px; border-top: 1px solid var(--line); position: relative;
+    }
+    .ob-alt-block { flex: 1; display: flex; flex-direction: column; gap: 9px; }
+    .ob-alt-label { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .ob-alt-divider { width: 1px; background: var(--line); flex-shrink: 0; }
+    .btn-onboard-outline {
+      display: inline-flex; align-items: center; justify-content: center; margin-top: auto;
+      padding: 11px 18px; border-radius: 10px; text-decoration: none;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold-deep) 100%);
+      color: #fff !important; font-size: 13.5px; font-weight: 800;
+      box-shadow: 0 8px 20px rgba(200,156,63,0.32); transition: transform .18s, box-shadow .18s;
+    }
+    .btn-onboard-outline:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(200,156,63,0.46); }
+    .btn-onboard-ghost {
+      display: inline-flex; align-items: center; justify-content: center; margin-top: auto;
+      padding: 11px 18px; border-radius: 10px; text-decoration: none;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--line2);
+      color: var(--gold3) !important; font-size: 13.5px; font-weight: 800; transition: background .18s, border-color .18s;
+    }
+    .btn-onboard-ghost:hover { background: rgba(200,156,63,0.12); border-color: var(--gold); }
+
+    @media (max-width: 560px) {
+      .onboard-card { padding: 28px 20px; }
+      .onboard-head h1 { font-size: 25px; }
+      .onboard-benefits { grid-template-columns: 1fr; gap: 10px; }
+      .onboard-alt { flex-direction: column; gap: 18px; }
+      .ob-alt-divider { width: 100%; height: 1px; }
+    }
+    .auth-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gold3); margin-bottom: 14px;
+    }
+    .auth-card h1 { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 900; color: var(--white); margin-bottom: 6px; letter-spacing: -.5px; }
+    .auth-card p.sub { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.72); margin-bottom: 7px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+      color: var(--white); font-size: 14.5px; font-family: inherit;
+      transition: border-color .18s, background .18s;
+    }
+    .field input::placeholder, .field textarea::placeholder { color: rgba(255,255,255,0.30); }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--gold); background: rgba(255,255,255,0.07);
+      box-shadow: 0 0 0 3px rgba(200,156,63,0.16);
+    }
+    .btn-gold {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 20px; border-radius: 12px; border: 0; cursor: pointer;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold-deep) 100%);
+      color: #fff; font-size: 14.5px; font-weight: 800; letter-spacing: .2px;
+      box-shadow: 0 12px 26px rgba(200,156,63,0.34);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(200,156,63,0.46); }
+    .btn-gold:disabled { opacity: .55; cursor: default; transform: none; }
+    .auth-switch { text-align: center; margin-top: 18px; font-size: 13.5px; color: var(--muted); }
+    .auth-switch a { color: var(--gold3); font-weight: 700; cursor: pointer; text-decoration: none; }
+    .auth-switch a:hover { text-decoration: underline; }
+    .auth-msg { font-size: 13px; padding: 10px 13px; border-radius: 10px; margin-bottom: 16px; display: none; }
+    .auth-msg.err { display: block; background: var(--loss-bg); color: #fca5a5; border: 1px solid rgba(239,68,68,0.28); }
+    .auth-msg.ok { display: block; background: var(--win-bg); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.28); }
+    .config-warn {
+      max-width: 560px; margin: 0 auto 20px; padding: 14px 18px; border-radius: 12px;
+      background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.30);
+      color: #fca5a5; font-size: 13px; line-height: 1.6; display: none;
+    }
+
+    /* ── APP SHELL ── */
+    #appShell { display: none; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .page-head h1 { font-family: 'Manrope', sans-serif; font-size: 28px; font-weight: 900; color: var(--white); letter-spacing: -.6px; }
+    .page-head p { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+    .head-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-sm {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 10px;
+      cursor: pointer; border: 1px solid var(--line2); background: rgba(255,255,255,0.04);
+      color: var(--text); transition: background .18s, border-color .18s;
+    }
+    .btn-sm:hover { background: rgba(200,156,63,0.12); border-color: var(--gold); }
+    .btn-sm.primary {
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold-deep) 100%);
+      color: #fff; border: 0; box-shadow: 0 8px 20px rgba(200,156,63,0.32);
+    }
+    .btn-sm svg { width: 15px; height: 15px; }
+
+    /* ── ANALYTICS GRID ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 26px; }
+    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 680px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 18px 18px;
+    }
+    .stat-label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--white); }
+    .stat-value.pos { color: var(--win); }
+    .stat-value.neg { color: var(--loss); }
+    .stat-sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+    /* ── CARD / SECTION ── */
+    .section-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+      padding: 24px; margin-bottom: 24px;
+    }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+    .section-head h2 { font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 800; color: var(--white); }
+
+    /* ── ENTRY FORM ── */
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 760px) { .form-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-grid .full { grid-column: 1 / -1; }
+    .seg-toggle { display: flex; gap: 8px; }
+    .seg-btn {
+      flex: 1; padding: 11px; text-align: center; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--text);
+      font-weight: 700; font-size: 13.5px; transition: all .18s;
+    }
+    .seg-btn[data-active="buy"].is-on { background: var(--win-bg); border-color: rgba(16,185,129,0.45); color: #6ee7b7; }
+    .seg-btn[data-active="sell"].is-on { background: var(--loss-bg); border-color: rgba(239,68,68,0.45); color: #fca5a5; }
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+    .live-rr { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+    .live-rr b { color: var(--gold3); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--line); }
+    table.trade-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    table.trade-table th {
+      background: rgba(200,156,63,0.07); color: var(--gold3);
+      font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+      text-align: left; padding: 12px 14px; white-space: nowrap; position: sticky; top: 0;
+    }
+    table.trade-table td { padding: 12px 14px; font-size: 13.5px; border-top: 1px solid var(--line); white-space: nowrap; }
+    table.trade-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: .3px; }
+    .badge.win { background: var(--win-bg); color: var(--win); }
+    .badge.loss { background: var(--loss-bg); color: var(--loss); }
+    .badge.be { background: rgba(168,162,158,0.14); color: var(--be); }
+    .badge.buy { background: rgba(16,185,129,0.10); color: #6ee7b7; }
+    .badge.sell { background: rgba(239,68,68,0.10); color: #fca5a5; }
+    .row-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.03); color: var(--muted); cursor: pointer; transition: all .18s;
+    }
+    .icon-btn:hover { color: var(--gold3); border-color: var(--gold); }
+    .icon-btn.danger:hover { color: #fca5a5; border-color: rgba(239,68,68,0.45); }
+    .icon-btn svg { width: 14px; height: 14px; }
+    .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+    .empty-state svg { width: 44px; height: 44px; color: var(--gold-deep); margin-bottom: 12px; }
+
+    /* ── PSYCHOLOGY FIELDS (form) ── */
+    .chip-toggle { display: flex; gap: 7px; flex-wrap: wrap; }
+    .chip-btn {
+      padding: 9px 14px; border-radius: 100px; cursor: pointer;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--text);
+      font-weight: 700; font-size: 12.5px; transition: all .18s;
+    }
+    .chip-btn.is-on { background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 100%); color: #fff; border-color: var(--gold); }
+    .conf-row { display: flex; align-items: center; gap: 12px; }
+    .conf-row input[type="range"] { flex: 1; accent-color: var(--gold); }
+    .conf-val {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(200,156,63,0.12); border: 1px solid var(--line2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: var(--gold3); font-family: 'JetBrains Mono', monospace;
+    }
+    .plan-toggle { display: flex; gap: 8px; }
+    .plan-btn {
+      flex: 1; padding: 11px; text-align: center; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--text);
+      font-weight: 700; font-size: 13.5px; transition: all .18s;
+    }
+    .plan-btn[data-plan="yes"].is-on { background: var(--win-bg); border-color: rgba(16,185,129,0.45); color: #6ee7b7; }
+    .plan-btn[data-plan="no"].is-on { background: var(--loss-bg); border-color: rgba(239,68,68,0.45); color: #fca5a5; }
+
+    /* ── PSYCHOLOGY DASHBOARD / BAR CHARTS ── */
+    .psych-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 860px) { .psych-grid { grid-template-columns: 1fr; } }
+    .psych-block h4 { font-size: 13px; font-weight: 800; color: var(--gold3); margin-bottom: 12px; letter-spacing: .3px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .bar-row .bar-label { width: 90px; flex-shrink: 0; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .bar-track { flex: 1; height: 10px; border-radius: 100px; background: rgba(255,255,255,0.06); overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--gold-deep), var(--gold3)); transition: width .4s; }
+    .bar-fill.win-fill { background: linear-gradient(90deg, #047857, var(--win)); }
+    .bar-row .bar-val { width: 56px; flex-shrink: 0; text-align: right; font-size: 12px; font-weight: 700; color: var(--white); font-family: 'JetBrains Mono', monospace; }
+    .psych-summary { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .psych-pill {
+      display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 100px;
+      background: rgba(200,156,63,0.08); border: 1px solid var(--line); font-size: 12.5px; color: var(--text);
+    }
+    .psych-pill b { color: var(--gold3); }
+
+    /* ── AI COACH ── */
+    .coach-tabs { display: flex; gap: 8px; }
+    .coach-tab {
+      padding: 9px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--muted);
+    }
+    .coach-tab.is-on { background: rgba(200,156,63,0.14); border-color: var(--gold); color: var(--gold3); }
+    .report-history-filter { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 16px; }
+    .history-filter-pill {
+      padding: 6px 13px; border-radius: 100px; cursor: pointer; font-size: 12px; font-weight: 700;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.03); color: var(--muted);
+    }
+    .history-filter-pill.is-on { background: rgba(200,156,63,0.14); border-color: var(--gold); color: var(--gold3); }
+    .report-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    @media (max-width: 760px) { .report-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .rs-stat { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+    .rs-stat .rs-label { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+    .rs-stat .rs-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--white); }
+    .rs-stat .rs-value.pos { color: var(--win); }
+    .rs-stat .rs-value.neg { color: var(--loss); }
+    .insight-card {
+      display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--line); margin-bottom: 10px;
+    }
+    .insight-card .ic-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--gold); }
+    .insight-card.good .ic-dot { background: var(--win); }
+    .insight-card.bad .ic-dot { background: var(--loss); }
+    .insight-card p { font-size: 13.5px; color: var(--text); line-height: 1.55; }
+    .coach-report-summary { font-size: 14px; color: var(--text); line-height: 1.7; margin-bottom: 16px; padding: 14px 16px; background: rgba(200,156,63,0.06); border-radius: 12px; border: 1px solid var(--line); }
+    .report-history { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .report-history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 13px; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; }
+    .report-history-item:hover { color: var(--gold3); }
+    .coach-disclaimer { font-size: 11.5px; color: var(--muted); margin-top: 14px; font-style: italic; }
+
+    /* ── PERSONALITY INTELLIGENCE (Big Phase 2) ── */
+    .classification-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 100px;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 100%); color: #fff;
+      font-size: 12.5px; font-weight: 800; margin-right: 8px; margin-bottom: 8px;
+      box-shadow: 0 8px 18px rgba(200,156,63,0.30);
+    }
+    .personality-trend { display: flex; gap: 0; overflow-x: auto; padding: 10px 4px 6px; }
+    .trend-node { display: flex; flex-direction: column; align-items: center; min-width: 140px; position: relative; flex-shrink: 0; }
+    .trend-node:not(:last-child)::after {
+      content: ''; position: absolute; top: 8px; left: 65%; right: -75%; height: 2px; background: var(--line2);
+    }
+    .trend-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--gold); border: 3px solid var(--card); box-shadow: 0 0 0 2px var(--line2); margin-bottom: 9px; z-index: 1; }
+    .trend-month { font-size: 10.5px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+    .trend-label { font-size: 12px; color: var(--white); font-weight: 700; text-align: center; margin-top: 4px; max-width: 130px; line-height: 1.4; }
+
+    /* ── PAIR ANALYTICS ── */
+    .pair-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px; }
+    @media (max-width: 680px) { .pair-grid { grid-template-columns: 1fr; } }
+    .pair-highlight { border-radius: 14px; padding: 16px 18px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .pair-highlight.best { background: var(--win-bg); border-color: rgba(16,185,129,0.28); }
+    .pair-highlight.worst { background: var(--loss-bg); border-color: rgba(239,68,68,0.28); }
+    .pair-highlight .ph-label { font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; opacity: .75; }
+    .pair-highlight .ph-pair { font-size: 18px; font-weight: 900; margin-top: 2px; }
+    .pair-highlight .ph-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.is-open { display: flex; }
+    .modal-box {
+      width: 100%; max-width: 620px; max-height: 88vh; overflow-y: auto;
+      background: var(--ink); border: 1px solid var(--line2); border-radius: 18px; padding: 26px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .modal-head h3 { font-size: 18px; font-weight: 800; color: var(--white); font-family: 'Manrope', sans-serif; }
+    .modal-close { cursor: pointer; color: var(--muted); background: none; border: 0; font-size: 20px; line-height: 1; }
+    .modal-close:hover { color: var(--white); }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1100;
+      background: var(--ink2); border: 1px solid var(--line2); border-radius: 12px;
+      padding: 13px 18px; font-size: 13.5px; color: var(--white); box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+      display: none; max-width: 320px;
+    }
+    .toast.show { display: block; }
+    .toast.err { border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+
+    /* ── UNIFIED ACCESS (Phase 4A) — premium badge, access notification ── */
+    .premium-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 13px; border-radius: 100px;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold-deep) 100%);
+      color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .4px; white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(200,156,63,0.34);
+    }
+    .premium-badge svg { width: 13px; height: 13px; }
+    .access-check-icon {
+      width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 16px;
+      background: var(--win-bg); border: 1px solid rgba(16,185,129,0.4);
+      display: flex; align-items: center; justify-content: center; color: var(--win);
+    }
+    .access-check-icon svg { width: 32px; height: 32px; }
+    .access-grant-list { text-align: left; display: inline-block; }
+    .access-grant {
+      display: flex; align-items: center; gap: 10px; padding: 9px 0;
+      font-size: 14px; font-weight: 600; color: var(--text);
+    }
+    .access-grant .ag-tick {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      background: var(--win-bg); color: var(--win); display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 13px;
+    }
+
+    footer.site-foot { padding: 26px 0; text-align: center; border-top: 1px solid var(--line); }
+    footer.site-foot p { font-size: 12.5px; color: var(--muted); }
+
+    /* ── MOBILE RESPONSIVE ── */
+    @media (max-width: 560px) {
+      .nav-inner { height: auto; flex-wrap: wrap; padding: 10px 0; gap: 8px; }
+      .logo-text small { display: none; }
+      .nav-right { width: 100%; justify-content: space-between; }
+      .nav-user span { display: none; }
+      .auth-card { padding: 26px 20px; }
+      .page-head { flex-direction: column; align-items: stretch; }
+      .head-actions { width: 100%; }
+      .head-actions .btn-sm { flex: 1; justify-content: center; }
+      .section-card { padding: 18px 14px; }
+      .stat-value { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════ HEADER ════════════════ -->
+  <header class="site-nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-shield"><span>Z</span></span>
+        <span class="logo-text"><b>Z TRADE</b><small>Trading Journal</small></span>
+      </a>
+      <div class="nav-right">
+        <a href="trading-tools.html" class="nav-link-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Tools
+        </a>
+        <div class="nav-user" id="navUser" style="display:none;">
+          <span class="premium-badge" id="premiumBadge" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>
+            ZTU PREMIUM MEMBER
+          </span>
+          <span id="navUserLabel">Signed in as <b id="navUserEmail"></b></span>
+          <button class="btn-logout" id="btnLogout">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ════════════════ CONFIG WARNING (shown if Supabase keys missing) ════════════════ -->
+    <div class="config-warn" id="configWarn">
+      <b>Trade saving is not connected yet.</b> Sign-in works, but trades won't save until the
+      database keys are filled in. This is a <b>static page</b> — it cannot read Cloudflare
+      environment variables, so the values must be pasted directly into the <code>CONFIG</code>
+      block near the bottom of <code>journal.html</code>:
+      <code>JOURNAL_SUPABASE_URL</code> and <code>JOURNAL_SUPABASE_ANON_KEY</code>
+      (Supabase → Project Settings → API). The <code>JOURNAL_SUPABASE_JWT_SECRET</code> env var
+      is separate and stays server-side. Once both client values are pasted, this notice disappears.
+    </div>
+
+    <!-- ════════════════ DISABLED SCREEN (TRADING_JOURNAL_ENABLED = false) ════════════════ -->
+    <section id="disabledScreen" style="display:none; text-align:center; padding:90px 20px;">
+      <h1 style="font-family:'Manrope',sans-serif; font-size:24px; font-weight:900; color:var(--white); margin-bottom:10px;">Trading Journal is currently unavailable</h1>
+      <p style="color:var(--muted); font-size:14px;">This feature has been temporarily disabled by the site administrator. Please check back later.</p>
+    </section>
+
+    <!-- ════════════════ UNIFIED ACCESS SCREEN (account # + OTP) ════════════════ -->
+    <!-- Phase 4A: single approval (ib_stars_active → special_access) unlocks
+         Journal + Library + AI Unlimited. Mirrors the Library/AI OTP flow via
+         /api/journal-access (a thin proxy over /api/library-auth). Shown when
+         FLAGS.JOURNAL_UNIFIED_ACCESS_ENABLED is true. -->
+    <!-- Phase 4B Ext.: the access wall is now the SHARED ZTUPremiumCard overlay
+         (assets/ztu-premium-card.js), opened by showUnifiedAuth(). This section
+         is only a minimal branded backdrop behind that overlay. -->
+    <section id="unifiedAuthScreen" style="display:none;">
+      <div class="onboard-card" style="text-align:center;">
+        <span class="auth-eyebrow">● Z Trade University · Membership</span>
+        <h1 style="font-family:'Manrope',sans-serif;font-size:28px;font-weight:900;color:var(--white);margin:8px 0;">Trading <span class="onboard-gold">Journal</span></h1>
+        <p class="onboard-lead" style="margin:0 auto;">Premium access is required. Loading your membership card…</p>
+      </div>
+    </section>
+
+    <!-- ════════════════ AUTH SCREEN (legacy email/password — fallback) ════════════════ -->
+    <!-- Retained behind FLAGS.JOURNAL_UNIFIED_ACCESS_ENABLED = false during the
+         transition. Not removed until the unified flow is proven in production. -->
+    <section id="authScreen">
+      <div class="auth-card">
+        <span class="auth-eyebrow">● Z Trade University</span>
+        <h1 id="authTitle">Welcome back</h1>
+        <p class="sub" id="authSub">Sign in to access your private trading journal.</p>
+        <div class="auth-msg" id="authMsg"></div>
+        <form id="authForm">
+          <div class="field" id="nameField" style="display:none;">
+            <label>Display Name</label>
+            <input type="text" id="authName" placeholder="e.g. Zubair" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" required minlength="6" />
+          </div>
+          <button type="submit" class="btn-gold" id="authSubmitBtn">Sign In</button>
+        </form>
+        <p class="auth-switch" id="authSwitch">
+          New here? <a id="authSwitchLink">Create an account</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ════════════════ APP SHELL ════════════════ -->
+    <div id="appShell">
+
+      <div class="page-head">
+        <div>
+          <h1>Trading Journal</h1>
+          <p>Every trade, fully digital — auto-calculated win rate, RR, streaks and pair performance.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn-sm" id="btnExportCsv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            CSV
+          </button>
+          <button class="btn-sm" id="btnExportXlsx">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Excel
+          </button>
+          <button class="btn-sm primary" id="btnNewTrade">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            New Trade
+          </button>
+        </div>
+      </div>
+
+      <!-- ── ANALYTICS ── -->
+      <div class="stats-grid" id="statsGrid"><!-- injected by JS --></div>
+
+      <div class="section-card">
+        <div class="section-head"><h2>Best &amp; Worst Performing Pair</h2></div>
+        <div class="pair-grid" id="pairHighlightGrid"><!-- injected by JS --></div>
+        <div class="table-wrap">
+          <table class="trade-table" id="pairTable">
+            <thead>
+              <tr><th>Pair</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>Net P/L</th></tr>
+            </thead>
+            <tbody id="pairTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PSYCHOLOGY DASHBOARD (Phase 2) ── -->
+      <div class="section-card" id="psychDashboardSection">
+        <div class="section-head"><h2>Trader Psychology Dashboard</h2></div>
+        <div class="psych-grid">
+          <div class="psych-block">
+            <h4>Win Rate by Confidence</h4>
+            <div id="psychConfidence"></div>
+          </div>
+          <div class="psych-block">
+            <h4>Win Rate by Emotion</h4>
+            <div id="psychEmotion"></div>
+          </div>
+          <div class="psych-block">
+            <h4>Win Rate by Plan Adherence</h4>
+            <div id="psychPlan"></div>
+          </div>
+        </div>
+        <div class="psych-summary" id="psychSummary"></div>
+      </div>
+
+      <!-- ── AI COACH ENGINE (Phase 2 — read-only analysis) ── -->
+      <div class="section-card" id="aiCoachSection">
+        <div class="section-head">
+          <h2>AI Coach Report</h2>
+          <div class="coach-tabs">
+            <div class="coach-tab is-on" id="coachTabWeekly" data-type="weekly">Weekly</div>
+            <div class="coach-tab" id="coachTabMonthly" data-type="monthly">Monthly</div>
+            <div class="coach-tab" id="coachTabQuarterly" data-type="quarterly">Quarterly</div>
+          </div>
+          <button class="btn-sm primary" id="btnGenerateReport">Generate Report</button>
+          <button class="btn-sm" id="btnDownloadPdf">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            Download PDF
+          </button>
+        </div>
+        <div id="coachReportOutput"></div>
+        <div class="report-history-filter" id="historyFilterTabs">
+          <span style="font-size:11.5px;color:var(--muted);font-weight:700;margin-right:6px;">History:</span>
+          <div class="history-filter-pill is-on" data-filter="all" id="historyFilterAll">All</div>
+          <div class="history-filter-pill" data-filter="weekly" id="historyFilterWeekly">Weekly</div>
+          <div class="history-filter-pill" data-filter="monthly" id="historyFilterMonthly">Monthly</div>
+          <div class="history-filter-pill" data-filter="quarterly" id="historyFilterQuarterly">Quarterly</div>
+        </div>
+        <div class="report-history" id="reportHistory"></div>
+        <p class="coach-disclaimer">Read-only analysis of your own trade history. The Coach Engine never edits, deletes, or auto-tags trades — it only summarizes patterns you've already logged.</p>
+      </div>
+
+      <!-- ── MENTOR FEEDBACK (Phase 5A — human reviews, separate from AI) ── -->
+      <div class="section-card" id="mentorFeedbackSection">
+        <div class="section-head"><h2>Mentor Feedback</h2></div>
+        <p class="coach-disclaimer" style="margin-top:0;margin-bottom:14px;">Human feedback written by a ZTU mentor — kept separate from the AI Coach analysis above. Only your own mentor's reviews appear here.</p>
+        <div id="mentorScorecard"></div>
+        <div id="mentorGrades"></div>
+        <h4 style="font-size:13px;font-weight:800;color:var(--gold3);margin:6px 0 10px;">Mentor Reviews</h4>
+        <div id="mentorFeedbackList"></div>
+      </div>
+
+      <!-- ── PERSONALITY INTELLIGENCE (Big Phase 2 — read-only) ── -->
+      <div class="section-card" id="personalityIntelSection">
+        <div class="section-head"><h2>Personality Intelligence</h2></div>
+        <div id="personalityClassification" style="margin-bottom:18px;"></div>
+        <div class="psych-grid">
+          <div class="psych-block">
+            <h4>Top Strengths</h4>
+            <div id="personalityStrengths"></div>
+          </div>
+          <div class="psych-block">
+            <h4>Top Weaknesses</h4>
+            <div id="personalityWeaknesses"></div>
+          </div>
+          <div class="psych-block">
+            <h4>Improvement Plan</h4>
+            <div id="personalityImprovement"></div>
+          </div>
+        </div>
+        <div style="margin-top:22px;">
+          <h4 style="font-size:13px;font-weight:800;color:var(--gold3);margin-bottom:4px;">Personality Trend (Monthly)</h4>
+          <div class="personality-trend" id="personalityTrend"></div>
+        </div>
+        <p class="coach-disclaimer">Classification is a heuristic summary of your own logged data — not a fixed label or medical/financial diagnosis. It updates automatically as you journal more trades.</p>
+      </div>
+
+      <!-- ── TRADE ENTRY FORM (inline card) ── -->
+      <div class="section-card" id="entryCard" style="display:none;">
+        <div class="section-head">
+          <h2 id="entryCardTitle">Log a New Trade</h2>
+        </div>
+        <form id="tradeForm">
+          <input type="hidden" id="tradeId" />
+          <div class="form-grid">
+            <div class="field">
+              <label>Pair</label>
+              <input type="text" id="fPair" placeholder="XAUUSD" required autocomplete="off" maxlength="20" style="text-transform:uppercase;" />
+            </div>
+            <div class="field">
+              <label>Direction</label>
+              <div class="seg-toggle">
+                <div class="seg-btn is-on" data-active="buy" data-dir="BUY">Buy</div>
+                <div class="seg-btn" data-active="sell" data-dir="SELL">Sell</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Entry Price</label>
+              <input type="number" step="any" id="fEntry" placeholder="2385.50" required />
+            </div>
+            <div class="field">
+              <label>Stop Loss</label>
+              <input type="number" step="any" id="fSL" placeholder="2378.00" required />
+            </div>
+            <div class="field">
+              <label>Take Profit</label>
+              <input type="number" step="any" id="fTP" placeholder="2401.00" />
+            </div>
+            <div class="field">
+              <label>Profit / Loss Result ($)</label>
+              <input type="number" step="any" id="fPnl" placeholder="e.g. 145.20 or -60" required />
+            </div>
+            <div class="field full">
+              <label>Trade Reason</label>
+              <textarea id="fReason" rows="2" maxlength="1000" placeholder="e.g. Liquidity sweep + bullish FVG retest on M15"></textarea>
+            </div>
+            <div class="field full">
+              <label>Tags <span style="color:var(--muted);font-weight:500;">(comma separated, optional)</span></label>
+              <input type="text" id="fTags" placeholder="breakout, news, revenge-trade" autocomplete="off" maxlength="300" />
+            </div>
+
+            <!-- ── Trader Psychology (Phase 2) ── -->
+            <div id="psychFormFields" style="display:contents;">
+            <div class="field full">
+              <label>Confidence Level (1–10)</label>
+              <div class="conf-row">
+                <input type="range" id="fConfidence" min="1" max="10" step="1" value="5" />
+                <div class="conf-val" id="confValDisplay">5</div>
+              </div>
+            </div>
+            <div class="field full">
+              <label>Emotion</label>
+              <div class="chip-toggle" id="emotionToggle">
+                <div class="chip-btn is-on" data-emotion="Calm">Calm</div>
+                <div class="chip-btn" data-emotion="Fear">Fear</div>
+                <div class="chip-btn" data-emotion="Greed">Greed</div>
+                <div class="chip-btn" data-emotion="FOMO">FOMO</div>
+                <div class="chip-btn" data-emotion="Revenge">Revenge</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Followed Plan?</label>
+              <div class="plan-toggle">
+                <div class="plan-btn is-on" data-plan="yes">Yes</div>
+                <div class="plan-btn" data-plan="no">No</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Session</label>
+              <input type="text" id="fSession" placeholder="London / New York / Asian" list="sessionList" autocomplete="off" maxlength="40" />
+              <datalist id="sessionList">
+                <option value="Asian"></option><option value="London"></option>
+                <option value="New York"></option><option value="Overlap"></option>
+              </datalist>
+            </div>
+            </div><!-- /psychFormFields -->
+            <div class="field" id="setupTypeField">
+              <label>Setup Type</label>
+              <input type="text" id="fSetupType" placeholder="Breakout, Trend, Reversal, News" autocomplete="off" maxlength="40" />
+            </div>
+          </div>
+          <p class="live-rr" id="liveRR">RR Ratio: <b>—</b> · Status auto-set from P/L</p>
+          <div class="form-actions">
+            <button type="button" class="btn-sm" id="btnCancelEntry">Cancel</button>
+            <button type="submit" class="btn-sm primary" id="btnSaveTrade">Save Trade</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── TRADE HISTORY ── -->
+      <div class="section-card">
+        <div class="section-head"><h2>Trade History</h2></div>
+        <div class="table-wrap">
+          <table class="trade-table">
+            <thead>
+              <tr>
+                <th>Trade ID</th><th>Date</th><th>Pair</th><th>Dir</th><th>Entry</th><th>SL</th><th>TP</th>
+                <th>RR</th><th>P/L</th><th>Status</th><th>Reason</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+          <p>No trades logged yet. Click <b>New Trade</b> to start your journal.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Access Approved notification is now owned by the shared ZTUPremiumCard. -->
+
+  <!-- ════════════════ DELETE CONFIRM MODAL ════════════════ -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-box" style="max-width:420px;">
+      <div class="modal-head"><h3>Delete this trade?</h3><button class="modal-close" data-close="deleteModal">&times;</button></div>
+      <p style="color:var(--muted);font-size:13.5px;margin-bottom:20px;">This permanently removes the trade and its tags. This cannot be undone.</p>
+      <div class="form-actions">
+        <button class="btn-sm" data-close="deleteModal">Cancel</button>
+        <button class="btn-sm" id="btnConfirmDelete" style="background:var(--loss);color:#fff;border:0;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-foot">
+    <p>© 2026 Z Trade University. Your trade data is private and visible only to you.</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    // ════════════════════════════════════════════════════════════════════
+    // CONFIG — fill these in with YOUR dedicated "ZTU Journal" Supabase
+    // project (Project Settings → API). The anon key is safe to expose in
+    // the browser; Row Level Security (see /supabase/journal-schema.sql)
+    // guarantees every user can only ever read/write their own trades.
+    // ════════════════════════════════════════════════════════════════════
+    const CONFIG = {
+      JOURNAL_SUPABASE_URL: 'https://pfsgaxqagpbptmjaeblc.supabase.co',
+      JOURNAL_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmc2dheHFhZ3BicHRtamFlYmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NzU2MjUsImV4cCI6MjA5NzQ1MTYyNX0.rWCHPT9Wbc5MdXdEt6Z25SeOEaWc1UH9MEFMcZteQYE',
+      // Phase 4A — which surface the user entered from, so the "Access Approved"
+      // notification can adapt its headline. ('journal' | 'library' | 'ai')
+      JOURNAL_ACCESS_ENTRY: 'journal',
+    };
+
+    // Configured only when BOTH the URL and the anon key have been filled in
+    // (a static page cannot read Cloudflare env vars — these must be pasted
+    // into this CONFIG block). Bug-fix phase: also check the anon-key
+    // placeholder so a half-filled config is still flagged.
+    const isConfigured =
+      !CONFIG.JOURNAL_SUPABASE_URL.includes('YOUR-PROJECT-REF') &&
+      !CONFIG.JOURNAL_SUPABASE_ANON_KEY.includes('YOUR-ANON');
+    if (!isConfigured) {
+      document.getElementById('configWarn').style.display = 'block';
+    }
+
+    // `let` (not const): Phase 4A re-creates this client carrying the minted
+    // Supabase JWT as its Authorization bearer once unified access is granted,
+    // so the existing RLS (auth.uid() = user_id) resolves from that JWT.
+    let supabase = isConfigured
+      ? window.supabase.createClient(CONFIG.JOURNAL_SUPABASE_URL, CONFIG.JOURNAL_SUPABASE_ANON_KEY)
+      : null;
+
+    // ── DOM helper (defined early — FLAGS gating below needs it) ──
+    const $ = (id) => document.getElementById(id);
+
+    // ════════════════════════════════════════════════════════════════════
+    // FEATURE FLAGS — toggle to switch a feature off without touching the
+    // rest of the code. JOURNAL_SUPABASE_SERVICE_ROLE_KEY is intentionally
+    // NOT defined here: a service-role key must never be shipped to the
+    // browser. It will live in a Cloudflare Pages Function env var once a
+    // server-side endpoint exists (see Phase 3 plan).
+    // ════════════════════════════════════════════════════════════════════
+    const FLAGS = {
+      TRADING_JOURNAL_ENABLED:    true,
+      JOURNAL_PSYCHOLOGY_ENABLED: true,
+      JOURNAL_AI_COACH_ENABLED:   true,
+      JOURNAL_AI_REPORTS_ENABLED: true,
+      JOURNAL_PERSONALITY_ENGINE_ENABLED: true,
+      JOURNAL_EXPORT_CSV_ENABLED:   true,
+      JOURNAL_EXPORT_EXCEL_ENABLED: true,
+      JOURNAL_SETUP_TYPES_ENABLED:  true,
+      JOURNAL_WEEKLY_REPORTS_ENABLED:    true,
+      JOURNAL_MONTHLY_REPORTS_ENABLED:   true,
+      JOURNAL_QUARTERLY_REPORTS_ENABLED: true,
+      JOURNAL_PDF_REPORTS_ENABLED: true,
+      // Phase 4A — when true, the account#+OTP unified-access gate replaces the
+      // legacy email/password screen. The legacy screen is retained (not
+      // removed) and shown when this is false, during the transition.
+      JOURNAL_UNIFIED_ACCESS_ENABLED: true,
+    };
+
+    // Apply static (one-time) UI gating as soon as the DOM is parsed.
+    function applyFeatureFlags() {
+      $('psychFormFields').style.display = FLAGS.JOURNAL_PSYCHOLOGY_ENABLED ? 'contents' : 'none';
+      $('psychDashboardSection').style.display = FLAGS.JOURNAL_PSYCHOLOGY_ENABLED ? 'block' : 'none';
+      $('aiCoachSection').style.display = FLAGS.JOURNAL_AI_COACH_ENABLED ? 'block' : 'none';
+      $('personalityIntelSection').style.display = FLAGS.JOURNAL_PERSONALITY_ENGINE_ENABLED ? 'block' : 'none';
+      $('btnExportCsv').style.display = FLAGS.JOURNAL_EXPORT_CSV_ENABLED ? 'inline-flex' : 'none';
+      $('btnExportXlsx').style.display = FLAGS.JOURNAL_EXPORT_EXCEL_ENABLED ? 'inline-flex' : 'none';
+      $('setupTypeField').style.display = FLAGS.JOURNAL_SETUP_TYPES_ENABLED ? 'block' : 'none';
+
+      // Each report-type tab (Generate + History filter) is independently gated.
+      $('coachTabWeekly').style.display = FLAGS.JOURNAL_WEEKLY_REPORTS_ENABLED ? 'block' : 'none';
+      $('coachTabMonthly').style.display = FLAGS.JOURNAL_MONTHLY_REPORTS_ENABLED ? 'block' : 'none';
+      $('coachTabQuarterly').style.display = FLAGS.JOURNAL_QUARTERLY_REPORTS_ENABLED ? 'block' : 'none';
+      $('historyFilterWeekly').style.display = FLAGS.JOURNAL_WEEKLY_REPORTS_ENABLED ? 'inline-block' : 'none';
+      $('historyFilterMonthly').style.display = FLAGS.JOURNAL_MONTHLY_REPORTS_ENABLED ? 'inline-block' : 'none';
+      $('historyFilterQuarterly').style.display = FLAGS.JOURNAL_QUARTERLY_REPORTS_ENABLED ? 'inline-block' : 'none';
+
+      // PDF controls — hidden entirely when the flag is off.
+      $('btnDownloadPdf').style.display = FLAGS.JOURNAL_PDF_REPORTS_ENABLED ? 'inline-flex' : 'none';
+
+      // If the default-selected generate-tab ('weekly') got disabled, fall back
+      // to the first enabled report type so Generate Report always has a target.
+      const order = [
+        ['weekly', FLAGS.JOURNAL_WEEKLY_REPORTS_ENABLED, 'coachTabWeekly'],
+        ['monthly', FLAGS.JOURNAL_MONTHLY_REPORTS_ENABLED, 'coachTabMonthly'],
+        ['quarterly', FLAGS.JOURNAL_QUARTERLY_REPORTS_ENABLED, 'coachTabQuarterly'],
+      ];
+      if (!FLAGS.JOURNAL_WEEKLY_REPORTS_ENABLED) {
+        const fallback = order.find(([, enabled]) => enabled);
+        if (fallback) {
+          coachPeriodType = fallback[0];
+          document.querySelectorAll('.coach-tab').forEach((t) => t.classList.remove('is-on'));
+          $(fallback[2]).classList.add('is-on');
+        }
+      }
+    }
+
+    // ── STATE ──
+    let session = null;            // legacy Supabase Auth session (fallback path)
+    let journalIdentity = null;    // Phase 4A unified identity { uuid, account, jwt, expiresAt, sessionStart }
+    let trades = [];   // raw rows from journal_trades, newest-first as fetched
+    let isSignup = false;
+    let editingTradeId = null;
+    let pendingDeleteId = null;
+
+    // Single source of truth for "whose rows are these" — works for BOTH the
+    // unified-JWT identity (uuid) and the legacy Supabase Auth session.
+    function currentUserId() {
+      return journalIdentity?.uuid || session?.user?.id || null;
+    }
+
+    // ── DOM ──
+    const toast = (msg, isErr = false) => {
+      const el = $('toast');
+      el.textContent = msg;
+      el.className = 'toast show' + (isErr ? ' err' : '');
+      setTimeout(() => el.classList.remove('show'), 3200);
+    };
+
+    // ════════════════════════════════════════════════════════════════════
+    // AUTH
+    // ════════════════════════════════════════════════════════════════════
+    function toggleAuthMode() {
+      isSignup = !isSignup;
+      $('authTitle').textContent = isSignup ? 'Create your journal' : 'Welcome back';
+      $('authSub').textContent = isSignup
+        ? 'Set up your private, fully digital trading journal.'
+        : 'Sign in to access your private trading journal.';
+      $('nameField').style.display = isSignup ? 'block' : 'none';
+      $('authSubmitBtn').textContent = isSignup ? 'Create Account' : 'Sign In';
+      $('authSwitch').innerHTML = isSignup
+        ? 'Already have an account? <a id="authSwitchLink">Sign in</a>'
+        : 'New here? <a id="authSwitchLink">Create an account</a>';
+      $('authMsg').className = 'auth-msg';
+    }
+    // Delegated click handler survives the innerHTML re-render above
+    // (a fresh #authSwitchLink node is inserted each toggle, so we listen
+    // on its stable parent instead of re-binding to the replaced node).
+    $('authSwitch').addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'authSwitchLink') toggleAuthMode();
+    });
+
+    $('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!isConfigured) { toast('Supabase is not configured yet — see the warning banner above.', true); return; }
+      const email = $('authEmail').value.trim();
+      const password = $('authPassword').value;
+      const btn = $('authSubmitBtn');
+      btn.disabled = true;
+      const msgEl = $('authMsg');
+      msgEl.className = 'auth-msg';
+      try {
+        if (isSignup) {
+          const { error } = await supabase.auth.signUp({
+            email, password,
+            options: { data: { display_name: $('authName').value.trim() || email.split('@')[0] } },
+          });
+          if (error) throw error;
+          msgEl.textContent = 'Account created! If email confirmation is enabled, check your inbox, then sign in.';
+          msgEl.className = 'auth-msg ok';
+        } else {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+        }
+      } catch (err) {
+        msgEl.textContent = err.message || 'Something went wrong.';
+        msgEl.className = 'auth-msg err';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $('btnLogout').addEventListener('click', async () => {
+      // Phase 4C — UNIFIED logout: clears Journal + Library + AI sessions, hides
+      // the premium badge, and reloads so the page re-gates (shared component).
+      if (window.ZTUPremiumCard) {
+        ZTUPremiumCard.logout();   // clears all keys, refreshes badge, reloads
+        return;
+      }
+      // Fallback if the shared component failed to load.
+      try { localStorage.removeItem('ztu_journal_v1'); localStorage.removeItem('ztu_lib_v3'); } catch (e) {}
+      if (!journalIdentity) { try { await supabase.auth.signOut(); } catch (e) {} }
+      location.reload();
+    });
+
+    function hideAllScreens() {
+      $('disabledScreen').style.display = 'none';
+      $('unifiedAuthScreen').style.display = 'none';
+      $('authScreen').style.display = 'none';
+      $('appShell').style.display = 'none';
+      $('navUser').style.display = 'none';
+    }
+    function showDisabledScreen() { hideAllScreens(); $('disabledScreen').style.display = 'block'; }
+    // Phase 4B Ext.: the journal access wall is the SHARED premium card overlay.
+    function showUnifiedAuth() {
+      hideAllScreens();
+      $('unifiedAuthScreen').style.display = 'flex';   // branded backdrop
+      if (window.ZTUPremiumCard) {
+        ZTUPremiumCard.open({
+          entry: 'journal',
+          dismissible: false,            // hard gate — the journal cannot be used without access
+          onApproved: (result) => onUnifiedGranted(result, { fresh: true }),
+        });
+      }
+    }
+    function showAuthScreen()     { hideAllScreens(); $('authScreen').style.display = 'flex'; }   // legacy fallback
+    function showApp() {
+      if (window.ZTUPremiumCard) ZTUPremiumCard.close();   // dismiss the access card if open
+      hideAllScreens();
+      $('appShell').style.display = 'block';
+      $('navUser').style.display = 'flex';
+      if (journalIdentity) {
+        $('navUserLabel').innerHTML = 'Account <b id="navUserEmail"></b>';
+        $('navUserEmail').textContent = journalIdentity.account || '';
+        $('premiumBadge').style.display = 'inline-flex';
+      } else {
+        $('navUserLabel').innerHTML = 'Signed in as <b id="navUserEmail"></b>';
+        $('navUserEmail').textContent = session?.user?.email || '';
+        $('premiumBadge').style.display = 'none';
+      }
+    }
+
+    // ── INIT — pick the auth model per flag ──
+    if (!FLAGS.TRADING_JOURNAL_ENABLED) {
+      showDisabledScreen();
+    } else if (!isConfigured) {
+      // No Supabase configured yet → show whichever auth screen is active so the
+      // config-warning banner is visible above it.
+      FLAGS.JOURNAL_UNIFIED_ACCESS_ENABLED ? showUnifiedAuth() : showAuthScreen();
+    } else if (FLAGS.JOURNAL_UNIFIED_ACCESS_ENABLED) {
+      hydrateUnifiedAccess();
+    } else {
+      // Legacy Supabase Auth (email/password) — retained fallback path.
+      supabase.auth.onAuthStateChange((_event, newSession) => {
+        session = newSession;
+        if (session) { showApp(); loadTrades(); loadReports(); loadMentorFeedback(); }
+        else { showAuthScreen(); }
+      });
+      supabase.auth.getSession().then(({ data }) => {
+        session = data.session;
+        if (session) { showApp(); loadTrades(); loadReports(); loadMentorFeedback(); } else { showAuthScreen(); }
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // PHASE 4A — UNIFIED ACCESS (account # + OTP via /api/journal-access)
+    // One approval (ib_stars_active → special_access, enforced server-side by
+    // the shared library-auth gate) unlocks Journal + Library + AI Unlimited.
+    // On success we receive a Supabase JWT, re-create the supabase client with
+    // it as the Authorization bearer, and self-provision the user's profile row
+    // (RLS users_insert_own permits auth.uid() = id). The JWT is NEVER persisted
+    // — only { account, sessionStart } is stored; the JWT is re-minted on each
+    // load via the 'session' action so a revoked account loses access at once.
+    // ════════════════════════════════════════════════════════════════════
+    const JOURNAL_STORE_KEY = 'ztu_journal_v1';
+
+    // Used only by the silent page-load re-validation (hydrateUnifiedAccess).
+    // The interactive OTP flow now lives entirely in the shared ZTUPremiumCard.
+    async function callJournalAccess(payload) {
+      const res = await fetch('/api/journal-access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return res.json();
+    }
+
+    function readStoredAccess() {
+      try {
+        const raw = localStorage.getItem(JOURNAL_STORE_KEY);
+        if (!raw) return null;
+        const s = JSON.parse(raw);
+        if (!s || !s.account || !s.sessionStart) return null;
+        // 15-day hard expiry from login (lockstep with Library/AI).
+        if (Date.now() - s.sessionStart > 15 * 24 * 60 * 60 * 1000) { localStorage.removeItem(JOURNAL_STORE_KEY); return null; }
+        return s;
+      } catch { return null; }
+    }
+    function persistAccess(account, sessionStart) {
+      try { localStorage.setItem(JOURNAL_STORE_KEY, JSON.stringify({ account, sessionStart })); } catch {}
+    }
+    function clearStoredAccess() {
+      try { localStorage.removeItem(JOURNAL_STORE_KEY); } catch {}
+    }
+
+    // Re-create the Supabase client so every PostgREST call carries the minted
+    // JWT — RLS then resolves auth.uid() from it, with no GoTrue session.
+    function createAuthedClient(jwt) {
+      supabase = window.supabase.createClient(CONFIG.JOURNAL_SUPABASE_URL, CONFIG.JOURNAL_SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: `Bearer ${jwt}` } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+    }
+
+    // Create this identity's own profile row if absent (the GoTrue signup
+    // trigger no longer runs). on_public_user_created then auto-creates
+    // journal_settings. Best-effort — a duplicate is a harmless no-op.
+    async function provisionUser() {
+      if (!journalIdentity?.uuid) return;
+      try {
+        await supabase.from('users').upsert({
+          id: journalIdentity.uuid,
+          account_number: journalIdentity.account,
+          access_source: 'unified',
+          tier: 'unlimited',
+          display_name: journalIdentity.account,
+        }, { onConflict: 'id' });
+      } catch (err) { /* non-fatal — RLS still isolates rows by auth.uid() */ }
+    }
+
+    async function onUnifiedGranted(res, { fresh, sessionStart }) {
+      journalIdentity = {
+        uuid: res.uuid, account: res.account, jwt: res.jwt,
+        expiresAt: res.expiresAt,
+        sessionStart: fresh ? Date.now() : (sessionStart || Date.now()),
+      };
+      persistAccess(journalIdentity.account, journalIdentity.sessionStart);
+      createAuthedClient(res.jwt);
+      await provisionUser();
+      showApp();
+      await loadTrades();
+      await loadReports();
+      loadMentorFeedback();   // Phase 5A — human mentor reviews (separate section)
+      // The "Access Approved" modal is owned by the shared ZTUPremiumCard on a
+      // fresh grant; hydrate (fresh:false) is silent.
+    }
+
+    async function hydrateUnifiedAccess() {
+      const stored = readStoredAccess();
+      if (!stored) { showUnifiedAuth(); return; }
+      try {
+        const res = await callJournalAccess({ action: 'session', account: stored.account, sessionStart: stored.sessionStart });
+        if (res.valid) { await onUnifiedGranted(res, { fresh: false, sessionStart: stored.sessionStart }); }
+        else { clearStoredAccess(); showUnifiedAuth(); }
+      } catch {
+        // Network failure on load: we cannot mint a JWT, so authed calls would
+        // fail anyway → fail closed to the auth screen (the user can retry).
+        clearStoredAccess();
+        showUnifiedAuth();
+      }
+    }
+
+    // (The interactive account#+OTP flow is provided by the shared
+    //  ZTUPremiumCard component; journal.html only handles silent session
+    //  restore via hydrateUnifiedAccess + the onApproved finalization above.)
+
+    // ════════════════════════════════════════════════════════════════════
+    // TRADE FORM — direction toggle + live RR preview
+    // ════════════════════════════════════════════════════════════════════
+    let currentDir = 'BUY';
+    document.querySelectorAll('.seg-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seg-btn').forEach((b) => b.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        currentDir = btn.dataset.dir;
+        updateLiveRR();
+      });
+    });
+    ['fEntry', 'fSL', 'fTP'].forEach((id) => $(id).addEventListener('input', updateLiveRR));
+
+    // ── Psychology field toggles (Phase 2) ──
+    let currentEmotion = 'Calm';
+    let currentFollowedPlan = true;
+    $('fConfidence').addEventListener('input', () => { $('confValDisplay').textContent = $('fConfidence').value; });
+    document.querySelectorAll('#emotionToggle .chip-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#emotionToggle .chip-btn').forEach((b) => b.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        currentEmotion = btn.dataset.emotion;
+      });
+    });
+    document.querySelectorAll('.plan-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.plan-btn').forEach((b) => b.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        currentFollowedPlan = btn.dataset.plan === 'yes';
+      });
+    });
+    function updateLiveRR() {
+      const entry = parseFloat($('fEntry').value);
+      const sl = parseFloat($('fSL').value);
+      const tp = parseFloat($('fTP').value);
+      const el = $('liveRR');
+      if (!isFinite(entry) || !isFinite(sl) || entry === sl) { el.innerHTML = 'RR Ratio: <b>—</b> · Status auto-set from P/L'; return; }
+      const risk = Math.abs(entry - sl);
+      if (!isFinite(tp)) { el.innerHTML = 'RR Ratio: <b>—</b> (add a Take Profit to preview RR) · Status auto-set from P/L'; return; }
+      const reward = Math.abs(tp - entry);
+      const rr = (reward / risk).toFixed(2);
+      el.innerHTML = `RR Ratio: <b>1 : ${rr}</b> · Status auto-set from P/L`;
+    }
+
+    function resetForm() {
+      $('tradeForm').reset();
+      $('tradeId').value = '';
+      editingTradeId = null;
+      currentDir = 'BUY';
+      document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.dir === 'BUY'));
+      updateLiveRR();
+      // psychology defaults
+      currentEmotion = 'Calm';
+      currentFollowedPlan = true;
+      $('fConfidence').value = 5;
+      $('confValDisplay').textContent = '5';
+      document.querySelectorAll('#emotionToggle .chip-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.emotion === 'Calm'));
+      document.querySelectorAll('.plan-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.plan === 'yes'));
+      $('entryCardTitle').textContent = 'Log a New Trade';
+      $('btnSaveTrade').textContent = 'Save Trade';
+    }
+
+    $('btnNewTrade').addEventListener('click', () => {
+      resetForm();
+      $('entryCard').style.display = 'block';
+      $('entryCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    $('btnCancelEntry').addEventListener('click', () => {
+      $('entryCard').style.display = 'none';
+      resetForm();
+    });
+
+    $('tradeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        pair: $('fPair').value.trim().toUpperCase(),
+        direction: currentDir,
+        entry_price: parseFloat($('fEntry').value),
+        stop_loss: parseFloat($('fSL').value),
+        take_profit: $('fTP').value ? parseFloat($('fTP').value) : null,
+        pnl: parseFloat($('fPnl').value),
+        trade_reason: $('fReason').value.trim() || null,
+        confidence_level: parseInt($('fConfidence').value, 10),
+        emotion: currentEmotion,
+        followed_plan: currentFollowedPlan,
+        session_name: $('fSession').value.trim() || null,
+        setup_type: $('fSetupType').value.trim() || null,
+      };
+      const tagsRaw = $('fTags').value.trim();
+      const tagList = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+
+      // Client-side pre-submit validation — fails fast with a clear message
+      // instead of round-tripping to Supabase and surfacing a raw Postgres
+      // constraint-violation error. The DB CHECK constraints remain the
+      // real enforcement boundary; this is purely a UX improvement.
+      if (!payload.pair) { toast('Pair is required.', true); return; }
+      if (!Number.isFinite(payload.entry_price) || payload.entry_price <= 0) { toast('Entry price must be a positive number.', true); return; }
+      if (!Number.isFinite(payload.stop_loss) || payload.stop_loss <= 0) { toast('Stop loss must be a positive number.', true); return; }
+      if (payload.take_profit != null && (!Number.isFinite(payload.take_profit) || payload.take_profit <= 0)) { toast('Take profit must be a positive number.', true); return; }
+      if (!Number.isFinite(payload.pnl)) { toast('Profit/Loss result must be a number.', true); return; }
+      if (payload.entry_price === payload.stop_loss) { toast('Entry price and stop loss cannot be identical.', true); return; }
+
+      const btn = $('btnSaveTrade');
+      btn.disabled = true;
+      try {
+        let tradeRowId = editingTradeId;
+        if (editingTradeId) {
+          const { error } = await supabase.from('journal_trades').update(payload).eq('id', editingTradeId);
+          if (error) throw error;
+        } else {
+          payload.user_id = currentUserId();
+          const { data, error } = await supabase.from('journal_trades').insert(payload).select('id').single();
+          if (error) throw error;
+          tradeRowId = data.id;
+        }
+
+        // tags: clear + re-insert (simple, avoids diffing)
+        if (tradeRowId) {
+          await supabase.from('trade_tags').delete().eq('trade_id', tradeRowId);
+          if (tagList.length) {
+            await supabase.from('trade_tags').insert(tagList.map((tag) => ({ trade_id: tradeRowId, tag })));
+          }
+        }
+
+        toast(editingTradeId ? 'Trade updated.' : 'Trade saved.');
+        $('entryCard').style.display = 'none';
+        resetForm();
+        await loadTrades();
+      } catch (err) {
+        toast(err.message || 'Could not save trade.', true);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ════════════════════════════════════════════════════════════════════
+    // LOAD + RENDER
+    // ════════════════════════════════════════════════════════════════════
+    async function loadTrades() {
+      try {
+        const { data, error } = await supabase
+          .from('journal_trades')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (error) { toast(error.message, true); return; }
+        trades = data || [];
+        render();
+      } catch (err) {
+        // Network failure (offline, DNS, CORS) — supabase-js usually returns
+        // {error} above, but a thrown exception is possible too; never let
+        // it propagate as an unhandled rejection that silently breaks the page.
+        toast('Could not reach the journal database. Check your connection and try again.', true);
+      }
+    }
+
+    function render() {
+      renderStats();
+      renderPairAnalytics();
+      renderPsychology();
+      renderPersonalityIntelligence();
+      renderHistory();
+    }
+
+    function fmtMoney(n) {
+      const v = Number(n) || 0;
+      return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+    }
+    function fmtDate(d) {
+      return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    // BIG PHASE 3C — security hardening. pair / setup_type / session_name /
+    // trade_reason are free-text fields the user fully controls; several
+    // render paths interpolate them into innerHTML-bound template strings
+    // (history table, AI Coach insights, Personality strengths/weaknesses,
+    // report stats grid). Escape at every such interpolation point so a
+    // value like `<img src=x onerror=...>` typed into "Pair" or "Setup
+    // Type" renders as harmless text instead of executing. Never apply
+    // this to the underlying stored text (DB rows, PDF, CSV/Excel export)
+    // — only at the point a raw value is concatenated into an HTML string.
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function computeAnalytics(list) {
+      const total = list.length;
+      const wins = list.filter((t) => t.status === 'WIN');
+      const losses = list.filter((t) => t.status === 'LOSS');
+      const winRate = total ? (wins.length / total) * 100 : 0;
+      const grossWin = wins.reduce((s, t) => s + Number(t.pnl), 0);
+      const grossLoss = Math.abs(losses.reduce((s, t) => s + Number(t.pnl), 0));
+      const profitFactor = grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? Infinity : 0);
+      const rrTrades = list.filter((t) => t.rr_ratio != null);
+      const avgRR = rrTrades.length ? rrTrades.reduce((s, t) => s + Number(t.rr_ratio), 0) / rrTrades.length : null;
+      const best = list.reduce((m, t) => (m == null || Number(t.pnl) > Number(m.pnl) ? t : m), null);
+      const worst = list.reduce((m, t) => (m == null || Number(t.pnl) < Number(m.pnl) ? t : m), null);
+      const netProfit = list.reduce((s, t) => s + Number(t.pnl), 0);
+
+      // streaks (chronological order assumed — list is sorted ascending by created_at)
+      let curStreakType = null, curStreakLen = 0, maxWinStreak = 0, maxLossStreak = 0;
+      for (const t of list) {
+        if (t.status === 'WIN' || t.status === 'LOSS') {
+          if (t.status === curStreakType) curStreakLen++; else { curStreakType = t.status; curStreakLen = 1; }
+          if (curStreakType === 'WIN') maxWinStreak = Math.max(maxWinStreak, curStreakLen);
+          if (curStreakType === 'LOSS') maxLossStreak = Math.max(maxLossStreak, curStreakLen);
+        } else { curStreakType = null; curStreakLen = 0; }
+      }
+
+      return {
+        total, wins: wins.length, losses: losses.length, breakeven: total - wins.length - losses.length,
+        winRate, grossWin, grossLoss, profitFactor, avgRR, best, worst, netProfit, maxWinStreak, maxLossStreak,
+      };
+    }
+
+    function renderStats() {
+      const a = computeAnalytics(trades);
+      const cards = [
+        { label: 'Total Trades', value: a.total },
+        { label: 'Win Rate', value: a.total ? a.winRate.toFixed(1) + '%' : '—', cls: a.winRate >= 50 ? 'pos' : (a.total ? 'neg' : '') },
+        { label: 'Profit Factor', value: a.profitFactor === Infinity ? '∞' : a.total ? a.profitFactor.toFixed(2) : '—', cls: a.profitFactor >= 1 ? 'pos' : (a.total ? 'neg' : '') },
+        { label: 'Avg RR', value: a.avgRR != null ? `1 : ${a.avgRR.toFixed(2)}` : '—' },
+        { label: 'Net Profit', value: fmtMoney(a.netProfit), cls: a.netProfit >= 0 ? 'pos' : 'neg' },
+        { label: 'Winning Trades', value: a.wins, sub: `${a.breakeven} breakeven` },
+        { label: 'Losing Trades', value: a.losses },
+        { label: 'Best Trade', value: a.best ? fmtMoney(a.best.pnl) : '—', cls: 'pos', sub: a.best ? `${a.best.pair} · ${a.best.trade_id}` : '' },
+        { label: 'Worst Trade', value: a.worst ? fmtMoney(a.worst.pnl) : '—', cls: 'neg', sub: a.worst ? `${a.worst.pair} · ${a.worst.trade_id}` : '' },
+        { label: 'Win / Loss Streak', value: `${a.maxWinStreak}W / ${a.maxLossStreak}L` },
+      ];
+      $('statsGrid').innerHTML = cards.map((c) => `
+        <div class="stat-card">
+          <div class="stat-label">${c.label}</div>
+          <div class="stat-value ${c.cls || ''}">${c.value}</div>
+          ${c.sub ? `<div class="stat-sub">${c.sub}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderPairAnalytics() {
+      const byPair = {};
+      for (const t of trades) {
+        byPair[t.pair] = byPair[t.pair] || { pair: t.pair, count: 0, wins: 0, losses: 0, net: 0 };
+        const p = byPair[t.pair];
+        p.count++;
+        if (t.status === 'WIN') p.wins++;
+        if (t.status === 'LOSS') p.losses++;
+        p.net += Number(t.pnl);
+      }
+      const rows = Object.values(byPair).sort((a, b) => b.net - a.net);
+      const best = rows[0] || null;
+      const worst = rows.length > 1 ? rows[rows.length - 1] : (rows.length === 1 ? null : null);
+
+      $('pairHighlightGrid').innerHTML = `
+        <div class="pair-highlight best">
+          <div><div class="ph-label">Best Performing Pair</div><div class="ph-pair">${best ? escapeHtml(best.pair) : '—'}</div></div>
+          <div class="ph-val">${best ? fmtMoney(best.net) : '—'}</div>
+        </div>
+        <div class="pair-highlight worst">
+          <div><div class="ph-label">Worst Performing Pair</div><div class="ph-pair">${worst ? escapeHtml(worst.pair) : '—'}</div></div>
+          <div class="ph-val">${worst ? fmtMoney(worst.net) : '—'}</div>
+        </div>`;
+
+      $('pairTableBody').innerHTML = rows.length ? rows.map((p) => `
+        <tr>
+          <td><b>${escapeHtml(p.pair)}</b></td>
+          <td>${p.count}</td>
+          <td>${p.wins}</td>
+          <td>${p.losses}</td>
+          <td>${p.count ? ((p.wins / p.count) * 100).toFixed(1) : '0.0'}%</td>
+          <td style="color:${p.net >= 0 ? 'var(--win)' : 'var(--loss)'}">${fmtMoney(p.net)}</td>
+        </tr>`).join('') : `<tr><td colspan="6" style="color:var(--muted);text-align:center;">No trades yet.</td></tr>`;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // PHASE 2 — TRADER PSYCHOLOGY DASHBOARD
+    // ════════════════════════════════════════════════════════════════════
+    function winRateOf(list) {
+      if (!list.length) return null;
+      const wins = list.filter((t) => t.status === 'WIN').length;
+      return (wins / list.length) * 100;
+    }
+
+    function confidenceBucket(level) {
+      if (level == null) return null;
+      if (level <= 3) return 'Low (1-3)';
+      if (level <= 6) return 'Medium (4-6)';
+      return 'High (7-10)';
+    }
+
+    function computePsychology(list) {
+      const withConfidence = list.filter((t) => t.confidence_level != null);
+      const buckets = ['Low (1-3)', 'Medium (4-6)', 'High (7-10)'];
+      const byConfidence = buckets.map((b) => {
+        const subset = withConfidence.filter((t) => confidenceBucket(t.confidence_level) === b);
+        return { label: b, rate: winRateOf(subset), count: subset.length };
+      });
+
+      const emotions = ['Calm', 'Fear', 'Greed', 'FOMO', 'Revenge'];
+      const withEmotion = list.filter((t) => t.emotion != null);
+      const byEmotion = emotions.map((e) => {
+        const subset = withEmotion.filter((t) => t.emotion === e);
+        return { label: e, rate: winRateOf(subset), count: subset.length };
+      }).filter((e) => e.count > 0);
+
+      const withPlan = list.filter((t) => t.followed_plan != null);
+      const followed = withPlan.filter((t) => t.followed_plan === true);
+      const broke = withPlan.filter((t) => t.followed_plan === false);
+      const byPlan = [
+        { label: 'Followed Plan', rate: winRateOf(followed), count: followed.length },
+        { label: 'Broke Plan', rate: winRateOf(broke), count: broke.length },
+      ];
+
+      const dominantEmotion = byEmotion.length
+        ? byEmotion.reduce((m, e) => (e.count > m.count ? e : m), byEmotion[0]).label
+        : null;
+      const planAdherenceRate = withPlan.length ? (followed.length / withPlan.length) * 100 : null;
+
+      return { byConfidence, byEmotion, byPlan, dominantEmotion, planAdherenceRate, sampleSize: list.length };
+    }
+
+    function renderBarGroup(containerId, rows) {
+      const el = $(containerId);
+      if (!rows.length) { el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;">Not enough data yet.</p>`; return; }
+      el.innerHTML = rows.map((r) => `
+        <div class="bar-row">
+          <div class="bar-label">${r.label}</div>
+          <div class="bar-track"><div class="bar-fill win-fill" style="width:${r.rate == null ? 0 : Math.max(2, r.rate)}%"></div></div>
+          <div class="bar-val">${r.rate == null ? '—' : r.rate.toFixed(0) + '%'}</div>
+        </div>`).join('');
+    }
+
+    function renderPsychology() {
+      if (!FLAGS.JOURNAL_PSYCHOLOGY_ENABLED) return;
+      const p = computePsychology(trades);
+      renderBarGroup('psychConfidence', p.byConfidence);
+      renderBarGroup('psychEmotion', p.byEmotion);
+      renderBarGroup('psychPlan', p.byPlan);
+      const pills = [];
+      if (p.dominantEmotion) pills.push(`Most logged emotion: <b>${p.dominantEmotion}</b>`);
+      if (p.planAdherenceRate != null) pills.push(`Plan adherence: <b>${p.planAdherenceRate.toFixed(0)}%</b>`);
+      pills.push(`Sample size: <b>${p.sampleSize}</b> trade${p.sampleSize === 1 ? '' : 's'}`);
+      $('psychSummary').innerHTML = pills.map((t) => `<span class="psych-pill">${t}</span>`).join('');
+    }
+
+    function toRateMap(rows) {
+      return rows.reduce((m, r) => { m[r.label] = r.rate; return m; }, {});
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // PHASE 2 — AI COACH ENGINE (read-only, rule-based pattern detection)
+    // ════════════════════════════════════════════════════════════════════
+    let coachPeriodType = 'weekly';
+    let lastGeneratedReport = null; // normalized shape, used by "Download PDF" (Big Phase 3B)
+    document.querySelectorAll('.coach-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.coach-tab').forEach((t) => t.classList.remove('is-on'));
+        tab.classList.add('is-on');
+        coachPeriodType = tab.dataset.type;
+      });
+    });
+
+    // Now that coachPeriodType exists, apply flag-driven UI gating
+    // (defined earlier in the script, deferred call to avoid a TDZ error).
+    applyFeatureFlags();
+
+    function netByKey(list, key) {
+      const groups = {};
+      for (const t of list) {
+        const k = t[key];
+        if (!k) continue;
+        groups[k] = groups[k] || { key: k, net: 0, count: 0, wins: 0 };
+        groups[k].net += Number(t.pnl);
+        groups[k].count++;
+        if (t.status === 'WIN') groups[k].wins++;
+      }
+      return Object.values(groups);
+    }
+
+    function bestWorst(groups) {
+      if (!groups.length) return { best: null, worst: null };
+      const sorted = [...groups].sort((a, b) => b.net - a.net);
+      return { best: sorted[0], worst: sorted[sorted.length - 1] };
+    }
+
+    function detectPatterns(list) {
+      const bySetup = bestWorst(netByKey(list, 'setup_type'));
+      const byPair = bestWorst(netByKey(list, 'pair'));
+      const bySession = bestWorst(netByKey(list, 'session_name'));
+
+      const withConfidence = list.filter((t) => t.confidence_level != null);
+      const byConfBucket = ['Low (1-3)', 'Medium (4-6)', 'High (7-10)'].map((b) => {
+        const subset = withConfidence.filter((t) => confidenceBucket(t.confidence_level) === b);
+        return { key: b, rate: winRateOf(subset), count: subset.length };
+      }).filter((b) => b.count > 0);
+      const sortedConf = [...byConfBucket].sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1));
+
+      // plan-break-after-losses: how often a loss is immediately followed by followed_plan === false
+      const chrono = [...list].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      let lossStreakBroken = 0, lossStreakOpportunities = 0;
+      for (let i = 1; i < chrono.length; i++) {
+        if (chrono[i - 1].status === 'LOSS') {
+          lossStreakOpportunities++;
+          if (chrono[i].followed_plan === false) lossStreakBroken++;
+        }
+      }
+      const revengeRate = lossStreakOpportunities ? (lossStreakBroken / lossStreakOpportunities) * 100 : null;
+
+      return {
+        bestSetup: bySetup.best, worstSetup: bySetup.worst,
+        bestPair: byPair.best, worstPair: byPair.worst,
+        bestSession: bySession.best, worstSession: bySession.worst,
+        bestConfidence: sortedConf[0] || null, worstConfidence: sortedConf[sortedConf.length - 1] || null,
+        revengeRate, lossStreakOpportunities,
+      };
+    }
+
+    function periodRange(type) {
+      const end = new Date();
+      const start = new Date();
+      if (type === 'weekly') {
+        start.setDate(end.getDate() - 7);
+      } else if (type === 'quarterly') {
+        const q = Math.floor(end.getMonth() / 3); // current calendar quarter
+        start.setTime(new Date(end.getFullYear(), q * 3, 1).getTime());
+      } else {
+        start.setDate(end.getDate() - 30); // 'monthly' (and safe default)
+      }
+      return { start, end };
+    }
+
+    function periodLabel(type) {
+      if (type === 'weekly') return 'the last 7 days';
+      if (type === 'quarterly') return 'this quarter';
+      return 'the last 30 days';
+    }
+
+    // Total Trades / Win Rate / Loss Rate / Avg RR / Net Profit / Best-Worst
+    // Pair/Setup/Session — required for Quarterly reports, rendered for all
+    // report types for consistency. Reuses computeAnalytics + detectPatterns
+    // (both unchanged) rather than recomputing anything.
+    function buildReportStatsBlock(a, patterns) {
+      const lossRate = a.total ? (a.losses / a.total) * 100 : null;
+      const fmtPair = (g) => (g ? `${escapeHtml(g.key)} (${fmtMoney(g.net)})` : '—');
+      const rows = [
+        { label: 'Total Trades', value: a.total },
+        { label: 'Win Rate', value: a.total ? a.winRate.toFixed(1) + '%' : '—', cls: a.total && a.winRate >= 50 ? 'pos' : 'neg' },
+        { label: 'Loss Rate', value: lossRate != null ? lossRate.toFixed(1) + '%' : '—' },
+        { label: 'Avg RR', value: a.avgRR != null ? `1:${a.avgRR.toFixed(2)}` : '—' },
+        { label: 'Net Profit', value: fmtMoney(a.netProfit), cls: a.netProfit >= 0 ? 'pos' : 'neg' },
+        { label: 'Best Pair', value: fmtPair(patterns.bestPair) },
+        { label: 'Worst Pair', value: fmtPair(patterns.worstPair) },
+        { label: 'Best Setup', value: fmtPair(patterns.bestSetup) },
+        { label: 'Worst Setup', value: fmtPair(patterns.worstSetup) },
+        { label: 'Best Session', value: patterns.bestSession ? escapeHtml(patterns.bestSession.key) : '—' },
+        { label: 'Worst Session', value: patterns.worstSession ? escapeHtml(patterns.worstSession.key) : '—' },
+      ];
+      return `<div class="report-stats-grid">${rows.map((r) => `
+        <div class="rs-stat">
+          <div class="rs-label">${r.label}</div>
+          <div class="rs-value ${r.cls || ''}">${r.value}</div>
+        </div>`).join('')}</div>`;
+    }
+
+    // Trader Classification / Strengths / Weaknesses / Improvement Plan,
+    // reusing the unmodified Personality Intelligence Engine functions.
+    function buildPersonalityReportBlock(profile) {
+      const categories = classifyTrader(profile);
+      const strengths = analyzeStrengths(profile);
+      const weaknesses = analyzeWeaknesses(profile);
+      const plan = buildImprovementPlan(weaknesses, profile);
+      const chips = categories.length
+        ? categories.map((c) => `<span class="classification-chip">${c}</span>`).join('')
+        : `<span class="psych-pill">Not enough data yet to classify this period.</span>`;
+      return {
+        html: `
+          <h4 style="margin:18px 0 10px;font-size:13px;color:var(--gold3);">Trader Classification</h4>
+          <div style="margin-bottom:6px;">${chips}</div>
+          ${strengths.length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Strengths</h4>` + strengths.map(renderInsightCard).join('') : ''}
+          ${weaknesses.length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Weaknesses</h4>` + weaknesses.map(renderInsightCard).join('') : ''}
+          <h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Improvement Plan</h4>
+          ${plan.map((text) => renderInsightCard({ tone: 'neutral', text })).join('')}
+        `,
+        categories, strengths: strengths.map((s) => s.text), weaknesses: weaknesses.map((w) => w.text), plan,
+      };
+    }
+
+    function buildInsights(list, patterns) {
+      const insights = [];
+      const recommendations = [];
+
+      if (patterns.bestSetup) insights.push({ tone: 'good', text: `You perform best on <b>${escapeHtml(patterns.bestSetup.key)}</b> setups (${fmtMoney(patterns.bestSetup.net)} net, ${patterns.bestSetup.count} trades).` });
+      if (patterns.worstSetup && patterns.worstSetup.net < 0) {
+        insights.push({ tone: 'bad', text: `You lose the most on <b>${escapeHtml(patterns.worstSetup.key)}</b> setups (${fmtMoney(patterns.worstSetup.net)} net).` });
+        recommendations.push(`Reduce position size or pause trading "${escapeHtml(patterns.worstSetup.key)}" setups until you identify why they underperform.`);
+      }
+      if (patterns.bestPair) insights.push({ tone: 'good', text: `Your most profitable pair is <b>${escapeHtml(patterns.bestPair.key)}</b> (${fmtMoney(patterns.bestPair.net)} net).` });
+      if (patterns.worstPair && patterns.worstPair.net < 0) insights.push({ tone: 'bad', text: `Your most costly pair is <b>${escapeHtml(patterns.worstPair.key)}</b> (${fmtMoney(patterns.worstPair.net)} net).` });
+      if (patterns.bestSession) insights.push({ tone: 'good', text: `You trade best during the <b>${escapeHtml(patterns.bestSession.key)}</b> session.` });
+      if (patterns.worstSession && patterns.worstSession.net < 0) insights.push({ tone: 'bad', text: `The <b>${escapeHtml(patterns.worstSession.key)}</b> session has been your weakest.` });
+      if (patterns.bestConfidence && patterns.bestConfidence.rate != null) {
+        insights.push({ tone: 'good', text: `Your win rate increases to <b>${patterns.bestConfidence.rate.toFixed(0)}%</b> when confidence is in the "${patterns.bestConfidence.key}" range.` });
+      }
+      if (patterns.worstConfidence && patterns.worstConfidence.rate != null && patterns.worstConfidence.key !== patterns.bestConfidence?.key) {
+        insights.push({ tone: 'bad', text: `Confidence in the "${patterns.worstConfidence.key}" range correlates with a lower <b>${patterns.worstConfidence.rate.toFixed(0)}%</b> win rate.` });
+        recommendations.push(`Consider skipping trades when your confidence falls in the "${patterns.worstConfidence.key}" range.`);
+      }
+      if (patterns.revengeRate != null && patterns.revengeRate > 25) {
+        insights.push({ tone: 'bad', text: `You broke your plan <b>${patterns.revengeRate.toFixed(0)}%</b> of the time immediately after a loss — a sign of revenge trading.` });
+        recommendations.push('Add a mandatory cool-down period (e.g. 30 minutes, or skip the rest of the session) after any losing trade.');
+      }
+      if (!insights.length) insights.push({ tone: 'neutral', text: 'Not enough logged data yet to detect a reliable pattern. Keep journaling — psychology insights improve as your history grows.' });
+
+      return { insights, recommendations };
+    }
+
+    function renderInsightCard(i) {
+      return `<div class="insight-card ${i.tone}"><span class="ic-dot"></span><p>${i.text}</p></div>`;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // BIG PHASE 2 — PERSONALITY INTELLIGENCE ENGINE (read-only, deterministic)
+    // Classifies the trader, surfaces strengths/weaknesses, builds an
+    // improvement plan, and tracks classification month-over-month.
+    // Every threshold below is a transparent heuristic over the trader's
+    // own logged data — not machine learning, never auto-edits a trade.
+    // Reuses computePsychology / detectPatterns / netByKey unchanged.
+    // ════════════════════════════════════════════════════════════════════
+    function computePersonalityProfile(list) {
+      const psych = computePsychology(list);
+      const winRate = winRateOf(list);
+      const rrTrades = list.filter((t) => t.rr_ratio != null);
+      const avgRR = rrTrades.length ? rrTrades.reduce((s, t) => s + Number(t.rr_ratio), 0) / rrTrades.length : null;
+      const emotionTagged = list.filter((t) => t.emotion != null).length;
+      const calmCount = list.filter((t) => t.emotion === 'Calm').length;
+      const calmRate = emotionTagged ? (calmCount / emotionTagged) * 100 : null;
+      const sessionGroups = netByKey(list, 'session_name').map((g) => ({ ...g, winRate: g.count ? (g.wins / g.count) * 100 : null }));
+      const setupGroups = netByKey(list, 'setup_type').map((g) => ({ ...g, winRate: g.count ? (g.wins / g.count) * 100 : null }));
+      const patterns = detectPatterns(list);
+      return { psych, winRate, avgRR, calmRate, sessionGroups, setupGroups, patterns, sampleSize: list.length };
+    }
+
+    function classifyTrader(profile) {
+      const categories = [];
+      if (profile.sampleSize < 5) return categories; // not enough data to label honestly
+      const { psych, avgRR, calmRate, setupGroups, patterns } = profile;
+      const nonCalmRate = calmRate == null ? null : 100 - calmRate;
+
+      if (psych.planAdherenceRate != null && psych.planAdherenceRate >= 75 && (calmRate == null || calmRate >= 50)) {
+        categories.push('Disciplined Trader');
+      }
+      if ((nonCalmRate != null && nonCalmRate >= 50) || (patterns.revengeRate != null && patterns.revengeRate > 25)) {
+        categories.push('Emotional Trader');
+      }
+      if (avgRR != null) {
+        if (avgRR <= 1.3) categories.push('Conservative Trader');
+        else if (avgRR >= 2.2) categories.push('Aggressive Trader');
+      }
+      const setupHas = (kw) => setupGroups.find((g) => g.key.toLowerCase().includes(kw) && g.count >= Math.max(3, profile.sampleSize * 0.25));
+      if (setupHas('scalp')) categories.push('Scalper');
+      if (setupHas('swing')) categories.push('Swing Trader');
+      if (setupHas('trend')) categories.push('Trend Trader');
+
+      return [...new Set(categories)];
+    }
+
+    function analyzeStrengths(profile) {
+      const strengths = [];
+      const { psych, avgRR, winRate, calmRate, sessionGroups, setupGroups } = profile;
+      if (psych.planAdherenceRate != null && psych.planAdherenceRate >= 75) {
+        strengths.push({ tone: 'good', text: `Excellent discipline — ${psych.planAdherenceRate.toFixed(0)}% plan adherence.` });
+      }
+      if (avgRR != null && avgRR >= 1.5 && winRate != null && winRate >= 35) {
+        strengths.push({ tone: 'good', text: `Good risk control — averaging 1:${avgRR.toFixed(2)} RR.` });
+      }
+      if (calmRate != null && calmRate >= 60) {
+        strengths.push({ tone: 'good', text: `Calm, level-headed execution — ${calmRate.toFixed(0)}% of trades logged as Calm.` });
+      }
+      sessionGroups.filter((g) => g.count >= 3 && g.winRate != null && g.winRate >= 60)
+        .sort((a, b) => b.winRate - a.winRate).slice(0, 1)
+        .forEach((g) => strengths.push({ tone: 'good', text: `Consistent ${escapeHtml(g.key)} session performance — ${g.winRate.toFixed(0)}% win rate.` }));
+      setupGroups.filter((g) => g.count >= 3 && g.winRate != null && g.winRate >= 60)
+        .sort((a, b) => b.winRate - a.winRate).slice(0, 2)
+        .forEach((g) => strengths.push({ tone: 'good', text: `Strong ${escapeHtml(g.key)} setups — ${g.winRate.toFixed(0)}% win rate, ${fmtMoney(g.net)} net.` }));
+      return strengths.slice(0, 5);
+    }
+
+    function analyzeWeaknesses(profile) {
+      const weaknesses = [];
+      const { psych, patterns, setupGroups, sessionGroups } = profile;
+      if (patterns.revengeRate != null && patterns.revengeRate > 25) {
+        weaknesses.push({ tone: 'bad', tag: 'revenge', text: `Revenge trading — you broke your plan ${patterns.revengeRate.toFixed(0)}% of the time right after a loss.` });
+      }
+      if (patterns.worstConfidence && patterns.worstConfidence.rate != null && patterns.worstConfidence.rate < 40) {
+        weaknesses.push({ tone: 'bad', tag: 'lowConfidence', text: `Low-confidence entries underperform — only ${patterns.worstConfidence.rate.toFixed(0)}% win rate in the "${patterns.worstConfidence.key}" confidence range.` });
+      }
+      [...setupGroups, ...sessionGroups]
+        .filter((g) => g.key.toLowerCase().includes('news') && g.net < 0)
+        .forEach((g) => weaknesses.push({ tone: 'bad', tag: 'news', text: `News trading losses — ${fmtMoney(g.net)} net on "${escapeHtml(g.key)}".` }));
+      if (psych.planAdherenceRate != null && psych.planAdherenceRate < 60) {
+        weaknesses.push({ tone: 'bad', tag: 'planAdherence', text: `Poor plan adherence — only ${psych.planAdherenceRate.toFixed(0)}% of trades followed your plan.` });
+      }
+      setupGroups.filter((g) => g.count >= 3 && g.winRate != null && g.winRate < 35)
+        .sort((a, b) => a.winRate - b.winRate).slice(0, 2)
+        .forEach((g) => weaknesses.push({ tone: 'bad', tag: 'weakSetup', text: `Weak ${escapeHtml(g.key)} setups — only ${g.winRate.toFixed(0)}% win rate.` }));
+      return weaknesses.slice(0, 5);
+    }
+
+    function buildImprovementPlan(weaknesses, profile) {
+      const tags = new Set(weaknesses.map((w) => w.tag));
+      const plan = [];
+      if (tags.has('revenge')) plan.push('Stop trading after 3 consecutive losses — step away for the rest of the session.');
+      if (tags.has('lowConfidence')) plan.push('Avoid taking trades when your confidence is below 4/10.');
+      if (tags.has('news')) plan.push('Reduce exposure to high-impact news trades, or size down significantly around news.');
+      if (tags.has('planAdherence')) plan.push('Write your trade plan before entry and commit to following it without deviation.');
+      if (tags.has('weakSetup')) plan.push('Pause or paper-trade your weakest setup type until you understand why it underperforms.');
+      const bestSetup = profile.patterns.bestSetup;
+      if (bestSetup && bestSetup.key && bestSetup.key.toLowerCase().includes('trend')) {
+        plan.push(`Focus more on trend-following setups — "${escapeHtml(bestSetup.key)}" is your strongest edge.`);
+      }
+      if (!plan.length) plan.push('Keep journaling consistently — recommendations sharpen as more trades are logged.');
+      return [...new Set(plan)];
+    }
+
+    function renderPersonalityIntelligence() {
+      if (!FLAGS.JOURNAL_PERSONALITY_ENGINE_ENABLED) return;
+      const profile = computePersonalityProfile(trades);
+      const categories = classifyTrader(profile);
+      const strengths = analyzeStrengths(profile);
+      const weaknesses = analyzeWeaknesses(profile);
+      const plan = buildImprovementPlan(weaknesses, profile);
+
+      $('personalityClassification').innerHTML = categories.length
+        ? categories.map((c) => `<span class="classification-chip">${c}</span>`).join('')
+        : `<span class="psych-pill">Not enough data yet to classify your trading style — keep journaling.</span>`;
+
+      $('personalityStrengths').innerHTML = strengths.length
+        ? strengths.map(renderInsightCard).join('')
+        : `<p style="color:var(--muted);font-size:12.5px;">No clear strengths detected yet.</p>`;
+
+      $('personalityWeaknesses').innerHTML = weaknesses.length
+        ? weaknesses.map(renderInsightCard).join('')
+        : `<p style="color:var(--muted);font-size:12.5px;">No clear weaknesses detected yet.</p>`;
+
+      $('personalityImprovement').innerHTML = plan.map((text) => renderInsightCard({ tone: 'neutral', text })).join('');
+
+      syncPersonalitySnapshot(trades);
+      loadPersonalityTrend();
+    }
+
+    // Best-effort: upserts ONE personality_reports row per calendar month
+    // that has trades, so the trend timeline below can show classification
+    // progression (e.g. "January: Emotional Trader" → "March: Disciplined
+    // Trader"). Idempotent via the (user_id, period_start, period_end)
+    // unique constraint — re-running just refreshes that month's row.
+    // BIG PHASE 3C — performance fix. Previously this looped over EVERY
+    // calendar month in the trader's full history and re-upserted each one
+    // on every single render() call (i.e. after every add/edit/delete) —
+    // redundant Supabase writes that grow linearly with account age and
+    // fire dozens of times per minute of normal use. Months that already
+    // exist don't change retroactively, so after the first full backfill
+    // in a session, only the CURRENT month (the one that can still change)
+    // is re-synced. Historical months remain correct from the first pass.
+    let personalityBackfillDone = false;
+    async function syncPersonalitySnapshot(list) {
+      if (!FLAGS.JOURNAL_PERSONALITY_ENGINE_ENABLED || !currentUserId() || !list.length) return;
+      const months = {};
+      for (const t of list) {
+        const d = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        (months[key] = months[key] || []).push(t);
+      }
+      const now = new Date();
+      const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const keysToSync = personalityBackfillDone
+        ? Object.keys(months).filter((k) => k === currentKey)
+        : Object.keys(months);
+      for (const key of keysToSync) {
+        const monthTrades = months[key];
+        const [y, m] = key.split('-').map(Number);
+        const periodStart = new Date(y, m - 1, 1);
+        const periodEnd = new Date(y, m, 0); // last day of that month
+        const profile = computePersonalityProfile(monthTrades);
+        const categories = classifyTrader(profile);
+        const strengths = analyzeStrengths(profile);
+        const weaknesses = analyzeWeaknesses(profile);
+        const plan = buildImprovementPlan(weaknesses, profile);
+        try {
+          await supabase.from('personality_reports').upsert({
+            user_id: currentUserId(),
+            period_start: periodStart.toISOString().slice(0, 10),
+            period_end: periodEnd.toISOString().slice(0, 10),
+            total_trades: monthTrades.length,
+            win_rate_by_confidence: toRateMap(profile.psych.byConfidence),
+            win_rate_by_emotion: toRateMap(profile.psych.byEmotion),
+            win_rate_by_plan: toRateMap(profile.psych.byPlan),
+            dominant_emotion: profile.psych.dominantEmotion,
+            plan_adherence_rate: profile.psych.planAdherenceRate,
+            classifications: categories,
+            strengths: strengths.map((s) => s.text),
+            weaknesses: weaknesses.map((w) => w.text),
+            recommendations: plan,
+            win_rate: profile.winRate,
+            avg_rr: profile.avgRR,
+            session_stats: profile.sessionGroups,
+            setup_stats: profile.setupGroups,
+          }, { onConflict: 'user_id,period_start,period_end' });
+        } catch (err) { /* best-effort analytics snapshot — never surfaces to the user */ }
+      }
+      personalityBackfillDone = true;
+    }
+
+    async function loadPersonalityTrend() {
+      if (!FLAGS.JOURNAL_PERSONALITY_ENGINE_ENABLED || !currentUserId()) return;
+      try {
+        const { data, error } = await supabase
+          .from('personality_reports')
+          .select('period_start, classifications')
+          .order('period_start', { ascending: true });
+        if (error) return; // non-critical background load — degrade silently, no toast spam
+        renderPersonalityTrend(data || []);
+      } catch (err) { /* non-critical — never let a network failure here break the page */ }
+    }
+
+    function renderPersonalityTrend(rows) {
+      const el = $('personalityTrend');
+      if (!rows.length) { el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;">No monthly history yet — check back after your first full month of journaling.</p>`; return; }
+      el.innerHTML = rows.map((r) => {
+        const d = new Date(r.period_start);
+        const monthLabel = d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+        const cats = Array.isArray(r.classifications) && r.classifications.length ? r.classifications.join(' · ') : 'No clear pattern';
+        return `<div class="trend-node"><div class="trend-dot"></div><div class="trend-month">${monthLabel}</div><div class="trend-label">${cats}</div></div>`;
+      }).join('');
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // BIG PHASE 3B — PDF REPORT ENGINE (client-side only, jsPDF, no backend)
+    // Takes the SAME normalized shape used for ai_reports rows — either a
+    // just-generated report or a row loaded from history — and renders it
+    // to a downloadable PDF. Read-only: never touches journal_trades.
+    // ════════════════════════════════════════════════════════════════════
+    // PDF text is plain text (jsPDF doc.text() never parses HTML), but the
+    // same insight/strength/weakness/plan strings are shared with the live
+    // innerHTML render path, which HTML-escapes user-controlled fragments
+    // (see escapeHtml above). Strip real tags, then unescape entities back
+    // to their original characters so the PDF shows raw text, not "&lt;".
+    function stripHtml(str) {
+      return String(str)
+        .replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    }
+
+    function pdfCheckPageBreak(doc, y, margin) {
+      if (y > doc.internal.pageSize.getHeight() - 70) { doc.addPage(); return margin; }
+      return y;
+    }
+    function addSectionHeading(doc, title, margin, y) {
+      y = pdfCheckPageBreak(doc, y, margin) + 14;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(140, 108, 31);
+      doc.text(title, margin, y);
+      y += 6;
+      doc.setDrawColor(200, 156, 63);
+      doc.line(margin, y, doc.internal.pageSize.getWidth() - margin, y);
+      return y + 16;
+    }
+    function addKeyValueTable(doc, rows, margin, y) {
+      doc.setFontSize(10);
+      rows.forEach(([label, value]) => {
+        y = pdfCheckPageBreak(doc, y, margin);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(60, 50, 40);
+        doc.text(String(label), margin, y);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 20, 20);
+        doc.text(String(value), margin + 170, y);
+        y += 16;
+      });
+      return y + 10;
+    }
+    function addLabeledList(doc, title, items, margin, y, lineWidth) {
+      y = pdfCheckPageBreak(doc, y, margin);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(60, 50, 40);
+      doc.text(title, margin, y); y += 16;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30, 30, 30);
+      items.forEach((item) => {
+        const lines = doc.splitTextToSize('• ' + stripHtml(item), lineWidth - 6);
+        lines.forEach((line) => {
+          y = pdfCheckPageBreak(doc, y, margin);
+          doc.text(line, margin + 4, y);
+          y += 13;
+        });
+      });
+      return y + 8;
+    }
+    // Distinct wording from the narrative "insights" — synthesized directly
+    // from the saved best/worst stats, so the AI Coach Section in the PDF
+    // has real, non-duplicated "Coach Findings" content.
+    function buildCoachFindings(s) {
+      const findings = [];
+      if (s.bestSetup) findings.push(`Best setup: ${s.bestSetup.key} (${fmtMoney(s.bestSetup.net)} net, ${s.bestSetup.count} trade(s)).`);
+      if (s.worstSetup) findings.push(`Worst setup: ${s.worstSetup.key} (${fmtMoney(s.worstSetup.net)} net).`);
+      if (s.bestPair) findings.push(`Best pair: ${s.bestPair.key} (${fmtMoney(s.bestPair.net)} net).`);
+      if (s.worstPair) findings.push(`Worst pair: ${s.worstPair.key} (${fmtMoney(s.worstPair.net)} net).`);
+      if (s.bestSession) findings.push(`Best session: ${s.bestSession.key}.`);
+      if (s.worstSession) findings.push(`Worst session: ${s.worstSession.key}.`);
+      return findings.length ? findings : ['Not enough data yet to surface coach findings.'];
+    }
+
+    function downloadReportPdf(r) {
+      if (!FLAGS.JOURNAL_PDF_REPORTS_ENABLED) return;
+      if (!r) { toast('Generate a report first.', true); return; }
+      if (!window.jspdf) { toast('PDF library failed to load.', true); return; }
+
+      try {
+      const s = r.stats || {};
+      const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+      const margin = 48;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const lineWidth = pageWidth - margin * 2;
+      let y = 56;
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(26, 20, 16);
+      doc.text('Z Trade University', margin, y); y += 22;
+      doc.setFontSize(13); doc.setTextColor(140, 108, 31);
+      doc.text(`${reportTypeLabel(r.report_type)} Coach Report`, margin, y); y += 16;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(90, 90, 90);
+      doc.text(`Period: ${r.period_start} -> ${r.period_end}`, margin, y); y += 14;
+      doc.setDrawColor(200, 156, 63); doc.line(margin, y, pageWidth - margin, y); y += 20;
+
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      const summaryLines = doc.splitTextToSize(stripHtml(r.summary || ''), lineWidth);
+      doc.text(summaryLines, margin, y); y += summaryLines.length * 14 + 10;
+
+      // ── Performance Summary ──
+      y = addSectionHeading(doc, 'Performance Summary', margin, y);
+      const lossRate = s.lossRate != null ? s.lossRate.toFixed(1) + '%' : (s.total ? (100 - s.winRate).toFixed(1) + '%' : '-');
+      y = addKeyValueTable(doc, [
+        ['Total Trades', s.total ?? '-'],
+        ['Win Rate', s.total ? s.winRate.toFixed(1) + '%' : '-'],
+        ['Loss Rate', lossRate],
+        ['Average RR', s.avgRR != null ? `1:${s.avgRR.toFixed(2)}` : '-'],
+        ['Net Profit', fmtMoney(s.netProfit || 0)],
+        ['Best Pair', s.bestPair ? `${s.bestPair.key} (${fmtMoney(s.bestPair.net)})` : '-'],
+        ['Worst Pair', s.worstPair ? `${s.worstPair.key} (${fmtMoney(s.worstPair.net)})` : '-'],
+        ['Best Setup', s.bestSetup ? `${s.bestSetup.key} (${fmtMoney(s.bestSetup.net)})` : '-'],
+        ['Worst Setup', s.worstSetup ? `${s.worstSetup.key} (${fmtMoney(s.worstSetup.net)})` : '-'],
+        ['Best Session', s.bestSession ? s.bestSession.key : '-'],
+        ['Worst Session', s.worstSession ? s.worstSession.key : '-'],
+      ], margin, y);
+
+      // ── Personality Section ──
+      y = addSectionHeading(doc, 'Personality Section', margin, y);
+      y = addLabeledList(doc, 'Trader Classification', (s.classifications && s.classifications.length) ? s.classifications : ['Not enough data yet'], margin, y, lineWidth);
+      y = addLabeledList(doc, 'Strengths', (s.personalityStrengths && s.personalityStrengths.length) ? s.personalityStrengths : ['None detected yet'], margin, y, lineWidth);
+      y = addLabeledList(doc, 'Weaknesses', (s.personalityWeaknesses && s.personalityWeaknesses.length) ? s.personalityWeaknesses : ['None detected yet'], margin, y, lineWidth);
+      y = addLabeledList(doc, 'Improvement Plan', (s.personalityPlan && s.personalityPlan.length) ? s.personalityPlan : ['Keep journaling consistently.'], margin, y, lineWidth);
+
+      // ── AI Coach Section ──
+      y = addSectionHeading(doc, 'AI Coach Section', margin, y);
+      y = addLabeledList(doc, 'Insights', (r.insights && r.insights.length) ? r.insights : ['No insights yet'], margin, y, lineWidth);
+      y = addLabeledList(doc, 'Recommendations', (r.recommendations && r.recommendations.length) ? r.recommendations : ['No recommendations yet'], margin, y, lineWidth);
+      y = addLabeledList(doc, 'Coach Findings', buildCoachFindings(s), margin, y, lineWidth);
+
+      doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+      doc.text('Generated by Z Trade University Trading Journal -- read-only analysis of your own logged trades.', margin, doc.internal.pageSize.getHeight() - 24);
+
+      doc.save(`ztu-${r.report_type}-report-${r.period_start}.pdf`);
+      } catch (err) {
+        toast('Could not generate the PDF: ' + (err.message || 'unknown error'), true);
+      }
+    }
+
+    const REPORT_FLAG_BY_TYPE = {
+      weekly: 'JOURNAL_WEEKLY_REPORTS_ENABLED',
+      monthly: 'JOURNAL_MONTHLY_REPORTS_ENABLED',
+      quarterly: 'JOURNAL_QUARTERLY_REPORTS_ENABLED',
+    };
+
+    $('btnGenerateReport').addEventListener('click', async () => {
+      if (!FLAGS[REPORT_FLAG_BY_TYPE[coachPeriodType]]) {
+        toast('This report type is currently disabled.', true);
+        return;
+      }
+      let start, end, periodTrades, effective, patterns, a, profile, insights, recommendations, personalityBlock;
+      try {
+        ({ start, end } = periodRange(coachPeriodType));
+        periodTrades = trades.filter((t) => {
+          const d = new Date(t.created_at);
+          return d >= start && d <= end;
+        });
+        effective = periodTrades.length ? periodTrades : trades;
+        patterns = detectPatterns(effective);
+        a = computeAnalytics(effective);
+        profile = computePersonalityProfile(effective);
+        ({ insights, recommendations } = buildInsights(periodTrades, patterns));
+        personalityBlock = buildPersonalityReportBlock(profile);
+      } catch (err) {
+        toast('Could not generate the report: ' + (err.message || 'unknown error'), true);
+        return;
+      }
+
+      const summary = periodTrades.length
+        ? `Over ${periodLabel(coachPeriodType)} you logged ${periodTrades.length} trade(s) with a ${a.winRate.toFixed(0)}% win rate and ${fmtMoney(a.netProfit)} net P/L.`
+        : `No trades were logged over ${periodLabel(coachPeriodType)} — this report falls back to your full history below.`;
+
+      $('coachReportOutput').innerHTML = `
+        <div class="coach-report-summary">${summary}</div>
+        ${buildReportStatsBlock(a, patterns)}
+        ${insights.map(renderInsightCard).join('')}
+        ${recommendations.length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Recommendations</h4>` + recommendations.map((r) => `<div class="insight-card"><span class="ic-dot"></span><p>${r}</p></div>`).join('') : ''}
+        ${personalityBlock.html}
+      `;
+
+      const reportStats = {
+        ...a,
+        lossRate: a.total ? (a.losses / a.total) * 100 : null,
+        bestPair: patterns.bestPair, worstPair: patterns.worstPair,
+        bestSetup: patterns.bestSetup, worstSetup: patterns.worstSetup,
+        bestSession: patterns.bestSession, worstSession: patterns.worstSession,
+        classifications: personalityBlock.categories,
+        personalityStrengths: personalityBlock.strengths,
+        personalityWeaknesses: personalityBlock.weaknesses,
+        personalityPlan: personalityBlock.plan,
+      };
+      // Tracked independently of JOURNAL_AI_REPORTS_ENABLED so "Download PDF"
+      // for the just-generated report still works even when history-saving
+      // to ai_reports is disabled.
+      lastGeneratedReport = {
+        report_type: coachPeriodType,
+        period_start: start.toISOString().slice(0, 10),
+        period_end: end.toISOString().slice(0, 10),
+        summary,
+        insights: insights.map((i) => i.text),
+        recommendations,
+        stats: reportStats,
+      };
+
+      if (!FLAGS.JOURNAL_AI_REPORTS_ENABLED) {
+        toast('Coach report generated (history is disabled).');
+        return;
+      }
+
+      try {
+        await supabase.from('ai_reports').insert({ user_id: currentUserId(), ...lastGeneratedReport });
+        toast('Coach report generated and saved.');
+        await loadReports();
+      } catch (err) {
+        toast('Report generated, but could not be saved: ' + (err.message || ''), true);
+      }
+    });
+
+    $('btnDownloadPdf').addEventListener('click', () => downloadReportPdf(lastGeneratedReport));
+
+    let historyFilter = 'all';
+    document.querySelectorAll('.history-filter-pill').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.history-filter-pill').forEach((p) => p.classList.remove('is-on'));
+        pill.classList.add('is-on');
+        historyFilter = pill.dataset.filter;
+        loadReports();
+      });
+    });
+
+    async function loadReports() {
+      if (!FLAGS.JOURNAL_AI_REPORTS_ENABLED) return;
+      try {
+        let query = supabase.from('ai_reports').select('*').order('created_at', { ascending: false }).limit(10);
+        if (historyFilter !== 'all') query = query.eq('report_type', historyFilter);
+        const { data, error } = await query;
+        if (error) return; // non-critical background load — degrade silently
+        renderReportHistory(data || []);
+      } catch (err) { /* non-critical — never let a network failure here break the page */ }
+    }
+
+    function reportTypeLabel(type) {
+      return type === 'weekly' ? 'Weekly' : type === 'quarterly' ? 'Quarterly' : 'Monthly';
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // PHASE 5A — MENTOR FEEDBACK (human reviews, separate from AI Feedback)
+    // Reads the trader's OWN mentor_reviews via the authed Supabase client;
+    // RLS (mentor_reviews_select_own) returns only this user's rows. The user
+    // can never write here — mentor reviews are created server-side only.
+    // ════════════════════════════════════════════════════════════════════
+    let mentorAcks = {};   // review_id -> { read_at, acknowledged_at }
+    async function loadMentorFeedback() {
+      if (!$('mentorFeedbackList') || !currentUserId()) return;
+      // Each table may not exist yet on older deployments — read defensively.
+      const safe = async (q) => { try { const { data, error } = await q; return error ? [] : (data || []); } catch (e) { return []; } };
+      const [reviews, grades, scards, acks] = await Promise.all([
+        safe(supabase.from('mentor_reviews').select('*').order('created_at', { ascending: false }).limit(50)),
+        safe(supabase.from('trade_grades').select('*').order('created_at', { ascending: false }).limit(50)),
+        safe(supabase.from('mentor_scorecards').select('*').limit(1)),
+        safe(supabase.from('mentor_review_acks').select('*')),
+      ]);
+      mentorAcks = {};
+      acks.forEach((a) => { mentorAcks[a.review_id] = a; });
+      renderMentorScorecard(scards[0] || null);
+      renderMentorGrades(grades);
+      renderMentorFeedback(reviews);
+    }
+
+    // 5B.3 — Personal Improvement Scorecard (mentor-generated; separate from AI)
+    function renderMentorScorecard(sc) {
+      const el = $('mentorScorecard');
+      if (!sc) { el.innerHTML = ''; return; }
+      const list = (arr, color) => (arr && arr.length)
+        ? arr.map((s) => `<div class="insight-card"><span class="ic-dot" style="background:${color};"></span><p>${escapeHtml(s)}</p></div>`).join('')
+        : `<p style="color:var(--muted);font-size:12px;">—</p>`;
+      const scoreRow = (lbl, v) => `<div class="stat-card" style="padding:12px 14px;"><div class="stat-label">${lbl}</div><div class="stat-value" style="font-size:20px;">${v != null ? v : '—'}</div></div>`;
+      el.innerHTML = `
+        <div class="insight-card" style="display:block;border-color:var(--line2);margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap;">
+            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:900;color:var(--gold3);">${sc.overall_score != null ? sc.overall_score : '—'}</div>
+            <div style="font-size:12.5px;color:var(--muted);">Overall Trader Score — your mentor's personal improvement scorecard (separate from AI).</div>
+          </div>
+          <div class="stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px;">
+            ${scoreRow('Discipline', sc.discipline_score)}${scoreRow('Risk Mgmt', sc.risk_score)}${scoreRow('Psychology', sc.psychology_score)}${scoreRow('Execution', sc.execution_score)}${scoreRow('Consistency', sc.consistency_score)}
+          </div>
+          <div class="psych-grid">
+            <div class="psych-block"><h4>Strengths</h4>${list(sc.strengths, 'var(--win)')}</div>
+            <div class="psych-block"><h4>Weaknesses</h4>${list(sc.weaknesses, 'var(--loss)')}</div>
+            <div class="psych-block"><h4>Areas to Improve</h4>${list(sc.areas_to_improve, 'var(--gold)')}</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;">— ${escapeHtml(sc.mentor_name || 'ZTU Mentor')}</div>
+        </div>`;
+    }
+
+    // 5B.2 — Trade grades from the mentor
+    function renderMentorGrades(rows) {
+      const el = $('mentorGrades');
+      if (!rows || !rows.length) { el.innerHTML = ''; return; }
+      el.innerHTML = `<h4 style="font-size:13px;font-weight:800;color:var(--gold3);margin:6px 0 10px;">Trade Grades</h4>` +
+        rows.map((g) => `
+          <div class="insight-card">
+            <span class="ic-dot" style="background:${g.score >= 4 ? 'var(--win)' : g.score >= 3 ? 'var(--gold)' : 'var(--loss)'};"></span>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:var(--gold3);">${escapeHtml(g.grade)}${g.score != null ? ` · ${g.score}/5` : ''}${g.trade_id ? ` · ${escapeHtml(g.trade_id)}` : ''}</div>
+              ${g.comment ? `<p>${escapeHtml(g.comment)}</p>` : ''}
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">— ${escapeHtml(g.mentor_name || 'ZTU Mentor')} · ${fmtDate(g.created_at)}</div>
+            </div>
+          </div>`).join('');
+    }
+
+    function renderMentorFeedback(rows) {
+      const el = $('mentorFeedbackList');
+      if (!rows.length) {
+        el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;">No mentor feedback yet. Your mentor's reviews will appear here once posted.</p>`;
+        return;
+      }
+      el.innerHTML = rows.map((r) => {
+        const a = mentorAcks[r.id] || {};
+        const st = a.acknowledged_at ? 'Acknowledged' : (a.read_at ? 'Read' : 'New');
+        const stColor = a.acknowledged_at ? 'var(--win)' : (a.read_at ? 'var(--gold3)' : 'var(--muted)');
+        return `
+        <div class="insight-card" style="display:block;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+            <div style="font-size:11px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:.4px;">
+              ${escapeHtml(r.category)}${r.trade_id ? ` · ${escapeHtml(r.trade_id)}` : ''}
+            </div>
+            <span style="font-size:10px;font-weight:800;color:${stColor};">${st}</span>
+          </div>
+          <p>${escapeHtml(r.comment)}</p>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">— ${escapeHtml(r.mentor_name || 'ZTU Mentor')} · ${fmtDate(r.created_at)}</div>
+          <div style="display:flex;gap:8px;margin-top:9px;">
+            <button class="btn-sm" data-mr-read="${r.id}" ${a.read_at ? 'disabled style="opacity:.5;"' : ''}>Mark Read</button>
+            <button class="btn-sm primary" data-mr-ack="${r.id}" ${a.acknowledged_at ? 'disabled style="opacity:.5;"' : ''}>Mark Acknowledged</button>
+          </div>
+        </div>`;
+      }).join('');
+      el.querySelectorAll('[data-mr-read]').forEach((b) => b.addEventListener('click', () => markReview(b.dataset.mrRead, 'read')));
+      el.querySelectorAll('[data-mr-ack]').forEach((b) => b.addEventListener('click', () => markReview(b.dataset.mrAck, 'ack')));
+    }
+
+    // 5B.4 — trader marks a review read / acknowledged (writes own ack row via JWT RLS)
+    async function markReview(reviewId, kind) {
+      const uid = currentUserId();
+      if (!uid) return;
+      const now = new Date().toISOString();
+      const existing = mentorAcks[reviewId] || {};
+      const row = {
+        review_id: reviewId, user_id: uid,
+        read_at: existing.read_at || now,                          // acknowledging implies read
+        acknowledged_at: kind === 'ack' ? now : (existing.acknowledged_at || null),
+      };
+      try {
+        const { error } = await supabase.from('mentor_review_acks').upsert(row, { onConflict: 'review_id' });
+        if (error) { toast('Could not update — please try again.', true); return; }
+        mentorAcks[reviewId] = row;
+        toast(kind === 'ack' ? 'Marked acknowledged.' : 'Marked read.');
+        await loadMentorFeedback();
+      } catch (e) { toast('Network error.', true); }
+    }
+
+    function renderReportHistory(reports) {
+      const el = $('reportHistory');
+      if (!reports.length) { el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;margin-top:10px;">No reports yet for this filter.</p>`; return; }
+      el.innerHTML = `<h4 style="font-size:12.5px;color:var(--muted);margin-bottom:8px;">Past Reports</h4>` +
+        reports.map((r) => `
+          <div class="report-history-item" data-report="${r.id}">
+            <span>${reportTypeLabel(r.report_type)} · ${r.period_start} → ${r.period_end}</span>
+            <span style="display:flex;align-items:center;gap:10px;">
+              ${new Date(r.created_at).toLocaleDateString()}
+              ${FLAGS.JOURNAL_PDF_REPORTS_ENABLED ? `<button class="icon-btn" data-pdf="${r.id}" title="Download PDF" style="width:26px;height:26px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></button>` : ''}
+            </span>
+          </div>`).join('');
+      el.querySelectorAll('[data-pdf]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const r = reports.find((x) => x.id === btn.dataset.pdf);
+          if (r) downloadReportPdf(r);
+        });
+      });
+      el.querySelectorAll('[data-report]').forEach((row) => {
+        row.addEventListener('click', () => {
+          const r = reports.find((x) => x.id === row.dataset.report);
+          if (!r) return;
+          const s = r.stats || {};
+          const hasStatsBlock = s.total != null;
+          const personalityHtml = (s.classifications || s.personalityStrengths || s.personalityWeaknesses || s.personalityPlan) ? `
+            <h4 style="margin:18px 0 10px;font-size:13px;color:var(--gold3);">Trader Classification</h4>
+            <div style="margin-bottom:6px;">${(s.classifications || []).length ? s.classifications.map((c) => `<span class="classification-chip">${c}</span>`).join('') : `<span class="psych-pill">Not enough data yet to classify this period.</span>`}</div>
+            ${(s.personalityStrengths || []).length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Strengths</h4>` + s.personalityStrengths.map((text) => renderInsightCard({ tone: 'good', text })).join('') : ''}
+            ${(s.personalityWeaknesses || []).length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Weaknesses</h4>` + s.personalityWeaknesses.map((text) => renderInsightCard({ tone: 'bad', text })).join('') : ''}
+            ${(s.personalityPlan || []).length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Improvement Plan</h4>` + s.personalityPlan.map((text) => renderInsightCard({ tone: 'neutral', text })).join('') : ''}
+          ` : '';
+          $('coachReportOutput').innerHTML = `
+            <div class="coach-report-summary">${r.summary}</div>
+            ${hasStatsBlock ? buildReportStatsBlock(s, { bestPair: s.bestPair, worstPair: s.worstPair, bestSetup: s.bestSetup, worstSetup: s.worstSetup, bestSession: s.bestSession, worstSession: s.worstSession }) : ''}
+            ${(r.insights || []).map((text) => renderInsightCard({ tone: 'neutral', text })).join('')}
+            ${(r.recommendations || []).length ? `<h4 style="margin:16px 0 8px;font-size:13px;color:var(--gold3);">Recommendations</h4>` + r.recommendations.map((rec) => `<div class="insight-card"><span class="ic-dot"></span><p>${rec}</p></div>`).join('') : ''}
+            ${personalityHtml}
+          `;
+        });
+      });
+    }
+
+    function renderHistory() {
+      const sorted = [...trades].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      $('emptyState').style.display = sorted.length ? 'none' : 'block';
+      $('historyTableBody').innerHTML = sorted.map((t) => `
+        <tr data-id="${t.id}">
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--gold3);">${t.trade_id}</td>
+          <td>${fmtDate(t.created_at)}</td>
+          <td><b>${escapeHtml(t.pair)}</b></td>
+          <td><span class="badge ${t.direction === 'BUY' ? 'buy' : 'sell'}">${t.direction}</span></td>
+          <td>${Number(t.entry_price)}</td>
+          <td>${Number(t.stop_loss)}</td>
+          <td>${t.take_profit != null ? Number(t.take_profit) : '—'}</td>
+          <td>${t.rr_ratio != null ? '1:' + Number(t.rr_ratio).toFixed(2) : '—'}</td>
+          <td style="color:${Number(t.pnl) >= 0 ? 'var(--win)' : 'var(--loss)'}">${fmtMoney(t.pnl)}</td>
+          <td><span class="badge ${t.status === 'WIN' ? 'win' : t.status === 'LOSS' ? 'loss' : 'be'}">${t.status}</span></td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t.trade_reason || '')}">${t.trade_reason ? escapeHtml(t.trade_reason) : '—'}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" data-edit="${t.id}" title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="icon-btn danger" data-delete="${t.id}" title="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      $('historyTableBody').querySelectorAll('[data-edit]').forEach((btn) => {
+        btn.addEventListener('click', () => openEdit(btn.dataset.edit));
+      });
+      $('historyTableBody').querySelectorAll('[data-delete]').forEach((btn) => {
+        btn.addEventListener('click', () => openDeleteConfirm(btn.dataset.delete));
+      });
+    }
+
+    async function openEdit(id) {
+      const t = trades.find((x) => x.id === id);
+      if (!t) return;
+      editingTradeId = id;
+      $('tradeId').value = id;
+      $('fPair').value = t.pair;
+      $('fEntry').value = t.entry_price;
+      $('fSL').value = t.stop_loss;
+      $('fTP').value = t.take_profit ?? '';
+      $('fPnl').value = t.pnl;
+      $('fReason').value = t.trade_reason || '';
+      currentDir = t.direction;
+      document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.dir === t.direction));
+      updateLiveRR();
+      // psychology fields
+      currentEmotion = t.emotion || 'Calm';
+      currentFollowedPlan = t.followed_plan !== false;
+      $('fConfidence').value = t.confidence_level || 5;
+      $('confValDisplay').textContent = String(t.confidence_level || 5);
+      $('fSession').value = t.session_name || '';
+      $('fSetupType').value = t.setup_type || '';
+      document.querySelectorAll('#emotionToggle .chip-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.emotion === currentEmotion));
+      document.querySelectorAll('.plan-btn').forEach((b) => b.classList.toggle('is-on', (b.dataset.plan === 'yes') === currentFollowedPlan));
+      const { data: tagRows } = await supabase.from('trade_tags').select('tag').eq('trade_id', id);
+      $('fTags').value = (tagRows || []).map((r) => r.tag).join(', ');
+      $('entryCardTitle').textContent = `Edit Trade ${t.trade_id}`;
+      $('btnSaveTrade').textContent = 'Update Trade';
+      $('entryCard').style.display = 'block';
+      $('entryCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function openDeleteConfirm(id) {
+      pendingDeleteId = id;
+      $('deleteModal').classList.add('is-open');
+    }
+    document.querySelectorAll('[data-close]').forEach((el) => {
+      el.addEventListener('click', () => $(el.dataset.close).classList.remove('is-open'));
+    });
+    $('btnConfirmDelete').addEventListener('click', async () => {
+      if (!pendingDeleteId) return;
+      const { error } = await supabase.from('journal_trades').delete().eq('id', pendingDeleteId);
+      $('deleteModal').classList.remove('is-open');
+      if (error) { toast(error.message, true); return; }
+      toast('Trade deleted.');
+      pendingDeleteId = null;
+      await loadTrades();
+    });
+
+    // ════════════════════════════════════════════════════════════════════
+    // EXPORT
+    // ════════════════════════════════════════════════════════════════════
+    function exportRows() {
+      const sorted = [...trades].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      return sorted.map((t) => ({
+        'Trade ID': t.trade_id,
+        'Timestamp': t.created_at,
+        'Date': t.trade_date,
+        'Pair': t.pair,
+        'Direction': t.direction,
+        'Entry': t.entry_price,
+        'Stop Loss': t.stop_loss,
+        'Take Profit': t.take_profit ?? '',
+        'RR Ratio': t.rr_ratio ?? '',
+        'P/L': t.pnl,
+        'Status': t.status,
+        'Reason': t.trade_reason || '',
+        'Confidence': t.confidence_level ?? '',
+        'Emotion': t.emotion || '',
+        'Followed Plan': t.followed_plan == null ? '' : (t.followed_plan ? 'Yes' : 'No'),
+        'Session': t.session_name || '',
+        'Setup Type': t.setup_type || '',
+      }));
+    }
+
+    $('btnExportCsv').addEventListener('click', () => {
+      const rows = exportRows();
+      if (!rows.length) { toast('No trades to export.', true); return; }
+      const headers = Object.keys(rows[0]);
+      const csv = [headers.join(',')].concat(
+        rows.map((r) => headers.map((h) => `"${String(r[h]).replace(/"/g, '""')}"`).join(','))
+      ).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `ztu-trading-journal-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $('btnExportXlsx').addEventListener('click', () => {
+      const rows = exportRows();
+      if (!rows.length) { toast('No trades to export.', true); return; }
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Trades');
+      XLSX.writeFile(wb, `ztu-trading-journal-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    });
+  </script>
+
+  <!-- ── CONTENT PROTECTION (parity with site) ── -->
+  <script>
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) || (e.ctrlKey && e.key === 'U')) { e.preventDefault(); }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn the best trading strategy for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trend, zones, risk management, and common mistakes." />
+  <meta name="keywords" content="best trading strategy for beginners, beginner trading strategy, trading strategy for beginners, simple trading strategy, how to trade for beginners, forex trading strategy, gold trading strategy, crypto trading strategy, risk management strategy, beginner trading guide" />
+  <title>Best Trading Strategy for Beginners in 2025 – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/best-trading-strategy-for-beginners-2025.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --lime:    #c89c3f;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+      --teal:    #0d9488;
+      --teal2:   #d4ae5e;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #030e14 0%, #052030 50%, #052538 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(13,148,136,0.14); border: 1px solid rgba(13,148,136,0.32);
+      color: var(--teal2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--teal2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    /* ── TYPOGRAPHY ── */
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px;
+      border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap h3 { font-family: 'Manrope','Inter',sans-serif; font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -.4px; margin: 32px 0 12px; }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    /* Lists */
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--teal2); }
+
+    /* Callout boxes */
+    .tip-box { background: #f5f7ff; border-left: 4px solid var(--purple2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    /* Quick answer */
+    .quick-answer {
+      background: linear-gradient(135deg, #f0fdf9 0%, #e0f7f4 100%);
+      border: 1.5px solid rgba(13,148,136,0.2); border-left: 4px solid var(--teal);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Cause cards */
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(13,148,136,0.35); padding: 16px 20px; background: #f4fbfa; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    /* Mistake items */
+    .mistakes-list { display: flex; flex-direction: column; gap: 16px; margin: 22px 0; }
+    .mistake-item { display: flex; align-items: flex-start; gap: 14px; }
+    .mistake-num { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .mistake-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
+
+    /* Smart steps */
+    .smart-list { display: flex; flex-direction: column; gap: 13px; margin: 22px 0; }
+    .smart-item { display: flex; align-items: flex-start; gap: 14px; background: #f8f9fd; border: 1px solid rgba(0,0,0,0.06); border-radius: 13px; padding: 16px 18px; }
+    .smart-icon { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; background: rgba(13,148,136,0.1); display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .smart-item b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .smart-item p { font-size: 13.5px; color: var(--muted); line-height: 1.65; margin: 0; }
+
+    /* Soft CTA */
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    /* FAQ */
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--teal); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    /* Related articles */
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(13,148,136,0.22); transform: translateY(-2px); border-bottom: 1px solid rgba(13,148,136,0.22); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--teal); margin-top: 2px; }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* ── FOOTER ── */
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-join  { display: none; }
+      .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; }
+      .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; }
+      .article-cta  { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy  { order: 0; }
+    }
+    @media (max-width: 480px) {
+      .container { padding: 0 20px; }
+      .article-cta-btns { flex-direction: column; }
+    }
+  </style>
+  <!-- SEO: Open Graph + Twitter + structured data (auto-injected by KPOS) -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Z Trade University" />
+  <meta property="og:title" content="Best Trading Strategy for Beginners in 2025" />
+  <meta property="og:description" content="Learn the best trading strategy for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trend, zones, risk management, and common mistakes." />
+  <meta property="og:url" content="https://ztradeuniversity.com/best-trading-strategy-for-beginners-2025.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Best Trading Strategy for Beginners in 2025" />
+  <meta name="twitter:description" content="Learn the best trading strategy for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trend, zones, risk management, and common mistakes." />
+  <meta name="twitter:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Best Trading Strategy for Beginners in 2025", "description": "Learn the best trading strategy for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trend, zones, risk management, and common mistakes.", "url": "https://ztradeuniversity.com/best-trading-strategy-for-beginners-2025.html", "mainEntityOfPage": "https://ztradeuniversity.com/best-trading-strategy-for-beginners-2025.html", "image": "https://ztradeuniversity.com/assets/ztu-logo.png", "datePublished": "2026-05-20", "dateModified": "2026-05-20", "author": {"@type": "Organization", "name": "Z Trade University"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ztradeuniversity.com/"}, {"@type": "ListItem", "position": 2, "name": "Articles", "item": "https://ztradeuniversity.com/articles.html"}, {"@type": "ListItem", "position": 3, "name": "Best Trading Strategy for Beginners in 2025", "item": "https://ztradeuniversity.com/best-trading-strategy-for-beginners-2025.html"}]}</script>
+</head>
+<body class="lux-themed">
+
+<!-- ── NAVBAR ── -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"         onclick="toggleMenu()">Home</a>
+  <a href="articles.html"      onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"    onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"         onclick="toggleMenu()">About</a>
+</div>
+
+<!-- ── ARTICLE HERO ── -->
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <a href="articles.html">Articles</a>
+        <span>›</span>
+        <a href="#" aria-current="page">Best Trading Strategy for Beginners</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M6 20V10M12 20V4M18 20v-6"/></svg>
+        Beginner Trading
+      </div>
+      <h1>Best <em>Trading Strategy</em> for Beginners in 2025</h1>
+      <p class="article-desc">Most beginners fail not because markets are too difficult — but because they're using strategies too complex to apply consistently. This guide builds a simple, repeatable framework for Forex, Gold, and Crypto from the ground up.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          12 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ARTICLE CONTENT ── -->
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Best Trading Strategy for Beginners in 2025" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Most beginner traders don't fail because markets are too difficult — they fail because they're trying to follow strategies that are too complex, built on too many conflicting rules, or copied from advanced traders without understanding how to apply them. The result is inconsistency, second-guessing, and eventually abandoning one strategy for the next before it's had a fair chance to prove itself.</p>
+
+    <p>The most effective beginner trading strategy isn't the most sophisticated one. It's the simplest one you can follow consistently — one that defines when to enter, how much to risk, when to exit, and critically, when to stay out. This guide builds that strategy from the ground up, with practical application to Forex, Gold, and Crypto.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>The best trading strategy for beginners combines three elements: <strong>(1)</strong> identify the market trend on the H4 or Daily chart, <strong>(2)</strong> wait for price to reach a key support or resistance zone that aligns with the trend, and <strong>(3)</strong> enter only on a confirmation signal — a rejection candle or price action pattern — with a clear stop loss and minimum 1:2 risk-to-reward ratio. Risk no more than 1–2% of your account per trade. That is the complete framework. Consistency and discipline in applying these rules — not complexity — is what produces results over time.</p>
+    </div>
+
+    <h2>What Makes a Strategy Beginner-Friendly?</h2>
+
+    <p>Before building the strategy, it's worth understanding what separates a beginner-appropriate framework from one that's technically valid but practically unusable. Most trading systems fail beginners not in concept — but in execution under live market pressure.</p>
+
+    <div class="causes-list">
+
+      <div class="cause-item">
+        <b>Simple, Clear Rules That Remove Hesitation</b>
+        <p>A good beginner strategy can be explained in a few sentences. If you need a multi-page manual to understand when to enter, the strategy is too complex to execute consistently under pressure. Simplicity is not a weakness — it's what allows you to act decisively when a setup forms, rather than hesitating through a checklist of conflicting conditions until the opportunity passes.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Works Across Multiple Markets Without Relearning</b>
+        <p>A beginner who learns one strategy should be able to apply the same core logic to Forex pairs, XAUUSD, and crypto without relearning from scratch. The underlying principles — trend, zones, confirmation, and risk — work across all liquid markets. Trying to learn separate strategies for each market simultaneously multiplies confusion without multiplying edge.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Risk Management Built In — Not Added On</b>
+        <p>Any strategy without a defined stop loss, maximum risk per trade, and minimum R:R requirement is incomplete. Risk management is not a separate topic layered on top — it is a structural component of the strategy itself. A setup without a risk framework is not a strategy; it is a directional guess with unpredictable consequences.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Forgiving of Imperfect Execution</b>
+        <p>Beginners will not execute perfectly. Entry timing will sometimes be slightly off. A strategy that only works when triggered at the exact pip — and fails on anything slightly early or late — is not suitable for someone still developing precision. A well-designed beginner strategy allows for reasonable execution variance and still produces valid trade geometry with a workable risk profile.</p>
+      </div>
+
+    </div>
+
+    <h2>Simple 5-Step Trading Strategy for Beginners</h2>
+
+    <p>The following framework applies to Forex, Gold, and Crypto. Every step has a clear purpose — removing any one of them weakens the strategy's mathematical and practical foundation.</p>
+
+    <div class="smart-list">
+
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <b>Step 1 — Identify the Trend on H4 or Daily</b>
+          <p>Start by determining the dominant market direction on the H4 or Daily chart. Are price making higher highs and higher lows (uptrend), lower highs and lower lows (downtrend), or is it moving sideways in a range? Only trade in the direction of the trend. Taking counter-trend trades as a beginner significantly lowers your win probability and increases the frequency of stop-outs before the setup can develop.</p>
+        </div>
+      </div>
+
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </div>
+        <div>
+          <b>Step 2 — Mark Key Support and Resistance Zones</b>
+          <p>On the same timeframe, identify the key horizontal levels where price has previously reversed, stalled, or consolidated. These zones — not precise lines — represent areas where significant buying or selling has occurred historically. Previous daily highs and lows, weekly open levels, and swing points all qualify. Mark them as areas rather than single prices; price rarely reacts to the exact pip.</p>
+        </div>
+      </div>
+
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+          <b>Step 3 — Wait for Price to Enter the Zone</b>
+          <p>Do nothing until price reaches one of your marked zones. This is the hardest step for most beginners — patience. The temptation to enter mid-range or chase price away from the zone is where most beginner losses occur. The zone is where your edge exists. Entering outside it removes the structure that justifies the trade and makes risk management significantly harder.</p>
+        </div>
+      </div>
+
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <b>Step 4 — Wait for a Confirmation Signal</b>
+          <p>Once price enters the zone, do not enter immediately. Wait for a confirmation signal that shows the market is reacting to the zone: a pin bar (long wick rejecting the level), a bearish or bullish engulfing candle, or a clear momentum shift visible on the H1 or H4 chart. The signal does not need to be complex — it needs to show that the zone is actively holding rather than being broken through.</p>
+        </div>
+      </div>
+
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <b>Step 5 — Enter with Stop Loss and 1:2 Minimum R:R</b>
+          <p>Place your stop loss beyond the zone — not at it. If buying at support, stop goes below the swing low of the zone; if selling at resistance, stop goes above the swing high. Target must be at least 2× the stop distance. Risk no more than 1–2% of your account on this trade. If the geometry doesn't produce a 1:2 R:R, the trade is skipped — regardless of how strong the setup appears.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Key Principle</div>
+      <p>One trade at the right zone with a clear confirmation signal beats five trades at random levels. Quality over quantity is not advice — it is the mechanism by which this strategy works. The edge comes from zone confluence, not from trade frequency.</p>
+    </div>
+
+    <h2>How to Use This Strategy in Forex, Gold, and Crypto</h2>
+
+    <p>The five steps above apply universally. The only adjustments needed are for instrument-specific volatility, spread, and timing. Here is how to adapt the framework for each market.</p>
+
+    <div class="causes-list">
+
+      <div class="cause-item">
+        <b>Forex (EUR/USD, GBP/USD, USD/JPY)</b>
+        <p>Identify trend on H4 or Daily. Mark support and resistance from previous daily and weekly highs/lows. Look for pin bars or engulfing candles on H1 or H4 at the zone. Best timing: London session (8:00–12:00 GMT) and the London–New York overlap (13:00–17:00 GMT). Stop loss typically 5–15 pips beyond the zone. Forex pairs are the most beginner-friendly market for this strategy — spreads are tight, liquidity is deep, and moves are generally more gradual than gold or crypto.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Gold / XAUUSD</b>
+        <p>Same trend and zone approach, but widen your zone boundaries to account for higher volatility. Stop losses of 20–35 pips beyond the zone are typical for gold. Use the London–New York overlap for the highest-probability entries. Always check the economic calendar before entering — CPI, NFP, and FOMC announcements can move XAUUSD 80–200 pips in seconds, invalidating even structurally valid setups instantly. Reduce position size relative to Forex to account for the wider stops and higher pip value.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>Crypto (BTC, ETH)</b>
+        <p>The same framework applies, but stop losses must be wider still — typically 1.5–3% of price for major coins. Use percentage-based risk rather than pip-based. Trade Bitcoin and Ethereum only until the strategy is consistently profitable; avoid mid-cap and low-cap altcoins until you have at least 50 documented trades with a positive expectancy. Despite the 24/7 market, focus on London and New York hours — price action is most structured and reliable when traditional institutional participants are active.</p>
+      </div>
+
+    </div>
+
+    <h2>Common Beginner Strategy Mistakes</h2>
+
+    <p>Understanding the strategy is the easy part. These are the execution errors that prevent beginners from ever seeing the strategy's actual edge in their results.</p>
+
+    <div class="mistakes-list">
+
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div>
+          <b>Switching Strategy Before Giving It Enough Trades</b>
+          <p>Any strategy needs 50–100 completed trades to demonstrate whether it has a statistical edge. Beginners routinely switch after 5–10 losses — never allowing any strategy the sample size needed to separate temporary variance from genuine failure. Every strategy has losing streaks. The only way to know if a strategy works is to follow it long enough to measure actual expectancy. Switching early guarantees you will never find out.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div>
+          <b>Entering Trades Without a Pre-Defined Plan</b>
+          <p>If you cannot state — before entering — exactly where your stop loss is, exactly where your target is, and exactly what percentage of your account is at risk, you are not ready to enter. "It looks like it might go up" is an observation, not a trade plan. Every trade must have complete parameters defined before execution. If any element is missing or unclear, the trade is not taken.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div>
+          <b>Overtrading to Compensate for Waiting</b>
+          <p>The strategy requires waiting — for the zone, then for the confirmation. This inactivity is uncomfortable. The most common response is to force trades at suboptimal levels: entering in the middle of a range, chasing a breakout, or taking a setup that almost fits the criteria. These are not strategy trades — they are impatience trades. Every extra trade taken outside the strategy's criteria degrades the overall performance average.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div>
+          <b>Following Signals Without Applying Context</b>
+          <p>Signal services and social media trade ideas are starting points, not completed strategies. A signal that says "buy gold at $2,380" does not tell you whether that level is a support zone on the higher timeframe, whether the trend is bullish, whether the R:R is valid, or whether a news event is imminent. Before acting on any external signal, run it through your own framework. If it doesn't meet your criteria, it is not your trade.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div>
+          <b>Skipping the Demo Phase Entirely</b>
+          <p>Trading real money before validating a strategy on a demo account means paying real losses for a learning process that could be free. A minimum 30 days of demo trading — tracking every entry, stop, target, and result — before going live is not a conservative suggestion. It is the practical difference between arriving at a live account with data about your strategy's actual win rate and arriving with nothing but confidence based on paper trades you didn't track.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Educational Disclaimer</div>
+      <p>This article is for educational purposes only and does not constitute financial advice. No trading strategy — including the framework described here — guarantees profitable results. All trading involves significant risk of loss. Past performance and hypothetical examples do not guarantee future results. Always conduct your own research and consult a qualified financial adviser before trading with real capital.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>beginner-friendly trading guidance</span> and research-based market analysis?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for trading zones, structured educational content, and practical guidance for Forex, Gold, and Crypto beginners.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="top-10-forex-trading-mistakes.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Top 10 Forex Trading Mistakes Beginners Make</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-risk-management-strategy.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Best Risk Management Strategy for Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-time-to-trade-gold-xauusd.html" class="related-card">
+          <span class="related-cat">Gold Trading</span>
+          <span class="related-title">Best Time to Trade Gold (XAUUSD) for Beginners</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="how-to-start-forex-trading-2025.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">How to Start Forex Trading in 2025 (Beginner Step-by-Step Guide)</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the best trading strategy for beginners in 2025?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The best beginner trading strategy in 2025 combines three core elements: identifying the market trend on the H4 or Daily chart, waiting for price to reach a clearly marked support or resistance zone, and entering only on a confirmation signal — such as a pin bar or engulfing candle — with a stop loss beyond the zone and a minimum 1:2 risk-to-reward ratio. Risk no more than 1–2% of your account per trade. This framework works across Forex, Gold, and Crypto without requiring separate strategies for each market. Simplicity and consistency in applying the rules matter more than any exotic indicator or complex system.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How long does it take to learn a trading strategy as a beginner?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Most beginners need 3–6 months of consistent practice — primarily on demo accounts — before a strategy becomes truly executable under live conditions. The concepts themselves (trend, zones, confirmation, risk) can be understood within a few weeks. The challenge is building the habit of applying them consistently under the psychological pressure of real or simulated money. A useful benchmark is completing 50–100 demo trades with documented entries, stops, targets, and outcomes before trading live. This gives you real data on your actual execution quality rather than theoretical confidence.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Can the same trading strategy work for Forex, Gold, and Crypto?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — the core principles of trend identification, support/resistance zones, entry confirmation, and risk management apply across Forex, Gold (XAUUSD), and major cryptocurrencies like Bitcoin and Ethereum. The primary adjustments are for volatility: Forex pairs typically require the tightest stops, Gold requires wider stops due to higher volatility, and Crypto requires the widest stops and smallest position sizes. The logical framework — wait for the trend, wait for the zone, wait for the signal, manage the risk — does not change between markets. This is one of the key advantages of learning a structure-based strategy rather than an indicator-based one.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How much should I risk per trade as a beginner trader?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Beginners should risk no more than 1% of their account balance per trade — ideally starting with 0.5% while still learning. At 1% risk, you would need 50 consecutive losses to lose half your account, which gives any reasonable strategy ample room to perform over time. Risking higher amounts — 5%, 10%, or more — turns normal losing streaks into account-destroying events. The goal of small risk per trade is not to limit gains; it's to survive long enough to develop genuine skill. Once a strategy has demonstrated consistent results over 50–100 trades, position sizing can be gradually reviewed.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Should I practice on a demo account before trading live?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — a demo account phase is strongly recommended for all beginners and should not be skipped. Demo trading allows you to learn execution mechanics, validate your strategy's rules, make mistakes without financial consequences, and build the habit of following a process consistently. A minimum 30 days of demo trading with documented trades before going live is a sensible standard. One important caveat: treat demo trades with the same seriousness as real money — use the same lot sizes, the same stop losses, and the same emotional discipline. Demo trading used as casual practice produces nothing useful; demo trading used as a real dry-run produces genuine data.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is support and resistance in trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Support and resistance are price zones where a market has historically paused, reversed, or consolidated — indicating that significant buying or selling occurred at those levels. Support is a zone below current price where buying pressure has previously overcome selling (price bounced up from this area). Resistance is a zone above current price where selling pressure has previously overcome buying (price was rejected down from this area). These are zones, not precise lines — price may overshoot slightly before reacting. Identifying and trading from these zones forms the structural backbone of most professional short-to-medium term trading strategies, including the beginner framework described in this article.</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- END FAQ -->
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text">
+          <b>Z Trade University</b>
+          <small>University</small>
+        </div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a>
+        <span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a>
+        <span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>

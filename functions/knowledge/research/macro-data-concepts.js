@@ -1,0 +1,110 @@
+// functions/knowledge/research/macro-data-concepts.js
+// ════════════════════════════════════════════════════════════════════════════
+// PRODUCTION UPGRADE — closes the acronym coverage gap flagged in audit: GDP,
+// PMI, ISM, ADP, and ECB had no dedicated concept (only FED/NFP/CPI/PPI/FOMC
+// existed in research/concepts.js). Additive only — new file, one import line
+// in knowledge/index.js, concatenated onto the existing `research` category.
+// Same KOS shape as research/concepts.js so kos-validator/dedup/review/
+// retrieval treat these identically to the rest of the library.
+// ════════════════════════════════════════════════════════════════════════════
+
+export const MACRO_DATA_CONCEPTS = [
+  {
+    id: 'gdp-report', category: 'research', topic: 'GDP (Gross Domestic Product)', level: 'intermediate',
+    title: 'GDP and Why It Moves Markets', intent: 'macro',
+    concepts: ['gdp', 'gross domestic product', 'growth', 'economic growth'],
+    questionPatterns: ['what is gdp', 'what is gross domestic product', 'how does gdp affect markets', 'why does gdp move the dollar', 'gdp explained', 'how does gdp affect gold'],
+    canonical: {
+      short: 'GDP measures total economic output — the broadest read on whether an economy is growing or shrinking. Stronger-than-expected GDP usually supports the dollar and pressures gold short-term by raising growth/rate expectations; weak GDP does the reverse.',
+      deep: 'GDP is released quarterly (with preliminary/advance, second, and final estimates), so markets often react more to the surprise versus forecast than the absolute number. Strong growth can firm up the case for higher-for-longer rates (dollar up, gold pressured); a weak or negative print (especially two straight quarters, the informal recession signal) can trigger risk-off or rate-cut bets, which can actually lift gold despite slowing growth. Treat GDP as a slower-moving macro confirmation rather than a scalping trigger — the bigger, faster-moving releases (NFP, CPI) usually drive the week-to-week reaction.',
+    },
+    marketContext: 'US GDP prints are watched closely around recession-risk periods — two consecutive negative quarters (e.g. H1 2022) reignited "recession vs soft landing" debates that whipsawed the dollar and gold for weeks.',
+    responseObjective: 'educate', desiredOutcome: 'read GDP as a growth-trend confirmation, not a single-print trigger',
+    relevanceTags: ['research', 'gdp', 'macro'],
+    guidance: { tradeProblem: true },
+    commonMistakes: ['treating one GDP print as decisive instead of a trend confirmation', 'ignoring the surprise-vs-forecast gap and reacting to the headline number alone'],
+    misconceptions: ['GDP is a single live number — it is actually released as preliminary, second, and final estimates that can each move markets'],
+    related: ['fomc', 'rate-cycles', 'gold-macro-model'], prerequisites: ['interest-rates'],
+    nextSteps: ['pmi-report'], followups: ['fomc', 'economic-calendar'],
+    riskNote: 'GDP reactions can be choppy and two-sided — confirm direction with structure before sizing up.',
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+  {
+    id: 'pmi-report', category: 'research', topic: 'PMI (Purchasing Managers Index)', level: 'intermediate',
+    title: 'PMI — Manufacturing and Services', intent: 'macro',
+    concepts: ['pmi', 'purchasing managers index', 'manufacturing pmi', 'services pmi'],
+    questionPatterns: ['what is pmi', 'what is purchasing managers index', 'manufacturing pmi vs services pmi', 'how does pmi affect markets', 'pmi explained', 'is pmi above or below 50 good'],
+    canonical: {
+      short: 'PMI is a survey-based gauge of business activity in manufacturing and services. A reading above 50 signals expansion, below 50 signals contraction — and because it is released early and monthly, it is one of the fastest "real-time" reads on the economy.',
+      deep: 'PMI surveys purchasing managers on new orders, output, employment, and prices, then compiles them into a single index centred on 50. Because PMI comes out well before GDP, traders use it to front-run the growth narrative — a string of sub-50 manufacturing prints often pressures the local currency and can lift gold on growth-worry flows, while strong services PMI can support a currency on resilient-economy expectations. Manufacturing and services PMI can diverge (manufacturing weak, services strong is common), so read them together rather than picking one.',
+    },
+    marketContext: 'Eurozone manufacturing PMI spent extended periods below 50 through 2023, repeatedly weighing on EUR sentiment even as services PMI held up better.',
+    responseObjective: 'educate', desiredOutcome: 'use the 50-line and the manufacturing/services split to read growth momentum early',
+    relevanceTags: ['research', 'pmi', 'macro'],
+    guidance: { tradeProblem: true },
+    commonMistakes: ['reacting to manufacturing PMI alone while ignoring the (often larger) services component'],
+    misconceptions: ['PMI is a hard economic measurement — it is actually a survey/sentiment-based diffusion index'],
+    related: ['gdp-report', 'ism-report', 'gold-macro-model'], prerequisites: ['gdp-report'],
+    nextSteps: ['ism-report'], followups: ['economic-calendar', 'fomc'],
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+  {
+    id: 'ism-report', category: 'research', topic: 'ISM Manufacturing & Services', level: 'intermediate',
+    title: 'ISM Manufacturing and Services Index', intent: 'macro',
+    concepts: ['ism', 'ism manufacturing', 'ism services', 'ism report'],
+    questionPatterns: ['what is ism', 'what is the ism report', 'ism manufacturing index', 'ism vs pmi', 'ism services explained', 'how does ism move the dollar'],
+    canonical: {
+      short: 'ISM is the US equivalent of a PMI survey, published by the Institute for Supply Management, covering manufacturing and (separately) services. Like PMI, 50 is the expansion/contraction line, and the US dollar and rate expectations react to surprises versus forecast.',
+      deep: 'ISM Manufacturing and ISM Services are among the most-watched early US growth indicators because they land before GDP and include forward-looking sub-components (new orders, prices paid) that hint at future inflation and hiring. A hot prices-paid sub-index can revive inflation/rate-hike fears even if the headline ISM is unremarkable, so professional readers check the internals, not just the headline. ISM and PMI (S&P Global) sometimes diverge on the same economy because they survey different panels — when they disagree, treat the data as mixed rather than picking whichever confirms your bias.',
+    },
+    marketContext: 'ISM Manufacturing spent much of 2023 below 50 while the broader US economy kept growing — a reminder that one sub-index missing the 50 line doesn\'t override the bigger macro picture.',
+    responseObjective: 'educate', desiredOutcome: 'read ISM headline AND sub-components (new orders, prices paid) together',
+    relevanceTags: ['research', 'ism', 'macro'],
+    guidance: { tradeProblem: true },
+    commonMistakes: ['trading the ISM headline number while ignoring the prices-paid/new-orders sub-indices that often drive the real reaction'],
+    misconceptions: ['ISM and PMI always agree because they measure "the same thing" — they use different survey panels and can diverge'],
+    related: ['pmi-report', 'gdp-report', 'adp-report'], prerequisites: ['pmi-report'],
+    nextSteps: ['adp-report'], followups: ['economic-calendar', 'fomc'],
+    status: 'published', origin: 'authored', confidence: 'MEDIUM', lang: 'en',
+  },
+  {
+    id: 'adp-report', category: 'research', topic: 'ADP Employment Report', level: 'intermediate',
+    title: 'ADP Employment Report', intent: 'macro',
+    concepts: ['adp', 'adp employment', 'adp jobs', 'adp payrolls'],
+    questionPatterns: ['what is adp report', 'what is the adp jobs report', 'adp vs nfp', 'how does adp affect markets', 'adp employment explained', 'is adp a good predictor of nfp'],
+    canonical: {
+      short: 'ADP is a private-payrolls report released two days before NFP, covering private-sector job creation. Traders watch it as an early (imperfect) hint of what NFP might show, so it can move markets on its own even though its correlation to the official NFP print is loose.',
+      deep: 'Because ADP lands just ahead of the more market-moving NFP release, a big ADP beat or miss can shift NFP expectations and cause a smaller pre-shock in the dollar and gold — then NFP itself can still surprise in the opposite direction, since ADP\'s methodology and coverage differ from the government\'s survey. Treat ADP as a volatility event in its own right, not a reliable forecast of NFP; sizing discipline into both releases matters more than trying to "front-run" NFP off ADP.',
+    },
+    marketContext: 'ADP has missed the following NFP print\'s direction often enough that desks treat a big ADP surprise as a tradable event on its own, while staying cautious about extrapolating it straight into NFP positioning.',
+    responseObjective: 'warn', desiredOutcome: 'trade ADP as its own event without assuming it predicts NFP',
+    relevanceTags: ['research', 'adp', 'nfp', 'news'],
+    guidance: { tradeProblem: true },
+    commonMistakes: ['building a large NFP position purely from an ADP surprise, then getting caught when NFP diverges'],
+    misconceptions: ['ADP is a reliable preview of NFP — historically the two have diverged significantly in many months'],
+    related: ['nfp', 'fomc', 'economic-news-impact'], prerequisites: ['nfp'],
+    nextSteps: ['nfp'], followups: ['nfp', 'economic-calendar'],
+    riskNote: 'Reduce size into ADP the same way you would into NFP — it is a genuine volatility event, not a low-impact data point.',
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+  {
+    id: 'ecb-policy', category: 'research', topic: 'ECB (European Central Bank) Policy', level: 'intermediate',
+    title: 'The ECB and Euro Rate Decisions', intent: 'macro',
+    concepts: ['ecb', 'european central bank', 'ecb rate decision', 'eurozone policy'],
+    questionPatterns: ['what is the ecb', 'what does the ecb do', 'how does the ecb affect eurusd', 'ecb rate decision explained', 'ecb vs fed', 'why does the ecb move the euro'],
+    canonical: {
+      short: 'The ECB is the Eurozone\'s central bank — its equivalent of the Fed. Its rate decisions, statement, and press conference move EUR pairs (and gold, via the dollar) the same way FOMC moves the dollar: the tone versus expectations usually matters more than the rate move itself.',
+      deep: 'The ECB sets policy for the entire Eurozone (19+ member states), so its decisions reflect a harder balancing act than a single-country central bank — a rate path that suits Germany may not suit a weaker peripheral economy. Markets trade the policy DIFFERENTIAL between the ECB and the Fed: when the Fed is hawkish and the ECB dovish (or vice versa), that divergence — not either bank in isolation — is what drives sustained EURUSD trends. President\'s press-conference language ("hawkish hold," "dovish cut," forward guidance on future meetings) is often the bigger mover than the decision itself.',
+    },
+    marketContext: 'In 2014–2015 the Fed leaned toward tightening while the ECB launched aggressive QE — that policy divergence drove EURUSD from roughly 1.39 down to parity-adjacent levels over the following years.',
+    responseObjective: 'educate', desiredOutcome: 'trade the Fed–ECB policy differential, not the ECB decision in isolation',
+    relevanceTags: ['research', 'ecb', 'macro'],
+    guidance: { tradeProblem: true },
+    commonMistakes: ['trading an ECB decision without checking what the Fed is doing on the other side of the pair'],
+    misconceptions: ['the ECB rate decision number is what moves EURUSD — the press conference tone and forward guidance usually move it more'],
+    related: ['fomc', 'forex-macro-model', 'interest-rates'], prerequisites: ['fomc'],
+    nextSteps: ['forex-macro-model'], followups: ['fomc', 'economic-calendar'],
+    riskNote: 'ECB decision days can whipsaw EUR pairs both ways — be flat or reduced into the press conference.',
+    status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en',
+  },
+];

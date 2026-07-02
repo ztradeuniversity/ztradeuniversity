@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Request MT5 bot license activation through Z Trade University. Submit your MT5 account, email, and WhatsApp number for fast, secure approval." />
+  <meta name="keywords" content="mt5 bot license, mt5 license request, ztu bot activation, trading bot license, mt5 account verification" />
+  <title>Request MT5 Bot License | Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/license-request.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS via CDN (no framework, no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --navy2:   #0d0902;
+      --gold:    #c89c3f;
+      --gold2:   #d4ae5e;
+      --gold3:   #8c6c1f;
+      --gold4:   #e6c987;
+      --cream:   #faf7f2;
+      --cream2:  #f0e8d8;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --success: #1f8a4d;
+      --danger:  #b13a3a;
+      --border:  rgba(200,156,63,0.15);
+      --radius:  16px;
+      --radius2: 24px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── (matches site standard) */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--gold); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--gold); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--gold); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; flex-direction: column; align-items: flex-start;
+      position: fixed; inset: 0; z-index: 200; background: rgba(250,247,242,0.98);
+      padding: 32px 28px; gap: 4px; backdrop-filter: blur(12px);
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 0; border-radius: 14px; transition: color .18s; width: 100%; }
+    .mobile-menu a:hover { color: var(--gold); }
+    .mobile-close { align-self: flex-end; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text); margin-bottom: 20px; padding: 8px; }
+
+    /* ══════════════════════════════════════════
+       HERO — dark luxury, gold accents
+    ══════════════════════════════════════════ */
+    .lic-hero {
+      padding: 120px 0 80px;
+      background: linear-gradient(145deg, #0d0902 0%, #1a1008 40%, #2b1e04 80%, #3d2a08 100%);
+      position: relative; overflow: hidden;
+    }
+    .lic-hero::before {
+      content: ''; position: absolute; top: -120px; right: -120px;
+      width: 620px; height: 620px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.14) 0%, transparent 68%);
+      pointer-events: none;
+      animation: licOrb 14s ease-in-out infinite alternate;
+    }
+    .lic-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(200,156,63,0.05) 1px, transparent 1px);
+      background-size: 36px 36px; pointer-events: none;
+    }
+    @keyframes licOrb {
+      0%   { transform: translate(0, 0)   scale(1); }
+      100% { transform: translate(-40px, 30px) scale(1.08); }
+    }
+    .lic-hero-inner { position: relative; z-index: 1; max-width: 760px; }
+
+    /* Hero typography — high specificity to win cleanly against lux-global */
+    .lic-hero .lic-hero-inner .lic-eyebrow-pill,
+    .lic-hero .lic-eyebrow-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(200,156,63,0.18); border: 1px solid rgba(200,156,63,0.45);
+      color: #e6c987 !important; font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .9px;
+      text-transform: uppercase; margin-bottom: 22px;
+    }
+    .lic-hero .lic-hero-inner h1,
+    .lic-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: clamp(30px, 5vw, 54px) !important; font-weight: 900 !important;
+      color: #ffffff !important; letter-spacing: -1.8px !important;
+      line-height: 1.07 !important; margin-bottom: 22px !important;
+    }
+    .lic-hero .lic-hero-inner h1 em,
+    .lic-hero h1 em { color: #d4ae5e !important; font-style: normal !important; }
+
+    .lic-hero .lic-hero-inner .lic-subtitle,
+    .lic-hero .lic-subtitle {
+      font-size: 17px !important; color: #ede8e0 !important;
+      line-height: 1.74 !important; max-width: 640px !important; margin-bottom: 30px !important;
+    }
+
+    /* Trust badges row */
+    .lic-trust-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .lic-trust-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(200,156,63,0.22);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      color: #d4ae5e !important;
+      font-size: 12.5px; font-weight: 700;
+      padding: 9px 16px; border-radius: 100px;
+      letter-spacing: .2px;
+    }
+    .lic-trust-chip svg { flex-shrink: 0; color: #d4a955; }
+
+    /* ══════════════════════════════════════════
+       FORM SECTION
+    ══════════════════════════════════════════ */
+    .lic-form-section {
+      padding: 76px 0 96px; background: var(--cream);
+      position: relative; overflow: hidden;
+    }
+    .lic-form-section::before {
+      content: ''; position: absolute; top: -1px; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(200,156,63,0.45), transparent);
+    }
+
+    .lic-form-wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 36px; align-items: start; max-width: 1040px; margin: 0 auto; }
+
+    .lic-form-card {
+      background: var(--white); border: 1px solid rgba(200,156,63,0.22);
+      border-radius: 24px; padding: 44px 44px 36px;
+      box-shadow: 0 8px 32px rgba(45,30,5,0.07), 0 2px 0 rgba(255,255,255,0.6) inset;
+      position: relative; overflow: hidden;
+    }
+    .lic-form-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+    }
+    .lic-form-kicker { font-size: 11px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold3); margin-bottom: 10px; }
+    .lic-form-card h2 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: 24px !important; font-weight: 900 !important; color: var(--text) !important;
+      letter-spacing: -.6px !important; line-height: 1.18 !important; margin-bottom: 8px !important;
+    }
+    .lic-form-card .lic-form-intro { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 30px; }
+
+    /* Field group */
+    .lic-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+    .lic-field label {
+      font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: .3px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lic-field label .lic-req { color: var(--gold3); font-weight: 800; }
+    .lic-field input[type="text"],
+    .lic-field input[type="email"],
+    .lic-field select {
+      width: 100%;
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
+      color: var(--text);
+      padding: 14px 16px; border-radius: 12px;
+      border: 1.5px solid rgba(200,156,63,0.22);
+      background: #fdfbf6;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    /* EXTENSION — broker dropdown styling (matches existing input vibe) */
+    .lic-field select {
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238c6c1f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
+    }
+    .lic-field select:invalid { color: #b3a896; font-weight: 400; }
+    .lic-field select option { color: var(--text); font-weight: 500; }
+    .lic-field input::placeholder { color: #b3a896; font-weight: 400; }
+    .lic-field input:focus,
+    .lic-field select:focus {
+      border-color: var(--gold);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(200,156,63,0.13);
+    }
+    .lic-field.lic-error input,
+    .lic-field.lic-error select { border-color: var(--danger); background: #fff5f5; }
+    .lic-field-msg {
+      font-size: 12px; color: var(--danger); font-weight: 600;
+      margin-top: 4px; display: none;
+    }
+    .lic-field.lic-error .lic-field-msg { display: block; }
+
+    /* Phase 16.8 — Screenshot upload CSS removed.
+       .lic-drop*, .lic-preview*, @keyframes licFadeIn no longer needed. */
+
+    /* Submit button */
+    .lic-submit {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold3) 0%, var(--gold) 50%, var(--gold2) 100%);
+      color: #0d0902 !important; font-family: 'Inter', sans-serif;
+      font-size: 15.5px; font-weight: 800; letter-spacing: -.2px;
+      padding: 17px 28px; border-radius: 100px; border: none;
+      cursor: pointer; text-decoration: none;
+      box-shadow: 0 8px 28px rgba(200,156,63,0.42), 0 2px 0 rgba(255,255,255,0.12) inset;
+      transition: transform .22s, box-shadow .22s, filter .22s, opacity .18s;
+      margin-top: 6px;
+    }
+    .lic-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(200,156,63,0.55); filter: brightness(1.06); }
+    .lic-submit:disabled { opacity: .78; cursor: not-allowed; transform: none; }
+    /* Submit button has TWO inner states: default label + loading (spinner + "Submitting Request...") */
+    .lic-submit .lic-submit-label   { display: inline-flex; align-items: center; gap: 10px; }
+    .lic-submit .lic-submit-loading { display: none;        align-items: center; gap: 10px; }
+    .lic-submit.is-loading .lic-submit-label   { display: none; }
+    .lic-submit.is-loading .lic-submit-loading { display: inline-flex; }
+    .lic-spinner {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2.5px solid rgba(13,9,2,0.22); border-top-color: #0d0902;
+      animation: licSpin .8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes licSpin { to { transform: rotate(360deg); } }
+
+    .lic-tos {
+      font-size: 11.5px; color: var(--muted); line-height: 1.55;
+      text-align: center; margin-top: 16px;
+    }
+    .lic-tos b { color: var(--text); font-weight: 700; }
+
+    /* ══════════════════════════════════════════
+       SIDE INFO CARD
+    ══════════════════════════════════════════ */
+    .lic-info {
+      background: linear-gradient(160deg, var(--navy2) 0%, var(--navy) 60%, #2b1e04 100%);
+      color: #ede8e0; border-radius: 24px; padding: 36px 32px;
+      box-shadow: 0 8px 32px rgba(13,9,2,0.18);
+      position: relative; overflow: hidden;
+    }
+    .lic-info::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.16) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    /* Renamed from .lic-info-eyebrow to .lic-info-tag — the original name ended in
+       "-eyebrow" and got caught by lux-global's [class$="-eyebrow"] rule, which forced
+       it to dark muddy gold. The new name breaks that substring match cleanly. */
+    .lic-info-tag {
+      display: inline-block; font-size: 10.5px; font-weight: 800;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: #f4d98a !important;
+      background: rgba(230,201,135,0.18); border: 1px solid rgba(230,201,135,0.45);
+      padding: 5px 12px; border-radius: 100px; margin-bottom: 16px;
+      position: relative; z-index: 1;
+    }
+    /* High-specificity selector beats lux-global's `body.lux-themed h3` rule cleanly. */
+    .lic-info h3,
+    body.lux-themed .lic-info h3 {
+      font-family: 'Manrope','Inter',sans-serif !important;
+      font-size: 22px !important; font-weight: 900 !important;
+      color: #ffffff !important;
+      letter-spacing: -.5px !important; line-height: 1.2 !important;
+      margin-bottom: 12px !important;
+      position: relative; z-index: 1;
+    }
+    .lic-info > p {
+      font-size: 14px; color: #c4bdb5; line-height: 1.66;
+      margin-bottom: 26px; position: relative; z-index: 1;
+    }
+    .lic-steps { list-style: none; display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 1; }
+    .lic-steps li { display: flex; align-items: flex-start; gap: 14px; }
+    .lic-step-num {
+      width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(135deg, #3d2a08, #8c6c1f);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 900;
+      color: var(--gold4); margin-top: 2px;
+    }
+    .lic-step-text b { color: #ffffff; font-size: 14px; font-weight: 700; display: block; margin-bottom: 2px; }
+    .lic-step-text small { color: #b0a89e; font-size: 12.5px; font-weight: 500; line-height: 1.55; }
+
+    .lic-info-foot {
+      margin-top: 28px; padding-top: 22px;
+      border-top: 1px solid rgba(200,156,63,0.18);
+      display: flex; align-items: center; gap: 12px;
+      position: relative; z-index: 1;
+    }
+    .lic-info-foot svg { color: var(--gold2); flex-shrink: 0; }
+    .lic-info-foot span { font-size: 12.5px; color: #c4bdb5; line-height: 1.5; }
+    .lic-info-foot span b { color: #ede8e0; font-weight: 700; }
+
+    /* ══════════════════════════════════════════
+       SUCCESS / ERROR TOAST OVERLAY
+    ══════════════════════════════════════════ */
+    .lic-toast-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(13,9,2,0.72);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+      opacity: 0; transition: opacity .25s;
+    }
+    .lic-toast-overlay.is-open { display: flex; opacity: 1; }
+    .lic-toast {
+      width: 100%; max-width: 480px;
+      background: var(--white); border-radius: 22px;
+      padding: 36px 32px 28px; text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+      position: relative; overflow: hidden;
+      transform: translateY(12px) scale(.98);
+      transition: transform .28s cubic-bezier(.2,.8,.2,1);
+    }
+    .lic-toast-overlay.is-open .lic-toast { transform: translateY(0) scale(1); }
+    .lic-toast::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+    }
+    .lic-toast.is-success::before { background: linear-gradient(90deg, #0f6b3a, #1f8a4d, #36b774); }
+    .lic-toast.is-error::before   { background: linear-gradient(90deg, #7a1f1f, #b13a3a, #d96a6a); }
+
+    .lic-toast-icon {
+      width: 64px; height: 64px; border-radius: 18px; margin: 4px auto 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lic-toast.is-success .lic-toast-icon { background: linear-gradient(135deg, #d8f3e3, #f0fbf4); color: var(--success); border: 1px solid rgba(31,138,77,0.2); }
+    .lic-toast.is-error   .lic-toast-icon { background: linear-gradient(135deg, #fbe3e3, #fff2f2); color: var(--danger);  border: 1px solid rgba(177,58,58,0.2); }
+    .lic-toast h3 {
+      font-family: 'Manrope','Inter',sans-serif; font-size: 22px; font-weight: 900;
+      color: var(--text); letter-spacing: -.4px; line-height: 1.2; margin-bottom: 10px;
+    }
+    .lic-toast > p { font-size: 14.5px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+    .lic-toast-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .lic-toast-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 100px;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: transform .18s, background .2s, box-shadow .2s;
+    }
+    .lic-toast-primary {
+      background: linear-gradient(135deg, var(--gold3), var(--gold), var(--gold2));
+      color: #0d0902;
+      box-shadow: 0 4px 14px rgba(200,156,63,0.32);
+    }
+    .lic-toast-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(200,156,63,0.45); }
+    .lic-toast-ghost {
+      background: rgba(45,30,5,0.06); color: var(--text);
+      border: 1px solid rgba(200,156,63,0.22);
+    }
+    .lic-toast-ghost:hover { background: rgba(45,30,5,0.10); }
+
+    /* ── Phase 16.8 — Prominent spam-folder notice on success ──
+       Bold, centered, high-contrast, mobile-responsive.
+       Visible only inside a success toast. */
+    .lic-spam-note {
+      display: none;
+      font-size: 17px;
+      font-weight: 800;
+      color: #5a3e10;
+      background: linear-gradient(135deg, rgba(200,156,63,0.18), rgba(200,156,63,0.08));
+      border: 2px solid rgba(200,156,63,0.55);
+      border-radius: 14px;
+      padding: 18px 18px;
+      margin: 6px 0 22px;
+      text-align: center;
+      line-height: 1.45;
+      letter-spacing: .2px;
+      box-shadow: 0 6px 22px rgba(200,156,63,0.18), 0 1px 0 rgba(255,255,255,0.4) inset;
+      text-transform: none;
+    }
+    .lic-toast.is-success .lic-spam-note { display: block; }
+    .lic-spam-note strong {
+      color: #4a2f06;
+      font-weight: 900;
+    }
+    @media (max-width: 480px) {
+      .lic-spam-note {
+        font-size: 15.5px;
+        padding: 14px 14px;
+        border-radius: 12px;
+      }
+    }
+
+    /* ── FOOTER ── */
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--gold2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 15px; font-weight: 900; color: var(--gold4);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.42); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════ */
+    @media (max-width: 920px) {
+      .lic-form-wrap { grid-template-columns: 1fr; gap: 26px; }
+      /* Phase 16.8 mobile UX — form FIRST, info card BELOW.
+         Previously the info card was forced above the form via order:-1, which
+         pushed the Submit button well below the fold on phones. */
+      .lic-form-card { order: 0; }
+      .lic-info      { order: 1; }
+    }
+    @media (max-width: 680px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      /* Phase 16.8 — tighter hero so the form sits closer to viewport top */
+      .lic-hero { padding: 84px 0 40px; }
+      .lic-form-section { padding: 36px 0 56px; }
+      .lic-form-card { padding: 26px 20px 22px; }
+      .lic-info { padding: 28px 24px; }
+      .lic-trust-chip { padding: 8px 13px; font-size: 12px; }
+      /* Phase 16.8 — guarantee the Submit button is a comfortable thumb target
+         and never crushes against the ToS footer line. */
+      .lic-submit {
+        min-height: 52px;
+        padding: 16px 22px;
+        font-size: 15px;
+      }
+      .lic-tos { margin-top: 12px; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 420px) {
+      .lic-hero .lic-hero-inner h1,
+      .lic-hero h1 { letter-spacing: -1px !important; }
+      /* Phase 16.8 — minor tighten so form-card title + Submit fit one phone screen */
+      .lic-form-card h2 { font-size: 22px; }
+      .lic-form-intro { font-size: 13.5px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy { order: 0; }
+    }
+
+    /* ══════════════════════════════════════════
+       PHASE 13.6 — INTERNATIONAL PHONE INPUT
+       Two-part field: country code selector + local number input
+    ══════════════════════════════════════════ */
+
+    /* Outer wrapper — shared border + focus ring */
+    .lic-phone-row {
+      display: flex;
+      border: 1.5px solid rgba(200,156,63,0.22);
+      border-radius: 12px;
+      background: #fdfbf6;
+      overflow: visible;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .lic-phone-row:focus-within {
+      border-color: var(--gold);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(200,156,63,0.13);
+    }
+
+    /* Error state — only the wrapper turns red; children stay transparent */
+    .lic-field.lic-error .lic-phone-row  { border-color: var(--danger); background: #fff5f5; }
+    .lic-field.lic-error .lic-phone-local  { background: transparent; border-color: transparent; }
+    .lic-field.lic-error .lic-cc-btn      { background: transparent; }
+
+    /* Left side — custom searchable country picker */
+    .lic-phone-cc-wrap {
+      position: relative;
+      flex-shrink: 0;
+      border-right: 1.5px solid rgba(200,156,63,0.18);
+    }
+    /* No position:relative here — panel's containing block is .lic-phone-cc-wrap (position:relative)
+       so top:calc(100%+5px) resolves to the wrap's flex-determined height, not a 0-height child */
+    .lic-cc-picker { display: flex; align-items: stretch; height: 100%; }
+
+    /* Trigger button — shows "PK (+92)" compact label */
+    .lic-cc-btn {
+      display: flex; align-items: center; gap: 6px;
+      height: 100%; padding: 0 10px 0 14px;
+      border: none; background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: .01em;
+      color: var(--text);
+      cursor: pointer; white-space: nowrap; min-width: 112px;
+      outline: none;
+    }
+    .lic-cc-btn:focus-visible {
+      outline: 2px solid var(--gold); outline-offset: -3px; border-radius: 4px;
+    }
+    .lic-cc-caret {
+      width: 9px; height: 5px; flex-shrink: 0;
+      color: var(--muted); transition: transform .18s;
+    }
+    .lic-cc-picker.is-open .lic-cc-caret { transform: rotate(180deg); }
+
+    /* Dropdown panel */
+    .lic-cc-panel {
+      display: none;
+      position: absolute; top: calc(100% + 5px); left: 0; z-index: 9999;
+      width: 240px;
+      background: #fff;
+      border: 1.5px solid rgba(200,156,63,0.3);
+      border-radius: 10px;
+      box-shadow: 0 10px 32px rgba(0,0,0,.14);
+      overflow: hidden;
+    }
+    .lic-cc-picker.is-open .lic-cc-panel { display: block; }
+
+    /* Search input inside panel */
+    .lic-cc-search-wrap {
+      padding: 8px 8px 6px;
+      border-bottom: 1px solid rgba(200,156,63,0.12);
+    }
+    .lic-cc-search {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid rgba(200,156,63,0.2);
+      border-radius: 7px; background: #fdfbf6;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px; color: var(--text);
+      padding: 7px 10px; outline: none;
+      transition: border-color .15s;
+    }
+    .lic-cc-search:focus { border-color: var(--gold); background: #fff; }
+    .lic-cc-search::placeholder { color: #b3a896; }
+
+    /* Scrollable list */
+    .lic-cc-list {
+      list-style: none; margin: 0; padding: 4px 0;
+      max-height: 218px; overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .lic-cc-list::-webkit-scrollbar { width: 4px; }
+    .lic-cc-list::-webkit-scrollbar-thumb {
+      background: rgba(200,156,63,0.22); border-radius: 4px;
+    }
+    .lic-cc-grp-label {
+      padding: 6px 13px 3px;
+      font-size: 9px; font-weight: 700; letter-spacing: .08em;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .lic-cc-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px; color: var(--text);
+      transition: background .08s;
+    }
+    .lic-cc-item:hover,
+    .lic-cc-item.is-active  { background: rgba(200,156,63,0.09); }
+    .lic-cc-item.is-selected { background: rgba(200,156,63,0.06); }
+    .lic-cc-item-code { font-weight: 700; font-size: 12px; min-width: 26px; }
+    .lic-cc-item-name { flex: 1; font-size: 11.5px; color: var(--muted); }
+    .lic-cc-item-dial { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+    .lic-cc-no-results {
+      padding: 14px; font-size: 12px; color: var(--muted); text-align: center;
+    }
+
+    /* Right side — local number input */
+    .lic-phone-local {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 500;
+      color: var(--text);
+      padding: 14px 16px;
+      outline: none;
+      min-width: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .lic-phone-local::placeholder { color: #b3a896; font-weight: 400; }
+
+    /* Live guidance text below the field */
+    .lic-phone-hint {
+      display: block;
+      font-size: 11.5px; font-weight: 500;
+      color: var(--muted); line-height: 1.5;
+      margin-top: 5px; min-height: 1.4em;
+      transition: color .16s;
+    }
+    .lic-phone-hint.hint-warn { color: var(--danger); font-weight: 600; }
+    .lic-phone-hint.hint-ok   { color: var(--success); font-weight: 700; }
+
+    /* Mobile — stack selector above number input */
+    @media (max-width: 520px) {
+      .lic-phone-row { flex-wrap: wrap; }
+      .lic-phone-cc-wrap {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1.5px solid rgba(200,156,63,0.18);
+      }
+      .lic-cc-btn  { min-width: unset; width: 100%; }
+      .lic-cc-panel { width: calc(100vw - 48px); }
+    }
+  </style>
+</head>
+<body class="lux-themed">
+
+<!-- ══════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════ -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+  <a href="license-request.html" onclick="toggleMenu()">Request Bot License</a>
+</div>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="lic-hero">
+  <div class="container">
+    <div class="lic-hero-inner">
+      <div class="lic-eyebrow-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg>
+        Bot Activation
+      </div>
+      <h1>Request MT5 Bot <em>License</em></h1>
+      <p class="lic-subtitle">
+        Submit your MT5 account details to receive bot activation approval from our team. Most license requests are reviewed within 24 hours.
+      </p>
+      <div class="lic-trust-row">
+        <div class="lic-trust-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          Secure Verification
+        </div>
+        <div class="lic-trust-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Fast Approval
+        </div>
+        <div class="lic-trust-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Protected Data
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FORM SECTION
+══════════════════════════════════════════ -->
+<section class="lic-form-section">
+  <div class="container">
+    <div class="lic-form-wrap">
+
+      <!-- ── Form Card ── -->
+      <form class="lic-form-card" id="licenseForm" novalidate>
+        <div class="lic-form-kicker">License Request</div>
+        <h2>Submit your verification details</h2>
+        <p class="lic-form-intro">Provide your MT5 account number, a contact email, and your WhatsApp number. Our compliance team will verify your account through the broker and activate your bot license.</p>
+
+        <!-- MT5 Account Number -->
+        <div class="lic-field" id="field-account">
+          <label for="lic-account">MT5 Account Number <span class="lic-req">*</span></label>
+          <input id="lic-account" name="account_number" type="text" inputmode="numeric" autocomplete="off" placeholder="Enter your MT5 account number" required />
+          <span class="lic-field-msg" id="msg-account">Please enter your MT5 account number.</span>
+        </div>
+
+        <!-- Email -->
+        <div class="lic-field" id="field-email">
+          <label for="lic-email">Email Address <span class="lic-req">*</span></label>
+          <input id="lic-email" name="email" type="email" autocomplete="email" placeholder="Enter your email address" required />
+          <span class="lic-field-msg" id="msg-email">Please enter a valid email address.</span>
+        </div>
+
+        <!-- EXTENSION — Broker Name (required dropdown) -->
+        <div class="lic-field" id="field-broker">
+          <label for="lic-broker">Broker Name <span class="lic-req">*</span></label>
+          <select id="lic-broker" name="broker_name" required>
+            <option value="" disabled selected hidden>Select your broker</option>
+            <option value="Exness">Exness</option>
+            <option value="HFM">HFM</option>
+            <option value="Pepperstone">Pepperstone</option>
+            <option value="IC Markets">IC Markets</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="lic-field-msg" id="msg-broker">Please choose the broker where you opened your MT5 account.</span>
+        </div>
+
+        <!-- Phase 13.6 — WhatsApp Number (country selector + local input) -->
+        <div class="lic-field" id="field-whatsapp">
+          <label for="lic-whatsapp-local">Give Your WhatsApp Number <span class="lic-req">*</span></label>
+          <div class="lic-phone-row" id="licPhoneRow">
+            <div class="lic-phone-cc-wrap" id="licCcWrap">
+              <!-- Hidden select — keeps getPhoneCountry() + change listeners intact -->
+              <select id="lic-whatsapp-cc" autocomplete="tel-country-code"
+                      style="display:none" tabindex="-1" aria-hidden="true"></select>
+              <!-- Custom searchable picker -->
+              <div class="lic-cc-picker" id="licCcPicker">
+                <button type="button" class="lic-cc-btn" id="licCcBtn"
+                        aria-haspopup="listbox" aria-expanded="false"
+                        aria-label="Country dialing code">
+                  <span id="licCcBtnText">PK (+92)</span>
+                  <svg class="lic-cc-caret" viewBox="0 0 9 5" fill="none" aria-hidden="true">
+                    <path d="M1 1l3.5 3L8 1" stroke="currentColor" stroke-width="1.7"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <div class="lic-cc-panel" id="licCcPanel"
+                     role="listbox" aria-label="Select country dialing code">
+                  <div class="lic-cc-search-wrap">
+                    <input type="text" class="lic-cc-search" id="licCcSearch"
+                           placeholder="Search country…"
+                           autocomplete="off" aria-label="Filter countries">
+                  </div>
+                  <ul class="lic-cc-list" id="licCcList"></ul>
+                </div>
+              </div>
+            </div>
+            <input id="lic-whatsapp-local" type="text" inputmode="tel"
+                   autocomplete="tel-local" class="lic-phone-local"
+                   placeholder="3001234567" maxlength="15" />
+          </div>
+          <span class="lic-field-msg" id="msg-whatsapp"></span>
+          <span class="lic-phone-hint" id="licPhoneHint" aria-live="polite"></span>
+        </div>
+
+        <!-- Phase 16.8 — Screenshot upload removed.
+             Verification now happens automatically via the broker partner
+             report; no manual proof-of-account upload is required. -->
+
+        <!-- Submit — toggles between default label and loading state with spinner + text -->
+        <button type="submit" class="lic-submit" id="licSubmit">
+          <span class="lic-submit-label">
+            Submit License Request
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+          <span class="lic-submit-loading" aria-live="polite">
+            <span class="lic-spinner" aria-hidden="true"></span>
+            Submitting Request...
+          </span>
+        </button>
+
+        <p class="lic-tos">
+          By submitting this request you confirm the MT5 account information is <b>yours</b> and was opened under our IB. Submissions are encrypted in transit.
+        </p>
+      </form>
+
+      <!-- ── Side Info Card ── -->
+      <aside class="lic-info">
+        <span class="lic-info-tag">How it works</span>
+        <h3>Three steps to bot activation</h3>
+        <p>Once you've opened your MT5 account through our IB, follow these steps to receive your bot license.</p>
+
+        <ol class="lic-steps">
+          <li>
+            <div class="lic-step-num">1</div>
+            <div class="lic-step-text">
+              <b>Fill the form</b>
+              <small>Enter your MT5 account number and the email address you'd like us to contact you on.</small>
+            </div>
+          </li>
+          <li>
+            <div class="lic-step-num">2</div>
+            <div class="lic-step-text">
+              <b>Add your WhatsApp number</b>
+              <small>So we can reach you quickly if there's an issue verifying your MT5 account with the broker.</small>
+            </div>
+          </li>
+          <li>
+            <div class="lic-step-num">3</div>
+            <div class="lic-step-text">
+              <b>Receive your activation</b>
+              <small>Our team verifies your account and sends approval &mdash; usually within 24 hours.</small>
+            </div>
+          </li>
+        </ol>
+
+        <div class="lic-info-foot">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span><b>Your data is private.</b> Submissions are encrypted in transit and used only for license verification.</span>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SUCCESS / ERROR TOAST
+══════════════════════════════════════════ -->
+<div class="lic-toast-overlay" id="licToast" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="lic-toast" id="licToastBox">
+    <div class="lic-toast-icon" id="licToastIcon"></div>
+    <h3 id="licToastTitle">Request submitted</h3>
+    <p id="licToastMsg">Your request has been submitted successfully. Our team will review and approve your MT5 bot license shortly.</p>
+    <!-- Phase 16.8 — prominent spam-folder reminder on success -->
+    <div class="lic-spam-note" id="licSpamNote">
+      <strong>Please check your Spam folder email within 48 hours.</strong>
+    </div>
+    <div class="lic-toast-actions">
+      <a href="index.html" class="lic-toast-btn lic-toast-primary" id="licToastPrimary">
+        Back to Home
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <button type="button" class="lic-toast-btn lic-toast-ghost" id="licToastDismiss">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════ -->
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   LICENSE REQUEST — Supabase integration
+   ────────────────────────────────────────────────────────────────────
+   Database table:  "license_requests"
+   Fields written:  account_number, email, broker_name, whatsapp_number, status
+   Phase 16.8 — Screenshot upload removed. No Storage bucket is touched.
+   ════════════════════════════════════════════════════════════════════ */
+
+const SUPABASE_URL      = 'https://yivkkfplrkcncjaqifxb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdmtrZnBscmtjbmNqYXFpZnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQ5MjcsImV4cCI6MjA5NDkwMDkyN30._CC6KIPVOhzMyOnLDtTpLbtMwee8y-991YFpoC3eC5Q';
+
+const TABLE_NAME = 'license_requests';
+
+/* Initialize Supabase client (window.supabase is the SDK namespace from the CDN script tag;
+   we hold our project-scoped client in `supabaseClient` to avoid colliding with that global). */
+let supabaseClient = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  /* Client init failed — handled at submit-time so user sees a graceful error. */
+  console.warn('[license-request] Supabase init error:', e);
+}
+
+/* ── DOM refs ─────────────────────────────────────────── */
+const form          = document.getElementById('licenseForm');
+const accountInput  = document.getElementById('lic-account');
+const emailInput    = document.getElementById('lic-email');
+const brokerInput   = document.getElementById('lic-broker');  /* EXTENSION — broker dropdown */
+/* Phase 13.6 — WhatsApp international phone input */
+const whatsappCcInput    = document.getElementById('lic-whatsapp-cc');
+const whatsappLocalInput = document.getElementById('lic-whatsapp-local');
+const licPhoneHint       = document.getElementById('licPhoneHint');
+
+/* ── Phase 13.6 — Country dial-code directory ─────────────────────────────
+   id    — ISO 3166-1 alpha-2 (used as <option value>)
+   dial  — ITU E.164 prefix with leading +
+   flag  — Unicode flag emoji (renders on iOS/Android/macOS/Linux;
+           Windows shows 2-letter code pair — still fully functional)
+   name  — English country name
+   minL  — minimum local digit count (after country code, NO leading zero)
+   maxL  — maximum local digit count
+   example — placeholder showing the correct local number format
+   ─────────────────────────────────────────────────────────────────────── */
+const PHONE_COUNTRIES = [
+  /* ── Popular (shown first) ─────────────────────────────────────────── */
+  { id:'PK', dial:'+92',  flag:'🇵🇰', name:'Pakistan',       minL:10, maxL:10, example:'3001234567'  },
+  { id:'AE', dial:'+971', flag:'🇦🇪', name:'UAE',            minL:9,  maxL:9,  example:'501234567'   },
+  { id:'SA', dial:'+966', flag:'🇸🇦', name:'Saudi Arabia',   minL:9,  maxL:9,  example:'501234567'   },
+  { id:'GB', dial:'+44',  flag:'🇬🇧', name:'United Kingdom', minL:10, maxL:10, example:'7700900123'  },
+  { id:'US', dial:'+1',   flag:'🇺🇸', name:'United States',  minL:10, maxL:10, example:'2025550123'  },
+  { id:'CA', dial:'+1',   flag:'🇨🇦', name:'Canada',         minL:10, maxL:10, example:'4165550123'  },
+  /* ── A–Z ────────────────────────────────────────────────────────────── */
+  { id:'DZ', dial:'+213', flag:'🇩🇿', name:'Algeria',        minL:9,  maxL:9,  example:'551234567'   },
+  { id:'AR', dial:'+54',  flag:'🇦🇷', name:'Argentina',      minL:10, maxL:11, example:'91112345678' },
+  { id:'AU', dial:'+61',  flag:'🇦🇺', name:'Australia',      minL:9,  maxL:9,  example:'412345678'   },
+  { id:'BH', dial:'+973', flag:'🇧🇭', name:'Bahrain',        minL:8,  maxL:8,  example:'33456789'    },
+  { id:'BD', dial:'+880', flag:'🇧🇩', name:'Bangladesh',     minL:10, maxL:10, example:'1712345678'  },
+  { id:'BR', dial:'+55',  flag:'🇧🇷', name:'Brazil',         minL:10, maxL:11, example:'11912345678' },
+  { id:'CN', dial:'+86',  flag:'🇨🇳', name:'China',          minL:11, maxL:11, example:'13912345678' },
+  { id:'DK', dial:'+45',  flag:'🇩🇰', name:'Denmark',        minL:8,  maxL:8,  example:'20123456'    },
+  { id:'EG', dial:'+20',  flag:'🇪🇬', name:'Egypt',          minL:10, maxL:10, example:'1001234567'  },
+  { id:'ET', dial:'+251', flag:'🇪🇹', name:'Ethiopia',       minL:9,  maxL:9,  example:'911234567'   },
+  { id:'FR', dial:'+33',  flag:'🇫🇷', name:'France',         minL:9,  maxL:9,  example:'612345678'   },
+  { id:'DE', dial:'+49',  flag:'🇩🇪', name:'Germany',        minL:10, maxL:11, example:'15123456789' },
+  { id:'GH', dial:'+233', flag:'🇬🇭', name:'Ghana',          minL:9,  maxL:9,  example:'241234567'   },
+  { id:'IN', dial:'+91',  flag:'🇮🇳', name:'India',          minL:10, maxL:10, example:'9876543210'  },
+  { id:'ID', dial:'+62',  flag:'🇮🇩', name:'Indonesia',      minL:9,  maxL:12, example:'81234567890' },
+  { id:'IQ', dial:'+964', flag:'🇮🇶', name:'Iraq',           minL:10, maxL:10, example:'7701234567'  },
+  { id:'IT', dial:'+39',  flag:'🇮🇹', name:'Italy',          minL:9,  maxL:10, example:'3123456789'  },
+  { id:'JP', dial:'+81',  flag:'🇯🇵', name:'Japan',          minL:10, maxL:10, example:'9012345678'  },
+  { id:'JO', dial:'+962', flag:'🇯🇴', name:'Jordan',         minL:9,  maxL:9,  example:'791234567'   },
+  { id:'KE', dial:'+254', flag:'🇰🇪', name:'Kenya',          minL:9,  maxL:9,  example:'712345678'   },
+  { id:'KW', dial:'+965', flag:'🇰🇼', name:'Kuwait',         minL:8,  maxL:8,  example:'97654321'    },
+  { id:'KR', dial:'+82',  flag:'🇰🇷', name:'South Korea',   minL:9,  maxL:11, example:'1012345678'  },
+  { id:'LY', dial:'+218', flag:'🇱🇾', name:'Libya',          minL:9,  maxL:9,  example:'912345678'   },
+  { id:'MY', dial:'+60',  flag:'🇲🇾', name:'Malaysia',       minL:9,  maxL:10, example:'123456789'   },
+  { id:'MX', dial:'+52',  flag:'🇲🇽', name:'Mexico',         minL:10, maxL:10, example:'5512345678'  },
+  { id:'MA', dial:'+212', flag:'🇲🇦', name:'Morocco',        minL:9,  maxL:9,  example:'612345678'   },
+  { id:'MM', dial:'+95',  flag:'🇲🇲', name:'Myanmar',        minL:8,  maxL:10, example:'91234567'    },
+  { id:'NL', dial:'+31',  flag:'🇳🇱', name:'Netherlands',    minL:9,  maxL:9,  example:'612345678'   },
+  { id:'NZ', dial:'+64',  flag:'🇳🇿', name:'New Zealand',    minL:8,  maxL:10, example:'211234567'   },
+  { id:'NG', dial:'+234', flag:'🇳🇬', name:'Nigeria',        minL:10, maxL:10, example:'8012345678'  },
+  { id:'NO', dial:'+47',  flag:'🇳🇴', name:'Norway',         minL:8,  maxL:8,  example:'41234567'    },
+  { id:'OM', dial:'+968', flag:'🇴🇲', name:'Oman',           minL:8,  maxL:8,  example:'92345678'    },
+  { id:'PH', dial:'+63',  flag:'🇵🇭', name:'Philippines',    minL:10, maxL:10, example:'9171234567'  },
+  { id:'QA', dial:'+974', flag:'🇶🇦', name:'Qatar',          minL:8,  maxL:8,  example:'33456789'    },
+  { id:'SG', dial:'+65',  flag:'🇸🇬', name:'Singapore',      minL:8,  maxL:8,  example:'81234567'    },
+  { id:'ZA', dial:'+27',  flag:'🇿🇦', name:'South Africa',   minL:9,  maxL:9,  example:'821234567'   },
+  { id:'ES', dial:'+34',  flag:'🇪🇸', name:'Spain',          minL:9,  maxL:9,  example:'612345678'   },
+  { id:'LK', dial:'+94',  flag:'🇱🇰', name:'Sri Lanka',      minL:9,  maxL:9,  example:'771234567'   },
+  { id:'SD', dial:'+249', flag:'🇸🇩', name:'Sudan',          minL:9,  maxL:9,  example:'912345678'   },
+  { id:'SE', dial:'+46',  flag:'🇸🇪', name:'Sweden',         minL:9,  maxL:9,  example:'701234567'   },
+  { id:'TZ', dial:'+255', flag:'🇹🇿', name:'Tanzania',       minL:9,  maxL:9,  example:'712345678'   },
+  { id:'TH', dial:'+66',  flag:'🇹🇭', name:'Thailand',       minL:9,  maxL:9,  example:'812345678'   },
+  { id:'TN', dial:'+216', flag:'🇹🇳', name:'Tunisia',        minL:8,  maxL:8,  example:'21234567'    },
+  { id:'TR', dial:'+90',  flag:'🇹🇷', name:'Turkey',         minL:10, maxL:10, example:'5012345678'  },
+  { id:'UG', dial:'+256', flag:'🇺🇬', name:'Uganda',         minL:9,  maxL:9,  example:'712345678'   },
+  { id:'VN', dial:'+84',  flag:'🇻🇳', name:'Vietnam',        minL:9,  maxL:10, example:'901234567'   },
+  { id:'ZM', dial:'+260', flag:'🇿🇲', name:'Zambia',         minL:9,  maxL:9,  example:'971234567'   },
+  { id:'ZW', dial:'+263', flag:'🇿🇼', name:'Zimbabwe',       minL:9,  maxL:9,  example:'771234567'   },
+];
+
+/* ── Phase 13.6 — Searchable country picker ──────────────────────────────
+   Hidden <select id="lic-whatsapp-cc"> keeps getPhoneCountry() + all
+   existing change-event listeners intact — no downstream code changes.
+   The visible UI is a custom button + flyout panel with instant search.
+   ──────────────────────────────────────────────────────────────────────── */
+(function buildCcOptions() {
+  if (!whatsappCcInput) return;
+  var TOP_COUNT = 6;
+
+  var pickerEl = document.getElementById('licCcPicker');
+  var btnEl    = document.getElementById('licCcBtn');
+  var btnText  = document.getElementById('licCcBtnText');
+  var searchEl = document.getElementById('licCcSearch');
+  var listEl   = document.getElementById('licCcList');
+  if (!pickerEl || !btnEl || !searchEl || !listEl) return;
+
+  /* 1 — Populate hidden <select> so getPhoneCountry() works unchanged */
+  PHONE_COUNTRIES.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    whatsappCcInput.appendChild(opt);
+  });
+  whatsappCcInput.value = 'PK';
+
+  /* 2 — Build / rebuild visible list; pass '' for full list, query to filter */
+  function renderList(query) {
+    listEl.innerHTML = '';
+    var lower     = (query || '').toLowerCase().trim();
+    var lowerDigs = lower.replace(/\D/g, '');
+    var anyResult = false;
+    var shownPop  = false;
+    var shownAll  = false;
+
+    PHONE_COUNTRIES.forEach(function(c, i) {
+      /* Match on code, name, or dial digits */
+      var matched = !lower
+        || c.id.toLowerCase().includes(lower)
+        || c.name.toLowerCase().includes(lower)
+        || (lowerDigs && c.dial.replace(/\D/g,'').startsWith(lowerDigs));
+      if (!matched) return;
+      anyResult = true;
+
+      /* Group headings — only when showing full unfiltered list */
+      if (!lower) {
+        if (i === 0 && !shownPop) {
+          var hPop = document.createElement('li');
+          hPop.className = 'lic-cc-grp-label'; hPop.textContent = 'Popular';
+          listEl.appendChild(hPop); shownPop = true;
+        }
+        if (i === TOP_COUNT && !shownAll) {
+          var hAll = document.createElement('li');
+          hAll.className = 'lic-cc-grp-label'; hAll.textContent = 'All Countries';
+          listEl.appendChild(hAll); shownAll = true;
+        }
+      }
+
+      /* Row: [CODE]  [Country Name]  [+dial] */
+      var li = document.createElement('li');
+      li.className = 'lic-cc-item' + (c.id === whatsappCcInput.value ? ' is-selected' : '');
+      li.setAttribute('role', 'option');
+      li.setAttribute('data-cc', c.id);
+
+      var codeSpan = document.createElement('span');
+      codeSpan.className = 'lic-cc-item-code'; codeSpan.textContent = c.id;
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'lic-cc-item-name'; nameSpan.textContent = c.name;
+      var dialSpan = document.createElement('span');
+      dialSpan.className = 'lic-cc-item-dial'; dialSpan.textContent = c.dial;
+
+      li.appendChild(codeSpan); li.appendChild(nameSpan); li.appendChild(dialSpan);
+      li.addEventListener('mouseenter', function() {
+        listEl.querySelectorAll('.lic-cc-item.is-active').forEach(function(el) {
+          el.classList.remove('is-active');
+        });
+        li.classList.add('is-active');
+      });
+      li.addEventListener('click', function() { selectCountry(c.id); });
+      listEl.appendChild(li);
+    });
+
+    if (!anyResult) {
+      var noRes = document.createElement('li');
+      noRes.className = 'lic-cc-no-results'; noRes.textContent = 'No match';
+      listEl.appendChild(noRes);
+    }
+  }
+
+  /* 3 — Select a country: sync hidden select → fire change → update button */
+  function selectCountry(id) {
+    whatsappCcInput.value = id;
+    /* Existing listeners (clearFieldError + updatePhonePlaceholder) fire here */
+    whatsappCcInput.dispatchEvent(new Event('change'));
+    /* Update compact trigger label */
+    var c = getPhoneCountry();
+    if (btnText) btnText.textContent = c.id + ' (' + c.dial + ')';
+    closePanel();
+  }
+
+  /* 4 — Panel open / close */
+  function openPanel() {
+    pickerEl.classList.add('is-open');
+    btnEl.setAttribute('aria-expanded', 'true');
+    searchEl.value = '';
+    renderList('');
+    requestAnimationFrame(function() {
+      var sel = listEl.querySelector('.is-selected');
+      if (sel) sel.scrollIntoView({ block: 'nearest' });
+      searchEl.focus();
+    });
+  }
+  function closePanel() {
+    pickerEl.classList.remove('is-open');
+    btnEl.setAttribute('aria-expanded', 'false');
+  }
+
+  /* 5 — Wire events */
+  btnEl.addEventListener('click', function(e) {
+    e.stopPropagation();
+    pickerEl.classList.contains('is-open') ? closePanel() : openPanel();
+  });
+  searchEl.addEventListener('input', function() { renderList(searchEl.value); });
+  searchEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closePanel(); btnEl.focus(); }
+    if (e.key === 'Enter') {
+      /* Select first visible country item on Enter */
+      var first = listEl.querySelector('.lic-cc-item');
+      if (first) selectCountry(first.getAttribute('data-cc'));
+    }
+  });
+  /* Close when user clicks outside the picker */
+  document.addEventListener('click', function(e) {
+    if (!pickerEl.contains(e.target)) closePanel();
+  });
+
+  /* 6 — Initial state */
+  btnText.textContent = 'PK (+92)';
+}());
+
+/* Returns the currently selected PHONE_COUNTRIES entry. */
+function getPhoneCountry() {
+  var id = whatsappCcInput ? whatsappCcInput.value : 'PK';
+  for (var i = 0; i < PHONE_COUNTRIES.length; i++) {
+    if (PHONE_COUNTRIES[i].id === id) return PHONE_COUNTRIES[i];
+  }
+  return PHONE_COUNTRIES[0];
+}
+
+/* Update input placeholder to match the selected country's example. */
+function updatePhonePlaceholder() {
+  var c = getPhoneCountry();
+  if (whatsappLocalInput) whatsappLocalInput.placeholder = c.example;
+  updatePhoneHint();
+}
+
+/* Show live guidance below the phone row based on current input state. */
+function updatePhoneHint() {
+  if (!licPhoneHint || !whatsappLocalInput) return;
+  var c      = getPhoneCountry();
+  var local  = whatsappLocalInput.value.trim();
+  var digits = local.replace(/\D/g, '');
+
+  if (!local) {
+    /* Field empty — show example */
+    licPhoneHint.textContent = 'e.g. ' + c.example + '  →  stored as ' + c.dial + c.example;
+    licPhoneHint.className   = 'lic-phone-hint';
+    return;
+  }
+  if (local.charAt(0) === '0') {
+    /* Leading zero detected — Pakistan users often type 0300... */
+    licPhoneHint.textContent = 'Remove the leading 0 — enter ' + c.example + ', not 0' + c.example;
+    licPhoneHint.className   = 'lic-phone-hint hint-warn';
+    return;
+  }
+  if (digits.length > 0 && digits.length < c.minL) {
+    /* Digit count in progress */
+    licPhoneHint.textContent = digits.length + ' of ' + c.minL + ' digits entered';
+    licPhoneHint.className   = 'lic-phone-hint';
+    return;
+  }
+  if (digits.length > c.maxL) {
+    /* Too many digits */
+    licPhoneHint.textContent = 'Too long — ' + c.name + ' numbers need max ' + c.maxL + ' digits';
+    licPhoneHint.className   = 'lic-phone-hint hint-warn';
+    return;
+  }
+  if (digits.length >= c.minL) {
+    /* Valid — show the final saved format */
+    licPhoneHint.textContent = '✓ Will be saved as ' + c.dial + digits;
+    licPhoneHint.className   = 'lic-phone-hint hint-ok';
+    return;
+  }
+  licPhoneHint.textContent = '';
+  licPhoneHint.className   = 'lic-phone-hint';
+}
+/* Phase 16.8 — Screenshot drop / preview DOM refs removed. */
+const submitBtn     = document.getElementById('licSubmit');
+
+const toastOverlay  = document.getElementById('licToast');
+const toastBox      = document.getElementById('licToastBox');
+const toastIcon     = document.getElementById('licToastIcon');
+const toastTitle    = document.getElementById('licToastTitle');
+const toastMsg      = document.getElementById('licToastMsg');
+const toastPrimary  = document.getElementById('licToastPrimary');
+const toastDismiss  = document.getElementById('licToastDismiss');
+
+/* ── Toast helpers ────────────────────────────────────── */
+const ICON_SUCCESS = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const ICON_ERROR   = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg>';
+
+function showToast(kind, title, message) {
+  toastBox.classList.remove('is-success', 'is-error');
+  toastBox.classList.add(kind === 'success' ? 'is-success' : 'is-error');
+  toastIcon.innerHTML = kind === 'success' ? ICON_SUCCESS : ICON_ERROR;
+  toastTitle.textContent = title;
+  toastMsg.textContent = message;
+  toastOverlay.classList.add('is-open');
+  toastOverlay.setAttribute('aria-hidden', 'false');
+}
+function hideToast() {
+  toastOverlay.classList.remove('is-open');
+  toastOverlay.setAttribute('aria-hidden', 'true');
+}
+toastDismiss.addEventListener('click', hideToast);
+toastOverlay.addEventListener('click', function (e) { if (e.target === toastOverlay) hideToast(); });
+
+/* Phase 16.8 — Screenshot upload UI removed:
+   formatBytes / setSelectedFile / clearSelectedFile / drag-drop / FileReader / preview render
+   no longer needed. submit handler below also strips file validation + storage upload. */
+
+/* ── Field validation helpers ─────────────────────────── */
+function markFieldError(name, message) {
+  const field = document.getElementById('field-' + name);
+  const msg   = document.getElementById('msg-' + name);
+  if (!field) return;
+  field.classList.add('lic-error');
+  if (name === 'file') drop.classList.add('lic-error');
+  if (msg && message) msg.textContent = message;
+}
+function clearFieldError(name) {
+  const field = document.getElementById('field-' + name);
+  if (!field) return;
+  field.classList.remove('lic-error');
+  if (name === 'file') drop.classList.remove('lic-error');
+}
+function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim()); }
+
+[accountInput, emailInput].forEach(function (inp) {
+  inp.addEventListener('input', function () { clearFieldError(inp === accountInput ? 'account' : 'email'); });
+});
+/* EXTENSION — broker dropdown clears its own error state on change */
+if (brokerInput) {
+  brokerInput.addEventListener('change', function () { clearFieldError('broker'); });
+}
+/* Phase 13.6 — Country selector: update placeholder + hint; clear any error */
+if (whatsappCcInput) {
+  whatsappCcInput.addEventListener('change', function () {
+    clearFieldError('whatsapp');
+    updatePhonePlaceholder();
+  });
+}
+/* Phase 13.6 — Local number input: live hint + error clearing */
+if (whatsappLocalInput) {
+  whatsappLocalInput.addEventListener('input', function () {
+    clearFieldError('whatsapp');
+    updatePhoneHint();
+  });
+}
+/* Initialise placeholder and hint text on page load */
+updatePhonePlaceholder();
+
+/* ── Submit handler ───────────────────────────────────── */
+form.addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  /* 1. Validate ---------------------------------------- */
+  const account  = accountInput.value.trim();
+  const email    = emailInput.value.trim();
+  const broker   = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION */
+  let   whatsapp = '';   /* Phase 13.6 — combined from country + local in validation block */
+  /* Phase 16.8 — Screenshot file requirement removed. */
+
+  /* Whitelist of valid broker values matches the dropdown <option>s — guards against
+     manually-tampered form values. */
+  const ALLOWED_BROKERS = ['Exness', 'HFM', 'Pepperstone', 'IC Markets', 'Other'];
+
+  let ok = true;
+  if (!account)         { markFieldError('account'); ok = false; }
+  if (!email)           { markFieldError('email', 'Please enter your email address.'); ok = false; }
+  else if (!validEmail(email)) { markFieldError('email', 'Please enter a valid email address.'); ok = false; }
+  if (!broker || ALLOWED_BROKERS.indexOf(broker) === -1) {
+    markFieldError('broker', 'Please choose your broker from the list.');
+    ok = false;
+  }
+  /* Phase 13.6 — WhatsApp: build combined international number from selector + local input */
+  {
+    var pc         = getPhoneCountry();
+    var localRaw   = whatsappLocalInput ? whatsappLocalInput.value.trim() : '';
+    var localDigits = localRaw.replace(/\D/g, '');
+    if (!localRaw) {
+      markFieldError('whatsapp', 'Please enter your WhatsApp number.');
+      ok = false;
+    } else if (localRaw.charAt(0) === '0') {
+      markFieldError('whatsapp', 'Remove the leading 0 — enter ' + pc.example + ', not 0' + pc.example);
+      ok = false;
+    } else if (localDigits.length < pc.minL || localDigits.length > pc.maxL) {
+      var lenStr = pc.minL === pc.maxL
+        ? pc.minL + ' digits'
+        : pc.minL + '–' + pc.maxL + ' digits';
+      markFieldError('whatsapp', pc.name + ' numbers need ' + lenStr + ', e.g. ' + pc.example);
+      ok = false;
+    } else {
+      whatsapp = pc.dial + localDigits;   /* e.g. +923001234567 */
+    }
+  }
+  /* Phase 16.8 — Screenshot file validation removed. */
+  if (!ok) return;
+
+  /* 2. Guard against missing Supabase config ----------- */
+  if (!supabaseClient || SUPABASE_URL === 'SUPABASE_URL_HERE' || SUPABASE_ANON_KEY === 'SUPABASE_ANON_KEY_HERE') {
+    showToast('error', 'Configuration missing', 'The submission endpoint isn’t configured yet. Please contact support or try again shortly.');
+    return;
+  }
+
+  /* 3. Loading state ----------------------------------- */
+  submitBtn.disabled = true;
+  submitBtn.classList.add('is-loading');
+
+  try {
+    /* Phase 16.5 PART C — IB Changed gate.
+       BEFORE the duplicate-delivery check, see whether this account is
+       already in ib_changed_accounts.  If so the client is no longer
+       under ZTU referral and MUST NOT enter the pipeline — show the
+       contact-support message and bail.  Soft-fail if the table doesn't
+       exist (older deploys) so submissions don't break. */
+    try {
+      const ibResp = await supabaseClient
+        .from('ib_changed_accounts')
+        .select('id, account_number')
+        .eq('account_number', account)
+        .limit(1);
+      if (!ibResp.error && Array.isArray(ibResp.data) && ibResp.data.length > 0) {
+        showToast(
+          'info',
+          'Account no longer under ZTU referral',
+          'Your trading account is no longer under Z Trade University referral. Please contact support for assistance.'
+        );
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+        return;   // STOP — do not upload, do not insert, do not deliver.
+      }
+    } catch (e) {
+      console.warn('[Submit] IB Changed gate check failed (continuing as non-fatal):', e);
+    }
+
+    /* Phase 16.1 — Issue 2 + 6: duplicate-account guard.
+       BEFORE inserting any row, check whether this account_number was
+       already DELIVERED.  We only consider it a true duplicate if the
+       prior license_request reached terminal 'emailed' status
+       (Issue 6 — verified delivery, not pending). */
+    try {
+      const dupResp = await supabaseClient
+        .from(TABLE_NAME)
+        .select('id, status, email, created_at')
+        .eq('account_number', account)
+        .in('status', ['emailed', 'delivered'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (!dupResp.error && Array.isArray(dupResp.data) && dupResp.data.length > 0) {
+        const prior = dupResp.data[0];
+        showToast(
+          'info',
+          'Account already processed',
+          'Your account was already created and previously delivered (' + (prior.email || 'on file') + '). Please check your email inbox including the spam/junk folder. If not found, contact support.'
+        );
+        // Best-effort queue ONE "already_processed" notification — but only
+        // if not already pending. Soft-fail; does NOT block UI message.
+        try {
+          const existing = await supabaseClient
+            .from('email_outbox')
+            .select('id')
+            .eq('recipient_email', email)
+            .eq('template_type', 'already_processed')
+            .eq('status', 'pending')
+            .limit(1);
+          if (!existing.error && (!existing.data || existing.data.length === 0)) {
+            await supabaseClient.from('email_outbox').insert([{
+              status: 'pending',
+              template_type: 'already_processed',
+              recipient_email: email,
+              recipient_account: account,
+              subject: 'Your ZTU Bot — Account Already Delivered',
+              body_html: '<p>Hi ' + (email || 'there') + ',</p><p>Your account was already created and your EA file was previously delivered successfully.</p><p>Please check your email inbox including the spam/junk folder.</p><p>If not found, contact support.</p><p>Best regards,<br>ZTU Support Team</p>',
+              body_text: 'Your account was already created and your EA file was previously delivered. Please check your inbox/spam folder.',
+            }]);
+          }
+        } catch (e) { /* non-fatal */ }
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+        return;   // STOP — do not insert duplicate license_request
+      }
+    } catch (e) {
+      console.warn('[Submit] duplicate check failed, continuing:', e);
+    }
+
+    /* Phase 16.8 — Screenshot upload + Storage step removed.
+       Verification now runs entirely through the broker partner report.
+       The license_requests row no longer carries screenshot_url. */
+
+    /* 3c. Insert into license_requests -----------------
+       EXTENSION — payload carries broker_name + whatsapp_number with graceful
+       cascade if the column is missing in the live schema. */
+    const baseRow = {
+      account_number:  account,
+      email:           email,
+      status:          'pending'
+    };
+    const rowWithBroker   = Object.assign({}, baseRow, { broker_name: broker });
+    const rowWithWhatsapp = Object.assign({}, rowWithBroker, { whatsapp_number: whatsapp }); /* Phase 13.5 */
+
+    /* Graceful cascade: try rowWithWhatsapp (full) → rowWithBroker → baseRow.
+       Each step only fires if the previous step failed due to a missing DB column.
+       This ensures submissions always succeed during any DB migration window.     */
+    let insertResp = await supabaseClient.from(TABLE_NAME).insert([rowWithWhatsapp]);
+    let insertErr  = insertResp.error;
+
+    /* Phase 13.5 — whatsapp_number column not yet added to DB */
+    if (insertErr) {
+      const m    = String(insertErr.message || '').toLowerCase();
+      const code = String(insertErr.code || '');
+      const looksLikeWaMissing =
+        m.indexOf('whatsapp_number') !== -1 ||
+        m.indexOf("could not find the 'whatsapp_number'") !== -1 ||
+        (m.indexOf('column') !== -1 && m.indexOf('schema cache') !== -1) ||
+        code === 'PGRST204';
+      if (looksLikeWaMissing) {
+        console.warn('[license-request] whatsapp_number column missing; retrying without it. Add the column to enable WhatsApp tracking.');
+        insertResp = await supabaseClient.from(TABLE_NAME).insert([rowWithBroker]);
+        insertErr  = insertResp.error;
+      }
+    }
+
+    /* Existing broker_name fallback */
+    if (insertErr) {
+      const m    = String(insertErr.message || '').toLowerCase();
+      const code = String(insertErr.code || '');
+      const looksLikeBrokerMissing =
+        m.indexOf('broker_name') !== -1 ||
+        m.indexOf("could not find the 'broker_name'") !== -1 ||
+        (m.indexOf('column') !== -1 && m.indexOf('schema cache') !== -1) ||
+        code === 'PGRST204';
+      if (looksLikeBrokerMissing) {
+        console.warn('[license-request] broker_name column missing; falling back to base row. Add the column to enable broker tracking.');
+        const fallback = await supabaseClient.from(TABLE_NAME).insert([baseRow]);
+        insertErr = fallback.error;
+      }
+    }
+
+    if (insertErr) throw new Error('Database error: ' + (insertErr.message || insertErr));
+
+    /* ════════════════════════════════════════════════════════════════════
+       Phase 18.3 — IMMEDIATE MATCH + IMMEDIATE ACK EMAIL
+       ────────────────────────────────────────────────────────────────────
+       Rule 1: probe broker_accounts right now (no waiting for the next
+               engine tick or broker upload).
+       Rule 2: if the account is already present in broker_accounts,
+               PATCH the license_request status='matched' so the engine
+               picks it up on the very next cycle (compile + delivery).
+       Rule 3: if NOT present, queue an acknowledgment email_outbox row
+               using the existing 'waiting' template so the engine sends
+               it on the next drain (~1 min via the trigger watcher).
+       Then insert an engine_triggers row to wake the engine within ~60s.
+       Every call is soft-fail — the license_requests row is already in
+       so the customer is never lost even if any of these probes glitch.
+    ════════════════════════════════════════════════════════════════════ */
+    const normAcct18_3 = String(account || '').trim();
+    let immediateMatch_18_3 = false;
+    let licenseRowId_18_3  = null;
+    try {
+      // 1. Find the license_request we just created so we can target the PATCH.
+      const { data: latestReq } = await supabaseClient
+        .from(TABLE_NAME)
+        .select('id, created_at')
+        .eq('account_number', normAcct18_3)
+        .eq('email', email)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (latestReq && latestReq[0]) licenseRowId_18_3 = latestReq[0].id;
+
+      // 2. Probe broker_accounts (the persistent registry populated on every
+      //    Broker File Intake — Phase 17D ensures this is always current).
+      const { data: brokerHits } = await supabaseClient
+        .from('broker_accounts')
+        .select('account_number')
+        .eq('account_number', normAcct18_3)
+        .limit(1);
+
+      if (brokerHits && brokerHits.length > 0 && licenseRowId_18_3) {
+        // RULE 2 — IMMEDIATE MATCH.  Flip to 'matched' so the engine's
+        // existing STEP 4-7 pipeline compiles + emails the EX5 file.
+        try {
+          await supabaseClient
+            .from(TABLE_NAME)
+            .update({ status: 'matched' })
+            .eq('id', licenseRowId_18_3);
+          immediateMatch_18_3 = true;
+          console.log('[Phase18.3] IMMEDIATE MATCH for', normAcct18_3, '→ status flipped to matched');
+        } catch (e) {
+          console.warn('[Phase18.3] immediate-match PATCH failed (non-fatal):', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[Phase18.3] broker_accounts probe failed (non-fatal):', e);
+    }
+
+    // RULE 3 — ACK email when not immediately matched.
+    if (!immediateMatch_18_3) {
+      /* Phase 18.4 — STATE-MACHINE DEDUP.
+         Each license_requests row may receive AT MOST one ack email.
+         We check the row's `ack_email_sent_at` flag first; only queue if
+         IS NULL.  Soft-fail when the column doesn't yet exist (pre-Phase-
+         18.4 schema) — the queue still runs once and never again because
+         the outbox-pending guard catches the second case. */
+      let ackAlreadyMarked_18_4 = false;
+      try {
+        if (licenseRowId_18_3) {
+          const { data: stateRow } = await supabaseClient
+            .from(TABLE_NAME)
+            .select('ack_email_sent_at')
+            .eq('id', licenseRowId_18_3)
+            .limit(1);
+          if (stateRow && stateRow[0] && stateRow[0].ack_email_sent_at) {
+            ackAlreadyMarked_18_4 = true;
+            console.log('[Phase18.4] ack_email_sent_at already set for id=' + licenseRowId_18_3 + ' — skipping duplicate queue.');
+          }
+        }
+      } catch (_) { /* column-missing fallback — proceed to queue */ }
+      try {
+        if (ackAlreadyMarked_18_4) { /* skip */ }
+        else {
+        // Dedupe: don't queue a second pending 'waiting' email for the same
+        // recipient within the last hour.
+        const { data: existing } = await supabaseClient
+          .from('email_outbox')
+          .select('id')
+          .eq('recipient_email', email)
+          .eq('template_type', 'waiting')
+          .eq('status', 'pending')
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          const ackBodyHtml =
+            '<p>Hi,</p>' +
+            '<p>Your license request has been received successfully.</p>' +
+            '<p>Your account number <strong>' + normAcct18_3 + '</strong> is not yet present in our latest broker report. ' +
+            'Our system will automatically re-check every new broker file upload for the next <strong>48 hours</strong>. ' +
+            'If your account appears in any future report, processing will continue automatically — no further action is required from you.</p>' +
+            '<p>If you have any questions, just reply to this email.</p>' +
+            '<p>Best regards,<br>Z Trade University Support</p>';
+          const ackBodyText =
+            'Your license request has been received successfully.\n\n' +
+            'Your account is not yet available in the latest broker report. ' +
+            'The system will automatically re-check future broker uploads for up to 48 hours. ' +
+            'If your account appears, processing will continue automatically. No further action is required.';
+          const ackRow = {
+            status:            'pending',
+            template_type:     'waiting',
+            recipient_email:   email,
+            recipient_account: normAcct18_3,
+            subject:           'License Request Received — Z Trade University',
+            body_html:         ackBodyHtml,
+            body_text:         ackBodyText,
+          };
+          if (licenseRowId_18_3) ackRow.request_id = String(licenseRowId_18_3);
+          await supabaseClient.from('email_outbox').insert([ackRow]);
+          console.log('[Phase18.3] ack email queued for', email);
+          /* Phase 18.4 — mark the license_request so future broker uploads
+             and dashboard sweeps cannot queue a duplicate ack.  Soft-fail
+             if the column hasn't been migrated yet. */
+          try {
+            if (licenseRowId_18_3) {
+              await supabaseClient
+                .from(TABLE_NAME)
+                .update({ ack_email_sent_at: new Date().toISOString() })
+                .eq('id', licenseRowId_18_3);
+            }
+          } catch (_) { /* column-missing soft-fail */ }
+        }
+        }
+      } catch (e) {
+        console.warn('[Phase18.3] ack email queue failed (non-fatal):', e);
+      }
+    }
+
+    // Always wake the engine so the pipeline (delivery email for matched,
+    // ack email for waiting) fires within ~60 seconds via the trigger watcher.
+    try {
+      await supabaseClient
+        .from('engine_triggers')
+        .insert([{ status: 'pending', requested_by: 'license-request-submit' }]);
+      console.log('[Phase18.3] engine_triggers nudge fired');
+    } catch (e) {
+      console.warn('[Phase18.3] engine_triggers nudge failed (non-fatal):', e);
+    }
+
+    /* 3d. Success -------------------------------------- */
+    if (immediateMatch_18_3) {
+      showToast(
+        'success',
+        'Account verified — your license is being prepared now.',
+        'Your account was found in our latest broker report. Your bot file will arrive in your inbox within minutes. Please check your Spam / Junk folder if you do not see it.'
+      );
+    } else {
+      showToast(
+        'success',
+        'Your license request has been submitted successfully.',
+        'You will receive a confirmation email shortly. Our system will automatically re-check future broker uploads for the next 48 hours and process your request as soon as your account appears.'
+      );
+    }
+
+    /* Reset the form so the user sees a clean state if they close the toast. */
+    form.reset();
+  } catch (err) {
+    console.error('[license-request] submission failed:', err);
+
+    /* Translate raw Supabase / network errors into beginner-friendly messages. */
+    const raw = String((err && err.message) || err || '').toLowerCase();
+    let errTitle   = 'Submission failed';
+    let errMessage = 'Something went wrong while submitting your request. Please try again in a moment.';
+
+    if (raw.indexOf('failed to fetch') !== -1 || raw.indexOf('networkerror') !== -1 || raw.indexOf('network') !== -1) {
+      errTitle   = 'Network issue';
+      errMessage = 'We couldn’t reach our servers. Please check your internet connection and try submitting again.';
+    } else if (raw.indexOf('row-level security') !== -1 || raw.indexOf('rls') !== -1 || raw.indexOf('permission') !== -1 || raw.indexOf('not authorized') !== -1) {
+      errTitle   = 'Permission issue';
+      errMessage = 'Your request couldn’t be saved due to a permissions setting on our side. Please contact support so we can activate your license manually.';
+    } else if (raw.indexOf('database error') !== -1 || raw.indexOf('insert') !== -1 || raw.indexOf('duplicate') !== -1) {
+      errTitle   = 'We couldn’t save your request';
+      errMessage = 'We couldn’t save your request details. Please try again in a moment — if the problem continues, contact support.';
+    } else if (err && err.message) {
+      /* Surface the raw error as a last resort so users have something actionable. */
+      errMessage = 'Something went wrong while submitting your request: ' + err.message;
+    }
+
+    showToast('error', errTitle, errMessage);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('is-loading');
+  }
+});
+</script>
+</body>
+</html>

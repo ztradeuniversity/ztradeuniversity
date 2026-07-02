@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(try { [void]\\([scriptblock]::Create\\([System.IO.File]::ReadAllText\\('D:\\\\ZTU_AUTOMATION\\\\master_engine.ps1'\\)\\)\\); 'PARSE OK' } catch { 'PARSE FAIL: ' + $_.Exception.Message })",
+      "PowerShell(Write-Host '=== Check 4: Engine patches in place ===' -ForegroundColor Cyan; @\\( @{n='Phase 15.5A STEP 8.5 block present';p='Draining email_outbox'}, @{n='Phase 15.5C return=minimal fix';p='return=minimal,count=exact'}, @{n='Phase 15.5C error body capture';p='PostgREST body:'}, @{n='-SkipOutbox switch present';p='\\\\$SkipOutbox'}\\) | ForEach-Object { $hit = Select-String -Path 'D:\\\\ZTU_AUTOMATION\\\\master_engine.ps1' -Pattern $_.p -SimpleMatch:$false -Quiet; Write-Host \\(\"  {0}  {1}\" -f $\\(if\\($hit\\){'[OK]   '}else{'[MISSING]'}\\), $_.n\\) -ForegroundColor $\\(if\\($hit\\){'Green'}else{'Red'}\\) }; Write-Host ''; Write-Host '=== Check 5: Last log content \\(final 25 lines\\) ===' -ForegroundColor Cyan; Get-Content 'D:\\\\ZTU_AUTOMATION\\\\logs\\\\master_engine_2026-05-27_20-49-57.log' -Tail 25; Write-Host ''; Write-Host '=== Check 6: System clock ===' -ForegroundColor Cyan; \\(Get-Date\\).ToString\\('yyyy-MM-dd HH:mm:ss zzz'\\))",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Manager | Z Trade University</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/png" href="../assets/ztu-logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0d0902;--bg2:#1a1410;--bg3:#221c15;--bg4:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;
+      --text:rgba(255,255,255,.92);--muted:rgba(255,255,255,.55);--mut2:rgba(255,255,255,.34);--brd:rgba(200,156,63,.16);--brs:rgba(200,156,63,.32);
+      --bull:#10b981;--bear:#ef4444;--amber:#f59e0b;--blue:#60a5fa}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+    a{color:var(--gold2)}
+    header{position:sticky;top:0;z-index:10;background:rgba(13,9,2,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--brd);padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+    .brand{font-family:'Manrope',sans-serif;font-weight:900;font-size:16px;letter-spacing:-.3px}
+    .brand small{display:block;font-size:9px;font-weight:700;color:var(--gold2);letter-spacing:2px;text-transform:uppercase}
+    .wrap{max-width:1180px;margin:0 auto;padding:22px;display:grid;grid-template-columns:360px 1fr;gap:20px}
+    @media(max-width:920px){.wrap{grid-template-columns:1fr}}
+    .card{background:var(--bg2);border:1px solid var(--brd);border-radius:14px;padding:16px;margin-bottom:16px}
+    .card h2{font-family:'Manrope',sans-serif;font-size:14px;font-weight:800;color:var(--gold3);margin-bottom:12px;letter-spacing:-.2px}
+    label{display:block;font-size:11px;font-weight:700;color:var(--gold2);margin:10px 0 4px;letter-spacing:.2px}
+    input,select,textarea{width:100%;padding:10px 12px;background:var(--bg4);border:1px solid var(--brd);border-radius:9px;color:var(--text);
+      font-family:'Inter',sans-serif;font-size:13.5px;outline:none;transition:border-color .15s}
+    input:focus,select:focus,textarea:focus{border-color:var(--brs)}
+    textarea{min-height:70px;resize:vertical;line-height:1.6}
+    .row{display:flex;gap:10px}.row>*{flex:1}
+    button{cursor:pointer;border:0;border-radius:9px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;padding:10px 14px;transition:opacity .15s,transform .15s}
+    button:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-gold{background:linear-gradient(135deg,#e6c987,#c89c3f 55%,#8c6c1f);color:#fff}
+    .btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--brd)}
+    .btn-danger{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .list-item{padding:11px 12px;border-radius:9px;border:1px solid var(--brd);background:var(--bg3);margin-bottom:8px;transition:background .15s;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .list-item:hover{background:rgba(200,156,63,.08)}
+    .li-main{flex:1;min-width:150px;cursor:pointer}
+    .list-item .t{font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .list-item .m{font-size:10.5px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .li-acts{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+    .row-btn{font-size:10.5px;font-weight:700;padding:5px 9px;border-radius:7px;border:1px solid var(--brd);background:var(--bg4);color:var(--text);cursor:pointer;white-space:nowrap}
+    .row-btn:hover{opacity:.9}
+    .row-btn.danger{border-color:rgba(239,68,68,.4);color:#fca5a5;background:rgba(239,68,68,.12)}
+    .pill{font-size:9px;font-weight:800;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px}
+    .pill.Win{background:rgba(16,185,129,.16);color:var(--bull)}
+    .pill.Loss{background:rgba(239,68,68,.16);color:#fca5a5}
+    .pill.Breakeven{background:rgba(255,255,255,.1);color:var(--muted)}
+    .pill.Running{background:rgba(96,165,250,.16);color:var(--blue)}
+    .pill.BUY{background:rgba(16,185,129,.14);color:var(--bull)}
+    .pill.SELL{background:rgba(239,68,68,.14);color:#fca5a5}
+    .pill.draft{background:rgba(245,158,11,.16);color:var(--amber)}
+    .note{font-size:11.5px;color:var(--mut2);margin-top:8px;line-height:1.5}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--brs);color:var(--gold3);
+      padding:11px 18px;border-radius:100px;font-size:12.5px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+    .toast.show{opacity:1}
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+    .mini{background:var(--bg3);border:1px solid var(--brd);border-radius:9px;padding:10px;text-align:center}
+    .mini .v{font-size:18px;font-weight:800;color:var(--gold3)}
+    .mini .k{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+    .gate{max-width:380px;margin:60px auto;text-align:center}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">Signal Manager <small>Z Trade University · Signal History</small></div>
+  <a href="../signal-history.html" target="_blank" style="font-size:12px;text-decoration:none">View public page ↗</a>
+</header>
+
+<!-- ADMIN KEY GATE -->
+<div class="gate" id="gate">
+  <div class="card">
+    <h2>🔐 Admin Access</h2>
+    <label for="adminKey">Admin Key</label>
+    <input id="adminKey" type="password" placeholder="Enter AI_ADMIN_KEY" autocomplete="off" />
+    <div class="btn-row"><button class="btn-gold" style="flex:1" onclick="unlock()">Unlock Manager</button></div>
+    <p class="note">Compared server-side (header <code>x-admin-key</code>) against the Cloudflare env var <b>AI_ADMIN_KEY</b> — the same key the Article Manager uses. Never stored in page source.</p>
+  </div>
+</div>
+
+<!-- MANAGER -->
+<div class="wrap hidden" id="manager">
+  <!-- LEFT: editor -->
+  <div>
+    <div class="card">
+      <h2 id="editorTitle">＋ New Signal</h2>
+      <input type="hidden" id="sigId" />
+      <div class="row">
+        <div><label for="signal_date">Signal Date</label><input id="signal_date" type="date" /></div>
+        <div><label for="market">Market</label><input id="market" placeholder="XAUUSD" /></div>
+      </div>
+      <div class="row">
+        <div><label for="signal_type">Type</label><select id="signal_type"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+        <div><label for="status">Status / Result</label>
+          <select id="status"><option>Running</option><option>Win</option><option>Loss</option><option>Breakeven</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label for="entry_price">Entry</label><input id="entry_price" type="number" step="any" placeholder="2310.0" /></div>
+        <div><label for="stop_loss">Stop Loss</label><input id="stop_loss" type="number" step="any" placeholder="2298.0" /></div>
+        <div><label for="take_profit">Take Profit</label><input id="take_profit" type="number" step="any" placeholder="2346.0" /></div>
+      </div>
+      <label for="result_summary">Result Summary</label>
+      <textarea id="result_summary" placeholder="e.g. TP hit, +3R clean trend continuation."></textarea>
+      <label for="mentor_notes">Mentor Notes (optional)</label>
+      <textarea id="mentor_notes" placeholder="Optional teaching note for traders."></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;color:var(--gold3)">
+        <input type="checkbox" id="is_published" checked style="width:auto" /> Published (visible on public page)
+      </label>
+      <div class="btn-row">
+        <button class="btn-gold" id="saveBtn" onclick="saveSignal()">💾 Save Signal</button>
+        <button class="btn-ghost" onclick="resetForm()">✨ New</button>
+        <button class="btn-danger hidden" id="delBtn" onclick="removeSignal()">🗑 Delete</button>
+      </div>
+      <p class="note" id="formNote">R:R is auto-computed from Entry / Stop / Target. Status “Running” = trade still open.</p>
+    </div>
+  </div>
+
+  <!-- RIGHT: list -->
+  <div>
+    <div class="card">
+      <h2>📊 Performance</h2>
+      <div class="stats-row">
+        <div class="mini"><div class="v" id="mTotal">—</div><div class="k">Total</div></div>
+        <div class="mini"><div class="v" id="mWinRate">—</div><div class="k">Win Rate</div></div>
+        <div class="mini"><div class="v" id="mRR">—</div><div class="k">Avg R:R</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🗂 All Signals <button class="btn-ghost" style="float:right;padding:5px 10px;font-size:11px" onclick="loadList()">↻ Refresh</button></h2>
+      <div id="list"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const API = '/api/signals';
+let KEY = '';
+let ROWS = [];
+
+const $ = (id) => document.getElementById(id);
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function hdrs(){ return { 'Content-Type':'application/json','x-admin-key':KEY }; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function unlock(){
+  KEY = $('adminKey').value.trim();
+  if(!KEY){ toast('Enter the admin key'); return; }
+  $('gate').classList.add('hidden');
+  $('manager').classList.remove('hidden');
+  const ok = await loadList();
+  if(ok === false){
+    $('gate').classList.remove('hidden');
+    $('manager').classList.add('hidden');
+    toast('Invalid admin key');
+  } else {
+    try { sessionStorage.setItem('ztu_kb_admin_key', KEY); } catch(e){}
+    resetForm();
+  }
+}
+
+function rr(s){
+  const e=Number(s.entry_price), sl=Number(s.stop_loss), tp=Number(s.take_profit);
+  if(![e,sl,tp].every(Number.isFinite)) return null;
+  const risk=Math.abs(e-sl); if(risk===0) return null;
+  return Math.abs(tp-e)/risk;
+}
+
+async function loadList(){
+  try {
+    const r = await fetch(API + '?action=list&all=1', { headers: hdrs() });
+    if(r.status === 403) return false;
+    const res = await r.json();
+    ROWS = Array.isArray(res.signals) ? res.signals : [];
+    renderStats(res.stats);
+    renderList();
+    return true;
+  } catch(e){ toast('Load failed'); return null; }
+}
+
+function renderStats(st){
+  if(!st) return;
+  $('mTotal').textContent  = st.total;
+  $('mWinRate').textContent = st.winRate == null ? '—' : st.winRate + '%';
+  $('mRR').textContent = st.avgRR == null ? '—' : st.avgRR + 'R';
+}
+
+function renderList(){
+  const el = $('list');
+  if(!ROWS.length){ el.innerHTML = '<p class="note">No signals yet. Create one on the left.</p>'; return; }
+  el.innerHTML = ROWS.map(s=>{
+    const r = rr(s); const rtxt = r==null ? '—' : r.toFixed(2)+'R';
+    return '<div class="list-item">'
+      + '<div class="li-main" onclick="editSignal(\''+s.id+'\')">'
+      + '<div class="t">'+esc(s.market)+' <span class="pill '+esc(s.signal_type)+'">'+esc(s.signal_type)+'</span>'
+      + '<span class="pill '+esc(s.status)+'">'+esc(s.status)+'</span>'
+      + (s.is_published ? '' : ' <span class="pill draft">draft</span>')+'</div>'
+      + '<div class="m"><span>'+esc(s.signal_date)+'</span><span>·</span><span>R:R '+rtxt+'</span>'
+      + (s.entry_price!=null?'<span>·</span><span>@ '+esc(s.entry_price)+'</span>':'')+'</div></div>'
+      + '<div class="li-acts">'
+      + '<button class="row-btn" onclick="editSignal(\''+s.id+'\')">Edit</button>'
+      + '<button class="row-btn danger" onclick="removeSignal(\''+s.id+'\')">Delete</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+function resetForm(){
+  $('editorTitle').textContent = '＋ New Signal';
+  $('sigId').value = '';
+  $('signal_date').value = new Date().toISOString().slice(0,10);
+  $('market').value=''; $('signal_type').value='BUY'; $('status').value='Running';
+  $('entry_price').value=''; $('stop_loss').value=''; $('take_profit').value='';
+  $('result_summary').value=''; $('mentor_notes').value=''; $('is_published').checked=true;
+  $('delBtn').classList.add('hidden');
+}
+
+function editSignal(id){
+  const s = ROWS.find(x=>x.id===id); if(!s) return;
+  $('editorTitle').textContent = '✏ Edit Signal';
+  $('sigId').value = s.id;
+  $('signal_date').value = (s.signal_date||'').slice(0,10);
+  $('market').value = s.market||''; $('signal_type').value = s.signal_type||'BUY'; $('status').value = s.status||'Running';
+  $('entry_price').value = s.entry_price ?? ''; $('stop_loss').value = s.stop_loss ?? ''; $('take_profit').value = s.take_profit ?? '';
+  $('result_summary').value = s.result_summary||''; $('mentor_notes').value = s.mentor_notes||'';
+  $('is_published').checked = s.is_published !== false;
+  $('delBtn').classList.remove('hidden');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+async function saveSignal(){
+  const id = $('sigId').value;
+  const data = {
+    id: id || undefined,
+    signal_date: $('signal_date').value,
+    market: $('market').value.trim(),
+    signal_type: $('signal_type').value,
+    status: $('status').value,
+    entry_price: $('entry_price').value,
+    stop_loss: $('stop_loss').value,
+    take_profit: $('take_profit').value,
+    result_summary: $('result_summary').value.trim(),
+    mentor_notes: $('mentor_notes').value.trim(),
+    is_published: $('is_published').checked
+  };
+  if(!data.signal_date || !data.market){ toast('Date and Market are required'); return; }
+  const action = id ? 'update' : 'create';
+  try {
+    const r = await fetch(API, { method:'POST', headers:hdrs(), body:JSON.stringify({ action, data }) });
+    const res = await r.json();
+    if(!r.ok || res.error){ toast(res.error || 'Save failed'); return; }
+    toast(id ? 'Signal updated' : 'Signal created');
+    await loadList();
+    resetForm();
+  } catch(e){ toast('Network error'); }
+}
+
+async function removeSignal(id){
+  id = id || $('sigId').value;
+  if(!id) return;
+  if(!confirm('Delete this signal permanently?')) return;
+  try {
+    const r = await fetch(API, { method:'POST', headers:hdrs(), body:JSON.stringify({ action:'delete', data:{ id } }) });
+    const res = await r.json();
+    if(!r.ok || res.error){ toast(res.error || 'Delete failed'); return; }
+    toast('Signal deleted');
+    await loadList();
+    if($('sigId').value === id) resetForm();
+  } catch(e){ toast('Network error'); }
+}
+
+/* allow Enter-to-unlock */
+$('adminKey').addEventListener('keydown', e=>{ if(e.key==='Enter') unlock(); });
+</script>
+</body>
+</html>

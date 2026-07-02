@@ -1,0 +1,33 @@
+{
+  "$schema": "ztu-broker-alias-map@1.0",
+  "version": "1.0",
+  "generated": "2026-05-22",
+  "purpose": "OPTIONAL informational-only broker name normalization map.",
+  "contract": [
+    "This file is read-only data for dashboards, analytics, and CRM tooling.",
+    "The orchestrator (master_engine.ps1) MUST NOT depend on this file.",
+    "If this file is missing, every part of the pipeline still works.",
+    "The compile / approval / matching / dedup logic is broker-agnostic — it",
+    "uses account_number as the sole primary identity."
+  ],
+  "usage": [
+    "Future analytics scripts may map a free-text broker_name from license_requests",
+    "to a canonical key (e.g., 'exness ltd', 'EXNESS', 'Exness Limited' -> 'Exness').",
+    "Useful for grouping rows in dashboards or sending broker-segmented newsletters.",
+    "NEVER use this file to gate compilation, approval, or rejection decisions."
+  ],
+  "aliases": {
+    "Exness":          ["exness", "Exness Ltd", "Exness Limited", "exness limited", "EXNESS"],
+    "HFM":             ["hfm", "HF Markets", "HotForex", "hot forex", "HF-Markets"],
+    "Pepperstone":     ["pepperstone", "Pepperstone Group", "PEPPERSTONE"],
+    "IC Markets":      ["ic markets", "IC Markets Global", "International Capital Markets", "icmarkets"],
+    "XM":              ["xm", "XM Group", "Trading Point", "XM Global"],
+    "Ox Securities":   ["ox securities", "OX", "OXS", "Ox Securities Pty"],
+    "FBS":             ["fbs", "FBS Markets", "FBS Inc"],
+    "FxPro":           ["fxpro", "FxPro Financial"],
+    "OctaFX":          ["octafx", "Octa FX", "Octa"],
+    "RoboForex":       ["roboforex", "Robo Forex"]
+  },
+  "fallback_label": "UNKNOWNBROKER",
+  "fallback_note": "When a license_requests row has a null/empty/whitespace broker_name, the orchestrator uses the literal string 'UNKNOWNBROKER' for filename derivation and worker-script arguments. This is a runtime fallback inside master_engine.ps1, NOT a value to add to the aliases map."
+}

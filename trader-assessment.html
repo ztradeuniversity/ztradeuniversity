@@ -1,0 +1,1785 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+<meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trader Self-Assessment | Z Trade University</title>
+<meta name="description" content="A professional AI-style self-diagnostic for traders. Discover your real trader level, behavioural profile, risk score, psychology score, and a personalised learning roadmap." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-1: #0d0902;
+    --bg-2: #1a1410;
+    --bg-3: #1a1410;
+    --bg-card: #1a1410;
+    --bg-card2: #2b2520;
+    --bg-panel: #1a1410;
+    --cyan:  #c89c3f;
+    --cyan2: #d4ae5e;
+    --cyan3: #e6c987;
+    --teal:  #c89c3f;
+    --teal2: #d4ae5e;
+    --gold:  #f59e0b;
+    --gold2: #fbbf24;
+    --bull:  #10b981;
+    --bull2: #34d399;
+    --bear:  #ef4444;
+    --bear2: #f87171;
+    --amber: #f59e0b;
+    --amber2:#fbbf24;
+    --purple:#e6c987;
+    --text:  rgba(255,255,255,0.92);
+    --muted: rgba(255,255,255,0.62);
+    --muted2:rgba(255,255,255,0.42);
+    --border:rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.14);
+    --light-surface: #f8fafc;
+    --light-surface2:#eef2f7;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-1);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(5,11,22,0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 66px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: inherit; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, #d4ae5e 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(200,156,63,0.36);
+  }
+  .brand-mark span {
+    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 900;
+    color: #d4ae5e; line-height: 1;
+  }
+  .brand-text { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
+  .topnav { display: flex; align-items: center; gap: 4px; }
+  .topnav a {
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.66);
+    text-decoration: none; padding: 8px 14px; border-radius: 8px;
+    transition: color .18s, background .18s;
+  }
+  .topnav a:hover { color: var(--cyan2); background: rgba(212,174,94,0.07); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    padding: 70px 0 60px;
+    background:
+      radial-gradient(900px 460px at 80% -10%, rgba(212,174,94,0.13), transparent 60%),
+      radial-gradient(700px 380px at 10% 20%, rgba(200,156,63,0.10), transparent 60%),
+      linear-gradient(180deg, #0d0902 0%, #1a1410 60%, #0d0902 100%);
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content:''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(212,174,94,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,174,94,0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at 50% 30%, black, transparent 70%);
+    -webkit-mask-image: radial-gradient(circle at 50% 30%, black, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; text-align: center; }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 7px 14px 7px 11px; border-radius: 100px;
+    background: rgba(212,174,94,0.10);
+    border: 1px solid rgba(212,174,94,0.28);
+    color: var(--cyan2);
+    font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase;
+  }
+  .live-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--cyan2);
+    box-shadow: 0 0 0 0 rgba(212,174,94,0.55);
+    animation: pulseDot 2.2s ease-out infinite;
+  }
+  @keyframes pulseDot {
+    0%   { box-shadow: 0 0 0 0 rgba(212,174,94,0.55); }
+    70%  { box-shadow: 0 0 0 9px rgba(212,174,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(212,174,94,0); }
+  }
+  .hero h1 {
+    font-family: 'Manrope', 'Inter', sans-serif;
+    font-size: clamp(34px, 5.4vw, 58px);
+    font-weight: 800; letter-spacing: -1.4px; line-height: 1.05;
+    margin: 20px auto 16px; max-width: 880px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(120deg, var(--cyan2) 0%, var(--teal2) 60%, #a7f3d0 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .hero-sub {
+    color: var(--muted); font-size: clamp(15px, 1.4vw, 17px);
+    max-width: 640px; margin: 0 auto 32px;
+  }
+  .start-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 16px 32px; border-radius: 100px;
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--teal) 100%);
+    color: #0d0902; font-size: 15px; font-weight: 800; letter-spacing: -.2px;
+    border: 0; cursor: pointer; text-decoration: none;
+    box-shadow: 0 10px 30px rgba(200,156,63,0.32), 0 1px 0 rgba(255,255,255,0.20) inset;
+    transition: transform .2s, box-shadow .22s;
+  }
+  .start-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(200,156,63,0.46), 0 1px 0 rgba(255,255,255,0.20) inset; }
+  .start-btn svg { transition: transform .2s; }
+  .start-btn:hover svg { transform: translateX(3px); }
+
+  /* ── EXPLAIN STRIP (3 cards) ── */
+  .explain {
+    padding: 50px 0 30px;
+    background: var(--bg-1);
+  }
+  .explain-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .ex-card {
+    background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px 22px;
+    transition: border-color .2s, transform .2s;
+  }
+  .ex-card:hover { border-color: rgba(212,174,94,0.25); transform: translateY(-2px); }
+  .ex-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    background: rgba(212,174,94,0.10);
+    border: 1px solid rgba(212,174,94,0.22);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--cyan2);
+    margin-bottom: 14px;
+  }
+  .ex-title { font-size: 14.5px; font-weight: 800; margin-bottom: 6px; }
+  .ex-body { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+  /* ── SURVEY ── */
+  .survey-wrap {
+    padding: 30px 0 70px;
+  }
+  .survey-shell {
+    max-width: 760px; margin: 0 auto;
+    background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 30px 32px 28px;
+    box-shadow: 0 22px 60px rgba(0,0,0,0.45);
+    position: relative;
+  }
+  .survey-shell.is-locked {
+    opacity: 0.55; pointer-events: none; filter: blur(1px);
+  }
+  .survey-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .q-counter {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: rgba(255,255,255,0.45); text-transform: uppercase;
+  }
+  .q-counter strong { color: var(--cyan2); }
+  .q-cat {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--cyan3); text-transform: uppercase;
+    background: rgba(212,174,94,0.08);
+    border: 1px solid rgba(212,174,94,0.22);
+    padding: 5px 12px; border-radius: 100px;
+  }
+  .progress-track {
+    height: 6px; border-radius: 100px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--teal2) 100%);
+    border-radius: 100px;
+    width: 0%;
+    transition: width .35s cubic-bezier(.2,.7,.3,1);
+    box-shadow: 0 0 14px rgba(212,174,94,0.45);
+  }
+
+  .q-block { animation: fadeUp .32s ease-out; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .q-text {
+    font-size: 19px; font-weight: 700; letter-spacing: -.3px;
+    color: #fff; margin-bottom: 6px;
+  }
+  .q-hint {
+    font-size: 13px; color: var(--muted2); margin-bottom: 18px;
+  }
+
+  .opt-list { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, transform .14s;
+    user-select: none;
+  }
+  .opt:hover { background: rgba(212,174,94,0.06); border-color: rgba(212,174,94,0.32); }
+  .opt.is-selected {
+    background: rgba(212,174,94,0.10);
+    border-color: var(--cyan2);
+    box-shadow: 0 0 0 4px rgba(212,174,94,0.10);
+  }
+  .opt-mark {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.20);
+    flex-shrink: 0; position: relative;
+    transition: border-color .18s, background .18s;
+  }
+  .opt.is-selected .opt-mark { border-color: var(--cyan2); background: var(--cyan2); }
+  .opt.is-selected .opt-mark::after {
+    content:''; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #0d0902;
+  }
+  .opt[data-multi="true"] .opt-mark { border-radius: 6px; }
+  .opt[data-multi="true"].is-selected .opt-mark::after {
+    width: 12px; height: 7px;
+    border: 0; background: transparent;
+    border-bottom: 2.4px solid #0d0902;
+    border-left:   2.4px solid #0d0902;
+    transform: translate(-50%, -65%) rotate(-45deg);
+    border-radius: 0;
+  }
+  .opt-label { font-size: 14.5px; font-weight: 600; color: rgba(255,255,255,0.88); }
+
+  /* MS grid for Q2 / Q13 */
+  .opt-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .opt-grid .opt { padding: 12px 14px; }
+  .opt-grid .opt-label { font-size: 13.5px; }
+
+  /* SL scale for Q12 */
+  .scale-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .scale-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 16px 8px; border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1.5px solid var(--border);
+    cursor: pointer; user-select: none;
+    transition: background .18s, border-color .18s, transform .12s;
+  }
+  .scale-btn:hover { background: rgba(212,174,94,0.06); border-color: rgba(212,174,94,0.32); }
+  .scale-btn.is-selected {
+    background: rgba(212,174,94,0.12);
+    border-color: var(--cyan2);
+    box-shadow: 0 0 0 4px rgba(212,174,94,0.10);
+  }
+  .scale-num {
+    font-family: 'Manrope', sans-serif;
+    font-size: 22px; font-weight: 800; color: #fff; line-height: 1;
+  }
+  .scale-btn.is-selected .scale-num { color: var(--cyan2); }
+  .scale-lbl {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 1px;
+    color: var(--muted2); text-transform: uppercase; text-align: center;
+  }
+
+  .survey-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 26px; padding-top: 22px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-back, .btn-next {
+    font-size: 13px; font-weight: 700;
+    padding: 12px 24px; border-radius: 100px;
+    cursor: pointer; border: 0;
+    transition: background .18s, transform .14s, border-color .18s, box-shadow .22s;
+  }
+  .btn-back {
+    background: transparent;
+    border: 1.5px solid var(--border-strong);
+    color: var(--muted);
+  }
+  .btn-back:hover:not(:disabled) { color: #fff; border-color: rgba(255,255,255,0.30); }
+  .btn-back:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-next {
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--teal) 100%);
+    color: #0d0902;
+    box-shadow: 0 8px 22px rgba(200,156,63,0.32);
+  }
+  .btn-next:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(200,156,63,0.46); }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+  /* Loading state */
+  .calc-overlay {
+    position: absolute; inset: 0; border-radius: 22px;
+    background: rgba(8,16,30,0.88);
+    backdrop-filter: blur(6px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .28s;
+  }
+  .calc-overlay.is-on { opacity: 1; pointer-events: all; }
+  .calc-spin {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 3px solid rgba(212,174,94,0.15);
+    border-top-color: var(--cyan2);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .calc-text {
+    font-size: 13px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--cyan2); text-transform: uppercase;
+  }
+
+  /* ── SCORING TRANSPARENCY ── */
+  .scoring {
+    padding: 60px 0;
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .section-eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--cyan2); text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-family: 'Manrope', sans-serif;
+    font-size: clamp(24px, 3.4vw, 34px);
+    font-weight: 800; letter-spacing: -.8px;
+    margin-bottom: 12px;
+  }
+  .section-sub {
+    color: var(--muted); font-size: 14.5px;
+    max-width: 600px;
+    margin-bottom: 26px;
+  }
+  .scoring-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  .sc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 18px;
+  }
+  .sc-pts {
+    font-family: 'Manrope', sans-serif;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(120deg, var(--cyan2) 0%, var(--teal2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1; margin-bottom: 8px;
+  }
+  .sc-name { font-size: 13.5px; font-weight: 700; margin-bottom: 4px; }
+  .sc-desc { font-size: 12px; color: var(--muted2); line-height: 1.5; }
+
+  /* ── RESULT CARD ── */
+  .result-section {
+    padding: 60px 0;
+    display: none;
+  }
+  .result-section.is-on { display: block; animation: fadeUp .5s ease-out; }
+  .result-wrap {
+    background: linear-gradient(165deg, var(--bg-card2) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 28px 80px rgba(0,0,0,0.55);
+    position: relative;
+    overflow: hidden;
+  }
+  .result-wrap::before {
+    content:''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan2), var(--teal2), transparent);
+  }
+
+  .critical-banner {
+    display: none;
+    background: linear-gradient(120deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.04) 100%);
+    border: 1.5px solid rgba(239,68,68,0.45);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    align-items: flex-start; gap: 12px;
+  }
+  .critical-banner.is-on { display: flex; }
+  .crit-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: rgba(239,68,68,0.25);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--bear2); flex-shrink: 0;
+  }
+  .crit-body { flex: 1; }
+  .crit-title {
+    font-size: 12px; font-weight: 800; letter-spacing: 1.6px;
+    color: var(--bear2); text-transform: uppercase; margin-bottom: 3px;
+  }
+  .crit-text { font-size: 13.5px; color: rgba(255,255,255,0.86); }
+
+  .result-top {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 28px;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .result-headline {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .level-badge {
+    display: inline-block;
+    font-family: 'Manrope', sans-serif;
+    font-size: 30px; font-weight: 800; letter-spacing: -.6px;
+    margin-bottom: 14px;
+  }
+  .level-Basic        { color: #94a3b8; }
+  .level-Beginner     { color: #60a5fa; }
+  .level-Developing   { color: var(--cyan2); }
+  .level-Intermediate { color: var(--teal2); }
+  .level-Advanced     {
+    background: linear-gradient(120deg, var(--gold2), var(--cyan2));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
+    padding: 7px 13px; border-radius: 100px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-strong);
+  }
+  .chip-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--cyan2); flex-shrink: 0;
+  }
+  .chip-profile { color: var(--cyan2); border-color: rgba(212,174,94,0.32); background: rgba(212,174,94,0.08); }
+  .chip-profile .chip-dot { background: var(--cyan2); }
+
+  .chip-conf-High   { color: var(--bull2); border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.08); }
+  .chip-conf-High   .chip-dot { background: var(--bull2); }
+  .chip-conf-Medium { color: var(--gold2); border-color: rgba(251,191,36,0.32); background: rgba(251,191,36,0.08); }
+  .chip-conf-Medium .chip-dot { background: var(--gold2); }
+  .chip-conf-Low    { color: var(--bear2); border-color: rgba(248,113,113,0.32); background: rgba(248,113,113,0.08); }
+  .chip-conf-Low    .chip-dot { background: var(--bear2); }
+
+  .chip-growth-green { color: var(--bull2); border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.08); }
+  .chip-growth-green .chip-dot { background: var(--bull2); }
+  .chip-growth-amber { color: var(--gold2); border-color: rgba(251,191,36,0.32); background: rgba(251,191,36,0.08); }
+  .chip-growth-amber .chip-dot { background: var(--gold2); }
+  .chip-growth-red   { color: var(--bear2); border-color: rgba(248,113,113,0.32); background: rgba(248,113,113,0.08); }
+  .chip-growth-red   .chip-dot { background: var(--bear2); }
+
+  /* Composite score visual */
+  .composite {
+    background: rgba(0,0,0,0.30);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px 22px;
+    text-align: center;
+    position: relative;
+  }
+  .comp-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .comp-num {
+    font-family: 'Manrope', sans-serif;
+    font-size: 64px; font-weight: 800; line-height: 1;
+    background: linear-gradient(120deg, var(--cyan2) 0%, var(--teal2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .comp-out {
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    margin-top: 4px;
+  }
+  .comp-bar {
+    height: 6px; border-radius: 100px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden; margin-top: 14px;
+  }
+  .comp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--teal2) 100%);
+    border-radius: 100px;
+    width: 0%;
+    transition: width 1s cubic-bezier(.2,.7,.3,1);
+  }
+
+  /* Sub-score meters */
+  .submeters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 30px;
+    margin: 28px 0 6px;
+  }
+  .sm-row {}
+  .sm-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 7px;
+  }
+  .sm-name {
+    font-size: 12.5px; font-weight: 700;
+    color: rgba(255,255,255,0.78);
+  }
+  .sm-val {
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px; font-weight: 800;
+    color: rgba(255,255,255,0.92);
+  }
+  .sm-pct { color: var(--muted2); font-weight: 600; font-size: 11px; margin-left: 5px; }
+  .sm-track {
+    height: 7px; border-radius: 100px;
+    background: rgba(255,255,255,0.06); overflow: hidden;
+  }
+  .sm-fill {
+    height: 100%; border-radius: 100px;
+    width: 0%;
+    transition: width 1s cubic-bezier(.2,.7,.3,1);
+  }
+  .sm-fill.t-cyan { background: linear-gradient(90deg, var(--cyan) 0%, var(--cyan3) 100%); }
+  .sm-fill.t-teal { background: linear-gradient(90deg, var(--teal) 0%, var(--teal2) 100%); }
+  .sm-fill.t-amber{ background: linear-gradient(90deg, var(--gold) 0%, var(--gold2) 100%); }
+  .sm-fill.t-bear { background: linear-gradient(90deg, var(--bear) 0%, var(--bear2) 100%); }
+  .sm-fill.t-bull { background: linear-gradient(90deg, var(--bull) 0%, var(--bull2) 100%); }
+
+  /* Strengths / Weaknesses */
+  .sw-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 18px; margin-top: 24px;
+  }
+  .sw-col {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+  }
+  .sw-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .sw-head.s { color: var(--bull2); }
+  .sw-head.w { color: var(--bear2); }
+  .sw-list {
+    list-style: none; display: flex; flex-direction: column; gap: 8px;
+  }
+  .sw-item {
+    display: flex; gap: 10px;
+    font-size: 13.5px; color: rgba(255,255,255,0.82);
+    line-height: 1.5;
+  }
+  .sw-item::before {
+    content:''; flex-shrink: 0;
+    width: 6px; height: 6px; border-radius: 50%;
+    margin-top: 9px;
+  }
+  .sw-col.s .sw-item::before { background: var(--bull2); }
+  .sw-col.w .sw-item::before { background: var(--bear2); }
+  .sw-empty {
+    font-size: 13px; color: var(--muted2); font-style: italic;
+  }
+
+  .ai-summary {
+    margin-top: 22px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(212,174,94,0.07) 0%, rgba(45,212,191,0.04) 100%);
+    border: 1px solid rgba(212,174,94,0.18);
+    border-left: 3px solid var(--cyan2);
+  }
+  .ai-lead {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--cyan2); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .ai-body {
+    font-size: 14px; color: rgba(255,255,255,0.86); line-height: 1.65;
+  }
+
+  /* ── ROADMAP ── */
+  .roadmap-section {
+    padding: 60px 0;
+    display: none;
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+  }
+  .roadmap-section.is-on { display: block; }
+  .road-list {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 6px;
+  }
+  .road-item {
+    display: flex; align-items: center; gap: 18px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .2s, background .2s, transform .18s;
+  }
+  .road-item:hover {
+    border-color: rgba(212,174,94,0.45);
+    background: var(--bg-card2);
+    transform: translateY(-2px);
+  }
+  .road-num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(212,174,94,0.10);
+    border: 1px solid rgba(212,174,94,0.28);
+    color: var(--cyan2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .road-text { flex: 1; }
+  .road-title { font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .road-cat   { font-size: 12px; color: var(--muted2); }
+  .road-arrow { color: var(--cyan2); flex-shrink: 0; transition: transform .18s; }
+  .road-item:hover .road-arrow { transform: translateX(4px); }
+
+  /* ── CTA (WhatsApp / Telegram) ── */
+  .cta-section {
+    padding: 60px 0;
+    display: none;
+    text-align: center;
+  }
+  .cta-section.is-on { display: block; }
+  .cta-wrap {
+    max-width: 720px; margin: 0 auto;
+    background: linear-gradient(160deg, var(--bg-card2) 0%, var(--bg-panel) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 36px 32px;
+  }
+  .cta-headline {
+    font-family: 'Manrope', sans-serif;
+    font-size: clamp(20px, 2.6vw, 26px);
+    font-weight: 800; letter-spacing: -.4px;
+    margin-bottom: 8px;
+  }
+  .cta-sub {
+    color: var(--muted); font-size: 14px;
+    margin-bottom: 22px;
+  }
+  .cta-row {
+    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+  }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 24px; border-radius: 100px;
+    font-size: 14px; font-weight: 800; letter-spacing: -.1px;
+    text-decoration: none; color: #fff;
+    border: 1.5px solid transparent;
+    transition: transform .18s, box-shadow .2s, background .2s;
+  }
+  .cta-wa {
+    background: linear-gradient(135deg, #1ebd5f 0%, #25d366 100%);
+    box-shadow: 0 8px 22px rgba(37,211,102,0.32);
+  }
+  .cta-wa:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(37,211,102,0.46); }
+  .cta-tg {
+    background: linear-gradient(135deg, #8c6c1f 0%, #d4ae5e 100%);
+    box-shadow: 0 8px 22px rgba(41,182,246,0.32);
+  }
+  .cta-tg:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(41,182,246,0.46); }
+
+  .restart-link {
+    display: inline-block; margin-top: 22px;
+    font-size: 12.5px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--muted); text-transform: uppercase;
+    text-decoration: none; cursor: pointer;
+  }
+  .restart-link:hover { color: var(--cyan2); }
+
+  /* ── DISCLAIMER ── */
+  .disclaim {
+    padding: 50px 0 70px;
+    background: var(--bg-1);
+    border-top: 1px solid var(--border);
+  }
+  .disclaim-wrap {
+    max-width: 880px; margin: 0 auto;
+    background: rgba(0,0,0,0.20);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 26px;
+  }
+  .disclaim-head {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--muted2); text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .disclaim-body {
+    font-size: 12.5px; color: var(--muted);
+    line-height: 1.7;
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px 0 30px;
+    font-size: 12px; color: var(--muted2);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 820px) {
+    .explain-grid { grid-template-columns: 1fr; }
+    .scoring-grid { grid-template-columns: 1fr 1fr; }
+    .result-top   { grid-template-columns: 1fr; }
+    .submeters    { grid-template-columns: 1fr; }
+    .sw-grid      { grid-template-columns: 1fr; }
+    .topnav a     { padding: 8px 10px; font-size: 12.5px; }
+  }
+  @media (max-width: 560px) {
+    .container { padding: 0 18px; }
+    .hero { padding: 56px 0 50px; }
+    .survey-shell { padding: 24px 20px 22px; border-radius: 18px; }
+    .q-text { font-size: 17px; }
+    .opt-grid { grid-template-columns: 1fr; }
+    .scale-num { font-size: 19px; }
+    .scale-lbl { font-size: 9.5px; letter-spacing: .6px; }
+    .scoring-grid { grid-template-columns: 1fr; }
+    .result-wrap { padding: 24px 20px; border-radius: 18px; }
+    .level-badge { font-size: 26px; }
+    .comp-num { font-size: 52px; }
+    .cta-row { flex-direction: column; }
+    .cta-btn { width: 100%; justify-content: center; }
+    .topnav a { padding: 6px 8px; font-size: 12px; }
+    .brand-text { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="brand">
+      <div class="brand-mark"><span>Z</span></div>
+      <span class="brand-text">Z Trade University</span>
+    </a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="articles.html">Articles</a>
+      <a href="live-sentiment.html">Live Sentiment</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── 1. HERO ── -->
+<section class="hero">
+  <div class="container hero-inner">
+    <span class="live-pill"><span class="dot"></span>AI Diagnostic Tool</span>
+    <h1>Find out what kind of <span class="accent">trader you really are</span>.</h1>
+    <p class="hero-sub">A structured 13-question self-diagnostic that returns your trader level, behavioural profile, risk score, psychology score, assessment confidence and AI growth potential — in under 4 minutes.</p>
+    <button class="start-btn" id="startBtn" type="button">
+      Start Assessment
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</section>
+
+<!-- ── 2. EXPLAIN STRIP ── -->
+<section class="explain">
+  <div class="container">
+    <div class="explain-grid">
+      <div class="ex-card">
+        <div class="ex-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="ex-title">What you'll get</div>
+        <div class="ex-body">A composite score out of 100, your trader level, behavioural profile, four sub-scores, top strengths and weaknesses, and a critical red-flag check.</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </div>
+        <div class="ex-title">How it works</div>
+        <div class="ex-body">13 structured questions across knowledge, risk, psychology, execution and learning. Each answer is weighted. Contradictions reduce assessment confidence.</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="ex-title">~4 minutes</div>
+        <div class="ex-body">Everything runs on your device. No account, no signup, no data collection. Refresh the page and the result is gone.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. SURVEY ── -->
+<section class="survey-wrap" id="surveyWrap">
+  <div class="container">
+    <div class="survey-shell" id="surveyShell">
+      <div class="survey-head">
+        <span class="q-counter">Question <strong id="qNum">1</strong> of 13</span>
+        <span class="q-cat" id="qCat">Trading Experience</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+      <div class="q-block" id="questionBlock">
+        <!-- rendered by JS -->
+      </div>
+
+      <div class="survey-nav">
+        <button class="btn-back" id="btnBack" type="button">← Back</button>
+        <button class="btn-next" id="btnNext" type="button">Next →</button>
+      </div>
+
+      <div class="calc-overlay" id="calcOverlay">
+        <div class="calc-spin"></div>
+        <div class="calc-text">Analyzing your trading profile…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. SCORING TRANSPARENCY ── -->
+<section class="scoring">
+  <div class="container">
+    <div class="section-eyebrow">Scoring Model</div>
+    <h2 class="section-title">A 100-point system, fully transparent.</h2>
+    <p class="section-sub">Your answers feed five weighted buckets. No black box. The same input always produces the same output.</p>
+    <div class="scoring-grid">
+      <div class="sc-card">
+        <div class="sc-pts">20</div>
+        <div class="sc-name">Knowledge</div>
+        <div class="sc-desc">Concepts you understand: structure, liquidity, sessions, news, risk math.</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-pts">25</div>
+        <div class="sc-name">Risk Management</div>
+        <div class="sc-desc">Risk per trade, stop-loss usage, position sizing logic.</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-pts">25</div>
+        <div class="sc-name">Psychology</div>
+        <div class="sc-desc">Emotional control, revenge behaviour, overtrading tendency.</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-pts">20</div>
+        <div class="sc-name">Execution</div>
+        <div class="sc-desc">Plan clarity, journaling, entry checklist, hard stop-loss discipline.</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-pts">10</div>
+        <div class="sc-name">Learning</div>
+        <div class="sc-desc">Review habits, courses, weekly study, market-research routine.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. RESULT CARD ── -->
+<section class="result-section" id="resultSection">
+  <div class="container">
+    <div class="result-wrap">
+      <div class="critical-banner" id="critBanner">
+        <div class="crit-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="crit-body">
+          <div class="crit-title">Critical Red Flag</div>
+          <div class="crit-text" id="critText"></div>
+        </div>
+      </div>
+
+      <div class="result-top">
+        <div>
+          <div class="result-headline">Your Trader Level</div>
+          <div class="level-badge" id="levelBadge">Beginner</div>
+          <div class="chips">
+            <span class="chip chip-profile" id="profileChip"><span class="chip-dot"></span><span id="profileText">Profile</span></span>
+            <span class="chip" id="confChip"><span class="chip-dot"></span><span id="confText">Confidence</span></span>
+            <span class="chip" id="growthChip"><span class="chip-dot"></span><span id="growthText">Growth</span></span>
+          </div>
+        </div>
+        <div class="composite">
+          <div class="comp-label">Composite Score</div>
+          <div class="comp-num"><span id="compNum">0</span></div>
+          <div class="comp-out">out of 100</div>
+          <div class="comp-bar"><div class="comp-bar-fill" id="compFill"></div></div>
+        </div>
+      </div>
+
+      <div class="submeters" id="subMeters"></div>
+
+      <div class="sw-grid">
+        <div class="sw-col s">
+          <div class="sw-head s">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Strengths
+          </div>
+          <ul class="sw-list" id="strengthsList"></ul>
+        </div>
+        <div class="sw-col w">
+          <div class="sw-head w">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Weaknesses
+          </div>
+          <ul class="sw-list" id="weakList"></ul>
+        </div>
+      </div>
+
+      <div class="ai-summary">
+        <div class="ai-lead">AI Diagnostic Summary</div>
+        <div class="ai-body" id="aiSummary"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. ROADMAP ── -->
+<section class="roadmap-section" id="roadmapSection">
+  <div class="container">
+    <div class="section-eyebrow">Recommended Roadmap</div>
+    <h2 class="section-title">Your next 4–6 learning steps.</h2>
+    <p class="section-sub">Targeted to your weakest dimensions first. Read each in order.</p>
+    <div class="road-list" id="roadList"></div>
+  </div>
+</section>
+
+<!-- ── 7. WHATSAPP / TELEGRAM CTA ── -->
+<section class="cta-section" id="ctaSection">
+  <div class="container">
+    <div class="cta-wrap">
+      <div class="cta-headline" id="ctaHeadline">Want a deeper review?</div>
+      <div class="cta-sub" id="ctaSub">A Z Trade University mentor can walk through your result with you and answer questions specific to your trading.</div>
+      <div class="cta-row">
+        <a class="cta-btn cta-wa" id="ctaWa" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.8-.9-3-1.6-4.2-3.6-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5 0-.1-.6-1.5-.9-2.1-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.5 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.2 5.1 4.5 1.9.8 2.6.9 3.6.7.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.3-.5-.4zM12 2C6.5 2 2 6.5 2 12c0 1.7.4 3.4 1.3 4.8L2 22l5.3-1.4c1.4.7 3 1.1 4.7 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.5-1.2l-.3-.2-3.1.8.8-3-.2-.3C3.9 14.8 3.5 13.4 3.5 12c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5-3.8 8.5-8.5 8.5z"/></svg>
+          WhatsApp Mentor
+        </a>
+        <a class="cta-btn cta-tg" id="ctaTg" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 3 2 11.2l5.3 1.9 2 6.2c.2.7 1 .9 1.6.4l3-2.7 5 3.7c.6.5 1.5.2 1.7-.6l3.3-15c.2-1-.7-1.8-1.6-1.4zM10 14.7l-.4 4.1L8.3 14l11-9.4L10 14.7z"/></svg>
+          Telegram Mentor
+        </a>
+      </div>
+      <a class="restart-link" id="restartLink">↻ Restart Assessment</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── 8. DISCLAIMER ── -->
+<section class="disclaim">
+  <div class="container">
+    <div class="disclaim-wrap">
+      <div class="disclaim-head">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Disclaimer
+      </div>
+      <div class="disclaim-body">
+        This Trader Self-Assessment is an <strong>educational diagnostic tool only</strong>. It is not investment advice, financial advice, a trading signal, or a recommendation to buy or sell any instrument. Results are calculated entirely from your own self-reported answers and may not reflect your real trading reality if answered inaccurately. Trading foreign exchange, cryptocurrency, commodities and other leveraged instruments carries substantial risk of loss and is not suitable for every investor. Past behaviour and past results do not predict future outcomes. Z Trade University is an educational platform and is not a regulated financial advisor; we do not manage funds, execute trades on behalf of users, or guarantee profitability. By using this tool you accept that all decisions you take in the markets are your own responsibility.
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">© Z Trade University · Educational content only</div>
+</footer>
+
+<script>
+/* ────────────────────────────────────────────────────────────────
+   TRADER SELF-ASSESSMENT — Phase 1 client-side engine
+   All scoring, profile detection, confidence, growth, roadmap
+   runs locally. No network calls.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ===== 1. QUESTION BANK ===== */
+const QUESTIONS = [
+  {
+    id: 'q1', cat: 'Trading Experience', fmt: 'SC',
+    text: 'How long have you been actively trading?',
+    hint: 'Pick the option closest to your real trading time, not chart-watching time.',
+    options: [
+      { v:'a', label:'Less than 3 months',  score:{ knowledge:1 } },
+      { v:'b', label:'3 to 12 months',      score:{ knowledge:2 } },
+      { v:'c', label:'1 to 3 years',        score:{ knowledge:4 } },
+      { v:'d', label:'More than 3 years',   score:{ knowledge:6 } }
+    ]
+  },
+  {
+    id: 'q2', cat: 'Market Knowledge', fmt: 'MS',
+    text: 'Which of these concepts do you actually understand and apply?',
+    hint: 'Select every concept you can explain to another trader. Be honest.',
+    options: [
+      { v:'trend',         label:'Trend direction',              score:{ knowledge:1 } },
+      { v:'sr',            label:'Support and resistance',       score:{ knowledge:1 } },
+      { v:'structure',     label:'Market structure (HH/HL)',     score:{ knowledge:1 } },
+      { v:'liquidity',     label:'Liquidity / sweeps',           score:{ knowledge:1 } },
+      { v:'orderBlocks',   label:'Order blocks',                 score:{ knowledge:1 } },
+      { v:'fvg',           label:'Fair value gaps (FVG)',        score:{ knowledge:1 } },
+      { v:'sessions',      label:'Sessions (Asia/London/NY)',    score:{ knowledge:1 } },
+      { v:'dxy',           label:'DXY correlation',              score:{ knowledge:1 } },
+      { v:'goldUsd',       label:'Gold vs USD inverse',          score:{ knowledge:1 } },
+      { v:'news',          label:'News impact on price',         score:{ knowledge:1 } },
+      { v:'atr',           label:'ATR / volatility',             score:{ knowledge:1 } },
+      { v:'rr',            label:'Risk-to-reward ratio',         score:{ knowledge:1 } },
+      { v:'fib',           label:'Fibonacci retracement',        score:{ knowledge:1 } },
+      { v:'lot',           label:'Lot size math',                score:{ knowledge:1 } }
+    ]
+  },
+  {
+    id: 'q3', cat: 'Risk Management', fmt: 'SC',
+    text: 'How much of your account do you risk per trade?',
+    hint: 'Risk = the amount you would actually lose if your stop loss is hit.',
+    options: [
+      { v:'a', label:"I don't really know",           score:{ riskMgmt:0 } },
+      { v:'b', label:'5% or more per trade',          score:{ riskMgmt:2 } },
+      { v:'c', label:'3 to 5% per trade',             score:{ riskMgmt:5 } },
+      { v:'d', label:'1 to 2% per trade (ideal)',     score:{ riskMgmt:12 } },
+      { v:'e', label:'Less than 1% per trade',        score:{ riskMgmt:10 } }
+    ]
+  },
+  {
+    id: 'q4', cat: 'Stop Loss', fmt: 'SC',
+    text: 'How do you use stop losses?',
+    hint: 'A "hard" stop is placed on the broker. A "mental" stop is only in your head.',
+    options: [
+      { v:'a', label:'I never use a stop loss',                       score:{ riskMgmt:0 } },
+      { v:'b', label:'Sometimes — depends on the trade',              score:{ riskMgmt:3 } },
+      { v:'c', label:'Always, but as a mental stop',                  score:{ riskMgmt:5 } },
+      { v:'d', label:'Always, as a hard stop on the broker',          score:{ riskMgmt:8, execution:3 } }
+    ]
+  },
+  {
+    id: 'q5', cat: 'Position Sizing', fmt: 'SC',
+    text: 'How do you decide your lot size?',
+    hint: 'Position sizing is what turns risk percentage into actual lot size.',
+    options: [
+      { v:'a', label:'Random — whatever feels right',                  score:{ riskMgmt:0 } },
+      { v:'b', label:'Same lot size on every trade',                   score:{ riskMgmt:2 } },
+      { v:'c', label:'I calculate it based on my account % and SL',    score:{ riskMgmt:5 } }
+    ]
+  },
+  {
+    id: 'q6', cat: 'Emotional Control', fmt: 'SC',
+    text: 'After a losing trade, what do you usually do?',
+    hint: 'Think about the last 10 losses, not the ideal version of yourself.',
+    options: [
+      { v:'a', label:'Enter a new trade immediately to recover',       score:{ psychology:0 } },
+      { v:'b', label:'I feel angry but force myself to wait',          score:{ psychology:3 } },
+      { v:'c', label:'Journal it and move on',                         score:{ psychology:7 } },
+      { v:'d', label:'Follow my plan — no emotional change',           score:{ psychology:12 } }
+    ]
+  },
+  {
+    id: 'q7', cat: 'Revenge Trading', fmt: 'SC',
+    text: 'How often do you take a trade specifically to recover a loss?',
+    hint: 'Revenge trading = entering because you lost, not because of a setup.',
+    options: [
+      { v:'a', label:'Yes, often',     score:{ psychology:0 } },
+      { v:'b', label:'Sometimes',      score:{ psychology:2 } },
+      { v:'c', label:'Rarely',         score:{ psychology:5 } },
+      { v:'d', label:'Never',          score:{ psychology:8 } }
+    ]
+  },
+  {
+    id: 'q8', cat: 'Overtrading', fmt: 'SC',
+    text: 'On average, how many trades do you take per day?',
+    hint: 'Including scalps, partials, and trades you closed quickly.',
+    options: [
+      { v:'a', label:'10 or more',                            score:{ psychology:0 } },
+      { v:'b', label:'5 to 9',                                score:{ psychology:2 } },
+      { v:'c', label:'2 to 4',                                score:{ psychology:4 } },
+      { v:'d', label:'0 to 1 — only A+ setups',               score:{ psychology:5, execution:4 } }
+    ]
+  },
+  {
+    id: 'q9', cat: 'Trading Journal', fmt: 'SC',
+    text: 'Do you keep a trading journal?',
+    hint: 'A journal logs your entries, reasoning, screenshots, emotions, results.',
+    options: [
+      { v:'a', label:"I don't journal",                       score:{ execution:0, learning:0 } },
+      { v:'b', label:'I plan to start one',                   score:{ execution:0, learning:0 } },
+      { v:'c', label:'Sometimes — not every trade',           score:{ execution:2, learning:2 } },
+      { v:'d', label:'Every trade, with screenshots',         score:{ execution:4, learning:4 } }
+    ]
+  },
+  {
+    id: 'q10', cat: 'Strategy Clarity', fmt: 'SC',
+    text: 'How clear is your trading strategy?',
+    hint: 'A real strategy has entry rules, exit rules, and risk rules written down.',
+    options: [
+      { v:'a', label:'I trade by feeling',                              score:{ execution:0 } },
+      { v:'b', label:'I follow signals or trading groups',              score:{ execution:1 } },
+      { v:'c', label:'I have a strategy but not written down',          score:{ execution:4 } },
+      { v:'d', label:'I have a written, tested trading plan',           score:{ execution:6 } }
+    ]
+  },
+  {
+    id: 'q11', cat: 'News Awareness', fmt: 'SC',
+    text: 'Do you check the economic calendar before trading?',
+    hint: 'High-impact news can invalidate a clean technical setup in seconds.',
+    options: [
+      { v:'a', label:"I don't check news",                              score:{ knowledge:0 } },
+      { v:'b', label:'Sometimes',                                       score:{ knowledge:2 } },
+      { v:'c', label:'Always — before every session',                   score:{ knowledge:4 } }
+    ]
+  },
+  {
+    id: 'q12', cat: 'Entry Checklist', fmt: 'SL',
+    text: 'How often do you run through a full entry checklist before placing a trade?',
+    hint: 'A checklist: setup, structure, risk:reward, news, session timing, position size.',
+    scale: [
+      { v:1, label:'Never',     score:{ execution:0 } },
+      { v:2, label:'Rarely',    score:{ execution:1 } },
+      { v:3, label:'Sometimes', score:{ execution:1 } },
+      { v:4, label:'Often',     score:{ execution:2 } },
+      { v:5, label:'Always',    score:{ execution:3 } }
+    ]
+  },
+  {
+    id: 'q13', cat: 'Learning Habits', fmt: 'MS',
+    text: 'Which of these learning habits do you actually maintain?',
+    hint: 'Select only the ones you do consistently — not the ones you wish you did.',
+    options: [
+      { v:'articles',  label:'Read trading articles weekly',           score:{ learning:2 } },
+      { v:'videos',    label:'Watch educational chart breakdowns',     score:{ learning:2 } },
+      { v:'review',    label:'Review my trades weekly',                score:{ learning:2 } },
+      { v:'analysts',  label:'Follow analysts / institutional reports',score:{ learning:1 } },
+      { v:'course',    label:'Completed a structured trading course',  score:{ learning:1 } },
+      { v:'none',      label:'None of these',                          score:{ learning:0 } }
+    ]
+  }
+];
+
+/* ===== 2. STATE ===== */
+const state = {
+  current: 0,
+  answers: {}, // { q1:'a', q2:['trend','sr'], q12: 3, ... }
+  done: false
+};
+
+/* ===== 3. RENDER QUESTION ===== */
+const qBlock = document.getElementById('questionBlock');
+const qNum = document.getElementById('qNum');
+const qCat = document.getElementById('qCat');
+const progressFill = document.getElementById('progressFill');
+const btnBack = document.getElementById('btnBack');
+const btnNext = document.getElementById('btnNext');
+
+function renderQuestion() {
+  const q = QUESTIONS[state.current];
+  qNum.textContent = state.current + 1;
+  qCat.textContent = q.cat;
+  progressFill.style.width = ((state.current) / QUESTIONS.length * 100) + '%';
+
+  let inner = `<div class="q-text">${q.text}</div><div class="q-hint">${q.hint}</div>`;
+
+  if (q.fmt === 'SC') {
+    inner += `<div class="opt-list">`;
+    q.options.forEach(opt => {
+      const sel = state.answers[q.id] === opt.v ? ' is-selected' : '';
+      inner += `<div class="opt${sel}" data-q="${q.id}" data-v="${opt.v}" data-multi="false">
+        <span class="opt-mark"></span><span class="opt-label">${opt.label}</span>
+      </div>`;
+    });
+    inner += `</div>`;
+  }
+  else if (q.fmt === 'MS') {
+    const sel = state.answers[q.id] || [];
+    inner += `<div class="opt-grid">`;
+    q.options.forEach(opt => {
+      const isSel = sel.includes(opt.v) ? ' is-selected' : '';
+      inner += `<div class="opt${isSel}" data-q="${q.id}" data-v="${opt.v}" data-multi="true">
+        <span class="opt-mark"></span><span class="opt-label">${opt.label}</span>
+      </div>`;
+    });
+    inner += `</div>`;
+  }
+  else if (q.fmt === 'SL') {
+    const cur = state.answers[q.id];
+    inner += `<div class="scale-row">`;
+    q.scale.forEach(s => {
+      const sel = cur === s.v ? ' is-selected' : '';
+      inner += `<div class="scale-btn${sel}" data-q="${q.id}" data-v="${s.v}">
+        <span class="scale-num">${s.v}</span>
+        <span class="scale-lbl">${s.label}</span>
+      </div>`;
+    });
+    inner += `</div>`;
+  }
+
+  qBlock.innerHTML = inner;
+
+  // attach listeners
+  qBlock.querySelectorAll('.opt').forEach(el => {
+    el.addEventListener('click', () => handleOption(el));
+  });
+  qBlock.querySelectorAll('.scale-btn').forEach(el => {
+    el.addEventListener('click', () => handleScale(el));
+  });
+
+  btnBack.disabled = state.current === 0;
+  btnNext.disabled = !isAnswered(q);
+  btnNext.textContent = state.current === QUESTIONS.length - 1 ? 'See Results →' : 'Next →';
+}
+
+function isAnswered(q) {
+  const a = state.answers[q.id];
+  if (q.fmt === 'MS') return Array.isArray(a) && a.length > 0;
+  return a !== undefined && a !== null;
+}
+
+function handleOption(el) {
+  const qid = el.dataset.q;
+  const v = el.dataset.v;
+  const multi = el.dataset.multi === 'true';
+  if (multi) {
+    const cur = state.answers[qid] || [];
+    let next;
+    if (v === 'none') {
+      // "none" clears all others
+      next = cur.includes('none') ? [] : ['none'];
+    } else {
+      next = cur.filter(x => x !== 'none');
+      next = next.includes(v) ? next.filter(x => x !== v) : [...next, v];
+    }
+    state.answers[qid] = next;
+  } else {
+    state.answers[qid] = v;
+  }
+  renderQuestion();
+}
+
+function handleScale(el) {
+  const qid = el.dataset.q;
+  const v = parseInt(el.dataset.v, 10);
+  state.answers[qid] = v;
+  renderQuestion();
+}
+
+/* ===== 4. NAVIGATION ===== */
+btnBack.addEventListener('click', () => {
+  if (state.current > 0) {
+    state.current--;
+    renderQuestion();
+  }
+});
+btnNext.addEventListener('click', () => {
+  const q = QUESTIONS[state.current];
+  if (!isAnswered(q)) return;
+  if (state.current < QUESTIONS.length - 1) {
+    state.current++;
+    renderQuestion();
+  } else {
+    finishAssessment();
+  }
+});
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('surveyWrap').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+/* ===== 5. SCORING ===== */
+const CAPS = { knowledge:20, riskMgmt:25, psychology:25, execution:20, learning:10 };
+
+function calculateScores() {
+  const s = { knowledge:0, riskMgmt:0, psychology:0, execution:0, learning:0 };
+  QUESTIONS.forEach(q => {
+    const a = state.answers[q.id];
+    if (a === undefined || a === null) return;
+    if (q.fmt === 'SC') {
+      const opt = q.options.find(o => o.v === a);
+      if (opt) addScore(s, opt.score);
+    } else if (q.fmt === 'MS') {
+      a.forEach(v => {
+        const opt = q.options.find(o => o.v === v);
+        if (opt) addScore(s, opt.score);
+      });
+    } else if (q.fmt === 'SL') {
+      const sopt = q.scale.find(o => o.v === a);
+      if (sopt) addScore(s, sopt.score);
+    }
+  });
+  // apply caps
+  Object.keys(s).forEach(k => { s[k] = Math.min(s[k], CAPS[k]); });
+  const total = s.knowledge + s.riskMgmt + s.psychology + s.execution + s.learning;
+  return { ...s, total };
+}
+function addScore(target, delta) {
+  if (!delta) return;
+  Object.keys(delta).forEach(k => { target[k] = (target[k] || 0) + delta[k]; });
+}
+
+/* ===== 6. LEVEL ===== */
+function detectLevel(scores) {
+  const c = scores.total;
+  let level;
+  if (c <= 25) level = 'Basic';
+  else if (c <= 45) level = 'Beginner';
+  else if (c <= 65) level = 'Developing';
+  else if (c <= 82) level = 'Intermediate';
+  else level = 'Advanced';
+
+  // guardrail: experience < 3 months but knowledge claim is huge
+  const q2 = state.answers.q2 || [];
+  if (state.answers.q1 === 'a' && q2.length >= 12 && (level === 'Intermediate' || level === 'Advanced')) {
+    level = 'Developing';
+  }
+  return level;
+}
+
+/* ===== 7. PROFILE (8 profiles, includes Burned-Out) ===== */
+function detectProfile(scores) {
+  const a = state.answers;
+  const psyPct = scores.psychology / 25;
+  const exPct  = scores.execution / 20;
+  const rmPct  = scores.riskMgmt / 25;
+  const lcPct  = scores.learning / 10;
+  const c = scores.total;
+
+  const overtrading = a.q8 === 'a' || a.q8 === 'b';
+  const emotionalWeak = a.q6 === 'a' || a.q6 === 'b';
+  const revengePattern = a.q7 === 'a' || a.q7 === 'b';
+
+  // 1. Burned-Out — most severe combo
+  if (overtrading && emotionalWeak && revengePattern) return 'Burned-Out Trader';
+
+  // 2. Risky
+  if (a.q3 === 'a' || a.q3 === 'b' || a.q4 === 'a' || rmPct < 0.4) return 'Risky Trader';
+
+  // 3. Emotional
+  if (a.q6 === 'a' || psyPct < 0.4) return 'Emotional Trader';
+
+  // 4. Random Entry
+  if (a.q10 === 'a' || a.q10 === 'b') return 'Random Entry Trader';
+
+  // 5. Overtrader
+  if (overtrading && exPct < 0.6) return 'Overtrader';
+
+  // 6. Structure-Based
+  const q2 = a.q2 || [];
+  if (q2.includes('structure') && q2.includes('liquidity') && q2.includes('orderBlocks') && exPct >= 0.65) {
+    return 'Structure-Based Trader';
+  }
+
+  // 7. Disciplined
+  if (exPct >= 0.75 && rmPct >= 0.7 && psyPct >= 0.7) return 'Disciplined Trader';
+
+  // 8. Learning-Focused
+  if (lcPct >= 0.7 && c < 65) return 'Learning-Focused Trader';
+
+  // fallback
+  return c >= 65 ? 'Disciplined Trader' : 'Learning-Focused Trader';
+}
+
+/* ===== 8. ASSESSMENT CONFIDENCE ===== */
+function detectConfidence() {
+  const a = state.answers;
+  let contradictions = 0;
+  const notes = [];
+
+  // Knowledge vs experience
+  const q2count = (a.q2 || []).length;
+  if (a.q1 === 'a' && q2count >= 8)  { contradictions++; notes.push('knowledge claim exceeds short experience'); }
+  if (a.q1 === 'd' && q2count <= 3)  { contradictions++; notes.push('long experience but few known concepts'); }
+
+  // Risk per trade vs SL behaviour
+  if (a.q3 === 'd' && a.q4 === 'a')                 { contradictions++; notes.push('ideal risk % but never using SL'); }
+  if ((a.q3 === 'a' || a.q3 === 'b') && a.q4 === 'd'){ contradictions++; notes.push('large risk per trade but hard SL claimed'); }
+
+  // Emotion vs revenge
+  if (a.q6 === 'd' && a.q7 === 'a')                 { contradictions++; notes.push('claims emotional control yet often revenge trades'); }
+  if (a.q6 === 'a' && a.q7 === 'd')                 { contradictions++; notes.push('reacts emotionally yet claims never revenge trades'); }
+
+  // Strategy vs journal
+  if (a.q10 === 'd' && a.q9 === 'a')                { contradictions++; notes.push('written plan but no journaling'); }
+
+  let level, tone;
+  if (contradictions === 0)      { level = 'High';   tone = 'High'; }
+  else if (contradictions <= 2)  { level = 'Medium'; tone = 'Medium'; }
+  else                            { level = 'Low';    tone = 'Low'; }
+
+  return { level, tone, contradictions, notes };
+}
+
+/* ===== 9. AI GROWTH POTENTIAL ===== */
+function detectGrowth(scores) {
+  const a = state.answers;
+  const lcPct = scores.learning / 10;
+  const hasJournal = a.q9 === 'c' || a.q9 === 'd';
+  const hasStrategy = a.q10 === 'c' || a.q10 === 'd';
+  const learning13 = a.q13 || [];
+  const hasLearningHabit = learning13.length > 0 && !learning13.includes('none');
+  const checklist = a.q12 || 1;
+  const hasDiscipline = checklist >= 3;
+
+  let positives = 0;
+  if (lcPct >= 0.6) positives++;
+  if (hasJournal) positives++;
+  if (hasStrategy) positives++;
+  if (hasLearningHabit) positives++;
+  if (hasDiscipline) positives++;
+
+  if (positives >= 4 && lcPct >= 0.5) return { label: 'High Growth Potential', tone: 'green' };
+  if (positives >= 2)                  return { label: 'Moderate Growth Potential', tone: 'amber' };
+  return { label: 'High Risk of Stagnation', tone: 'red' };
+}
+
+/* ===== 10. RED FLAGS ===== */
+function detectCriticalFlag() {
+  const a = state.answers;
+  if (a.q4 === 'a') return 'You currently trade without a stop loss. This is the single fastest way to blow an account. Fix this before anything else.';
+  if (a.q6 === 'a') return 'You enter a new trade immediately after a loss to recover. This is a textbook revenge-trading pattern and the leading cause of account blow-ups.';
+  if (a.q10 === 'a')return 'You trade by feeling, not by rules. Without a written strategy, results are statistically random — no edge can develop.';
+  if (a.q3 === 'b') return 'You risk 5% or more per trade. Statistically, three consecutive losses can wipe a meaningful portion of your account.';
+  return null;
+}
+
+/* ===== 11. STRENGTHS / WEAKNESSES ===== */
+const BUCKET_LABEL = {
+  knowledge: 'Knowledge',
+  riskMgmt:  'Risk Management',
+  psychology:'Psychology',
+  execution: 'Execution',
+  learning:  'Learning Consistency'
+};
+const STRENGTH_LINE = {
+  knowledge:  'Strong grasp of core market concepts and how price actually moves.',
+  riskMgmt:   'Solid risk management — sized properly with stop losses in place.',
+  psychology: 'Emotionally controlled — you do not let losses dictate the next trade.',
+  execution:  'Disciplined execution — clear plan, journal, and entry checklist.',
+  learning:   'Active learning routine — reviewing, studying, improving every week.'
+};
+const WEAK_LINE = {
+  knowledge:  'Knowledge gaps in market structure, liquidity, sessions or news impact.',
+  riskMgmt:   'Risk management is the biggest threat to your account right now.',
+  psychology: 'Emotional reactions and revenge trading are erasing your progress.',
+  execution:  'Execution is inconsistent — no plan, no journal, or no entry checklist.',
+  learning:   'Learning routine is stagnant — without input, the edge cannot improve.'
+};
+
+function buildStrengthsWeaknesses(scores) {
+  const items = Object.keys(CAPS).map(k => ({
+    key: k, pct: scores[k] / CAPS[k]
+  }));
+  const strengths = items.filter(i => i.pct >= 0.7)
+                         .sort((a,b)=>b.pct-a.pct).slice(0,3);
+  const weaknesses = items.filter(i => i.pct < 0.5)
+                          .sort((a,b)=>a.pct-b.pct).slice(0,3);
+  return {
+    strengths: strengths.map(s => STRENGTH_LINE[s.key]),
+    weaknesses: weaknesses.map(w => WEAK_LINE[w.key]),
+    weakKeys: weaknesses.map(w => w.key)
+  };
+}
+
+/* ===== 12. AI SUMMARY (template-based, deterministic) ===== */
+const LEVEL_INTRO = {
+  Basic: "You are in the Basic stage of trading. Statistically, accounts at this stage are at the highest risk of being wiped before any edge develops.",
+  Beginner: "You are in the Beginner stage. You have started forming habits, but most of them are still fragile and inconsistent.",
+  Developing: "You are in the Developing stage. The concepts are forming — execution and consistency are where the gap currently lives.",
+  Intermediate: "You are in the Intermediate stage. You operate with structure. Refinement is what now stands between you and consistency.",
+  Advanced: "You are in the Advanced stage. Your job is no longer to learn more — it is to execute cleaner, journal harder, and protect your equity curve."
+};
+const PROFILE_DESC = {
+  'Burned-Out Trader':    "You are showing classic signs of trader burnout — overtrading, emotional reactivity and revenge entries stacked together. This is the single most dangerous combination in retail trading.",
+  'Risky Trader':         "You behave as a Risky Trader. Position sizing and stop-loss habits expose your account to ruin even when the strategy is otherwise sound.",
+  'Emotional Trader':     "You behave as an Emotional Trader. Losses trigger reactions, not reflections — and that loop is more destructive than any technical mistake.",
+  'Random Entry Trader':  "You behave as a Random Entry Trader. Without a written, rule-based strategy, results will remain random regardless of how the market behaves.",
+  'Overtrader':           "You behave as an Overtrader. Too many positions dilute focus, multiply mistakes and compound emotional fatigue.",
+  'Structure-Based Trader':"You behave as a Structure-Based Trader. You read market structure, liquidity and order blocks — your edge is real, but discipline must protect it.",
+  'Disciplined Trader':   "You behave as a Disciplined Trader. Plan, risk and psychology are aligned. The next stage is refinement, not reinvention.",
+  'Learning-Focused Trader':"You behave as a Learning-Focused Trader. You are absorbing the right inputs — now the priority is converting study into clean execution."
+};
+const WEAK_ADVICE = {
+  knowledge:  "Start with the fundamentals — what really moves price, market structure, sessions, and news. Knowledge depth produces conviction; conviction reduces hesitation.",
+  riskMgmt:   "Fix risk management before fixing strategy. Cap risk at 1–2% per trade, place hard stop losses, and size positions from account percent — not from feel.",
+  psychology: "Until the emotional loop is broken, no system will produce consistent results. Build a cool-down rule after every loss and journal the emotion as well as the trade.",
+  execution:  "Write the plan down. If a trade is not in the checklist, it is not a trade — it is a guess. Discipline lives in the checklist, not in the chart.",
+  learning:   "A stagnant learning routine is a stagnant equity curve. Schedule a fixed weekly review, follow at least one institutional analyst, and read structurally — not randomly."
+};
+
+function buildSummary(level, profile, scores, weakKeys) {
+  const intro   = LEVEL_INTRO[level] || '';
+  const profDesc = PROFILE_DESC[profile] || '';
+  const topBucketKey = Object.keys(CAPS).sort((a,b)=>(scores[b]/CAPS[b])-(scores[a]/CAPS[a]))[0];
+  const lowBucketKey = weakKeys[0] || Object.keys(CAPS).sort((a,b)=>(scores[a]/CAPS[a])-(scores[b]/CAPS[b]))[0];
+  const advice  = WEAK_ADVICE[lowBucketKey] || '';
+  return `${intro} ${profDesc} Your strongest dimension is <strong>${BUCKET_LABEL[topBucketKey]}</strong> and your weakest is <strong>${BUCKET_LABEL[lowBucketKey]}</strong>. ${advice}`;
+}
+
+/* ===== 13. ROADMAP ROUTER ===== */
+const ROADMAP_LIB = {
+  knowledge: [
+    { title:'Smart Money Concepts for Beginners',          cat:'Market Structure',  href:'smart-money-concepts-beginners.html' },
+    { title:'Most Popular Trading Strategies Explained',    cat:'Trading Strategies',href:'most-popular-trading-strategies-beginners.html' },
+    { title:'Browse All Articles',                          cat:'Education Hub',     href:'articles.html' }
+  ],
+  riskMgmt: [
+    { title:'Best Risk-Reward Ratio for Forex Trading',     cat:'Risk Management',   href:'best-risk-reward-ratio-forex-trading.html' },
+    { title:'How to Build a Forex Trading Plan',            cat:'Beginner Trading',  href:'how-to-build-forex-trading-plan.html' }
+  ],
+  psychology: [
+    { title:'How to Avoid Emotional Trading',               cat:'Trading Psychology',href:'how-to-avoid-emotional-trading.html' },
+    { title:'How to Build a Forex Trading Plan',            cat:'Beginner Trading',  href:'how-to-build-forex-trading-plan.html' }
+  ],
+  execution: [
+    { title:'How to Build a Forex Trading Plan',            cat:'Beginner Trading',  href:'how-to-build-forex-trading-plan.html' },
+    { title:'Best Risk-Reward Ratio for Forex Trading',     cat:'Risk Management',   href:'best-risk-reward-ratio-forex-trading.html' }
+  ],
+  learning: [
+    { title:'Browse All Articles',                          cat:'Education Hub',     href:'articles.html' },
+    { title:'Live Market Sentiment',                        cat:'Live Tool',         href:'live-sentiment.html' }
+  ]
+};
+
+function buildRoadmap(level, weakKeys) {
+  // Advanced traders: refinement path
+  if (level === 'Advanced') {
+    return [
+      { title:'Live Market Sentiment',                cat:'Live Tool',        href:'live-sentiment.html' },
+      { title:'How to Build a Forex Trading Plan',    cat:'Refinement',       href:'how-to-build-forex-trading-plan.html' },
+      { title:'Browse All Articles',                  cat:'Continuous Study', href:'articles.html' },
+      { title:'Talk to a Mentor',                     cat:'Personalised Review', href:'#cta' }
+    ];
+  }
+  // Mix top steps from each weak bucket
+  const seen = new Set();
+  const path = [];
+  weakKeys.forEach(k => {
+    (ROADMAP_LIB[k] || []).forEach(item => {
+      if (!seen.has(item.href)) { seen.add(item.href); path.push(item); }
+    });
+  });
+  // top up with universal fallbacks if path is short
+  if (path.length < 4) {
+    ['How to Build a Forex Trading Plan'].forEach(()=>{});
+    const fillers = [
+      { title:'How to Build a Forex Trading Plan',    cat:'Beginner Trading', href:'how-to-build-forex-trading-plan.html' },
+      { title:'How to Avoid Emotional Trading',       cat:'Trading Psychology', href:'how-to-avoid-emotional-trading.html' },
+      { title:'Browse All Articles',                  cat:'Education Hub',    href:'articles.html' }
+    ];
+    fillers.forEach(f => { if (!seen.has(f.href)) { seen.add(f.href); path.push(f); } });
+  }
+  // always end with mentor
+  path.push({ title:'Talk to a Mentor', cat:'Personalised Review', href:'#cta' });
+  return path.slice(0, 6);
+}
+
+/* ===== 14. FINISH & RENDER RESULT ===== */
+const surveyShell = document.getElementById('surveyShell');
+const calcOverlay = document.getElementById('calcOverlay');
+
+function finishAssessment() {
+  surveyShell.classList.add('is-locked');
+  calcOverlay.classList.add('is-on');
+  progressFill.style.width = '100%';
+
+  setTimeout(() => {
+    const scores = calculateScores();
+    const level = detectLevel(scores);
+    const profile = detectProfile(scores);
+    const conf = detectConfidence();
+    const growth = detectGrowth(scores);
+    const critical = detectCriticalFlag();
+    const sw = buildStrengthsWeaknesses(scores);
+    const summaryHTML = buildSummary(level, profile, scores, sw.weakKeys);
+    const roadmap = buildRoadmap(level, sw.weakKeys.length ? sw.weakKeys : ['execution']);
+
+    renderResult({ scores, level, profile, conf, growth, critical, sw, summaryHTML, roadmap });
+
+    calcOverlay.classList.remove('is-on');
+    state.done = true;
+
+    document.getElementById('resultSection').classList.add('is-on');
+    document.getElementById('roadmapSection').classList.add('is-on');
+    document.getElementById('ctaSection').classList.add('is-on');
+    document.getElementById('resultSection').scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 1300);
+}
+
+function renderResult(r) {
+  // Level badge
+  const lb = document.getElementById('levelBadge');
+  lb.textContent = r.level;
+  lb.className = 'level-badge level-' + r.level;
+
+  // Chips
+  document.getElementById('profileText').textContent = r.profile;
+  const confChip = document.getElementById('confChip');
+  confChip.className = 'chip chip-conf-' + r.conf.tone;
+  document.getElementById('confText').textContent = r.conf.level + ' Confidence';
+
+  const growthChip = document.getElementById('growthChip');
+  growthChip.className = 'chip chip-growth-' + r.growth.tone;
+  document.getElementById('growthText').textContent = r.growth.label;
+
+  // Critical banner
+  if (r.critical) {
+    document.getElementById('critBanner').classList.add('is-on');
+    document.getElementById('critText').textContent = r.critical;
+  } else {
+    document.getElementById('critBanner').classList.remove('is-on');
+  }
+
+  // Composite
+  animateNumber('compNum', 0, r.scores.total, 1100);
+  setTimeout(()=> { document.getElementById('compFill').style.width = r.scores.total + '%'; }, 60);
+
+  // Sub meters
+  const meters = [
+    { key:'knowledge',  tone:'cyan' },
+    { key:'riskMgmt',   tone:'teal' },
+    { key:'psychology', tone:'amber' },
+    { key:'execution',  tone:'cyan' },
+    { key:'learning',   tone:'bull' }
+  ];
+  const subEl = document.getElementById('subMeters');
+  subEl.innerHTML = meters.map(m => {
+    const max = CAPS[m.key];
+    const val = r.scores[m.key];
+    const pct = Math.round((val / max) * 100);
+    return `<div class="sm-row">
+      <div class="sm-head">
+        <span class="sm-name">${BUCKET_LABEL[m.key]}</span>
+        <span class="sm-val">${val}<span class="sm-pct">/${max} · ${pct}%</span></span>
+      </div>
+      <div class="sm-track"><div class="sm-fill t-${m.tone}" data-pct="${pct}"></div></div>
+    </div>`;
+  }).join('');
+  setTimeout(()=> {
+    subEl.querySelectorAll('.sm-fill').forEach(f => { f.style.width = f.dataset.pct + '%'; });
+  }, 80);
+
+  // Strengths / weaknesses
+  const sList = document.getElementById('strengthsList');
+  const wList = document.getElementById('weakList');
+  if (r.sw.strengths.length === 0) {
+    sList.innerHTML = `<li class="sw-empty">No bucket is above 70% yet — focus on the roadmap.</li>`;
+  } else {
+    sList.innerHTML = r.sw.strengths.map(s => `<li class="sw-item">${s}</li>`).join('');
+  }
+  if (r.sw.weaknesses.length === 0) {
+    wList.innerHTML = `<li class="sw-empty">No weak buckets detected. Focus on refinement.</li>`;
+  } else {
+    wList.innerHTML = r.sw.weaknesses.map(w => `<li class="sw-item">${w}</li>`).join('');
+  }
+
+  // Summary
+  document.getElementById('aiSummary').innerHTML = r.summaryHTML;
+
+  // Roadmap
+  const roadEl = document.getElementById('roadList');
+  roadEl.innerHTML = r.roadmap.map((item, i) => `
+    <a class="road-item" href="${item.href}">
+      <div class="road-num">${i+1}</div>
+      <div class="road-text">
+        <div class="road-title">${item.title}</div>
+        <div class="road-cat">${item.cat}</div>
+      </div>
+      <div class="road-arrow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </a>
+  `).join('');
+
+  // CTA messaging adapts to severity
+  const ctaHead = document.getElementById('ctaHeadline');
+  const ctaSub = document.getElementById('ctaSub');
+  if (r.critical) {
+    ctaHead.textContent = 'Your account needs a structured review.';
+    ctaSub.textContent  = 'Before your next trade, walk through your result with a Z Trade University mentor. We will help you neutralise the critical red flag first.';
+  } else if (r.level === 'Advanced' || r.profile === 'Disciplined Trader' || r.profile === 'Structure-Based Trader') {
+    ctaHead.textContent = 'Refine the last 10%.';
+    ctaSub.textContent  = 'Your foundation is solid. A mentor can help compress the gap between intermediate and consistently profitable.';
+  } else {
+    ctaHead.textContent = 'Want a deeper review?';
+    ctaSub.textContent  = 'A Z Trade University mentor can walk through your result with you and answer questions specific to your trading.';
+  }
+  // Pre-fill WhatsApp / Telegram with result context
+  const preMsg = `Hi, I just completed the Z Trade University Trader Self-Assessment. My result: ${r.level} — ${r.profile} (${r.scores.total}/100). I would like a deeper review.`;
+  document.getElementById('ctaWa').href = `https://wa.me/17189730347?text=${encodeURIComponent(preMsg)}`;
+  document.getElementById('ctaTg').href = `https://t.me/share/url?url=${encodeURIComponent('https://ztradeuniversity')}&text=${encodeURIComponent(preMsg)}`;
+}
+
+function animateNumber(id, from, to, duration) {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ===== 15. RESTART ===== */
+document.getElementById('restartLink').addEventListener('click', () => {
+  state.current = 0;
+  state.answers = {};
+  state.done = false;
+  surveyShell.classList.remove('is-locked');
+  document.getElementById('resultSection').classList.remove('is-on');
+  document.getElementById('roadmapSection').classList.remove('is-on');
+  document.getElementById('ctaSection').classList.remove('is-on');
+  document.getElementById('critBanner').classList.remove('is-on');
+  renderQuestion();
+  document.getElementById('surveyWrap').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+/* ===== BOOT ===== */
+renderQuestion();
+</script>
+
+</body>
+</html>

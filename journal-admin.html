@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Journal Mentor Workspace — Z Trade University</title>
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --navy:#0d0902;--ink:#1a1410;--ink2:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;--gold-deep:#8c6c1f;
+      --white:#fff;--text:rgba(255,255,255,.88);--muted:rgba(255,255,255,.56);--line:rgba(200,156,63,.18);--line2:rgba(200,156,63,.32);
+      --card:#15110a;--win:#10b981;--win-bg:rgba(16,185,129,.12);--loss:#ef4444;--loss-bg:rgba(239,68,68,.12);
+    }
+    body{font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,var(--navy),var(--ink));color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.55;}
+    .container{max-width:1340px;margin:0 auto;padding:0 22px;}
+    a{color:var(--gold3);}
+    h1,h2,h3,h4{font-family:Manrope,Inter,sans-serif;}
+    /* gate */
+    #gate{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(6,5,2,.9);padding:18px;}
+    .gate-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 26px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+    .gate-card h1{font-size:20px;font-weight:900;color:#fff;margin-bottom:4px;}
+    .gate-card p{font-size:13px;color:var(--muted);margin-bottom:18px;}
+    .gate-card input{width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:#fff;font-size:15px;}
+    .gate-card input:focus{outline:none;border-color:var(--gold);}
+    .gate-card button{width:100%;margin-top:12px;padding:12px;border:0;border-radius:10px;cursor:pointer;background:linear-gradient(135deg,var(--gold3),var(--gold) 50%,var(--gold-deep));color:#3a2c08;font-weight:900;font-size:14.5px;}
+    .gate-err{color:#fca5a5;font-size:12.5px;margin-top:10px;display:none;}
+    /* header */
+    header{position:sticky;top:0;z-index:50;background:rgba(13,9,2,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+    .head-in{display:flex;align-items:center;justify-content:space-between;height:64px;}
+    .brand{display:flex;align-items:center;gap:10px;}
+    .logo-shield{width:36px;height:36px;border-radius:9px;background:linear-gradient(150deg,#3d2a08,#8c6c1f 55%,var(--gold2));display:flex;align-items:center;justify-content:center;}
+    .logo-shield span{font-family:Manrope;font-weight:900;color:var(--gold3);font-size:17px;}
+    .brand b{font-size:14px;color:#fff;font-weight:800;}.brand small{display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold3);}
+    .btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:9px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--text);}
+    .btn:hover{background:rgba(200,156,63,.12);border-color:var(--gold);}
+    .btn.primary{background:linear-gradient(135deg,var(--gold3),var(--gold) 50%,var(--gold-deep));color:#3a2c08;border:0;font-weight:900;}
+    main{padding:22px 0 70px;}
+    .config-warn{background:var(--loss-bg);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:12px;padding:13px 16px;font-size:13px;margin-bottom:18px;display:none;}
+    /* stats bar */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+    .stat .l{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+    .stat .v{font-family:JetBrains Mono,monospace;font-size:22px;font-weight:700;color:#fff;}
+    /* layout */
+    .work{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start;}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;}
+    .panel h2{font-size:15px;font-weight:800;color:#fff;margin-bottom:12px;}
+    .search{width:100%;padding:10px 12px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:#fff;font-size:13.5px;margin-bottom:12px;}
+    .search:focus{outline:none;border-color:var(--gold);}
+    .trader-list{display:flex;flex-direction:column;gap:7px;max-height:64vh;overflow-y:auto;}
+    .trader-item{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:all .15s;}
+    .trader-item:hover{border-color:var(--gold);background:rgba(200,156,63,.07);}
+    .trader-item.active{border-color:var(--gold);background:rgba(200,156,63,.12);}
+    .trader-item .nm{font-size:13.5px;font-weight:700;color:#fff;}
+    .trader-item .meta{font-size:11.5px;color:var(--muted);margin-top:2px;font-family:JetBrains Mono,monospace;}
+    .trader-item .pills{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+    .mini{font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(255,255,255,.05);color:var(--muted);}
+    .mini.win{background:var(--win-bg);color:var(--win);}
+    /* profile */
+    #profile .empty{color:var(--muted);text-align:center;padding:60px 20px;}
+    .pcard{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
+    .pcard h3{font-size:14px;color:var(--gold3);font-weight:800;margin-bottom:12px;text-transform:uppercase;letter-spacing:.6px;}
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+    .grid.g4{grid-template-columns:repeat(4,1fr);}
+    .kv{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+    .kv .l{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+    .kv .v{font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:#fff;}
+    .kv .v.pos{color:var(--win);}.kv .v.neg{color:var(--loss);}
+    table{width:100%;border-collapse:collapse;font-size:12.5px;}
+    th{background:rgba(200,156,63,.07);color:var(--gold3);font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;text-align:left;padding:9px 10px;white-space:nowrap;}
+    td{padding:9px 10px;border-top:1px solid var(--line);white-space:nowrap;}
+    .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+    .badge{display:inline-flex;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;}
+    .badge.win{background:var(--win-bg);color:var(--win);}.badge.loss{background:var(--loss-bg);color:var(--loss);}.badge.be{background:rgba(168,162,158,.14);color:#a8a29e;}
+    .review-form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+    .review-form label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+    .review-form select,.review-form input,.review-form textarea{width:100%;padding:10px 12px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:#fff;font-size:13.5px;font-family:inherit;}
+    .review-form select:focus,.review-form input:focus,.review-form textarea:focus{outline:none;border-color:var(--gold);}
+    .review-item{border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:9px;background:rgba(255,255,255,.02);}
+    .review-item .cat{display:inline-block;font-size:10.5px;font-weight:800;color:#3a2c08;background:linear-gradient(135deg,var(--gold3),var(--gold));padding:3px 9px;border-radius:100px;}
+    .review-item .cmt{font-size:13px;color:var(--text);margin:8px 0 5px;line-height:1.5;}
+    .review-item .meta{font-size:11px;color:var(--muted);}
+    .toast{position:fixed;bottom:22px;right:22px;z-index:1100;background:var(--ink2);border:1px solid var(--line2);border-radius:11px;padding:12px 17px;font-size:13px;color:#fff;display:none;max-width:320px;box-shadow:0 14px 34px rgba(0,0,0,.4);}
+    .toast.show{display:block;}.toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5;}
+    /* ── Phase 5B — view tabs ── */
+    .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+    .tab{padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--muted);}
+    .tab.on{background:linear-gradient(135deg,var(--gold3),var(--gold) 50%,var(--gold-deep));color:#3a2c08;border:0;}
+    .view{display:none;}.view.on{display:block;}
+    /* dashboard cards */
+    .dash-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+    .dcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+    .dcard .l{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+    .dcard .v{font-family:Manrope;font-size:30px;font-weight:900;color:#fff;line-height:1;}
+    .dcard.warn .v{color:var(--gold3);}
+    .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .quick-section .qrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;}
+    .quick-section .qrow:hover{color:var(--gold3);}
+    .quick-section .qrow .nm{font-size:13px;font-weight:700;color:#fff;}
+    .quick-section .qrow .sub{font-size:11px;color:var(--muted);}
+    /* grading */
+    .grade-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+    .grade-btn{padding:9px 13px;border-radius:10px;cursor:pointer;font-size:12.5px;font-weight:800;border:1.5px solid var(--line2);background:rgba(255,255,255,.03);color:var(--text);}
+    .grade-btn.sel{box-shadow:0 0 0 2px currentColor inset;}
+    .grade-btn[data-g="Excellent Trade"]{color:#34d399;}.grade-btn[data-g="Good Trade"]{color:#86efac;}
+    .grade-btn[data-g="Average Trade"]{color:var(--gold3);}.grade-btn[data-g="Poor Trade"]{color:#fb923c;}
+    .grade-btn[data-g="Rule Violation"]{color:#fca5a5;}
+    .grade-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.06);}
+    /* scorecard */
+    .score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;}
+    .score-in label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:5px;}
+    .score-in input{width:100%;padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:#fff;font-size:14px;font-family:'JetBrains Mono',monospace;text-align:center;}
+    .score-ring{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+    .score-ring .num{font-family:Manrope;font-size:34px;font-weight:900;color:var(--gold3);}
+    /* templates */
+    .templates{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;}
+    .tpl-chip{font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:100px;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);}
+    .tpl-chip:hover{border-color:var(--gold);background:rgba(200,156,63,.1);color:var(--gold3);}
+    /* ack status */
+    .ack{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px;}
+    .ack.pending{background:rgba(168,162,158,.14);color:#a8a29e;}
+    .ack.read{background:rgba(245,158,11,.14);color:var(--gold3);}
+    .ack.acknowledged{background:var(--win-bg);color:var(--win);}
+    .analytics-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+    .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+    .bar-row .bl{width:120px;font-size:12px;color:var(--text);flex-shrink:0;}
+    .bar-track{flex:1;height:8px;border-radius:100px;background:rgba(255,255,255,.06);overflow:hidden;}
+    .bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold3));}
+    .bar-row .bn{width:30px;text-align:right;font-size:12px;font-weight:700;color:#fff;}
+    @media(max-width:900px){.work{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}.grid,.grid.g4{grid-template-columns:repeat(2,1fr);}.review-form .row{grid-template-columns:1fr;}
+      .dash-cards{grid-template-columns:repeat(2,1fr);}.quick-grid{grid-template-columns:1fr;}.score-grid{grid-template-columns:repeat(2,1fr);}.analytics-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+
+  <!-- ════ PASSWORD GATE (reuses the existing admin gate pattern) ════ -->
+  <div id="gate">
+    <div class="gate-card">
+      <h1>Journal Mentor Workspace</h1>
+      <p>Authentication required. Use the ZTU admin password.</p>
+      <form id="gateForm" autocomplete="off">
+        <input type="password" id="gateInput" placeholder="Admin password" autocomplete="current-password" autofocus />
+        <button type="submit">Unlock</button>
+        <p class="gate-err" id="gateErr">Incorrect password.</p>
+      </form>
+    </div>
+  </div>
+
+  <header>
+    <div class="container head-in">
+      <div class="brand">
+        <span class="logo-shield"><span>Z</span></span>
+        <span><b>Mentor Workspace</b><small>Trading Journal Reviews</small></span>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <a class="btn" href="journal.html">Journal</a>
+        <button class="btn" id="btnRefresh">Refresh</button>
+        <button class="btn" id="btnLogout">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="config-warn" id="configWarn"></div>
+
+    <!-- Phase 5B — view tabs -->
+    <div class="tabs">
+      <div class="tab on" data-view="dashboard">Dashboard</div>
+      <div class="tab" data-view="traders">Traders</div>
+      <div class="tab" data-view="analytics">Analytics</div>
+    </div>
+
+    <!-- ════ DASHBOARD VIEW (5B.1) ════ -->
+    <div class="view on" id="view-dashboard">
+      <div class="dash-cards" id="dashCards"></div>
+      <div class="quick-grid">
+        <div class="panel quick-section"><h2>Latest Traders</h2><div id="qLatestTraders"></div></div>
+        <div class="panel quick-section"><h2>Latest Reviews</h2><div id="qLatestReviews"></div></div>
+        <div class="panel quick-section"><h2>Traders Needing Review</h2><div id="qNeedReview"></div></div>
+        <div class="panel quick-section"><h2>Pending Acknowledgement (5B.4)</h2><div id="qPendingAcks"></div></div>
+      </div>
+      <div class="panel quick-section" style="margin-top:16px;"><h2>Recent Activity</h2><div id="qRecentActivity"></div></div>
+    </div>
+
+    <!-- ════ TRADERS VIEW ════ -->
+    <div class="view" id="view-traders">
+      <div class="stats" id="statsBar"></div>
+      <div class="work">
+        <div class="panel">
+          <h2>Traders</h2>
+          <input class="search" id="traderSearch" placeholder="Search name / account / email…" />
+          <div class="trader-list" id="traderList"><p style="color:var(--muted);font-size:13px;">Loading…</p></div>
+        </div>
+        <div id="profile">
+          <div class="empty" id="profileEmpty">Select a trader to open their mentor workspace.</div>
+          <div id="profileBody" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ ANALYTICS VIEW (5B.5) ════ -->
+    <div class="view" id="view-analytics">
+      <div class="dash-cards" id="analyticsCards"></div>
+      <div class="analytics-grid">
+        <div class="panel quick-section"><h2>Most Common Mistakes</h2><div id="anMistakes"></div></div>
+        <div class="panel quick-section"><h2>Psychology Issues</h2><div id="anPsych"></div></div>
+        <div class="panel quick-section"><h2>Risk Issues</h2><div id="anRisk"></div></div>
+      </div>
+      <div class="panel quick-section" style="margin-top:14px;"><h2>Trade Grade Distribution</h2><div id="anGrades"></div></div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function(){
+    'use strict';
+    // ── reuse the existing project admin gate pattern (ADMIN_CONFIG password) ──
+    var ADMIN_CONFIG = { password: 'ZTU-Admin-2026', sessionMinutes: 30, storageKey: 'ZTU_JADMIN_SESSION_V1' };
+    var ADMIN_KEY = null;  // sent to /api/journal-admin as x-journal-admin-key
+
+    var $ = function(id){ return document.getElementById(id); };
+    var traders = [], selectedId = null, currentProfile = null;
+
+    function toast(m, err){ var t=$('toast'); t.textContent=m; t.className='toast show'+(err?' err':''); setTimeout(function(){t.classList.remove('show');},3200); }
+    function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmtMoney(n){ if(n==null||n==='') return '—'; var v=Number(n)||0; return (v<0?'-$':'$')+Math.abs(v).toFixed(2); }
+    function fmtDate(d){ return d? new Date(d).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—'; }
+
+    // ── gate ──
+    function sessionValid(){ try{ var s=JSON.parse(sessionStorage.getItem(ADMIN_CONFIG.storageKey)||'null'); return s && s.expiresAt>Date.now() && s.key; }catch(e){ return false; } }
+    function openSession(key){ ADMIN_KEY=key; sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify({ expiresAt:Date.now()+ADMIN_CONFIG.sessionMinutes*60000, key:key })); }
+    function readSessionKey(){ try{ return JSON.parse(sessionStorage.getItem(ADMIN_CONFIG.storageKey)||'null').key; }catch(e){ return null; } }
+    function unlock(){ $('gate').style.display='none'; boot(); }
+    $('gateForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var pwd=$('gateInput').value;
+      if(pwd===ADMIN_CONFIG.password){ openSession(pwd); $('gateErr').style.display='none'; unlock(); }
+      else { $('gateErr').style.display='block'; }
+    });
+    $('btnLogout').addEventListener('click', function(){ sessionStorage.removeItem(ADMIN_CONFIG.storageKey); location.reload(); });
+
+    // ── API ──
+    function api(action, payload){
+      return fetch('/api/journal-admin', {
+        method:'POST', headers:{ 'Content-Type':'application/json', 'x-journal-admin-key':ADMIN_KEY },
+        body: JSON.stringify(Object.assign({ action:action }, payload||{})),
+      }).then(function(r){ return r.json().then(function(d){ return { status:r.status, data:d }; }); });
+    }
+    function showConfigWarn(msg){ var w=$('configWarn'); w.textContent=msg; w.style.display='block'; }
+
+    // ── load stats + traders ──
+    function loadStats(){
+      api('stats').then(function(res){
+        if(res.status!==200){ if(res.data&&res.data.error==='server_not_configured') showConfigWarn('Backend not configured: set JOURNAL_SUPABASE_SERVICE_ROLE_KEY and JOURNAL_ADMIN_PASSWORD in Cloudflare Pages env, then redeploy.'); return; }
+        var s=res.data;
+        $('statsBar').innerHTML =
+          stat('Total Reviews', s.totalReviews) +
+          stat('Reviewed Traders', s.reviewedTraders) +
+          stat('Total Traders', s.totalTraders) +
+          stat('Top Category', topCat(s.byCategory));
+      });
+    }
+    function topCat(by){ var k=Object.keys(by||{}); if(!k.length) return '—'; k.sort(function(a,b){return by[b]-by[a];}); return k[0]; }
+    function stat(l,v){ return '<div class="stat"><div class="l">'+esc(l)+'</div><div class="v">'+esc(v)+'</div></div>'; }
+
+    function loadTraders(){
+      api('list-traders').then(function(res){
+        if(res.status!==200){
+          if(res.status===401){ showConfigWarn('Unauthorized — the admin password does not match JOURNAL_ADMIN_PASSWORD on the server.'); }
+          else if(res.data&&res.data.error==='server_not_configured'){ showConfigWarn('Backend not configured: set JOURNAL_SUPABASE_SERVICE_ROLE_KEY and JOURNAL_ADMIN_PASSWORD in Cloudflare Pages env, then redeploy.'); }
+          else { showConfigWarn('Could not load traders: '+((res.data&&res.data.detail)||res.status)); }
+          $('traderList').innerHTML='<p style="color:var(--muted);font-size:13px;">Unavailable.</p>';
+          return;
+        }
+        traders = res.data.traders||[];
+        renderTraderList(traders);
+      }).catch(function(e){ showConfigWarn('Network error reaching /api/journal-admin.'); });
+    }
+
+    function renderTraderList(list){
+      if(!list.length){ $('traderList').innerHTML='<p style="color:var(--muted);font-size:13px;">No traders found.</p>'; return; }
+      $('traderList').innerHTML = list.map(function(t){
+        var wr = t.winRate!=null ? Math.round(t.winRate)+'% WR' : '—';
+        return '<div class="trader-item'+(t.id===selectedId?' active':'')+'" data-id="'+esc(t.id)+'">'+
+          '<div class="nm">'+esc(t.name||t.account||'Trader')+'</div>'+
+          '<div class="meta">'+esc(t.account||'—')+' · '+esc(t.email||'')+'</div>'+
+          '<div class="pills"><span class="mini">'+t.totalTrades+' trades</span><span class="mini win">'+esc(wr)+'</span><span class="mini">'+fmtMoney(t.netProfit)+'</span></div>'+
+        '</div>';
+      }).join('');
+      Array.prototype.forEach.call($('traderList').querySelectorAll('[data-id]'), function(el){
+        el.addEventListener('click', function(){ openTrader(el.getAttribute('data-id')); });
+      });
+    }
+
+    $('traderSearch').addEventListener('input', function(){
+      var q=this.value.trim().toLowerCase();
+      renderTraderList(traders.filter(function(t){
+        return !q || [t.name,t.account,t.email].some(function(x){ return (x||'').toLowerCase().indexOf(q)>=0; });
+      }));
+    });
+
+    // ── trader profile ──
+    function openTrader(id){
+      selectedId=id;
+      renderTraderList(traders.filter(function(t){ var q=$('traderSearch').value.trim().toLowerCase(); return !q||[t.name,t.account,t.email].some(function(x){return (x||'').toLowerCase().indexOf(q)>=0;}); }));
+      $('profileEmpty').style.display='none';
+      $('profileBody').style.display='block';
+      $('profileBody').innerHTML='<div class="pcard">Loading trader…</div>';
+      api('trader-profile', { userId:id }).then(function(res){
+        if(res.status!==200){ $('profileBody').innerHTML='<div class="pcard">Could not load profile: '+esc((res.data&&res.data.detail)||res.status)+'</div>'; return; }
+        currentProfile=res.data; renderProfile(res.data);
+      });
+    }
+
+    function renderProfile(p){
+      var u=p.user, m=p.metrics||{};
+      var trades=p.trades||[], psych=summPsych(trades);
+      var html='';
+      // header / identity
+      html+='<div class="pcard"><h3>Trader</h3><div class="grid g4">'+
+        kv('Name', esc(u.display_name||'—'))+kv('Account', esc(u.account_number||'—'))+
+        kv('Email', esc(u.email||'—'))+kv('Joined', fmtDate(u.created_at))+'</div></div>';
+      // performance metrics
+      html+='<div class="pcard"><h3>Performance Metrics</h3><div class="grid">'+
+        kv('Total Trades', m.total||0)+
+        kv('Winning', m.wins||0)+kv('Losing', m.losses||0)+
+        kv('Win Rate', m.winRate!=null? m.winRate.toFixed(1)+'%':'—', m.winRate>=50?'pos':(m.total?'neg':''))+
+        kv('Avg RR', m.avgRR!=null?'1:'+m.avgRR.toFixed(2):'—')+
+        kv('Net P/L', fmtMoney(m.netProfit), (m.netProfit>=0?'pos':'neg'))+
+        kv('Latest Activity', trades[0]?fmtDate(trades[0].created_at):'—')+'</div></div>';
+      // psychology summary
+      html+='<div class="pcard"><h3>Psychology</h3><div class="grid g4">'+
+        kv('Dominant Emotion', esc(psych.dominantEmotion||'—'))+
+        kv('Plan Adherence', psych.planRate!=null?psych.planRate+'%':'—')+
+        kv('Avg Confidence', psych.avgConf!=null?psych.avgConf:'—')+
+        kv('Tagged Trades', psych.tagged)+'</div></div>';
+      // trade history
+      html+='<div class="pcard"><h3>Trade History &amp; Details</h3><div class="table-wrap"><table><thead><tr>'+
+        '<th>Trade ID</th><th>Date</th><th>Pair</th><th>Dir</th><th>RR</th><th>P/L</th><th>Status</th><th>Emotion</th><th>Conf</th><th>Plan</th><th>Setup</th><th>Session</th><th>Reason</th>'+
+        '</tr></thead><tbody>'+ (trades.length? trades.slice(0,40).map(function(t){
+          return '<tr><td style="font-family:JetBrains Mono,monospace;color:var(--gold3)">'+esc(t.trade_id)+'</td>'+
+          '<td>'+fmtDate(t.created_at)+'</td><td><b>'+esc(t.pair)+'</b></td><td>'+esc(t.direction)+'</td>'+
+          '<td>'+(t.rr_ratio!=null?'1:'+Number(t.rr_ratio).toFixed(2):'—')+'</td>'+
+          '<td style="color:'+(Number(t.pnl)>=0?'var(--win)':'var(--loss)')+'">'+fmtMoney(t.pnl)+'</td>'+
+          '<td><span class="badge '+(t.status==='WIN'?'win':t.status==='LOSS'?'loss':'be')+'">'+esc(t.status)+'</span></td>'+
+          '<td>'+esc(t.emotion||'—')+'</td><td>'+esc(t.confidence_level!=null?t.confidence_level:'—')+'</td>'+
+          '<td>'+(t.followed_plan==null?'—':(t.followed_plan?'Yes':'No'))+'</td>'+
+          '<td>'+esc(t.setup_type||'—')+'</td><td>'+esc(t.session_name||'—')+'</td>'+
+          '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;" title="'+esc(t.trade_reason||'')+'">'+esc(t.trade_reason||'—')+'</td></tr>';
+        }).join('') : '<tr><td colspan="13" style="text-align:center;color:var(--muted)">No trades logged.</td></tr>')+
+        '</tbody></table></div></div>';
+      // AI reports
+      html+='<div class="pcard"><h3>AI Coach Reports</h3>'+ (p.aiReports&&p.aiReports.length? p.aiReports.slice(0,6).map(function(r){
+        return '<div class="review-item"><span class="cat">'+esc((r.report_type||'').toUpperCase())+'</span>'+
+          '<div class="cmt">'+esc(r.summary||'')+'</div>'+
+          '<div class="meta">'+esc(r.period_start)+' → '+esc(r.period_end)+' · '+fmtDate(r.created_at)+'</div></div>';
+      }).join('') : '<p style="color:var(--muted);font-size:12.5px">No AI reports yet.</p>')+'</div>';
+      // personality reports
+      html+='<div class="pcard"><h3>Personality Reports</h3>'+ (p.personality&&p.personality.length? p.personality.slice(0,6).map(function(r){
+        var cats=Array.isArray(r.classifications)?r.classifications.join(' · '):'';
+        return '<div class="review-item"><span class="cat">'+esc(r.period_start||'')+'</span>'+
+          '<div class="cmt"><b>'+esc(cats||'No classification')+'</b></div>'+
+          '<div class="meta">Win rate '+(r.win_rate!=null?Number(r.win_rate).toFixed(0)+'%':'—')+' · plan '+(r.plan_adherence_rate!=null?Number(r.plan_adherence_rate).toFixed(0)+'%':'—')+'</div></div>';
+      }).join('') : '<p style="color:var(--muted);font-size:12.5px">No personality reports yet.</p>')+'</div>';
+      // ── 5B.2 TRADE GRADING ──
+      html+='<div class="pcard"><h3>Grade a Trade (5B.2)</h3>'+
+        '<div class="grade-btns" id="gradeBtns">'+
+          GRADES.map(function(g){ return '<div class="grade-btn" data-g="'+esc(g.label)+'">'+g.icon+' '+esc(g.label)+' ('+g.score+')</div>'; }).join('')+
+        '</div>'+
+        '<div class="review-form"><div class="row">'+
+          '<div><label>Trade ID (optional)</label><input id="grTradeId" placeholder="e.g. ZTU-000012" maxlength="32" /></div>'+
+          '<div><label>Mentor Name</label><input id="grMentor" value="ZTU Mentor" maxlength="80" /></div>'+
+        '</div>'+
+        '<div style="margin-bottom:10px;"><label>Grade Comment (optional)</label><textarea id="grComment" rows="2" maxlength="2000"></textarea></div>'+
+        '<button class="btn primary" id="grSubmit">Submit Grade</button></div>'+
+        '<div style="margin-top:12px;" id="gradeHistory">'+ renderGrades(p.grades||[]) +'</div></div>';
+
+      // ── 5B.3 MENTOR SCORECARD ──
+      var sc=p.scorecard||{};
+      html+='<div class="pcard"><h3>Mentor Scorecard (5B.3)</h3>'+
+        '<div class="score-ring"><span class="num" id="scOverall">'+(sc.overall_score!=null?sc.overall_score:'—')+'</span><span class="sub" style="color:var(--muted);font-size:12px;">Overall Trader Score (0–100, mentor-generated, separate from AI)</span></div>'+
+        '<div class="score-grid">'+
+          scoreIn('Discipline','scDiscipline',sc.discipline_score)+scoreIn('Risk Mgmt','scRisk',sc.risk_score)+
+          scoreIn('Psychology','scPsychology',sc.psychology_score)+scoreIn('Execution','scExecution',sc.execution_score)+
+          scoreIn('Consistency','scConsistency',sc.consistency_score)+
+        '</div>'+
+        '<div class="review-form">'+
+          '<div style="margin-bottom:9px;"><label>Strengths (one per line)</label><textarea id="scStrengths" rows="2">'+esc((sc.strengths||[]).join('\n'))+'</textarea></div>'+
+          '<div style="margin-bottom:9px;"><label>Weaknesses (one per line)</label><textarea id="scWeaknesses" rows="2">'+esc((sc.weaknesses||[]).join('\n'))+'</textarea></div>'+
+          '<div style="margin-bottom:10px;"><label>Areas to Improve (one per line)</label><textarea id="scAreas" rows="2">'+esc((sc.areas_to_improve||[]).join('\n'))+'</textarea></div>'+
+          '<button class="btn primary" id="scSave">Save Scorecard</button>'+
+        '</div></div>';
+
+      // ── MENTOR REVIEW: templates + submit + history ──
+      html+='<div class="pcard"><h3>Add Mentor Review</h3>'+
+        '<div class="templates" id="rvTemplates">'+ TEMPLATES.map(function(t){ return '<span class="tpl-chip" data-tpl="'+esc(t)+'">'+esc(t)+'</span>'; }).join('') +'</div>'+
+        '<div class="review-form">'+
+        '<div class="row">'+
+        '<div><label>Category</label><select id="rvCategory">'+
+          ['Approved Trade','Good Entry','Bad Entry','Risk Management Issue','Psychology Issue','Setup Issue','Execution Issue','Rule Violation','Excellent Discipline','Needs Improvement','Custom Review'].map(function(c){return '<option>'+c+'</option>';}).join('')+
+        '</select></div>'+
+        '<div><label>Mentor Name</label><input id="rvMentor" value="ZTU Mentor" maxlength="80" /></div>'+
+        '</div>'+
+        '<div style="margin-bottom:10px;"><label>Trade ID (optional)</label><input id="rvTradeId" placeholder="e.g. ZTU-000012" maxlength="32" /></div>'+
+        '<div style="margin-bottom:10px;"><label>Comment</label><textarea id="rvComment" rows="3" maxlength="4000" placeholder="Click a template above or write structured feedback…"></textarea></div>'+
+        '<button class="btn primary" id="rvSubmit">Submit Review</button>'+
+        '</div></div>';
+      html+='<div class="pcard"><h3>Review History ('+((p.reviews||[]).length)+')</h3><div id="reviewHistory">'+ renderReviews(p.reviews||[], ackMap(p.acks)) +'</div></div>';
+
+      $('profileBody').innerHTML=html;
+      // wire grading
+      var selGrade=null;
+      Array.prototype.forEach.call(document.querySelectorAll('#gradeBtns .grade-btn'), function(b){
+        b.addEventListener('click', function(){ Array.prototype.forEach.call(document.querySelectorAll('#gradeBtns .grade-btn'),function(x){x.classList.remove('sel');}); b.classList.add('sel'); selGrade=b.getAttribute('data-g'); });
+      });
+      $('grSubmit').addEventListener('click', function(){ submitGrade(selGrade); });
+      $('scSave').addEventListener('click', saveScorecard);
+      Array.prototype.forEach.call(document.querySelectorAll('#rvTemplates .tpl-chip'), function(c){
+        c.addEventListener('click', function(){ var ta=$('rvComment'); ta.value=(ta.value?ta.value+' ':'')+c.getAttribute('data-tpl')+'.'; ta.focus(); });
+      });
+      $('rvSubmit').addEventListener('click', submitReview);
+    }
+
+    var GRADES=[
+      {label:'Excellent Trade',icon:'🌟',score:5},{label:'Good Trade',icon:'✅',score:4},
+      {label:'Average Trade',icon:'➖',score:3},{label:'Poor Trade',icon:'⚠️',score:2},
+      {label:'Rule Violation',icon:'⛔',score:0}];
+    var TEMPLATES=['Excellent discipline','Good risk control','Entry too early','Entry too late','Revenge trading detected',
+      'Stop loss too wide','Stop loss too tight','Emotional trading','Followed plan correctly','Broke trading rules'];
+
+    function scoreIn(label,id,val){ return '<div class="score-in"><label>'+esc(label)+'</label><input id="'+id+'" type="number" min="0" max="100" value="'+(val!=null?val:'')+'" placeholder="0-100" /></div>'; }
+    function ackMap(acks){ var m={}; (acks||[]).forEach(function(a){ m[a.review_id]=a; }); return m; }
+
+    function renderReviews(list, acks){
+      acks=acks||{};
+      if(!list.length) return '<p style="color:var(--muted);font-size:12.5px">No mentor reviews yet for this trader.</p>';
+      return list.map(function(r){
+        var a=acks[r.id]||{}; var st=a.acknowledged_at?'acknowledged':(a.read_at?'read':'pending');
+        return '<div class="review-item"><span class="cat">'+esc(r.category)+'</span>'+
+          (r.trade_id?' <span class="mini" style="margin-left:6px">'+esc(r.trade_id)+'</span>':'')+
+          ' <span class="ack '+st+'" style="margin-left:6px">'+st+'</span>'+
+          '<div class="cmt">'+esc(r.comment)+'</div>'+
+          '<div class="meta">— '+esc(r.mentor_name||'Mentor')+' · '+fmtDate(r.created_at)+
+            (a.read_at?(' · read '+fmtDate(a.read_at)):'')+(a.acknowledged_at?(' · ack '+fmtDate(a.acknowledged_at)):'')+'</div></div>';
+      }).join('');
+    }
+
+    function renderGrades(list){
+      if(!list.length) return '<p style="color:var(--muted);font-size:12px">No trade grades yet.</p>';
+      return '<div style="display:flex;flex-direction:column;gap:7px;">'+list.slice(0,12).map(function(g){
+        return '<div class="qrow"><span><span class="grade-chip">'+esc(g.grade)+(g.score!=null?(' · '+g.score):'')+'</span>'+(g.trade_id?' <span class="sub">'+esc(g.trade_id)+'</span>':'')+(g.comment?'<br><span class="sub">'+esc(g.comment)+'</span>':'')+'</span><span class="sub">'+fmtDate(g.created_at)+'</span></div>';
+      }).join('')+'</div>';
+    }
+
+    function submitGrade(grade){
+      if(!currentProfile) return;
+      if(!grade){ toast('Select a grade.', true); return; }
+      var u=currentProfile.user, btn=$('grSubmit'); btn.disabled=true;
+      api('grade-trade', { userId:u.id, grade:grade, tradeId:$('grTradeId').value.trim()||null, comment:$('grComment').value.trim()||null, mentorName:$('grMentor').value.trim()||'ZTU Mentor' }).then(function(res){
+        btn.disabled=false;
+        if(res.status!==200){ toast('Could not save grade: '+esc((res.data&&res.data.detail)||(res.data&&res.data.error)||res.status), true); return; }
+        toast('Grade saved.');
+        currentProfile.grades=[res.data.grade].concat(currentProfile.grades||[]);
+        $('gradeHistory').innerHTML=renderGrades(currentProfile.grades);
+        $('grComment').value=''; $('grTradeId').value='';
+      }).catch(function(){ btn.disabled=false; toast('Network error.', true); });
+    }
+
+    function saveScorecard(){
+      if(!currentProfile) return;
+      var u=currentProfile.user, btn=$('scSave'); btn.disabled=true;
+      var lines=function(id){ return $(id).value.split('\n').map(function(s){return s.trim();}).filter(Boolean); };
+      api('save-scorecard', { userId:u.id,
+        discipline:$('scDiscipline').value, risk:$('scRisk').value, psychology:$('scPsychology').value,
+        execution:$('scExecution').value, consistency:$('scConsistency').value,
+        strengths:lines('scStrengths'), weaknesses:lines('scWeaknesses'), areas:lines('scAreas') }).then(function(res){
+        btn.disabled=false;
+        if(res.status!==200){ toast('Could not save scorecard: '+esc((res.data&&res.data.detail)||(res.data&&res.data.error)||res.status), true); return; }
+        toast('Scorecard saved.');
+        currentProfile.scorecard=res.data.scorecard;
+        $('scOverall').textContent=res.data.scorecard.overall_score!=null?res.data.scorecard.overall_score:'—';
+      }).catch(function(){ btn.disabled=false; toast('Network error.', true); });
+    }
+
+    function submitReview(){
+      if(!currentProfile) return;
+      var u=currentProfile.user;
+      var payload={ userId:u.id, account:u.account_number, category:$('rvCategory').value,
+        mentorName:$('rvMentor').value.trim()||'ZTU Mentor', tradeId:$('rvTradeId').value.trim()||null, comment:$('rvComment').value.trim() };
+      if(!payload.comment){ toast('Enter a comment.', true); return; }
+      var btn=$('rvSubmit'); btn.disabled=true;
+      api('create-review', payload).then(function(res){
+        btn.disabled=false;
+        if(res.status!==200){ toast('Could not save: '+esc((res.data&&res.data.detail)||(res.data&&res.data.error)||res.status), true); return; }
+        toast('Review saved.');
+        $('rvComment').value=''; $('rvTradeId').value='';
+        // refresh this trader's reviews + stats
+        currentProfile.reviews=[res.data.review].concat(currentProfile.reviews||[]);
+        $('reviewHistory').innerHTML=renderReviews(currentProfile.reviews);
+        loadStats();
+      }).catch(function(){ btn.disabled=false; toast('Network error.', true); });
+    }
+
+    // ── psychology summary (server returns raw trades; summarize here) ──
+    function summPsych(trades){
+      var em={}, conf=[], plan=[], tagged=0;
+      trades.forEach(function(t){
+        if(t.emotion){ em[t.emotion]=(em[t.emotion]||0)+1; tagged++; }
+        if(t.confidence_level!=null) conf.push(Number(t.confidence_level));
+        if(t.followed_plan!=null) plan.push(t.followed_plan?1:0);
+      });
+      var dom=Object.keys(em).sort(function(a,b){return em[b]-em[a];})[0]||null;
+      return {
+        dominantEmotion:dom,
+        avgConf: conf.length? (conf.reduce(function(a,b){return a+b;},0)/conf.length).toFixed(1):null,
+        planRate: plan.length? Math.round(plan.reduce(function(a,b){return a+b;},0)/plan.length*100):null,
+        tagged:tagged,
+      };
+    }
+
+    function kv(l,v,cls){ return '<div class="kv"><div class="l">'+esc(l)+'</div><div class="v '+(cls||'')+'">'+v+'</div></div>'; }
+
+    // ════ Phase 5B — VIEW SWITCHING ════
+    var currentView='dashboard', dashLoaded=false, analyticsLoaded=false;
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
+      t.addEventListener('click', function(){ showView(t.getAttribute('data-view')); });
+    });
+    function showView(v){
+      currentView=v;
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){ t.classList.toggle('on', t.getAttribute('data-view')===v); });
+      Array.prototype.forEach.call(document.querySelectorAll('.view'), function(el){ el.classList.toggle('on', el.id==='view-'+v); });
+      if(v==='dashboard' && !dashLoaded) loadDashboard();
+      if(v==='traders'){ if(!traders.length) loadTraders(); loadStats(); }
+      if(v==='analytics' && !analyticsLoaded) loadAnalytics();
+    }
+
+    // ════ 5B.1 DASHBOARD ════
+    function loadDashboard(){
+      api('dashboard').then(function(res){
+        if(res.status!==200){ handleApiErr(res); return; }
+        dashLoaded=true; var d=res.data;
+        $('dashCards').innerHTML=
+          dcard('Total Traders', d.cards.totalTraders)+
+          dcard('Pending Reviews', d.cards.pendingReviews, 'warn')+
+          dcard('Reviewed Traders', d.cards.reviewedTraders)+
+          dcard('Reviews This Week', d.cards.reviewsThisWeek)+
+          dcard('Reviews This Month', d.cards.reviewsThisMonth);
+        $('qLatestTraders').innerHTML=(d.latestTraders||[]).map(function(t){
+          return '<div class="qrow" data-open="'+esc(t.id)+'"><span><span class="nm">'+esc(t.name||t.account||'Trader')+'</span><br><span class="sub">'+esc(t.account||'')+'</span></span><span class="sub">'+fmtDate(t.joined)+'</span></div>';
+        }).join('')||emptyP('No traders.');
+        $('qLatestReviews').innerHTML=(d.latestReviews||[]).map(function(r){
+          return '<div class="qrow" data-open="'+esc(r.user_id)+'"><span><span class="nm">'+esc(r.category)+'</span><br><span class="sub">'+esc((r.comment||'').slice(0,50))+'</span></span><span class="sub">'+fmtDate(r.created_at)+'</span></div>';
+        }).join('')||emptyP('No reviews yet.');
+        $('qNeedReview').innerHTML=(d.tradersNeedingReview||[]).map(function(t){
+          return '<div class="qrow" data-open="'+esc(t.id)+'"><span class="nm">'+esc(t.name||t.account||'Trader')+'</span><span class="sub">'+t.trades+' trades</span></div>';
+        }).join('')||emptyP('Everyone is reviewed. ✓');
+        loadPendingAcks();
+        $('qRecentActivity').innerHTML=(d.recentActivity||[]).map(function(a){
+          return '<div class="qrow"><span><span class="nm">'+esc(a.category)+'</span> <span class="sub">'+esc(a.account||'')+'</span></span><span class="sub">'+esc(a.mentor||'')+' · '+fmtDate(a.at)+'</span></div>';
+        }).join('')||emptyP('No activity yet.');
+        wireQuickOpens();
+      }).catch(function(){ showConfigWarn('Network error reaching /api/journal-admin.'); });
+    }
+    function loadPendingAcks(){
+      api('pending-acks').then(function(res){
+        if(res.status!==200) return;
+        var list=res.data.pending||[];
+        $('qPendingAcks').innerHTML=list.length? list.slice(0,8).map(function(r){
+          return '<div class="qrow" data-open="'+esc(r.user_id)+'"><span><span class="nm">'+esc(r.category)+'</span><br><span class="sub">'+esc(r.account||'')+'</span></span><span class="ack '+r.status+'">'+r.status+'</span></div>';
+        }).join('') : emptyP('Nothing pending acknowledgement.');
+        wireQuickOpens();
+      });
+    }
+    function wireQuickOpens(){
+      Array.prototype.forEach.call(document.querySelectorAll('[data-open]'), function(el){
+        if(el._wired) return; el._wired=true;
+        el.addEventListener('click', function(){ showView('traders'); openTrader(el.getAttribute('data-open')); });
+      });
+    }
+    function dcard(l,v,cls){ return '<div class="dcard '+(cls||'')+'"><div class="l">'+esc(l)+'</div><div class="v">'+esc(v)+'</div></div>'; }
+    function emptyP(t){ return '<p style="color:var(--muted);font-size:12.5px;padding:6px 0;">'+esc(t)+'</p>'; }
+
+    // ════ 5B.5 ANALYTICS ════
+    function loadAnalytics(){
+      api('mentor-analytics').then(function(res){
+        if(res.status!==200){ handleApiErr(res); return; }
+        analyticsLoaded=true; var a=res.data;
+        $('analyticsCards').innerHTML=
+          dcard('Reviews Completed', a.reviewsCompleted)+
+          dcard('Active Traders', a.activeTraders)+
+          dcard('Total Traders', a.totalTraders)+
+          dcard('Avg Trader Score', a.avgTraderScore!=null?a.avgTraderScore:'—','warn')+
+          dcard('Graded Trades', Object.values(a.gradeDistribution||{}).reduce(function(x,y){return x+y;},0));
+        $('anMistakes').innerHTML=bars(a.mostCommonMistakes)||emptyP('No data yet.');
+        $('anPsych').innerHTML=bars(a.mostCommonPsychology)||emptyP('No data yet.');
+        $('anRisk').innerHTML=bars(a.mostCommonRisk)||emptyP('No data yet.');
+        var gd=a.gradeDistribution||{}; var gmax=Math.max(1,Math.max.apply(null,Object.values(gd).concat([1])));
+        $('anGrades').innerHTML=Object.keys(gd).length? Object.keys(gd).map(function(k){
+          return barRow(k, gd[k], gmax);
+        }).join('') : emptyP('No trade grades yet.');
+      }).catch(function(){ showConfigWarn('Network error reaching /api/journal-admin.'); });
+    }
+    function bars(list){ if(!list||!list.length) return ''; var mx=Math.max.apply(null,list.map(function(x){return x.n;}).concat([1])); return list.map(function(x){ return barRow(x.k, x.n, mx); }).join(''); }
+    function barRow(label,n,mx){ return '<div class="bar-row"><span class="bl">'+esc(label)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+Math.max(4,Math.round(n/mx*100))+'%"></span></span><span class="bn">'+n+'</span></div>'; }
+
+    function handleApiErr(res){
+      if(res.status===401) showConfigWarn('Unauthorized — admin password does not match JOURNAL_ADMIN_PASSWORD on the server.');
+      else if(res.data&&res.data.error==='server_not_configured') showConfigWarn('Backend not configured: set JOURNAL_SUPABASE_SERVICE_ROLE_KEY and JOURNAL_ADMIN_PASSWORD in Cloudflare Pages env, then redeploy.');
+      else showConfigWarn('API error: '+((res.data&&res.data.detail)||(res.data&&res.data.error)||res.status));
+    }
+
+    $('btnRefresh').addEventListener('click', function(){
+      dashLoaded=false; analyticsLoaded=false;
+      if(currentView==='dashboard') loadDashboard();
+      else if(currentView==='analytics') loadAnalytics();
+      else { loadStats(); loadTraders(); if(selectedId) openTrader(selectedId); }
+    });
+
+    function boot(){ loadDashboard(); }   // dashboard is the default view
+
+    // auto-unlock if a valid session exists
+    if(sessionValid()){ ADMIN_KEY=readSessionKey(); $('gate').style.display='none'; boot(); }
+  })();
+  </script>
+</body>
+</html>

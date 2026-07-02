@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!--
+  ZTU mismatch / rejection email.
+  Structure-only. All editable copy lives in content\mismatch_text.txt.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>{{EMAIL_SUBJECT}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f1ea;font-family:'Helvetica Neue',Arial,sans-serif;color:#2b2520;line-height:1.55;-webkit-font-smoothing:antialiased;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f4f1ea;padding:32px 14px;">
+  <tr><td align="center">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 22px rgba(45,30,5,0.08);">
+
+      <!-- Header (dark with warning-tinted accent) -->
+      <tr><td style="background:linear-gradient(135deg,#0d0902 0%,#1a1410 50%,#3d2a08 100%);padding:30px 36px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="padding-right:14px;vertical-align:middle;">
+              <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(150deg,#3d2a08 0%,#8c6c1f 55%,#d4ae5e 100%);text-align:center;line-height:44px;color:#e6c987;font-weight:900;font-size:21px;font-family:'Helvetica Neue',Arial,sans-serif;">Z</div>
+            </td>
+            <td style="vertical-align:middle;">
+              <div style="color:#ffffff;font-size:15px;font-weight:800;letter-spacing:-0.3px;">Z Trade University</div>
+              <div style="color:#d4ae5e;font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;margin-top:3px;">Verification Update</div>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- Warning accent bar -->
+      <tr><td style="height:4px;background:linear-gradient(90deg,#b8881a,#d4a955,#fdf6df);font-size:0;line-height:0;">&nbsp;</td></tr>
+
+      <!-- Hero -->
+      <tr><td style="padding:36px 36px 14px;">
+        <h1 style="margin:0 0 8px;font-size:24px;line-height:1.22;color:#1a1410;font-weight:900;letter-spacing:-0.5px;">{{MISMATCH_HEADLINE}}</h1>
+        <p style="margin:0;font-size:14px;color:#756347;line-height:1.65;">{{MISMATCH_INTRO}}</p>
+      </td></tr>
+
+      <!-- Submitted details -->
+      <tr><td style="padding:6px 36px 18px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#fdfbf6;border:1px solid rgba(200,156,63,0.22);border-radius:11px;">
+          <tr><td style="padding:16px 22px;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#8c6c1f;margin-bottom:10px;">Your submission</div>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="font-size:13px;color:#756347;padding:4px 0;">Account number</td>
+                <td style="font-size:14px;font-weight:800;color:#2b2520;font-family:'Courier New',Consolas,monospace;padding:4px 0;text-align:right;">{{ACCOUNT_NUMBER}}</td>
+              </tr>
+              <tr>
+                <td style="font-size:13px;color:#756347;padding:4px 0;">Broker</td>
+                <td style="font-size:14px;font-weight:700;color:#2b2520;padding:4px 0;text-align:right;">{{BROKER}}</td>
+              </tr>
+              <tr>
+                <td style="font-size:13px;color:#756347;padding:4px 0;">Reviewed</td>
+                <td style="font-size:13px;color:#2b2520;padding:4px 0;text-align:right;">{{REJECTION_DATE}}</td>
+              </tr>
+              <tr>
+                <td style="font-size:13px;color:#756347;padding:4px 0;">Status</td>
+                <td style="padding:4px 0;text-align:right;"><span style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.6px;background:rgba(184,136,26,0.16);color:#7a5a0e;border:1px solid rgba(184,136,26,0.34);padding:3px 10px;border-radius:100px;">Could not verify</span></td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Reason summary -->
+      <tr><td style="padding:6px 36px 12px;">
+        <div style="background:linear-gradient(135deg,#fdf6df 0%,#faecbf 100%);border:1px solid rgba(184,136,26,0.28);border-radius:11px;padding:14px 18px;font-size:13px;color:#4a3206;line-height:1.6;">
+          <b style="font-weight:800;">Verification result:</b> {{REJECTION_REASON}}
+        </div>
+      </td></tr>
+
+      <!-- Possible reasons -->
+      <tr><td style="padding:12px 36px 6px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#8c6c1f;margin-bottom:10px;">{{POSSIBLE_REASONS_TITLE}}</div>
+        <div style="font-size:13.5px;color:#2b2520;line-height:1.85;white-space:pre-line;">{{POSSIBLE_REASONS}}</div>
+      </td></tr>
+
+      <!-- Retry instructions -->
+      <tr><td style="padding:14px 36px 6px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#8c6c1f;margin-bottom:10px;">{{RETRY_INSTRUCTIONS_TITLE}}</div>
+        <div style="font-size:13.5px;color:#2b2520;line-height:1.85;white-space:pre-line;">{{RETRY_INSTRUCTIONS}}</div>
+      </td></tr>
+
+      <!-- CTA -->
+      <tr><td style="padding:18px 36px 24px;text-align:center;">
+        <a href="{{RETRY_CTA_URL}}" style="display:inline-block;background:linear-gradient(135deg,#8c6c1f 0%,#c89c3f 50%,#d4ae5e 100%);color:#0d0902;text-decoration:none;font-size:14px;font-weight:800;padding:13px 30px;border-radius:100px;letter-spacing:.2px;box-shadow:0 6px 18px rgba(200,156,63,0.36);">{{RETRY_CTA_LABEL}}</a>
+      </td></tr>
+
+      <!-- Resources -->
+      <tr><td style="padding:6px 36px 22px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#8c6c1f;margin-bottom:10px;">Need help?</div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr><td style="padding:5px 0;font-size:13px;color:#2b2520;"><b style="color:#3d2a08;font-weight:800;">Email support:</b> <a href="mailto:{{SUPPORT_EMAIL}}" style="color:#8c6c1f;text-decoration:none;">{{SUPPORT_EMAIL}}</a></td></tr>
+          <tr><td style="padding:5px 0;font-size:13px;color:#2b2520;"><b style="color:#3d2a08;font-weight:800;">WhatsApp:</b> {{WHATSAPP}}</td></tr>
+          <tr><td style="padding:5px 0;font-size:13px;color:#2b2520;"><b style="color:#3d2a08;font-weight:800;">Website:</b> <a href="https://{{WEBSITE}}" style="color:#8c6c1f;text-decoration:none;">{{WEBSITE}}</a></td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Custom note -->
+      <tr><td style="padding:6px 36px 26px;">
+        <div style="font-size:12.5px;color:#756347;line-height:1.6;border-left:3px solid rgba(200,156,63,0.32);padding:2px 0 2px 14px;">{{CUSTOM_MESSAGE}}</div>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="background:#0d0902;padding:22px 36px;text-align:center;">
+        <div style="color:rgba(255,255,255,0.6);font-size:11.5px;letter-spacing:.2px;">{{FOOTER_LINE}}</div>
+        <div style="color:rgba(230,201,135,0.55);font-size:10.5px;font-family:'Courier New',Consolas,monospace;margin-top:6px;letter-spacing:.5px;">{{WEBSITE}}</div>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

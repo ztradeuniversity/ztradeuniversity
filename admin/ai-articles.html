@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Article Manager | Z Trade University</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/png" href="../assets/ztu-logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0d0902;--bg2:#1a1410;--bg3:#221c15;--bg4:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;
+      --text:rgba(255,255,255,.92);--muted:rgba(255,255,255,.55);--mut2:rgba(255,255,255,.34);--brd:rgba(200,156,63,.16);--brs:rgba(200,156,63,.32);
+      --bull:#10b981;--bear:#ef4444;--amber:#f59e0b}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+    a{color:var(--gold2)}
+    header{position:sticky;top:0;z-index:10;background:rgba(13,9,2,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--brd);padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+    .brand{font-family:'Manrope',sans-serif;font-weight:900;font-size:16px;letter-spacing:-.3px}
+    .brand small{display:block;font-size:9px;font-weight:700;color:var(--gold2);letter-spacing:2px;text-transform:uppercase}
+    .wrap{max-width:1100px;margin:0 auto;padding:22px;display:grid;grid-template-columns:330px 1fr;gap:20px}
+    @media(max-width:860px){.wrap{grid-template-columns:1fr}}
+    .card{background:var(--bg2);border:1px solid var(--brd);border-radius:14px;padding:16px;margin-bottom:16px}
+    .card h2{font-family:'Manrope',sans-serif;font-size:14px;font-weight:800;color:var(--gold3);margin-bottom:12px;letter-spacing:-.2px}
+    label{display:block;font-size:11px;font-weight:700;color:var(--gold2);margin:10px 0 4px;letter-spacing:.2px}
+    input,select,textarea{width:100%;padding:10px 12px;background:var(--bg4);border:1px solid var(--brd);border-radius:9px;color:var(--text);
+      font-family:'Inter',sans-serif;font-size:13.5px;outline:none;transition:border-color .15s}
+    input:focus,select:focus,textarea:focus{border-color:var(--brs)}
+    textarea{min-height:200px;resize:vertical;line-height:1.6}
+    .row{display:flex;gap:10px}.row>*{flex:1}
+    button{cursor:pointer;border:0;border-radius:9px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;padding:10px 14px;transition:opacity .15s,transform .15s}
+    button:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-gold{background:linear-gradient(135deg,#e6c987,#c89c3f 55%,#8c6c1f);color:#fff}
+    .btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--brd)}
+    .btn-danger{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .list-item{padding:10px 12px;border-radius:9px;border:1px solid var(--brd);background:var(--bg3);margin-bottom:8px;transition:background .15s;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .list-item:hover{background:rgba(200,156,63,.08)}
+    .li-main{flex:1;min-width:140px;cursor:pointer}
+    .list-item .t{font-weight:700;font-size:13px}
+    .list-item .m{font-size:10.5px;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .li-acts{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+    .row-btn{font-size:10.5px;font-weight:700;padding:5px 9px;border-radius:7px;border:1px solid var(--brd);background:var(--bg4);color:var(--text);cursor:pointer;white-space:nowrap;transition:opacity .15s,transform .15s}
+    .row-btn:hover{opacity:.9;transform:translateY(-1px)}
+    .row-btn.ok{border-color:rgba(16,185,129,.4);color:var(--bull);background:rgba(16,185,129,.12)}
+    .row-btn.warn{border-color:rgba(245,158,11,.4);color:var(--amber);background:rgba(245,158,11,.12)}
+    .row-btn.danger{border-color:rgba(239,68,68,.4);color:#fca5a5;background:rgba(239,68,68,.12)}
+    .pill{font-size:9px;font-weight:800;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px}
+    .pill.pub{background:rgba(16,185,129,.14);color:var(--bull)}
+    .pill.draft{background:rgba(245,158,11,.14);color:var(--amber)}
+    .note{font-size:11.5px;color:var(--mut2);margin-top:8px;line-height:1.5}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--brs);color:var(--gold3);
+      padding:11px 18px;border-radius:100px;font-size:12.5px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+    .toast.show{opacity:1}
+    .imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .imgs figure{width:80px}.imgs img{width:80px;height:60px;object-fit:cover;border-radius:7px;border:1px solid var(--brd)}
+    .imgs figcaption{font-size:9px;color:var(--mut2);margin-top:2px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .gate{max-width:380px;margin:60px auto;text-align:center}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">AI Article Manager <small>Z Trade University · Knowledge Base</small></div>
+  <a href="../ai-trade-assistant.html" style="font-size:12px;text-decoration:none">← AI Assistant</a>
+</header>
+
+<!-- ADMIN KEY GATE -->
+<div class="gate" id="gate">
+  <div class="card">
+    <h2>🔐 Admin Access</h2>
+    <label for="adminKey">Admin Key</label>
+    <input id="adminKey" type="password" placeholder="Enter AI_ADMIN_KEY" autocomplete="off" />
+    <div class="btn-row"><button class="btn-gold" style="flex:1" onclick="unlock()">Unlock Manager</button></div>
+    <p class="note">The key is compared server-side (header <code>x-admin-key</code>) against the Cloudflare env var <b>AI_ADMIN_KEY</b>. It is never stored in the page source. Reads/search work without it; creating/editing requires it.</p>
+  </div>
+</div>
+
+<!-- MANAGER -->
+<div class="wrap hidden" id="manager">
+  <!-- LEFT: list -->
+  <div>
+    <div class="card">
+      <h2>📚 Articles</h2>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn-gold" onclick="newArticle()">+ New Article</button>
+        <button class="btn-ghost" onclick="loadList()">↻ Refresh</button>
+      </div>
+      <div id="list"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: editor -->
+  <div>
+    <div class="card">
+      <h2 id="editorTitle">New Article</h2>
+      <input type="hidden" id="artId" />
+
+      <!-- AUTO MODE TOGGLE (additive — Manual mode is the default, unchanged) -->
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px;padding:9px 12px;border:1px solid var(--brd);border-radius:9px;background:var(--bg3)">
+        <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--gold3)">
+          <input type="checkbox" id="autoMode" style="width:auto" onchange="toggleAuto()" />
+          ✨ AUTO mode — paste content, auto-generate everything
+        </label>
+        <button class="btn-ghost" style="margin-left:auto;padding:6px 10px;font-size:12px" onclick="autoGenerate(false)" id="autoBtn">⚡ Generate metadata</button>
+      </div>
+      <p class="note hidden" id="autoHint">AUTO: paste your article into <b>Content</b> below, then Save. Title, category, difficulty, tags, summary &amp; image caption are generated by Workers AI (deterministic fallback) and stay fully editable.</p>
+
+      <div id="metaFields">
+        <label for="title">Title</label>
+        <input id="title" placeholder="e.g. How Real Yields Drive Gold" />
+        <div class="row">
+          <div><label for="category">Category</label><select id="category"></select></div>
+          <div><label for="language">Language</label><select id="language"></select></div>
+        </div>
+        <div class="row">
+          <div><label for="difficulty">Difficulty</label>
+            <select id="difficulty"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
+          </div>
+          <div><label for="author">Author</label><input id="author" value="ZTU" /></div>
+        </div>
+        <label for="tags">Tags (comma-separated)</label>
+        <input id="tags" placeholder="gold, real yields, dxy" />
+        <label for="summary">Summary (used by the AI for quick answers)</label>
+        <textarea id="summary" style="min-height:70px" placeholder="2–3 sentence summary the AI can cite directly."></textarea>
+      </div>
+
+      <label for="content">Content (Markdown)</label>
+      <textarea id="content" placeholder="Full article body…"></textarea>
+
+      <div class="btn-row">
+        <button class="btn-gold" id="draftBtn" onclick="saveArticle(false)">💾 Save Draft</button>
+        <button class="btn-gold" id="pubSaveBtn" onclick="saveArticle(true)">🚀 Save &amp; Publish</button>
+        <button class="btn-ghost" onclick="togglePublish()" id="pubBtn">Toggle Publish</button>
+        <button class="btn-danger" id="delBtn" onclick="removeArticle()">🗑 Delete</button>
+      </div>
+      <p class="note" id="metaNote"></p>
+    </div>
+
+    <div class="card">
+      <h2>🖼 Images <span style="font-weight:500;color:var(--mut2);font-size:11px">(bucket: article-images)</span></h2>
+      <input id="imgFile" type="file" accept="image/*" />
+      <label for="imgCaption">Caption</label>
+      <input id="imgCaption" placeholder="e.g. Double bottom on XAUUSD H1" />
+      <div class="btn-row"><button class="btn-gold" onclick="uploadImage()" id="imgBtn">⬆ Upload &amp; Attach</button></div>
+      <div class="imgs" id="imgList"></div>
+      <p class="note">Save the article first to attach images to it. Multiple images per article supported.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const API = '/api/ai-articles';
+let KEY = '';
+let CATS = [], LANGS = [];
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function hdrs(){return {'Content-Type':'application/json','x-admin-key':KEY};}
+
+// BUG FIX: this previously hid the gate + wrote the typed key into the SHARED
+// sessionStorage slot ('ztu_kb_admin_key', also read by admin/ai-feedback.html
+// and admin/kb-admin.js) UNCONDITIONALLY — loadCategories() never even sends
+// the key, so an unvalidated/wrong key still "unlocked" this page AND poisoned
+// the shared slot for the other admin pages, which then auto-failed with
+// "Invalid admin key" using a key that was never actually correct. Fix:
+// validate first via the REAL authenticated call (loadList()), only commit
+// (hide gate, persist to the shared slot) on confirmed success.
+async function unlock(){
+  KEY=document.getElementById('adminKey').value.trim();
+  if(!KEY){toast('Enter the admin key');return;}
+  await loadCategories();   // unauthenticated metadata only — never used to validate
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('manager').classList.remove('hidden');
+  const ok = await loadList();
+  if(ok === false){
+    sessionStorage.removeItem('ztu_kb_admin_key');   // never poison the shared slot with a bad key
+    document.getElementById('gate').classList.remove('hidden');
+    document.getElementById('manager').classList.add('hidden');
+    toast('❌ Invalid admin key — check AI_ADMIN_KEY in Cloudflare and retry');
+    return;
+  }
+  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin) — only stored once confirmed valid
+}
+
+async function loadCategories(){
+  try{
+    const r=await fetch(`${API}?action=categories`); const d=await r.json();
+    CATS=d.categories||[]; LANGS=d.languages||[];
+    const cs=document.getElementById('category'); cs.innerHTML='<option value="">— select —</option>'+CATS.map(c=>`<option value="${c.key}">${c.label}</option>`).join('');
+    const ls=document.getElementById('language'); ls.innerHTML=LANGS.map(l=>`<option value="${l.code}">${l.label}</option>`).join('');
+  }catch{ toast('Could not load categories'); }
+}
+
+// Returns true once a real authenticated list load succeeds, false on a
+// confirmed 403 (bad/missing admin key), undefined on any other failure
+// (network/parse/Supabase-not-configured) — mirrors the ai-feedback.html fix
+// so unlock() can tell "wrong key" apart from "key fine, something else failed".
+async function loadList(){
+  const el=document.getElementById('list');
+  el.innerHTML='<p class="note">⏳ Loading…</p>';
+  try{
+    const r=await fetch(`${API}?action=list&status=all`,{headers:hdrs()});
+    if(r.status===403){ el.innerHTML='<p class="note">🔐 Admin key rejected by the server — re-enter it.</p>'; return false; }
+    let d=null; try{ d=await r.json(); }catch{ el.innerHTML=`<p class="note">⚠️ List error: server returned ${r.status} (non-JSON). Check admin key / deployment.</p>`; return; }
+    if(d.configured===false){el.innerHTML='<p class="note">⚠️ AI Supabase (ZTU Chatbot) is not connected yet. Add AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY in Cloudflare, then refresh.</p>';return true;}
+    if(d.error){el.innerHTML=`<p class="note">${d.error}</p>`;return;}
+    const arts=d.articles||[];
+    if(!arts.length){el.innerHTML='<p class="note">No articles yet. Create your first one →</p>';return true;}
+    el.innerHTML=arts.map(a=>{
+      const aj=JSON.stringify(a).replace(/'/g,"&#39;");
+      const id=String(a.id);
+      // Inline quick actions per row (Edit · Publish/Unpublish · Delete) — no need
+      // to open the editor. Each calls the SAME backend actions used by the editor
+      // (publish / draft / delete), then refreshes the list.
+      const pubUnpub = a.is_active
+        ? `<button class="row-btn warn" title="Unpublish (set to Draft)" onclick="rowUnpublish('${id}',event)">⏸ Unpublish</button>`
+        : `<button class="row-btn ok" title="Publish now (KB + graph sync)" onclick="rowPublish('${id}',event)">🚀 Publish</button>`;
+      return `<div class="list-item">
+        <div class="li-main" onclick='editArticle(${aj})'>
+          <div class="t">${esc(a.title||'(untitled)')}</div>
+          <div class="m"><span class="pill ${a.is_active?'pub':'draft'}">${a.is_active?'Published':'Draft'}</span>
+            <span>${esc(a.category||'—')}</span><span>${esc((a.language||'en'))}</span></div>
+        </div>
+        <div class="li-acts">
+          <button class="row-btn" title="Edit" onclick='editArticle(${aj})'>✏️ Edit</button>
+          ${pubUnpub}
+          <button class="row-btn danger" title="Delete" onclick="rowDelete('${id}',event)">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+    return true;
+  }catch{ el.innerHTML='<p class="note">Failed to load.</p>'; }
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function newArticle(){
+  document.getElementById('editorTitle').textContent='New Article';
+  ['artId','title','tags','summary','content'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('author').value='ZTU';
+  document.getElementById('category').value=''; document.getElementById('language').value='en';
+  document.getElementById('difficulty').value='beginner';
+  document.getElementById('imgList').innerHTML=''; document.getElementById('metaNote').textContent='';
+}
+
+function editArticle(a){
+  document.getElementById('editorTitle').textContent='Edit: '+(a.title||'');
+  document.getElementById('artId').value=a.id||'';
+  document.getElementById('title').value=a.title||'';
+  document.getElementById('category').value=a.category||'';
+  document.getElementById('language').value=a.language||'en';
+  document.getElementById('difficulty').value=a.difficulty||'beginner';
+  document.getElementById('author').value=a.author||'ZTU';
+  document.getElementById('tags').value=(a.tags||[]).join(', ');
+  document.getElementById('summary').value=a.summary||'';
+  document.getElementById('content').value=a.content||'';
+  document.getElementById('metaNote').textContent=`Status: ${a.is_active?'Published':'Draft'} · Reading time: ${a.reading_time||'—'} min · Updated: ${a.updated_at||'—'}`;
+  loadImages(a.id);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function gather(isActive){
+  return {
+    id:document.getElementById('artId').value||undefined,
+    title:document.getElementById('title').value.trim(),
+    category:document.getElementById('category').value||null,
+    language:document.getElementById('language').value||'en',
+    difficulty:document.getElementById('difficulty').value,
+    author:document.getElementById('author').value.trim()||'ZTU',
+    tags:document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    summary:document.getElementById('summary').value.trim(),
+    content:document.getElementById('content').value.trim(),
+    is_active:isActive,
+  };
+}
+
+// ── AUTO MODE (additive) — paste content, generate metadata, reuse existing save ──
+let AUTO=false;
+function toggleAuto(){
+  AUTO=document.getElementById('autoMode').checked;
+  document.getElementById('metaFields').classList.toggle('hidden',AUTO);
+  document.getElementById('autoHint').classList.toggle('hidden',!AUTO);
+}
+// Calls the new /api/ai-articles {action:'auto-meta'} (generate-only; never persists),
+// then fills the EXISTING form fields. Returns true on success. `silent` suppresses
+// toasts + field reveal (used when triggered from Save in AUTO mode).
+async function autoGenerate(silent){
+  const content=document.getElementById('content').value.trim();
+  if(!content){ if(!silent)toast('Paste content first'); return false; }
+  const btn=document.getElementById('autoBtn'); const old=btn.textContent; btn.textContent='Generating…';
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'auto-meta',data:{content}})});
+    const d=await r.json();
+    if(d.error){toast(d.error);return false;}
+    const m=d.meta||{};
+    if(m.title)document.getElementById('title').value=m.title;
+    if(m.category)document.getElementById('category').value=m.category;
+    if(m.language)document.getElementById('language').value=m.language;
+    if(m.difficulty)document.getElementById('difficulty').value=m.difficulty;
+    if(Array.isArray(m.tags))document.getElementById('tags').value=m.tags.join(', ');
+    if(m.summary)document.getElementById('summary').value=m.summary;
+    if(m.caption && !document.getElementById('imgCaption').value)document.getElementById('imgCaption').value=m.caption;
+    if(!silent){ document.getElementById('metaFields').classList.remove('hidden'); toast('Metadata generated ✓ ('+(m.source||'')+') — review & save'); }
+    return true;
+  }catch{ if(!silent)toast('Auto-generate failed'); return false; }
+  finally{ btn.textContent=old; }
+}
+
+// ── ROBUSTNESS LAYER (additive) — prevents silent failures, surfaces the real
+// server error, disables buttons + shows a spinner while a request runs, and stops
+// duplicate clicks. No API/schema change; only the existing actions are called. ──
+const $id = (id)=>document.getElementById(id);
+let UIBUSY=false;
+function actionButtons(){return ['draftBtn','pubSaveBtn','pubBtn','delBtn','autoBtn'].map($id).filter(Boolean);}
+function setBusy(on,btn,label){
+  UIBUSY=on;
+  actionButtons().forEach(b=>{ b.disabled=on; b.style.opacity=on?'0.55':''; b.style.cursor=on?'not-allowed':'pointer'; });
+  if(btn){ if(on){ btn.dataset.lbl=btn.textContent; btn.textContent='⏳ '+(label||'Working…'); }
+           else if(btn.dataset.lbl!=null){ btn.textContent=btn.dataset.lbl; delete btn.dataset.lbl; } }
+}
+// fetch + SAFE json parse → {ok,data,error}. Never throws (kills the silent-failure bug).
+async function apiPost(payload){
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify(payload)});
+    let d=null; try{ d=await r.json(); }
+    catch{ return {ok:false,error:`Server returned ${r.status} (non-JSON) — check admin key / that the latest code is deployed.`}; }
+    if(!r.ok)               return {ok:false,error:(d&&d.error)||`HTTP ${r.status}`,data:d};
+    if(d&&d.error)          return {ok:false,error:d.error,data:d};
+    if(d&&d.configured===false) return {ok:false,error:'Supabase not connected (AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY).',data:d};
+    return {ok:true,data:d};
+  }catch(e){ return {ok:false,error:'Network error: '+((e&&e.message)||e)}; }
+}
+// Single source of truth for the publish action (+ full graph/SEO ecosystem).
+async function doPublish(id){
+  const res=await apiPost({action:'publish',data:{id}});
+  if(!res.ok) return {ok:false,error:res.error};
+  const g=(res.data&&res.data.graph)||{};
+  const note = g.published&&g.published.ok ? `graph ✓ (+${(g.strengthen&&g.strengthen.added)||0} edges)`
+    : g.authored&&g.authored.action==='merged' ? 'graph ✓ (merged)' : '';
+  return {ok:true,note};
+}
+
+// ── INLINE LIST ROW ACTIONS (no editor needed) ──────────────────────────────
+// Reuse the exact same backend actions as the editor buttons. stopPropagation so
+// the row's edit-on-click doesn't also fire. loadList() refreshes status pills.
+async function rowPublish(id,ev){ if(ev){ev.stopPropagation();} if(UIBUSY) return;
+  const btn=ev&&ev.currentTarget; setBusy(true,btn,'Publishing…');
+  try{ const p=await doPublish(id);
+    toast(p.ok ? ['🚀 Published',p.note].filter(Boolean).join(' · ') : '❌ '+p.error);
+    await loadList();
+  } finally { setBusy(false,btn); } }
+async function rowUnpublish(id,ev){ if(ev){ev.stopPropagation();} if(UIBUSY) return;
+  const btn=ev&&ev.currentTarget; setBusy(true,btn,'Unpublishing…');
+  try{ const res=await apiPost({action:'draft',data:{id}});
+    toast(res.ok ? '✅ Set to Draft' : '❌ '+res.error);
+    await loadList();
+  } finally { setBusy(false,btn); } }
+async function rowDelete(id,ev){ if(ev){ev.stopPropagation();} if(UIBUSY) return;
+  if(!confirm('Delete this article and its images?')) return;
+  const btn=ev&&ev.currentTarget; setBusy(true,btn,'Deleting…');
+  try{ const res=await apiPost({action:'delete',data:{id}});
+    toast(res.ok ? '🗑 Deleted' : '❌ '+res.error);
+    if($id('artId').value===String(id)) newArticle();   // clear editor if it held this row
+    await loadList();
+  } finally { setBusy(false,btn); } }
+
+async function saveArticle(publish){
+  if(UIBUSY) return;
+  // AUTO mode: if the user only pasted content, generate metadata first (reuses the
+  // same save path below — never bypasses create/publish).
+  if(AUTO && !$id('title').value.trim()){
+    const ok=await autoGenerate(true);
+    if(!ok){ toast('Paste content first'); return; }
+  }
+  const data=gather(false);   // always save the row first; Publish is a separate step
+  if(!data.title){ toast('⚠️ Title required'+(AUTO?' — paste content so AUTO can generate it':'')); return; }
+  const action=data.id?'update':'create';
+  const btn=publish?$id('pubSaveBtn'):$id('draftBtn');
+  setBusy(true,btn,publish?'Publishing…':'Saving…');
+  try{
+    const res=await apiPost({action,data});
+    if(!res.ok){ toast('❌ '+res.error); return; }
+    const art=res.data&&res.data.article;
+    if(!art||!art.id){ toast('❌ Save failed — the insert was rejected (no article id returned). Set DEBUG=true in Cloudflare to log the exact Supabase error.'); return; }
+    $id('artId').value=art.id;                       // ← the id the publish/image steps need
+    if(!publish){ toast('✅ Draft Saved'); await loadList(); return; }
+    const p=await doPublish(art.id);
+    toast(p.ok ? ['✅ Article Published Successfully', p.note].filter(Boolean).join(' · ')
+               : '⚠️ Saved as draft, but publish failed: '+p.error);
+    await loadList();                                 // published article appears immediately
+  } finally { setBusy(false,btn); }
+}
+
+// "Toggle Publish" standalone button: publish a draft, or unpublish a live article.
+async function publishArticle(){
+  if(UIBUSY) return;
+  const id=$id('artId').value; if(!id){ toast('⚠️ Save the article first'); return; }
+  setBusy(true,$id('pubBtn'),'Publishing…');
+  try{
+    const p=await doPublish(id);
+    toast(p.ok ? ['✅ Article Published Successfully', p.note].filter(Boolean).join(' · ') : '❌ '+p.error);
+    if(p.ok) await loadList();
+  } finally { setBusy(false,$id('pubBtn')); }
+}
+
+async function togglePublish(){
+  if(UIBUSY) return;
+  const id=$id('artId').value; if(!id){ toast('⚠️ Save the article first'); return; }
+  const isPub=/Published/.test($id('metaNote').textContent);
+  setBusy(true,$id('pubBtn'),isPub?'Unpublishing…':'Publishing…');
+  try{
+    if(isPub){
+      const res=await apiPost({action:'draft',data:{id}});
+      if(!res.ok){ toast('❌ '+res.error); return; }
+      toast('✅ Set to Draft'); $id('metaNote').textContent=$id('metaNote').textContent.replace('Published','Draft');
+      await loadList(); return;
+    }
+    const p=await doPublish(id);
+    toast(p.ok ? '✅ Article Published Successfully' : '❌ '+p.error);
+    if(p.ok) await loadList();
+  } finally { setBusy(false,$id('pubBtn')); }
+}
+
+async function removeArticle(){
+  if(UIBUSY) return;
+  const id=$id('artId').value; if(!id){ toast('Nothing to delete'); return; }
+  if(!confirm('Delete this article and its images?')) return;
+  setBusy(true,$id('delBtn'),'Deleting…');
+  try{
+    const res=await apiPost({action:'delete',data:{id}});
+    if(!res.ok){ toast('❌ '+res.error); return; }
+    toast('✅ Removed from list'); newArticle(); await loadList();
+  } finally { setBusy(false,$id('delBtn')); }
+}
+
+async function loadImages(id){
+  const el=document.getElementById('imgList'); el.innerHTML='';
+  if(!id)return;
+  try{
+    const r=await fetch(`${API}?action=get&id=${encodeURIComponent(id)}`); const d=await r.json();
+    (d.images||[]).forEach(im=>{
+      const fig=document.createElement('figure');
+      fig.innerHTML=`<img src="${im.url}" alt="${esc(im.alt_text||'')}"><figcaption>${esc(im.caption||'')}</figcaption>`;
+      el.appendChild(fig);
+    });
+  }catch{}
+}
+
+function uploadImage(){
+  const id=document.getElementById('artId').value;
+  if(!id){toast('Save the article first');return;}
+  const f=document.getElementById('imgFile').files[0];
+  if(!f){toast('Choose an image');return;}
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    document.getElementById('imgBtn').textContent='Uploading…';
+    const r=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify({action:'upload_image',data:{
+      articleId:id, filename:f.name, dataUrl:reader.result,
+      caption:document.getElementById('imgCaption').value.trim(), tags:[]
+    }})});
+    const d=await r.json();
+    document.getElementById('imgBtn').textContent='⬆ Upload & Attach';
+    if(d.error){toast(d.error);return;}
+    toast('Image attached ✓'); document.getElementById('imgFile').value=''; document.getElementById('imgCaption').value='';
+    loadImages(id);
+  };
+  reader.readAsDataURL(f);
+}
+
+// auto-unlock if key cached this session — canonical slot only (legacy ztu_art_key purged)
+(function(){try{sessionStorage.removeItem('ztu_art_key');}catch(_){}const k=sessionStorage.getItem('ztu_kb_admin_key');if(k){document.getElementById('adminKey').value=k;unlock();}})();
+</script>
+</body>
+</html>

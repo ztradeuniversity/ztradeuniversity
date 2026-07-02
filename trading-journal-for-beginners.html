@@ -1,0 +1,660 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn how to keep a trading journal for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trade review, psychology, risk tracking, and performance improvement." />
+  <meta name="keywords" content="trading journal for beginners, how to keep a trading journal, trading journal template, forex trading journal, trading performance tracking, trading psychology, risk management journal, trade review process, trading mistakes tracking, trading discipline" />
+  <title>Trading Journal for Beginners: How to Track and Improve Your Trades – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/trading-journal-for-beginners.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --purple3: #e6c987;
+      --lime:    #c89c3f;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #0a0318 0%, #160830 50%, #120628 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.2) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(200,156,63,0.16); border: 1px solid rgba(200,156,63,0.38);
+      color: var(--purple3); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--purple3); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px; border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--purple2); }
+
+    .tip-box { background: #f5f7ff; border-left: 4px solid var(--purple2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .quick-answer {
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      border: 1.5px solid rgba(200,156,63,0.16); border-left: 4px solid var(--purple);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Journal template table */
+    .journal-box { background: linear-gradient(145deg, #0d1127 0%, #111a38 100%); border-radius: 16px; padding: 22px 24px 18px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.07); overflow-x: auto; }
+    .journal-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .journal-table { width: 100%; border-collapse: collapse; min-width: 580px; }
+    .journal-table th { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 8px 10px; text-align: left; color: rgba(255,255,255,0.45); border-bottom: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
+    .journal-table td { font-size: 12.5px; padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; line-height: 1.45; color: rgba(255,255,255,0.72); }
+    .journal-table tr:last-child td { border-bottom: none; }
+    .journal-table .head-row td { color: rgba(255,255,255,0.38); font-size: 11px; font-style: italic; border-bottom: 1px solid rgba(255,255,255,0.09); }
+    .journal-table .ex-row td { background: rgba(200,156,63,0.04); }
+    .journal-table .win  { color: #4ade80; font-weight: 700; }
+    .journal-table .loss { color: #f87171; font-weight: 700; }
+    .journal-table .emo  { color: #f7e0a8; }
+
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(200,156,63,0.35); padding: 16px 20px; background: #f8f5ff; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    .mistakes-list { display: flex; flex-direction: column; gap: 16px; margin: 22px 0; }
+    .mistake-item { display: flex; align-items: flex-start; gap: 14px; }
+    .mistake-num { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .mistake-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
+
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--purple2); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(200,156,63,0.22); transform: translateY(-2px); border-bottom: 1px solid rgba(200,156,63,0.22); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple2); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--purple2); margin-top: 2px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; } .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; } .article-cta { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; } .footer-copy { order: 0; }
+    }
+    @media (max-width: 480px) { .container { padding: 0 20px; } .article-cta-btns { flex-direction: column; } .journal-box { padding: 18px 16px 14px; } }
+  </style>
+  <!-- SEO: Open Graph + Twitter + structured data (auto-injected by KPOS) -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Z Trade University" />
+  <meta property="og:title" content="Trading Journal for Beginners: How to Track and Improve Your Trades" />
+  <meta property="og:description" content="Learn how to keep a trading journal for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trade review, psychology, risk tracking, and performance improvement." />
+  <meta property="og:url" content="https://ztradeuniversity.com/trading-journal-for-beginners.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Trading Journal for Beginners: How to Track and Improve Your Trades" />
+  <meta name="twitter:description" content="Learn how to keep a trading journal for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trade review, psychology, risk tracking, and performance improvement." />
+  <meta name="twitter:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Trading Journal for Beginners: How to Track and Improve Your Trades", "description": "Learn how to keep a trading journal for beginners in 2025. Simple guide for Forex, Gold, and Crypto traders covering trade review, psychology, risk tracking, and performance improvement.", "url": "https://ztradeuniversity.com/trading-journal-for-beginners.html", "mainEntityOfPage": "https://ztradeuniversity.com/trading-journal-for-beginners.html", "image": "https://ztradeuniversity.com/assets/ztu-logo.png", "datePublished": "2026-05-20", "dateModified": "2026-05-20", "author": {"@type": "Organization", "name": "Z Trade University"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ztradeuniversity.com/"}, {"@type": "ListItem", "position": 2, "name": "Articles", "item": "https://ztradeuniversity.com/articles.html"}, {"@type": "ListItem", "position": 3, "name": "Trading Journal for Beginners: How to Track and Improve Your Trades", "item": "https://ztradeuniversity.com/trading-journal-for-beginners.html"}]}</script>
+</head>
+<body class="lux-themed">
+
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+</div>
+
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>›</span>
+        <a href="articles.html">Articles</a><span>›</span>
+        <a href="#" aria-current="page">Trading Journal for Beginners</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Trading Psychology
+      </div>
+      <h1>Trading Journal for Beginners: <em>Track and Improve</em> Your Trades</h1>
+      <p class="article-desc">Most beginners repeat the same mistakes for months without noticing — because they never write them down. A trading journal is the simplest, most underused tool that separates improving traders from those who stay stuck.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          9 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Trading Journal for Beginners: How to Track and Improve Your Trades" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Every experienced trader knows that improvement does not come from watching more videos or reading more strategies. It comes from honest, repeated review of your own trades — what you did, why you did it, and what the result tells you about your habits. Without a record, you are guessing. With a journal, you are learning from data.</p>
+
+    <p>A trading journal does not need to be elaborate or time-consuming. Even a simple spreadsheet with a few key fields, reviewed weekly, can reveal patterns in your mistakes that would otherwise stay invisible for months. This guide shows you what to record, how to use what you record, and the common journalling errors that prevent beginners from getting value out of the process.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>A <strong>trading journal</strong> is a record of every trade you take — including the setup, entry price, stop loss, result, and the emotional state you were in when you made each decision. Reviewing your journal weekly reveals repeated mistakes, identifies which setups are actually profitable, and builds the self-awareness that underpins consistent <a href="trading-psychology-successful-traders.html">trading psychology</a>. You do not need special software — a simple spreadsheet works. The value comes from honest entries and regular review, not from the format.</p>
+    </div>
+
+    <h2>What Is a Trading Journal?</h2>
+
+    <p>A trading journal is a structured record of your trading activity over time. Each entry documents one trade — what market you traded, what your reason for entering was, the technical details (entry price, stop loss, target), the outcome in terms of profit or loss, and crucially, the mental state you were in when you made the decision.</p>
+
+    <p>The last part — the emotional record — is what separates a trading journal from a simple trade log. A log tells you what happened. A journal tells you why it happened and how it felt. That distinction matters because the majority of trading mistakes are driven by emotional states: impatience, overconfidence after a win, anxiety after a loss, or the compulsive need to be in a trade. Without recording these states, you cannot diagnose them. Without diagnosing them, they repeat indefinitely.</p>
+
+    <p>A trading journal works equally for Forex pairs, Gold (XAUUSD), and Crypto. Market type does not change the need for self-reflection — if anything, the higher volatility of Gold and Crypto makes emotional discipline more important, and therefore makes the journal more valuable in those markets.</p>
+
+    <h2>Why Beginners Need a Trading Journal</h2>
+
+    <div class="causes-list">
+      <div class="cause-item">
+        <b>It Turns Experience Into Evidence</b>
+        <p>Without a journal, trading experience accumulates as vague feelings — "I seem to do better in the London session" or "my breakout trades feel unreliable." With a journal, these feelings become verifiable facts. You can look at 40 trades and see that your win rate on London-session setups is 58% while your New York-session win rate is 34%. That data point is more valuable than any indicator or strategy course. It is evidence specific to your own trading behaviour.</p>
+      </div>
+      <div class="cause-item">
+        <b>It Reveals Hidden Patterns in Mistakes</b>
+        <p>Most beginners have one or two recurring mistakes they repeat across dozens of trades without realising the pattern. Common ones include: moving stop losses on trades that feel "almost there," entering too early before confirmation, or oversizing after a winning streak. A journal makes these patterns visible. Once you can see that 60% of your losses came from one specific type of error, you have a concrete, actionable improvement target — not a general intention to "trade better."</p>
+      </div>
+      <div class="cause-item">
+        <b>It Builds Accountability and Discipline</b>
+        <p>Knowing that you will have to write down what you did — and why — changes how you trade. When a trade does not meet your setup criteria but feels tempting anyway, the knowledge that you will have to record "entered without confirmation" creates a small but real moment of pause. Over time, that accountability becomes internalised. The journal is not a punishment for bad trades; it is the mechanism through which discipline becomes a consistent habit rather than an occasional effort.</p>
+      </div>
+    </div>
+
+    <h2>What Should You Record in a Trading Journal?</h2>
+
+    <p>The entry does not need to be long. A single row in a spreadsheet, filled in immediately after closing a trade, is enough. Here are the fields that provide the most analytical value:</p>
+
+    <ul>
+      <li><strong>Date and time</strong> — identifies session patterns and market-timing tendencies</li>
+      <li><strong>Market</strong> — EUR/USD, XAUUSD, BTC/USD, etc.</li>
+      <li><strong>Direction</strong> — Buy or Sell</li>
+      <li><strong>Setup type</strong> — what pattern or signal triggered the entry (e.g. "HL pullback," "support bounce," "breakout retest")</li>
+      <li><strong>Entry price and stop loss</strong> — the exact levels at open</li>
+      <li><strong>Target / actual close price</strong> — where you planned to exit and where you actually exited</li>
+      <li><strong>Result in pips and percentage</strong> — the actual financial outcome as a share of account balance</li>
+      <li><strong>Rules followed?</strong> — a simple Yes / No / Partially answer that flags execution quality</li>
+      <li><strong>Emotional state</strong> — one or two words: calm, anxious, impatient, confident, revenge-trading, FOMO</li>
+      <li><strong>Lesson or observation</strong> — one sentence about what you notice from this trade in hindsight</li>
+    </ul>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Important Habit</div>
+      <p>Fill in your journal entry immediately after closing the trade — not at the end of the day. Emotional states fade quickly and lose accuracy with time. Recording "slightly anxious, widened stop twice" in the moment is more honest and useful than trying to reconstruct the feeling hours later when the outcome is already known.</p>
+    </div>
+
+    <h2>Simple Trading Journal Template</h2>
+
+    <p>Below is a lightweight template you can replicate in any spreadsheet. The example rows show what completed entries look like — one winning trade where rules were followed, and one losing trade where they were not.</p>
+
+    <div class="journal-box">
+      <div class="journal-label">Trading Journal Template — Sample Entries</div>
+      <table class="journal-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Market</th>
+            <th>Setup</th>
+            <th>Entry / SL</th>
+            <th>Result</th>
+            <th>Rules?</th>
+            <th>Emotion</th>
+            <th>Lesson</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="head-row">
+            <td>DD/MM</td>
+            <td>Pair/Asset</td>
+            <td>Signal type</td>
+            <td>Price levels</td>
+            <td>Pips / %</td>
+            <td>Y / N / Part.</td>
+            <td>State</td>
+            <td>1-line note</td>
+          </tr>
+          <tr class="ex-row">
+            <td>14/05</td>
+            <td>XAU/USD</td>
+            <td>HL pullback H4</td>
+            <td>2318 / 2308</td>
+            <td class="win">+38p / +1.9%</td>
+            <td class="win">Yes</td>
+            <td class="emo">Calm</td>
+            <td>Held to target — no early exit urge</td>
+          </tr>
+          <tr>
+            <td>15/05</td>
+            <td>EUR/USD</td>
+            <td>Breakout M15</td>
+            <td>1.0842 / 1.0832</td>
+            <td class="loss">−22p / −1.1%</td>
+            <td class="loss">No</td>
+            <td class="emo">Impatient</td>
+            <td>Entered before H4 candle closed — fakeout</td>
+          </tr>
+          <tr class="ex-row">
+            <td>17/05</td>
+            <td>BTC/USD</td>
+            <td>Support bounce D1</td>
+            <td>62,400 / 61,800</td>
+            <td class="win">+$480 / +1.6%</td>
+            <td class="win">Yes</td>
+            <td class="emo">Confident</td>
+            <td>D1 structure respected — waited for close</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Notice that the losing trade was flagged immediately as a rules violation caused by impatience — not as a strategy failure. This distinction is critical. A losing trade where rules were followed is statistical noise. A losing trade where rules were broken is a behavioural pattern that needs addressing. A journal makes that separation visible at a glance.</p>
+
+    <h2>Common Journalling Mistakes</h2>
+
+    <div class="mistakes-list">
+
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div>
+          <b>Only Journalling Winning Trades</b>
+          <p>Recording wins and skipping losses is the most common journal error — and the one that makes it useless. The entire value of a journal comes from analysing where things go wrong. A journal that only contains positive entries is a highlight reel, not a learning tool. Every trade — win, loss, or breakeven — must be recorded with the same honesty and detail.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div>
+          <b>Recording Results but Not Reasons</b>
+          <p>A trade log that only shows "+$120" or "−$80" provides almost no actionable information. The result is secondary — the reason and the emotional state at entry are what allow you to identify patterns. Why did you enter? What did you feel? Did you follow your rules? Without those fields, you are just keeping score, not learning.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div>
+          <b>Journalling Without Weekly Review</b>
+          <p>Writing entries is the data collection phase. The actual improvement comes from the weekly review — sitting down with 10–20 entries and asking: What pattern do I see? Which trades followed my rules? Which emotional states preceded my worst decisions? Without regular review, a journal accumulates without ever being read, which produces no benefit whatsoever.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div>
+          <b>Being Dishonest About Rule Violations</b>
+          <p>It is tempting to write "Yes" in the "Rules followed?" column even on trades where you deviated slightly — especially if the trade happened to win. Dishonest entries corrupt the data. If you moved a stop loss, entered without confirmation, or sized up beyond your rule, record it accurately. The journal is for your improvement, not for appearances. Honest bad entries are worth more than dishonest good ones.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div>
+          <b>Abandoning the Journal After a Bad Week</b>
+          <p>Losing weeks are exactly when the journal is most valuable — and exactly when beginners stop maintaining it. A journal during a drawdown period shows whether losses are coming from strategy variance (which is normal) or from rule-breaking under emotional pressure (which requires behavioural correction). Stopping the journal during difficult periods removes the one tool most likely to shorten those periods.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Educational Disclaimer</div>
+      <p>This article is for educational purposes only and does not constitute financial advice. A trading journal improves self-awareness and discipline — it does not guarantee profitable trading. All trading involves risk of loss. Never trade with capital you cannot afford to lose, and consider seeking professional financial advice before trading live markets.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>beginner-friendly trading guidance</span>, risk management support, and research-based analysis?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for structured market education, psychology support, and content for Forex, Gold, and Crypto traders at every level.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="trading-psychology-successful-traders.html" class="related-card">
+          <span class="related-cat">Trading Psychology</span>
+          <span class="related-title">Trading Psychology Habits of Successful Traders</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="demo-trading-vs-live-trading.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Demo Trading vs Live Trading for Beginners</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-risk-management-strategy.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Best Risk Management Strategy for Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-trading-strategy-for-beginners-2025.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Best Trading Strategy for Beginners in 2025</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is a trading journal and why do I need one?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">A trading journal is a structured record of every trade you take, documenting the setup, entry, stop loss, result, and emotional state at the time of each decision. You need one because patterns in trading mistakes are almost invisible without a written record — most beginners repeat the same errors for months without realising it. A journal transforms vague impressions about your trading into concrete, reviewable data. It shows you which setups are genuinely profitable, which emotional states precede your worst decisions, and whether your losses come from strategy variance or rule violations.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What should I include in a trading journal?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">At minimum, record: date, market traded, trade direction (buy/sell), setup type, entry price and stop loss level, result in pips and percentage of account, whether you followed your rules (yes/no), emotional state at entry, and a one-line lesson or observation. The emotional state and rules-followed fields are the most commonly skipped and the most valuable for identifying behavioural patterns. Record entries immediately after closing a trade — emotional states fade quickly and lose accuracy with time.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Do I need special software for a trading journal?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">No — a simple spreadsheet (Google Sheets or Excel) works perfectly for most beginners. Dedicated trading journal apps exist and can add features like automatic trade import and performance charts, but they are not necessary to get value from journalling. The benefit comes from consistent honest entries and regular review, not from the software format. Start with a basic spreadsheet template, maintain it consistently for two to three months, and upgrade to dedicated software only if you find you genuinely need the extra features.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How often should I review my trading journal?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Weekly review is the most effective cadence for most beginners. At the end of each trading week, read through that week's entries and look for patterns: Which setups performed best? Which emotional states preceded rule violations? Were losses concentrated in a particular session, market, or timeframe? A weekly review takes 15–20 minutes and produces the insights that daily entry-writing cannot provide on its own. Monthly reviews are also valuable for identifying longer-term trends in performance and behaviour.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Does a trading journal work for Gold and Crypto trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — a trading journal is equally valuable for Gold (XAUUSD) and Crypto (BTC, ETH) as it is for Forex. If anything, the higher volatility and emotional intensity of these markets makes psychological self-tracking more important, not less. For Gold, journalling emotional responses to news-driven moves helps identify whether you are trading news or reacting to it. For Crypto, tracking overnight holds and weekend behaviour often reveals risk management inconsistencies that cost more than the trades themselves.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Will a trading journal guarantee I become profitable?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">No — a trading journal does not guarantee profitability. What it does is accelerate learning by making your mistakes visible, measurable, and reviewable. A trader who journals honestly and reviews consistently will typically identify and correct recurring errors significantly faster than one who does not. But a journal is a self-improvement tool, not a profit-generating system. It works best alongside a tested strategy, disciplined risk management, and genuine commitment to applying what the review process reveals.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+</body>
+</html>

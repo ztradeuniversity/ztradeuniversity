@@ -1,0 +1,1412 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live Market Sentiment dashboard for Gold (XAUUSD) and Bitcoin (BTC). Research-based educational sentiment engine. Not financial advice." />
+  <meta name="robots" content="index, follow" />
+  <title>Live Market Sentiment — Gold &amp; Bitcoin · Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/live-sentiment.html" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1410" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1a1410;
+      --purple:    #c89c3f;
+      --purple2:   #d4ae5e;
+      --lime:      #c89c3f;
+      --white:     #ffffff;
+      --text:      #2b2520;
+      --muted:     #756347;
+      --bg:        #fbf8f1;
+      --gold:      #d97706;
+      --gold2:     #f59e0b;
+      --gold3:     #fbbf24;
+      --btc:       #ea580c;
+      --btc2:      #f97316;
+      --btc3:      #fb923c;
+      --bull:      #059669;
+      --bull2:     #10b981;
+      --bull3:     #34d399;
+      --bear:      #dc2626;
+      --bear2:     #ef4444;
+      --bear3:     #f87171;
+      --neutral:   #78716c;
+      --neutral2:  #a8a29e;
+      --neutral3:  #d6d3d1;
+      --card-bg:   #1a1410;
+      --card-bg2:  #2b2520;
+      --card-line: rgba(255,255,255,0.07);
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── LIVE DOT ── */
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--bull3); display: inline-block;
+      box-shadow: 0 0 0 0 rgba(52,211,153,0.6);
+      animation: pulse 2.2s ease-out infinite; flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+      100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+    }
+
+    /* ── FADE ON UPDATE ── */
+    .data-flash { animation: dataFlash 0.55s ease-out; }
+    @keyframes dataFlash {
+      0%   { opacity: 0.45; }
+      100% { opacity: 1; }
+    }
+
+    /* ── NAVBAR ── */
+    header.site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; transition: background .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22);
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── HERO ── */
+    .sent-hero {
+      padding: 124px 0 60px;
+      background: linear-gradient(145deg, #0d0902 0%, #0d0902 45%, #1a1410 100%);
+      position: relative; overflow: hidden;
+    }
+    .sent-hero::before {
+      content: ''; position: absolute; top: -120px; right: -120px;
+      width: 580px; height: 580px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,174,94,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .sent-hero::after {
+      content: ''; position: absolute; bottom: -160px; left: -120px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,158,11,0.09) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 860px; }
+    .hero-pre {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(212,174,94,0.14); border: 1px solid rgba(192,132,252,0.32);
+      color: #f7e0a8; font-size: 11.5px; font-weight: 700;
+      padding: 6px 14px 6px 10px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 22px;
+    }
+    .sent-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 48px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.6px; line-height: 1.07;
+      margin-bottom: 18px;
+    }
+    .sent-hero h1 .gx { background: linear-gradient(110deg, var(--gold3) 0%, var(--gold2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sent-hero h1 .bx { background: linear-gradient(110deg, var(--btc3) 0%, var(--btc2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sent-hero p.lead { font-size: 16.5px; color: rgba(255,255,255,0.55); line-height: 1.72; max-width: 680px; margin-bottom: 26px; }
+    .hero-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 26px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.76); font-size: 12px; font-weight: 600;
+      padding: 7px 13px; border-radius: 100px;
+    }
+    .hero-badge svg { color: var(--bull3); flex-shrink: 0; }
+    .hero-cta { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.90); font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 100px; text-decoration: none; transition: background .2s, transform .2s; }
+    .hero-cta:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+    .hero-cta svg { transition: transform .18s; }
+    .hero-cta:hover svg { transform: translateX(-3px); }
+
+    /* ── MAIN ── */
+    main { background: var(--bg); padding: 30px 0 80px; }
+
+    /* ── REFRESH STRIP ── */
+    .refresh-strip {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 13px 18px; margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .rs-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+    .rs-status-text { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .rs-status-text.is-err { color: var(--bear2); }
+    .rs-sep { width: 1px; height: 16px; background: rgba(0,0,0,0.08); flex-shrink: 0; }
+    .rs-age { font-size: 12px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+    .rs-sources { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .src-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 700; letter-spacing: .6px;
+      padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    }
+    .src-pill .sp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .src-pill.sp-ok       { background: rgba(16,185,129,0.10); color: var(--bull2); }
+    .src-pill.sp-ok .sp-dot       { background: var(--bull2); }
+    .src-pill.sp-err      { background: rgba(239,68,68,0.10);  color: var(--bear2); }
+    .src-pill.sp-err .sp-dot      { background: var(--bear2); }
+    .src-pill.sp-fallback { background: rgba(245,158,11,0.10); color: var(--gold2); }
+    .src-pill.sp-fallback .sp-dot { background: var(--gold2); }
+    .src-pill.sp-wait     { background: rgba(90,101,128,0.08); color: var(--muted); }
+    .src-pill.sp-wait .sp-dot     { background: var(--muted); }
+
+    /* ── SECTION ── */
+    .section-wrap { margin-bottom: 22px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    .section-head h2 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 17px; color: var(--text); letter-spacing: -.25px; }
+    .section-badge { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+
+    /* ── PRICE CARDS ── */
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .price-card {
+      background: linear-gradient(160deg, var(--card-bg) 0%, var(--card-bg2) 60%, #1a1410 100%);
+      border: 1px solid var(--card-line); border-radius: 20px;
+      padding: 26px; position: relative; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .price-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.22); }
+    .card-glow {
+      position: absolute; top: -100px; right: -100px;
+      width: 340px; height: 340px; border-radius: 50%; pointer-events: none;
+    }
+    .gold-card .card-glow { background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 65%); }
+    .btc-card  .card-glow { background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 65%); }
+    .pc-header { display: flex; align-items: center; gap: 13px; margin-bottom: 20px; position: relative; z-index: 1; }
+    .pc-icon {
+      width: 42px; height: 42px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 17px; flex-shrink: 0;
+    }
+    .gold-card .pc-icon { background: linear-gradient(140deg, var(--gold2), var(--gold)); color: #1a0e00; box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
+    .btc-card  .pc-icon { background: linear-gradient(140deg, var(--btc2),  var(--btc));  color: #1a0500; box-shadow: 0 4px 14px rgba(249,115,22,0.35); }
+    .pc-name { display: block; font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 17px; color: var(--white); letter-spacing: -.2px; }
+    .pc-sub  { display: block; font-size: 10.5px; color: rgba(255,255,255,0.38); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; margin-top: 2px; }
+    .pc-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 36px; font-weight: 700; color: var(--white);
+      letter-spacing: -1px; line-height: 1; margin-bottom: 6px;
+      position: relative; z-index: 1;
+    }
+    .price-delta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px; font-weight: 700; display: block;
+      margin-bottom: 20px; position: relative; z-index: 1; min-height: 20px;
+    }
+    .delta-up   { color: var(--bull3); }
+    .delta-down { color: var(--bear3); }
+    .delta-flat { color: rgba(255,255,255,0.38); }
+    .pc-range { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative; z-index: 1; }
+    .pc-range-item {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 11px 13px;
+    }
+    .pc-range-label { font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.35); display: block; margin-bottom: 5px; }
+    .pc-range-val   { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; color: var(--white); }
+
+    /* ── SENTIMENT SIGNALS (NEW PREMIUM DARK CARDS) ── */
+    .sent-signals-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+    }
+    .sent-card {
+      background: linear-gradient(160deg, #1a1410 0%, #2b2520 55%, #1a1410 100%);
+      border: 1px solid var(--card-line);
+      border-radius: 22px;
+      padding: 26px 28px 22px;
+      position: relative; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .sent-card:hover { transform: translateY(-2px); box-shadow: 0 14px 44px rgba(0,0,0,0.28); }
+    .sent-card.gold-sent::before {
+      content: ''; position: absolute; top: -110px; right: -110px;
+      width: 360px; height: 360px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,158,11,0.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .sent-card.btc-sent::before {
+      content: ''; position: absolute; top: -110px; right: -110px;
+      width: 360px; height: 360px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .sent-card-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px; position: relative; z-index: 1; }
+    .sent-card-icon {
+      width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 17px;
+    }
+    .sent-card-icon.gold { background: linear-gradient(140deg, var(--gold2), var(--gold)); color: #1a0e00; box-shadow: 0 4px 16px rgba(245,158,11,0.38); }
+    .sent-card-icon.btc  { background: linear-gradient(140deg, var(--btc2),  var(--btc));  color: #1a0500; box-shadow: 0 4px 16px rgba(249,115,22,0.38); }
+    .sent-card-titles { flex: 1; min-width: 0; }
+    .sent-card-title {
+      font-size: 11px; font-weight: 800; letter-spacing: 1.6px;
+      text-transform: uppercase; color: rgba(255,255,255,0.45);
+      margin-bottom: 5px;
+    }
+    .sent-card-label {
+      font-family: 'Manrope',sans-serif; font-weight: 900;
+      font-size: 28px; letter-spacing: -.5px; line-height: 1;
+      transition: color .3s;
+    }
+    .sent-card-label.bull { color: var(--bull3); text-shadow: 0 0 28px rgba(52,211,153,0.30); }
+    .sent-card-label.bear { color: var(--bear3); text-shadow: 0 0 28px rgba(248,113,113,0.30); }
+    .sent-card-label.neut { color: var(--gold3); }
+    .sent-card-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; font-weight: 700;
+      padding: 6px 11px; border-radius: 7px; flex-shrink: 0;
+      align-self: flex-start; margin-top: 18px;
+    }
+    .sent-card-pct.up   { color: var(--bull3); background: rgba(16,185,129,0.12);  border: 1px solid rgba(16,185,129,0.20); }
+    .sent-card-pct.down { color: var(--bear3); background: rgba(239,68,68,0.12);   border: 1px solid rgba(239,68,68,0.20); }
+    .sent-card-pct.flat { color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+
+    .sent-card-explain {
+      font-size: 13.5px; color: rgba(255,255,255,0.65);
+      line-height: 1.55; margin-bottom: 8px; position: relative; z-index: 1;
+    }
+
+    /* GAUGE */
+    .trend-gauge-wrap {
+      position: relative; z-index: 1;
+      margin: 4px -6px 14px;
+    }
+    .trend-gauge {
+      width: 100%; height: auto; display: block;
+      max-width: 360px; margin: 0 auto;
+    }
+    .gauge-needle-group {
+      transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: 150px 150px;
+      transform-box: view-box;
+      pointer-events: none;
+      will-change: transform;
+    }
+    .gauge-tick-num { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; fill: rgba(255,255,255,0.45); }
+    .gauge-zone-txt { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 1.2px; }
+    .gauge-zone-bear { fill: var(--bear3); }
+    .gauge-zone-neut { fill: var(--gold3); }
+    .gauge-zone-bull { fill: var(--bull3); }
+
+    .sent-card-foot {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 11.5px; color: rgba(255,255,255,0.42);
+      line-height: 1.55; position: relative; z-index: 1;
+      padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .sent-card-foot svg { flex-shrink: 0; color: rgba(255,255,255,0.30); margin-top: 2px; }
+    .sent-card-foot em { color: rgba(255,255,255,0.62); font-style: normal; font-weight: 600; }
+
+    /* ── MACRO GRID ── */
+    .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .macro-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 18px 15px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+      transition: transform .2s;
+    }
+    .macro-card:hover { transform: translateY(-1px); }
+    .macro-card-label {
+      font-size: 10.5px; font-weight: 800; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .macro-note {
+      font-size: 8.5px; font-weight: 700; background: rgba(200,156,63,0.07);
+      color: var(--purple); padding: 2px 6px; border-radius: 4px;
+      letter-spacing: .4px; white-space: nowrap; flex-shrink: 0;
+    }
+    .macro-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -.5px;
+    }
+    .macro-source { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 6px; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer-block {
+      background: linear-gradient(135deg, #fffbf2 0%, #fef3c7 100%);
+      border: 1px solid rgba(245,158,11,0.28);
+      border-radius: 18px; padding: 24px 26px;
+    }
+    .disclaimer-block h3 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px; color: #78350f; margin-bottom: 9px; display: flex; align-items: center; gap: 9px; letter-spacing: -.2px; }
+    .disclaimer-block p { font-size: 13px; color: #3d2a08; line-height: 1.70; }
+    .disclaimer-block strong { color: #451a03; font-weight: 700; }
+
+    /* ── FOOTER ── */
+    footer.site-footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.30); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.30); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .nav-links, .nav-join { display: none; }
+      .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 768px) {
+      .price-grid        { grid-template-columns: 1fr; }
+      .sent-signals-grid { grid-template-columns: 1fr; }
+      .macro-grid        { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .container       { padding: 0 16px; }
+      .sent-hero       { padding: 104px 0 44px; }
+      .sent-card       { padding: 22px 20px 18px; }
+      .rs-sources      { gap: 4px; }
+    }
+    @media (max-width: 420px) {
+      .macro-grid { grid-template-columns: 1fr; }
+      .pc-price   { font-size: 30px; }
+      .sent-card-label { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header class="site-nav">
+  <nav class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="live-sentiment.html" class="active">Sentiment</a></li>
+      <li><a href="fundamentals.html">Intelligence</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<!-- ── MOBILE MENU ── -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"          onclick="toggleMenu()">Home</a>
+  <a href="articles.html"       onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"     onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"          onclick="toggleMenu()">About</a>
+  <a href="live-sentiment.html" onclick="toggleMenu()">Sentiment</a>
+  <a href="fundamentals.html"   onclick="toggleMenu()">Intelligence</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="sent-hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-pre">
+        <span class="live-dot"></span>
+        Live Market Sentiment
+      </div>
+      <h1>Live Prices &amp; Sentiment —<br><span class="gx">Gold</span> &amp; <span class="bx">Bitcoin</span></h1>
+      <p class="lead">Real-time prices from TwelveData. Macro context from FRED (end-of-day). Sentiment derived from daily price action. Educational only — not financial advice.</p>
+      <div class="hero-badges">
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Real Data Only
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Educational
+        </span>
+        <span class="hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Not Financial Advice
+        </span>
+      </div>
+      <a href="articles.html" class="hero-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to Articles
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── MAIN ── -->
+<main>
+  <div class="container">
+
+    <!-- STATUS STRIP -->
+    <div class="refresh-strip" aria-label="Data status">
+      <div class="rs-left">
+        <span class="live-dot" style="width:7px;height:7px;"></span>
+        <span class="rs-status-text" id="statusText">Connecting&hellip;</span>
+        <div class="rs-sep"></div>
+        <span class="rs-age" id="ageText">&mdash;</span>
+      </div>
+      <div class="rs-sources" id="sourcePills">
+        <span class="src-pill sp-wait"><span class="sp-dot"></span>FRED</span>
+        <span class="src-pill sp-wait"><span class="sp-dot"></span>TWELVEDATA</span>
+      </div>
+    </div>
+
+    <!-- API ERROR PANEL — shown only when a provider fails -->
+    <div id="apiErrorPanel" style="display:none;margin-bottom:16px;"></div>
+    <style>
+      .api-err-panel { background:#fff3f3; border:1px solid rgba(239,68,68,0.25); border-radius:12px; padding:14px 18px; }
+      .api-err-row   { display:flex; flex-wrap:wrap; gap:8px 24px; margin-bottom:6px; font-size:12.5px; }
+      .api-err-row:last-child { margin-bottom:0; }
+      .api-err-svc   { font-weight:800; color:#b91c1c; min-width:60px; }
+      .api-err-kv    { display:flex; gap:5px; align-items:baseline; }
+      .api-err-key   { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:.6px; }
+      .api-err-val   { font-size:12px; font-weight:600; color:#374151; }
+      .api-err-fix   { font-size:11.5px; color:#6b7280; margin-top:4px; line-height:1.5; }
+      .api-err-head  { font-size:11px; font-weight:800; color:#b91c1c; letter-spacing:.8px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:7px; }
+      .api-err-sep   { width:100%; height:1px; background:rgba(239,68,68,0.12); margin:10px 0; }
+    </style>
+
+    <!-- ── SECTION 1: MARKET PRICES ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Market Prices</h2>
+        <span class="section-badge">
+          <span class="live-dot" style="width:6px;height:6px;"></span>
+          TwelveData &middot; 40s refresh
+        </span>
+      </div>
+      <div class="price-grid" id="priceGrid">
+
+        <div class="price-card gold-card" aria-label="Gold price">
+          <div class="card-glow"></div>
+          <div class="pc-header">
+            <div class="pc-icon">Au</div>
+            <div>
+              <span class="pc-name">XAUUSD</span>
+              <span class="pc-sub">Gold Spot</span>
+            </div>
+          </div>
+          <div class="pc-price" id="goldPrice">&mdash;</div>
+          <span class="price-delta delta-flat" id="goldChange"></span>
+          <div class="pc-range">
+            <div class="pc-range-item">
+              <span class="pc-range-label">Day High</span>
+              <span class="pc-range-val" id="goldHigh">&mdash;</span>
+            </div>
+            <div class="pc-range-item">
+              <span class="pc-range-label">Day Low</span>
+              <span class="pc-range-val" id="goldLow">&mdash;</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="price-card btc-card" aria-label="Bitcoin price">
+          <div class="card-glow"></div>
+          <div class="pc-header">
+            <div class="pc-icon">&#8383;</div>
+            <div>
+              <span class="pc-name">BTCUSD</span>
+              <span class="pc-sub">Bitcoin Spot</span>
+            </div>
+          </div>
+          <div class="pc-price" id="btcPrice">&mdash;</div>
+          <span class="price-delta delta-flat" id="btcChange"></span>
+          <div class="pc-range">
+            <div class="pc-range-item">
+              <span class="pc-range-label">Day High</span>
+              <span class="pc-range-val" id="btcHigh">&mdash;</span>
+            </div>
+            <div class="pc-range-item">
+              <span class="pc-range-label">Day Low</span>
+              <span class="pc-range-val" id="btcLow">&mdash;</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: SENTIMENT SIGNALS (PREMIUM DARK CARDS) ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Sentiment Signals</h2>
+        <span class="section-badge">Price Momentum Signal</span>
+      </div>
+      <div class="sent-signals-grid">
+
+        <!-- ─── GOLD SENTIMENT CARD ─── -->
+        <div class="sent-card gold-sent" id="goldSentCard" aria-label="Gold sentiment">
+          <div class="sent-card-head">
+            <div class="sent-card-icon gold">Au</div>
+            <div class="sent-card-titles">
+              <div class="sent-card-title">Gold Sentiment</div>
+              <div class="sent-card-label neut" id="goldSentLabel">Neutral</div>
+            </div>
+            <div class="sent-card-pct flat" id="goldSentPct">&mdash;</div>
+          </div>
+          <div class="sent-card-explain" id="goldSentExplain">Awaiting live price data&hellip;</div>
+
+          <div class="trend-gauge-wrap">
+            <svg class="trend-gauge" viewBox="0 -14 300 229" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <defs>
+                <linearGradient id="gold-grad-red" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#991b1b"/>
+                  <stop offset="100%" stop-color="#ef4444"/>
+                </linearGradient>
+                <linearGradient id="gold-grad-yellow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#f59e0b"/>
+                  <stop offset="50%" stop-color="#fbbf24"/>
+                  <stop offset="100%" stop-color="#f59e0b"/>
+                </linearGradient>
+                <linearGradient id="gold-grad-green" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981"/>
+                  <stop offset="100%" stop-color="#065f46"/>
+                </linearGradient>
+                <filter id="gold-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" result="blur"/>
+                  <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <!-- Track -->
+              <path d="M 40 150 A 110 110 0 0 1 260 150"
+                    stroke="rgba(255,255,255,0.04)" stroke-width="22" fill="none" stroke-linecap="round"/>
+
+              <!-- Red zone: -3% to -1% (180° to 120°) -->
+              <path d="M 40 150 A 110 110 0 0 1 95 54.74"
+                    stroke="url(#gold-grad-red)" stroke-width="18" fill="none" stroke-linecap="round"/>
+
+              <!-- Yellow zone: -1% to +1% (120° to 60°) -->
+              <path d="M 95 54.74 A 110 110 0 0 1 205 54.74"
+                    stroke="url(#gold-grad-yellow)" stroke-width="18" fill="none"/>
+
+              <!-- Green zone: +1% to +3% (60° to 0°) -->
+              <path d="M 205 54.74 A 110 110 0 0 1 260 150"
+                    stroke="url(#gold-grad-green)" stroke-width="18" fill="none" stroke-linecap="round"/>
+
+              <!-- Tick numbers (-3, -1, 0, +1, +3) -->
+              <text class="gauge-tick-num" x="32"  y="175" text-anchor="middle">-3%</text>
+              <text class="gauge-tick-num" x="80"  y="40"  text-anchor="middle">-1%</text>
+              <text class="gauge-tick-num" x="150" y="-2"  text-anchor="middle">0%</text>
+              <text class="gauge-tick-num" x="220" y="40"  text-anchor="middle">+1%</text>
+              <text class="gauge-tick-num" x="268" y="175" text-anchor="middle">+3%</text>
+
+              <!-- Zone text labels -->
+              <text class="gauge-zone-txt gauge-zone-bear" x="32"  y="190" text-anchor="middle">BEARISH</text>
+              <text class="gauge-zone-txt gauge-zone-neut" x="150" y="14"  text-anchor="middle">NEUTRAL</text>
+              <text class="gauge-zone-txt gauge-zone-bull" x="268" y="190" text-anchor="middle">BULLISH</text>
+
+              <!-- Needle group (rotates around 150,150) -->
+              <g class="gauge-needle-group" id="goldGaugeNeedle">
+                <line x1="150" y1="150" x2="150" y2="56" stroke="rgba(0,0,0,0.45)" stroke-width="3.6" stroke-linecap="round"/>
+                <line x1="150" y1="150" x2="150" y2="56" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="150" cy="56" r="4" fill="#fff" stroke="rgba(0,0,0,0.25)" stroke-width="0.6"/>
+              </g>
+
+              <!-- Hub -->
+              <circle cx="150" cy="150" r="11" fill="#1a1410" stroke="#fff" stroke-width="2"/>
+              <circle cx="150" cy="150" r="4.5" fill="#fff"/>
+            </svg>
+
+            <!-- Readout -->
+            <div style="text-align:center; margin-top:-44px; position:relative; z-index:2; pointer-events:none;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:#fff; letter-spacing:-.5px;" id="goldGaugeValue">0.00%</div>
+              <div style="font-size:9.5px; font-weight:700; color:rgba(255,255,255,0.42); letter-spacing:1.6px; margin-top:3px;">PRICE CHANGE (1D)</div>
+            </div>
+          </div>
+
+          <div class="sent-card-foot">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Based on price momentum, Gold, and volatility. <em>Not trading advice.</em></span>
+          </div>
+        </div><!-- /gold-sent -->
+
+        <!-- ─── BTC SENTIMENT CARD ─── -->
+        <div class="sent-card btc-sent" id="btcSentCard" aria-label="Bitcoin sentiment">
+          <div class="sent-card-head">
+            <div class="sent-card-icon btc">&#8383;</div>
+            <div class="sent-card-titles">
+              <div class="sent-card-title">BTC Sentiment</div>
+              <div class="sent-card-label neut" id="btcSentLabel">Neutral</div>
+            </div>
+            <div class="sent-card-pct flat" id="btcSentPct">&mdash;</div>
+          </div>
+          <div class="sent-card-explain" id="btcSentExplain">Awaiting live price data&hellip;</div>
+
+          <div class="trend-gauge-wrap">
+            <svg class="trend-gauge" viewBox="0 -14 300 229" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <defs>
+                <linearGradient id="btc-grad-red" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#991b1b"/>
+                  <stop offset="100%" stop-color="#ef4444"/>
+                </linearGradient>
+                <linearGradient id="btc-grad-yellow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#f59e0b"/>
+                  <stop offset="50%" stop-color="#fbbf24"/>
+                  <stop offset="100%" stop-color="#f59e0b"/>
+                </linearGradient>
+                <linearGradient id="btc-grad-green" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981"/>
+                  <stop offset="100%" stop-color="#065f46"/>
+                </linearGradient>
+                <filter id="btc-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" result="blur"/>
+                  <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <path d="M 40 150 A 110 110 0 0 1 260 150"
+                    stroke="rgba(255,255,255,0.04)" stroke-width="22" fill="none" stroke-linecap="round"/>
+
+              <path d="M 40 150 A 110 110 0 0 1 95 54.74"
+                    stroke="url(#btc-grad-red)" stroke-width="18" fill="none" stroke-linecap="round"/>
+
+              <path d="M 95 54.74 A 110 110 0 0 1 205 54.74"
+                    stroke="url(#btc-grad-yellow)" stroke-width="18" fill="none"/>
+
+              <path d="M 205 54.74 A 110 110 0 0 1 260 150"
+                    stroke="url(#btc-grad-green)" stroke-width="18" fill="none" stroke-linecap="round"/>
+
+              <text class="gauge-tick-num" x="32"  y="175" text-anchor="middle">-3%</text>
+              <text class="gauge-tick-num" x="80"  y="40"  text-anchor="middle">-1%</text>
+              <text class="gauge-tick-num" x="150" y="-2"  text-anchor="middle">0%</text>
+              <text class="gauge-tick-num" x="220" y="40"  text-anchor="middle">+1%</text>
+              <text class="gauge-tick-num" x="268" y="175" text-anchor="middle">+3%</text>
+
+              <text class="gauge-zone-txt gauge-zone-bear" x="32"  y="190" text-anchor="middle">BEARISH</text>
+              <text class="gauge-zone-txt gauge-zone-neut" x="150" y="14"  text-anchor="middle">NEUTRAL</text>
+              <text class="gauge-zone-txt gauge-zone-bull" x="268" y="190" text-anchor="middle">BULLISH</text>
+
+              <g class="gauge-needle-group" id="btcGaugeNeedle">
+                <line x1="150" y1="150" x2="150" y2="56" stroke="rgba(0,0,0,0.45)" stroke-width="3.6" stroke-linecap="round"/>
+                <line x1="150" y1="150" x2="150" y2="56" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="150" cy="56" r="4" fill="#fff" stroke="rgba(0,0,0,0.25)" stroke-width="0.6"/>
+              </g>
+
+              <circle cx="150" cy="150" r="11" fill="#1a1410" stroke="#fff" stroke-width="2"/>
+              <circle cx="150" cy="150" r="4.5" fill="#fff"/>
+            </svg>
+
+            <div style="text-align:center; margin-top:-44px; position:relative; z-index:2; pointer-events:none;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:#fff; letter-spacing:-.5px;" id="btcGaugeValue">0.00%</div>
+              <div style="font-size:9.5px; font-weight:700; color:rgba(255,255,255,0.42); letter-spacing:1.6px; margin-top:3px;">PRICE CHANGE (1D)</div>
+            </div>
+          </div>
+
+          <div class="sent-card-foot">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Based on price momentum, BTC, and volatility. <em>Not trading advice.</em></span>
+          </div>
+        </div><!-- /btc-sent -->
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: MACRO CONTEXT ── -->
+    <div class="section-wrap">
+      <div class="section-head">
+        <h2>Macro Context</h2>
+        <span class="section-badge">FRED &middot; End-of-day</span>
+      </div>
+      <div class="macro-grid">
+
+        <div class="macro-card">
+          <div class="macro-card-label">US10Y Yield <span class="macro-note">EOD</span></div>
+          <div class="macro-value" id="us10y">&mdash;</div>
+          <div class="macro-source">FRED &middot; DGS10</div>
+        </div>
+
+        <div class="macro-card">
+          <div class="macro-card-label">Real Yield <span class="macro-note">EOD</span></div>
+          <div class="macro-value" id="realYield">&mdash;</div>
+          <div class="macro-source">FRED &middot; DFII10</div>
+        </div>
+
+        <div class="macro-card">
+          <div class="macro-card-label">Breakeven Inflation <span class="macro-note">Derived</span></div>
+          <div class="macro-value" id="breakeven">&mdash;</div>
+          <div class="macro-source">10Y &minus; Real Yield</div>
+        </div>
+
+        <div class="macro-card">
+          <div class="macro-card-label">VIX <span class="macro-note">Prev. close</span></div>
+          <div class="macro-value" id="vix">&mdash;</div>
+          <div class="macro-source">FRED &middot; VIXCLS</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: MARKET INTERPRETATION (AI ENGINE) ── -->
+    <style>
+      .mi-section { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 26px 28px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+      .mi-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+      .mi-head h2 { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 17px; color: var(--text); letter-spacing: -.25px; display: inline-flex; align-items: center; gap: 10px; }
+      .mi-engine-tag { font-size: 9.5px; font-weight: 800; letter-spacing: .8px; padding: 3px 8px; border-radius: 5px; background: linear-gradient(135deg, var(--purple) 0%, #d4ae5e 100%); color: #fff; text-transform: uppercase; }
+      .mi-status-tag { font-size: 10px; font-weight: 700; letter-spacing: .8px; padding: 4px 10px; border-radius: 6px; background: rgba(200,156,63,0.07); color: var(--purple); }
+      .mi-block { margin-top: 18px; }
+      .mi-block:first-of-type { margin-top: 0; }
+      .mi-block-label { font-size: 10.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+      .mi-block-label::before { content: ''; width: 22px; height: 2px; background: var(--purple); border-radius: 2px; }
+      .mi-summary { background: rgba(200,156,63,0.04); border: 1px solid rgba(200,156,63,0.10); border-radius: 12px; padding: 16px 18px; }
+      .mi-summary-state { font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 6px; letter-spacing: -.2px; line-height: 1.4; }
+      .mi-state-pill { font-size: 9.5px; font-weight: 800; padding: 3px 8px; border-radius: 5px; margin-left: 8px; letter-spacing: .5px; vertical-align: middle; text-transform: uppercase; display: inline-block; }
+      .mi-summary-why { list-style: none; margin: 10px 0 12px; padding: 0; }
+      .mi-summary-why li { font-size: 12.5px; color: var(--text); line-height: 1.55; padding-left: 16px; position: relative; margin-bottom: 5px; }
+      .mi-summary-why li::before { content: '\2022'; position: absolute; left: 4px; color: var(--purple); font-weight: 800; }
+      .mi-expected { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+      .mi-expected-pill { font-size: 11.5px; font-weight: 600; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
+      .mi-expected-pill b { font-weight: 800; }
+      .mi-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 12px; }
+      .mi-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+      .mi-table th { font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--border); background: rgba(200,156,63,0.025); }
+      .mi-table td { padding: 11px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; vertical-align: middle; color: var(--text); }
+      .mi-table tr:last-child td { border-bottom: none; }
+      .mi-table td.num { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+      .mi-table td.signal { font-weight: 700; }
+      .mi-table td.meaning { color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .mi-impact { display: inline-block; font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 5px; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
+      .mi-impact.bull { background: rgba(16,185,129,0.12); color: var(--bull); border: 1px solid rgba(16,185,129,0.22); }
+      .mi-impact.bear { background: rgba(239,68,68,0.12);  color: var(--bear); border: 1px solid rgba(239,68,68,0.22); }
+      .mi-impact.neut { background: rgba(120,113,108,0.10); color: var(--neutral); border: 1px solid rgba(120,113,108,0.20); }
+      .mi-bias-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 600px) { .mi-bias-grid { grid-template-columns: 1fr; } }
+      .mi-bias-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+      .mi-bias-card.gold { border-left: 4px solid var(--gold2); }
+      .mi-bias-card.btc  { border-left: 4px solid var(--btc2); }
+      .mi-bias-asset { font-size: 10.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+      .mi-bias-label { font-family: 'Manrope',sans-serif; font-weight: 900; font-size: 22px; letter-spacing: -.4px; margin-bottom: 10px; }
+      .mi-bias-label.bull { color: var(--bull); }
+      .mi-bias-label.bear { color: var(--bear); }
+      .mi-bias-label.neut { color: var(--neutral); }
+      .mi-bias-conf { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); font-weight: 700; }
+      .mi-conf-bar { flex: 1; height: 5px; background: rgba(0,0,0,0.06); border-radius: 100px; overflow: hidden; }
+      .mi-conf-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), #d4ae5e); border-radius: 100px; transition: width .5s; }
+      .mi-conf-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text); }
+      .mi-footnote { font-size: 11px; color: var(--muted); line-height: 1.5; margin-top: 14px; font-style: italic; text-align: center; }
+      @media (max-width: 540px) { .mi-section { padding: 22px 18px; } }
+    </style>
+    <div class="section-wrap">
+      <section class="mi-section" aria-label="Market interpretation">
+        <div class="mi-head">
+          <h2>Market Interpretation <span class="mi-engine-tag">AI Engine</span></h2>
+          <span class="mi-status-tag" id="miStatusTag">Rules-based &middot; Live</span>
+        </div>
+
+        <!-- BLOCK A · SMART SUMMARY -->
+        <div class="mi-block">
+          <div class="mi-block-label">A &middot; Smart Summary</div>
+          <div class="mi-summary">
+            <div class="mi-summary-state" id="miStateLine">Awaiting market data&hellip;</div>
+            <ul class="mi-summary-why" id="miWhyList">
+              <li>Loading signal interpretation</li>
+            </ul>
+            <div class="mi-expected">
+              <span class="mi-expected-pill">Gold direction: <b id="miExpGold">&mdash;</b></span>
+              <span class="mi-expected-pill">BTC direction: <b id="miExpBtc">&mdash;</b></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCK B · SIGNALS TABLE -->
+        <div class="mi-block">
+          <div class="mi-block-label">B &middot; Signals</div>
+          <div class="mi-table-wrap">
+            <table class="mi-table">
+              <thead>
+                <tr><th>Signal</th><th>Current Value</th><th>Meaning</th><th>Impact</th></tr>
+              </thead>
+              <tbody id="miSignalsBody">
+                <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px 0">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BLOCK C · FINAL BIAS -->
+        <div class="mi-block">
+          <div class="mi-block-label">C &middot; Final Bias</div>
+          <div class="mi-bias-grid">
+            <div class="mi-bias-card gold">
+              <div class="mi-bias-asset">Gold (XAU/USD)</div>
+              <div class="mi-bias-label neut" id="miGoldBias">NEUTRAL</div>
+              <div class="mi-bias-conf">
+                <span>Confidence</span>
+                <span class="mi-conf-bar"><span class="mi-conf-fill" id="miGoldConfBar" style="width:0%"></span></span>
+                <span class="mi-conf-val" id="miGoldConfVal">&mdash;</span>
+              </div>
+            </div>
+            <div class="mi-bias-card btc">
+              <div class="mi-bias-asset">Bitcoin (BTC/USD)</div>
+              <div class="mi-bias-label neut" id="miBtcBias">NEUTRAL</div>
+              <div class="mi-bias-conf">
+                <span>Confidence</span>
+                <span class="mi-conf-bar"><span class="mi-conf-fill" id="miBtcConfBar" style="width:0%"></span></span>
+                <span class="mi-conf-val" id="miBtcConfVal">&mdash;</span>
+              </div>
+            </div>
+          </div>
+          <div class="mi-footnote">Rules-based interpretation derived from live Gold/BTC change, Real Yield (FRED) and VIX (FRED). Not financial advice.</div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer-block" role="note" aria-label="Disclaimer">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Not Financial Advice
+      </h3>
+      <p>This dashboard is <strong>educational only</strong>. Data sourced from TwelveData, FRED, and Finnhub — may be delayed or inaccurate. Sentiment is a simple rules-based indicator, not a trading recommendation. <strong>Always do your own research.</strong></p>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html" class="footer-logo-wrap">
+      <div class="footer-logo-mark">Z</div>
+      <div class="footer-brand-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <span class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <span class="footer-sep">/</span>
+      <a href="about.html">About</a>
+      <span class="footer-sep">/</span>
+      <a href="articles.html">Articles</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ── DASHBOARD LOGIC ── -->
+<script>
+(function () {
+  'use strict';
+
+  /* ─── CONFIG ──────────────────────────────────────────────────────────── */
+  var MARKET_URL    = '/api/market';
+  var MARKET_MS     = 40 * 1000;
+  var AGE_TICK_MS   = 10 * 1000;
+  var TIMEOUT_MS    = 12000;
+
+  /* ─── STATE ───────────────────────────────────────────────────────────── */
+  var state = {
+    market: { data: null, lastOk: 0, pending: false },
+  };
+
+  /* ─── DOM ─────────────────────────────────────────────────────────────── */
+  function $(id) { return document.getElementById(id); }
+
+  function setText(id, val) {
+    var el = $(id);
+    if (!el) return;
+    el.textContent = (val === null || val === undefined || val === '') ? '—' : String(val);
+  }
+
+  function flashEl(el) {
+    if (!el) return;
+    el.classList.remove('data-flash');
+    void el.offsetWidth;
+    el.classList.add('data-flash');
+  }
+
+  /* ─── FORMAT ──────────────────────────────────────────────────────────── */
+  function fmtNum(n, dec) {
+    if (!Number.isFinite(n)) return null;
+    return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  function fmtPct(n, dec) {
+    if (!Number.isFinite(n)) return null;
+    return n.toFixed(dec === undefined ? 2 : dec) + '%';
+  }
+  function fmtDelta(pct) {
+    if (!Number.isFinite(pct)) return null;
+    return (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+  }
+
+  function secsAgo(ts) {
+    if (!ts) return null;
+    var s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 5)   return 'just now';
+    if (s < 60)  return s + 's ago';
+    var m = Math.floor(s / 60);
+    if (m < 60)  return m + 'm ago';
+    return Math.floor(m / 60) + 'h ago';
+  }
+  /* ─── FETCH ───────────────────────────────────────────────────────────── */
+  function safeFetch(name, url) {
+    if (state[name].pending) return Promise.resolve(null);
+    state[name].pending = true;
+    var ctrl  = new AbortController();
+    var timer = setTimeout(function () { try { ctrl.abort(); } catch (_) {} }, TIMEOUT_MS);
+    return fetch(url, { cache: 'no-store', signal: ctrl.signal })
+      .then(function (res) {
+        clearTimeout(timer);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        state[name].data   = data;
+        state[name].lastOk = Date.now();
+        state[name].pending = false;
+        return data;
+      })
+      .catch(function () {
+        clearTimeout(timer);
+        state[name].pending = false;
+        return null;
+      });
+  }
+
+  /* ─── SOURCE PILLS ────────────────────────────────────────────────────── */
+  function pillClass(v) {
+    if (v === 'ok')       return 'sp-ok';
+    if (v === 'fallback') return 'sp-fallback';
+    if (v === 'error')    return 'sp-err';
+    return 'sp-wait';
+  }
+  function renderSourceStatus(ss) {
+    var container = $('sourcePills');
+    if (!container || !ss) return;
+    var items = [
+      { key: 'fred',       label: 'FRED' },
+      { key: 'twelvedata', label: 'TWELVEDATA' },
+    ];
+    container.innerHTML = items.map(function (it) {
+      var status = ss[it.key] || 'wait';
+      var cls    = pillClass(status);
+      var badge  = status === 'fallback' ? 'FALLBACK' : status === 'ok' ? 'OK' : status === 'error' ? 'ERROR' : '…';
+      return '<span class="src-pill ' + cls + '"><span class="sp-dot"></span>' + it.label + ': ' + badge + '</span>';
+    }).join('');
+  }
+
+  /* ─── AGE TICK ────────────────────────────────────────────────────────── */
+  function tickAge() {
+    var ageEl = $('ageText');
+    if (!ageEl) return;
+    if (state.market.lastOk) ageEl.textContent = 'Updated ' + secsAgo(state.market.lastOk);
+  }
+
+  /* ─── DELTA EL ────────────────────────────────────────────────────────── */
+  function setDeltaEl(id, pct) {
+    var el = $(id);
+    if (!el) return;
+    var txt = fmtDelta(pct);
+    if (txt === null) { el.textContent = ''; el.className = 'price-delta delta-flat'; }
+    else { el.textContent = txt; el.className = 'price-delta ' + (pct > 0 ? 'delta-up' : pct < 0 ? 'delta-down' : 'delta-flat'); }
+  }
+
+  /* ─── SENTIMENT RULES ─────────────────────────────────────────────────── */
+  // Gold: > +1.0% → Bearish · -0.5% to +1.0% → Neutral · < -0.5% → Bullish
+  function goldSentiment(pct) {
+    if (!Number.isFinite(pct)) return { cls: 'neut', label: 'No Data', micro: 'Price data unavailable.' };
+    if (pct > 1.0)  return { cls: 'bear', label: 'Bearish', micro: 'Gold surging strongly — typical risk-off signal as safe-haven demand rises.' };
+    if (pct < -0.5) return { cls: 'bull', label: 'Bullish', micro: 'Gold easing — risk-on signal as safe-haven demand fades.' };
+    return { cls: 'neut', label: 'Neutral', micro: 'No strong directional signal from price action today.' };
+  }
+  // BTC: > +1.5% → Bullish · -1.5% to +1.5% → Neutral · < -1.5% → Bearish
+  function btcSentiment(pct) {
+    if (!Number.isFinite(pct)) return { cls: 'neut', label: 'No Data', micro: 'Price data unavailable.' };
+    if (pct > 1.5)  return { cls: 'bull', label: 'Bullish', micro: 'BTC showing strong upside momentum with notable daily gains.' };
+    if (pct < -1.5) return { cls: 'bear', label: 'Bearish', micro: 'BTC under selling pressure with a notable daily loss.' };
+    return { cls: 'neut', label: 'Neutral', micro: 'No strong directional signal from price action today.' };
+  }
+
+  /* ─── UPDATE GAUGE ────────────────────────────────────────────────────── */
+  // Maps changePct ∈ [-3, +3] → rotation ∈ [-90°, +90°]
+  //   -3% → -90deg (far left, BEARISH)
+  //    0% →   0deg (vertical, NEUTRAL)
+  //   +3% → +90deg (far right, BULLISH)
+  function updateGauge(prefix, pct) {
+    var needle = $(prefix + 'GaugeNeedle');
+    var readout = $(prefix + 'GaugeValue');
+    if (needle) {
+      var clamped  = Number.isFinite(pct) ? Math.max(-3, Math.min(3, pct)) : 0;
+      var rotation = (clamped / 3) * 90;
+      // Use CSS transform so the CSS transition animates the needle smoothly.
+      needle.style.transform = 'rotate(' + rotation.toFixed(2) + 'deg)';
+    }
+    if (readout) {
+      readout.textContent = Number.isFinite(pct) ? fmtDelta(pct) : '—';
+    }
+  }
+
+  /* ─── RENDER SENT CARD ────────────────────────────────────────────────── */
+  function renderSentCard(prefix, pct, sent) {
+    var labelEl   = $(prefix + 'SentLabel');
+    var pctEl     = $(prefix + 'SentPct');
+    var explainEl = $(prefix + 'SentExplain');
+    var cardEl    = $(prefix + 'SentCard');
+
+    if (labelEl) { labelEl.textContent = sent.label; labelEl.className = 'sent-card-label ' + sent.cls; }
+    if (explainEl) explainEl.textContent = sent.micro;
+    if (pctEl) {
+      if (Number.isFinite(pct)) {
+        pctEl.textContent = fmtDelta(pct);
+        pctEl.className   = 'sent-card-pct ' + (pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat');
+      } else {
+        pctEl.textContent = '—'; pctEl.className = 'sent-card-pct flat';
+      }
+    }
+
+    updateGauge(prefix, pct);
+    flashEl(cardEl);
+  }
+
+  function renderSentimentCards(gold, btc) {
+    var gPct = gold && Number.isFinite(gold.changePct) ? gold.changePct : null;
+    var bPct = btc  && Number.isFinite(btc.changePct)  ? btc.changePct  : null;
+    renderSentCard('gold', gPct, goldSentiment(gPct));
+    renderSentCard('btc',  bPct, btcSentiment(bPct));
+  }
+
+  /* ─── RENDER MARKET ───────────────────────────────────────────────────── */
+  function renderMarket(d) {
+    if (!d) return;
+    var gold   = d.gold   || {};
+    var btc    = d.btc    || {};
+    var yields = d.yields || {};
+    var vix    = d.vix    || {};
+
+    /* prices */
+    setText('goldPrice', Number.isFinite(gold.price) ? '$' + fmtNum(gold.price, 2) : null);
+    setDeltaEl('goldChange', gold.changePct);
+    setText('goldHigh', Number.isFinite(gold.high) ? '$' + fmtNum(gold.high, 2) : null);
+    setText('goldLow',  Number.isFinite(gold.low)  ? '$' + fmtNum(gold.low,  2) : null);
+
+    setText('btcPrice', Number.isFinite(btc.price) ? '$' + fmtNum(btc.price, 0) : null);
+    setDeltaEl('btcChange', btc.changePct);
+    setText('btcHigh', Number.isFinite(btc.high) ? '$' + fmtNum(btc.high, 0) : null);
+    setText('btcLow',  Number.isFinite(btc.low)  ? '$' + fmtNum(btc.low,  0) : null);
+
+    flashEl($('priceGrid'));
+
+    /* sentiment cards */
+    renderSentimentCards(gold, btc);
+
+    /* macro */
+    setText('us10y',     fmtPct(yields.us10y,   2));
+    setText('realYield', fmtPct(yields.real10y, 2));
+    var bkevn = (Number.isFinite(yields.us10y) && Number.isFinite(yields.real10y))
+      ? yields.us10y - yields.real10y : null;
+    setText('breakeven', fmtPct(bkevn, 2));
+    var vv = vix.value;
+    setText('vix', Number.isFinite(vv) ? vv.toFixed(1) : null);
+
+    /* market interpretation (rules-based, uses existing data only) */
+    renderInterpretation(gold.changePct, btc.changePct, yields.real10y, vv);
+
+    /* source pills */
+    renderSourceStatus(d.sourceStatus);
+
+    /* api error panel */
+    renderApiErrors(d);
+
+    /* status text */
+    var stEl = $('statusText');
+    if (stEl) { stEl.textContent = 'Live'; stEl.className = 'rs-status-text'; }
+  }
+
+  /* ─── RENDER MARKET INTERPRETATION (rules-based AI engine) ───────────── */
+  function renderInterpretation(goldPct, btcPct, realYield, vixVal) {
+    var gOk = Number.isFinite(goldPct);
+    var bOk = Number.isFinite(btcPct);
+    var yOk = Number.isFinite(realYield);
+    var vOk = Number.isFinite(vixVal);
+
+    /* ── BLOCK B: SIGNALS TABLE ── */
+    var rows = [];
+    function pushRow(name, val, meaning, impact) {
+      var cls = impact === 'BULLISH' ? 'bull' : impact === 'BEARISH' ? 'bear' : 'neut';
+      rows.push('<tr><td class="signal">' + name + '</td><td class="num">' + val + '</td><td class="meaning">' + meaning + '</td><td><span class="mi-impact ' + cls + '">' + impact + '</span></td></tr>');
+    }
+
+    /* Real Yield: high yield = BEARISH for gold; low yield = BULLISH for gold */
+    var ryImpact = 'NEUTRAL', ryMean = 'Awaiting data';
+    if (yOk) {
+      if (realYield >= 2.0)      { ryImpact = 'BEARISH'; ryMean = 'High real yield reduces gold demand'; }
+      else if (realYield <= 1.5) { ryImpact = 'BULLISH'; ryMean = 'Low real yield supports gold demand'; }
+      else                       { ryImpact = 'NEUTRAL'; ryMean = 'Real yield in normal range'; }
+    }
+    pushRow('Real Yield (US 10Y)', yOk ? realYield.toFixed(2) + '%' : '—', ryMean, ryImpact);
+
+    /* VIX: high VIX = risk-off (gold up, BTC down); low VIX = risk-on */
+    var vxImpact = 'NEUTRAL', vxMean = 'Awaiting data';
+    if (vOk) {
+      if (vixVal >= 25)      { vxImpact = 'BEARISH'; vxMean = 'Fear-driven, risk-off (BTC pressured)'; }
+      else if (vixVal <= 15) { vxImpact = 'BULLISH'; vxMean = 'Calm market, risk-on (BTC supported)'; }
+      else                   { vxImpact = 'NEUTRAL'; vxMean = 'Volatility in normal range'; }
+    }
+    pushRow('VIX (Volatility)', vOk ? vixVal.toFixed(1) : '—', vxMean, vxImpact);
+
+    /* Gold change: dip = bullish (dip demand); strong move = bullish momentum */
+    var gxImpact = 'NEUTRAL', gxMean = 'Awaiting data';
+    if (gOk) {
+      if (goldPct <= -0.5)     { gxImpact = 'BULLISH'; gxMean = 'Pullback invites dip-buying demand'; }
+      else if (goldPct >= 0.5) { gxImpact = 'BULLISH'; gxMean = 'Strong upward momentum on the day'; }
+      else                     { gxImpact = 'NEUTRAL'; gxMean = 'Range-bound intraday action'; }
+    }
+    pushRow('Gold Price Change', gOk ? (goldPct > 0 ? '+' : '') + goldPct.toFixed(2) + '%' : '—', gxMean, gxImpact);
+
+    /* BTC change: up = bullish; down = bearish */
+    var bxImpact = 'NEUTRAL', bxMean = 'Awaiting data';
+    if (bOk) {
+      if (btcPct >= 1.0)       { bxImpact = 'BULLISH'; bxMean = 'Strong upward momentum'; }
+      else if (btcPct <= -1.0) { bxImpact = 'BEARISH'; bxMean = 'Selling pressure dominant'; }
+      else                     { bxImpact = 'NEUTRAL'; bxMean = 'Sideways consolidation'; }
+    }
+    pushRow('BTC Price Change', bOk ? (btcPct > 0 ? '+' : '') + btcPct.toFixed(2) + '%' : '—', bxMean, bxImpact);
+
+    var sigBody = $('miSignalsBody');
+    if (sigBody) sigBody.innerHTML = rows.join('');
+
+    /* ── BLOCK C: FINAL BIAS ──
+       GOLD rules: Real Yield ↑ → Bearish · Gold ↓ → Bullish (dip demand) · VIX ↑ → Bullish
+       BTC rules:  BTC ↑ → Bullish · VIX ↓ → Bullish · VIX ↑ → Bearish */
+    var gScore = 0, gMax = 0;
+    if (yOk) { gMax++; if (realYield >= 2.0) gScore--; else if (realYield <= 1.5) gScore++; }
+    if (gOk) { gMax++; if (goldPct <= -0.5 || goldPct >= 0.5) gScore++; }
+    if (vOk) { gMax++; if (vixVal >= 20) gScore++; else if (vixVal <= 14) gScore--; }
+
+    var bScore = 0, bMax = 0;
+    if (bOk) { bMax++; if (btcPct >= 1.0) bScore++; else if (btcPct <= -1.0) bScore--; }
+    if (vOk) { bMax++; if (vixVal >= 25) bScore--; else if (vixVal <= 15) bScore++; }
+
+    function biasLabel(s) {
+      if (s >= 1)  return { lbl: 'BULLISH', cls: 'bull' };
+      if (s <= -1) return { lbl: 'BEARISH', cls: 'bear' };
+      return { lbl: 'NEUTRAL', cls: 'neut' };
+    }
+    function biasConf(s, m) {
+      if (m === 0) return 0;
+      return Math.min(95, Math.round((Math.abs(s) / m) * 100));
+    }
+
+    var gB = biasLabel(gScore), bB = biasLabel(bScore);
+    var gC = biasConf(gScore, gMax), bC = biasConf(bScore, bMax);
+
+    var gBE = $('miGoldBias'); if (gBE) { gBE.textContent = gB.lbl; gBE.className = 'mi-bias-label ' + gB.cls; }
+    var bBE = $('miBtcBias');  if (bBE) { bBE.textContent = bB.lbl; bBE.className = 'mi-bias-label ' + bB.cls; }
+    var gCB = $('miGoldConfBar'); if (gCB) gCB.style.width = gC + '%';
+    var gCV = $('miGoldConfVal'); if (gCV) gCV.textContent = gC + '%';
+    var bCB = $('miBtcConfBar');  if (bCB) bCB.style.width = bC + '%';
+    var bCV = $('miBtcConfVal');  if (bCV) bCV.textContent = bC + '%';
+
+    /* ── BLOCK A: SMART SUMMARY ── */
+    var hasAny = gOk || bOk || yOk || vOk;
+    var stateText, statePill = 'neut', stateLbl = 'MIXED';
+    if (gB.lbl === 'BULLISH' && bB.lbl === 'BULLISH')      { stateText = 'Risk-on / Broad Bullish';                    statePill = 'bull'; stateLbl = 'BULLISH'; }
+    else if (gB.lbl === 'BEARISH' && bB.lbl === 'BEARISH') { stateText = 'Risk-off / Broad Bearish';                   statePill = 'bear'; stateLbl = 'BEARISH'; }
+    else if (gB.lbl === 'BULLISH' && bB.lbl === 'BEARISH') { stateText = 'Defensive Rotation (Gold up, BTC down)';     statePill = 'neut'; stateLbl = 'MIXED'; }
+    else if (gB.lbl === 'BEARISH' && bB.lbl === 'BULLISH') { stateText = 'Risk-seeking (BTC up, Gold down)';           statePill = 'neut'; stateLbl = 'MIXED'; }
+    else                                                    { stateText = 'Mixed / Range-bound';                       statePill = 'neut'; stateLbl = 'MIXED'; }
+    if (!hasAny) stateText = 'Awaiting market data…';
+
+    var stateEl = $('miStateLine');
+    if (stateEl) {
+      stateEl.innerHTML = stateText + (hasAny ? ' <span class="mi-state-pill mi-impact ' + statePill + '">' + stateLbl + '</span>' : '');
+    }
+
+    var whys = [];
+    if (yOk) whys.push('Real Yield at <b>' + realYield.toFixed(2) + '%</b> → ' + (realYield >= 2.0 ? 'pressures gold lower' : realYield <= 1.5 ? 'supports gold demand' : 'neutral for gold'));
+    if (vOk) whys.push('VIX at <b>' + vixVal.toFixed(1) + '</b> → ' + (vixVal >= 25 ? 'fear-driven, risk-off' : vixVal <= 15 ? 'calm, risk-on for BTC' : 'volatility in normal range'));
+    if (gOk) whys.push('Gold change: <b>' + (goldPct > 0 ? '+' : '') + goldPct.toFixed(2) + '%</b> on the session');
+    if (bOk) whys.push('BTC change: <b>'  + (btcPct > 0  ? '+' : '') + btcPct.toFixed(2)  + '%</b> on the session');
+    if (whys.length === 0) whys.push('No live data yet — interpretation will appear when feeds connect.');
+
+    var whyList = $('miWhyList');
+    if (whyList) whyList.innerHTML = whys.map(function (w) { return '<li>' + w + '</li>'; }).join('');
+
+    var expG = $('miExpGold'); if (expG) expG.textContent = gB.lbl;
+    var expB = $('miExpBtc');  if (expB) expB.textContent = bB.lbl;
+  }
+
+  /* ─── API ERROR PANEL ────────────────────────────────────────────────── */
+  function renderApiErrors(d) {
+    var panel = $('apiErrorPanel');
+    if (!panel) return;
+    var diag = d && d._fredDiag;
+    var fredStatus = d && d.sourceStatus && d.sourceStatus.fred;
+    if (fredStatus !== 'error' || !diag) { panel.style.display = 'none'; return; }
+
+    var rows = [];
+    var seriesList = ['DGS10', 'DFII10', 'VIXCLS'];
+    var firstErr = null;
+    for (var i = 0; i < seriesList.length; i++) {
+      var s = seriesList[i];
+      if (diag[s]) { firstErr = diag[s]; break; }
+    }
+
+    var ts = new Date().toUTCString().replace(' GMT', ' UTC');
+    var statusVal = firstErr && firstErr.status ? 'HTTP ' + firstErr.status : (diag.keyPresent === false ? 'Key Missing' : 'Unknown');
+    var category  = firstErr ? firstErr.category : 'Unknown';
+    var fix       = firstErr ? firstErr.recommended_fix : '';
+    if (!fix && diag.keyLength === 0) fix = 'Set FRED_API_KEY in Cloudflare Pages → Settings → Environment Variables, then redeploy.';
+    if (!fix && diag.keyLength > 0 && diag.keyLength !== 32) fix = 'FRED API keys must be exactly 32 characters. Current key length: ' + diag.keyLength + '. Verify in Cloudflare env vars.';
+
+    var html = '<div class="api-err-panel">'
+      + '<div class="api-err-head">&#9888; API Failure Details</div>'
+      + '<div class="api-err-row">'
+      + '  <span class="api-err-svc">FRED</span>'
+      + '  <span class="api-err-kv"><span class="api-err-key">Status</span><span class="api-err-val">' + statusVal + '</span></span>'
+      + '  <span class="api-err-kv"><span class="api-err-key">Error Type</span><span class="api-err-val">' + category + '</span></span>'
+      + '  <span class="api-err-kv"><span class="api-err-key">Key Present</span><span class="api-err-val">' + (diag.keyPresent ? 'Yes (' + diag.keyLength + ' chars)' : 'NO') + '</span></span>'
+      + '  <span class="api-err-kv"><span class="api-err-key">Endpoint</span><span class="api-err-val">series/observations</span></span>'
+      + '  <span class="api-err-kv"><span class="api-err-key">Time</span><span class="api-err-val">' + ts + '</span></span>'
+      + '</div>'
+      + (fix ? '<div class="api-err-fix"><b>Fix:</b> ' + fix + '</div>' : '')
+      + '<div class="api-err-fix" style="margin-top:6px;color:#9ca3af;">For full diagnostics call <code>/api/diagnose</code></div>'
+      + '</div>';
+
+    panel.innerHTML  = html;
+    panel.style.display = 'block';
+  }
+
+  /* ─── REFRESH ─────────────────────────────────────────────────────────── */
+  function refreshMarket() {
+    return safeFetch('market', MARKET_URL).then(function (data) {
+      if (data) renderMarket(data);
+      else if (state.market.data) {
+        renderMarket(state.market.data);
+        var st = $('statusText');
+        if (st) { st.textContent = 'Cached (retry…)'; st.className = 'rs-status-text is-err'; }
+      } else {
+        var st2 = $('statusText');
+        if (st2) { st2.textContent = 'Data unavailable'; st2.className = 'rs-status-text is-err'; }
+      }
+    });
+  }
+  /* ─── BOOT ────────────────────────────────────────────────────────────── */
+  function init() {
+    var st = $('statusText');
+    if (st) st.textContent = 'Connecting…';
+    Promise.all([refreshMarket()]);
+    setInterval(refreshMarket, MARKET_MS);
+    tickAge();
+    setInterval(tickAge, AGE_TICK_MS);
+  }
+  init();
+
+})();
+
+/* ─── MOBILE MENU ──────────────────────────────────────────────────────────── */
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+</script>
+
+<script>
+/* ─── CONTENT PROTECTION ───────────────────────────────────────────────────── */
+document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+document.addEventListener('keydown', function (e) {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) ||
+    (e.ctrlKey && e.key === 'U')
+  ) { e.preventDefault(); }
+});
+
+/* ─── PWA ──────────────────────────────────────────────────────────────────── */
+var _pwa = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); _pwa = e; });
+window.addEventListener('appinstalled', function () { _pwa = null; });
+</script>
+</body>
+</html>

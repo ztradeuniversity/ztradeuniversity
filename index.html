@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Z Trade University – ZTU AI Trading Assistant</title>
+  <meta name="description" content="Z Trade University — ZTU AI Trading Assistant. Ask anything about trading, explore free trading tools, request the MT5 bot, and access the learning library." />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <!-- PWA install metadata (lightweight) -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#FAFAFA" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Z Trade University" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       Z TRADE UNIVERSITY — ZTU AI HOMEPAGE
+       Premium · Luxury · Lightweight · Fully responsive
+       Brand: Orange #F7931A · Navy #0F172A · White · BG #FAFAFA
+       ════════════════════════════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:      #F7931A;
+      --orange-soft: rgba(247,147,26,0.12);
+      --orange-deep: #e07e0a;
+      --navy:        #0F172A;
+      --white:       #FFFFFF;
+
+      /* semantic (theme-aware) */
+      --bg:          #FAFAFA;
+      --surface:     #FFFFFF;
+      --surface-2:   #FFFFFF;
+      --text:        #0F172A;
+      --heading:     #0F172A;
+      --muted:       #64708A;
+      --border:      #EAEAEA;
+      --shadow-sm:   0 1px 2px rgba(15,23,42,0.04);
+      --shadow:      0 8px 28px rgba(15,23,42,0.07);
+      --shadow-lg:   0 20px 50px rgba(15,23,42,0.10);
+      --radius:      16px;
+      --radius-lg:   22px;
+      --strip-bg:    #FFFFFF;
+    }
+
+    [data-theme="dark"] {
+      --bg:          #0B1120;
+      --surface:     #131C30;
+      --surface-2:   #0F1830;
+      --text:        #E8EDF6;
+      --heading:     #F4F7FC;
+      --muted:       #93A0B8;
+      --border:      rgba(255,255,255,0.09);
+      --shadow-sm:   0 1px 2px rgba(0,0,0,0.4);
+      --shadow:      0 8px 28px rgba(0,0,0,0.45);
+      --shadow-lg:   0 20px 50px rgba(0,0,0,0.55);
+      --strip-bg:    #0E1626;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', 'Poppins', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      overflow-x: hidden;
+      transition: background .3s ease, color .3s ease;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── HEADER ───────────────────────────────────────────────── */
+    header.site-head {
+      position: sticky; top: 0; z-index: 200;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .head-inner {
+      height: 72px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand img { height: 42px; width: auto; display: block; }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.08; }
+    .brand-text b {
+      font-family: 'Poppins','Inter',sans-serif;
+      font-size: 17px; font-weight: 800; letter-spacing: .5px; color: var(--heading);
+    }
+    .brand-text span {
+      font-size: 10px; font-weight: 700; letter-spacing: 4px;
+      color: var(--orange); text-transform: uppercase;
+    }
+
+    .head-right { display: flex; align-items: center; gap: 12px; }
+
+    .theme-toggle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      transition: transform .2s, color .2s, border-color .2s;
+    }
+    .theme-toggle:hover { color: var(--orange); border-color: var(--orange); transform: translateY(-1px); }
+    .theme-toggle .icon-moon { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+    .btn-signin {
+      display: inline-flex; align-items: center; gap: 9px;
+      height: 44px; padding: 0 22px; border-radius: 100px;
+      border: 1.5px solid var(--orange); color: var(--orange);
+      background: transparent; font-size: 15px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background .2s, color .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-signin:hover {
+      background: var(--orange); color: #fff; transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(247,147,26,0.32);
+    }
+
+    .hamburger {
+      display: none; width: 44px; height: 44px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      flex-shrink: 0;
+    }
+    .hamburger span { width: 19px; height: 2px; border-radius: 2px; background: var(--heading); transition: .25s; }
+
+    /* ── MOBILE MENU ──────────────────────────────────────────── */
+    .mobile-menu {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(8,12,22,0.55); backdrop-filter: blur(4px);
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .mobile-menu.open { opacity: 1; pointer-events: auto; }
+    .mobile-panel {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      width: min(82vw, 320px);
+      background: var(--surface); padding: 22px 20px;
+      display: flex; flex-direction: column; gap: 4px;
+      transform: translateX(-100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 0 40px rgba(0,0,0,0.25);
+    }
+    .mobile-menu.open .mobile-panel { transform: translateX(0); }
+    .mobile-panel .mm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .mobile-panel .mm-close {
+      width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); font-size: 20px; cursor: pointer;
+    }
+    .mobile-panel a {
+      padding: 13px 14px; border-radius: 11px; font-size: 15px; font-weight: 600;
+      color: var(--text); transition: background .18s, color .18s;
+    }
+    .mobile-panel a:hover { background: var(--orange-soft); color: var(--orange); }
+
+    /* ── SOCIAL STRIP ─────────────────────────────────────────── */
+    .social-strip { background: var(--strip-bg); border-bottom: 1px solid var(--border); }
+    .social-strip-inner {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; flex-wrap: wrap; padding: 18px 0;
+    }
+    .soc {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      transition: transform .2s, box-shadow .2s, border-color .2s, color .2s;
+    }
+    .soc svg { width: 20px; height: 20px; }
+    .soc:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .soc.wa:hover { color: #25D366; border-color: #25D366; }
+    .soc.tt:hover { color: var(--heading); border-color: var(--heading); }
+    .soc.yt:hover { color: #FF0000; border-color: #FF0000; }
+    .soc.tg:hover { color: #229ED9; border-color: #229ED9; }
+    .soc.ig:hover { color: #E1306C; border-color: #E1306C; }
+    .soc.fb:hover { color: #1877F2; border-color: #1877F2; }
+    .soc.x:hover  { color: var(--heading); border-color: var(--heading); }
+
+    /* ── HERO ─────────────────────────────────────────────────── */
+    .hero { position: relative; overflow: hidden; padding: 46px 0 64px; }
+
+    /* chart decorations */
+    .hero-chart {
+      position: absolute; top: 12%; pointer-events: none; z-index: 0;
+      width: clamp(150px, 16vw, 260px); height: auto; opacity: .22;
+    }
+    .hero-chart.left  { left: 1.5%; }
+    .hero-chart.right { right: 1.5%; top: 8%; transform: scaleX(-1); }
+
+    .hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; text-align: center; }
+
+    .hero-title {
+      font-family: 'Poppins','Inter',sans-serif;
+      font-weight: 800; letter-spacing: -1px; line-height: 1.02;
+      font-size: clamp(42px, 7.4vw, 64px);
+    }
+    .hero-title .ztu { color: var(--orange); }
+    .hero-title .ai  { color: var(--heading); }
+    .hero-subtitle {
+      font-family: 'Poppins','Inter',sans-serif;
+      font-weight: 700; color: var(--heading);
+      font-size: clamp(24px, 3.6vw, 32px);
+      margin-top: 6px; letter-spacing: -.3px;
+    }
+    .hero-underline {
+      width: 64px; height: 4px; border-radius: 3px;
+      background: var(--orange); margin: 18px auto 0;
+    }
+
+    /* ── CHAT BOX ──────────────────────────────────────────────── */
+    .chat-form {
+      margin: 38px auto 0; max-width: 720px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 100px; padding: 9px 9px 9px 26px;
+      box-shadow: var(--shadow);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .chat-form:focus-within { border-color: var(--orange); box-shadow: 0 10px 34px rgba(247,147,26,0.18); }
+    .chat-form input {
+      flex: 1; border: 0; outline: 0; background: transparent;
+      font-family: inherit; font-size: 16px; color: var(--text);
+      min-width: 0; padding: 12px 0;
+    }
+    .chat-form input::placeholder { color: var(--muted); }
+    .chat-send {
+      width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+      border: 0; cursor: pointer;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(247,147,26,0.4);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .chat-send:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 24px rgba(247,147,26,0.5); }
+    .chat-send svg { width: 21px; height: 21px; transform: translateX(1px); }
+
+    /* ── QUICK ACTIONS ─────────────────────────────────────────── */
+    .quick-actions {
+      margin: 22px auto 0; max-width: 720px;
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    }
+    .qa {
+      flex: 1 1 220px; max-width: 320px;
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 15px 20px;
+      box-shadow: var(--shadow-sm);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .qa:hover { transform: translateY(-2px); border-color: var(--orange); box-shadow: var(--shadow); }
+    .qa .qa-ic { color: var(--orange); display: flex; flex-shrink: 0; }
+    .qa .qa-label { font-size: 15px; font-weight: 700; color: var(--heading); flex: 1; }
+    .qa .qa-arrow { color: var(--muted); display: flex; transition: transform .2s, color .2s; }
+    .qa:hover .qa-arrow { color: var(--orange); transform: translateX(3px); }
+
+    /* ── FEATURE CARDS ─────────────────────────────────────────── */
+    .features { padding: 8px 0 64px; }
+    .cards-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+      max-width: 1000px; margin: 0 auto;
+    }
+    .fcard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 30px 26px 26px;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s, border-color .26s;
+      position: relative; overflow: hidden;
+    }
+    .fcard::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+      opacity: 0; transition: opacity .26s;
+    }
+    .fcard:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.4); }
+    .fcard:hover::before { opacity: 1; }
+
+    .fcard-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--orange); margin-bottom: 16px;
+    }
+    .fcard-icon svg { width: 30px; height: 30px; }
+    .fcard h3 {
+      font-family: 'Poppins','Inter',sans-serif;
+      font-size: 21px; font-weight: 700; color: var(--heading);
+      letter-spacing: -.3px; margin-bottom: 18px;
+    }
+    .fcard-btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 11px 24px; border-radius: 100px;
+      border: 1.5px solid var(--orange); color: var(--orange);
+      font-size: 14.5px; font-weight: 700;
+      transition: background .2s, color .2s, box-shadow .2s, transform .2s;
+    }
+    .fcard-btn svg { width: 15px; height: 15px; transition: transform .2s; }
+    .fcard:hover .fcard-btn {
+      background: var(--orange); color: #fff;
+      box-shadow: 0 8px 20px rgba(247,147,26,0.3);
+    }
+    .fcard:hover .fcard-btn svg { transform: translateX(3px); }
+
+    .fcard-feats {
+      display: flex; justify-content: center; gap: 26px;
+      margin-top: 24px; padding-top: 20px;
+      border-top: 1px solid var(--border); width: 100%;
+    }
+    .feat { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+    .feat .feat-ic { color: var(--orange); display: flex; }
+    .feat .feat-ic svg { width: 19px; height: 19px; }
+    .feat span { font-size: 12.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+
+    /* ── FOOTER ────────────────────────────────────────────────── */
+    .site-foot { padding: 0 0 30px; }
+    .foot-div {
+      width: min(92%, 1140px); height: 2px; margin: 0 auto 22px;
+      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+      border-radius: 2px;
+    }
+    .foot-text { text-align: center; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+
+    /* ── RESPONSIVE ────────────────────────────────────────────── */
+    @media (max-width: 940px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr); max-width: 640px; }
+      .cards-grid .fcard:last-child { grid-column: 1 / -1; max-width: 380px; margin: 0 auto; width: 100%; }
+      .fcard-feats { gap: 12px; }
+      .feat span { font-size: 11.5px; }
+    }
+    @media (max-width: 860px) {
+      .btn-signin span.si-label { display: inline; }
+      .hero-chart { opacity: .15; }
+    }
+    @media (max-width: 760px) {
+      .hamburger { display: flex; }
+      .brand-text b { font-size: 16px; }
+      .head-inner { gap: 10px; }
+      .btn-signin { height: 42px; padding: 0 16px; font-size: 14px; }
+      .theme-toggle { width: 42px; height: 42px; }
+      .soc { width: 36px; height: 36px; }
+      .soc svg { width: 16px; height: 16px; }
+      .social-strip-inner { gap: 10px; }
+      .hero { padding: 32px 0 48px; }
+      .hero-chart { width: 100px; opacity: .12; }
+      .hero-chart.left { left: -10px; }
+      .hero-chart.right { right: -10px; }
+      .chat-form { padding: 7px 7px 7px 20px; }
+      .chat-form input { font-size: 15px; }
+      .chat-send { width: 48px; height: 48px; }
+      .quick-actions { flex-direction: column; }
+      .qa { flex: none; width: 100%; max-width: none; }
+    }
+    @media (max-width: 600px) {
+      .cards-grid { grid-template-columns: 1fr; max-width: 400px; }
+      .cards-grid .fcard:last-child { grid-column: auto; max-width: none; }
+      .container { padding: 0 18px; }
+    }
+    @media (max-width: 380px) {
+      .brand-text span { letter-spacing: 2.5px; }
+      .fcard-feats { gap: 16px; }
+    }
+
+    /* accessibility focus */
+    a:focus-visible, button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════ HEADER ════════════════ -->
+  <header class="site-head">
+    <div class="container head-inner">
+      <button class="hamburger" type="button" onclick="toggleMenu()" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+
+      <a href="index.html" class="brand" aria-label="Z Trade University home">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" />
+        <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
+      </a>
+
+      <div class="head-right">
+        <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle light/dark theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <a href="library.html" class="btn-signin" aria-label="Sign in">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span class="si-label">Sign In</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════ MOBILE MENU ════════════════ -->
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-panel">
+      <div class="mm-head">
+        <a href="index.html" class="brand">
+          <img src="assets/ztu-logo.png" alt="Z Trade University" style="height:34px" />
+          <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
+        </a>
+        <button class="mm-close" type="button" onclick="toggleMenu()" aria-label="Close menu">&times;</button>
+      </div>
+      <a href="index.html"                onclick="toggleMenu()">Home</a>
+      <a href="ai-trade-assistant.html"   onclick="toggleMenu()">AI Trading Assistant</a>
+      <a href="trading-tools.html"        onclick="toggleMenu()">Trading Tools</a>
+      <a href="library.html"              onclick="toggleMenu()">Library</a>
+      <a href="license-request.html"      onclick="toggleMenu()">MT5 Bot</a>
+      <a href="articles.html"             onclick="toggleMenu()">Read Articles</a>
+      <a href="signal-history.html"       onclick="toggleMenu()">Signal History</a>
+      <a href="create-account-with-us.html" onclick="toggleMenu()">How To Join Us</a>
+      <a href="live-sentiment.html"       onclick="toggleMenu()">Live Sentiment</a>
+      <a href="about.html"                onclick="toggleMenu()">About</a>
+    </div>
+  </div>
+
+  <!-- ════════════════ SOCIAL STRIP ════════════════ -->
+  <div class="social-strip">
+    <div class="container social-strip-inner">
+      <a href="https://wa.me/17189730347" class="soc wa" target="_blank" rel="noopener" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.5-.2-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.5-.7-2.5-1.3-3.5-3-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4zM12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+      </a>
+      <a href="https://www.tiktok.com/@ztradeuniversity" class="soc tt" target="_blank" rel="noopener" aria-label="TikTok">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.8a4.3 4.3 0 0 1-1-2.8h-3v12a2.4 2.4 0 1 1-2.4-2.4c.2 0 .5 0 .7.1V9.6a5.6 5.6 0 0 0-.7-.1 5.4 5.4 0 1 0 5.4 5.4V8.7a7.2 7.2 0 0 0 4.2 1.3V7a4.3 4.3 0 0 1-3.2-1.2z"/></svg>
+      </a>
+      <a href="https://youtube.com/@ztradeuniversity" class="soc yt" target="_blank" rel="noopener" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.3-1C16.6 3.5 12 3.5 12 3.5h0s-4.6 0-7.8.2c-.4.1-1.4.1-2.3 1C1.2 5.4 1 7 1 7S.8 8.9.8 10.8v1.4c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.5 1 1.8.2 7.6.2 7.6.2s4.6 0 7.8-.2c.4-.1 1.4-.1 2.3-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8v-1.4C23.2 8.9 23 7 23 7zM9.7 14.6V8.9l6 2.9-6 2.8z"/></svg>
+      </a>
+      <a href="https://t.me/ztradeuniversity" class="soc tg" target="_blank" rel="noopener" aria-label="Telegram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" class="soc ig" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5.5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </a>
+      <a href="https://www.facebook.com/@ztradeuniversity" class="soc fb" target="_blank" rel="noopener" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </a>
+      <a href="https://x.com/Ztradeuni" class="soc x" target="_blank" rel="noopener" aria-label="X (Twitter)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- ════════════════ HERO ════════════════ -->
+  <section class="hero">
+    <!-- chart decorations (left & right) -->
+    <svg class="hero-chart left" viewBox="0 0 120 160" aria-hidden="true" fill="none">
+      <polyline points="6,150 26,120 46,128 66,86 86,96 112,40" stroke="#F7931A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+      <g stroke-linecap="round">
+        <line x1="14" y1="96"  x2="14" y2="150" stroke="#F7931A" stroke-width="2"/><rect x="9"  y="110" width="10" height="30" rx="2" fill="#F7931A"/>
+        <line x1="36" y1="86"  x2="36" y2="138" stroke="#0F172A" stroke-width="2"/><rect x="31" y="98"  width="10" height="30" rx="2" fill="#0F172A"/>
+        <line x1="58" y1="66"  x2="58" y2="120" stroke="#F7931A" stroke-width="2"/><rect x="53" y="80"  width="10" height="30" rx="2" fill="#F7931A"/>
+        <line x1="80" y1="80"  x2="80" y2="128" stroke="#0F172A" stroke-width="2"/><rect x="75" y="92"  width="10" height="28" rx="2" fill="#0F172A"/>
+        <line x1="102" y1="34" x2="102" y2="96" stroke="#F7931A" stroke-width="2"/><rect x="97" y="48" width="10" height="36" rx="2" fill="#F7931A"/>
+      </g>
+    </svg>
+    <svg class="hero-chart right" viewBox="0 0 120 160" aria-hidden="true" fill="none">
+      <polyline points="6,150 26,120 46,128 66,86 86,96 112,40" stroke="#F7931A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+      <g stroke-linecap="round">
+        <line x1="14" y1="96"  x2="14" y2="150" stroke="#F7931A" stroke-width="2"/><rect x="9"  y="110" width="10" height="30" rx="2" fill="#F7931A"/>
+        <line x1="36" y1="86"  x2="36" y2="138" stroke="#0F172A" stroke-width="2"/><rect x="31" y="98"  width="10" height="30" rx="2" fill="#0F172A"/>
+        <line x1="58" y1="66"  x2="58" y2="120" stroke="#F7931A" stroke-width="2"/><rect x="53" y="80"  width="10" height="30" rx="2" fill="#F7931A"/>
+        <line x1="80" y1="80"  x2="80" y2="128" stroke="#0F172A" stroke-width="2"/><rect x="75" y="92"  width="10" height="28" rx="2" fill="#0F172A"/>
+        <line x1="102" y1="34" x2="102" y2="96" stroke="#F7931A" stroke-width="2"/><rect x="97" y="48" width="10" height="36" rx="2" fill="#F7931A"/>
+      </g>
+    </svg>
+
+    <div class="container">
+      <div class="hero-inner">
+        <h1 class="hero-title"><span class="ztu">ZTU</span> <span class="ai">AI</span></h1>
+        <div class="hero-subtitle">Trading Assistant</div>
+        <div class="hero-underline"></div>
+
+        <!-- CHAT BOX — wired to existing AI assistant -->
+        <form class="chat-form" id="chatForm" onsubmit="return goChat(event)" role="search">
+          <input id="homeChatInput" type="text" autocomplete="off"
+                 placeholder="Ask me anything about trading..." aria-label="Ask the ZTU AI trading assistant" />
+          <button class="chat-send" type="submit" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg>
+          </button>
+        </form>
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+          <a class="qa" href="articles.html">
+            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
+            <span class="qa-label">Read Articles</span>
+            <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="qa" href="signal-history.html">
+            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+            <span class="qa-label">Signal History</span>
+            <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="qa" href="create-account-with-us.html">
+            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="qa-label">How To Join Us</span>
+            <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ FEATURE CARDS (order: Trading Tools · MT5 Bot · Library) ════════════════ -->
+  <section class="features">
+    <div class="container">
+      <div class="cards-grid">
+
+        <!-- 1 · TRADING TOOLS -->
+        <article class="fcard">
+          <div class="fcard-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Trading Tools</h3>
+          <a class="fcard-btn" href="trading-tools.html">
+            Explore (Free)
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <div class="fcard-feats">
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Trade Audit</span></div>
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span>Self Assessment</span></div>
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span>General</span></div>
+          </div>
+        </article>
+
+        <!-- 2 · MT5 BOT -->
+        <article class="fcard">
+          <div class="fcard-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg>
+          </div>
+          <h3>MT5 Bot</h3>
+          <a class="fcard-btn" href="license-request.html">
+            Submit Your Request
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <div class="fcard-feats">
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" stroke="none"/></svg></span><span>Automated</span></div>
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg></span><span>Risk Free</span></div>
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>24/7</span></div>
+          </div>
+        </article>
+
+        <!-- 3 · LIBRARY -->
+        <article class="fcard">
+          <div class="fcard-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg>
+          </div>
+          <h3>Library</h3>
+          <a class="fcard-btn" href="library.html">
+            Get Library Access
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <div class="fcard-feats">
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span><span>Videos</span></div>
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span><span>Audios</span></div>
+            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Books</span></div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SIGNAL HISTORY (transparency band) ════════════════ -->
+  <section class="features" style="padding-top:0;">
+    <div class="container">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:1.1fr 1fr;">
+        <div style="padding:34px 32px;display:flex;flex-direction:column;justify-content:center;">
+          <span style="display:inline-flex;align-items:center;gap:7px;align-self:flex-start;font-size:11.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--orange);background:var(--orange-soft);padding:6px 13px;border-radius:100px;margin-bottom:14px;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Full Transparency
+          </span>
+          <h3 style="font-family:'Poppins','Inter',sans-serif;font-size:25px;font-weight:700;color:var(--heading);letter-spacing:-.4px;margin-bottom:10px;">Signal History &amp; Performance</h3>
+          <p style="font-size:15px;color:var(--muted);margin-bottom:22px;max-width:440px;">Review every signal we have published — entry, stop loss, take profit, and the real result. Wins and losses, all on record. No cherry-picking.</p>
+          <a class="fcard-btn" href="signal-history.html" style="align-self:flex-start;">
+            View Signal History
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+        <div style="background:var(--orange-soft);padding:34px 32px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:center;">
+          <div style="text-align:center;"><div id="sigTotal" style="font-family:'Poppins',sans-serif;font-size:30px;font-weight:800;color:var(--heading);letter-spacing:-.5px;">—</div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;">Total Signals</div></div>
+          <div style="text-align:center;"><div id="sigWinRate" style="font-family:'Poppins',sans-serif;font-size:30px;font-weight:800;color:var(--orange);letter-spacing:-.5px;">—</div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;">Win Rate</div></div>
+          <div style="text-align:center;"><div id="sigWins" style="font-family:'Poppins',sans-serif;font-size:30px;font-weight:800;color:#16a34a;letter-spacing:-.5px;">—</div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;">Winning</div></div>
+          <div style="text-align:center;"><div id="sigRR" style="font-family:'Poppins',sans-serif;font-size:30px;font-weight:800;color:var(--heading);letter-spacing:-.5px;">—</div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;">Avg R:R</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <style>
+    @media (max-width: 760px) {
+      .features .container > div[style*="grid-template-columns:1.1fr"] { grid-template-columns: 1fr !important; }
+    }
+  </style>
+
+  <!-- ════════════════ FOOTER ════════════════ -->
+  <footer class="site-foot">
+    <div class="foot-div"></div>
+    <p class="foot-text">© 2024 Z Trade University. All rights reserved.</p>
+  </footer>
+
+  <!-- ════════════════ SCRIPTS ════════════════ -->
+  <script>
+    /* ── Theme toggle (light / dark, persisted) ── */
+    (function () {
+      try {
+        var saved = localStorage.getItem('ztu-theme');
+        if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) {}
+    })();
+    function toggleTheme() {
+      var el = document.documentElement;
+      var dark = el.getAttribute('data-theme') === 'dark';
+      if (dark) { el.removeAttribute('data-theme'); }
+      else { el.setAttribute('data-theme', 'dark'); }
+      try { localStorage.setItem('ztu-theme', dark ? 'light' : 'dark'); } catch (e) {}
+    }
+
+    /* ── Mobile menu ── */
+    function toggleMenu() {
+      document.getElementById('mobileMenu').classList.toggle('open');
+    }
+    document.getElementById('mobileMenu').addEventListener('click', function (e) {
+      if (e.target === this) toggleMenu();
+    });
+
+    /* ── Chat box → existing AI assistant (prefills + auto-sends) ── */
+    function goChat(e) {
+      if (e) e.preventDefault();
+      var v = document.getElementById('homeChatInput').value.trim();
+      var url = 'ai-trade-assistant.html';
+      if (v) url += '?q=' + encodeURIComponent(v) + '&send=1';
+      window.location.href = url;
+      return false;
+    }
+
+    /* ── Signal History teaser stats (best-effort; section renders fine without it) ── */
+    (function () {
+      fetch('/api/signals?action=list')
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          var st = res && res.stats; if (!st) return;
+          var set = function (id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+          set('sigTotal',  st.total);
+          set('sigWins',   st.wins);
+          set('sigWinRate', st.winRate == null ? '—' : st.winRate + '%');
+          set('sigRR',     st.avgRR  == null ? '—' : st.avgRR + 'R');
+        })
+        .catch(function () { /* leave the em-dash placeholders */ });
+    })();
+  </script>
+
+  <!-- ── PWA: install prompt + service-worker registration (preserved) ── -->
+  <style>
+    .ztu-install {
+      position: fixed; right: 16px; bottom: 16px; z-index: 9000;
+      display: inline-flex; align-items: stretch; gap: 0;
+      background: linear-gradient(135deg, #0F172A 0%, #1e2a44 100%);
+      border-radius: 14px; box-shadow: 0 10px 30px rgba(15,23,42,0.35), 0 2px 8px rgba(0,0,0,0.2);
+      font-family: 'Inter', sans-serif; overflow: hidden;
+      transform: translateY(20px); opacity: 0;
+      transition: transform .35s ease, opacity .35s ease; max-width: calc(100vw - 32px);
+    }
+    .ztu-install.is-visible { transform: translateY(0); opacity: 1; }
+    .ztu-install-btn {
+      display: inline-flex; align-items: center; gap: 10px; padding: 11px 14px 11px 13px;
+      background: transparent; border: 0; cursor: pointer; color: #fff; font: inherit; text-align: left;
+    }
+    .ztu-install-icon {
+      width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+      background: rgba(247,147,26,0.18); display: flex; align-items: center; justify-content: center; color: #F7931A;
+    }
+    .ztu-install-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .ztu-install-text b { font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -.1px; }
+    .ztu-install-text i { font-size: 11px; font-weight: 600; font-style: normal; color: rgba(255,255,255,0.72); letter-spacing: .1px; margin-top: 2px; }
+    .ztu-install-x {
+      align-self: stretch; padding: 0 12px; background: rgba(0,0,0,0.18); border: 0; cursor: pointer;
+      color: rgba(255,255,255,0.75); font-size: 18px; font-weight: 700; line-height: 1;
+    }
+    .ztu-install-x:hover { background: rgba(0,0,0,0.32); color: #fff; }
+    @media (max-width: 480px) { .ztu-install { right: 12px; bottom: 12px; } }
+  </style>
+  <div id="ztuInstall" class="ztu-install" hidden>
+    <button id="ztuInstallBtn" class="ztu-install-btn" type="button">
+      <span class="ztu-install-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+      </span>
+      <span class="ztu-install-text"><b>Install App</b><i>Z Trade University</i></span>
+    </button>
+    <button id="ztuInstallX" class="ztu-install-x" type="button" aria-label="Dismiss install prompt">&times;</button>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { /* silent */ });
+        });
+      }
+      var wrap = document.getElementById('ztuInstall');
+      var btn  = document.getElementById('ztuInstallBtn');
+      var btnX = document.getElementById('ztuInstallX');
+      if (!wrap || !btn) return;
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return;
+      if (window.navigator.standalone === true) return;
+      try {
+        var dismissed = localStorage.getItem('ztuInstallDismissed');
+        if (dismissed && (Date.now() - parseInt(dismissed, 10)) < 7 * 24 * 60 * 60 * 1000) return;
+      } catch (e) {}
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault(); deferredPrompt = e; wrap.hidden = false;
+        requestAnimationFrame(function () { wrap.classList.add('is-visible'); });
+      });
+      btn.addEventListener('click', function () {
+        if (!deferredPrompt) { wrap.hidden = true; return; }
+        var p = deferredPrompt; deferredPrompt = null; p.prompt();
+        p.userChoice.then(function () {
+          wrap.classList.remove('is-visible'); setTimeout(function () { wrap.hidden = true; }, 300);
+        }).catch(function () {
+          wrap.classList.remove('is-visible'); setTimeout(function () { wrap.hidden = true; }, 300);
+        });
+      });
+      btnX.addEventListener('click', function (e) {
+        e.stopPropagation();
+        wrap.classList.remove('is-visible'); setTimeout(function () { wrap.hidden = true; }, 300);
+        try { localStorage.setItem('ztuInstallDismissed', String(Date.now())); } catch (err) {}
+      });
+      window.addEventListener('appinstalled', function () {
+        deferredPrompt = null; wrap.classList.remove('is-visible');
+        setTimeout(function () { wrap.hidden = true; }, 300);
+        try { localStorage.removeItem('ztuInstallDismissed'); } catch (e) {}
+      });
+    })();
+  </script>
+
+  <!-- ── CONTENT PROTECTION (preserved) ── -->
+  <script>
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('keydown', function (e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) ||
+        (e.ctrlKey && e.key === 'U')
+      ) { e.preventDefault(); }
+    });
+  </script>
+</body>
+</html>

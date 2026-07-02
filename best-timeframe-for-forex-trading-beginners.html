@@ -1,0 +1,663 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn the best timeframe for Forex trading beginners in 2025. Simple guide covering M15, H1, H4, daily charts, scalping, swing trading, and multi-timeframe analysis." />
+  <meta name="keywords" content="best timeframe for forex trading, forex timeframe for beginners, best trading timeframe, forex timeframes explained, beginner forex timeframe, M15 timeframe, H1 timeframe forex, H4 trading strategy, scalping vs swing trading, multi-timeframe analysis" />
+  <title>Best Timeframe for Forex Trading Beginners – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/best-timeframe-for-forex-trading-beginners.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --lime:    #c89c3f;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+      --nv:      #1a56db;
+      --nv2:     #93c5fd;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #010718 0%, #030e2e 50%, #020a22 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,86,219,0.18) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(26,86,219,0.16); border: 1px solid rgba(26,86,219,0.35);
+      color: var(--nv2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--nv2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px; border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--nv2); }
+
+    .tip-box { background: #f5f7ff; border-left: 4px solid var(--purple2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .quick-answer {
+      background: linear-gradient(135deg, #eff6ff 0%, #f3e6c2 100%);
+      border: 1.5px solid rgba(26,86,219,0.18); border-left: 4px solid var(--nv);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--nv); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Timeframe comparison table */
+    .compare-box { background: linear-gradient(145deg, #0d1127 0%, #111a38 100%); border-radius: 16px; padding: 22px 24px 18px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.07); overflow-x: auto; }
+    .compare-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .compare-table { width: 100%; border-collapse: collapse; min-width: 420px; }
+    .compare-table th { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 9px 14px; text-align: left; }
+    .compare-table td { font-size: 13px; padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.05); vertical-align: middle; line-height: 1.5; }
+    .tf-table td:nth-child(1) { color: rgba(255,255,255,0.9); font-weight: 800; width: 16%; }
+    .tf-table th:nth-child(1) { color: rgba(255,255,255,0.35); }
+    .tf-table th:nth-child(2) { color: var(--nv2); background: rgba(147,197,253,0.07); border-radius: 6px 6px 0 0; }
+    .tf-table th:nth-child(3) { color: #4ade80; background: rgba(74,222,128,0.07); border-radius: 6px 6px 0 0; }
+    .tf-table td:nth-child(2) { color: rgba(255,255,255,0.72); background: rgba(147,197,253,0.04); }
+    .tf-table td:nth-child(3) { color: rgba(255,255,255,0.72); background: rgba(74,222,128,0.04); }
+    .dif-easy   { color: #4ade80; font-weight: 700; }
+    .dif-mod    { color: #fb923c; font-weight: 700; }
+    .dif-hard   { color: #f87171; font-weight: 700; }
+
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(26,86,219,0.38); padding: 16px 20px; background: #f0f4ff; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    .mistakes-list { display: flex; flex-direction: column; gap: 16px; margin: 22px 0; }
+    .mistake-item { display: flex; align-items: flex-start; gap: 14px; }
+    .mistake-num { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .mistake-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
+
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--nv); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(26,86,219,0.22); transform: translateY(-2px); border-bottom: 1px solid rgba(26,86,219,0.22); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--nv); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--nv); margin-top: 2px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; } .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; } .article-cta { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; } .footer-copy { order: 0; }
+    }
+    @media (max-width: 480px) { .container { padding: 0 20px; } .article-cta-btns { flex-direction: column; } .compare-box { padding: 18px 16px 14px; } }
+  </style>
+  <!-- SEO: Open Graph + Twitter + structured data (auto-injected by KPOS) -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Z Trade University" />
+  <meta property="og:title" content="Best Timeframe for Forex Trading Beginners" />
+  <meta property="og:description" content="Learn the best timeframe for Forex trading beginners in 2025. Simple guide covering M15, H1, H4, daily charts, scalping, swing trading, and multi-timeframe analysis." />
+  <meta property="og:url" content="https://ztradeuniversity.com/best-timeframe-for-forex-trading-beginners.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Best Timeframe for Forex Trading Beginners" />
+  <meta name="twitter:description" content="Learn the best timeframe for Forex trading beginners in 2025. Simple guide covering M15, H1, H4, daily charts, scalping, swing trading, and multi-timeframe analysis." />
+  <meta name="twitter:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Best Timeframe for Forex Trading Beginners", "description": "Learn the best timeframe for Forex trading beginners in 2025. Simple guide covering M15, H1, H4, daily charts, scalping, swing trading, and multi-timeframe analysis.", "url": "https://ztradeuniversity.com/best-timeframe-for-forex-trading-beginners.html", "mainEntityOfPage": "https://ztradeuniversity.com/best-timeframe-for-forex-trading-beginners.html", "image": "https://ztradeuniversity.com/assets/ztu-logo.png", "datePublished": "2026-05-20", "dateModified": "2026-05-20", "author": {"@type": "Organization", "name": "Z Trade University"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ztradeuniversity.com/"}, {"@type": "ListItem", "position": 2, "name": "Articles", "item": "https://ztradeuniversity.com/articles.html"}, {"@type": "ListItem", "position": 3, "name": "Best Timeframe for Forex Trading Beginners", "item": "https://ztradeuniversity.com/best-timeframe-for-forex-trading-beginners.html"}]}</script>
+</head>
+<body class="lux-themed">
+
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+</div>
+
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>›</span>
+        <a href="articles.html">Articles</a><span>›</span>
+        <a href="#" aria-current="page">Best Timeframe for Forex Trading</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Forex Basics
+      </div>
+      <h1>Best Timeframe for <em>Forex Trading Beginners</em></h1>
+      <p class="article-desc">The timeframe you trade on shapes everything — how long you hold positions, how much screen time you need, how much noise you have to filter, and how quickly your mistakes compound. Choosing the wrong one is one of the most fixable beginner errors.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          9 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Best Timeframe for Forex Trading Beginners" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Ask ten traders what the best timeframe is and you will get ten different answers. Some will tell you M5 is ideal because you can take more trades per session. Others will insist the Daily chart is the only timeframe that matters. The truth is that timeframe choice is not about which one is objectively superior — it is about which one matches your skill level, available time, and risk tolerance at this specific stage of your development.</p>
+
+    <p>For beginners, certain timeframes are genuinely harder to trade profitably than others. They produce more noise, require faster reactions, demand more capital efficiency, and leave less time to think before making decisions. This guide explains what each timeframe is, which ones give beginners the most workable conditions, and how to combine multiple timeframes into a simple, practical analysis framework.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>The best starting timeframes for beginners are <strong>H1 (1-hour)</strong> for setups and <strong>H4 (4-hour) or Daily</strong> for trend direction. H1 provides enough candles to identify structure without excessive noise, and allows time to think before acting. <strong>Avoid M1 and M5</strong> until you have a tested, profitable edge on higher timeframes — they require fast decisions, are heavily affected by spread costs, and produce far more false signals than meaningful ones. For swing traders with limited screen time, H4 and Daily are excellent starting points on their own.</p>
+    </div>
+
+    <h2>What Is a Trading Timeframe?</h2>
+
+    <p>Every candle on a chart represents a fixed period of price action. On an M1 chart, each candle covers one minute. On a Daily chart, each candle covers an entire trading day — from open to close, including the high, low, and all movement in between. Higher timeframes aggregate more data into each candle, which filters out short-term noise and shows the more structurally significant moves that tend to be followed by more traders and institutions.</p>
+
+    <p>The most commonly used timeframes in retail forex trading are:</p>
+
+    <ul>
+      <li><strong>M1 and M5</strong> — 1-minute and 5-minute charts; used by scalpers for very short-term trades</li>
+      <li><strong>M15</strong> — 15-minute chart; used for entry refinement and shorter day trades</li>
+      <li><strong>H1</strong> — 1-hour chart; the most popular timeframe for day traders and beginners</li>
+      <li><strong>H4</strong> — 4-hour chart; shows medium-term structure; widely used for swing setups</li>
+      <li><strong>Daily (D1)</strong> — End-of-day candles; the most widely respected timeframe for trend analysis</li>
+      <li><strong>Weekly (W1)</strong> — Used for macro trend context and long-term support/resistance</li>
+    </ul>
+
+    <p>The key insight: the same price level can appear as a meaningful support zone on an H4 chart but look like random noise on M1. <a href="market-structure-trading-guide.html">Market structure</a> becomes increasingly reliable as timeframe increases.</p>
+
+    <h2>Best Timeframes for Beginners</h2>
+
+    <div class="causes-list">
+      <div class="cause-item">
+        <b>M1 / M5 — Too Fast for Most Beginners</b>
+        <p>One-minute and five-minute charts move quickly enough that decisions must be made in seconds. This sounds exciting but creates two problems for beginners: there is not enough time to identify whether a signal is valid before it disappears, and spread costs become disproportionately large relative to the small target moves available. A 2-pip spread on a 10-pip target takes 20% of your profit before the trade even moves. Scalping on M1/M5 requires a proven edge, fast execution, and strict discipline that takes significant time to develop. Starting here almost guarantees losses driven by speed, not by poor strategy alone.</p>
+      </div>
+      <div class="cause-item">
+        <b>M15 — Useful for Entry Refinement</b>
+        <p>The 15-minute chart sits at a useful middle point: active enough to show intraday structure, but slow enough to give you 1–2 minutes to evaluate a setup before acting. For beginners, M15 works well as a secondary timeframe for entry precision — for example, spotting a candlestick reversal pattern at an H1 support level to define a tighter entry point. As a standalone primary timeframe for early-stage traders, M15 is workable but still requires close attention during active sessions. Gold (XAUUSD) on M15 during London or New York session is particularly active and can be valuable for learning how price behaves around key levels.</p>
+      </div>
+      <div class="cause-item">
+        <b>H1 — Best Primary Timeframe for Beginners</b>
+        <p>The 1-hour chart is the most recommended starting timeframe for the majority of beginners, and the reasons are practical: each new candle gives you up to 60 minutes to identify the setup, assess the risk/reward, check higher timeframe alignment, and place the trade with intention. Support and resistance levels on H1 are respected by a large proportion of the active market. Trends are clear enough to read without excessive zigzagging, and false breakouts are less frequent than on lower timeframes. Both EUR/USD and Gold (XAUUSD) show clean, reliable structure on H1 during major trading sessions.</p>
+      </div>
+      <div class="cause-item">
+        <b>H4 / Daily — Best for Swing Trading and Trend Context</b>
+        <p>The 4-hour and Daily charts are the foundation of swing trading — a style where positions are held for 1–5 days to capture larger moves. For beginners who cannot monitor charts during work hours, H4 and Daily are genuinely liberating: you check setups once or twice per day, place your order with a well-defined stop loss and target, and let the trade develop. Daily charts are also the most important timeframe for understanding macro trend direction — whether the overall bias is bullish or bearish over the coming days and weeks. All serious top-down analysis starts here.</p>
+      </div>
+    </div>
+
+    <div class="compare-box">
+      <div class="compare-label">Timeframe Comparison for Beginners</div>
+      <table class="compare-table tf-table">
+        <thead>
+          <tr>
+            <th>Timeframe</th>
+            <th>Best For</th>
+            <th>Beginner Difficulty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>M1</td>
+            <td>High-frequency scalping (advanced)</td>
+            <td><span class="dif-hard">★★★★ Avoid for now</span></td>
+          </tr>
+          <tr>
+            <td>M5</td>
+            <td>Scalping, fast entries (advanced)</td>
+            <td><span class="dif-hard">★★★ Hard</span></td>
+          </tr>
+          <tr>
+            <td>M15</td>
+            <td>Entry refinement, short day trades</td>
+            <td><span class="dif-mod">★★ Moderate</span></td>
+          </tr>
+          <tr>
+            <td>H1</td>
+            <td>Day trading setups, main structure</td>
+            <td><span class="dif-easy">★ Easy — Recommended</span></td>
+          </tr>
+          <tr>
+            <td>H4</td>
+            <td>Swing setups, medium-term structure</td>
+            <td><span class="dif-easy">★ Easy — Recommended</span></td>
+          </tr>
+          <tr>
+            <td>Daily</td>
+            <td>Trend direction, macro bias, swing</td>
+            <td><span class="dif-easy">★ Easy — Recommended</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Scalping vs Day Trading vs Swing Trading</h2>
+
+    <p>Timeframe choice is directly tied to trading style. Understanding which style fits your life — not just which produces the most trades — is essential before committing to a timeframe.</p>
+
+    <p><strong>Scalping</strong> (M1–M5): Multiple trades per session, targets of 5–20 pips, positions held for seconds to minutes. Requires constant chart monitoring, fast execution, and extremely tight discipline. Spread costs are proportionally large. The learning curve is steep and the failure rate among beginners is very high. Not suitable as a starting style.</p>
+
+    <p><strong>Day trading</strong> (M15–H1): Open and close positions within the same session, targeting 20–80 pips. Requires 2–4 hours of focused screen time per session. Allows enough time to think and plan without the frantic pace of scalping. This is the style most compatible with H1 timeframe analysis and is the natural starting point for most new traders who can dedicate a daily session.</p>
+
+    <p><strong>Swing trading</strong> (H4–Daily): Hold positions for 1–5 days, targeting 100–400 pips. Requires only 15–30 minutes of chart review per day. Wider stop losses mean each trade risks more pips — but these wider stops make sense given the larger potential moves. For beginners with jobs, families, or other commitments, swing trading is often the most realistic and sustainable approach. Gold (XAUUSD) and EUR/USD both offer excellent swing trading opportunities on H4 and Daily charts.</p>
+
+    <h2>Simple Multi-Timeframe Analysis</h2>
+
+    <p>Multi-timeframe analysis (MTA) means using a higher timeframe to establish direction and a lower timeframe to find your entry. This "top-down" approach is one of the most consistently useful frameworks in all of retail trading — and it is simple enough for beginners to apply immediately.</p>
+
+    <p>The basic three-step process:</p>
+
+    <ul>
+      <li><strong>Step 1 — Daily or H4:</strong> Identify the overall trend direction. Is price above or below the 50 MA? Is structure showing higher highs and higher lows (uptrend) or lower highs and lower lows (downtrend)? This determines your bias — which direction you are looking to trade.</li>
+      <li><strong>Step 2 — H1:</strong> Look for a setup within that direction. A pullback to a key support level in an uptrend. A retest of broken resistance in a downtrend. This is where your setup forms.</li>
+      <li><strong>Step 3 — M15 (optional):</strong> Refine the entry. Look for a confirming candlestick pattern — a bullish engulfing, a pin bar, a rejection wick — to tighten the entry point and improve risk/reward.</li>
+    </ul>
+
+    <p><strong>Gold example:</strong> Daily chart shows XAUUSD in an established uptrend above the 200 MA. H4 shows price pulling back to a previous weekly high turned support. H1 forms a bullish pin bar at that level. This three-layer confluence — macro trend, key structure level, entry signal — is a significantly higher-quality setup than any single-timeframe entry.</p>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Key Rule</div>
+      <p>Always trade <strong>in the direction of the higher timeframe trend</strong>. If the Daily chart is bearish, avoid looking for longs on H1 — you are trading against the dominant flow. The highest-probability setups align direction across all three timeframes. When the Daily, H4, and H1 all point the same way, the setup is as clean as technical analysis gets.</p>
+    </div>
+
+    <h2>Common Beginner Timeframe Mistakes</h2>
+
+    <div class="mistakes-list">
+
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div>
+          <b>Starting on M1 or M5 "Because There Are More Trades"</b>
+          <p>More candles does not mean more opportunity — it means more noise, more false signals, and more commission. A beginner on M1 EUR/USD might see 50 potential setups per hour, of which 40 are noise and 10 are genuine. Without the experience to tell them apart in real time, the result is a string of small losses that compound quickly. The same beginner on H1 sees 3–5 setups per day, has time to evaluate each carefully, and has a far better chance of identifying which ones are valid.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div>
+          <b>Switching Timeframes Mid-Trade to Justify a Position</b>
+          <p>A common pattern: a trader enters a long on H1, the trade goes into drawdown, and they switch to the M5 chart to find a reason to stay in. The M5 chart obligingly shows a small bullish structure that "justifies" holding — but the H1 signal has already been invalidated. This is confirmation bias driven by an unwillingness to take a loss. Decide your timeframe before entering the trade and evaluate the position's validity only on that timeframe. If the H1 signal is broken, the trade is closed regardless of what M5 shows.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div>
+          <b>Ignoring the Higher Timeframe Trend Entirely</b>
+          <p>Trading H1 setups without checking H4 or Daily direction is one of the most reliable ways to take low-probability trades. A beautiful H1 bullish setup that forms inside a clear H4 downtrend is a counter-trend trade — significantly lower probability than a setup that aligns with the dominant flow. Even if the H1 structure is technically perfect, the odds are against you if the macro direction is opposite. Check the higher timeframe before every entry, not just when it is convenient.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div>
+          <b>Using a Different Timeframe Every Session Inconsistently</b>
+          <p>Monday on H1, Tuesday on M15 because "it looks more active," Wednesday back to H4 after two losses — this produces no trackable data and no learning. You cannot improve a system you are not consistently applying. Choose a primary timeframe, commit to it for at least 30–50 trades tracked in a <a href="trading-journal-for-beginners.html">trading journal</a>, and evaluate results based on that consistent sample. Only then can you make an informed decision about whether to change timeframe or style.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div>
+          <b>Assuming Higher Timeframe = Higher Win Rate</b>
+          <p>Moving from H1 to Daily does not automatically make you more profitable. Daily chart trades require wider stop losses, which demands larger account buffers or smaller lot sizes to maintain the same risk percentage. A beginner who switches to Daily charts thinking it will be easier often finds they are holding trades through uncomfortable multi-day drawdowns that they are not psychologically prepared for. Every timeframe has its own demands — the question is which demands match your current skill level, patience, and account size.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Important</div>
+      <p>No timeframe guarantees profitable trading. Chart structure, entry quality, and strict <a href="best-risk-management-strategy.html">risk management</a> determine results — not the timeframe alone. Beginners should test their chosen timeframe on a demo account first, track all trades in a journal, and only move to live trading once a consistent edge has been demonstrated over a meaningful sample of trades.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>beginner-friendly Forex guidance</span>, trading zones, and research-based analysis?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for timeframe-specific education, structured chart analysis, and content built for Forex, Gold, and Crypto beginners.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="best-forex-pairs-for-beginners.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">Best Forex Pairs for Beginners in 2025</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-indicators-forex-gold-beginners.html" class="related-card">
+          <span class="related-cat">Technical Analysis</span>
+          <span class="related-title">Best Indicators for Forex and Gold Trading Beginners</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-risk-management-strategy.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Best Risk Management Strategy for Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-trading-strategy-for-beginners-2025.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Best Trading Strategy for Beginners in 2025</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the best timeframe for forex trading beginners?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The best timeframe for most forex trading beginners is H1 (1-hour). It provides enough candles to identify clear price structure and trends, while giving traders sufficient time to evaluate setups before acting — unlike M1 or M5, where decisions must be made in seconds. H1 setups are respected by a large portion of active market participants, and support/resistance levels on this timeframe tend to be more reliable than on lower timeframes. For beginners who cannot monitor charts throughout the day, H4 (4-hour) and Daily charts are excellent alternatives that suit a swing trading approach with only 15–30 minutes of chart review per day.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Is H1 a good timeframe for beginner forex traders?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — H1 (1-hour) is widely considered the most beginner-friendly active trading timeframe. Each candle takes an hour to form, giving beginners time to identify setups methodically rather than reacting to fast-moving price action. H1 shows clear trend structure, meaningful support and resistance zones, and is active enough to produce 3–5 good setups per week on major pairs like EUR/USD. The spread cost is proportionally low relative to typical H1 targets (50–100 pips), which means transaction costs do not dominate the risk/reward calculation the way they do on shorter timeframes like M5 or M15.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is multi-timeframe analysis in forex?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Multi-timeframe analysis (MTA) is the practice of using a higher timeframe chart to establish overall trend direction and bias, and a lower timeframe chart to identify the specific entry point. A common beginner framework is: check the Daily or H4 chart to determine whether the macro trend is bullish or bearish, then look for setups in that direction on H1, then optionally refine the entry on M15. This "top-down" approach dramatically improves setup quality because it ensures entries align with the dominant market direction rather than fighting against it. Trades that align across three timeframes simultaneously carry significantly higher probability than single-timeframe entries alone.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Is scalping on M1 or M5 suitable for beginners?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Scalping on M1 or M5 is not suitable for most beginners. The primary reasons are: decisions must be made in seconds, leaving no time to properly evaluate a setup; spread costs consume a disproportionately large percentage of small pip targets (a 1.5-pip spread on a 10-pip target is 15% of your profit before price moves at all); and the sheer volume of signals requires the ability to distinguish valid setups from noise in real time — a skill that takes significant time to develop. Most professional scalpers spent years first building an edge on higher timeframes before moving down to M1/M5. Beginners attempting to scalp usually accumulate losses quickly due to speed pressure, spread costs, and the inability to filter false signals.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What timeframe is best for trading Gold (XAUUSD)?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">For Gold (XAU/USD), H1 and H4 are the most recommended timeframes for beginner and intermediate traders. H4 shows clear macro structure on Gold — major support and resistance zones, established trends, and swing highs/lows that are respected across sessions. H1 is excellent for identifying entries within that H4 structure. Gold is more volatile than most forex pairs (average daily range of 150–250 pips), which means stop losses need to be wider on Gold than on EUR/USD or USD/JPY for the same timeframe — account for this in your position sizing. Gold should not be scalped on M1/M5 by beginners as its volatility and spread make very short-term trading disproportionately expensive.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Should I use H4 or Daily charts for swing trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Both H4 and Daily are excellent for swing trading, and most experienced swing traders use them together rather than choosing one. The Daily chart is the primary reference for macro trend direction, key swing highs and lows, and the overall market structure context. H4 is where many swing setups become visible — pullbacks to support levels, flag patterns, and structure-based entries that are less clear on the Daily but confirm the Daily trend direction. A common swing trading workflow: identify the dominant trend on Daily, find the setup level on H4, enter on H4 with a stop below/above a key structure level, and target the next Daily resistance or support zone. This combination suits traders who can review charts once or twice per day.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+</body>
+</html>

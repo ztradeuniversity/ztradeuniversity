@@ -1,0 +1,63 @@
+# =====================================================================
+# success_text.txt
+# =====================================================================
+# This file holds every piece of EDITABLE TEXT used by the success
+# email. Open it in Notepad, change the wording, save. The HTML
+# template in templates\success_email.html will pick up the new text
+# on the next run -- no HTML editing required.
+#
+# Section format:
+#   --- KEY ---
+#   value (can span multiple lines, blank lines allowed)
+#
+# The orchestrator substitutes {{KEY}} placeholders inside the HTML
+# template with the value under each section.
+#
+# Runtime placeholders (filled by the engine, not editable here):
+#   {{ACCOUNT_NUMBER}}  -- the client's MT5 account number
+#   {{BROKER}}          -- the broker name (e.g., Exness)
+#   {{EX5_FILENAME}}    -- the generated EX5 filename
+#   {{CLIENT_EMAIL}}    -- the recipient address
+#   {{DELIVERY_DATE}}   -- ISO 8601 timestamp
+#   {{COMPILE_HASH}}    -- SHA256 of the EX5
+# =====================================================================
+
+--- EMAIL_SUBJECT ---
+Your Z Trade University MT5 Bot License — Account {{ACCOUNT_NUMBER}}
+
+--- SUCCESS_HEADLINE ---
+Your bot license is ready
+
+--- SUCCESS_INTRO ---
+Thank you for choosing Z Trade University. Your MT5 account has been verified against the latest broker partner report and your account-locked EX5 bot is attached to this email as a ZIP package.
+
+--- INSTALL_STEPS ---
+1. Extract the ZIP attached to this email
+2. Open MetaTrader 5
+3. Click File -> Open Data Folder
+4. Open the MQL5 folder, then the Experts folder
+5. Copy the .ex5 file into Experts
+6. Restart MetaTrader 5
+7. Drag the EA from Navigator onto a chart
+8. Enable Algo Trading from the toolbar (turns green)
+
+--- CUSTOM_MESSAGE ---
+Tip: this bot is locked to the MT5 account number above. It will only run on that account. If you ever need to migrate to a new account, just reply to this email and we'll re-issue the binary.
+
+--- FOOTER_LINE ---
+© Z Trade University — Trade like a pro
+
+--- WEBSITE ---
+ZTradeUniversity.com
+
+--- SUPPORT_EMAIL ---
+support@ztradeuniversity.com
+
+--- WHATSAPP ---
++92-300-0000000
+
+--- YOUTUBE_LINK ---
+https://youtube.com/@ztradeuniversity
+
+--- PDF_GUIDE ---
+https://ztradeuniversity.com/ZTU-Activation-Guide.pdf

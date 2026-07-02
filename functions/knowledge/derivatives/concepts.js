@@ -1,0 +1,121 @@
+// functions/knowledge/derivatives/concepts.js
+// KNOWLEDGE EXPANSION WAVE 2 — OPTIONS & FUTURES DEPTH (category: derivatives)
+// Fills the verified gap: the base held only "Options Basics" / "Futures Basics".
+// Adds calls, puts, the Greeks, a core income strategy, a defined-risk spread, and
+// the futures term-structure concept. Auto-integrates like every concept. Additive.
+
+const F = (o) => ({
+  level: 'intermediate', responseObjective: 'educate', journeyStages: ['journey-foundation'],
+  status: 'published', origin: 'authored', confidence: 'HIGH', lang: 'en', ...o,
+});
+
+export const DERIVATIVES_CONCEPTS = [
+  F({
+    id: 'call-options', category: 'derivatives', topic: 'Call Options', title: 'Call Options Explained',
+    concepts: ['call-option', 'options', 'derivatives'],
+    questionPatterns: ['what is a call option', 'how do call options work', 'when to buy a call option', 'call option example', 'call options for beginners'],
+    canonical: {
+      short: 'A call option gives you the right, but not the obligation, to buy an asset at a fixed strike price before the option expires. Traders buy calls when they expect the price to rise — the most they can lose is the premium paid, while the upside is leveraged.',
+      deep: 'Buying a call is a leveraged, defined-risk way to express a bullish view: you pay a premium for the right to buy at the strike, and the call gains value as the underlying climbs above that strike toward expiry. Your maximum loss is the premium; your gain scales with the move. The trade-offs are time decay (the option loses value as expiry nears if price stalls) and the need to be right on both direction and timing. Beginners often overpay for far out-of-the-money calls that expire worthless because the move never arrives in time.',
+    },
+    marketContext: 'A trader expecting Gold-linked equities to rise into a catalyst might buy calls to gain leveraged upside with risk capped at the premium.',
+    desiredOutcome: 'understand a call as leveraged, premium-capped bullish exposure that decays with time',
+    relevanceTags: ['call-option', 'options', 'derivatives', 'intermediate'],
+    commonMistakes: ['buying cheap far-out-of-the-money calls that expire worthless'],
+    misconceptions: ['that a call can only make money if you hold to expiry'],
+    prerequisites: ['options-basics'], nextSteps: ['put-options', 'options-greeks'], related: ['covered-call', 'futures-basics'],
+    followups: ['put-options'],
+    riskNote: 'Options can expire worthless — never risk premium you cannot afford to lose entirely.',
+    seo: { title: 'Call Options Explained for Beginners', description: 'What a call option is, how it gives leveraged bullish exposure with capped risk, and why time decay matters.', keywords: ['call options', 'call option explained', 'how call options work', 'buying calls'] },
+  }),
+  F({
+    id: 'put-options', category: 'derivatives', topic: 'Put Options', title: 'Put Options Explained',
+    concepts: ['put-option', 'options', 'derivatives', 'hedging'],
+    questionPatterns: ['what is a put option', 'how do put options work', 'when to buy a put option', 'put option example', 'puts for hedging'],
+    canonical: {
+      short: 'A put option gives you the right, but not the obligation, to sell an asset at a fixed strike price before expiry. Traders buy puts to profit from falling prices or to hedge a position — the risk is limited to the premium paid.',
+      deep: 'A put is the bearish mirror of a call: it gains value as the underlying falls below the strike. It has two main uses — speculating on a decline with defined risk, and insurance, where a holder of an asset buys puts to protect against a drop (a "protective put"). As with calls, the premium is the maximum loss, and time decay works against the buyer. Puts are how many portfolio managers hedge downside without selling their holdings, paying a known cost for protection much like an insurance premium.',
+    },
+    marketContext: 'An investor holding a stock portfolio into an uncertain Fed meeting might buy index puts as insurance, capping downside for a known premium.',
+    desiredOutcome: 'understand a put as defined-risk bearish exposure and as portfolio insurance',
+    relevanceTags: ['put-option', 'options', 'hedging', 'intermediate'],
+    commonMistakes: ['over-paying for protective puts and bleeding the portfolio with premium costs'],
+    misconceptions: ['that buying a put is always a bearish bet rather than sometimes a hedge'],
+    prerequisites: ['call-options'], nextSteps: ['options-greeks', 'covered-call'], related: ['iron-condor', 'futures-basics'],
+    followups: ['options-greeks'],
+    riskNote: 'Protection costs premium — hedging is insurance, not free downside cover.',
+    seo: { title: 'Put Options Explained for Beginners', description: 'What a put option is, how it profits from falling prices, and how protective puts hedge a portfolio.', keywords: ['put options', 'put option explained', 'protective put', 'hedging with puts'] },
+  }),
+  F({
+    id: 'options-greeks', category: 'derivatives', topic: 'Options Greeks', title: 'The Options Greeks Explained', level: 'advanced',
+    concepts: ['options-greeks', 'options', 'risk'],
+    questionPatterns: ['what are the options greeks', 'what is delta gamma theta vega', 'how do the greeks work', 'options greeks explained', 'what is theta decay'],
+    canonical: {
+      short: 'The "Greeks" measure how an option\'s price reacts to different forces: Delta (price movement of the underlying), Gamma (how Delta changes), Theta (time decay), and Vega (volatility). Together they tell you what will help or hurt an option position.',
+      deep: 'Each Greek isolates one risk. Delta is roughly how much the option moves per $1 in the underlying (and a proxy for probability of finishing in-the-money). Gamma shows how fast Delta shifts, which matters most near the strike and expiry. Theta is the daily value an option loses to time — the enemy of buyers, the ally of sellers. Vega measures sensitivity to implied volatility, so options gain value when volatility rises even if price is flat. Understanding the Greeks is what separates guessing from managing an options position, because a call can lose money even when you are right on direction if Theta and Vega work against you.',
+    },
+    marketContext: 'A trader long calls into a volatility crush after a news event can lose money despite a favourable price move, because falling Vega outweighs positive Delta.',
+    desiredOutcome: 'use the Greeks to understand what drives an option\'s P&L beyond just direction',
+    relevanceTags: ['options-greeks', 'options', 'risk', 'advanced'],
+    commonMistakes: ['ignoring Theta and Vega and being surprised when a "correct" trade still loses'],
+    misconceptions: ['that an option only moves with the price of the underlying'],
+    prerequisites: ['put-options'], nextSteps: ['covered-call', 'iron-condor'], related: ['call-options', 'options-basics'],
+    followups: ['iron-condor'],
+    riskNote: 'Time and volatility erode long options — manage Theta and Vega, not just direction.',
+    seo: { title: 'Options Greeks Explained (Delta, Gamma, Theta, Vega)', description: 'What the options Greeks measure, how Delta, Gamma, Theta and Vega drive an option\'s price, and why timing and volatility matter.', keywords: ['options greeks', 'delta gamma theta vega', 'theta decay', 'options greeks explained'] },
+  }),
+  F({
+    id: 'covered-call', category: 'derivatives', topic: 'Covered Call', title: 'The Covered Call Strategy Explained',
+    concepts: ['covered-call', 'options', 'income'],
+    questionPatterns: ['what is a covered call', 'how does a covered call work', 'covered call strategy for income', 'covered call example', 'is a covered call safe'],
+    canonical: {
+      short: 'A covered call is an income strategy where you own an asset and sell a call option against it. You collect the premium as income; in exchange you cap your upside at the strike, because the shares can be "called away" if price rises above it.',
+      deep: 'The covered call suits a neutral-to-mildly-bullish view on something you already hold. Selling the call generates premium that cushions small declines and adds yield in flat markets. The cost is opportunity: if the asset rallies past the strike, your gains stop there while you keep the premium. It does not protect against a large drop — you still own the asset. It is popular for generating consistent income on long-term holdings, but repeatedly capping upside in a strong bull run can underperform simply holding.',
+    },
+    marketContext: 'An investor holding a stock they expect to trade sideways sells monthly covered calls to earn premium income while the position drifts.',
+    desiredOutcome: 'use covered calls to generate income on holdings while accepting capped upside',
+    relevanceTags: ['covered-call', 'options', 'income', 'intermediate'],
+    commonMistakes: ['selling covered calls on a stock in a strong uptrend and capping away the biggest gains'],
+    misconceptions: ['that a covered call protects against a large drop in the underlying'],
+    prerequisites: ['call-options'], nextSteps: ['iron-condor', 'options-greeks'], related: ['put-options', 'portfolio-management'],
+    followups: ['iron-condor'],
+    riskNote: 'A covered call caps upside and still leaves full downside on the asset — it is income, not a hedge.',
+    seo: { title: 'Covered Call Strategy Explained for Beginners', description: 'How the covered call income strategy works, why it caps upside, and when it fits a neutral-to-bullish view.', keywords: ['covered call', 'covered call strategy', 'options income', 'selling covered calls'] },
+  }),
+  F({
+    id: 'iron-condor', category: 'derivatives', topic: 'Iron Condor', title: 'The Iron Condor Strategy Explained', level: 'advanced',
+    concepts: ['iron-condor', 'options', 'range'],
+    questionPatterns: ['what is an iron condor', 'how does an iron condor work', 'iron condor strategy explained', 'iron condor example', 'is the iron condor profitable'],
+    canonical: {
+      short: 'An iron condor is a defined-risk options strategy that profits when price stays within a range. You sell a call spread above the market and a put spread below it, collecting premium — you win if the asset expires between the two short strikes.',
+      deep: 'The iron condor is a neutral, range-bound strategy built from four options: a bear call spread and a bull put spread. Maximum profit is the net premium collected, earned if price finishes between the short strikes; maximum loss is capped by the long "wings." It thrives in low-volatility, sideways markets and benefits from Theta decay, but a strong trend or a volatility spike that pushes price through a short strike produces a loss. The skill is in strike selection and management — closing or adjusting before a breakout rather than hoping price returns to the range.',
+    },
+    marketContext: 'When an index is expected to chop in a range with falling volatility, an iron condor collects premium as time decays and price stays boxed in.',
+    desiredOutcome: 'use the iron condor for defined-risk income in range-bound, low-volatility conditions',
+    relevanceTags: ['iron-condor', 'options', 'range', 'advanced'],
+    commonMistakes: ['holding a condor into a strong breakout instead of adjusting or closing early'],
+    misconceptions: ['that a defined-risk strategy means it rarely loses'],
+    prerequisites: ['covered-call'], nextSteps: ['options-greeks', 'contango-backwardation'], related: ['put-options', 'range-trading'],
+    followups: ['contango-backwardation'],
+    riskNote: 'Range strategies lose in trends — respect the defined max loss and manage before a breakout.',
+    seo: { title: 'Iron Condor Strategy Explained', description: 'How the iron condor profits from a range, how its defined risk works, and why volatility and trend break it.', keywords: ['iron condor', 'iron condor strategy', 'options range strategy', 'defined risk options'] },
+  }),
+  F({
+    id: 'contango-backwardation', category: 'derivatives', topic: 'Contango and Backwardation', title: 'Contango vs Backwardation Explained', level: 'advanced',
+    concepts: ['contango', 'backwardation', 'futures'],
+    questionPatterns: ['what is contango', 'what is backwardation', 'contango vs backwardation', 'how does contango affect futures', 'futures term structure explained'],
+    canonical: {
+      short: 'Contango and backwardation describe the shape of the futures curve. In contango, further-dated futures cost more than the spot price; in backwardation, they cost less. This term structure affects the cost of rolling futures positions and commodity ETFs.',
+      deep: 'Futures for different expiries rarely trade at the same price. Contango (upward-sloping curve) is common in stored commodities where carrying costs push future prices above spot; it creates a "roll cost" as traders sell cheaper expiring contracts and buy pricier later ones, which can erode long positions and commodity ETFs over time. Backwardation (downward-sloping curve) often signals tight near-term supply or strong immediate demand, and rewards holders who roll into cheaper deferred contracts. Understanding the curve explains why a commodity ETF can lag spot price and why term structure itself is a tradable signal.',
+    },
+    marketContext: 'An oil ETF in steep contango can lose value over time from roll costs even when spot oil is flat, surprising investors who expected it to track price.',
+    desiredOutcome: 'read the futures curve to understand roll costs and what term structure signals about supply and demand',
+    relevanceTags: ['contango', 'backwardation', 'futures', 'advanced'],
+    commonMistakes: ['holding a contango-heavy commodity ETF long-term and ignoring roll decay'],
+    misconceptions: ['that a commodity ETF tracks spot price one-for-one'],
+    prerequisites: ['futures-basics'], nextSteps: ['iron-condor', 'options-greeks'], related: ['spot-vs-futures', 'commodity-trading'],
+    followups: ['spot-vs-futures'],
+    riskNote: 'Roll costs are a real, recurring drag — account for term structure before holding futures products long.',
+    seo: { title: 'Contango vs Backwardation Explained', description: 'What contango and backwardation mean for the futures curve, how roll costs work, and why commodity ETFs can lag spot.', keywords: ['contango', 'backwardation', 'contango vs backwardation', 'futures term structure'] },
+  }),
+];

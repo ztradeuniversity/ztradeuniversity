@@ -1,0 +1,804 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Why does your stop loss always get hit? This guide explains the real reasons — liquidity sweeps, tight stops, emotional entries, news spikes, and poor placement — and shows exactly how smart traders place stop losses that survive." />
+  <meta name="keywords" content="why my stop loss gets hit, stop loss in forex, stop loss hunting, why traders get stopped out, gold stop loss strategy, XAUUSD stop loss, forex volatility, liquidity sweep trading, bad stop loss placement, trading risk management" />
+  <title>Why Your Stop Loss Always Gets Hit in Forex and Gold Trading – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/why-stop-loss-gets-hit.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --purple3: #e6c987;
+      --lime:    #c89c3f;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --red:     #dc2626;
+      --red2:    #f87171;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #0e0209 0%, #1e0410 50%, #160310 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(220,38,38,0.16) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.28);
+      color: var(--red2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--red2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    /* ── TYPOGRAPHY ── */
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px;
+      border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap h3 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: 18px; font-weight: 800; color: var(--text);
+      letter-spacing: -.4px; margin: 32px 0 12px;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    /* Lists */
+    .article-wrap ul, .article-wrap ol { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li, .article-wrap ol li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--red2); }
+    .article-wrap ol { counter-reset: ol-c; }
+    .article-wrap ol li { counter-increment: ol-c; }
+    .article-wrap ol li::before { content: counter(ol-c); position: absolute; left: 0; top: 5px; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: var(--white); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+    /* Callout boxes */
+    .tip-box {
+      background: #f5f7ff; border-left: 4px solid var(--purple2);
+      border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0;
+    }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box {
+      background: #fff8ed; border-left: 4px solid var(--gold2);
+      border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0;
+    }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    /* Quick answer */
+    .quick-answer {
+      background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 100%);
+      border: 1.5px solid rgba(220,38,38,0.18);
+      border-left: 4px solid var(--red);
+      border-radius: 0 14px 14px 0;
+      padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Dark example box */
+    .example-box {
+      background: linear-gradient(145deg, #0d1127 0%, #111a38 100%);
+      border-radius: 18px; padding: 26px 30px; margin: 28px 0;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .example-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .ex-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .ex-row:last-of-type { border-bottom: none; }
+    .ex-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.38); width: 120px; flex-shrink: 0; text-transform: uppercase; letter-spacing: .8px; padding-top: 1px; }
+    .ex-value { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.82); line-height: 1.55; }
+    .ex-value.green { color: #4ade80; font-weight: 700; }
+    .ex-value.red   { color: #f87171; font-weight: 700; }
+    .ex-value.amber { color: var(--gold2); font-weight: 700; }
+    .example-note { font-size: 12.5px; color: rgba(255,255,255,0.32); line-height: 1.6; margin-top: 16px; font-style: italic; }
+
+    /* Cause cards */
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item {
+      border-left: 3px solid rgba(220,38,38,0.35);
+      padding: 16px 20px; background: #fdf8f8;
+      border-radius: 0 14px 14px 0;
+    }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+    .cause-item p + p { margin-top: 10px; }
+
+    /* Smart placement steps */
+    .smart-list { display: flex; flex-direction: column; gap: 13px; margin: 22px 0; }
+    .smart-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 13px; padding: 16px 18px;
+    }
+    .smart-icon {
+      width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+      background: rgba(212,174,94,0.1); display: flex; align-items: center;
+      justify-content: center; margin-top: 1px;
+    }
+    .smart-item b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .smart-item p { font-size: 13.5px; color: var(--muted); line-height: 1.65; margin: 0; }
+
+    /* Mistake cards */
+    .mistakes-grid { display: flex; flex-direction: column; gap: 12px; margin: 22px 0; }
+    .mistake-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: #fdf8f8; border: 1px solid rgba(220,38,38,0.1);
+      border-radius: 12px; padding: 16px 18px;
+    }
+    .mistake-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(220,38,38,0.1); border: 1.5px solid rgba(220,38,38,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: #dc2626; margin-top: 1px;
+    }
+    .mistake-content b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .mistake-content p { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+    /* Soft CTA */
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(18px, 2.4vw, 24px); font-weight: 800;
+      color: var(--white); letter-spacing: -.5px; margin-bottom: 12px;
+    }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none;
+      box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    /* FAQ */
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--red); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    /* Related articles */
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(220,38,38,0.2); transform: translateY(-2px); border-bottom: 1px solid rgba(220,38,38,0.2); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--red); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--red); margin-top: 2px; }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* ── FOOTER ── */
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98);
+      z-index: 99; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .nav-join  { display: none; }
+      .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; }
+      .footer-copy  { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; }
+      .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; }
+      .example-box  { padding: 20px 18px; }
+      .article-cta  { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .footer-copy  { order: 0; }
+    }
+    @media (max-width: 480px) {
+      .container { padding: 0 20px; }
+      .article-cta-btns { flex-direction: column; }
+      .ex-label { width: 90px; }
+    }
+  </style>
+  <!-- SEO: Open Graph + Twitter + structured data (auto-injected by KPOS) -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Z Trade University" />
+  <meta property="og:title" content="Why Your Stop Loss Always Gets Hit in Forex and Gold Trading" />
+  <meta property="og:description" content="Why does your stop loss always get hit? This guide explains the real reasons — liquidity sweeps, tight stops, emotional entries, news spikes, and poor placement — and shows exactly how smart traders place stop losses that survive." />
+  <meta property="og:url" content="https://ztradeuniversity.com/why-stop-loss-gets-hit.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Why Your Stop Loss Always Gets Hit in Forex and Gold Trading" />
+  <meta name="twitter:description" content="Why does your stop loss always get hit? This guide explains the real reasons — liquidity sweeps, tight stops, emotional entries, news spikes, and poor placement — and shows exactly how smart traders place stop losses that survive." />
+  <meta name="twitter:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Why Your Stop Loss Always Gets Hit in Forex and Gold Trading", "description": "Why does your stop loss always get hit? This guide explains the real reasons \u2014 liquidity sweeps, tight stops, emotional entries, news spikes, and poor placement \u2014 and shows exactly how smart traders place stop losses that survive.", "url": "https://ztradeuniversity.com/why-stop-loss-gets-hit.html", "mainEntityOfPage": "https://ztradeuniversity.com/why-stop-loss-gets-hit.html", "image": "https://ztradeuniversity.com/assets/ztu-logo.png", "datePublished": "2026-05-20", "dateModified": "2026-05-20", "author": {"@type": "Organization", "name": "Z Trade University"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ztradeuniversity.com/"}, {"@type": "ListItem", "position": 2, "name": "Articles", "item": "https://ztradeuniversity.com/articles.html"}, {"@type": "ListItem", "position": 3, "name": "Why Your Stop Loss Always Gets Hit in Forex and Gold Trading", "item": "https://ztradeuniversity.com/why-stop-loss-gets-hit.html"}]}</script>
+</head>
+<body class="lux-themed">
+
+<!-- ── NAVBAR ── -->
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text">
+        <b>Z Trade University</b>
+        <small>University</small>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html"         onclick="toggleMenu()">Home</a>
+  <a href="articles.html"      onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join"    onclick="toggleMenu()">Join Now</a>
+  <a href="about.html"         onclick="toggleMenu()">About</a>
+</div>
+
+<!-- ── ARTICLE HERO ── -->
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <a href="articles.html">Articles</a>
+        <span>›</span>
+        <a href="#" aria-current="page">Why Stop Loss Gets Hit</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Risk Management
+      </div>
+      <h1>Why Your <em>Stop Loss Always Gets Hit</em> in Forex and Gold Trading</h1>
+      <p class="article-desc">Getting stopped out — then watching the market reverse in your direction — is one of the most frustrating experiences in trading. This guide explains the real reasons it happens, what liquidity sweeps actually are, and how smart traders place stops that survive.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          12 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ARTICLE CONTENT ── -->
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Why Your Stop Loss Always Gets Hit in Forex and Gold Trading" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Few experiences in trading are as demoralising as getting stopped out, watching the market reverse, and realising you were right about the direction — but wrong about the stop. If this happens to you repeatedly, you're in good company. It's one of the most common patterns in retail trading. And while it's tempting to conclude that "stop loss hunting" is a conspiracy against small traders, the real explanation is both more nuanced and more useful.</p>
+
+    <p>Most stop losses are hit for specific, identifiable reasons. Understanding those reasons gives you the ability to change your approach — and reduce how often it happens.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>Stop losses get hit repeatedly when they're placed at predictable price levels where orders cluster, set too close to entry for the instrument's volatility, entered during news events, or taken in reaction to emotion rather than structure. Understanding how liquidity sweeps work — and placing stops beyond obvious levels — significantly reduces premature stop triggers.</p>
+    </div>
+
+    <h2>Is Stop Loss Hunting Real? The Honest Answer</h2>
+
+    <p>This is the first question most traders ask after getting stopped out multiple times. The answer is: partly — but not in the way most people think.</p>
+
+    <p>Large institutional players — banks, hedge funds, and market makers — operate in areas of high liquidity. Liquidity in financial markets means concentrations of pending orders: stop losses, limit orders, and pending entries. These orders cluster at predictable locations: just below obvious support levels, just above obvious resistance, at round numbers, at previous swing highs and lows. These are also, not coincidentally, exactly where retail traders are typically taught to place their stop losses.</p>
+
+    <p>When an institutional player needs to fill a large position, they often move price toward these liquidity zones to access the orders sitting there. The brief price push through the level — which triggers all those retail stop losses — provides the counterparty volume needed to fill the institutional order. Then price reverses.</p>
+
+    <p>This is not a targeted conspiracy against individual accounts. Your broker cannot see your specific stop loss and instruct the market to hit it. But the market, driven by players with enormous resources, does move toward areas of concentrated order flow — and those areas happen to be where most beginners place their stops.</p>
+
+    <div class="tip-box">
+      <div class="tip-box-label">The Key Insight</div>
+      <p>It's not that someone knows your specific stop. It's that predictable price zones attract predictable order flow. Place your stops where everyone else places theirs, and they'll be swept with everyone else's. Place them beyond those obvious levels, and they survive the sweep.</p>
+    </div>
+
+    <h2>The Real Reasons Your Stop Loss Gets Hit</h2>
+
+    <div class="causes-list">
+
+      <div class="cause-item">
+        <b>1. Stops Placed at Obvious Price Levels</b>
+        <p>The most common cause. Beginners learn to place stops "just below support" or "just above resistance." The problem is that every beginner does the same thing — which creates a dense cluster of orders right at and just beyond those levels. When price approaches that area, the concentration of stop orders is exactly what moves the market through it.</p>
+        <p>On XAUUSD: if support is clearly established at $2,400, and every trader places stops at $2,397–$2,398, price only needs to dip to $2,396 to trigger all of them. The zone is swept, liquidity is collected, and price bounces back to $2,415. The traders who were stopped out were right about the direction — they just placed stops exactly where everyone else did.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>2. Stop Losses That Are Too Tight for the Instrument</b>
+        <p>Gold (XAUUSD) moves 15 to 45 pips in a normal intraday session. A 5-pip stop loss on gold is not a stop loss — it's a guaranteed entry into a loss. It will be hit by normal market breathing before the trade has any chance to develop.</p>
+        <p>Stop placement must account for the instrument's actual volatility, not just the trader's preferred risk amount. The Average True Range (ATR) indicator shows the typical price movement over a given period. On gold's H4 chart, ATR might read 25–40 pips — which means any stop smaller than that is inside the noise rather than outside it.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>3. Late Entries Creating Poor Stop Locations</b>
+        <p>A trader who enters a trade after the setup has already moved 30 pips in their direction faces an impossible choice: place a tight stop that sits right in the zone of previous price action (high sweep probability), or place a wide stop that produces a terrible reward-to-risk ratio.</p>
+        <p>Good stop loss placement depends on entering at or near the zone reaction — not after price has already moved away from it. Late entries almost always result in stops that are structurally wrong before the trade even starts.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>4. Trading Around High-Impact News Events</b>
+        <p>NFP, CPI, FOMC, PCE — these data releases produce sudden price spikes that can move gold 30 to 80 pips in seconds. These aren't directional moves driven by technical analysis — they're mechanical reactions to new information, often reversing within minutes. Even perfectly placed stops will not survive a 50-pip news spike if they're within that range.</p>
+        <p>If you're holding a position when major US data releases, your stop loss is exposed to forces that have nothing to do with your technical setup. Always check the economic calendar before entering any trade.</p>
+      </div>
+
+      <div class="cause-item">
+        <b>5. Emotional or Impulsive Entries</b>
+        <p>Trades entered on impulse — because "it looks like it's going up" or because of FOMO after watching a strong move — have no natural stop loss location. The trader either places the stop based on how much they want to lose (arbitrary) or "just below the recent candle" (meaningless structurally). Both result in stops that get hit for all the wrong reasons.</p>
+        <p>A stop loss can only be correctly placed when the trade has a clearly defined reason for entry and a clearly defined level where that reason is invalidated. Without that foundation, the stop location is a guess.</p>
+      </div>
+
+    </div>
+
+    <h2>What Is a Liquidity Sweep? (Explained Simply)</h2>
+
+    <p>A liquidity sweep — sometimes called a "stop hunt" or "liquidity grab" — is when price briefly pushes through a key level to collect the orders clustered just beyond it, before reversing in the original direction. Understanding how this works mechanically helps you anticipate it rather than be caught by it.</p>
+
+    <div class="example-box">
+      <div class="example-label">XAUUSD Liquidity Sweep — Hypothetical Example</div>
+      <div class="ex-row">
+        <div class="ex-label">Context</div>
+        <div class="ex-value">Gold uptrend on the daily chart. Recent swing low at $2,380 holds as support twice over 3 days. Obvious stop cluster: $2,376–$2,378.</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">The Sweep</div>
+        <div class="ex-value red">Price dips to $2,374 — 6 pips below the swing low — triggering all stops in the $2,376–$2,378 zone.</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">What happens</div>
+        <div class="ex-value">The stop-triggered sell orders provide the liquidity a large buyer needs to fill their position. Price immediately reverses.</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Outcome</div>
+        <div class="ex-value green">Price moves to $2,412 — a 38-pip move in the original bullish direction. Stopped-out traders watch from the sidelines.</div>
+      </div>
+      <div class="ex-row">
+        <div class="ex-label">Better stop</div>
+        <div class="ex-value amber">$2,368 — 12 pips below the swing low, past the likely sweep range, with a structural reason (major zone below). Survives.</div>
+      </div>
+      <div class="example-note">This scenario is hypothetical and for educational purposes only. Liquidity sweeps vary in size — there is no guaranteed "safe" distance. Always verify current market conditions.</div>
+    </div>
+
+    <p>The pattern repeats across all instruments and timeframes. The traders who lose their stops are not necessarily wrong about direction — they're wrong about placement. Surviving the sweep requires placing stops past the logical sweep zone, not right at the obvious level.</p>
+
+    <h2>How Smart Traders Place Stop Loss</h2>
+
+    <p>Effective stop placement isn't about finding a "magic number of pips." It's about understanding market structure and placing stops at levels where your trade analysis is genuinely invalidated — not just where price briefly touched before reversing.</p>
+
+    <div class="smart-list">
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <b>Place stops beyond structural levels — not at them</b>
+          <p>If support is at $2,400, your stop should be below the sweep range of that level — not right at $2,398. Give it room to breathe past the predictable cluster zone: $2,388–$2,392 is typically safer than $2,396–$2,399.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <b>Use ATR to calibrate stop distance to instrument volatility</b>
+          <p>The Average True Range on your trading timeframe tells you how much price typically moves. A stop smaller than 1× ATR on that timeframe is inside normal noise. Stops of 1.2–1.8× ATR survive typical market fluctuation without being unnecessarily wide.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <b>Identify the invalidation level first, then size the position</b>
+          <p>Find the level where your trade analysis is structurally wrong — the point where the market has clearly broken your setup. Place the stop there. Then calculate position size to keep that distance within your 1–2% risk budget. Size follows the stop; the stop doesn't follow the size.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <b>Check the economic calendar before every trade</b>
+          <p>If a high-impact US data release (NFP, CPI, FOMC) is scheduled within the next 60–90 minutes, either wait until after the release to enter, or accept that your stop is exposed to news spike risk regardless of how well placed it is technically.</p>
+        </div>
+      </div>
+      <div class="smart-item">
+        <div class="smart-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </div>
+        <div>
+          <b>Don't enter if there's no logical stop location</b>
+          <p>If you can identify a setup but cannot find a clear structural level that would invalidate it, the trade isn't ready. A stop placed without a logical reason is just a number — and arbitrary stops get hit arbitrarily.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Useful Distinction</div>
+      <p>A stop loss hit at the right structural location means your analysis was wrong — and that's useful information. A stop loss hit at a poor location means your process was wrong. Learning which type of stop hit you're experiencing is how you improve. Keep a trading journal and note the reason for every stop hit.</p>
+    </div>
+
+    <h2>Common Beginner Stop Loss Mistakes</h2>
+
+    <div class="mistakes-grid">
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div class="mistake-content">
+          <b>Placing Stops at Round Numbers</b>
+          <p>Levels like $2,400 exactly, $1.1000 exactly, or $2,350 exactly attract enormous order flow from traders across every broker and platform worldwide. Stops clustered at these precise levels get swept far more reliably than stops placed 8–15 pips beyond them.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div class="mistake-content">
+          <b>Using a Fixed Pip Stop for Every Trade</b>
+          <p>A 15-pip stop makes sense in some conditions on EURUSD. It's nearly meaningless on XAUUSD during the London session. Stop distance must reflect the instrument, the timeframe, and the current volatility — not a number you're comfortable with.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div class="mistake-content">
+          <b>Moving Stops to Break Even Too Early</b>
+          <p>Moving to break even the moment a trade is 5 pips green sounds logical — but it usually results in being stopped out on a routine pullback before the move continues. Break even should be moved when there's structural reason to do so (price has cleared a key level, a new support has formed), not based on pixel distance from entry.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div class="mistake-content">
+          <b>Widening the Stop When the Trade Goes Against You</b>
+          <p>"Just give it a little more room" is one of the most expensive phrases in trading. A stop is placed where the trade is structurally wrong. Moving it to avoid being stopped out simply delays accepting that the analysis was incorrect — and converts a small defined loss into a large undefined one.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div class="mistake-content">
+          <b>Not Accounting for News Events</b>
+          <p>Holding a trade with a 12-pip stop during an NFP release is not a technical decision — it's a lottery. News events create mechanical volatility that technical analysis cannot predict. Entering before major data without adjusting the stop (or waiting) is a process failure, not bad luck.</p>
+        </div>
+      </div>
+      <div class="mistake-item">
+        <div class="mistake-num">6</div>
+        <div class="mistake-content">
+          <b>Sizing the Position First, Then Setting the Stop</b>
+          <p>When the first question is "how many lots can I trade?" instead of "where is the invalidation point?", the stop becomes an afterthought. Position size should be determined by the stop location and the percentage risk budget — not the other way around.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Educational Disclaimer</div>
+      <p>This article is for educational purposes only and does not constitute financial advice. All examples are hypothetical. Stop loss strategies do not guarantee trade profitability — all trading involves the risk of loss. Always apply your own analysis and risk management before entering any trade.</p>
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>research-based XAUUSD analysis</span> and guided trading support?</h3>
+        <p>Join our Telegram channel for regular gold analysis, key trading zones, and practical educational content — or contact us directly on WhatsApp.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="why-forex-traders-lose-money.html" class="related-card">
+          <span class="related-cat">Trading Psychology</span>
+          <span class="related-title">Why 90% of Forex Traders Lose Money — And How Smart Traders Avoid It</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="xauusd-buy-or-sell-today.html" class="related-card">
+          <span class="related-cat">Gold Analysis</span>
+          <span class="related-title">XAUUSD Buy or Sell Today? How to Read Gold Direction Like a Pro</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="gold-trading-strategy-beginners.html" class="related-card">
+          <span class="related-cat">Gold Trading</span>
+          <span class="related-title">Best Gold Trading Strategy for Beginners in 2025 (Simple XAUUSD Guide)</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="how-to-start-forex-trading-2025.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">How to Start Forex Trading in 2025 (Beginner Step-by-Step Guide)</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Why does my stop loss always get hit in forex?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The most common causes are: stops placed at predictable price levels where orders cluster (just below support, just above resistance, at round numbers), stops that are too tight for the instrument's volatility, late entries that leave no room for structural stop placement, and holding positions during high-impact news events. Each of these is addressable with better process — they're not random bad luck.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Is stop loss hunting real?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The concept is real — but it's not a targeted conspiracy against individual retail traders. Large institutional players move price toward areas of concentrated liquidity (where retail stop losses cluster) to access the volume they need to fill large orders. This looks like "hunting" but is actually a structural feature of how markets work. The solution is to place stops beyond the predictable liquidity zones, not right at them.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How do I place my stop loss correctly?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Correct stop placement is structural — it's based on where the market would prove your trade wrong, not on how many pips you want to risk. Identify the key level (swing high or low, support or resistance) that invalidates your trade analysis. Place the stop beyond that level — several pips past the obvious cluster zone. Then calculate position size to keep the dollar risk within your 1–2% budget.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Why does gold (XAUUSD) hit stop losses so often?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Gold has a wide daily range — typically 15 to 45 pips on a normal session, and significantly more around US news events. Tight stops that might work on a calmer pair like EURUSD will be swept by routine XAUUSD fluctuation. Additionally, gold reacts strongly to liquidity sweeps around key psychological levels like $2,300 or $2,400. Stops on gold need to be wider and placed more carefully than on lower-volatility instruments.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is a liquidity sweep in forex?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">A liquidity sweep is when price briefly pushes beyond a key level — triggering the stop losses and pending orders clustered just beyond it — before reversing direction. The brief move through the level collects the order volume that institutional players need to fill large positions. Once the liquidity is captured, price reverses toward its original direction, often leaving the stopped-out retail traders watching the market go where they predicted.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How much space should I give my stop loss?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">There's no universal answer — it depends on the instrument and timeframe. A useful reference is the Average True Range (ATR). On the H4 XAUUSD chart, ATR might be 25–40 pips; a stop of at least 1–1.5× ATR from the entry zone gives the trade room to breathe. For structural stop placement: put it several pips beyond the obvious swing high or low, past where a typical sweep is likely to reach.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Should I use a stop loss at all?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — always. Some traders avoid stop losses after getting hit repeatedly, but this is far more dangerous than the alternative. Without a stop loss, a single bad trade can eliminate months of gains or wipe an entire account. The solution to stop losses getting hit is to place them better — not to remove them. Trading without stops is one of the fastest ways to lose a trading account.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">How do I protect my stop loss during news events?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">The most effective approach is to check the economic calendar before every trading session and avoid entering new trades in the 30–60 minutes before major US data releases (NFP, CPI, FOMC, PCE). If you're already in a position when news approaches, consider closing partially or moving to break even if the trade is in profit. Widening the stop to accommodate news is generally not advisable — it changes the original risk calculation and reward-to-risk ratio.</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- END FAQ -->
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text">
+          <b>Z Trade University</b>
+          <small>University</small>
+        </div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a>
+        <span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a>
+        <span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>

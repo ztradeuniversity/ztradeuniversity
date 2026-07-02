@@ -1,0 +1,649 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learn forex leverage explained for beginners in 2025. Simple guide covering how leverage works, margin, lot size, overleveraging, risk management, and safer trading habits." />
+  <meta name="keywords" content="forex leverage explained, leverage in forex trading, forex leverage for beginners, how leverage works in forex, best leverage for beginners, margin in forex, overleveraging forex, forex risk management, lot size and leverage, beginner forex guide" />
+  <title>Forex Leverage Explained for Beginners – Z Trade University</title>
+  <link rel="canonical" href="https://ztradeuniversity.com/forex-leverage-explained-beginners.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a1410;
+      --purple:  #c89c3f;
+      --purple2: #d4ae5e;
+      --lime:    #c89c3f;
+      --white:   #ffffff;
+      --text:    #2b2520;
+      --muted:   #756347;
+      --gold:    #d97706;
+      --gold2:   #f59e0b;
+      --nv:      #1a56db;
+      --nv2:     #93c5fd;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAVBAR ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.065);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .logo-shield {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(200,156,63,0.38), 0 1px 0 rgba(255,255,255,0.12) inset;
+      position: relative; overflow: hidden;
+    }
+    .logo-shield::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+    .logo-shield span { position: relative; z-index: 1; font-family: 'Manrope','Inter',sans-serif; font-size: 20px; font-weight: 900; color: var(--lime); letter-spacing: -1px; line-height: 1; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-text b     { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+    .logo-text small { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 0; list-style: none; }
+    .nav-links a { font-size: 13.5px; font-weight: 500; color: #2b2520; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: color .18s, background .18s; position: relative; }
+    .nav-links a:hover { color: var(--purple); background: rgba(200,156,63,0.05); }
+    .nav-links a.active { font-weight: 700; color: var(--text); }
+    .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
+    .nav-join {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--navy); color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 24px; border-radius: 100px;
+      text-decoration: none; border: 1.5px solid transparent;
+      transition: background .22s, box-shadow .22s, transform .18s;
+      box-shadow: 0 2px 12px rgba(26,20,16,0.22), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .nav-join:hover { background: var(--purple); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,156,63,0.35); }
+    .nav-join svg { transition: transform .2s; flex-shrink: 0; }
+    .nav-join:hover svg { transform: translateX(3px); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: .25s; }
+
+    /* ── ARTICLE HERO ── */
+    .article-hero {
+      padding: 120px 0 56px;
+      background: linear-gradient(145deg, #010718 0%, #030e2e 50%, #020a22 100%);
+      position: relative; overflow: hidden;
+    }
+    .article-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,86,219,0.18) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-hero::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px; pointer-events: none;
+    }
+    .article-hero-inner { position: relative; z-index: 1; max-width: 800px; }
+    .article-breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .article-breadcrumb a { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.45); text-decoration: none; transition: color .18s; }
+    .article-breadcrumb a:hover { color: rgba(255,255,255,0.75); }
+    .article-breadcrumb span { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .article-cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(26,86,219,0.16); border: 1px solid rgba(26,86,219,0.35);
+      color: var(--nv2); font-size: 11.5px; font-weight: 700;
+      padding: 5px 14px; border-radius: 100px; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .article-hero h1 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(28px, 4.2vw, 46px); font-weight: 900;
+      color: var(--white); letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 20px;
+    }
+    .article-hero h1 em { color: var(--nv2); font-style: normal; }
+    .article-desc { font-size: 17px; color: rgba(255,255,255,0.58); line-height: 1.72; max-width: 680px; margin-bottom: 28px; }
+    .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .article-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: rgba(255,255,255,0.4); }
+    .article-meta-item svg { flex-shrink: 0; color: rgba(255,255,255,0.28); }
+
+    /* ── ARTICLE LAYOUT ── */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 80px; }
+
+    .article-wrap h2 {
+      font-family: 'Manrope','Inter',sans-serif;
+      font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+      color: var(--text); letter-spacing: -.6px; line-height: 1.25;
+      margin: 48px 0 16px; padding-top: 8px; border-top: 2px solid #f0f2f8;
+    }
+    .article-wrap p { font-size: 16px; color: #2a3244; line-height: 1.82; margin-bottom: 18px; }
+    .article-wrap p:last-child { margin-bottom: 0; }
+    .article-wrap strong { font-weight: 700; color: var(--text); }
+    .article-wrap a { color: var(--purple2); text-decoration: none; border-bottom: 1px solid rgba(212,174,94,0.25); transition: border-color .18s, color .18s; }
+    .article-wrap a:hover { color: var(--purple); border-color: var(--purple); }
+
+    .article-wrap ul { padding-left: 0; margin-bottom: 20px; list-style: none; }
+    .article-wrap ul li { font-size: 16px; color: #2a3244; line-height: 1.72; padding: 5px 0 5px 26px; position: relative; }
+    .article-wrap ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--nv2); }
+
+    .tip-box { background: #f5f7ff; border-left: 4px solid var(--purple2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .tip-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: 8px; }
+    .tip-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .warning-box { background: #fff8ed; border-left: 4px solid var(--gold2); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0; }
+    .warning-box-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .warning-box p { font-size: 15px; color: #2a3244; margin: 0; line-height: 1.7; }
+
+    .quick-answer {
+      background: linear-gradient(135deg, #eff6ff 0%, #f3e6c2 100%);
+      border: 1.5px solid rgba(26,86,219,0.18); border-left: 4px solid var(--nv);
+      border-radius: 0 14px 14px 0; padding: 20px 24px; margin: 0 0 36px;
+    }
+    .quick-answer-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--nv); margin-bottom: 10px; }
+    .quick-answer p { font-size: 15.5px; color: #1a1a2e; line-height: 1.74; margin: 0; font-weight: 500; }
+
+    /* Comparison table */
+    .compare-box { background: linear-gradient(145deg, #0d1127 0%, #111a38 100%); border-radius: 16px; padding: 22px 24px 18px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.07); overflow-x: auto; }
+    .compare-label { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 16px; }
+    .compare-table { width: 100%; border-collapse: collapse; }
+    .compare-table th { font-size: 11.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 9px 14px; text-align: left; }
+    .compare-table th:nth-child(1) { color: rgba(255,255,255,0.35); width: 38%; }
+    .compare-table th:nth-child(2) { color: #4ade80; background: rgba(74,222,128,0.06); border-radius: 6px 6px 0 0; }
+    .compare-table th:nth-child(3) { color: #f87171; background: rgba(248,113,113,0.06); border-radius: 6px 6px 0 0; }
+    .compare-table td { font-size: 13.5px; padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.05); vertical-align: top; line-height: 1.5; }
+    .compare-table td:nth-child(1) { color: rgba(255,255,255,0.4); font-size: 12.5px; font-weight: 600; }
+    .compare-table td:nth-child(2) { color: rgba(255,255,255,0.78); background: rgba(74,222,128,0.04); font-weight: 500; }
+    .compare-table td:nth-child(3) { color: rgba(255,255,255,0.78); background: rgba(248,113,113,0.04); font-weight: 500; }
+    .compare-table .bad  { color: #f87171; font-weight: 700; }
+    .compare-table .good { color: #4ade80; font-weight: 700; }
+
+    .causes-list { display: flex; flex-direction: column; gap: 20px; margin: 22px 0; }
+    .cause-item { border-left: 3px solid rgba(26,86,219,0.38); padding: 16px 20px; background: #f0f4ff; border-radius: 0 14px 14px 0; }
+    .cause-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .cause-item p { font-size: 15px; color: #2a3244; line-height: 1.75; margin: 0; }
+
+    .mistakes-list { display: flex; flex-direction: column; gap: 16px; margin: 22px 0; }
+    .mistake-item { display: flex; align-items: flex-start; gap: 14px; }
+    .mistake-num { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .mistake-item b { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .mistake-item p { font-size: 15px; color: #2a3244; line-height: 1.72; margin: 0; }
+
+    .article-cta {
+      background: linear-gradient(130deg, #0b0f20 0%, #180a42 50%, #3d2a08 100%);
+      border-radius: 22px; padding: 40px 38px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .article-cta::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,156,63,0.1) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .article-cta-inner { position: relative; z-index: 1; }
+    .article-cta h3 { font-family: 'Manrope','Inter',sans-serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 800; color: var(--white); letter-spacing: -.5px; margin-bottom: 12px; }
+    .article-cta h3 span { color: var(--lime); }
+    .article-cta p { font-size: 15px; color: rgba(255,255,255,0.52); line-height: 1.7; margin-bottom: 20px; }
+    .article-cta-contact { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+    .cta-contact-line { font-size: 13.5px; color: rgba(255,255,255,0.55); }
+    .cta-contact-line strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .article-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-tg-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0088cc; color: var(--white);
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: none; box-shadow: 0 4px 14px rgba(0,136,204,0.38);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-tg-a:hover { background: #009de0; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(0,136,204,0.48); border-bottom: none; }
+    .btn-wa-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.12); color: #25d366;
+      font-size: 13.5px; font-weight: 700; padding: 11px 22px; border-radius: 11px;
+      text-decoration: none; border: 1.5px solid rgba(37,211,102,0.3);
+      transition: background .2s, transform .2s;
+    }
+    .btn-wa-a:hover { background: rgba(37,211,102,0.2); transform: translateY(-2px); border-bottom: 1.5px solid rgba(37,211,102,0.3); }
+
+    .faq-list { display: flex; flex-direction: column; gap: 0; margin-top: 20px; }
+    .faq-item { border-bottom: 1px solid #edf0f8; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; margin-bottom: 10px; line-height: 1.4; }
+    .faq-q::before { content: 'Q: '; color: var(--nv); }
+    .faq-a { font-size: 15px; color: #3a4560; line-height: 1.76; }
+
+    .related-articles { margin-top: 52px; padding-top: 40px; border-top: 2px solid #f0f2f8; }
+    .related-articles h2 { margin-top: 0 !important; border-top: none !important; padding-top: 0 !important; }
+    .related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+    .related-card {
+      background: #f8f9fd; border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px; padding: 18px 20px;
+      text-decoration: none; display: flex; flex-direction: column; gap: 6px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .related-card:hover { background: var(--white); border-color: rgba(26,86,219,0.22); transform: translateY(-2px); border-bottom: 1px solid rgba(26,86,219,0.22); }
+    .related-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--nv); }
+    .related-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .related-arrow { font-size: 12px; font-weight: 700; color: var(--nv); margin-top: 2px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 700; color: var(--purple2);
+      text-decoration: none; border: none; margin-bottom: 40px;
+      transition: gap .18s, color .18s;
+    }
+    .back-link:hover { color: var(--purple); gap: 10px; border-bottom: none; }
+    .back-link svg { flex-shrink: 0; transition: transform .18s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-logo-wrap { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-mark {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px;
+      background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, var(--purple2) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 17px; font-weight: 900; color: var(--lime);
+      box-shadow: 0 3px 12px rgba(200,156,63,0.35);
+    }
+    .footer-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .footer-brand-text b     { font-size: 13.5px; font-weight: 800; color: rgba(255,255,255,0.82); letter-spacing: -.2px; }
+    .footer-brand-text small { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.26); }
+    .footer-links { display: flex; align-items: center; gap: 6px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color .18s; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-sep { font-size: 11px; color: rgba(255,255,255,0.12); }
+
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; padding: 14px 40px; border-radius: 14px; transition: background .18s, color .18s; }
+    .mobile-menu a:hover { background: rgba(200,156,63,0.08); color: var(--purple); }
+    .mobile-close { position: absolute; top: 20px; right: 22px; font-size: 28px; background: none; border: none; cursor: pointer; color: var(--text); }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
+      .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .related-grid { grid-template-columns: 1fr; } .article-wrap { padding: 44px 20px 64px; }
+      .article-hero { padding: 104px 0 44px; } .article-cta { padding: 30px 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; } .footer-copy { order: 0; }
+    }
+    @media (max-width: 480px) { .container { padding: 0 20px; } .article-cta-btns { flex-direction: column; } .compare-box { padding: 18px 16px 14px; } }
+  </style>
+  <!-- SEO: Open Graph + Twitter + structured data (auto-injected by KPOS) -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Z Trade University" />
+  <meta property="og:title" content="Forex Leverage Explained for Beginners" />
+  <meta property="og:description" content="Learn forex leverage explained for beginners in 2025. Simple guide covering how leverage works, margin, lot size, overleveraging, risk management, and safer trading habits." />
+  <meta property="og:url" content="https://ztradeuniversity.com/forex-leverage-explained-beginners.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Forex Leverage Explained for Beginners" />
+  <meta name="twitter:description" content="Learn forex leverage explained for beginners in 2025. Simple guide covering how leverage works, margin, lot size, overleveraging, risk management, and safer trading habits." />
+  <meta name="twitter:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Forex Leverage Explained for Beginners", "description": "Learn forex leverage explained for beginners in 2025. Simple guide covering how leverage works, margin, lot size, overleveraging, risk management, and safer trading habits.", "url": "https://ztradeuniversity.com/forex-leverage-explained-beginners.html", "mainEntityOfPage": "https://ztradeuniversity.com/forex-leverage-explained-beginners.html", "image": "https://ztradeuniversity.com/assets/ztu-logo.png", "datePublished": "2026-05-20", "dateModified": "2026-05-20", "author": {"@type": "Organization", "name": "Z Trade University"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ztradeuniversity.com/"}, {"@type": "ListItem", "position": 2, "name": "Articles", "item": "https://ztradeuniversity.com/articles.html"}, {"@type": "ListItem", "position": 3, "name": "Forex Leverage Explained for Beginners", "item": "https://ztradeuniversity.com/forex-leverage-explained-beginners.html"}]}</script>
+</head>
+<body class="lux-themed">
+
+<header>
+  <nav class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-shield"><span>Z</span></div>
+      <div class="logo-text"><b>Z Trade University</b><small>University</small></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles.html" class="active">Articles</a></li>
+      <li><a href="index.html#join">Join Now</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <a href="index.html#join" class="nav-join">
+      Join Now
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMenu()">&#10005;</button>
+  <a href="index.html" onclick="toggleMenu()">Home</a>
+  <a href="articles.html" onclick="toggleMenu()">Articles</a>
+  <a href="index.html#join" onclick="toggleMenu()">Join Now</a>
+  <a href="about.html" onclick="toggleMenu()">About</a>
+</div>
+
+<section class="article-hero">
+  <div class="container">
+    <div class="article-hero-inner">
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>›</span>
+        <a href="articles.html">Articles</a><span>›</span>
+        <a href="#" aria-current="page">Forex Leverage Explained</a>
+      </nav>
+      <div class="article-cat-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Forex Basics
+      </div>
+      <h1>Forex Leverage <em>Explained for Beginners</em></h1>
+      <p class="article-desc">Leverage is the most powerful — and most misunderstood — tool in forex trading. Used correctly, it allows small accounts to trade meaningful positions. Used carelessly, it wipes accounts in hours. This guide explains exactly how it works.</p>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          10 min read
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          2025 Guide
+        </div>
+        <div class="article-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Z Trade University
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="article-wrap" itemscope itemtype="https://schema.org/Article">
+    <meta itemprop="headline" content="Forex Leverage Explained for Beginners" />
+    <meta itemprop="datePublished" content="2025-01-01" />
+    <meta itemprop="author" content="Z Trade University" />
+
+    <a href="articles.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Articles
+    </a>
+
+    <p itemprop="description">Every new forex trader encounters leverage on day one — usually before they fully understand what it does. Brokers advertise ratios like 1:100 or 1:500 as features, and many beginners choose the highest option without realising that higher leverage does not mean higher profit. It means higher exposure, and higher exposure means faster losses when trades go wrong.</p>
+
+    <p>This guide explains what leverage actually is, how it interacts with lot size and margin, what happens when beginners overleverage, and how to use it sensibly as part of a <a href="best-risk-management-strategy.html">disciplined risk management approach</a>.</p>
+
+    <div class="quick-answer">
+      <div class="quick-answer-label">Quick Answer</div>
+      <p>Leverage in forex is borrowed capital that allows you to control a position larger than your actual deposit. A 1:100 leverage ratio means $1,000 in your account can control a $100,000 position. Leverage <strong>amplifies both profits and losses equally</strong> — a 1% market move against a 1:100 leveraged position produces a 100% loss on the margin used. The key is not which leverage ratio your broker offers, but how much of your account you risk per trade. Beginners should risk no more than 1–2% of their account per trade, regardless of leverage setting.</p>
+    </div>
+
+    <h2>What Is Leverage in Forex?</h2>
+
+    <p>Forex leverage is a ratio that determines how large a position you can open relative to the money in your account. It is essentially a loan from your broker that lets you trade a bigger position than your deposit would normally allow.</p>
+
+    <p>The ratio is expressed as X:1 — for example, 1:50, 1:100, or 1:500:</p>
+    <ul>
+      <li><strong>1:10 leverage</strong> — $1,000 account controls a $10,000 position</li>
+      <li><strong>1:100 leverage</strong> — $1,000 account controls a $100,000 position</li>
+      <li><strong>1:500 leverage</strong> — $1,000 account controls a $500,000 position</li>
+    </ul>
+
+    <p>The currency markets operate in standardised units called lots. A standard lot is 100,000 units of the base currency. Without leverage, trading a standard lot of EUR/USD would require $100,000 in your account. With 1:100 leverage, you only need $1,000 as margin to open that same position. This is what makes forex accessible to retail traders with small accounts — but it also creates the risk that a small adverse move can eliminate that $1,000 very quickly.</p>
+
+    <h2>How Forex Leverage Works</h2>
+
+    <p>When you open a leveraged trade, your broker sets aside a portion of your account balance as <strong>margin</strong> — a security deposit that covers potential losses. The remaining balance is your free margin, available to absorb losses or open additional trades.</p>
+
+    <p>Here is a concrete example: You have a $1,000 account with 1:100 leverage. You open 1 standard lot of EUR/USD (worth $100,000). Your broker requires $1,000 as margin (1%). Every 1 pip movement on a standard lot is worth approximately $10. If the market moves 100 pips against you, your position loses $1,000 — your entire account balance. Your broker will issue a <strong>margin call</strong> (a warning that equity is running low) and may close your position automatically once free margin drops to a critical level.</p>
+
+    <p>The same 100-pip move with proper position sizing — say, a 0.1 mini lot instead of a full standard lot — loses only $100, leaving $900 intact and allowing you to trade another day.</p>
+
+    <div class="tip-box">
+      <div class="tip-box-label">Key Insight</div>
+      <p>Leverage does not determine your risk — <strong>lot size determines your risk</strong>. Two traders with 1:500 leverage accounts can have completely different risk profiles depending on how large a lot size they choose to trade. The broker's leverage ratio is the ceiling of what you <em>could</em> control — your position size is the choice that actually determines how much money you put at risk.</p>
+    </div>
+
+    <h2>Leverage vs Lot Size vs Margin</h2>
+
+    <p>These three concepts are connected but often confused by beginners. Understanding all three together is essential before opening any live trade:</p>
+
+    <div class="causes-list">
+      <div class="cause-item">
+        <b>Leverage — Your Borrowing Ratio</b>
+        <p>Set by your broker (or chosen within a range). Determines the maximum position size you can open relative to your account balance. Higher leverage means smaller margin requirements, but also means each pip is worth more money — amplifying both gains and losses proportionally.</p>
+      </div>
+      <div class="cause-item">
+        <b>Lot Size — Your Actual Risk Control</b>
+        <p>The size of position you actually open. Standard lot = 100,000 units (~$10/pip). Mini lot = 10,000 units (~$1/pip). Micro lot = 1,000 units (~$0.10/pip). This is the number you must calculate before every trade using your account balance and the risk percentage you are willing to lose on that trade.</p>
+      </div>
+      <div class="cause-item">
+        <b>Margin — The Broker's Security Deposit</b>
+        <p>The amount set aside when you open a position. Required margin = Position size ÷ Leverage. On a $10,000 position with 1:100 leverage, margin = $100. Margin is not a fee — it is your own money held as collateral and returned when the trade closes. Free margin is what remains available to absorb losses or open new trades.</p>
+      </div>
+    </div>
+
+    <!-- Comparison table -->
+    <div class="compare-box">
+      <div class="compare-label">Low Risk vs High Leverage — Same $1,000 Account</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>✓ Low Risk Approach</th>
+            <th>✗ Overleveraged</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Leverage ratio</td>
+            <td>1:100</td>
+            <td>1:500</td>
+          </tr>
+          <tr>
+            <td>Lot size chosen</td>
+            <td>0.02 lots (micro)</td>
+            <td>1.0 lot (standard)</td>
+          </tr>
+          <tr>
+            <td>Position value</td>
+            <td>$2,000</td>
+            <td>$100,000</td>
+          </tr>
+          <tr>
+            <td>Risk per 50-pip loss</td>
+            <td class="good">$10 (1% of account)</td>
+            <td class="bad">$500 (50% of account)</td>
+          </tr>
+          <tr>
+            <td>Account wiped at</td>
+            <td class="good">500 pips adverse move</td>
+            <td class="bad">100 pips adverse move</td>
+          </tr>
+          <tr>
+            <td>Survivability</td>
+            <td class="good">Can absorb 50+ losses</td>
+            <td class="bad">Account gone in 2 trades</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Why High Leverage Is Dangerous for Beginners</h2>
+
+    <p>High leverage ratios — 1:200, 1:500, or even 1:1000 — are legally restricted or banned in many regulated markets (the EU caps retail forex leverage at 1:30, the US at 1:50) precisely because of the damage they cause to retail accounts. In less-regulated markets these ratios are still widely offered, and beginners often choose them, believing more leverage means more profit.</p>
+
+    <p>The reality: high leverage makes normal market fluctuations dangerous. EUR/USD moves 50–80 pips on an average day. At 1:500 on a standard lot, a 20-pip adverse move costs $200 — 20% of a $1,000 account. Five such trades and the account is gone, even if the overall market analysis was correct.</p>
+
+    <p>Gold (XAUUSD) and Crypto carry additional volatility risk. A single economic news release can move XAUUSD 300+ pips in minutes. Bitcoin can move 3–5% in hours. Applying high leverage to these markets without extreme caution leads to margin calls that execute at the worst possible price, often before you can manually close the position.</p>
+
+    <div class="warning-box">
+      <div class="warning-box-label">Important Warning</div>
+      <p>Leverage is not a strategy — it is a tool. The leverage ratio your broker provides does not make you profitable. What makes you profitable is consistent edge, disciplined position sizing, and strict risk management. Many traders blow their accounts not because their analysis was wrong, but because leverage made normal losing trades catastrophic.</p>
+    </div>
+
+    <h2>Common Beginner Leverage Mistakes</h2>
+
+    <div class="mistakes-list">
+
+      <div class="mistake-item">
+        <div class="mistake-num">1</div>
+        <div>
+          <b>Choosing Maximum Leverage Because It Sounds Better</b>
+          <p>New traders often select 1:500 or 1:1000 from a dropdown without understanding what it means in practice. Maximum leverage offers maximum exposure — not maximum profit. Choose leverage that allows you to place sensible lot sizes for your account without putting more than 1–2% of your balance at risk per trade. For a $500 account, that typically means micro lots regardless of leverage.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">2</div>
+        <div>
+          <b>Opening Full Standard Lots on a Small Account</b>
+          <p>A standard lot on EUR/USD is worth approximately $10 per pip. On a $500 account, a 50-pip stop loss costs $500 — the entire balance. Every small account must trade micro or nano lots. Lot size must be calculated from your account size and risk percentage — not from what leverage allows you to technically open.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">3</div>
+        <div>
+          <b>Adding to Losing Positions to "Average Down"</b>
+          <p>When a leveraged trade goes against you, the instinct to open more positions at a better price — hoping the market reverses — is one of the fastest ways to blow an account. Each additional position adds margin requirement and compounds the loss if the market continues against you. A pre-planned stop loss is always safer than averaging into a losing trade.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">4</div>
+        <div>
+          <b>Holding High-Leverage Positions Overnight or Over News</b>
+          <p>Overnight gaps and news-driven spikes (NFP, CPI, central bank decisions) can move markets 100–300 pips in seconds. A position that looked safe with a 30-pip stop can be closed by the broker at 150 pips slippage if the market gaps. If you must hold positions through news, reduce size significantly or use the widest stop your risk management allows.</p>
+        </div>
+      </div>
+
+      <div class="mistake-item">
+        <div class="mistake-num">5</div>
+        <div>
+          <b>Treating Demo Leverage as Real</b>
+          <p>Many beginners practice on demo accounts using full leverage with unrealistic lot sizes, generate impressive returns, then replicate those exact trades on a live account. The psychological difference between losing virtual money and real money is significant — and the lot sizes that felt comfortable on demo will feel catastrophic when real capital is at stake. Always demo trade with the exact lot sizes you plan to use live.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SOFT CTA -->
+    <div class="article-cta" aria-label="Join Z Trade University">
+      <div class="article-cta-inner">
+        <h3>Want <span>beginner-friendly Forex guidance</span>, risk management education, and research-based analysis?</h3>
+        <p>Contact us on WhatsApp or join our Telegram channel for structured market education, position sizing guidance, and content for Forex, Gold, and Crypto traders.</p>
+        <div class="article-cta-contact">
+          <div class="cta-contact-line"><strong>WhatsApp:</strong> +92 320 0400800</div>
+          <div class="cta-contact-line"><strong>Email:</strong> ztradeuniversity@gmail.com</div>
+        </div>
+        <div class="article-cta-btns">
+          <a href="https://t.me/ztradeuniversity" class="btn-tg-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Join Telegram Channel
+          </a>
+          <a href="https://wa.me/17189730347" class="btn-wa-a" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contact on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- YOU MAY ALSO LIKE -->
+    <div class="related-articles">
+      <h2>You May Also Like</h2>
+      <div class="related-grid">
+        <a href="best-risk-management-strategy.html" class="related-card">
+          <span class="related-cat">Risk Management</span>
+          <span class="related-title">Best Risk Management Strategy for Forex and Gold Trading</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="best-trading-strategy-for-beginners-2025.html" class="related-card">
+          <span class="related-cat">Beginner Trading</span>
+          <span class="related-title">Best Trading Strategy for Beginners in 2025</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="top-10-forex-trading-mistakes.html" class="related-card">
+          <span class="related-cat">Trading Mistakes</span>
+          <span class="related-title">Top 10 Forex Trading Mistakes Beginners Make</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+        <a href="how-to-start-forex-trading-2025.html" class="related-card">
+          <span class="related-cat">Forex Basics</span>
+          <span class="related-title">How to Start Forex Trading in 2025 — Beginner's Guide</span>
+          <span class="related-arrow">Read Article →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is leverage in forex trading?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Forex leverage is a ratio that allows you to control a position size larger than your actual account deposit. With 1:100 leverage, a $1,000 account can control a $100,000 position. Leverage amplifies both profits and losses — a 1% market move on a 1:100 leveraged position represents a 100% gain or loss on the margin used. Leverage itself does not determine how much you risk per trade; that is determined by your lot size choice. Leverage simply defines the maximum position size available relative to your balance.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is the best leverage for beginner forex traders?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">For beginners, lower leverage ratios — 1:10 to 1:30 — are significantly safer because they make it harder to accidentally open oversized positions. However, the leverage ratio matters less than the lot size you actually trade. A beginner with 1:500 leverage who only trades micro lots (0.01) is taking on very little risk. The key rule is: risk no more than 1–2% of your account balance per trade, calculate the correct lot size from that risk amount, and use whatever leverage your broker offers as a tool — not a reason to increase position size.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is margin in forex and how does it relate to leverage?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Margin is the portion of your account balance set aside by your broker as collateral when you open a leveraged position. It is calculated as: Required Margin = Position Size ÷ Leverage. For example, opening a $10,000 position with 1:100 leverage requires $100 in margin. Margin is not a fee — it is your own money temporarily reserved and returned when the trade closes. If your account equity falls close to the required margin level, your broker will issue a margin call and may close your positions automatically to prevent a negative balance.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Can you lose more than your deposit with leverage?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">With most regulated brokers, negative balance protection ensures you cannot lose more than your deposited amount — the broker closes your positions before your equity goes below zero. However, in extreme market conditions (flash crashes, major gap openings, or highly volatile news events), slippage can cause positions to close at a worse price than the stop loss level, resulting in losses larger than anticipated. Always choose a regulated broker that explicitly offers negative balance protection, and never trade with money you cannot afford to lose entirely.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">Does leverage work the same way for Gold and Crypto?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">Yes — the mechanics of leverage are identical for Gold (XAUUSD) and Crypto, but the risk profile is significantly higher due to greater volatility. Gold can move 200–400 pips in a single session around major news events. Bitcoin and Ethereum can move 5–10% in a matter of hours. Applying high leverage to these markets means that normal intraday volatility can trigger margin calls or stop losses before the anticipated direction plays out. For Gold and Crypto, always use smaller position sizes than you would for major forex pairs, even if the leverage ratio is the same.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <div class="faq-q" itemprop="name">What is a margin call in forex?</div>
+        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+          <div itemprop="text">A margin call occurs when your account equity falls below the broker's required margin level — typically 50–100% of the used margin. The broker will warn you to either deposit more funds or close some positions. If equity continues falling to the stop-out level (usually 20–50% of used margin), the broker automatically closes your open positions from largest loss to smallest to protect against a negative balance. Margin calls are almost always caused by overleveraging combined with the absence of a stop loss, or by holding positions through extreme volatility without adequate free margin.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo-wrap">
+        <div class="footer-logo-mark">Z</div>
+        <div class="footer-brand-text"><b>Z Trade University</b><small>University</small></div>
+      </a>
+      <div class="footer-copy">&copy; 2025 Z Trade University. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="about.html">About</a><span class="footer-sep">·</span>
+        <a href="articles.html">Articles</a><span class="footer-sep">·</span>
+        <a href="index.html#join">Join Now</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+</body>
+</html>
