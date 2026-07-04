@@ -1,29 +1,68 @@
 #!/bin/sh
 # ─────────────────────────────────────────────────────────────────────────────
-# ZTU REGRESSION GUARD (pre-push)
-# The governance dashboard fix + populate/sync optimizations have been reverted 3×
-# by pushes made from a STALE working copy (D:\website). This hook BLOCKS any push
-# whose HEAD is missing those fixes, so a stale copy can never overwrite production.
-# Enable once:   git config core.hooksPath .githooks
+# ZTU PRODUCTION GUARD (pre-push) — REGRESSION-ONLY, false-positive-free.
+#
+# Blocks a push ONLY when it would REMOVE a protected runtime implementation that
+# origin/main currently has. It compares HEAD vs origin/main by a FUNCTIONAL
+# SIGNATURE (a real API call / function name that IS the implementation) — NOT by
+# comment markers. So it never blocks on: unrelated files, README/docs, CSS, HTML
+# layout, comments, or formatting — those never remove the signature.
+#
+# Logic per protected file:
+#   origin/main HAS signature  AND  HEAD is MISSING it   →  regression  →  BLOCK
+#   otherwise (unchanged / preserved / improved / not-in-base)          →  PASS
+#
+# No network (uses the local origin/main ref). No bypass. Enable once:
+#   git config core.hooksPath .githooks
 # ─────────────────────────────────────────────────────────────────────────────
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || exit 0
+cat > /dev/null 2>&1   # drain stdin (git sends ref updates); we don't need it
+
+BASE="$(git rev-parse --verify --quiet refs/remotes/origin/main)"
+if [ -z "$BASE" ]; then
+  echo "i ZTU guard: no local origin/main ref (run 'git fetch origin') - regression check skipped."
+  exit 0
+fi
+
+# file | functional signature (fixed string, = the implementation) | description
+PROTECTED="
+admin/governance-admin.html§setConn(connected)§dashboard hydrate() live-state wiring
+functions/utils/kb-populate.js§getNode(§populate delta / skip-unchanged
+admin/kb-admin.js§Promise.all(§populate/sync parallel execution
+functions/utils/kb-store.js§getRawEdgesBySrc§incremental syncEdges
+"
+
 fail=0
-check() {
-  # $1 = file, $2 = required marker, $3 = human description
-  if ! git cat-file -p "HEAD:$1" 2>/dev/null | grep -q "$2"; then
-    echo "✗ PUSH BLOCKED — $1 is missing: $3"
+OLDIFS="$IFS"; IFS='
+'
+for line in $PROTECTED; do
+  [ -z "$line" ] && continue
+  file="${line%%§*}"; rest="${line#*§}"; sig="${rest%%§*}"; desc="${rest#*§}"
+  base_has=0; head_has=0
+  git show "$BASE:$file"  2>/dev/null | grep -qF "$sig" && base_has=1
+  git show "HEAD:$file"   2>/dev/null | grep -qF "$sig" && head_has=1
+  if [ "$base_has" = 1 ] && [ "$head_has" = 0 ]; then
+    echo "x PUSH BLOCKED - this push REMOVES production logic: $desc"
+    echo "    $file - present on origin/main, missing in your HEAD (signature: '$sig')"
     fail=1
   fi
-}
-check "admin/governance-admin.html"       "derived ONLY from EXISTING" "dashboard hydrate() /api/diagnose wiring"
-check "functions/utils/kb-populate.js"     "function conceptHash"       "populate delta/skip-unchanged optimization"
-check "admin/kb-admin.js"                  "CONCURRENCY"                "populate/sync parallel pool"
-check "functions/utils/kb-store.js"        "getRawEdgesBySrc"           "incremental syncEdges optimization"
+done
+IFS="$OLDIFS"
+
+# Soft, NON-blocking warning: detect a sibling/stale clone that commonly causes reverts.
+for sib in "../website" "/d/website" "/c/Users/$USER/website" "$HOME/website"; do
+  if [ -d "$sib/.git" ]; then
+    echo "! ZTU guard: another working copy detected at '$sib'."
+    echo "  Commit ONLY from this clone; copying files from it is what caused past reverts."
+  fi
+done
 
 if [ "$fail" -ne 0 ]; then
   echo ""
-  echo "This push looks like the recurring revert from a stale copy. Fix before pushing, e.g.:"
-  echo "  git fetch origin && git checkout origin/main -- <reverted-file>"
-  echo "Then re-commit and push. (Work in ONE clone; do not copy files from D:\\website.)"
+  echo "This looks like a revert of production code (usually a stale copy). Restore, then push:"
+  echo "  git fetch origin && git checkout origin/main -- <the file(s) above>"
+  echo "  git commit -m 'restore production logic' && git push"
   exit 1
 fi
+echo "ok ZTU guard: no regression - all protected runtime logic preserved."
 exit 0
