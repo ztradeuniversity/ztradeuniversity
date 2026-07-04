@@ -1,0 +1,28 @@
+# ── AI-CSO SECURITY POLICY — never commit client PII or secrets ──
+# Client personal data (emails, account numbers, brokers, delivery logs)
+admin/data/
+automation/mailing_lists/
+
+# Secrets / environment (all runtime secrets come from Cloudflare env, never the repo)
+.env
+.env.*
+*.key
+*.pem
+.dev.vars
+wrangler.toml.local
+
+# Local backups produced by automation (kept out of the deploy artifact)
+*.bak
+**/seo_backup/
+
+# Dependencies / build
+node_modules/
+.wrangler/
+dist/
+.cache/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

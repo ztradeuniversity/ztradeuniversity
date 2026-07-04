@@ -310,7 +310,7 @@
           q(root, '[data-zpc-mask]').textContent = r.email_mask ? ('· sent to ' + r.email_mask) : '';
           acctForm.style.display = 'none'; codeForm.style.display = 'block';
           q(root, '[data-zpc-code]').focus();
-          showMsg(root, 'Verification code sent. Check your email.', 'ok');
+          showMsg(root, r.email_mask ? ('Verification code sent to: ' + r.email_mask) : 'Verification code sent. Check your email.', 'ok');
         } else { showMsg(root, r.message || 'Could not start verification.', 'err'); }
       } catch (err) { showMsg(root, 'Network error. Please try again.', 'err'); }
       finally { btn.disabled = false; }

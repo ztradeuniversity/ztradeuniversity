@@ -94,6 +94,22 @@ import { INDICATORS_CONCEPTS } from './indicators/concepts.js';
 import { CRYPTO_CONCEPTS } from './crypto/concepts.js';
 import { STRATEGY_BASICS_CONCEPTS } from './strategy/basics-concepts.js';
 
+// ── KNOWLEDGE EXPANSION WAVE 1 — verified-gap closure (additive only) ──
+// Candlestick pattern library (extends price-action), classic + harmonic chart
+// pattern library (new category), and the expanded technical-indicator library.
+import { CANDLESTICK_PATTERNS_CONCEPTS } from './price-action/candlestick-patterns-concepts.js';
+import { CHART_PATTERNS_CONCEPTS } from './chart-patterns/concepts.js';
+import { INDICATORS_EXPANDED_CONCEPTS } from './indicators/expanded-concepts.js';
+
+// ── KNOWLEDGE EXPANSION WAVE 2 — options/futures depth, automation, crypto depth ──
+import { DERIVATIVES_CONCEPTS } from './derivatives/concepts.js';
+import { AUTOMATION_CONCEPTS } from './automation/concepts.js';
+import { CRYPTO_EXPANDED_CONCEPTS } from './crypto/expanded-concepts.js';
+
+// ── KPOS V3 EXPANSION — equities domain + market-sentiment assets ──
+import { EQUITIES_CONCEPTS } from './equities/concepts.js';
+import { SENTIMENT_CONCEPTS } from './macro/sentiment-concepts.js';
+
 // category → concept[]  (a category MAY span multiple files; concat them here)
 export const CATEGORY_MODULES = Object.freeze({
   gold: [...GOLD_CONCEPTS, ...GOLD_SESSION_CONCEPTS],
@@ -112,19 +128,23 @@ export const CATEGORY_MODULES = Object.freeze({
   'smart-money': SMART_MONEY_CONCEPTS,
   'prop-firms': [...PROP_FIRM_CONCEPTS, ...PROP_FIRM_BASICS_CONCEPTS],
   strategy: [...STRATEGY_CONCEPTS, ...STRATEGY_BASICS_CONCEPTS],
-  indicators: INDICATORS_CONCEPTS,
-  crypto: CRYPTO_CONCEPTS,
+  indicators: [...INDICATORS_CONCEPTS, ...INDICATORS_EXPANDED_CONCEPTS],
+  'chart-patterns': CHART_PATTERNS_CONCEPTS,
+  crypto: [...CRYPTO_CONCEPTS, ...CRYPTO_EXPANDED_CONCEPTS],
+  derivatives: DERIVATIVES_CONCEPTS,
+  automation: AUTOMATION_CONCEPTS,
+  equities: EQUITIES_CONCEPTS,
   planning: PLANNING_CONCEPTS,
   mistakes: MISTAKES_CONCEPTS,
   execution: EXECUTION_CONCEPTS,
   review: REVIEW_CONCEPTS,
   orders: ORDERS_CONCEPTS,
   platforms: PLATFORMS_CONCEPTS,
-  'price-action': [...PRICE_ACTION_CONCEPTS, ...PRICE_ACTION_BASICS_CONCEPTS, ...PRICE_ACTION_STRUCTURE_BASICS_CONCEPTS],
+  'price-action': [...PRICE_ACTION_CONCEPTS, ...PRICE_ACTION_BASICS_CONCEPTS, ...PRICE_ACTION_STRUCTURE_BASICS_CONCEPTS, ...CANDLESTICK_PATTERNS_CONCEPTS],
   markets: [...MARKETS_CONCEPTS, ...MARKETS_BASICS_CONCEPTS, ...MARKETS_MORE_BASICS_CONCEPTS],
   institutional: INSTITUTIONAL_CONCEPTS,
   coaching: COACHING_CONCEPTS,
-  macro: MACRO_CONCEPTS,
+  macro: [...MACRO_CONCEPTS, ...SENTIMENT_CONCEPTS],
   research: [...RESEARCH_CONCEPTS, ...MACRO_DATA_CONCEPTS],
   advanced: ADVANCED_CONCEPTS,
   professional: PROFESSIONAL_CONCEPTS,

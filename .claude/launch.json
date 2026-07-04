@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ZTU Website",
+      "runtimeExecutable": "C:\\Program Files\\Python39\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "4537"],
+      "port": 4537
+    }
+  ]
+}
