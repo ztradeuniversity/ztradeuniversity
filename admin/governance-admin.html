@@ -171,17 +171,22 @@
 const API = {
   base: '',                                    // e.g. '/api'
   liveState:      null,                         // GET governance snapshot (JSON) — null = none yet
+  // Only endpoints that actually satisfy the action are wired. Where no existing
+  // API answers the requirement, the value is null → button renders "Not Connected".
   actions: {
-    'run-governance-cycle': null,               // no backend endpoint yet
-    'run-chatbot-audit':    '/api/ai-verify',   // real route (exists)
-    'run-seo-audit':        null,
-    'run-knowledge-audit':  '/api/ai-kb-admin', // real route (exists)
-    'run-graph-audit':      '/api/ai-kb-admin',
-    'run-deployment-audit': '/api/diagnose',    // real route (exists)
+    'run-governance-cycle': null,                          // no backend API (governance runs via ZGF/agent)
+    'run-chatbot-audit':    null,                          // no existing chatbot-audit API (ai-verify = account verification, not this)
+    'run-seo-audit':        null,                          // SEO audit is a repo scan, no runtime API
+    'run-knowledge-audit':  '/api/ai-kb-admin?action=status', // reuse existing (admin-gated)
+    'run-graph-audit':      '/api/ai-kb-admin?action=parity', // reuse existing (admin-gated)
+    'run-deployment-audit': '/api/diagnose',               // reuse existing (open JSON)
     'run-maintenance-cycle':null,
     'run-content-cycle':    null,
     'run-executive-review': null,
-  }
+  },
+  // Reuse the existing shared admin-key slot populated by the kb-admin console
+  // (sessionStorage 'ztu_kb_admin_key'). Never embed the secret in this page.
+  adminKey: () => { try { return sessionStorage.getItem('ztu_kb_admin_key') || ''; } catch (_) { return ''; } }
 };
 
 // A metric with no live source. Kept honest: value = null → renders "Not Connected".
@@ -362,9 +367,13 @@ function renderModule(key){
 async function runAction(id){
   const ep=API.actions[id]; const st=document.querySelector(`[data-st="${id}"]`);
   if(!ep){ st.textContent='Not Connected'; st.className='badge nc'; return; }
+  const headers={'Accept':'application/json'};
+  // admin-gated endpoints reuse the shared admin-key slot; omitted → server returns 403.
+  if(ep.startsWith('/api/ai-kb-admin')){ const k=API.adminKey(); if(k) headers['x-admin-key']=k; }
   st.textContent='Running…'; st.className='badge wait';
   try{
-    const res=await fetch((API.base||'')+ep,{method:'GET',headers:{'Accept':'application/json'}});
+    const res=await fetch((API.base||'')+ep,{method:'GET',headers});
+    if(res.status===403){ st.textContent='Not Connected (admin key)'; st.className='badge nc'; return; }
     if(!res.ok){ st.textContent='HTTP '+res.status; st.className='badge bad'; return; }
     await res.text(); st.textContent='Responded ✓'; st.className='badge ok';
   }catch(err){ st.textContent='Not Connected'; st.className='badge nc'; }
