@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>System Architecture — Z Trade University</title>
+  <link rel="icon" type="image/png" href="/assets/ztu-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#100e0a;--panel:#171410;--card:#1e1a13;--card2:#241f17;--border:rgba(200,156,63,.16);--border2:rgba(200,156,63,.28);--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;--text:#ece7dd;--muted:#9a8f7c;--dim:#6f6553;--warn:#e0b24a;--bad:#e2685f;--ok:#5bbb7b;--radius:14px}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:radial-gradient(1200px 600px at 80% -10%,rgba(200,156,63,.06),transparent),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:rgba(200,156,63,.22);border-radius:8px}
+    .top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 26px;background:rgba(16,14,10,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:11px}
+    .shield{width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#3d2a08,#8c6c1f 55%,var(--gold2));display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;color:var(--gold3);font-size:18px}
+    .brand b{font-size:14px;font-weight:800;display:block}.brand small{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+    .crumb{font-size:12px;color:var(--muted)}.crumb a{color:var(--gold3);font-weight:700}
+    .banner{margin:18px 26px 0;padding:12px 16px;border:1px solid var(--border2);border-radius:12px;background:linear-gradient(90deg,rgba(224,178,74,.08),transparent);font-size:12.5px;color:var(--gold3)}
+    .layout{display:grid;grid-template-columns:270px 1fr;gap:18px;padding:20px 26px 60px}
+    .list{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:10px;height:max-content;position:sticky;top:86px}
+    .list .mi{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer}
+    .list .mi:hover{background:rgba(200,156,63,.07);color:var(--text)}
+    .list .mi.active{background:linear-gradient(90deg,rgba(200,156,63,.16),transparent);color:var(--gold3);box-shadow:inset 2px 0 0 var(--gold)}
+    .detail{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;min-width:0}
+    .detail h2{font-family:'Manrope';font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+    .detail .purpose{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+    .block{margin-bottom:18px}
+    .block h4{font-size:11.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gold3);margin-bottom:8px}
+    .chips{display:flex;flex-wrap:wrap;gap:7px}
+    .chip{font-size:12px;font-family:'Courier New',monospace;color:var(--text);background:rgba(200,156,63,.06);border:1px solid var(--border);border-radius:7px;padding:5px 9px}
+    ul.pts{list-style:none}ul.pts li{font-size:13px;padding:5px 0 5px 18px;position:relative;color:var(--text)}
+    ul.pts li::before{content:'▸';position:absolute;left:0;color:var(--gold)}
+    ul.pts.warn li::before{content:'⚠';color:var(--warn)}ul.pts.rec li::before{content:'✎';color:var(--ok)}
+    @media(max-width:880px){.layout{grid-template-columns:1fr}.list{position:static}}
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"><div class="shield">Z</div><div><b>System Architecture</b><small>Admin · Read-only</small></div></div>
+    <div class="crumb"><a href="admin-dashboard.html">Admin</a> › System Architecture</div>
+  </div>
+  <div class="banner">🏗 Read-only architecture map generated from the repository. Secrets are never shown — environment variables display <b>names only</b>, values masked as <code>Runtime (masked)</code>. Source of every item: <b>Repository</b>.</div>
+  <div class="layout">
+    <div class="list" id="list"></div>
+    <div class="detail" id="detail"></div>
+  </div>
+
+<script>
+/* Architecture map — grounded in the repository. Read-only; no secrets. */
+const ARCH = {
+  repository:{ icon:'📦', name:'Repository & Structure', purpose:'Static site + Cloudflare Pages Functions + Supabase; deploy path D:\\website → Git → Cloudflare Pages.',
+    files:['/*.html (public pages)','/functions/** (Pages Functions)','/functions/knowledge/** (KB)','/admin/** (admin UI)','/assets/**','GOVERNANCE.md'],
+    deps:['git (baseline 96bbc79)','Cloudflare Pages','Supabase'],
+    fns:['static hosting','edge functions','KB authoring'],
+    warn:['admin/data & automation/mailing_lists hold client PII (gitignored)'],
+    rec:['Merge feature branches after review','Push only with owner consent'] },
+  graph:{ icon:'🕸', name:'Knowledge Graph', purpose:'Concept nodes + edges powering retrieval, learning paths, courses.',
+    files:['functions/utils/graph-retrieval.js','functions/utils/kb-graph.js','functions/utils/graph-growth.js','functions/utils/article-graph-sync.js'],
+    deps:['kb_nodes','kb_edges','KB_GRAPH_ENABLED flag'],
+    fns:['retrieveBest()','getNeighbors()','buildLearningPath()','strengthenGraphConnections()'],
+    warn:['20 orphan nodes (0 inbound edges) — Repository-measured'],
+    rec:['Run graph-orphan auto-linker to wire the 20 orphans'] },
+  kb:{ icon:'📚', name:'Knowledge Base', purpose:'Authored concept library — each concept is an auto-integrating article (chatbot + SEO + graph).',
+    files:['functions/knowledge/index.js','functions/knowledge/<category>/*.js','functions/utils/anchor-entries.js','functions/utils/kb-store.js','functions/utils/kb-schema.js'],
+    deps:['ANCHOR_CONCEPTS','kb_nodes (when graph live)'],
+    fns:['getAnchorEntries()','conceptsForCategory()','validateKnowledgeObject()'],
+    warn:['none — 474 concepts, 39 categories, 0 duplicate ids (Repository)'],
+    rec:['Continue verified-gap expansion (tax, glossary, book summaries)'] },
+  chatbot:{ icon:'🤖', name:'Chatbot Engine', purpose:'Self-hosted retrieval assistant (SSE) with optional LLM humanization.',
+    files:['functions/api/ai-chat.js','functions/utils/*.js (~120 modules)','functions/utils/composer-llm.js'],
+    deps:['ai_user_profiles','ai_chat_memory','kb_missing','KB_EMBEDDINGS_ENABLED','LLM_ENDPOINT/AI binding'],
+    fns:['classifyIntent()','retrieveBest()','composeAnswer()','logMissingKnowledge()'],
+    warn:['Embeddings + LLM humanization are env-gated (dormant until configured)'],
+    rec:['Activate Workers AI + embeddings backfill (roadmap P1/P2)'] },
+  journal:{ icon:'📓', name:'Trading Journal', purpose:'User trading journal with mentor/report layers.',
+    files:['journal.html','journal-admin.html','functions/api/journal-access.js','functions/api/journal-admin.js','supabase/journal-schema*.sql'],
+    deps:['JOURNAL_SUPABASE_URL','JOURNAL_SUPABASE_SERVICE_ROLE_KEY','JOURNAL_SUPABASE_JWT_SECRET'],
+    fns:['journal auth','reports','mentor'],
+    warn:['Separate Supabase project (JOURNAL_) — do not mix with AI_ project'],
+    rec:['Runtime health = Runtime Verification Required (no creds in repo)'] },
+  library:{ icon:'📖', name:'Library', purpose:'Gated content library with OTP/passcode access.',
+    files:['library.html','library/library-admin.html','functions/api/library-auth.js','functions/api/library-storage.js','functions/api/library-debug.js'],
+    deps:['LIBRARY_SUPABASE_URL','LIBRARY_SUPABASE_SERVICE_KEY','LIBRARY_OTP_SECRET','LIBRARY_ADMIN_PASSCODE'],
+    fns:['library auth','storage'],
+    warn:['Passcode/OTP secrets are runtime env only'],
+    rec:['RVR at runtime'] },
+  crm:{ icon:'👥', name:'CRM / Command Center', purpose:'Client, broker, campaign & IB management admin.',
+    files:['admin/admin-dashboard.html','admin/admin-dashboard.js','admin/admin-dashboard.css','admin/data/* (PII, gitignored)'],
+    deps:['admin/data JSON','automation/mailing_lists (PII)'],
+    fns:['activateSection()','campaign builder','client search'],
+    warn:['admin/data & mailing_lists contain real client PII — gitignored, never committed'],
+    rec:['Keep PII out of git; access-control the /admin path at the edge'] },
+  ea:{ icon:'🔑', name:'EA Licensing', purpose:'Expert Advisor license requests, compile queue & delivery.',
+    files:['license-request.html','create-account-with-us.html','compile-dashboard.html','automation/compile_queue_engine.ps1','automation/master_engine.ps1'],
+    deps:['EA_SUPABASE_URL','EA_SUPABASE_SERVICE_KEY','EA_IB_STARS_TABLE','ai_ib_accounts'],
+    fns:['license intake','compile queue','delivery email'],
+    warn:['PowerShell automation runs outside Cloudflare (local/desktop)'],
+    rec:['RVR — desktop automation status not observable from repo'] },
+  sentiment:{ icon:'📈', name:'Live Sentiment & Market Data', purpose:'Live market, news, calendar & sentiment feeds.',
+    files:['live-sentiment.html','functions/api/sentiment.js','functions/api/market.js','functions/api/news.js','functions/api/calendar.js'],
+    deps:['FINNHUB_API_KEY','TWELVEDATA_API_KEY','NEWS_API_KEY','FRED_API_KEY'],
+    fns:['market()','sentiment()','news()','calendar()'],
+    warn:['Third-party API keys are runtime env only'],
+    rec:['Monitor provider rate limits at runtime (RVR)'] },
+  automation:{ icon:'⚙️', name:'Automation', purpose:'Desktop/email automation for EA delivery & campaigns.',
+    files:['automation/master_engine.ps1','automation/prepare_compile.ps1','automation/send_delivery_email.ps1','automation/templates/*'],
+    deps:['RESEND_API_KEY / EMAIL_FROM','mailing_lists (PII)'],
+    fns:['compile','bundle','email delivery'],
+    warn:['Runs on desktop, not the edge — not observable from Cloudflare'],
+    rec:['RVR; keep credentials out of repo'] },
+  deployment:{ icon:'🚀', name:'Deployment', purpose:'Repository → Git → Cloudflare Pages (Functions auto-deploy).',
+    files:['functions/** (auto-deployed)','_headers','robots.txt','functions/sitemap.xml.js'],
+    deps:['Cloudflare Pages project','git remote (not configured in repo)'],
+    fns:['Pages build','edge function routing'],
+    warn:['Production state = Deployment Verification Required until a push occurs'],
+    rec:['Owner authorizes push; then verify live via Search Console'] },
+  api:{ icon:'🔌', name:'API Endpoints (21)', purpose:'Existing Cloudflare Pages Functions under /functions/api.',
+    files:['ai-access','ai-articles','ai-chart','ai-chat','ai-feedback','ai-kb-admin','ai-knowledge','ai-memory','ai-patterns','ai-verify','calendar','diagnose','journal-access','journal-admin','library-auth','library-debug','library-storage','market','news','sentiment','signals'],
+    deps:['route = /api/<name>'],
+    fns:['onRequestGet/Post handlers'],
+    warn:['Do NOT create new APIs (stabilization rule) — reuse these'],
+    rec:['Governance panel reuses /api/diagnose, /api/ai-verify, /api/ai-kb-admin, /api/ai-chat'] },
+  flags:{ icon:'🚩', name:'Feature Flags', purpose:'Env-driven flags gating optional behavior.',
+    files:['read via env.* in functions/**'],
+    deps:['Cloudflare env'],
+    fns:[],
+    flagList:['KB_EMBEDDINGS_ENABLED','KB_GRAPH_ENABLED','KB_RETRIEVAL_NARROW','AI_LEARN_ENABLED','OPENAI_ENABLED','OPENAI_FALLBACK_ENABLED','DEBUG / AI_DEBUG'],
+    warn:['Flags default OFF → offline anchor library serves (zero regression)'],
+    rec:['Toggle in Cloudflare dashboard only — never hardcode'] },
+  env:{ icon:'🔒', name:'Environment Variables (masked)', purpose:'Runtime secrets & config — NAMES only, values never shown.',
+    files:['configured in Cloudflare Pages env (not in repo)'],
+    deps:['Cloudflare / Supabase / provider dashboards'],
+    fns:[],
+    envList:['AI_SUPABASE_URL','AI_SUPABASE_SERVICE_KEY','AI (Workers AI binding)','LLM_ENDPOINT','LLM_API_KEY','LLM_MODEL','AI_EMBED_URL','AI_EMBED_KEY','AI_EMBED_MODEL','OPENAI_API_KEY','JOURNAL_SUPABASE_URL','JOURNAL_SUPABASE_SERVICE_ROLE_KEY','JOURNAL_SUPABASE_JWT_SECRET','JOURNAL_ADMIN_PASSWORD','LIBRARY_SUPABASE_URL','LIBRARY_SUPABASE_SERVICE_KEY','LIBRARY_OTP_SECRET','LIBRARY_ADMIN_PASSCODE','EA_SUPABASE_URL','EA_SUPABASE_SERVICE_KEY','FINNHUB_API_KEY','TWELVEDATA_API_KEY','NEWS_API_KEY','FRED_API_KEY','RESEND_API_KEY','EMAIL_FROM'],
+    warn:['Every value is Runtime (masked) — the repo contains no secrets (verified)'],
+    rec:['Keep all secrets in Cloudflare env; never commit'] },
+  supabase:{ icon:'🗄', name:'Supabase Architecture', purpose:'Separate Supabase configs by domain (env-prefixed). Tables referenced in code.',
+    files:['AI_ project: ai_articles, ai_article_images, ai_user_profiles, ai_chat_memory, ai_response_logs, ai_verification_requests, kb_nodes, kb_edges, kb_missing, kb_sources, kb_reviews, kb_versions, kb_system_log','JOURNAL_ project: journal-schema*.sql tables','LIBRARY_ project','EA_ project: ai_ib_accounts, EA_IB_STARS_TABLE'],
+    deps:['4 env-prefixed Supabase configs: AI_ / JOURNAL_ / LIBRARY_ / EA_'],
+    fns:['REST v1 access via service keys (server-side only)'],
+    warn:['Do NOT create new Supabase projects or duplicate tables (stabilization rule)'],
+    rec:['Reuse existing tables; graph needs kb_nodes/kb_edges populated at runtime'] },
+};
+
+const listEl=document.getElementById('list'), detEl=document.getElementById('detail');
+function chips(arr){return `<div class="chips">${(arr||[]).map(x=>`<span class="chip">${x}</span>`).join('')||'<span class="chip">—</span>'}</div>`;}
+function pts(arr,cls){return `<ul class="pts ${cls||''}">${(arr||[]).map(x=>`<li>${x}</li>`).join('')||'<li>—</li>'}</ul>`;}
+function show(key){
+  const a=ARCH[key];
+  let extra='';
+  if(a.flagList) extra+=`<div class="block"><h4>Feature Flags</h4>${chips(a.flagList)}</div>`;
+  if(a.envList) extra+=`<div class="block"><h4>Env Vars (names only · values Runtime-masked)</h4>${chips(a.envList.map(n=>n+' = ••••'))}</div>`;
+  detEl.innerHTML=`<h2>${a.icon} ${a.name}</h2><div class="purpose">${a.purpose}</div>
+    <div class="block"><h4>Files Used</h4>${chips(a.files)}</div>
+    <div class="block"><h4>Dependencies</h4>${chips(a.deps)}</div>
+    ${a.fns&&a.fns.length?`<div class="block"><h4>Functions Used</h4>${chips(a.fns)}</div>`:''}
+    ${extra}
+    <div class="block"><h4>Warnings</h4>${pts(a.warn,'warn')}</div>
+    <div class="block"><h4>Recommendations</h4>${pts(a.rec,'rec')}</div>`;
+  document.querySelectorAll('.mi').forEach(m=>m.classList.toggle('active',m.dataset.k===key));
+}
+Object.entries(ARCH).forEach(([k,a],i)=>{const d=document.createElement('div');d.className='mi'+(i===0?' active':'');d.dataset.k=k;d.innerHTML=`<span>${a.icon}</span>${a.name}`;d.onclick=()=>show(k);listEl.appendChild(d);});
+show('repository');
+</script>
+</body>
+</html>

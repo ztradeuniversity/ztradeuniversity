@@ -695,6 +695,7 @@ const AdminDashboard = (() => {
     els.navItems.forEach(item => {
       item.addEventListener('click', e => {
         e.preventDefault();
+        if (item.dataset.href) { window.location.href = item.dataset.href; return; }
         activateSection(item.dataset.section, item.dataset.label);
       });
     });

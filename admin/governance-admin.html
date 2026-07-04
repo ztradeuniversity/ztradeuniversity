@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Governance Admin Panel — Z Trade University</title>
-  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="icon" type="image/png" href="/assets/ztu-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
@@ -132,6 +132,7 @@
     </div>
     <nav class="side" id="sideNav"></nav>
     <div class="side-foot">
+      <a href="admin-dashboard.html" style="color:var(--gold3);font-weight:700">← Admin Dashboard</a><br/>
       ZGF V1 · Monitoring &amp; control interface.<br/>No data is simulated.
     </div>
   </aside>
@@ -211,6 +212,7 @@ const MODULES = {
       M('Hallucination Risk','Runtime'), M('Conversation Quality','Runtime'), M('Human-Behaviour Score','Runtime'),
       M('Retrieval Quality','Runtime'), M('Graph Quality','Repository') ],
     tables:[ {title:'Top Missing Questions (kb_missing)',cols:['Question','Frequency','Category'],rows:[]} ]},
+  playground:{ title:'AI Playground', sub:'Admin-only — query the chatbot engine and inspect what it used', icon:'🧪', playground:true },
   seo:{ title:'SEO', sub:'Schema, coverage, and authority', icon:'🔎',
     metrics:[ M('Structured-Data Coverage','Repository'), M('Schema','Repository'), M('Open Graph','Repository'),
       M('Twitter Cards','Repository'), M('Canonicals','Repository'), M('Internal Links','Repository'),
@@ -246,17 +248,29 @@ function tableCard(t){
 }
 function renderMetrics(list){ const g=el('div','grid cols-4'); list.forEach(m=>g.appendChild(metricCard(m))); return g; }
 
+const REPORT_TYPES=[
+  ['governance','Governance Report','governance'],
+  ['architecture','Architecture Report',null],
+  ['knowledge','Knowledge Report','knowledge'],
+  ['seo','SEO Report','seo'],
+  ['system','System Report',null],
+];
 function renderReports(){
   const c=el('div','card full');
-  c.innerHTML=`<h3>Generate &amp; Export Report</h3>
-    <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Exports a snapshot of the <b>current dashboard state</b> (honest — unconnected metrics export as “Not Connected”).</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn gold" data-exp="json">⬇ Download JSON</button>
-      <button class="btn" data-exp="csv">⬇ Download CSV</button>
-      <button class="btn" data-exp="pdf">⬇ PDF (Print)</button>
-    </div>
+  c.innerHTML=`<h3>Generate &amp; Export Reports</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Each report exports the <b>current dashboard state</b> for its domain (honest — unconnected metrics export as “Not Connected” / “Waiting for Backend”; nothing is simulated).</p>
+    <table><thead><tr><th>Report</th><th>Live Source</th><th style="text-align:right">Export</th></tr></thead><tbody>
+      ${REPORT_TYPES.map(([id,label,mod])=>`<tr>
+        <td style="font-weight:700">${label}</td>
+        <td>${mod?`<span class="badge wait">Waiting for Backend</span>`:`<span class="badge nc">Not Connected</span>`}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn sm gold" data-rep="${id}" data-fmt="json">JSON</button>
+          <button class="btn sm" data-rep="${id}" data-fmt="csv">CSV</button>
+          <button class="btn sm" data-rep="${id}" data-fmt="pdf">PDF</button>
+        </td></tr>`).join('')}
+    </tbody></table>
     <div id="repStatus" class="meta" style="margin-top:12px"></div>`;
-  c.addEventListener('click',e=>{const b=e.target.closest('[data-exp]');if(b)exportReport(b.dataset.exp);});
+  c.addEventListener('click',e=>{const b=e.target.closest('[data-rep]');if(b)exportReport(b.dataset.fmt,b.dataset.rep);});
   return c;
 }
 function renderActions(){
@@ -286,12 +300,43 @@ function renderLogs(){
   const c=el('div','card full');
   c.innerHTML=`<h3>Live Logs</h3>
     <div class="tabs" id="logTabs">
-      ${['Board','Automation','Deployment','Validation','Error'].map((t,i)=>`<div class="tab ${i===0?'active':''}" data-log="${t}">${t} Logs</div>`).join('')}
+      ${['Governance','Automation','Validation','Deployment','Chatbot','System'].map((t,i)=>`<div class="tab ${i===0?'active':''}" data-log="${t}">${t} Logs</div>`).join('')}
     </div>
     <div class="logbox" id="logBox"><span class="t">[client]</span> Governance Admin Panel loaded. <span class="g">No backend log stream connected</span> — showing local client events only.\n<span class="t">[policy]</span> Awaiting governance API. No log data is simulated.</div>`;
   c.addEventListener('click',e=>{const t=e.target.closest('[data-log]');if(!t)return;
     c.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
     document.getElementById('logBox').innerHTML=`<span class="t">[${t.dataset.log.toLowerCase()}]</span> <span class="g">Not Connected</span> — this stream requires a backend log source. Nothing is fabricated.`;
+  });
+  return c;
+}
+
+/* ── AI Playground (admin-only) — reuses the existing /api/ai-chat engine ── */
+function renderPlayground(){
+  const c=el('div','card full');
+  const fields=['Knowledge Used','Graph Nodes','Context Used','Confidence','Missing Knowledge','Suggested Improvements'];
+  c.innerHTML=`<h3>🧪 AI Playground <span class="badge src" style="margin-left:8px">admin only</span></h3>
+    <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Queries the existing chatbot engine (<code>/api/ai-chat</code>). Structured fields show <b>Not Connected</b> unless the backend returns them — nothing is fabricated.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <input id="pgQ" placeholder="Ask a trading question…" style="flex:1;min-width:240px;background:#0c0a07;border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Inter'" />
+      <button class="btn gold" id="pgAsk">Ask</button>
+    </div>
+    <div style="margin-top:14px">
+      <div class="k" style="font-size:11.5px;font-weight:700;text-transform:uppercase;color:var(--muted)">Response</div>
+      <div id="pgResp" class="logbox" style="margin-top:6px;min-height:70px"><span class="g">Not Connected</span> — submit a question to call the engine.</div>
+    </div>
+    <div class="grid cols-3" style="margin-top:14px">
+      ${fields.map(f=>`<div class="card"><div class="k">${f}</div><div class="meta"><span class="badge nc" data-pg="${f}">Not Connected</span></div></div>`).join('')}
+    </div>`;
+  c.querySelector('#pgAsk').addEventListener('click',async()=>{
+    const q=c.querySelector('#pgQ').value.trim(); if(!q)return;
+    const resp=c.querySelector('#pgResp'); resp.innerHTML='<span class="t">Querying engine…</span>';
+    try{
+      const r=await fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})});
+      if(!r.ok){ resp.innerHTML=`<span class="r">Not Connected</span> — HTTP ${r.status}`; return; }
+      const txt=await r.text();
+      resp.textContent=txt.slice(0,4000)||'(empty response)';
+      // structured fields remain "Not Connected" unless the engine returns them — honest by default.
+    }catch(err){ resp.innerHTML='<span class="r">Not Connected</span> — engine unreachable (expected in local/preview).'; }
   });
   return c;
 }
@@ -304,6 +349,7 @@ function renderModule(key){
   const sec=el('section','module active');
   if(m.metrics) sec.appendChild(renderMetrics(m.metrics));
   if(m.tables){ const g=el('div','grid cols-1');g.style.marginTop='14px'; m.tables.forEach(t=>g.appendChild(tableCard(t))); sec.appendChild(g); }
+  if(m.playground) sec.appendChild(renderPlayground());
   if(m.reports) sec.appendChild(renderReports());
   if(m.actions) sec.appendChild(renderActions());
   if(m.logs) sec.appendChild(renderLogs());
@@ -333,15 +379,21 @@ function snapshot(){
   }
   return out;
 }
-function exportReport(type){
-  const s=snapshot(); const st=document.getElementById('repStatus');
-  if(type==='json'){ download('governance-snapshot.json',JSON.stringify(s,null,2),'application/json'); }
+function exportReport(type, reportId){
+  const rt=(REPORT_TYPES.find(r=>r[0]===reportId))||['snapshot','Governance Report',null];
+  const modKey=rt[2]; const s=snapshot();
+  // scope to the report's module when it maps to one; else whole snapshot
+  const scoped={generatedAt:s.generatedAt,report:rt[1],note:s.note,
+    modules: modKey ? {[modKey]: s.modules[modKey]||[]} : s.modules};
+  const st=document.getElementById('repStatus');
+  const fname=(reportId||'governance')+'-report';
+  if(type==='json'){ download(fname+'.json',JSON.stringify(scoped,null,2),'application/json'); }
   else if(type==='csv'){
     let rows=[['module','metric','value','source']];
-    for(const [k,arr] of Object.entries(s.modules)) arr.forEach(x=>rows.push([k,x.metric,x.value,x.source]));
-    download('governance-snapshot.csv',rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv');
+    for(const [k,arr] of Object.entries(scoped.modules)) (arr||[]).forEach(x=>rows.push([k,x.metric,x.value,x.source]));
+    download(fname+'.csv',rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv');
   } else { window.print(); }
-  st.innerHTML=`<span class="badge ok">Exported ${type.toUpperCase()} (current state)</span>`;
+  st.innerHTML=`<span class="badge ok">Exported ${rt[1]} — ${type.toUpperCase()} (current state)</span>`;
 }
 function download(name,data,mime){const b=new Blob([data],{type:mime});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
 
