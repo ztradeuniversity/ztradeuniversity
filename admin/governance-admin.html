@@ -331,7 +331,7 @@ function renderPlayground(){
     const q=c.querySelector('#pgQ').value.trim(); if(!q)return;
     const resp=c.querySelector('#pgResp'); resp.innerHTML='<span class="t">Querying engine…</span>';
     try{
-      const r=await fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})});
+      const r=await fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:q}]})});
       if(!r.ok){ resp.innerHTML=`<span class="r">Not Connected</span> — HTTP ${r.status}`; return; }
       const txt=await r.text();
       resp.textContent=txt.slice(0,4000)||'(empty response)';
