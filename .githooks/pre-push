@@ -1,0 +1,29 @@
+#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────────────
+# ZTU REGRESSION GUARD (pre-push)
+# The governance dashboard fix + populate/sync optimizations have been reverted 3×
+# by pushes made from a STALE working copy (D:\website). This hook BLOCKS any push
+# whose HEAD is missing those fixes, so a stale copy can never overwrite production.
+# Enable once:   git config core.hooksPath .githooks
+# ─────────────────────────────────────────────────────────────────────────────
+fail=0
+check() {
+  # $1 = file, $2 = required marker, $3 = human description
+  if ! git cat-file -p "HEAD:$1" 2>/dev/null | grep -q "$2"; then
+    echo "✗ PUSH BLOCKED — $1 is missing: $3"
+    fail=1
+  fi
+}
+check "admin/governance-admin.html"       "derived ONLY from EXISTING" "dashboard hydrate() /api/diagnose wiring"
+check "functions/utils/kb-populate.js"     "function conceptHash"       "populate delta/skip-unchanged optimization"
+check "admin/kb-admin.js"                  "CONCURRENCY"                "populate/sync parallel pool"
+check "functions/utils/kb-store.js"        "getRawEdgesBySrc"           "incremental syncEdges optimization"
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "This push looks like the recurring revert from a stale copy. Fix before pushing, e.g.:"
+  echo "  git fetch origin && git checkout origin/main -- <reverted-file>"
+  echo "Then re-commit and push. (Work in ONE clone; do not copy files from D:\\website.)"
+  exit 1
+fi
+exit 0

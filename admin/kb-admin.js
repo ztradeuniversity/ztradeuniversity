@@ -144,47 +144,62 @@
     // worker and the request hung (~offset #30). One node = ≤~15 subrequests, ~3s,
     // never hangs. A client-side abort timeout retries any stuck invocation instead
     // of blocking the loop forever (the page fetch has no timeout of its own).
-    const LIMIT = 1;
-    let offset = 0, nodes = 0, edges = 0, batchErrors = 0;
+    // OPTIMIZED — bounded PARALLEL pool (concurrency 4). Server syncEdges is now
+    // INCREMENTAL (skips unchanged nodes → 0 writes; inserts only missing, deletes only
+    // removed), so most invocations are a single read. Distinct offsets = distinct nodes
+    // (edges keyed by src) → safe concurrency, no duplicate edges. 25s abort + retry per
+    // request preserved. Checkpoint resume in sessionStorage. limit:1 keeps subrequests low.
+    const RETRY_MAX = 2, CONCURRENCY = 4, CKPT = 'ztu_syncedges_ckpt';
     const batchErrs = [];
-    let lastOffset = -1, attempt = 0;
-    const RETRY_MAX = 2;
-    for (let guard = 0; guard < 400; guard++) {
-      if (offset !== lastOffset) { lastOffset = offset; attempt = 0; }
-      render('… syncing edges (from #' + offset + ')' + (attempt ? ' retry ' + attempt : '') + ' …');
-      let res, body;
-      const ctl = new AbortController();
-      const tmo = setTimeout(() => ctl.abort(), 25000);   // abort a hung invocation → retry
-      try {
-        res = await fetch(ENDPOINT, {
-          method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'sync-edges', limit: LIMIT, offset }),
-          signal: ctl.signal,
-        });
-        body = await res.json().catch(() => ({}));
-      } catch (fetchErr) {
-        if (++attempt <= RETRY_MAX) { continue; }
-        batchErrs.push({ offset, error: 'fetch-error: ' + (fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr)) });
-        batchErrors++; offset += LIMIT; continue;
-      } finally { clearTimeout(tmo); }
-      if (res.status === 403) {
-        render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err');
-        try { if (sessionStorage.getItem(SS_KEY) === key) sessionStorage.removeItem(SS_KEY); } catch (_) {}
-        return;
+    let nodes = 0, edges = 0, skipped = 0, batchErrors = 0, next = 0, ended = false, aborted = false;
+    let done = new Set();
+    try { const raw = sessionStorage.getItem(CKPT); if (raw) done = new Set(JSON.parse(raw)); } catch (_) {}
+
+    async function callOffset(offset) {
+      for (let attempt = 0; attempt <= RETRY_MAX; attempt++) {
+        const ctl = new AbortController();
+        const tmo = setTimeout(() => ctl.abort(), 25000);
+        try {
+          const res = await fetch(ENDPOINT, {
+            method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'sync-edges', limit: 1, offset }), signal: ctl.signal,
+          });
+          if (res.status === 403) return { offset, fatal403: true };
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) { if (attempt < RETRY_MAX) continue; return { offset, httpError: res.status, body }; }
+          return { offset, ok: true, body };
+        } catch (e) { if (attempt < RETRY_MAX) continue; return { offset, netError: String((e && e.message) || e) }; }
+        finally { clearTimeout(tmo); }
       }
-      keyConfirmedValid = true;
-      if (!res.ok) {
-        if (++attempt <= RETRY_MAX) { continue; }
-        batchErrs.push({ offset, httpStatus: res.status, error: JSON.stringify(body).slice(0, 300) });
-        batchErrors++; offset += LIMIT; continue;
-      }
-      nodes += body.nodes || 0; edges += body.edges || 0;
-      render('… edges synced for ' + nodes + ' node(s), ' + edges + ' edge(s) so far …');
-      if (body.nextOffset == null) break;
-      offset = body.nextOffset;
     }
+    const persist = () => { try { sessionStorage.setItem(CKPT, JSON.stringify([...done])); } catch (_) {} };
+
+    async function worker() {
+      while (!ended && !aborted) {
+        const offset = next++;
+        if (done.has(offset)) continue;                              // resume: skip completed
+        const r = await callOffset(offset);
+        if (r.fatal403) { aborted = true; return; }
+        if (r.ok) {
+          if ((r.body.nodes || 0) === 0) { ended = true; break; }    // past the last node
+          keyConfirmedValid = true;
+          nodes += r.body.nodes || 0; edges += r.body.edges || 0; skipped += r.body.skipped || 0;
+          done.add(offset); persist();
+          render('… edges: ' + nodes + ' node(s), +' + edges + ' new, ' + skipped + ' unchanged …');
+        } else { batchErrs.push(r.httpError ? { offset: r.offset, httpStatus: r.httpError } : { offset: r.offset, error: r.netError || 'err' }); batchErrors++; done.add(offset); }
+      }
+    }
+
+    render('… syncing edges (parallel ×' + CONCURRENCY + ', incremental) …');
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    if (aborted) {
+      render('🔒 Rejected (403): wrong or missing AI_ADMIN_KEY.', 'err');
+      try { if (sessionStorage.getItem(SS_KEY) === key) sessionStorage.removeItem(SS_KEY); } catch (_) {}
+      return;
+    }
+    try { sessionStorage.removeItem(CKPT); } catch (_) {}
     render(
-      (batchErrors ? '⚠️' : '✅') + ' sync-edges done — nodes=' + nodes + ', edges=' + edges +
+      (batchErrors ? '⚠️' : '✅') + ' sync-edges done — nodes=' + nodes + ', new edges=' + edges + ', unchanged=' + skipped +
       (batchErrors ? '\n❌ ' + batchErrors + ' batch error(s):\n' + batchErrs.map(e => JSON.stringify(e)).join('\n') : ''),
       batchErrors ? 'err' : 'ok'
     );

@@ -303,7 +303,7 @@ export async function onRequest(context) {
     const a = body?.action;
     if (a === 'migrate-seed') return json(await provisionSeed(env));
     if (a === 'backfill-embeddings') return json(await backfillEmbeddings(env, { limit: body.limit || 200, offset: body.offset || 0, force: !!body.force }));
-    if (a === 'sync-edges')   return json(await syncAllEdges(env, { limit: body.limit || 200, offset: body.offset || 0 }));
+    if (a === 'sync-edges')   return json(await syncAllEdges(env, { limit: body.limit || 200, offset: body.offset || 0, rebuild: !!body.rebuild }));
     if (a === 'validate')     return json(validateKnowledgeObject(body.object, { mode: body.mode || 'publish' }));
     if (a === 'author')       return json(await authorConcept(env, body.object, { origin: body.origin }));
     if (a === 'author-batch') return json(await authorBatch(env, body.objects, { origin: body.origin }));
