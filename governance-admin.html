@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Governance Admin Panel — Z Trade University</title>
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── ZTU Governance Admin — dark + gold, component-based ── */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#100e0a; --panel:#171410; --card:#1e1a13; --card2:#241f17;
+      --border:rgba(200,156,63,.16); --border2:rgba(200,156,63,.28);
+      --gold:#c89c3f; --gold2:#d4ae5e; --gold3:#e6c987;
+      --text:#ece7dd; --muted:#9a8f7c; --dim:#6f6553;
+      --ok:#5bbb7b; --warn:#e0b24a; --bad:#e2685f; --idle:#6f6553;
+      --radius:14px; --sidebar:248px;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:radial-gradient(1200px 600px at 80% -10%,rgba(200,156,63,.06),transparent),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(200,156,63,.22);border-radius:8px}
+
+    /* Layout */
+    .layout{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}
+    aside{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,var(--panel),#120f0b);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 14px;overflow-y:auto}
+    .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 18px;border-bottom:1px solid var(--border);margin-bottom:14px}
+    .brand .shield{width:38px;height:38px;border-radius:10px;background:linear-gradient(150deg,#3d2a08,#8c6c1f 55%,var(--gold2));display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;color:var(--gold3);font-size:19px;box-shadow:0 4px 16px rgba(200,156,63,.35)}
+    .brand b{font-size:14px;font-weight:800;letter-spacing:-.2px;display:block}
+    .brand small{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+    nav.side a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s;margin-bottom:2px}
+    nav.side a:hover{background:rgba(200,156,63,.07);color:var(--text)}
+    nav.side a.active{background:linear-gradient(90deg,rgba(200,156,63,.16),rgba(200,156,63,.03));color:var(--gold3);box-shadow:inset 2px 0 0 var(--gold)}
+    nav.side a .ico{width:16px;text-align:center;opacity:.9}
+    .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
+
+    /* Topbar */
+    main{min-width:0}
+    .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 26px;background:rgba(16,14,10,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .topbar h1{font-family:'Manrope';font-size:19px;font-weight:800;letter-spacing:-.4px}
+    .topbar .sub{font-size:12px;color:var(--muted);margin-top:1px}
+    .conn{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--border2);border-radius:100px;padding:7px 14px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--idle);box-shadow:0 0 0 3px rgba(111,101,83,.18)}
+    .dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(91,187,123,.18)}
+    .banner{margin:18px 26px 0;padding:12px 16px;border:1px solid var(--border2);border-radius:12px;background:linear-gradient(90deg,rgba(224,178,74,.08),transparent);font-size:12.5px;color:var(--gold3);display:flex;gap:10px;align-items:flex-start}
+
+    /* Sections & grid */
+    .wrap{padding:22px 26px 60px}
+    section.module{display:none;animation:fade .25s ease}
+    section.module.active{display:block}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .mod-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:6px 0 16px}
+    .mod-head h2{font-family:'Manrope';font-size:22px;font-weight:800;letter-spacing:-.5px}
+    .mod-head p{font-size:12.5px;color:var(--muted)}
+    .grid{display:grid;gap:14px}
+    .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    @media(max-width:1100px){.grid.cols-4{grid-template-columns:repeat(2,1fr)}.grid.cols-3{grid-template-columns:repeat(2,1fr)}}
+
+    /* Reusable card */
+    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:16px 17px;position:relative;transition:.18s}
+    .card:hover{border-color:var(--border2);transform:translateY(-1px)}
+    .card .k{font-size:11.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+    .card .v{font-family:'Manrope';font-size:24px;font-weight:800;margin-top:8px;letter-spacing:-.5px}
+    .card .meta{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+    .card.full{grid-column:1/-1}
+    .card h3{font-family:'Manrope';font-size:15px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+    /* Badges */
+    .badge{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:100px;border:1px solid transparent;white-space:nowrap}
+    .badge.nc{color:var(--dim);border-color:var(--border);background:rgba(255,255,255,.02)}
+    .badge.wait{color:var(--warn);border-color:rgba(224,178,74,.3);background:rgba(224,178,74,.07)}
+    .badge.ok{color:var(--ok);border-color:rgba(91,187,123,.3);background:rgba(91,187,123,.07)}
+    .badge.bad{color:var(--bad);border-color:rgba(226,104,95,.3);background:rgba(226,104,95,.07)}
+    .badge.src{color:var(--gold3);border-color:var(--border2);background:rgba(200,156,63,.06)}
+
+    /* Tables */
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+    td{color:var(--text)}
+    tr:last-child td{border-bottom:none}
+    .empty{color:var(--dim);font-size:12.5px;padding:18px 12px;text-align:center}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Inter';font-size:13px;font-weight:700;color:var(--text);background:rgba(200,156,63,.09);border:1px solid var(--border2);border-radius:10px;padding:10px 15px;cursor:pointer;transition:.15s}
+    .btn:hover{background:rgba(200,156,63,.16);color:var(--gold3)}
+    .btn:active{transform:translateY(1px)}
+    .btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241c08;border-color:transparent}
+    .btn.gold:hover{filter:brightness(1.06)}
+    .btn.sm{padding:7px 11px;font-size:12px}
+    .action-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .action-row:last-child{border-bottom:none}
+    .action-row .desc{font-size:12px;color:var(--muted);margin-top:2px}
+
+    /* Logs */
+    .logbox{background:#0c0a07;border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:12px;color:#b9ad95;max-height:320px;overflow:auto;white-space:pre-wrap}
+    .logbox .t{color:var(--dim)} .logbox .g{color:var(--gold3)} .logbox .r{color:var(--bad)}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .tabs .tab{font-size:12px;font-weight:700;color:var(--muted);padding:7px 13px;border:1px solid var(--border);border-radius:100px;cursor:pointer}
+    .tabs .tab.active{color:var(--gold3);border-color:var(--border2);background:rgba(200,156,63,.07)}
+
+    /* Health ring */
+    .ring{display:flex;align-items:center;gap:16px}
+    .ring svg{transform:rotate(-90deg)}
+    .ring .lbl{font-family:'Manrope';font-size:30px;font-weight:800}
+
+    /* mobile */
+    .menu-btn{display:none}
+    @media(max-width:880px){
+      .layout{grid-template-columns:1fr}
+      aside{position:fixed;left:0;top:0;z-index:60;width:var(--sidebar);transform:translateX(-100%);transition:.25s}
+      aside.open{transform:none}
+      .menu-btn{display:inline-flex}
+      .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr}
+      .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none}.scrim.show{display:block}
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="shield">Z</div>
+      <div><b>ZTU Governance</b><small>Admin Panel</small></div>
+    </div>
+    <nav class="side" id="sideNav"></nav>
+    <div class="side-foot">
+      ZGF V1 · Monitoring &amp; control interface.<br/>No data is simulated.
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- MAIN -->
+  <main>
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn sm menu-btn" id="menuBtn">☰</button>
+        <div>
+          <h1 id="modTitle">Executive Dashboard</h1>
+          <div class="sub" id="modSub">Platform health overview · every metric cites its source</div>
+        </div>
+      </div>
+      <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Backend: Not Connected</span></div>
+    </div>
+
+    <div class="banner">
+      <span>⚠️</span>
+      <span><b>Monitoring &amp; control interface — not the execution engine.</b> Metrics display <b>“Not Connected”</b> or <b>“Waiting for Backend”</b> until a live governance API responds. No statistics are fabricated and no successful execution is simulated. Actions call real endpoints only where they exist.</span>
+    </div>
+
+    <div class="wrap" id="wrap"><!-- modules injected here --></div>
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZTU GOVERNANCE ADMIN — component-based, evidence-first.
+   Design rule: NO fabricated data. Every metric is "Not Connected" / "Waiting
+   for Backend" until a real API fills it. New modules = add to MODULES config.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// Optional: point these at real governance endpoints when they exist.
+const API = {
+  base: '',                                    // e.g. '/api'
+  liveState:      null,                         // GET governance snapshot (JSON) — null = none yet
+  actions: {
+    'run-governance-cycle': null,               // no backend endpoint yet
+    'run-chatbot-audit':    '/api/ai-verify',   // real route (exists)
+    'run-seo-audit':        null,
+    'run-knowledge-audit':  '/api/ai-kb-admin', // real route (exists)
+    'run-graph-audit':      '/api/ai-kb-admin',
+    'run-deployment-audit': '/api/diagnose',    // real route (exists)
+    'run-maintenance-cycle':null,
+    'run-content-cycle':    null,
+    'run-executive-review': null,
+  }
+};
+
+// A metric with no live source. Kept honest: value = null → renders "Not Connected".
+const M = (k, source, opts={}) => ({ k, value:null, source, ...opts });
+
+const MODULES = {
+  executive: { title:'Executive Dashboard', sub:'Platform health overview · every metric cites its source', icon:'📊',
+    metrics:[
+      M('Overall Health','Runtime'), M('Platform Health','Repository'), M('Business Health','Analytics'),
+      M('Knowledge Health','Repository'), M('SEO Health','Repository'), M('Chatbot Health','Runtime'),
+      M('Graph Health','Repository'), M('Security','Repository'), M('Deployment','Cloudflare'), M('Automation','Runtime'),
+    ]},
+  governance:{ title:'Governance', sub:'Board status, decisions, and registers', icon:'🏛️',
+    metrics:[ M('Board Status','Runtime'), M('Current Cycle','Runtime'), M('Current Department','Runtime'),
+      M('Current Priority','Runtime'), M('Current Task','Runtime'), M('Current Decision','Runtime') ],
+    tables:[ {title:'Decision History / Board Minutes',cols:['Cycle','Decision','Result','Source'],rows:[]},
+      {title:'Evidence Register',cols:['Metric','Value','Source','Confidence'],rows:[]},
+      {title:'Risk Register',cols:['Risk','Severity','Rollback','Status'],rows:[]},
+      {title:'Opportunity Register',cols:['Opportunity','Impact','Blocked By'],rows:[]} ]},
+  knowledge:{ title:'Knowledge', sub:'Coverage, inventory, and queue', icon:'📚',
+    metrics:[ M('Total Articles','Repository'), M('Published','Supabase'), M('Draft','Supabase'),
+      M('Missing Topics','Repository'), M('Weak Topics','Repository'), M('Duplicate Topics','Repository'),
+      M('Knowledge Coverage','Repository'), M('Graph Nodes','Repository') ],
+    tables:[ {title:'Topic Inventory',cols:['Topic','Category','Coverage','Source'],rows:[]},
+      {title:'Article Queue',cols:['Topic','Priority','Status'],rows:[]} ]},
+  chatbot:{ title:'Chatbot', sub:'Retrieval, coverage, and quality', icon:'🤖',
+    metrics:[ M('Knowledge Coverage','Runtime'), M('Missing Knowledge','Supabase'), M('Weak Responses','Runtime'),
+      M('Hallucination Risk','Runtime'), M('Conversation Quality','Runtime'), M('Human-Behaviour Score','Runtime'),
+      M('Retrieval Quality','Runtime'), M('Graph Quality','Repository') ],
+    tables:[ {title:'Top Missing Questions (kb_missing)',cols:['Question','Frequency','Category'],rows:[]} ]},
+  seo:{ title:'SEO', sub:'Schema, coverage, and authority', icon:'🔎',
+    metrics:[ M('Structured-Data Coverage','Repository'), M('Schema','Repository'), M('Open Graph','Repository'),
+      M('Twitter Cards','Repository'), M('Canonicals','Repository'), M('Internal Links','Repository'),
+      M('Broken Links','Runtime'), M('Topical Authority','Search Console'), M('Sitemap','Repository') ]},
+  automation:{ title:'Automation', sub:'Jobs, queues, and background tasks', icon:'⚙️',
+    metrics:[ M('Running Jobs','Runtime'), M('Completed Jobs','Runtime'), M('Failed Jobs','Runtime'),
+      M('Retry Queue','Runtime'), M('Deployment Queue','Cloudflare'), M('Background Tasks','Runtime') ],
+    tables:[ {title:'Queue History',cols:['Job','Type','Result','When'],rows:[]} ]},
+  reports:{ title:'Reports', sub:'Export the current dashboard snapshot', icon:'📄', reports:true },
+  actions:{ title:'Actions', sub:'Trigger backend audits/cycles where an endpoint exists', icon:'▶️', actions:true },
+  logs:{ title:'Live Logs', sub:'Board, automation, deployment, validation & error logs', icon:'📜', logs:true },
+};
+
+/* ── reusable component factories ── */
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+function metricCard(m){
+  const c=el('div','card');
+  const connected = m.value!=null;
+  const vBadge = connected ? `<span class="v">${m.value}</span>`
+    : `<span class="meta"><span class="badge ${m.source==='Repository'?'wait':'nc'}">${m.source==='Repository'?'Waiting for Backend':'Not Connected'}</span></span>`;
+  c.innerHTML=`<div class="k">${m.k}</div>${vBadge}
+    <div class="meta"><span class="badge src">src: ${m.source}</span><span class="badge nc">conf: —</span></div>`;
+  return c;
+}
+function tableCard(t){
+  const c=el('div','card full');
+  let body;
+  if(!t.rows||!t.rows.length){ body=`<div class="empty">Waiting for Backend — no live data source connected.</div>`; }
+  else{ body=`<table><thead><tr>${t.cols.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${
+    t.rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+  c.innerHTML=`<h3>${t.title}</h3>${body}`;
+  return c;
+}
+function renderMetrics(list){ const g=el('div','grid cols-4'); list.forEach(m=>g.appendChild(metricCard(m))); return g; }
+
+function renderReports(){
+  const c=el('div','card full');
+  c.innerHTML=`<h3>Generate &amp; Export Report</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Exports a snapshot of the <b>current dashboard state</b> (honest — unconnected metrics export as “Not Connected”).</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn gold" data-exp="json">⬇ Download JSON</button>
+      <button class="btn" data-exp="csv">⬇ Download CSV</button>
+      <button class="btn" data-exp="pdf">⬇ PDF (Print)</button>
+    </div>
+    <div id="repStatus" class="meta" style="margin-top:12px"></div>`;
+  c.addEventListener('click',e=>{const b=e.target.closest('[data-exp]');if(b)exportReport(b.dataset.exp);});
+  return c;
+}
+function renderActions(){
+  const c=el('div','card full'); c.innerHTML='<h3>Governance Actions</h3>';
+  const defs=[
+    ['run-governance-cycle','Run Governance Cycle'],['run-chatbot-audit','Run Chatbot Audit'],
+    ['run-seo-audit','Run SEO Audit'],['run-knowledge-audit','Run Knowledge Audit'],
+    ['run-graph-audit','Run Graph Audit'],['run-deployment-audit','Run Deployment Audit'],
+    ['run-maintenance-cycle','Run Maintenance Cycle'],['run-content-cycle','Run Content Cycle'],
+    ['run-executive-review','Run Executive Review'],
+  ];
+  defs.forEach(([id,label])=>{
+    const ep=API.actions[id];
+    const row=el('div','action-row');
+    row.innerHTML=`<div><div style="font-weight:700;font-size:13.5px">${label}</div>
+      <div class="desc">${ep?('endpoint: '+ep):'no backend endpoint configured'}</div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge ${ep?'nc':'nc'}" data-st="${id}">${ep?'Ready':'Not Connected'}</span>
+        <button class="btn sm ${ep?'gold':''}" data-act="${id}" ${ep?'':'disabled style=\"opacity:.5;cursor:not-allowed\"'}>Run</button>
+      </div>`;
+    c.appendChild(row);
+  });
+  c.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)runAction(b.dataset.act);});
+  return c;
+}
+function renderLogs(){
+  const c=el('div','card full');
+  c.innerHTML=`<h3>Live Logs</h3>
+    <div class="tabs" id="logTabs">
+      ${['Board','Automation','Deployment','Validation','Error'].map((t,i)=>`<div class="tab ${i===0?'active':''}" data-log="${t}">${t} Logs</div>`).join('')}
+    </div>
+    <div class="logbox" id="logBox"><span class="t">[client]</span> Governance Admin Panel loaded. <span class="g">No backend log stream connected</span> — showing local client events only.\n<span class="t">[policy]</span> Awaiting governance API. No log data is simulated.</div>`;
+  c.addEventListener('click',e=>{const t=e.target.closest('[data-log]');if(!t)return;
+    c.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+    document.getElementById('logBox').innerHTML=`<span class="t">[${t.dataset.log.toLowerCase()}]</span> <span class="g">Not Connected</span> — this stream requires a backend log source. Nothing is fabricated.`;
+  });
+  return c;
+}
+
+/* ── render a module ── */
+function renderModule(key){
+  const m=MODULES[key]; const wrap=document.getElementById('wrap'); wrap.innerHTML='';
+  document.getElementById('modTitle').textContent=m.title;
+  document.getElementById('modSub').textContent=m.sub;
+  const sec=el('section','module active');
+  if(m.metrics) sec.appendChild(renderMetrics(m.metrics));
+  if(m.tables){ const g=el('div','grid cols-1');g.style.marginTop='14px'; m.tables.forEach(t=>g.appendChild(tableCard(t))); sec.appendChild(g); }
+  if(m.reports) sec.appendChild(renderReports());
+  if(m.actions) sec.appendChild(renderActions());
+  if(m.logs) sec.appendChild(renderLogs());
+  wrap.appendChild(sec);
+  document.querySelectorAll('#sideNav a').forEach(a=>a.classList.toggle('active',a.dataset.k===key));
+  closeSidebar();
+}
+
+/* ── actions: real fetch or honest "Not Connected" ── */
+async function runAction(id){
+  const ep=API.actions[id]; const st=document.querySelector(`[data-st="${id}"]`);
+  if(!ep){ st.textContent='Not Connected'; st.className='badge nc'; return; }
+  st.textContent='Running…'; st.className='badge wait';
+  try{
+    const res=await fetch((API.base||'')+ep,{method:'GET',headers:{'Accept':'application/json'}});
+    if(!res.ok){ st.textContent='HTTP '+res.status; st.className='badge bad'; return; }
+    await res.text(); st.textContent='Responded ✓'; st.className='badge ok';
+  }catch(err){ st.textContent='Not Connected'; st.className='badge nc'; }
+}
+
+/* ── export current snapshot (honest: unconnected = "Not Connected") ── */
+function snapshot(){
+  const out={generatedAt:new Date().toISOString(),note:'Snapshot of Governance Admin state. Unconnected metrics export as "Not Connected" — no fabricated values.',modules:{}};
+  for(const [k,m] of Object.entries(MODULES)){
+    if(!m.metrics) continue;
+    out.modules[k]=m.metrics.map(x=>({metric:x.k,value:x.value==null?'Not Connected':x.value,source:x.source}));
+  }
+  return out;
+}
+function exportReport(type){
+  const s=snapshot(); const st=document.getElementById('repStatus');
+  if(type==='json'){ download('governance-snapshot.json',JSON.stringify(s,null,2),'application/json'); }
+  else if(type==='csv'){
+    let rows=[['module','metric','value','source']];
+    for(const [k,arr] of Object.entries(s.modules)) arr.forEach(x=>rows.push([k,x.metric,x.value,x.source]));
+    download('governance-snapshot.csv',rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv');
+  } else { window.print(); }
+  st.innerHTML=`<span class="badge ok">Exported ${type.toUpperCase()} (current state)</span>`;
+}
+function download(name,data,mime){const b=new Blob([data],{type:mime});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+
+/* ── optional live state hydrate (only if a real endpoint is configured) ── */
+async function hydrate(){
+  if(!API.liveState){ setConn(false); return; }
+  try{ const r=await fetch((API.base||'')+API.liveState); if(!r.ok) throw 0;
+    const d=await r.json(); // shape: { moduleKey: { MetricName: value } }
+    for(const [k,m] of Object.entries(MODULES)){ if(!m.metrics||!d[k])continue;
+      m.metrics.forEach(x=>{ if(d[k][x.k]!=null) x.value=d[k][x.k]; }); }
+    setConn(true); renderModule(currentKey);
+  }catch(e){ setConn(false); }
+}
+function setConn(live){ document.getElementById('connDot').classList.toggle('live',live);
+  document.getElementById('connTxt').textContent='Backend: '+(live?'Connected':'Not Connected'); }
+
+/* ── nav + boot ── */
+let currentKey='executive';
+function buildNav(){ const n=document.getElementById('sideNav');
+  Object.entries(MODULES).forEach(([k,m])=>{ const a=el('a',k===currentKey?'active':'');a.dataset.k=k;
+    a.innerHTML=`<span class="ico">${m.icon}</span>${m.title}`;a.onclick=()=>{currentKey=k;renderModule(k);};n.appendChild(a); }); }
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('scrim').classList.remove('show');}
+document.getElementById('menuBtn').onclick=()=>{document.getElementById('sidebar').classList.toggle('open');document.getElementById('scrim').classList.toggle('show');};
+document.getElementById('scrim').onclick=closeSidebar;
+
+buildNav(); renderModule('executive'); setConn(false); hydrate();
+</script>
+</body>
+</html>
