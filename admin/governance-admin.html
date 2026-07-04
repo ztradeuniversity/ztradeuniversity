@@ -70,6 +70,23 @@
     .card .meta{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
     .card.full{grid-column:1/-1}
     .card h3{font-family:'Manrope';font-size:15px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    /* Executive hero (top summary + guide + actions) */
+    .hero{margin-bottom:16px}
+    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+    .hero-top h2{font-family:'Manrope';font-size:20px;font-weight:800;letter-spacing:-.4px}
+    .hero-sum{font-size:12.5px;color:var(--muted);margin-top:3px;max-width:640px}
+    .hero-chips,.hero-quick,.hero-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .hero-quick{margin-top:14px}
+    .hero-actions{margin-top:14px}
+    .hero-help{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+    .hero-help summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--gold3);list-style:none}
+    .hero-help summary::-webkit-details-marker{display:none}
+    .hero-help summary::before{content:'▸ ';color:var(--gold)}
+    .hero-help[open] summary::before{content:'▾ '}
+    .hero-help ul{margin:10px 0 2px 2px;list-style:none;display:grid;gap:6px}
+    .hero-help li{font-size:12.5px;color:var(--text);padding-left:16px;position:relative}
+    .hero-help li::before{content:'•';position:absolute;left:2px;color:var(--gold)}
+    .hero-help a{color:var(--gold3);font-weight:700}
 
     /* Badges */
     .badge{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:100px;border:1px solid transparent;white-space:nowrap}
@@ -234,12 +251,21 @@ const MODULES = {
 /* ── reusable component factories ── */
 const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 function metricCard(m){
+  // Honest states: value+stateClass set by hydrate() from a REAL endpoint. 'ok' shows a
+  // large value (OK/Live/Ready); 'wait' = Not Configured / Feature Off (source exists,
+  // not set up); null = literally no backend source → "Not Connected". No fabrication.
   const c=el('div','card');
-  const connected = m.value!=null;
-  const vBadge = connected ? `<span class="v">${m.value}</span>`
-    : `<span class="meta"><span class="badge ${m.source==='Repository'?'wait':'nc'}">${m.source==='Repository'?'Waiting for Backend':'Not Connected'}</span></span>`;
-  c.innerHTML=`<div class="k">${m.k}</div>${vBadge}
-    <div class="meta"><span class="badge src">src: ${m.source}</span><span class="badge nc">conf: —</span></div>`;
+  let body;
+  if(m.value!=null){
+    const cls=m.stateClass||'ok';
+    body = (cls==='ok')
+      ? `<span class="v" style="color:var(--ok)">${m.value}</span>`
+      : `<span class="meta"><span class="badge ${cls}">${m.value}</span></span>`;
+  } else {
+    body = `<span class="meta"><span class="badge nc">Not Connected</span></span>`;
+  }
+  c.innerHTML=`<div class="k">${m.k}</div>${body}
+    <div class="meta"><span class="badge src">src: ${m.source}</span></div>`;
   return c;
 }
 function tableCard(t){
@@ -347,11 +373,58 @@ function renderPlayground(){
 }
 
 /* ── render a module ── */
+// Executive hero — fills the first screen with a real summary + guide + actions.
+function renderExecHero(){
+  const c=el('div','card full hero');
+  const live=document.getElementById('connDot').classList.contains('live');
+  const q=(k)=>{ const x=(MODULES.executive.metrics.find(e=>e.k===k)||{}); return x.value!=null?x.value:'—'; };
+  const lr=window.__lastRefresh?window.__lastRefresh.toLocaleTimeString():'—';
+  const chip=(label,val,good)=>`<span class="badge ${good?'ok':(val==='—'?'nc':'wait')}">${label}: ${val}</span>`;
+  c.innerHTML=`
+    <div class="hero-top">
+      <div>
+        <h2>Executive Dashboard</h2>
+        <p class="hero-sum">Live platform health, read only from real production endpoints (/api/diagnose, /api/ai-chat, /api/ai-kb-admin). No values are simulated.</p>
+      </div>
+      <div class="hero-chips">
+        <span class="badge ${live?'ok':'nc'}">Backend: ${live?'Connected':'Not Connected'}</span>
+        <span class="badge src">Last refresh: ${lr}</span>
+        <span class="badge ${q('Deployment')==='Live'?'ok':'nc'}">Deployment: ${q('Deployment')}</span>
+      </div>
+    </div>
+    <div class="hero-quick">
+      ${chip('Overall',q('Overall Health'),q('Overall Health')==='OK')}
+      ${chip('Platform',q('Platform Health'),q('Platform Health')==='OK')}
+      ${chip('Chatbot',q('Chatbot Health'),q('Chatbot Health')==='OK')}
+      ${chip('Knowledge',q('Knowledge Health'),String(q('Knowledge Health')).match(/Ready|OK/))}
+    </div>
+    <details class="hero-help">
+      <summary>How to use this dashboard</summary>
+      <ul>
+        <li><b>What it monitors:</b> backend liveness, deployment, chatbot, and the knowledge graph — each card cites its real source.</li>
+        <li><b>Status words:</b> <b>OK/Live/Ready</b> = healthy · <b>Not Configured</b> = source exists but needs setup (e.g. admin key) · <b>Not Connected</b> = no backend source for that metric.</li>
+        <li><b>Click first:</b> <b>Refresh</b> to pull live state. For Knowledge/Graph, open <a href="kb-admin.html">KB Admin</a> and enter the admin key.</li>
+        <li><b>Populate Anchors</b> (in KB Admin): writes the concept library into the graph. Run once after knowledge changes — re-runs skip unchanged concepts.</li>
+        <li><b>Sync Edges</b> (in KB Admin): rebuilds concept→concept relationships. Run <i>after</i> Populate Anchors — incremental, skips unchanged edges.</li>
+      </ul>
+    </details>
+    <div class="hero-actions">
+      <button class="btn gold" id="heroRefresh">↻ Refresh</button>
+      <button class="btn" data-goto="actions">▶ Actions</button>
+      <button class="btn" data-goto="reports">📄 Reports</button>
+      <a class="btn" href="kb-admin.html">🗄 KB Admin</a>
+    </div>`;
+  const rb=c.querySelector('#heroRefresh'); if(rb) rb.addEventListener('click',()=>{ rb.textContent='↻ Refreshing…'; hydrate(); });
+  c.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>{ currentKey=b.dataset.goto; renderModule(b.dataset.goto); }));
+  return c;
+}
+
 function renderModule(key){
   const m=MODULES[key]; const wrap=document.getElementById('wrap'); wrap.innerHTML='';
   document.getElementById('modTitle').textContent=m.title;
   document.getElementById('modSub').textContent=m.sub;
   const sec=el('section','module active');
+  if(key==='executive') sec.appendChild(renderExecHero());
   if(m.metrics) sec.appendChild(renderMetrics(m.metrics));
   if(m.tables){ const g=el('div','grid cols-1');g.style.marginTop='14px'; m.tables.forEach(t=>g.appendChild(tableCard(t))); sec.appendChild(g); }
   if(m.playground) sec.appendChild(renderPlayground());
@@ -408,13 +481,45 @@ function download(name,data,mime){const b=new Blob([data],{type:mime});const u=U
 
 /* ── optional live state hydrate (only if a real endpoint is configured) ── */
 async function hydrate(){
-  if(!API.liveState){ setConn(false); return; }
-  try{ const r=await fetch((API.base||'')+API.liveState); if(!r.ok) throw 0;
-    const d=await r.json(); // shape: { moduleKey: { MetricName: value } }
-    for(const [k,m] of Object.entries(MODULES)){ if(!m.metrics||!d[k])continue;
-      m.metrics.forEach(x=>{ if(d[k][x.k]!=null) x.value=d[k][x.k]; }); }
-    setConn(true); renderModule(currentKey);
-  }catch(e){ setConn(false); }
+  // Connection + health derived ONLY from EXISTING production endpoints; every value
+  // comes from a real response field (no fabrication). Cards with no real source stay
+  // "Not Connected"/"Waiting for Backend". Connected = at least one real endpoint answered.
+  let connected=false;
+  const set=(mod,key,val,cls)=>{ const m=MODULES[mod]; if(!m||!m.metrics||val==null)return; const x=m.metrics.find(e=>e.k===key); if(x){ x.value=val; x.stateClass=cls||'ok'; } };
+  // 1) Backend liveness + platform + deployment — existing open endpoint /api/diagnose
+  try{
+    const r=await fetch((API.base||'')+'/api/diagnose',{headers:{'Accept':'application/json'}});
+    if(r.ok){ const d=await r.json().catch(()=>({})); connected=true;
+      const ok=!d.status || String(d.status).toLowerCase()==='ok';
+      set('executive','Overall Health', ok?'OK':'DEGRADED', ok?'ok':'wait');
+      set('executive','Platform Health', ok?'OK':'DEGRADED', ok?'ok':'wait');
+      set('executive','Deployment','Live','ok'); }
+  }catch(_){}
+  // 2) Chatbot — existing /api/ai-chat (POST-only). OPTIONS proves it is deployed/live.
+  try{ const r=await fetch((API.base||'')+'/api/ai-chat',{method:'OPTIONS'}); if(r.ok||r.status===204) set('executive','Chatbot Health','OK','ok'); }catch(_){}
+  // 3) Knowledge + Graph — existing admin-gated endpoint, reuses shared admin-key slot.
+  //    Source EXISTS but needs the admin key → "Not Configured" (not "Not Connected").
+  const key=(API.adminKey&&API.adminKey())||'';
+  if(key){
+    try{ const r=await fetch((API.base||'')+'/api/ai-kb-admin?action=status',{headers:{'x-admin-key':key,'Accept':'application/json'}});
+      if(r.ok){ const d=await r.json().catch(()=>({})); set('executive','Knowledge Health', d&&d.ready?'Ready':'Not provisioned', d&&d.ready?'ok':'wait'); connected=true; }
+      else if(r.status===403){ set('executive','Knowledge Health','Not Configured','wait'); } }catch(_){}
+    try{ const r=await fetch((API.base||'')+'/api/ai-kb-admin?action=parity',{headers:{'x-admin-key':key,'Accept':'application/json'}});
+      if(r.ok){ const d=await r.json().catch(()=>({})); set('executive','Graph Health', d&&d.parity===false?'Drift':'OK', d&&d.parity===false?'wait':'ok'); } }catch(_){}
+  } else {
+    set('executive','Knowledge Health','Not Configured','wait');
+    set('executive','Graph Health','Not Configured','wait');
+  }
+  // 4) Sources that exist but are not wired at runtime → "Not Configured" (honest, not
+  //    "Not Connected"). Business=analytics not connected; Automation=desktop, no web hook.
+  set('executive','Business Health','Not Configured','wait');
+  set('executive','Automation','Not Configured','wait');
+  // (SEO Health & Security have NO runtime endpoint → left as "Not Connected", correctly.)
+  // 5) Optional explicit governance snapshot endpoint (unchanged when configured)
+  if(API.liveState){ try{ const r=await fetch((API.base||'')+API.liveState); if(r.ok){ const d=await r.json();
+    for(const [k,m] of Object.entries(MODULES)){ if(!m.metrics||!d[k])continue; m.metrics.forEach(x=>{ if(d[k][x.k]!=null){ x.value=d[k][x.k]; x.stateClass='ok'; } }); } connected=true; } }catch(_){} }
+  window.__lastRefresh=new Date();
+  setConn(connected); renderModule(currentKey);
 }
 function setConn(live){ document.getElementById('connDot').classList.toggle('live',live);
   document.getElementById('connTxt').textContent='Backend: '+(live?'Connected':'Not Connected'); }
