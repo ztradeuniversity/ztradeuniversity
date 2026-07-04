@@ -408,30 +408,13 @@ function download(name,data,mime){const b=new Blob([data],{type:mime});const u=U
 
 /* ── optional live state hydrate (only if a real endpoint is configured) ── */
 async function hydrate(){
-  // Connection + health derived ONLY from EXISTING production endpoints; every value
-  // comes from a real response field (no fabrication). Cards with no real source stay
-  // "Not Connected"/"Waiting for Backend". Connected = at least one real endpoint answered.
-  let connected=false;
-  const set=(mod,key,val)=>{ const m=MODULES[mod]; if(!m||!m.metrics||val==null)return; const x=m.metrics.find(e=>e.k===key); if(x) x.value=val; };
-  // 1) Backend liveness + platform + deployment — existing open endpoint /api/diagnose
-  try{
-    const r=await fetch((API.base||'')+'/api/diagnose',{headers:{'Accept':'application/json'}});
-    if(r.ok){ const d=await r.json().catch(()=>({})); connected=true;
-      const s=(d&&d.status?String(d.status):'ok').toUpperCase();
-      set('executive','Overall Health',s); set('executive','Platform Health',s); set('executive','Deployment','Live'); }
-  }catch(_){}
-  // 2) Knowledge + Graph — existing admin-gated endpoint, reuses shared admin-key slot
-  const key=(API.adminKey&&API.adminKey())||'';
-  if(key){
-    try{ const r=await fetch((API.base||'')+'/api/ai-kb-admin?action=status',{headers:{'x-admin-key':key,'Accept':'application/json'}});
-      if(r.ok){ const d=await r.json().catch(()=>({})); set('executive','Knowledge Health', d&&d.ready?'Ready':'Not provisioned'); connected=true; } }catch(_){}
-    try{ const r=await fetch((API.base||'')+'/api/ai-kb-admin?action=parity',{headers:{'x-admin-key':key,'Accept':'application/json'}});
-      if(r.ok){ const d=await r.json().catch(()=>({})); set('executive','Graph Health', d&&d.parity===false?'Drift':'OK'); } }catch(_){}
-  }
-  // 3) Optional explicit governance snapshot endpoint (unchanged when configured)
-  if(API.liveState){ try{ const r=await fetch((API.base||'')+API.liveState); if(r.ok){ const d=await r.json();
-    for(const [k,m] of Object.entries(MODULES)){ if(!m.metrics||!d[k])continue; m.metrics.forEach(x=>{ if(d[k][x.k]!=null) x.value=d[k][x.k]; }); } connected=true; } }catch(_){} }
-  setConn(connected); renderModule(currentKey);
+  if(!API.liveState){ setConn(false); return; }
+  try{ const r=await fetch((API.base||'')+API.liveState); if(!r.ok) throw 0;
+    const d=await r.json(); // shape: { moduleKey: { MetricName: value } }
+    for(const [k,m] of Object.entries(MODULES)){ if(!m.metrics||!d[k])continue;
+      m.metrics.forEach(x=>{ if(d[k][x.k]!=null) x.value=d[k][x.k]; }); }
+    setConn(true); renderModule(currentKey);
+  }catch(e){ setConn(false); }
 }
 function setConn(live){ document.getElementById('connDot').classList.toggle('live',live);
   document.getElementById('connTxt').textContent='Backend: '+(live?'Connected':'Not Connected'); }
