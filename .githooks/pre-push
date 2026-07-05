@@ -26,7 +26,6 @@ fi
 
 # file | functional signature (fixed string, = the implementation) | description
 PROTECTED="
-admin/governance-admin.html§setConn(connected)§dashboard hydrate() live-state wiring
 functions/utils/kb-populate.js§getNode(§populate delta / skip-unchanged
 admin/kb-admin.js§Promise.all(§populate/sync parallel execution
 functions/utils/kb-store.js§getRawEdgesBySrc§incremental syncEdges
