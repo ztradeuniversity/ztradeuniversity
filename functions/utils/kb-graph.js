@@ -139,7 +139,6 @@ export function nodeFromKOS(kos) {
       // Phase 11C.2 — answer intent for the (future) Composer:
       responseObjective: kos.responseObjective || null,   // educate|mentor|encourage|warn|clarify|recover|assess|motivate
       desiredOutcome: kos.desiredOutcome || null,          // e.g. "confidence without false certainty"
-      hash: kos.hash || null,                              // content hash for delta/skip-unchanged in populateAnchors (additive)
     },
     intent: kos.intent || null,
     status: kos.status || STATUS.DRAFT, origin: kos.origin || ORIGIN.AUTHORED,

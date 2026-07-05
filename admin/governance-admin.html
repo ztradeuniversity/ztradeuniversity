@@ -4,137 +4,174 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Governance Admin Panel — Z Trade University</title>
+  <title>Governance Admin — Z Trade University</title>
   <link rel="icon" type="image/png" href="/assets/ztu-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
   <style>
-    /* ── ZTU Governance Admin — dark + gold, component-based ── */
+    /* ── ZTU Governance Admin — dark + gold, evidence-first, component-based ── */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --bg:#100e0a; --panel:#171410; --card:#1e1a13; --card2:#241f17;
+      --bg:#100e0a; --panel:#171410; --card:#1e1a13; --card2:#241f17; --inset:#0c0a07;
       --border:rgba(200,156,63,.16); --border2:rgba(200,156,63,.28);
       --gold:#c89c3f; --gold2:#d4ae5e; --gold3:#e6c987;
       --text:#ece7dd; --muted:#9a8f7c; --dim:#6f6553;
-      --ok:#5bbb7b; --warn:#e0b24a; --bad:#e2685f; --idle:#6f6553;
-      --radius:14px; --sidebar:248px;
+      --ok:#5bbb7b; --warn:#e0b24a; --bad:#e2685f; --idle:#6f6553; --info:#6ea8d8;
+      --radius:14px; --sidebar:250px;
     }
     html{scroll-behavior:smooth}
-    body{font-family:'Inter',sans-serif;background:radial-gradient(1200px 600px at 80% -10%,rgba(200,156,63,.06),transparent),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;min-height:100vh}
+    body{font-family:'Inter',sans-serif;background:radial-gradient(1200px 600px at 82% -12%,rgba(200,156,63,.07),transparent),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;min-height:100vh}
     a{color:inherit;text-decoration:none}
+    code{font-family:'Courier New',monospace;font-size:.92em;background:rgba(200,156,63,.08);border:1px solid var(--border);border-radius:5px;padding:1px 5px;color:var(--gold3)}
     ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(200,156,63,.22);border-radius:8px}
 
     /* Layout */
     .layout{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}
-    aside{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,var(--panel),#120f0b);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 14px;overflow-y:auto}
-    .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 18px;border-bottom:1px solid var(--border);margin-bottom:14px}
+    aside{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,var(--panel),#120f0b);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px;overflow-y:auto}
+    .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 16px;border-bottom:1px solid var(--border);margin-bottom:12px}
     .brand .shield{width:38px;height:38px;border-radius:10px;background:linear-gradient(150deg,#3d2a08,#8c6c1f 55%,var(--gold2));display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;color:var(--gold3);font-size:19px;box-shadow:0 4px 16px rgba(200,156,63,.35)}
     .brand b{font-size:14px;font-weight:800;letter-spacing:-.2px;display:block}
     .brand small{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-    nav.side a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s;margin-bottom:2px}
+    nav.side{display:flex;flex-direction:column;gap:1px}
+    nav.side .navgroup{font-size:9.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);padding:12px 12px 5px}
+    nav.side a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s}
     nav.side a:hover{background:rgba(200,156,63,.07);color:var(--text)}
     nav.side a.active{background:linear-gradient(90deg,rgba(200,156,63,.16),rgba(200,156,63,.03));color:var(--gold3);box-shadow:inset 2px 0 0 var(--gold)}
     nav.side a .ico{width:16px;text-align:center;opacity:.9}
-    .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
+    nav.side a .st{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--idle);flex:0 0 auto}
+    nav.side a .st.ok{background:var(--ok)} nav.side a .st.warn{background:var(--warn)} nav.side a .st.bad{background:var(--bad)}
+    .side-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);font-size:10.5px;color:var(--dim);line-height:1.6}
+    .side-foot a{color:var(--gold3);font-weight:700}
 
     /* Topbar */
-    main{min-width:0}
-    .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 26px;background:rgba(16,14,10,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
-    .topbar h1{font-family:'Manrope';font-size:19px;font-weight:800;letter-spacing:-.4px}
-    .topbar .sub{font-size:12px;color:var(--muted);margin-top:1px}
-    .conn{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--border2);border-radius:100px;padding:7px 14px}
+    main{min-width:0;display:flex;flex-direction:column;min-height:100vh}
+    .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 26px;background:rgba(16,14,10,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .topbar h1{font-family:'Manrope';font-size:18px;font-weight:800;letter-spacing:-.4px}
+    .topbar .sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+    .top-right{display:flex;align-items:center;gap:10px}
+    .conn{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--border2);border-radius:100px;padding:6px 13px}
     .dot{width:8px;height:8px;border-radius:50%;background:var(--idle);box-shadow:0 0 0 3px rgba(111,101,83,.18)}
     .dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(91,187,123,.18)}
-    .banner{margin:18px 26px 0;padding:12px 16px;border:1px solid var(--border2);border-radius:12px;background:linear-gradient(90deg,rgba(224,178,74,.08),transparent);font-size:12.5px;color:var(--gold3);display:flex;gap:10px;align-items:flex-start}
+    .dot.part{background:var(--warn);box-shadow:0 0 0 3px rgba(224,178,74,.18)}
 
     /* Sections & grid */
-    .wrap{padding:22px 26px 60px}
-    section.module{display:none;animation:fade .25s ease}
+    .wrap{padding:20px 26px 60px;flex:1}
+    section.module{display:none;animation:fade .22s ease}
     section.module.active{display:block}
     @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-    .mod-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:6px 0 16px}
-    .mod-head h2{font-family:'Manrope';font-size:22px;font-weight:800;letter-spacing:-.5px}
-    .mod-head p{font-size:12.5px;color:var(--muted)}
-    .grid{display:grid;gap:14px}
+    .grid{display:grid;gap:13px}
+    .grid.cols-5{grid-template-columns:repeat(5,1fr)}
     .grid.cols-4{grid-template-columns:repeat(4,1fr)}
     .grid.cols-3{grid-template-columns:repeat(3,1fr)}
     .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    @media(max-width:1280px){.grid.cols-5{grid-template-columns:repeat(3,1fr)}}
     @media(max-width:1100px){.grid.cols-4{grid-template-columns:repeat(2,1fr)}.grid.cols-3{grid-template-columns:repeat(2,1fr)}}
 
+    /* Executive hero */
+    .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}
+    @media(max-width:980px){.hero{grid-template-columns:1fr}}
+    .hero-card{background:linear-gradient(150deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden}
+    .hero-card::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(200,156,63,.10),transparent 70%);pointer-events:none}
+    .hero-title{font-family:'Manrope';font-size:23px;font-weight:800;letter-spacing:-.6px;display:flex;align-items:center;gap:12px}
+    .hero-title .pill{font-family:'Inter';font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gold3);border:1px solid var(--border2);border-radius:100px;padding:3px 10px;background:rgba(200,156,63,.06)}
+    .hero-desc{font-size:12.5px;color:var(--muted);margin-top:8px;max-width:52ch}
+    .kv{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin-top:16px;font-size:12.5px}
+    .kv dt{color:var(--dim);font-weight:600;white-space:nowrap}
+    .kv dd{color:var(--text);font-weight:700;text-align:right}
+    /* Health ring */
+    .ringwrap{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;height:100%}
+    .ring{position:relative;width:150px;height:150px}
+    .ring svg{transform:rotate(-90deg)}
+    .ring .lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .ring .lbl b{font-family:'Manrope';font-size:38px;font-weight:800;line-height:1}
+    .ring .lbl span{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+
+    /* Status ribbon (pills) */
+    .ribbon{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:14px}
+    @media(max-width:1280px){.ribbon{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:760px){.ribbon{grid-template-columns:repeat(2,1fr)}}
+    .stat{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:12px;padding:13px 14px;position:relative}
+    .stat .lab{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+    .stat .lab .ic{font-size:13px;opacity:.85}
+    .stat .val{font-family:'Manrope';font-size:19px;font-weight:800;margin-top:8px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+    .stat .sub{font-size:11px;color:var(--dim);margin-top:3px;min-height:14px}
+    .stat .led{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--idle)}
+    .led.ok{background:var(--ok);box-shadow:0 0 8px rgba(91,187,123,.5)} .led.warn{background:var(--warn);box-shadow:0 0 8px rgba(224,178,74,.5)}
+    .led.bad{background:var(--bad);box-shadow:0 0 8px rgba(226,104,95,.5)} .led.wait{background:var(--info)} .led.idle{background:var(--idle)}
+
     /* Reusable card */
-    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:16px 17px;position:relative;transition:.18s}
-    .card:hover{border-color:var(--border2);transform:translateY(-1px)}
-    .card .k{font-size:11.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
-    .card .v{font-family:'Manrope';font-size:24px;font-weight:800;margin-top:8px;letter-spacing:-.5px}
-    .card .meta{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;position:relative;transition:.16s}
+    .card:hover{border-color:var(--border2)}
+    .card .k{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+    .card .v{font-family:'Manrope';font-size:22px;font-weight:800;margin-top:7px;letter-spacing:-.4px;word-break:break-word}
+    .card .meta{display:flex;gap:7px;align-items:center;margin-top:9px;flex-wrap:wrap}
     .card.full{grid-column:1/-1}
     .card h3{font-family:'Manrope';font-size:15px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-    /* Executive hero (top summary + guide + actions) */
-    .hero{margin-bottom:16px}
-    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
-    .hero-top h2{font-family:'Manrope';font-size:20px;font-weight:800;letter-spacing:-.4px}
-    .hero-sum{font-size:12.5px;color:var(--muted);margin-top:3px;max-width:640px}
-    .hero-chips,.hero-quick,.hero-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .hero-quick{margin-top:14px}
-    .hero-actions{margin-top:14px}
-    .hero-help{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
-    .hero-help summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--gold3);list-style:none}
-    .hero-help summary::-webkit-details-marker{display:none}
-    .hero-help summary::before{content:'▸ ';color:var(--gold)}
-    .hero-help[open] summary::before{content:'▾ '}
-    .hero-help ul{margin:10px 0 2px 2px;list-style:none;display:grid;gap:6px}
-    .hero-help li{font-size:12.5px;color:var(--text);padding-left:16px;position:relative}
-    .hero-help li::before{content:'•';position:absolute;left:2px;color:var(--gold)}
-    .hero-help a{color:var(--gold3);font-weight:700}
+    .sec-title{font-family:'Manrope';font-size:13px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--gold3);margin:22px 2px 11px;display:flex;align-items:center;gap:9px}
+    .sec-title::after{content:"";flex:1;height:1px;background:var(--border)}
+
+    /* Documentation panel */
+    .doc{background:linear-gradient(180deg,rgba(30,26,19,.7),rgba(18,15,11,.7));border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+    .doc summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;gap:11px;font-weight:700;font-size:14px}
+    .doc summary::-webkit-details-marker{display:none}
+    .doc summary .chev{margin-left:auto;color:var(--muted);transition:.2s;font-size:12px}
+    .doc[open] summary .chev{transform:rotate(90deg)}
+    .doc summary .tag{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gold3);border:1px solid var(--border2);border-radius:100px;padding:2px 9px;background:rgba(200,156,63,.06)}
+    .doc-body{padding:2px 18px 18px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:14px 26px}
+    @media(max-width:820px){.doc-body{grid-template-columns:1fr}}
+    .doc-body .field{font-size:12.5px}
+    .doc-body .field.wide{grid-column:1/-1}
+    .doc-body .field .lab{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gold3);margin-bottom:4px}
+    .doc-body .field p{color:var(--muted);margin:0 0 4px}
+    .doc-body ul{margin:2px 0 0 16px;color:var(--muted)} .doc-body li{margin-bottom:3px}
 
     /* Badges */
-    .badge{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:100px;border:1px solid transparent;white-space:nowrap}
+    .badge{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:100px;border:1px solid transparent;white-space:nowrap}
     .badge.nc{color:var(--dim);border-color:var(--border);background:rgba(255,255,255,.02)}
     .badge.wait{color:var(--warn);border-color:rgba(224,178,74,.3);background:rgba(224,178,74,.07)}
     .badge.ok{color:var(--ok);border-color:rgba(91,187,123,.3);background:rgba(91,187,123,.07)}
     .badge.bad{color:var(--bad);border-color:rgba(226,104,95,.3);background:rgba(226,104,95,.07)}
+    .badge.info{color:var(--info);border-color:rgba(110,168,216,.3);background:rgba(110,168,216,.07)}
     .badge.src{color:var(--gold3);border-color:var(--border2);background:rgba(200,156,63,.06)}
 
     /* Tables */
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
-    th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
-    td{color:var(--text)}
-    tr:last-child td{border-bottom:none}
-    .empty{color:var(--dim);font-size:12.5px;padding:18px 12px;text-align:center}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:top}
+    th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+    td{color:var(--text)} tr:last-child td{border-bottom:none}
+    td.mono{font-family:'Courier New',monospace;font-size:11.5px;color:var(--muted)}
+    .empty{color:var(--dim);font-size:12.5px;padding:16px 12px;text-align:center}
 
     /* Buttons */
-    .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Inter';font-size:13px;font-weight:700;color:var(--text);background:rgba(200,156,63,.09);border:1px solid var(--border2);border-radius:10px;padding:10px 15px;cursor:pointer;transition:.15s}
+    .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Inter';font-size:12.5px;font-weight:700;color:var(--text);background:rgba(200,156,63,.09);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;cursor:pointer;transition:.15s}
     .btn:hover{background:rgba(200,156,63,.16);color:var(--gold3)}
     .btn:active{transform:translateY(1px)}
     .btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241c08;border-color:transparent}
     .btn.gold:hover{filter:brightness(1.06)}
-    .btn.sm{padding:7px 11px;font-size:12px}
-    .action-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .btn.sm{padding:6px 10px;font-size:11.5px}
+    .btn[disabled]{opacity:.45;cursor:not-allowed}
+    .action-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
     .action-row:last-child{border-bottom:none}
-    .action-row .desc{font-size:12px;color:var(--muted);margin-top:2px}
+    .action-row .desc{font-size:11.5px;color:var(--muted);margin-top:2px}
 
-    /* Logs */
-    .logbox{background:#0c0a07;border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:12px;color:#b9ad95;max-height:320px;overflow:auto;white-space:pre-wrap}
-    .logbox .t{color:var(--dim)} .logbox .g{color:var(--gold3)} .logbox .r{color:var(--bad)}
+    /* Logs / console */
+    .logbox{background:var(--inset);border:1px solid var(--border);border-radius:12px;padding:13px;font-family:'Courier New',monospace;font-size:12px;color:#b9ad95;max-height:340px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+    .logbox .t{color:var(--dim)} .logbox .g{color:var(--gold3)} .logbox .r{color:var(--bad)} .logbox .ok{color:var(--ok)}
     .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-    .tabs .tab{font-size:12px;font-weight:700;color:var(--muted);padding:7px 13px;border:1px solid var(--border);border-radius:100px;cursor:pointer}
+    .tabs .tab{font-size:11.5px;font-weight:700;color:var(--muted);padding:6px 12px;border:1px solid var(--border);border-radius:100px;cursor:pointer}
     .tabs .tab.active{color:var(--gold3);border-color:var(--border2);background:rgba(200,156,63,.07)}
-
-    /* Health ring */
-    .ring{display:flex;align-items:center;gap:16px}
-    .ring svg{transform:rotate(-90deg)}
-    .ring .lbl{font-family:'Manrope';font-size:30px;font-weight:800}
+    .banner{margin:0 0 16px;padding:11px 15px;border:1px solid var(--border2);border-radius:12px;background:linear-gradient(90deg,rgba(224,178,74,.08),transparent);font-size:12px;color:var(--gold3);display:flex;gap:10px;align-items:flex-start}
+    .input{flex:1;min-width:220px;background:var(--inset);border:1px solid var(--border2);border-radius:10px;padding:10px 13px;color:var(--text);font-family:'Inter';font-size:13px}
 
     /* mobile */
     .menu-btn{display:none}
-    @media(max-width:880px){
+    @media(max-width:900px){
       .layout{grid-template-columns:1fr}
       aside{position:fixed;left:0;top:0;z-index:60;width:var(--sidebar);transform:translateX(-100%);transition:.25s}
       aside.open{transform:none}
       .menu-btn{display:inline-flex}
-      .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr}
+      .grid.cols-4,.grid.cols-3,.grid.cols-2,.grid.cols-5{grid-template-columns:1fr}
       .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none}.scrim.show{display:block}
     }
   </style>
@@ -149,8 +186,9 @@
     </div>
     <nav class="side" id="sideNav"></nav>
     <div class="side-foot">
-      <a href="admin-dashboard.html" style="color:var(--gold3);font-weight:700">← Admin Dashboard</a><br/>
-      ZGF V1 · Monitoring &amp; control interface.<br/>No data is simulated.
+      <a href="admin-dashboard.html">← Admin Dashboard</a><br/>
+      ZGF V1 · Monitoring &amp; control interface.<br/>
+      Evidence-first — no metric is simulated.
     </div>
   </aside>
   <div class="scrim" id="scrim"></div>
@@ -162,116 +200,424 @@
         <button class="btn sm menu-btn" id="menuBtn">☰</button>
         <div>
           <h1 id="modTitle">Executive Dashboard</h1>
-          <div class="sub" id="modSub">Platform health overview · every metric cites its source</div>
+          <div class="sub" id="modSub">Platform health at a glance — every metric cites its live source</div>
         </div>
       </div>
-      <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Backend: Not Connected</span></div>
+      <div class="top-right">
+        <button class="btn sm" id="refreshBtn" title="Re-run all live probes">↻ Refresh</button>
+        <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Checking backend…</span></div>
+      </div>
     </div>
-
-    <div class="banner">
-      <span>⚠️</span>
-      <span><b>Monitoring &amp; control interface — not the execution engine.</b> Metrics display <b>“Not Connected”</b> or <b>“Waiting for Backend”</b> until a live governance API responds. No statistics are fabricated and no successful execution is simulated. Actions call real endpoints only where they exist.</span>
-    </div>
-
     <div class="wrap" id="wrap"><!-- modules injected here --></div>
   </main>
 </div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   ZTU GOVERNANCE ADMIN — component-based, evidence-first.
-   Design rule: NO fabricated data. Every metric is "Not Connected" / "Waiting
-   for Backend" until a real API fills it. New modules = add to MODULES config.
+   ZTU GOVERNANCE ADMIN — evidence-first, component-based.
+
+   DESIGN RULE (unchanged): NO fabricated data. A metric is only ever shown as a
+   real number returned by a live API, or as an explicit "Not Connected" /
+   "Waiting for Backend" state THAT NAMES THE REASON. Nothing is simulated.
+
+   WHAT CHANGED vs the old build:
+   • The old page set API.liveState=null and hydrate() bailed immediately, so
+     100% of cards rendered "Not Connected" even though real endpoints exist.
+   • This build probes the endpoints that DO exist (diagnose / ai-kb-admin /
+     ai-chat) and hydrates real values, while keeping unwired metrics honest.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-// Optional: point these at real governance endpoints when they exist.
-const API = {
-  base: '',                                    // e.g. '/api'
-  liveState:      null,                         // GET governance snapshot (JSON) — null = none yet
-  // Only endpoints that actually satisfy the action are wired. Where no existing
-  // API answers the requirement, the value is null → button renders "Not Connected".
-  actions: {
-    'run-governance-cycle': null,                          // no backend API (governance runs via ZGF/agent)
-    'run-chatbot-audit':    null,                          // no existing chatbot-audit API (ai-verify = account verification, not this)
-    'run-seo-audit':        null,                          // SEO audit is a repo scan, no runtime API
-    'run-knowledge-audit':  '/api/ai-kb-admin?action=status', // reuse existing (admin-gated)
-    'run-graph-audit':      '/api/ai-kb-admin?action=parity', // reuse existing (admin-gated)
-    'run-deployment-audit': '/api/diagnose',               // reuse existing (open JSON)
-    'run-maintenance-cycle':null,
-    'run-content-cycle':    null,
-    'run-executive-review': null,
-  },
-  // Reuse the existing shared admin-key slot populated by the kb-admin console
-  // (sessionStorage 'ztu_kb_admin_key'). Never embed the secret in this page.
-  adminKey: () => { try { return sessionStorage.getItem('ztu_kb_admin_key') || ''; } catch (_) { return ''; } }
+/* ── LIVE DATA SOURCES ─────────────────────────────────────────────────────
+   Each source is a real, existing endpoint. `auth:'admin'` requires the shared
+   AI_ADMIN_KEY (sessionStorage 'ztu_kb_admin_key', set by KB Admin / AI
+   Articles login). The secret is NEVER embedded in this page. */
+const ADMIN_KEY = () => { try { return sessionStorage.getItem('ztu_kb_admin_key') || ''; } catch (_) { return ''; } };
+
+const STATE = {
+  hydratedAt: null,
+  diagnose:   { status:'idle', reason:'not yet probed', data:null },  // GET /api/diagnose (open)
+  health:     { status:'idle', reason:'not yet probed', data:null },  // GET ?action=health (admin)
+  kbstatus:   { status:'idle', reason:'not yet probed', data:null },  // GET ?action=status (admin)
+  parity:     { status:'idle', reason:'not yet probed', data:null },  // GET ?action=parity (admin)
+  deploy:     { status:'idle', reason:'not yet probed', data:null },  // GET ?action=deployment-probe (admin)
 };
 
-// A metric with no live source. Kept honest: value = null → renders "Not Connected".
-const M = (k, source, opts={}) => ({ k, value:null, source, ...opts });
+const SOURCES = [
+  { id:'diagnose', label:'Provider Diagnostics', endpoint:'/api/diagnose', method:'GET', auth:'open',
+    supplies:'Backend reachability · Deployment · market-data provider health (FRED, Finnhub, TwelveData)' },
+  { id:'health', label:'AI Health Report', endpoint:'/api/ai-kb-admin?action=health', method:'GET', auth:'admin',
+    supplies:'Overall Health score · Knowledge Graph · AI Articles · concept counts · retrieval quality' },
+  { id:'kbstatus', label:'KB Provision Status', endpoint:'/api/ai-kb-admin?action=status', method:'GET', auth:'admin',
+    supplies:'AI Supabase configured · graph enabled · schema · published concept count' },
+  { id:'parity', label:'Graph Parity Check', endpoint:'/api/ai-kb-admin?action=parity', method:'GET', auth:'admin',
+    supplies:'Graph⇄seed parity — proves graph retrieval matches the canonical KB_SEED' },
+  { id:'deploy', label:'Deployment Probe', endpoint:'/api/ai-kb-admin?action=deployment-probe', method:'GET', auth:'admin',
+    supplies:'Live build tag · runtime versions · confirms production runs the latest bundle' },
+  { id:'chat', label:'Chatbot Engine', endpoint:'/api/ai-chat', method:'POST', auth:'open',
+    supplies:'AI Playground answers + source-badge (which retrieval layer answered)' },
+];
+
+async function probe(stateKey, endpoint, auth){
+  const s = STATE[stateKey]; s.status='wait'; s.reason='probing…';
+  const headers = { 'Accept':'application/json' };
+  if (auth==='admin'){
+    const k = ADMIN_KEY();
+    if (!k){ s.status='idle'; s.reason='admin key not set — log in via KB Admin / AI Articles'; s.data=null; return s; }
+    headers['x-admin-key'] = k;
+  }
+  try {
+    const r = await fetch(endpoint, { method:'GET', headers });
+    if (r.status===403){ s.status='bad'; s.reason='admin key rejected (HTTP 403)'; s.data=null; return s; }
+    if (!r.ok){ s.status='bad'; s.reason='HTTP '+r.status; s.data=null; return s; }
+    s.data = await r.json(); s.status='ok'; s.reason='live'; return s;
+  } catch(err){ s.status='bad'; s.reason='unreachable (expected in local/preview — deploy to Cloudflare)'; s.data=null; return s; }
+}
+
+async function hydrate(){
+  setConn('wait','Probing live sources…');
+  await Promise.all([
+    probe('diagnose','/api/diagnose','open'),
+    probe('health','/api/ai-kb-admin?action=health','admin'),
+    probe('kbstatus','/api/ai-kb-admin?action=status','admin'),
+    probe('parity','/api/ai-kb-admin?action=parity','admin'),
+    probe('deploy','/api/ai-kb-admin?action=deployment-probe','admin'),
+  ]);
+  STATE.hydratedAt = new Date();
+  // Connection verdict: live if the OPEN backend probe (diagnose) responded;
+  // partial if only admin sources or vice-versa; else offline.
+  const backend = STATE.diagnose.status==='ok';
+  const admin   = ['health','kbstatus','parity','deploy'].some(k=>STATE[k].status==='ok');
+  if (backend && admin) setConn('live','Backend: Connected · admin sources live');
+  else if (backend)     setConn('part','Backend: Connected · admin sources need key');
+  else if (admin)       setConn('part','Admin sources live · open backend unreachable');
+  else                  setConn('idle','Backend: Not Connected');
+  renderModule(currentKey);
+  refreshNavLeds();
+}
+function setConn(cls,txt){
+  const d=document.getElementById('connDot'); d.className='dot'+(cls==='live'?' live':cls==='part'?' part':'');
+  document.getElementById('connTxt').textContent=txt;
+}
+
+/* ── VALUE RESOLVERS — pull real values out of STATE, or return an honest miss.
+   Each returns { value, state, sub } where value===null means "Not Connected"
+   and `sub` explains WHY (the reason from the owning source). */
+const nz = v => (v===0 || v) ? v : null;
+function fromHealth(path, fallbackFmt){
+  const s=STATE.health;
+  if (s.status!=='ok') return { value:null, sub:s.reason };
+  const v = path(s.data);
+  return { value: (v===0||v) ? (fallbackFmt?fallbackFmt(v):v) : null, sub:(v===0||v)?'live':'field absent in response' };
+}
+function scoreState(n){ return n>=80?'ok':n>=50?'warn':'bad'; }
+
+/* ── EXECUTIVE STATUS RIBBON — the "no scrolling required" summary. ── */
+function ribbonItems(){
+  const H=STATE.health.data, D=STATE.diagnose.data, KS=STATE.kbstatus.data;
+  const score = STATE.health.status==='ok' ? (H.productionScore ?? null) : null;
+  const providersOk = D ? Object.values(D.summary||{}).filter(x=>x==='OK').length : null;
+  const providersTot = D ? Object.keys(D.summary||{}).length : null;
+  const graphActive = KS ? KS.graphEnabled : (H ? H.retrievalQuality?.graphActive : null);
+  const concepts = H ? (H.graphGrowth?.totalConcepts) : (KS ? KS.conceptCount : null);
+  const articles = H ? (H.articleCoverage?.totalArticles) : null;
+  return [
+    { lab:'Platform', ic:'🌐', ...(function(){ // static repo is always served; backend probe confirms Functions
+        if (STATE.diagnose.status==='ok') return {val:'Operational', led:'ok', sub:'static + Functions serving'};
+        if (STATE.diagnose.status==='wait') return {val:'Checking…', led:'wait', sub:''};
+        return {val:'Site up · API ?', led:'warn', sub:'static served; Functions unverified'}; })() },
+    { lab:'Backend', ic:'🔌', ...(STATE.diagnose.status==='ok'
+        ? {val:'Connected', led:'ok', sub:'/api/diagnose responded'}
+        : STATE.diagnose.status==='wait' ? {val:'Checking…', led:'wait', sub:''}
+        : {val:'Not Connected', led:'bad', sub:STATE.diagnose.reason}) },
+    { lab:'Deployment', ic:'🚀', ...(providersOk!=null
+        ? {val:providersOk+' / '+providersTot+' OK', led: providersOk===providersTot?'ok':providersOk>0?'warn':'bad', sub:'upstream providers'}
+        : {val:'—', led:'idle', sub:STATE.diagnose.reason}) },
+    { lab:'Knowledge Graph', ic:'🕸️', ...(graphActive!=null
+        ? {val: graphActive?'Active':'Inactive', led: graphActive?'ok':'warn', sub: concepts!=null?(concepts+' concepts'):'kb_nodes'}
+        : {val:'—', led:'idle', sub:(STATE.health.reason||STATE.kbstatus.reason)}) },
+    { lab:'AI Articles', ic:'📝', ...(articles!=null
+        ? {val:String(articles), led: articles>0?'ok':'warn', sub:'published articles'}
+        : {val:'—', led:'idle', sub:STATE.health.reason}) },
+    { lab:'Automation', ic:'⚙️', val:'Not Connected', led:'idle', sub:'no runtime automation API exists' },
+    { lab:'Chatbot', ic:'🤖', val: STATE.diagnose.status==='ok'?'Endpoint ready':'Ready', led: 'wait', sub:'/api/ai-chat — test in Playground' },
+    { lab:'SEO', ic:'🔎', val:'Repo scan', led:'wait', sub:'no runtime SEO API — repo-based' },
+    { lab:'Overall Health', ic:'❤️', ...(score!=null
+        ? {val:score+' / 100', led:scoreState(score), sub:'AI health report'}
+        : {val:'—', led:'idle', sub:STATE.health.reason}) },
+    { lab:'Graph Parity', ic:'⚖️', ...(STATE.parity.status==='ok'
+        ? {val: STATE.parity.data.parity?'Passing':'Drift', led: STATE.parity.data.parity?'ok':'bad', sub:(STATE.parity.data.checked||0)+' seed checks'}
+        : {val:'—', led:'idle', sub:STATE.parity.reason}) },
+  ];
+}
+function renderRibbon(){
+  const g=el('div','ribbon');
+  ribbonItems().forEach(it=>{
+    const c=el('div','stat');
+    c.innerHTML=`<div class="lab"><span class="ic">${it.ic}</span>${it.lab}</div>
+      <div class="val"><span class="led ${it.led}"></span>${it.val}</div>
+      <div class="sub">${it.sub||''}</div>`;
+    g.appendChild(c);
+  });
+  return g;
+}
+function renderExecHero(){
+  const H=STATE.health.data, DEP=STATE.deploy.data;
+  const score = STATE.health.status==='ok' ? (H.productionScore ?? null) : null;
+  const ver   = STATE.deploy.status==='ok' ? DEP.buildVersion : null;
+  const refresh = STATE.hydratedAt ? STATE.hydratedAt.toLocaleString() : '—';
+  const hero=el('div','hero');
+  const left=el('div','hero-card');
+  left.innerHTML=`
+    <div class="hero-title">Z Trade University <span class="pill">Governance V1</span></div>
+    <div class="hero-desc">Single control surface for the platform's knowledge, AI content, chatbot and deployment health. This is a <b>monitoring &amp; control interface</b> — every figure below is pulled from a live API or shown as an explicit, reasoned "Not Connected".</div>
+    <dl class="kv">
+      <dt>Project</dt><dd>ztradeuniversity</dd>
+      <dt>Platform status</dt><dd>${STATE.diagnose.status==='ok'?'Operational':'Unverified'}</dd>
+      <dt>Backend</dt><dd>${STATE.diagnose.status==='ok'?'Connected':'Not Connected'}</dd>
+      <dt>Current build</dt><dd>${ver? '<code>'+ver+'</code>' : (STATE.deploy.reason)}</dd>
+      <dt>Runtime source</dt><dd>${DEP?.deploymentSource || 'Cloudflare Pages Functions'}</dd>
+      <dt>Latest bundle</dt><dd>${DEP? (DEP.allLatest?'Yes ✓':'Mixed versions') : '—'}</dd>
+      <dt>Last refresh</dt><dd>${refresh}</dd>
+    </dl>`;
+  const right=el('div','hero-card');
+  const pct = score!=null ? score : 0;
+  const col = score==null ? 'var(--idle)' : (score>=80?'var(--ok)':score>=50?'var(--warn)':'var(--bad)');
+  const circ=2*Math.PI*64, off=circ*(1-pct/100);
+  right.innerHTML=`<div class="ringwrap">
+    <div class="ring">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r="64" stroke="rgba(255,255,255,.06)" stroke-width="13" fill="none"/>
+        <circle cx="75" cy="75" r="64" stroke="${col}" stroke-width="13" fill="none" stroke-linecap="round"
+          stroke-dasharray="${circ}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset .6s ease"/>
+      </svg>
+      <div class="lbl"><b>${score!=null?score:'—'}</b><span>Overall Health</span></div>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);max-width:26ch">${score!=null?'Weighted AI production score (activation + coverage + structural checks).':(STATE.health.reason)}</div>
+  </div>`;
+  hero.appendChild(left); hero.appendChild(right);
+  return hero;
+}
+
+/* ── MODULE CONFIG — metrics now carry live resolvers where a source exists ── */
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+// M(key, source-label, resolver?) — resolver:(STATE)=>{value,sub} or omitted (=always Not Connected w/ note)
+const M = (k, source, resolver, note) => ({ k, source, resolver, note });
 
 const MODULES = {
-  executive: { title:'Executive Dashboard', sub:'Platform health overview · every metric cites its source', icon:'📊',
-    metrics:[
-      M('Overall Health','Runtime'), M('Platform Health','Repository'), M('Business Health','Analytics'),
-      M('Knowledge Health','Repository'), M('SEO Health','Repository'), M('Chatbot Health','Runtime'),
-      M('Graph Health','Repository'), M('Security','Repository'), M('Deployment','Cloudflare'), M('Automation','Runtime'),
-    ]},
-  governance:{ title:'Governance', sub:'Board status, decisions, and registers', icon:'🏛️',
-    metrics:[ M('Board Status','Runtime'), M('Current Cycle','Runtime'), M('Current Department','Runtime'),
-      M('Current Priority','Runtime'), M('Current Task','Runtime'), M('Current Decision','Runtime') ],
+  executive:{ title:'Executive Dashboard', sub:'Platform health at a glance — every metric cites its live source', icon:'📊', group:'Overview', exec:true,
+    doc:{ purpose:'The single screen a business owner opens first: is the platform healthy, is the backend up, is the AI content pipeline working?',
+      how:'On load it probes the open <code>/api/diagnose</code> endpoint plus the admin-gated AI health/status/parity/deployment probes, then renders a status ribbon and a health ring. No value is invented.',
+      use:['Read the ribbon top-to-bottom — each pill is one subsystem.','Green = live & healthy, amber = live but degraded/limited, grey = no live source yet, red = failing.','Click a subsystem in the sidebar to drill in.'],
+      requires:['For the health/graph/articles figures: log in once via KB Admin or AI Articles so the shared AI_ADMIN_KEY is present.','Deployed on Cloudflare (open probes fail on a local file:// preview — that is expected and labelled).'],
+      expect:'Overall Health score, backend/deployment status, graph & article counts — all populated when the admin key is set and the site is deployed.',
+      trouble:['All pills grey → not deployed, or admin key not set. Use ↻ Refresh after logging in.','Backend red but admin green → Functions reachable but /api/diagnose upstream keys missing (see Deployment).'],
+      apis:['/api/diagnose','/api/ai-kb-admin?action=health','?action=status','?action=parity','?action=deployment-probe'],
+      deps:['Cloudflare Pages Functions','AI_ADMIN_KEY env var','AI Supabase (for graph/article counts)'] } },
+
+  connections:{ title:'Runtime Connections', sub:'Every data source, its endpoint, auth requirement and live status', icon:'🔗', group:'Overview', connections:true,
+    doc:{ purpose:'The runtime audit made visible: for every card in this panel you can see exactly which API feeds it, whether it exists, and why it is or is not connected.',
+      how:'Re-uses the same probe results as the dashboard. Each row shows the endpoint, method, auth model, what it supplies, and the live probe verdict + reason.',
+      use:['Scan the Status column. Any non-green row shows the precise reason in Detail.','Fix admin-key rows by logging in; fix "unreachable" rows by deploying.'],
+      requires:['Nothing extra — this panel is the diagnostic itself.'],
+      expect:'A green row per working source; reasoned amber/red for the rest. No guesses.',
+      trouble:['"admin key not set" → open KB Admin, enter AI_ADMIN_KEY, return, ↻ Refresh.','"admin key rejected (403)" → the key is wrong; re-enter the exact AI_ADMIN_KEY from Cloudflare.','"unreachable" → you are on a local preview or the Function is not deployed.'],
+      apis:SOURCES.map(s=>s.endpoint), deps:['Cloudflare Pages Functions','AI_ADMIN_KEY'] } },
+
+  governance:{ title:'Governance', sub:'Board status, decisions, and registers', icon:'🏛️', group:'Governance',
+    metrics:[ M('Board Status','Governance API'), M('Current Cycle','Governance API'), M('Current Department','Governance API'),
+      M('Current Priority','Governance API'), M('Current Task','Governance API'), M('Current Decision','Governance API') ],
     tables:[ {title:'Decision History / Board Minutes',cols:['Cycle','Decision','Result','Source'],rows:[]},
       {title:'Evidence Register',cols:['Metric','Value','Source','Confidence'],rows:[]},
       {title:'Risk Register',cols:['Risk','Severity','Rollback','Status'],rows:[]},
-      {title:'Opportunity Register',cols:['Opportunity','Impact','Blocked By'],rows:[]} ]},
-  knowledge:{ title:'Knowledge', sub:'Coverage, inventory, and queue', icon:'📚',
-    metrics:[ M('Total Articles','Repository'), M('Published','Supabase'), M('Draft','Supabase'),
-      M('Missing Topics','Repository'), M('Weak Topics','Repository'), M('Duplicate Topics','Repository'),
-      M('Knowledge Coverage','Repository'), M('Graph Nodes','Repository') ],
-    tables:[ {title:'Topic Inventory',cols:['Topic','Category','Coverage','Source'],rows:[]},
-      {title:'Article Queue',cols:['Topic','Priority','Status'],rows:[]} ]},
-  chatbot:{ title:'Chatbot', sub:'Retrieval, coverage, and quality', icon:'🤖',
-    metrics:[ M('Knowledge Coverage','Runtime'), M('Missing Knowledge','Supabase'), M('Weak Responses','Runtime'),
-      M('Hallucination Risk','Runtime'), M('Conversation Quality','Runtime'), M('Human-Behaviour Score','Runtime'),
-      M('Retrieval Quality','Runtime'), M('Graph Quality','Repository') ],
-    tables:[ {title:'Top Missing Questions (kb_missing)',cols:['Question','Frequency','Category'],rows:[]} ]},
-  playground:{ title:'AI Playground', sub:'Admin-only — query the chatbot engine and inspect what it used', icon:'🧪', playground:true },
-  seo:{ title:'SEO', sub:'Schema, coverage, and authority', icon:'🔎',
-    metrics:[ M('Structured-Data Coverage','Repository'), M('Schema','Repository'), M('Open Graph','Repository'),
-      M('Twitter Cards','Repository'), M('Canonicals','Repository'), M('Internal Links','Repository'),
-      M('Broken Links','Runtime'), M('Topical Authority','Search Console'), M('Sitemap','Repository') ]},
-  automation:{ title:'Automation', sub:'Jobs, queues, and background tasks', icon:'⚙️',
-    metrics:[ M('Running Jobs','Runtime'), M('Completed Jobs','Runtime'), M('Failed Jobs','Runtime'),
-      M('Retry Queue','Runtime'), M('Deployment Queue','Cloudflare'), M('Background Tasks','Runtime') ],
-    tables:[ {title:'Queue History',cols:['Job','Type','Result','When'],rows:[]} ]},
-  reports:{ title:'Reports', sub:'Export the current dashboard snapshot', icon:'📄', reports:true },
-  actions:{ title:'Actions', sub:'Trigger backend audits/cycles where an endpoint exists', icon:'▶️', actions:true },
-  logs:{ title:'Live Logs', sub:'Board, automation, deployment, validation & error logs', icon:'📜', logs:true },
+      {title:'Opportunity Register',cols:['Opportunity','Impact','Blocked By'],rows:[]} ],
+    doc:{ purpose:'The board layer of the ZTU Governance Framework (ZGF): cycles, decisions, and the evidence / risk / opportunity registers.',
+      how:'These fields are fed by a governance snapshot API. <b>No such runtime endpoint exists in the repository today</b> — the ZGF board runs as an offline/agent process, so these cards are honestly "Not Connected" rather than faked.',
+      use:['Treat this as the register template. When a <code>/api/governance</code> snapshot endpoint is added, wire it into <code>SOURCES</code> and these tables populate automatically.'],
+      requires:['A governance snapshot endpoint (not yet built).'],
+      expect:'Empty registers until the board API is published — by design.',
+      trouble:['Everything "Not Connected" here is expected: there is no governance runtime API. This is the one module with no backing endpoint.'],
+      apis:['(none — governance snapshot API not yet implemented)'], deps:['ZGF board process (offline)'] } },
+
+  knowledge:{ title:'Knowledge', sub:'Coverage, inventory, and demand', icon:'📚', group:'Knowledge',
+    metrics:[
+      M('Total Articles','AI Health', S=>fromHealth(d=>d.articleCoverage?.totalArticles)),
+      M('Graph Concepts','AI Health', S=>fromHealth(d=>d.graphGrowth?.totalConcepts)),
+      M('Published (graph DB)','AI Health', S=>fromHealth(d=>d.graphGrowth?.publishedInGraphDb)),
+      M('Categories','AI Health', S=>fromHealth(d=>d.graphGrowth?.categories)),
+      M('Knowledge Gaps Logged','AI Health', S=>fromHealth(d=>d.unknownQuestionRate?.totalGapsLogged)),
+      M('Asked Today','AI Health', S=>fromHealth(d=>d.unknownQuestionRate?.askedTodayCount)),
+      M('Increasing Questions','AI Health', S=>fromHealth(d=>d.unknownQuestionRate?.increasingCount)),
+      M('Graph Active','KB Status', S=>{const s=STATE.kbstatus;return s.status==='ok'?{value:s.data.graphEnabled?'Yes':'No',sub:'live'}:{value:null,sub:s.reason};}),
+    ],
+    tables:[ {title:'Categories Needing Articles',cols:['Category'],rows:[]} ],
+    doc:{ purpose:'How much the platform actually knows: article inventory, graph concept coverage, and what users ask that is NOT yet covered (real demand).',
+      how:'Reads <code>/api/ai-kb-admin?action=health</code> (which composes the content + intelligence dashboards) and <code>?action=status</code>. Counts are pulled straight from AI Supabase.',
+      use:['Watch "Knowledge Gaps Logged" and "Increasing Questions" — these are your write-next signals.','Use the Actions tab → Run Knowledge Audit for the raw provisioning status.'],
+      requires:['AI_ADMIN_KEY set (admin-gated).','AI Supabase configured (AI_SUPABASE_URL + AI_SUPABASE_SERVICE_KEY) for non-zero counts.'],
+      expect:'Live article/concept/category counts and a live gap feed once the admin key is set.',
+      trouble:['Counts show "admin key not set" → log in via KB Admin.','Counts are 0 with graph inactive → AI Supabase not configured or kb_nodes not migrated (see Actions → Run Knowledge Audit).'],
+      apis:['/api/ai-kb-admin?action=health','?action=status','?action=content-dashboard'], deps:['AI Supabase','AI_ADMIN_KEY'] } },
+
+  graph:{ title:'Knowledge Graph', sub:'Activation, parity, and rollback safety', icon:'🕸️', group:'Knowledge',
+    metrics:[
+      M('Graph Enabled','KB Status', S=>{const s=STATE.kbstatus;return s.status==='ok'?{value:s.data.graphEnabled?'Enabled':'Disabled',sub:'live'}:{value:null,sub:s.reason};}),
+      M('Schema Complete','KB Status', S=>{const s=STATE.kbstatus;return s.status==='ok'?{value:s.data.schemaComplete?'Complete':'Partial',sub:'kb_* tables'}:{value:null,sub:s.reason};}),
+      M('Concept Count','KB Status', S=>{const s=STATE.kbstatus;return s.status==='ok'?{value:String(s.data.conceptCount),sub:'kb_nodes'}:{value:null,sub:s.reason};}),
+      M('Graph Ready','KB Status', S=>{const s=STATE.kbstatus;return s.status==='ok'?{value:s.data.ready?'Ready':'Not ready',sub:s.data.note||''}:{value:null,sub:s.reason};}),
+      M('Parity','Parity', S=>{const s=STATE.parity;return s.status==='ok'?{value:s.data.parity?'Passing ✓':'Drift ✗',sub:(s.data.checked||0)+' checks'}:{value:null,sub:s.reason};}),
+      M('Runtime Version','Deployment', S=>{const s=STATE.deploy;return s.status==='ok'?{value:s.data.graphRuntimeVersion||'—',sub:'live probe'}:{value:null,sub:s.reason};}),
+    ],
+    doc:{ purpose:'Health of the knowledge graph that powers the chatbot: is it enabled, is the schema present, does graph retrieval still match the canonical seed (parity), and is rollback safe?',
+      how:'Reads <code>?action=status</code> (provision status: configured / schema / concept count), <code>?action=parity</code> (graph⇄KB_SEED equivalence) and <code>?action=deployment-probe</code> (which runtime version is live).',
+      use:['Graph Enabled + Schema Complete + Parity Passing = graph is safely serving answers.','If Parity shows Drift, run Actions → Run Graph Audit for the per-seed breakdown.'],
+      requires:['AI_ADMIN_KEY set.','AI Supabase with the kb_* tables migrated (Actions → Run Knowledge Audit shows what is missing).'],
+      expect:'Enabled / Complete / Ready / Passing across the board on a healthy graph.',
+      trouble:['"Not ready" with note "run migrateSeed" → the kb_nodes table exists but is empty; run the seed migration from KB Admin.','Parity "admin key not set" → log in first.'],
+      apis:['/api/ai-kb-admin?action=status','?action=parity','?action=rollback-check','?action=deployment-probe'], deps:['AI Supabase kb_* tables','AI_ADMIN_KEY'] } },
+
+  articles:{ title:'AI Articles', sub:'Automated content pipeline coverage', icon:'📝', group:'Knowledge',
+    metrics:[
+      M('Total Articles','AI Health', S=>fromHealth(d=>d.articleCoverage?.totalArticles)),
+      M('Categories Covered','AI Health', S=>{const s=STATE.health;if(s.status!=='ok')return{value:null,sub:s.reason};const bc=s.data.articleCoverage?.byCategory||{};return{value:String(Object.keys(bc).length),sub:'with ≥1 article'};}),
+      M('Categories Needing Articles','AI Health', S=>{const s=STATE.health;if(s.status!=='ok')return{value:null,sub:s.reason};const n=(s.data.articleCoverage?.categoriesNeedingArticles||[]).length;return{value:String(n),sub:'coverage gaps'};}),
+      M('Graph Concepts (from articles)','AI Health', S=>fromHealth(d=>d.graphGrowth?.totalConcepts)),
+    ],
+    tables:[ {title:'Categories Needing Articles',cols:['Category','Action'],rows:[]} ],
+    doc:{ purpose:'The AI content automation that was designed to detect gaps → generate articles → validate → publish → grow the graph → feed the chatbot. This module reports how far coverage has progressed.',
+      how:'Reads <code>?action=health</code> → <code>articleCoverage</code>. The full authoring pipeline lives in <code>/api/ai-kb-admin</code> (ingest-article → validate → review-queue → publish) and <code>/api/ai-articles</code>. Publishing an article auto-creates a graph concept and edges (see review-runtime).',
+      use:['Read Categories Needing Articles → these are the highest-value topics to author next.','Author/publish via the dedicated AI Article Manager (admin/ai-articles.html); this panel then reflects the new counts.'],
+      requires:['AI_ADMIN_KEY set.','AI Supabase (ai_articles table) for real counts.','LLM keys only if you use auto-generation.'],
+      expect:'Rising Total Articles and shrinking "Categories Needing Articles" as the pipeline runs.',
+      trouble:['Zeroes with "admin key not set" → log in.','Counts flat → the pipeline is manual-trigger; there is no cron auto-writer in this repo, so articles appear only when authored/ingested.'],
+      apis:['/api/ai-kb-admin?action=health','?action=content-dashboard','?action=author-assistant','/api/ai-articles'], deps:['AI Supabase ai_articles','AI_ADMIN_KEY'] } },
+
+  chatbot:{ title:'Chatbot', sub:'Engine reachability, retrieval source, and coverage', icon:'🤖', group:'AI',
+    metrics:[
+      M('Engine','Diagnostics', S=>({value: STATE.diagnose.status==='ok'?'Functions live':'Unverified', sub: STATE.diagnose.status==='ok'?'/api/ai-chat deployed':STATE.diagnose.reason})),
+      M('Graph-backed Answers','AI Health', S=>{const s=STATE.health;return s.status==='ok'?{value:s.data.retrievalQuality?.graphActive?'Yes':'Seed fallback',sub:'retrieval layer'}:{value:null,sub:s.reason};}),
+      M('Published Concepts','AI Health', S=>fromHealth(d=>d.retrievalQuality?.publishedConcepts)),
+      M('Missing Knowledge (gaps)','AI Health', S=>fromHealth(d=>d.unknownQuestionRate?.totalGapsLogged)),
+      M('Memory / Mentor Brain','AI Health', S=>{const s=STATE.health;return s.status==='ok'?{value:s.data.mentorContinuity?.memoryConfigured?'Configured':'Off',sub:'ai_chat_memory'}:{value:null,sub:s.reason};}),
+      M('Language Routing','AI Health', S=>{const s=STATE.health;return s.status==='ok'?{value:s.data.languageRouting?.active?'Active':'Off',sub:'lang-assist'}:{value:null,sub:s.reason};}),
+    ],
+    doc:{ purpose:'The public AI trade assistant. Confirms the engine is deployed, whether it answers from the graph or the seed fallback, and how much user demand is going unanswered.',
+      how:'Engine reachability is inferred from the open diagnostics probe; retrieval quality, memory and language routing come from <code>?action=health</code>. To see a live answer with its exact source layer, use the AI Playground.',
+      use:['Open AI Playground → ask a question → the source badge shows which layer answered (database / graph / live / OpenAI / safe).','Watch "Missing Knowledge" — high numbers mean author more concepts.'],
+      requires:['/api/ai-chat deployed (open — no key needed to chat).','AI_ADMIN_KEY only for the health metrics on this panel.'],
+      expect:'Engine "Functions live", graph-backed answers "Yes", and a small/steady gap count on a healthy system.',
+      trouble:['"Seed fallback" → graph is inactive; fix in Knowledge Graph module.','Playground says "unreachable" locally → expected; the engine only runs on the deployed Functions.'],
+      apis:['/api/ai-chat','/api/ai-kb-admin?action=health','?action=retrieval-probe'], deps:['AI Supabase','LLM provider (fallback)','AI_ADMIN_KEY (health only)'] } },
+
+  seo:{ title:'SEO', sub:'Schema, coverage, and authority (repository-based)', icon:'🔎', group:'AI',
+    metrics:[ M('Structured-Data Coverage','Repo scan'), M('Schema / JSON-LD','Repo scan'), M('Open Graph','Repo scan'),
+      M('Twitter Cards','Repo scan'), M('Canonicals','Repo scan'), M('Internal Links','Repo scan'),
+      M('Sitemap','Repo scan'), M('Topical Authority','Search Console'), M('Broken Links','Runtime crawl') ],
+    doc:{ purpose:'On-page SEO health: schema/JSON-LD presence, Open Graph / Twitter cards, canonicals, internal linking, sitemap and topical authority.',
+      how:'SEO is evaluated by scanning the repository HTML and by Google Search Console — <b>there is no runtime SEO API in this project</b>, so these metrics are honestly "Not Connected" here and are produced by an offline repo audit instead.',
+      use:['Run the repo SEO audit (offline tooling) to generate the coverage numbers.','Per-article FAQ/schema suggestions ARE available at runtime via <code>?action=faq-schema&id=</code> and <code>?action=content-dashboard</code>.'],
+      requires:['Offline repo scan for coverage; Search Console for authority.'],
+      expect:'No live numbers here by design; use the reports export for the repo-scan snapshot.',
+      trouble:['Do not expect green here — SEO is intentionally repo-driven, not a runtime endpoint.'],
+      apis:['(repo scan — no runtime endpoint)','/api/ai-kb-admin?action=faq-schema (per-concept schema helper)'], deps:['Repository HTML','Google Search Console'] } },
+
+  automation:{ title:'Automation', sub:'Jobs, queues, and background tasks', icon:'⚙️', group:'AI',
+    metrics:[ M('Running Jobs','Automation API'), M('Completed Jobs','Automation API'), M('Failed Jobs','Automation API'),
+      M('Retry Queue','Automation API'), M('Deployment Queue','Cloudflare API'), M('Background Tasks','Automation API') ],
+    doc:{ purpose:'Background jobs and queues (content compilation, delivery bundles, mailings).',
+      how:'The automation in this repo is <b>PowerShell scripts under <code>/automation</code></b> (master_engine.ps1, compile_queue_engine.ps1, send_delivery_email.ps1) run on an operator machine — there is no runtime jobs API exposing their state to the browser.',
+      use:['Run automation from the operator machine; monitor via its own logs.','If a jobs API is later exposed, add it to <code>SOURCES</code> and these cards populate.'],
+      requires:['A runtime automation/queue endpoint (not present).'],
+      expect:'"Not Connected" by design — automation is offline PowerShell, not a web API.',
+      trouble:['Nothing to fix here at runtime; these jobs are intentionally out-of-band.'],
+      apis:['(offline — /automation/*.ps1)'], deps:['Operator machine','PowerShell engine'] } },
+
+  deployment:{ title:'Deployment', sub:'Build tag, runtime versions, and upstream providers', icon:'🚀', group:'Ops', deployment:true,
+    doc:{ purpose:'Prove production is running the latest bundle and that every upstream data provider the site depends on is reachable.',
+      how:'Combines <code>?action=deployment-probe</code> (live build tag + per-module runtime versions) with <code>/api/diagnose</code> (real probes against FRED / Finnhub / TwelveData, with key-length checks and exact root causes).',
+      use:['Confirm "Latest bundle: Yes".','Scan the provider table — any FAIL row names the exact cause and fix (missing key, wrong length, plan restriction).'],
+      requires:['AI_ADMIN_KEY for the build tag; market-data keys (FRED_API_KEY, FINNHUB_API_KEY, TWELVEDATA_API_KEY) in Cloudflare env for the providers.'],
+      expect:'Build tag shown, all providers OK.',
+      trouble:['Provider "Missing API key" → add the named env var in Cloudflare Pages → Settings → Environment Variables, then redeploy.','Finnhub calendar 403 → free plan; upgrade or swap source (diagnose says so explicitly).'],
+      apis:['/api/ai-kb-admin?action=deployment-probe','/api/diagnose'], deps:['Cloudflare Pages','FRED/Finnhub/TwelveData keys'] } },
+
+  playground:{ title:'AI Playground', sub:'Admin-only — query the live chatbot engine and inspect its source', icon:'🧪', group:'Ops', playground:true,
+    doc:{ purpose:'Ask the real chatbot engine a question and see exactly which retrieval layer answered — the fastest way to confirm the AI stack end-to-end.',
+      how:'POSTs to <code>/api/ai-chat</code> and parses the SSE stream: <code>{t}</code> tokens build the answer, the final <code>{source}</code> frame reveals the layer (database / graph / live / OpenAI / safe).',
+      use:['Type a trading question → Ask.','Read the Source Badge under the answer to see where it came from.'],
+      requires:['/api/ai-chat deployed (open endpoint — no admin key needed).'],
+      expect:'A streamed answer plus a real source badge.',
+      trouble:['"unreachable" → you are on a local preview; deploy to test.','Empty/refusal answers → check the Chatbot + Knowledge Graph modules.'],
+      apis:['/api/ai-chat'], deps:['AI Supabase','LLM provider'] } },
+
+  reports:{ title:'Reports', sub:'Export the current dashboard snapshot', icon:'📄', group:'Ops', reports:true,
+    doc:{ purpose:'Export exactly what the dashboard currently shows — honest snapshots including reasoned "Not Connected" states.',
+      how:'Serializes the live STATE + resolved metrics to JSON / CSV, or opens the browser print dialog for PDF.',
+      use:['Pick a report scope → JSON / CSV / PDF.','Unconnected metrics export with their reason, never as fake numbers.'],
+      requires:['Nothing — exports whatever is currently hydrated. Refresh first for fresh data.'],
+      expect:'A downloaded file reflecting the current state.',
+      trouble:['Export looks empty → hydrate first (↻ Refresh) with the admin key set.'],
+      apis:['(client-side export of live STATE)'], deps:['—'] } },
+
+  actions:{ title:'Actions', sub:'Trigger backend audits where a real endpoint exists', icon:'▶️', group:'Ops', actions:true,
+    doc:{ purpose:'One-click triggers for the audits that DO have a real endpoint. Buttons with no backing endpoint are disabled and labelled — never faked.',
+      how:'Each action maps to a real GET. Admin-gated actions attach the shared AI_ADMIN_KEY automatically.',
+      use:['Run Knowledge Audit / Graph Audit / Deployment Audit → live JSON status.','Disabled buttons have no runtime API in this repo (governance/SEO/content cycles).'],
+      requires:['AI_ADMIN_KEY for the admin-gated audits.'],
+      expect:'"Responded ✓" and a status for wired actions; explicit "Not Connected" for the rest.',
+      trouble:['"Not Connected (admin key)" → log in first.','Disabled → intentional; no such endpoint exists.'],
+      apis:['/api/ai-kb-admin?action=status','?action=parity','/api/diagnose'], deps:['AI_ADMIN_KEY'] } },
+
+  logs:{ title:'Live Logs', sub:'System log trail from the AI backend', icon:'📜', group:'Ops', logs:true,
+    doc:{ purpose:'The AI backend\'s failure trail (embedding / graph-sync / article-ingest / LLM-fallback) plus local client events.',
+      how:'Pulls <code>?action=system-log</code> (admin) which reads the kb_system_log table. Empty until the AI Supabase + that table exist — shown honestly, never simulated.',
+      use:['Open the System tab → live backend log summary.','Other tabs surface client-side events only until their streams are wired.'],
+      requires:['AI_ADMIN_KEY + AI Supabase with kb_system_log.'],
+      expect:'A real log summary on the System tab when configured; explicit "Not Connected" otherwise.',
+      trouble:['"admin key not set" → log in.','Empty with key set → kb_system_log not yet created (optional table).'],
+      apis:['/api/ai-kb-admin?action=system-log'], deps:['AI Supabase kb_system_log','AI_ADMIN_KEY'] } },
 };
 
-/* ── reusable component factories ── */
-const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+/* ── component factories ── */
+function docPanel(m){
+  const d=m.doc; if(!d) return null;
+  const det=el('details','doc'); det.open=false;
+  const list = arr => `<ul>${arr.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  det.innerHTML=`
+    <summary><span>📖</span> Module documentation — ${m.title} <span class="tag">Guide</span><span class="chev">▶</span></summary>
+    <div class="doc-body">
+      <div class="field wide"><div class="lab">Purpose (business)</div><p>${d.purpose}</p></div>
+      <div class="field wide"><div class="lab">How it works (technical)</div><p>${d.how}</p></div>
+      <div class="field"><div class="lab">How to use / typical workflow</div>${list(d.use)}</div>
+      <div class="field"><div class="lab">Requirements</div>${list(d.requires)}</div>
+      <div class="field"><div class="lab">Expected result</div><p>${d.expect}</p></div>
+      <div class="field"><div class="lab">Common problems &amp; troubleshooting</div>${list(d.trouble)}</div>
+      <div class="field"><div class="lab">Related APIs</div>${list(d.apis.map(a=>`<code>${a}</code>`))}</div>
+      <div class="field"><div class="lab">Dependencies</div>${list(d.deps)}</div>
+    </div>`;
+  return det;
+}
 function metricCard(m){
-  // Honest states: value+stateClass set by hydrate() from a REAL endpoint. 'ok' shows a
-  // large value (OK/Live/Ready); 'wait' = Not Configured / Feature Off (source exists,
-  // not set up); null = literally no backend source → "Not Connected". No fabrication.
   const c=el('div','card');
-  let body;
-  if(m.value!=null){
-    const cls=m.stateClass||'ok';
-    body = (cls==='ok')
-      ? `<span class="v" style="color:var(--ok)">${m.value}</span>`
-      : `<span class="meta"><span class="badge ${cls}">${m.value}</span></span>`;
+  let value=null, sub=m.note||('source: '+m.source), stateBadge;
+  if(m.resolver){ const r=m.resolver(STATE); value=r.value; if(r.sub) sub=r.sub; }
+  if(value!=null){
+    c.innerHTML=`<div class="k">${m.k}</div><div class="v">${value}</div>
+      <div class="meta"><span class="badge ok">Live</span><span class="badge src">src: ${m.source}</span></div>
+      <div class="sub" style="font-size:11px;color:var(--dim);margin-top:6px">${sub}</div>`;
   } else {
-    body = `<span class="meta"><span class="badge nc">Not Connected</span></span>`;
+    const admin = /admin key/i.test(sub);
+    const cls = admin?'wait':'nc';
+    const label = /Governance API|Automation API|Cloudflare API|Search Console|Runtime crawl|Repo scan/.test(m.source) ? 'Not Connected' : (admin?'Waiting — admin key':'Not Connected');
+    c.innerHTML=`<div class="k">${m.k}</div>
+      <div class="meta" style="margin-top:8px"><span class="badge ${cls}">${label}</span></div>
+      <div class="sub" style="font-size:11px;color:var(--dim);margin-top:8px"><span class="badge src">src: ${m.source}</span> · ${sub}</div>`;
   }
-  c.innerHTML=`<div class="k">${m.k}</div>${body}
-    <div class="meta"><span class="badge src">src: ${m.source}</span></div>`;
   return c;
 }
 function tableCard(t){
   const c=el('div','card full');
   let body;
-  if(!t.rows||!t.rows.length){ body=`<div class="empty">Waiting for Backend — no live data source connected.</div>`; }
+  if(!t.rows||!t.rows.length){ body=`<div class="empty">Waiting for Backend — no live rows for this register yet. (Reason: source not connected or returned no rows.)</div>`; }
   else{ body=`<table><thead><tr>${t.cols.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${
     t.rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
   c.innerHTML=`<h3>${t.title}</h3>${body}`;
@@ -279,21 +625,98 @@ function tableCard(t){
 }
 function renderMetrics(list){ const g=el('div','grid cols-4'); list.forEach(m=>g.appendChild(metricCard(m))); return g; }
 
+/* Populate Knowledge/Articles register tables from live health data (honest). */
+function liveTables(key, tables){
+  const H=STATE.health.data;
+  if(STATE.health.status==='ok' && H && (key==='knowledge'||key==='articles')){
+    const cats = H.articleCoverage?.categoriesNeedingArticles || [];
+    if(cats.length){
+      return tables.map(t=>{
+        if(/Needing Articles/i.test(t.title)){
+          return {...t, rows: cats.map(c=> key==='articles' ? [c,'Author an article for this category'] : [c])};
+        }
+        return t;
+      });
+    }
+  }
+  return tables;
+}
+
+/* ── Runtime Connections (audit) ── */
+function renderConnections(){
+  const c=el('div','card full');
+  const rows = SOURCES.map(s=>{
+    const key = s.id==='chat' ? null : s.id;
+    const st = key ? STATE[key] : { status:'wait', reason:'on-demand (Playground) — open POST endpoint' };
+    const badge = st.status==='ok'?'<span class="badge ok">Connected</span>'
+      : st.status==='wait'?'<span class="badge info">On-demand</span>'
+      : st.status==='bad'?'<span class="badge bad">Error</span>'
+      : '<span class="badge nc">Not Connected</span>';
+    const authB = s.auth==='admin'?'<span class="badge wait">admin key</span>':'<span class="badge ok">open</span>';
+    return `<tr>
+      <td style="font-weight:700">${s.label}</td>
+      <td class="mono">${s.method} ${s.endpoint}</td>
+      <td>${authB}</td>
+      <td>${badge}</td>
+      <td style="color:var(--muted)">${st.reason}</td>
+    </tr><tr><td colspan="5" style="color:var(--dim);font-size:11px;border-bottom:1px solid var(--border);padding-top:0">↳ supplies: ${s.supplies}</td></tr>`;
+  }).join('');
+  c.innerHTML=`<h3>🔗 Runtime Connection Audit</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Every card in this admin panel is fed by one of these endpoints. Status is the result of the live probe from the last refresh (${STATE.hydratedAt?STATE.hydratedAt.toLocaleTimeString():'not yet run'}). No status is assumed.</p>
+    <table><thead><tr><th>Source</th><th>Endpoint</th><th>Auth</th><th>Status</th><th>Detail / reason</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  return c;
+}
+
+/* ── Deployment module (live) ── */
+function renderDeployment(){
+  const frag=document.createDocumentFragment();
+  const DEP=STATE.deploy.data, D=STATE.diagnose.data;
+  const top=el('div','card full');
+  top.innerHTML=`<h3>🚀 Build &amp; Runtime</h3>`+ (STATE.deploy.status==='ok'
+    ? `<dl class="kv" style="grid-template-columns:auto 1fr;max-width:640px">
+        <dt>Build tag</dt><dd><code>${DEP.buildVersion}</code></dd>
+        <dt>Deployment source</dt><dd>${DEP.deploymentSource}</dd>
+        <dt>Graph runtime</dt><dd>${DEP.graphRuntimeVersion}</dd>
+        <dt>Retrieval</dt><dd>${DEP.retrievalVersion}</dd>
+        <dt>Relevance</dt><dd>${DEP.relevanceVersion}</dd>
+        <dt>All latest?</dt><dd>${DEP.allLatest?'<span class="badge ok">Yes ✓</span>':'<span class="badge warn">Mixed</span>'}</dd>
+      </dl>`
+    : `<div class="empty">${STATE.deploy.reason==='admin key not set — log in via KB Admin / AI Articles'?'Waiting — admin key not set. Log in via KB Admin, then ↻ Refresh.':'Not Connected — '+STATE.deploy.reason}</div>`);
+  frag.appendChild(top);
+
+  const prov=el('div','card full'); prov.style.marginTop='13px';
+  let body;
+  if(STATE.diagnose.status==='ok' && D){
+    body=`<table><thead><tr><th>Provider</th><th>Status</th><th>HTTP</th><th>Key</th><th>Root cause / fix</th></tr></thead><tbody>${
+      (D.providers||[]).map(p=>`<tr>
+        <td style="font-weight:700">${p.service}</td>
+        <td>${p.ok?'<span class="badge ok">OK</span>':'<span class="badge bad">FAIL</span>'}</td>
+        <td class="mono">${p.httpStatus??'—'}</td>
+        <td class="mono">${p.keyPresent?('len '+p.keyLength):'missing'}</td>
+        <td style="color:var(--muted)">${p.ok?'—':(p.rootCause||'')}${p.recommendedFix?'<br><span style="color:var(--gold3)">↳ '+p.recommendedFix+'</span>':''}</td>
+      </tr>`).join('')}</tbody></table>`;
+  } else {
+    body=`<div class="empty">${STATE.diagnose.status==='wait'?'Probing…':'Not Connected — '+STATE.diagnose.reason}</div>`;
+  }
+  prov.innerHTML=`<h3>🛰️ Upstream Provider Health <span class="badge src" style="margin-left:6px">/api/diagnose</span></h3>${body}`;
+  frag.appendChild(prov);
+  return frag;
+}
+
+/* ── Reports ── */
 const REPORT_TYPES=[
-  ['governance','Governance Report','governance'],
-  ['architecture','Architecture Report',null],
-  ['knowledge','Knowledge Report','knowledge'],
-  ['seo','SEO Report','seo'],
-  ['system','System Report',null],
+  ['executive','Executive Snapshot'], ['knowledge','Knowledge Report'], ['graph','Graph Report'],
+  ['deployment','Deployment Report'], ['connections','Connections Audit'], ['system','Full System Report'],
 ];
 function renderReports(){
   const c=el('div','card full');
   c.innerHTML=`<h3>Generate &amp; Export Reports</h3>
-    <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Each report exports the <b>current dashboard state</b> for its domain (honest — unconnected metrics export as “Not Connected” / “Waiting for Backend”; nothing is simulated).</p>
-    <table><thead><tr><th>Report</th><th>Live Source</th><th style="text-align:right">Export</th></tr></thead><tbody>
-      ${REPORT_TYPES.map(([id,label,mod])=>`<tr>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Exports the <b>current hydrated state</b>. Unconnected metrics export with their reason — nothing is simulated. Run <b>↻ Refresh</b> first for fresh data.</p>
+    <table><thead><tr><th>Report</th><th>Source status</th><th style="text-align:right">Export</th></tr></thead><tbody>
+      ${REPORT_TYPES.map(([id,label])=>`<tr>
         <td style="font-weight:700">${label}</td>
-        <td>${mod?`<span class="badge wait">Waiting for Backend</span>`:`<span class="badge nc">Not Connected</span>`}</td>
+        <td>${reportSourceBadge(id)}</td>
         <td style="text-align:right;white-space:nowrap">
           <button class="btn sm gold" data-rep="${id}" data-fmt="json">JSON</button>
           <button class="btn sm" data-rep="${id}" data-fmt="csv">CSV</button>
@@ -304,236 +727,249 @@ function renderReports(){
   c.addEventListener('click',e=>{const b=e.target.closest('[data-rep]');if(b)exportReport(b.dataset.fmt,b.dataset.rep);});
   return c;
 }
+function reportSourceBadge(id){
+  const map={executive:'health',knowledge:'health',graph:'kbstatus',deployment:'deploy',connections:'diagnose',system:'health'};
+  const k=map[id]; const s=STATE[k];
+  if(!s) return '<span class="badge nc">mixed</span>';
+  return s.status==='ok'?'<span class="badge ok">Live</span>':s.status==='wait'?'<span class="badge info">Probing</span>':`<span class="badge nc">${s.reason}</span>`;
+}
+
+/* ── Actions ── */
+const ACTION_EP = {
+  'run-knowledge-audit':  { ep:'/api/ai-kb-admin?action=status',  auth:'admin', label:'Run Knowledge Audit' },
+  'run-graph-audit':      { ep:'/api/ai-kb-admin?action=parity',  auth:'admin', label:'Run Graph Audit' },
+  'run-health-audit':     { ep:'/api/ai-kb-admin?action=health',  auth:'admin', label:'Run Health Audit' },
+  'run-deployment-audit': { ep:'/api/diagnose',                   auth:'open',  label:'Run Deployment Audit' },
+  'run-deployment-probe': { ep:'/api/ai-kb-admin?action=deployment-probe', auth:'admin', label:'Run Deployment Probe' },
+  'run-governance-cycle': { ep:null, label:'Run Governance Cycle' },
+  'run-seo-audit':        { ep:null, label:'Run SEO Audit (offline repo scan)' },
+  'run-content-cycle':    { ep:null, label:'Run Content Cycle (offline)' },
+};
 function renderActions(){
-  const c=el('div','card full'); c.innerHTML='<h3>Governance Actions</h3>';
-  const defs=[
-    ['run-governance-cycle','Run Governance Cycle'],['run-chatbot-audit','Run Chatbot Audit'],
-    ['run-seo-audit','Run SEO Audit'],['run-knowledge-audit','Run Knowledge Audit'],
-    ['run-graph-audit','Run Graph Audit'],['run-deployment-audit','Run Deployment Audit'],
-    ['run-maintenance-cycle','Run Maintenance Cycle'],['run-content-cycle','Run Content Cycle'],
-    ['run-executive-review','Run Executive Review'],
-  ];
-  defs.forEach(([id,label])=>{
-    const ep=API.actions[id];
+  const c=el('div','card full'); c.innerHTML='<h3>Governance &amp; Audit Actions</h3>';
+  Object.entries(ACTION_EP).forEach(([id,def])=>{
     const row=el('div','action-row');
-    row.innerHTML=`<div><div style="font-weight:700;font-size:13.5px">${label}</div>
-      <div class="desc">${ep?('endpoint: '+ep):'no backend endpoint configured'}</div></div>
+    row.innerHTML=`<div><div style="font-weight:700;font-size:13px">${def.label}</div>
+      <div class="desc">${def.ep?('endpoint: '+def.ep+(def.auth==='admin'?' · admin key':' · open')):'no runtime endpoint in this repo — runs offline'}</div></div>
       <div style="display:flex;align-items:center;gap:10px">
-        <span class="badge ${ep?'nc':'nc'}" data-st="${id}">${ep?'Ready':'Not Connected'}</span>
-        <button class="btn sm ${ep?'gold':''}" data-act="${id}" ${ep?'':'disabled style=\"opacity:.5;cursor:not-allowed\"'}>Run</button>
+        <span class="badge ${def.ep?'nc':'nc'}" data-st="${id}">${def.ep?'Ready':'Not Connected'}</span>
+        <button class="btn sm ${def.ep?'gold':''}" data-act="${id}" ${def.ep?'':'disabled'}>Run</button>
       </div>`;
     c.appendChild(row);
   });
+  const out=el('div','logbox'); out.id='actOut'; out.style.marginTop='14px';
+  out.innerHTML='<span class="t">Action output appears here.</span>';
+  c.appendChild(out);
   c.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)runAction(b.dataset.act);});
   return c;
 }
+async function runAction(id){
+  const def=ACTION_EP[id]; const st=document.querySelector(`[data-st="${id}"]`); const out=document.getElementById('actOut');
+  if(!def.ep){ st.textContent='Not Connected'; st.className='badge nc'; return; }
+  const headers={'Accept':'application/json'};
+  if(def.auth==='admin'){ const k=ADMIN_KEY(); if(!k){ st.textContent='Not Connected (admin key)'; st.className='badge nc'; out.innerHTML='<span class="r">Admin key not set.</span> Log in via KB Admin / AI Articles, then retry.'; return; } headers['x-admin-key']=k; }
+  st.textContent='Running…'; st.className='badge wait';
+  try{
+    const res=await fetch(def.ep,{method:'GET',headers});
+    const txt=await res.text();
+    if(res.status===403){ st.textContent='Rejected (403)'; st.className='badge bad'; out.innerHTML='<span class="r">HTTP 403</span> — admin key wrong or missing.'; return; }
+    if(!res.ok){ st.textContent='HTTP '+res.status; st.className='badge bad'; out.textContent=txt.slice(0,3000); return; }
+    st.textContent='Responded ✓'; st.className='badge ok';
+    let pretty=txt; try{ pretty=JSON.stringify(JSON.parse(txt),null,2); }catch(_){}
+    out.textContent=pretty.slice(0,6000);
+  }catch(err){ st.textContent='Unreachable'; st.className='badge nc'; out.innerHTML='<span class="r">Unreachable</span> — deploy to Cloudflare to run live.'; }
+}
+
+/* ── Logs ── */
 function renderLogs(){
   const c=el('div','card full');
   c.innerHTML=`<h3>Live Logs</h3>
     <div class="tabs" id="logTabs">
-      ${['Governance','Automation','Validation','Deployment','Chatbot','System'].map((t,i)=>`<div class="tab ${i===0?'active':''}" data-log="${t}">${t} Logs</div>`).join('')}
+      ${['System','Governance','Automation','Validation','Deployment','Chatbot'].map((t,i)=>`<div class="tab ${i===0?'active':''}" data-log="${t}">${t}</div>`).join('')}
     </div>
-    <div class="logbox" id="logBox"><span class="t">[client]</span> Governance Admin Panel loaded. <span class="g">No backend log stream connected</span> — showing local client events only.\n<span class="t">[policy]</span> Awaiting governance API. No log data is simulated.</div>`;
-  c.addEventListener('click',e=>{const t=e.target.closest('[data-log]');if(!t)return;
-    c.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
-    document.getElementById('logBox').innerHTML=`<span class="t">[${t.dataset.log.toLowerCase()}]</span> <span class="g">Not Connected</span> — this stream requires a backend log source. Nothing is fabricated.`;
+    <div class="logbox" id="logBox"><span class="t">[client]</span> Governance Admin loaded. Select <span class="g">System</span> for the live backend log summary (requires admin key).</div>`;
+  c.querySelector('#logTabs').addEventListener('click',async e=>{
+    const t=e.target.closest('[data-log]'); if(!t)return;
+    c.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+    const box=document.getElementById('logBox'); const kind=t.dataset.log;
+    if(kind==='System'){
+      const k=ADMIN_KEY();
+      if(!k){ box.innerHTML='<span class="r">Not Connected</span> — admin key not set. Log in via KB Admin, then reopen this tab.'; return; }
+      box.innerHTML='<span class="t">Fetching system log…</span>';
+      try{
+        const r=await fetch('/api/ai-kb-admin?action=system-log&limit=100',{headers:{'x-admin-key':k,'Accept':'application/json'}});
+        if(r.status===403){ box.innerHTML='<span class="r">HTTP 403</span> — admin key rejected.'; return; }
+        if(!r.ok){ box.innerHTML='<span class="r">HTTP '+r.status+'</span>'; return; }
+        const d=await r.json();
+        box.textContent=JSON.stringify(d,null,2).slice(0,8000);
+      }catch(_){ box.innerHTML='<span class="r">Unreachable</span> — deploy to Cloudflare to read the live log.'; }
+    } else {
+      box.innerHTML=`<span class="t">[${kind.toLowerCase()}]</span> <span class="g">Not Connected</span> — no dedicated ${kind} log stream is exposed as a runtime endpoint. Nothing is fabricated. (System tab reads the real kb_system_log.)`;
+    }
   });
   return c;
 }
 
-/* ── AI Playground (admin-only) — reuses the existing /api/ai-chat engine ── */
+/* ── AI Playground — SSE aware ── */
 function renderPlayground(){
   const c=el('div','card full');
-  const fields=['Knowledge Used','Graph Nodes','Context Used','Confidence','Missing Knowledge','Suggested Improvements'];
-  c.innerHTML=`<h3>🧪 AI Playground <span class="badge src" style="margin-left:8px">admin only</span></h3>
-    <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Queries the existing chatbot engine (<code>/api/ai-chat</code>). Structured fields show <b>Not Connected</b> unless the backend returns them — nothing is fabricated.</p>
+  c.innerHTML=`<h3>🧪 AI Playground <span class="badge src" style="margin-left:8px">live engine</span></h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Queries <code>/api/ai-chat</code> and parses the response stream. The <b>Source Badge</b> shows which retrieval layer actually answered — nothing is fabricated.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <input id="pgQ" placeholder="Ask a trading question…" style="flex:1;min-width:240px;background:#0c0a07;border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Inter'" />
+      <input id="pgQ" class="input" placeholder="Ask a trading question…" />
       <button class="btn gold" id="pgAsk">Ask</button>
     </div>
     <div style="margin-top:14px">
-      <div class="k" style="font-size:11.5px;font-weight:700;text-transform:uppercase;color:var(--muted)">Response</div>
-      <div id="pgResp" class="logbox" style="margin-top:6px;min-height:70px"><span class="g">Not Connected</span> — submit a question to call the engine.</div>
+      <div class="k" style="text-transform:uppercase;color:var(--muted);font-size:11px;font-weight:700">Answer</div>
+      <div id="pgResp" class="logbox" style="margin-top:6px;min-height:70px"><span class="g">Ready</span> — submit a question to call the engine.</div>
     </div>
     <div class="grid cols-3" style="margin-top:14px">
-      ${fields.map(f=>`<div class="card"><div class="k">${f}</div><div class="meta"><span class="badge nc" data-pg="${f}">Not Connected</span></div></div>`).join('')}
+      <div class="card"><div class="k">Source Layer</div><div class="meta"><span class="badge nc" id="pgSrc">—</span></div></div>
+      <div class="card"><div class="k">Answer Length</div><div class="v" id="pgLen" style="font-size:18px">—</div></div>
+      <div class="card"><div class="k">Latency</div><div class="v" id="pgMs" style="font-size:18px">—</div></div>
     </div>`;
-  c.querySelector('#pgAsk').addEventListener('click',async()=>{
+  const ask=async()=>{
     const q=c.querySelector('#pgQ').value.trim(); if(!q)return;
-    const resp=c.querySelector('#pgResp'); resp.innerHTML='<span class="t">Querying engine…</span>';
+    const resp=c.querySelector('#pgResp'); resp.textContent='Querying engine…';
+    c.querySelector('#pgSrc').textContent='—'; c.querySelector('#pgLen').textContent='—'; c.querySelector('#pgMs').textContent='—';
+    const t0=Date.now();
     try{
       const r=await fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:q}]})});
-      if(!r.ok){ resp.innerHTML=`<span class="r">Not Connected</span> — HTTP ${r.status}`; return; }
-      const txt=await r.text();
-      resp.textContent=txt.slice(0,4000)||'(empty response)';
-      // structured fields remain "Not Connected" unless the engine returns them — honest by default.
-    }catch(err){ resp.innerHTML='<span class="r">Not Connected</span> — engine unreachable (expected in local/preview).'; }
-  });
+      if(!r.ok){ resp.innerHTML=`<span class="r">HTTP ${r.status}</span> — engine error.`; return; }
+      // Parse SSE frames: {t} tokens accumulate; {source} = badge.
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let buf='',answer='',src=null;
+      while(true){
+        const {done,value}=await reader.read(); if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        const parts=buf.split('\n\n'); buf=parts.pop();
+        for(const p of parts){
+          const line=p.replace(/^data:\s*/,'').trim(); if(!line||line==='[DONE]')continue;
+          try{ const j=JSON.parse(line); if(j.t)answer+=j.t; if(j.source)src=j.source; }catch(_){}
+        }
+        resp.textContent=answer||'…';
+      }
+      resp.textContent=answer||'(empty response)';
+      c.querySelector('#pgLen').textContent=answer.length+' ch';
+      c.querySelector('#pgMs').textContent=(Date.now()-t0)+' ms';
+      const badge=c.querySelector('#pgSrc');
+      if(src){ const label=(src.label||src.stage||src.layer||JSON.stringify(src)); badge.textContent=(typeof label==='string'?label:JSON.stringify(label)); badge.className='badge ok'; }
+      else { badge.textContent='not reported'; badge.className='badge nc'; }
+    }catch(err){ resp.innerHTML='<span class="r">Unreachable</span> — engine only runs on the deployed Cloudflare Functions (expected on local preview).'; }
+  };
+  c.querySelector('#pgAsk').addEventListener('click',ask);
+  c.querySelector('#pgQ').addEventListener('keydown',e=>{if(e.key==='Enter')ask();});
   return c;
 }
 
 /* ── render a module ── */
-// Executive hero — fills the first screen with a real summary + guide + actions.
-function renderExecHero(){
-  const c=el('div','card full hero');
-  const live=document.getElementById('connDot').classList.contains('live');
-  const q=(k)=>{ const x=(MODULES.executive.metrics.find(e=>e.k===k)||{}); return x.value!=null?x.value:'—'; };
-  const lr=window.__lastRefresh?window.__lastRefresh.toLocaleTimeString():'—';
-  const chip=(label,val,good)=>`<span class="badge ${good?'ok':(val==='—'?'nc':'wait')}">${label}: ${val}</span>`;
-  c.innerHTML=`
-    <div class="hero-top">
-      <div>
-        <h2>Executive Dashboard</h2>
-        <p class="hero-sum">Live platform health, read only from real production endpoints (/api/diagnose, /api/ai-chat, /api/ai-kb-admin). No values are simulated.</p>
-      </div>
-      <div class="hero-chips">
-        <span class="badge ${live?'ok':'nc'}">Backend: ${live?'Connected':'Not Connected'}</span>
-        <span class="badge src">Last refresh: ${lr}</span>
-        <span class="badge ${q('Deployment')==='Live'?'ok':'nc'}">Deployment: ${q('Deployment')}</span>
-      </div>
-    </div>
-    <div class="hero-quick">
-      ${chip('Overall',q('Overall Health'),q('Overall Health')==='OK')}
-      ${chip('Platform',q('Platform Health'),q('Platform Health')==='OK')}
-      ${chip('Chatbot',q('Chatbot Health'),q('Chatbot Health')==='OK')}
-      ${chip('Knowledge',q('Knowledge Health'),String(q('Knowledge Health')).match(/Ready|OK/))}
-    </div>
-    <details class="hero-help">
-      <summary>How to use this dashboard</summary>
-      <ul>
-        <li><b>What it monitors:</b> backend liveness, deployment, chatbot, and the knowledge graph — each card cites its real source.</li>
-        <li><b>Status words:</b> <b>OK/Live/Ready</b> = healthy · <b>Not Configured</b> = source exists but needs setup (e.g. admin key) · <b>Not Connected</b> = no backend source for that metric.</li>
-        <li><b>Click first:</b> <b>Refresh</b> to pull live state. For Knowledge/Graph, open <a href="kb-admin.html">KB Admin</a> and enter the admin key.</li>
-        <li><b>Populate Anchors</b> (in KB Admin): writes the concept library into the graph. Run once after knowledge changes — re-runs skip unchanged concepts.</li>
-        <li><b>Sync Edges</b> (in KB Admin): rebuilds concept→concept relationships. Run <i>after</i> Populate Anchors — incremental, skips unchanged edges.</li>
-      </ul>
-    </details>
-    <div class="hero-actions">
-      <button class="btn gold" id="heroRefresh">↻ Refresh</button>
-      <button class="btn" data-goto="actions">▶ Actions</button>
-      <button class="btn" data-goto="reports">📄 Reports</button>
-      <a class="btn" href="kb-admin.html">🗄 KB Admin</a>
-    </div>`;
-  const rb=c.querySelector('#heroRefresh'); if(rb) rb.addEventListener('click',()=>{ rb.textContent='↻ Refreshing…'; hydrate(); });
-  c.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>{ currentKey=b.dataset.goto; renderModule(b.dataset.goto); }));
-  return c;
-}
-
 function renderModule(key){
   const m=MODULES[key]; const wrap=document.getElementById('wrap'); wrap.innerHTML='';
   document.getElementById('modTitle').textContent=m.title;
   document.getElementById('modSub').textContent=m.sub;
   const sec=el('section','module active');
-  if(key==='executive') sec.appendChild(renderExecHero());
+
+  // Documentation panel first (collapsible) on every module.
+  const doc=docPanel(m); if(doc) sec.appendChild(doc);
+
+  if(m.exec){
+    sec.appendChild(el('div','banner','<span>🛰️</span><span><b>Monitoring &amp; control interface — not the execution engine.</b> Figures are pulled live from real APIs. Anything without a live source is labelled <b>Not Connected</b> <b>with its reason</b> — never simulated.</span>'));
+    sec.appendChild(renderExecHero());
+    sec.appendChild(el('div','sec-title','Subsystem Status'));
+    sec.appendChild(renderRibbon());
+    sec.appendChild(el('div','sec-title','Detailed Health Metrics'));
+    sec.appendChild(renderMetrics([
+      M('Overall Health','AI Health', S=>fromHealth(d=>d.productionScore!=null?d.productionScore+' / 100':null)),
+      M('Graph Concepts','AI Health', S=>fromHealth(d=>d.graphGrowth?.totalConcepts)),
+      M('Total Articles','AI Health', S=>fromHealth(d=>d.articleCoverage?.totalArticles)),
+      M('Knowledge Gaps','AI Health', S=>fromHealth(d=>d.unknownQuestionRate?.totalGapsLogged)),
+      M('Graph Enabled','KB Status', S=>{const s=STATE.kbstatus;return s.status==='ok'?{value:s.data.graphEnabled?'Yes':'No',sub:'live'}:{value:null,sub:s.reason};}),
+      M('Parity','Parity', S=>{const s=STATE.parity;return s.status==='ok'?{value:s.data.parity?'Passing':'Drift',sub:(s.data.checked||0)+' checks'}:{value:null,sub:s.reason};}),
+      M('Backend','Diagnostics', S=>({value: STATE.diagnose.status==='ok'?'Connected':null, sub: STATE.diagnose.status==='ok'?'/api/diagnose live':STATE.diagnose.reason})),
+      M('Build','Deployment', S=>{const s=STATE.deploy;return s.status==='ok'?{value:s.data.allLatest?'Latest ✓':'Mixed',sub:s.data.buildVersion}:{value:null,sub:s.reason};}),
+    ]));
+  }
+  if(m.connections) sec.appendChild(renderConnections());
+  if(m.deployment) sec.appendChild(renderDeployment());
   if(m.metrics) sec.appendChild(renderMetrics(m.metrics));
-  if(m.tables){ const g=el('div','grid cols-1');g.style.marginTop='14px'; m.tables.forEach(t=>g.appendChild(tableCard(t))); sec.appendChild(g); }
+  if(m.tables){ const g=el('div','grid');g.style.marginTop='13px'; liveTables(key,m.tables).forEach(t=>g.appendChild(tableCard(t))); sec.appendChild(g); }
   if(m.playground) sec.appendChild(renderPlayground());
   if(m.reports) sec.appendChild(renderReports());
   if(m.actions) sec.appendChild(renderActions());
   if(m.logs) sec.appendChild(renderLogs());
+
   wrap.appendChild(sec);
   document.querySelectorAll('#sideNav a').forEach(a=>a.classList.toggle('active',a.dataset.k===key));
   closeSidebar();
 }
 
-/* ── actions: real fetch or honest "Not Connected" ── */
-async function runAction(id){
-  const ep=API.actions[id]; const st=document.querySelector(`[data-st="${id}"]`);
-  if(!ep){ st.textContent='Not Connected'; st.className='badge nc'; return; }
-  const headers={'Accept':'application/json'};
-  // admin-gated endpoints reuse the shared admin-key slot; omitted → server returns 403.
-  if(ep.startsWith('/api/ai-kb-admin')){ const k=API.adminKey(); if(k) headers['x-admin-key']=k; }
-  st.textContent='Running…'; st.className='badge wait';
-  try{
-    const res=await fetch((API.base||'')+ep,{method:'GET',headers});
-    if(res.status===403){ st.textContent='Not Connected (admin key)'; st.className='badge nc'; return; }
-    if(!res.ok){ st.textContent='HTTP '+res.status; st.className='badge bad'; return; }
-    await res.text(); st.textContent='Responded ✓'; st.className='badge ok';
-  }catch(err){ st.textContent='Not Connected'; st.className='badge nc'; }
-}
-
-/* ── export current snapshot (honest: unconnected = "Not Connected") ── */
-function snapshot(){
-  const out={generatedAt:new Date().toISOString(),note:'Snapshot of Governance Admin state. Unconnected metrics export as "Not Connected" — no fabricated values.',modules:{}};
-  for(const [k,m] of Object.entries(MODULES)){
-    if(!m.metrics) continue;
-    out.modules[k]=m.metrics.map(x=>({metric:x.k,value:x.value==null?'Not Connected':x.value,source:x.source}));
-  }
+/* ── snapshot / export ── */
+function resolveModuleMetrics(key){
+  const m=MODULES[key]; const out=[];
+  const push=list=>list.forEach(x=>{ let v=null,sub=x.note||('source:'+x.source); if(x.resolver){const r=x.resolver(STATE);v=r.value;if(r.sub)sub=r.sub;} out.push({metric:x.k,value:v==null?'Not Connected':v,source:x.source,detail:sub}); });
+  if(m.metrics) push(m.metrics);
   return out;
 }
+function snapshot(){
+  return {
+    generatedAt:new Date().toISOString(),
+    hydratedAt: STATE.hydratedAt?STATE.hydratedAt.toISOString():null,
+    note:'Governance Admin live snapshot. Unconnected metrics export with their reason — no fabricated values.',
+    sources: SOURCES.map(s=>({label:s.label,endpoint:s.endpoint,auth:s.auth,status:(STATE[s.id]?.status||'on-demand'),reason:(STATE[s.id]?.reason||'—')})),
+    raw:{ health:STATE.health.data, status:STATE.kbstatus.data, parity:STATE.parity.data, deploy:STATE.deploy.data, diagnose:STATE.diagnose.data },
+    modules:Object.fromEntries(Object.keys(MODULES).filter(k=>MODULES[k].metrics||MODULES[k].exec).map(k=>[k,resolveModuleMetrics(k)])),
+  };
+}
 function exportReport(type, reportId){
-  const rt=(REPORT_TYPES.find(r=>r[0]===reportId))||['snapshot','Governance Report',null];
-  const modKey=rt[2]; const s=snapshot();
-  // scope to the report's module when it maps to one; else whole snapshot
-  const scoped={generatedAt:s.generatedAt,report:rt[1],note:s.note,
-    modules: modKey ? {[modKey]: s.modules[modKey]||[]} : s.modules};
-  const st=document.getElementById('repStatus');
-  const fname=(reportId||'governance')+'-report';
+  const s=snapshot();
+  const scopeMap={executive:['executive'],knowledge:['knowledge'],graph:['graph'],deployment:['deployment'],connections:[],system:null};
+  const keys=scopeMap[reportId];
+  const scoped={generatedAt:s.generatedAt,hydratedAt:s.hydratedAt,report:reportId,note:s.note,sources:s.sources,
+    modules: keys===null ? s.modules : (keys.length? Object.fromEntries(keys.map(k=>[k,s.modules[k]||[]])) : {}),
+    raw: reportId==='system'||reportId==='deployment'||reportId==='connections' ? s.raw : undefined };
+  const st=document.getElementById('repStatus'); const fname=reportId+'-report';
   if(type==='json'){ download(fname+'.json',JSON.stringify(scoped,null,2),'application/json'); }
   else if(type==='csv'){
-    let rows=[['module','metric','value','source']];
-    for(const [k,arr] of Object.entries(scoped.modules)) (arr||[]).forEach(x=>rows.push([k,x.metric,x.value,x.source]));
+    let rows=[['module','metric','value','source','detail']];
+    for(const [k,arr] of Object.entries(scoped.modules)) (arr||[]).forEach(x=>rows.push([k,x.metric,x.value,x.source,x.detail]));
+    if(!Object.keys(scoped.modules).length){ (s.sources).forEach(x=>rows.push(['source',x.label,x.status,x.endpoint,x.reason])); }
     download(fname+'.csv',rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv');
   } else { window.print(); }
-  st.innerHTML=`<span class="badge ok">Exported ${rt[1]} — ${type.toUpperCase()} (current state)</span>`;
+  if(st) st.innerHTML=`<span class="badge ok">Exported ${reportId} — ${type.toUpperCase()} (live state @ ${s.hydratedAt||'not hydrated'})</span>`;
 }
 function download(name,data,mime){const b=new Blob([data],{type:mime});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
 
-/* ── optional live state hydrate (only if a real endpoint is configured) ── */
-async function hydrate(){
-  // Connection + health derived ONLY from EXISTING production endpoints; every value
-  // comes from a real response field (no fabrication). Cards with no real source stay
-  // "Not Connected"/"Waiting for Backend". Connected = at least one real endpoint answered.
-  let connected=false;
-  const set=(mod,key,val,cls)=>{ const m=MODULES[mod]; if(!m||!m.metrics||val==null)return; const x=m.metrics.find(e=>e.k===key); if(x){ x.value=val; x.stateClass=cls||'ok'; } };
-  // 1) Backend liveness + platform + deployment — existing open endpoint /api/diagnose
-  try{
-    const r=await fetch((API.base||'')+'/api/diagnose',{headers:{'Accept':'application/json'}});
-    if(r.ok){ const d=await r.json().catch(()=>({})); connected=true;
-      const ok=!d.status || String(d.status).toLowerCase()==='ok';
-      set('executive','Overall Health', ok?'OK':'DEGRADED', ok?'ok':'wait');
-      set('executive','Platform Health', ok?'OK':'DEGRADED', ok?'ok':'wait');
-      set('executive','Deployment','Live','ok'); }
-  }catch(_){}
-  // 2) Chatbot — existing /api/ai-chat (POST-only). OPTIONS proves it is deployed/live.
-  try{ const r=await fetch((API.base||'')+'/api/ai-chat',{method:'OPTIONS'}); if(r.ok||r.status===204) set('executive','Chatbot Health','OK','ok'); }catch(_){}
-  // 3) Knowledge + Graph — existing admin-gated endpoint, reuses shared admin-key slot.
-  //    Source EXISTS but needs the admin key → "Not Configured" (not "Not Connected").
-  const key=(API.adminKey&&API.adminKey())||'';
-  if(key){
-    try{ const r=await fetch((API.base||'')+'/api/ai-kb-admin?action=status',{headers:{'x-admin-key':key,'Accept':'application/json'}});
-      if(r.ok){ const d=await r.json().catch(()=>({})); set('executive','Knowledge Health', d&&d.ready?'Ready':'Not provisioned', d&&d.ready?'ok':'wait'); connected=true; }
-      else if(r.status===403){ set('executive','Knowledge Health','Not Configured','wait'); } }catch(_){}
-    try{ const r=await fetch((API.base||'')+'/api/ai-kb-admin?action=parity',{headers:{'x-admin-key':key,'Accept':'application/json'}});
-      if(r.ok){ const d=await r.json().catch(()=>({})); set('executive','Graph Health', d&&d.parity===false?'Drift':'OK', d&&d.parity===false?'wait':'ok'); } }catch(_){}
-  } else {
-    set('executive','Knowledge Health','Not Configured','wait');
-    set('executive','Graph Health','Not Configured','wait');
-  }
-  // 4) Sources that exist but are not wired at runtime → "Not Configured" (honest, not
-  //    "Not Connected"). Business=analytics not connected; Automation=desktop, no web hook.
-  set('executive','Business Health','Not Configured','wait');
-  set('executive','Automation','Not Configured','wait');
-  // (SEO Health & Security have NO runtime endpoint → left as "Not Connected", correctly.)
-  // 5) Optional explicit governance snapshot endpoint (unchanged when configured)
-  if(API.liveState){ try{ const r=await fetch((API.base||'')+API.liveState); if(r.ok){ const d=await r.json();
-    for(const [k,m] of Object.entries(MODULES)){ if(!m.metrics||!d[k])continue; m.metrics.forEach(x=>{ if(d[k][x.k]!=null){ x.value=d[k][x.k]; x.stateClass='ok'; } }); } connected=true; } }catch(_){} }
-  window.__lastRefresh=new Date();
-  setConn(connected); renderModule(currentKey);
-}
-function setConn(live){ document.getElementById('connDot').classList.toggle('live',live);
-  document.getElementById('connTxt').textContent='Backend: '+(live?'Connected':'Not Connected'); }
-
 /* ── nav + boot ── */
 let currentKey='executive';
-function buildNav(){ const n=document.getElementById('sideNav');
-  Object.entries(MODULES).forEach(([k,m])=>{ const a=el('a',k===currentKey?'active':'');a.dataset.k=k;
-    a.innerHTML=`<span class="ico">${m.icon}</span>${m.title}`;a.onclick=()=>{currentKey=k;renderModule(k);};n.appendChild(a); }); }
+const NAV_GROUPS=['Overview','Governance','Knowledge','AI','Ops'];
+function buildNav(){
+  const n=document.getElementById('sideNav'); n.innerHTML='';
+  NAV_GROUPS.forEach(group=>{
+    const entries=Object.entries(MODULES).filter(([,m])=>m.group===group);
+    if(!entries.length)return;
+    n.appendChild(el('div','navgroup',group));
+    entries.forEach(([k,m])=>{ const a=el('a',k===currentKey?'active':''); a.dataset.k=k;
+      a.innerHTML=`<span class="ico">${m.icon}</span>${m.title}<span class="st" data-led="${k}"></span>`;
+      a.onclick=()=>{currentKey=k;renderModule(k);}; n.appendChild(a); });
+  });
+  refreshNavLeds();
+}
+function refreshNavLeds(){
+  const led=(k,cls)=>{const e=document.querySelector(`[data-led="${k}"]`);if(e)e.className='st '+cls;};
+  led('executive', STATE.diagnose.status==='ok'?'ok':STATE.diagnose.status==='bad'?'bad':'');
+  led('connections', ['diagnose','health','kbstatus','parity','deploy'].some(x=>STATE[x].status==='ok')?'ok':'');
+  led('knowledge', STATE.health.status==='ok'?'ok':STATE.health.status==='bad'?'bad':'');
+  led('graph', STATE.kbstatus.status==='ok'?'ok':STATE.kbstatus.status==='bad'?'bad':'');
+  led('articles', STATE.health.status==='ok'?'ok':'');
+  led('chatbot', STATE.diagnose.status==='ok'?'ok':'');
+  led('deployment', STATE.deploy.status==='ok'?'ok':STATE.diagnose.status==='ok'?'warn':'');
+  led('governance','warn'); led('seo','warn'); led('automation','warn');
+}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('scrim').classList.remove('show');}
 document.getElementById('menuBtn').onclick=()=>{document.getElementById('sidebar').classList.toggle('open');document.getElementById('scrim').classList.toggle('show');};
 document.getElementById('scrim').onclick=closeSidebar;
+document.getElementById('refreshBtn').onclick=()=>hydrate();
 
-buildNav(); renderModule('executive'); setConn(false); hydrate();
+buildNav(); renderModule('executive'); setConn('wait','Checking backend…'); hydrate();
 </script>
 </body>
 </html>
