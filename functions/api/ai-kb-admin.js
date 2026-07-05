@@ -38,6 +38,7 @@ import { buildIntelligenceReport } from '../utils/intelligence-dashboard.js';
 import { buildFeedbackRecommendations } from '../utils/feedback-loop.js';
 import { buildHealthReport } from '../utils/health-report.js';
 import { systemLogSummary } from '../utils/system-log.js';
+import { requireAdminModule } from '../utils/admin-session.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -51,8 +52,12 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 
-  // Admin gate — never expose provisioning to the public.
-  if (!env.AI_ADMIN_KEY || request.headers.get('x-admin-key') !== env.AI_ADMIN_KEY) {
+  // Admin gate — never expose provisioning to the public. Accepts a signed
+  // admin-portal session (module 'kb' or 'governance' — both front-end tools
+  // share this backend) or, as a back-compat fallback, the legacy shared
+  // AI_ADMIN_KEY header.
+  const authorized = await requireAdminModule(env, request, ['kb', 'governance'], { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
+  if (!authorized) {
     return json({ error: 'admin only' }, 403);
   }
 

@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#100e0a;--panel:#171410;--card:#1e1a13;--card2:#241f17;--border:rgba(200,156,63,.16);--border2:rgba(200,156,63,.28);--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;--text:#ece7dd;--muted:#9a8f7c;--dim:#6f6553;--warn:#e0b24a;--bad:#e2685f;--ok:#5bbb7b;--radius:14px}
@@ -165,8 +166,19 @@ function show(key){
     <div class="block"><h4>Recommendations</h4>${pts(a.rec,'rec')}</div>`;
   document.querySelectorAll('.mi').forEach(m=>m.classList.toggle('active',m.dataset.k===key));
 }
-Object.entries(ARCH).forEach(([k,a],i)=>{const d=document.createElement('div');d.className='mi'+(i===0?' active':'');d.dataset.k=k;d.innerHTML=`<span>${a.icon}</span>${a.name}`;d.onclick=()=>show(k);listEl.appendChild(d);});
-show('repository');
+function boot(){
+  Object.entries(ARCH).forEach(([k,a],i)=>{const d=document.createElement('div');d.className='mi'+(i===0?' active':'');d.dataset.k=k;d.innerHTML=`<span>${a.icon}</span>${a.name}`;d.onclick=()=>show(k);listEl.appendChild(d);});
+  show('repository');
+}
+</script>
+<script src="../js/admin-auth-client.js"></script>
+<script>
+  AdminGate.init({
+    module: 'architecture',
+    title: 'System Architecture',
+    subtitle: 'Enter the Architecture Admin password to continue.',
+    onUnlock: function () { boot(); }
+  });
 </script>
 </body>
 </html>

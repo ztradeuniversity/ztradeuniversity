@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Journal Mentor Workspace — Z Trade University</title>
-  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="icon" type="image/png" href="../../assets/ztu-logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     :root{
@@ -136,19 +137,6 @@
 </head>
 <body>
 
-  <!-- ════ PASSWORD GATE (reuses the existing admin gate pattern) ════ -->
-  <div id="gate">
-    <div class="gate-card">
-      <h1>Journal Mentor Workspace</h1>
-      <p>Authentication required. Use the ZTU admin password.</p>
-      <form id="gateForm" autocomplete="off">
-        <input type="password" id="gateInput" placeholder="Admin password" autocomplete="current-password" autofocus />
-        <button type="submit">Unlock</button>
-        <p class="gate-err" id="gateErr">Incorrect password.</p>
-      </form>
-    </div>
-  </div>
-
   <header>
     <div class="container head-in">
       <div class="brand">
@@ -156,8 +144,9 @@
         <span><b>Mentor Workspace</b><small>Trading Journal Reviews</small></span>
       </div>
       <div style="display:flex;gap:10px;">
-        <a class="btn" href="journal.html">Journal</a>
+        <a class="btn" href="../../journal.html">Journal</a>
         <button class="btn" id="btnRefresh">Refresh</button>
+        <button class="btn" id="btnSettings">Settings</button>
         <button class="btn" id="btnLogout">Sign Out</button>
       </div>
     </div>
@@ -218,9 +207,7 @@
   <script>
   (function(){
     'use strict';
-    // ── reuse the existing project admin gate pattern (ADMIN_CONFIG password) ──
-    var ADMIN_CONFIG = { password: 'ZTU-Admin-2026', sessionMinutes: 30, storageKey: 'ZTU_JADMIN_SESSION_V1' };
-    var ADMIN_KEY = null;  // sent to /api/journal-admin as x-journal-admin-key
+    var ADMIN_KEY = null;  // signed admin-portal session token, sent as Authorization: Bearer
 
     var $ = function(id){ return document.getElementById(id); };
     var traders = [], selectedId = null, currentProfile = null;
@@ -230,23 +217,13 @@
     function fmtMoney(n){ if(n==null||n==='') return '—'; var v=Number(n)||0; return (v<0?'-$':'$')+Math.abs(v).toFixed(2); }
     function fmtDate(d){ return d? new Date(d).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—'; }
 
-    // ── gate ──
-    function sessionValid(){ try{ var s=JSON.parse(sessionStorage.getItem(ADMIN_CONFIG.storageKey)||'null'); return s && s.expiresAt>Date.now() && s.key; }catch(e){ return false; } }
-    function openSession(key){ ADMIN_KEY=key; sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify({ expiresAt:Date.now()+ADMIN_CONFIG.sessionMinutes*60000, key:key })); }
-    function readSessionKey(){ try{ return JSON.parse(sessionStorage.getItem(ADMIN_CONFIG.storageKey)||'null').key; }catch(e){ return null; } }
-    function unlock(){ $('gate').style.display='none'; boot(); }
-    $('gateForm').addEventListener('submit', function(e){
-      e.preventDefault();
-      var pwd=$('gateInput').value;
-      if(pwd===ADMIN_CONFIG.password){ openSession(pwd); $('gateErr').style.display='none'; unlock(); }
-      else { $('gateErr').style.display='block'; }
-    });
-    $('btnLogout').addEventListener('click', function(){ sessionStorage.removeItem(ADMIN_CONFIG.storageKey); location.reload(); });
+    $('btnLogout').addEventListener('click', function(){ sessionStorage.removeItem('ztu_admin_sess::journal'); location.reload(); });
+    $('btnSettings').addEventListener('click', function(){ if(window.AdminGate) window.AdminGate.openSettings('journal'); });
 
     // ── API ──
     function api(action, payload){
       return fetch('/api/journal-admin', {
-        method:'POST', headers:{ 'Content-Type':'application/json', 'x-journal-admin-key':ADMIN_KEY },
+        method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+ADMIN_KEY },
         body: JSON.stringify(Object.assign({ action:action }, payload||{})),
       }).then(function(r){ return r.json().then(function(d){ return { status:r.status, data:d }; }); });
     }
@@ -620,11 +597,17 @@
       else { loadStats(); loadTraders(); if(selectedId) openTrader(selectedId); }
     });
 
-    function boot(){ loadDashboard(); }   // dashboard is the default view
-
-    // auto-unlock if a valid session exists
-    if(sessionValid()){ ADMIN_KEY=readSessionKey(); $('gate').style.display='none'; boot(); }
+    window.__journalBoot = function(token){ ADMIN_KEY = token; loadDashboard(); };   // dashboard is the default view
   })();
+  </script>
+  <script src="../js/admin-auth-client.js"></script>
+  <script>
+    AdminGate.init({
+      module: 'journal',
+      title: 'Journal Mentor Workspace',
+      subtitle: 'Enter the Journal Admin password to continue.',
+      onUnlock: function (token) { window.__journalBoot(token); }
+    });
   </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
 <title>ZTU · Knowledge Graph Admin</title>
+<link rel="stylesheet" href="../css/admin-portal.css" />
 <style>
   :root { --bg:#0d0902; --card:#16110a; --line:#2a2114; --gold:#e8b339; --txt:#f3ead7; --mut:#a99a78; --ok:#3fb950; --err:#f06f5e; }
   * { box-sizing:border-box; }
@@ -37,17 +38,7 @@
 <body>
 <div class="wrap">
   <h1>Knowledge Graph Admin</h1>
-  <p class="sub">Secure operator console for <code>/api/ai-kb-admin</code>. Protected server-side by your AI_ADMIN_KEY — nothing works without it.</p>
-
-  <div class="card">
-    <label for="key">AI_ADMIN_KEY</label>
-    <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="paste your admin key" />
-    <div class="row">
-      <label style="margin:0;"><input id="show" type="checkbox" /> show</label>
-      <label style="margin:0;"><input id="remember" type="checkbox" /> remember for this tab</label>
-      <small>Stored only in this tab's memory (cleared when you close it). Never sent anywhere except the admin API header.</small>
-    </div>
-  </div>
+  <p class="sub">Secure operator console for <code>/api/ai-kb-admin</code>. Protected by your KB Admin password — logged in once for this tab.</p>
 
   <div class="card">
     <div class="row" style="justify-content:space-between; margin:0 0 14px;">
@@ -65,9 +56,18 @@
 
   <div class="card">
     <label>Result</label>
-    <pre id="out">Enter your AI_ADMIN_KEY, then click a button. Recommended order: 1 → 2 → 3 → 4.</pre>
+    <pre id="out">Log in above, then click a button. Recommended order: 1 → 2 → 3 → 4.</pre>
   </div>
 </div>
-<script src="/admin/kb-admin.js" defer></script>
+<script src="../js/admin-auth-client.js"></script>
+<script src="../js/kb-admin.js"></script>
+<script>
+  AdminGate.init({
+    module: 'kb',
+    title: 'Knowledge Graph Admin',
+    subtitle: 'Enter the KB Admin password to continue.',
+    onUnlock: function (token) { window.KBAdmin.boot(token); }
+  });
+</script>
 </body>
 </html>

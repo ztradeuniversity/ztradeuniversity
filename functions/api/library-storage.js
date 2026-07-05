@@ -23,6 +23,8 @@
 //     short-lived Supabase signed URL the browser PUTs directly to.
 // =============================================================================
 
+import { requireAdminModule, timingSafeEqual } from '../utils/admin-session.js';
+
 const BUCKET_DEFS = [
   { id: 'library-covers', name: 'library-covers', public: true,  fileSizeLimit: 5242880   },
   { id: 'library-books',  name: 'library-books',  public: false, fileSizeLimit: 52428800  },
@@ -52,13 +54,17 @@ export async function onRequest(ctx) {
   const passcode   = env.LIBRARY_ADMIN_PASSCODE;
 
   // Secure by default: if not configured, the endpoint stays closed.
-  if (!url || !serviceKey || !passcode) {
+  if (!url || !serviceKey) {
     return json({ ok: false, error: 'storage_not_configured',
-      hint: 'Set LIBRARY_SUPABASE_URL, LIBRARY_SUPABASE_SERVICE_KEY and LIBRARY_ADMIN_PASSCODE in Cloudflare Pages.' }, 200);
+      hint: 'Set LIBRARY_SUPABASE_URL and LIBRARY_SUPABASE_SERVICE_KEY in Cloudflare Pages.' }, 200);
   }
 
-  // Admin gate
-  if (!body.passcode || !safeEqual(String(body.passcode), String(passcode))) {
+  // Admin gate — accepts the enterprise admin-portal session (Authorization:
+  // Bearer, module 'library') or, as a day-1 fallback, the legacy passcode
+  // sent in the request body (LIBRARY_ADMIN_PASSCODE).
+  const sessionOk = await requireAdminModule(env, request, 'library');
+  const legacyOk  = !!(passcode && body.passcode && timingSafeEqual(String(body.passcode), String(passcode)));
+  if (!sessionOk && !legacyOk) {
     return json({ ok: false, error: 'unauthorized' }, 401);
   }
 
@@ -146,12 +152,6 @@ async function doSignUpload(url, headers, body) {
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
-function safeEqual(a, b) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: CORS });
 }

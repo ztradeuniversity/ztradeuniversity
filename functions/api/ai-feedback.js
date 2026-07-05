@@ -11,10 +11,12 @@
 // AI_SUPABASE_SERVICE_KEY are set and the table exists — never breaks chat.
 // ════════════════════════════════════════════════════════════════════════════
 
+import { requireAdminModule } from '../utils/admin-session.js';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-admin-key',
+  'Access-Control-Allow-Headers': 'Content-Type, x-admin-key, Authorization',
 };
 const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: JSON_H }); }
@@ -76,11 +78,9 @@ export async function onRequest({ request, env }) {
     // Distinguish WHY a 401 happened — never reveals the actual key value, only
     // which misconfiguration to look at, so a future admin-key issue is
     // self-diagnosable from the dashboard instead of an opaque "Invalid admin key".
-    if (!env.AI_ADMIN_KEY) {
-      return json({ error: 'unauthorized', reason: 'admin_key_not_configured' }, 401);
-    }
-    if (request.headers.get('x-admin-key') !== env.AI_ADMIN_KEY) {
-      return json({ error: 'unauthorized', reason: 'key_mismatch' }, 401);
+    const authorized = await requireAdminModule(env, request, 'feedback', { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
+    if (!authorized) {
+      return json({ error: 'unauthorized', reason: env.AI_ADMIN_KEY ? 'key_mismatch' : 'admin_key_not_configured' }, 401);
     }
     if (!isConfigured(env)) return json({ configured: false, items: [], totals: { likes: 0, dislikes: 0, approval: null } });
 

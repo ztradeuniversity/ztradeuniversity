@@ -10392,26 +10392,29 @@ const AdminDashboard = (() => {
      dashboard rendering until authenticated.
   ══════════════════════════════════════════════════════════ */
   const ADMIN_CONFIG = {
-    password:        'ZTU-Admin-2026',   // CHANGE THIS to rotate admin password
+    module:          'dashboard',         // enterprise admin portal module key
     sessionMinutes:  30,                  // idle timeout in minutes
     storageKey:      'ZTU_ADMIN_SESSION_V1',
   };
 
   const AdminAuth = {
     _idleTimer: null,
+    _token: null,
 
     _isValid() {
       try {
         const raw = sessionStorage.getItem(ADMIN_CONFIG.storageKey);
         if (!raw) return false;
         const s = JSON.parse(raw);
-        return s && s.expiresAt && Date.now() < s.expiresAt;
+        if (!(s && s.expiresAt && Date.now() < s.expiresAt && s.token)) return false;
+        this._token = s.token;
+        return true;
       } catch (e) { return false; }
     },
 
     _refresh() {
       const expiresAt = Date.now() + ADMIN_CONFIG.sessionMinutes * 60_000;
-      sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify({ expiresAt }));
+      sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify({ expiresAt, token: this._token }));
     },
 
     _scheduleIdleCheck() {
@@ -10449,40 +10452,65 @@ const AdminDashboard = (() => {
       if (sh) sh.style.display = '';
     },
 
-    tryLogin(pwd) {
-      if (pwd === ADMIN_CONFIG.password) {
-        this._refresh();
-        this.hideGate();
-        this._scheduleIdleCheck();
-        console.log('[AdminAuth] login OK — session valid for ' + ADMIN_CONFIG.sessionMinutes + ' min idle');
-        return true;
-      }
+    async tryLogin(pwd) {
+      try {
+        const res = await fetch('/api/admin-auth', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', module: ADMIN_CONFIG.module, password: pwd }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && data.ok && data.token) {
+          this._token = data.token;
+          this._refresh();
+          this.hideGate();
+          this._scheduleIdleCheck();
+          this._mountChrome();
+          console.log('[AdminAuth] login OK — session valid for ' + ADMIN_CONFIG.sessionMinutes + ' min idle');
+          return true;
+        }
+      } catch (e) { console.error('[AdminAuth] login request failed', e); }
       return false;
     },
 
     logout(sessionExpired) {
       sessionStorage.removeItem(ADMIN_CONFIG.storageKey);
+      this._token = null;
       if (this._idleTimer) { clearInterval(this._idleTimer); this._idleTimer = null; }
       this.showGate(sessionExpired ? 'Session expired — please re-enter password.' : null);
       console.log('[AdminAuth] logged out' + (sessionExpired ? ' (idle timeout)' : ''));
     },
 
+    // Same shared header/breadcrumb/session-timer/sidebar-drawer/footer every
+    // other admin module gets — this page keeps its own bespoke gate, but
+    // still inherits the common chrome once authenticated.
+    _mountChrome() {
+      if (window.AdminGate && !document.querySelector('.zap-chrome-header')) {
+        window.AdminGate.mountChrome(ADMIN_CONFIG.module, 'Executive Dashboard', this._token, () => this.logout(false));
+      }
+    },
+
     bindGate() {
       const form = document.getElementById('adminGateForm');
       const btnLogout = document.getElementById('btnAdminLogout');
+      const btnSettings = document.getElementById('btnAdminSettings');
       if (form) {
-        form.addEventListener('submit', e => {
+        form.addEventListener('submit', async e => {
           e.preventDefault();
           const ip = document.getElementById('adminGateInput');
+          const btn = document.getElementById('adminGateSubmit');
           const pwd = ip ? ip.value : '';
-          if (!this.tryLogin(pwd)) {
+          if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+          const ok = await this.tryLogin(pwd);
+          if (btn) { btn.disabled = false; btn.textContent = 'Unlock'; }
+          if (!ok) {
             const er = document.getElementById('adminGateError');
-            if (er) { er.textContent = 'Incorrect password.'; er.hidden = false; }
+            if (er) { er.textContent = 'Incorrect password. Access denied.'; er.hidden = false; }
             if (ip) { ip.value = ''; ip.focus(); }
           }
         });
       }
       if (btnLogout) btnLogout.addEventListener('click', () => this.logout(false));
+      if (btnSettings) btnSettings.addEventListener('click', () => { if (window.AdminGate) window.AdminGate.openSettings(ADMIN_CONFIG.module); });
     },
 
     /* Entry point — call before any dashboard rendering.  Returns true
@@ -10493,6 +10521,7 @@ const AdminDashboard = (() => {
         this.hideGate();
         this._refresh();
         this._scheduleIdleCheck();
+        this._mountChrome();
         return true;
       }
       this.showGate();
