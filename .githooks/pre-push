@@ -50,12 +50,7 @@ done
 IFS="$OLDIFS"
 
 # Soft, NON-blocking warning: detect a sibling/stale clone that commonly causes reverts.
-for sib in "../website" "/d/website" "/c/Users/$USER/website" "$HOME/website"; do
-  if [ -d "$sib/.git" ]; then
-    echo "! ZTU guard: another working copy detected at '$sib'."
-    echo "  Commit ONLY from this clone; copying files from it is what caused past reverts."
-  fi
-done
+
 
 if [ "$fail" -ne 0 ]; then
   echo ""
