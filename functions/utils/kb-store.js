@@ -91,42 +91,19 @@ export async function insertEdge(env, src, dst, type, weight = 1.0, meta = {}) {
 export async function deleteEdgesBySrc(env, src) {
   return sb(env, 'DELETE', 'kb_edges', `src=eq.${encodeURIComponent(src)}`, null, 'return=minimal');
 }
-// Raw outgoing edges (type,dst only) for a node — for incremental diff. 1 subrequest, no join.
-export async function getRawEdgesBySrc(env, src) {
-  if (!isConfigured(env) || !src) return [];
-  const rows = await sb(env, 'GET', 'kb_edges', `src=eq.${encodeURIComponent(src)}&select=dst,type`, null, null);
-  return Array.isArray(rows) ? rows : [];
-}
-// Delete ONE specific edge (src,dst,type) — for incremental removal.
-export async function deleteEdge(env, src, dst, type) {
-  return sb(env, 'DELETE', 'kb_edges',
-    `src=eq.${encodeURIComponent(src)}&dst=eq.${encodeURIComponent(dst)}&type=eq.${encodeURIComponent(type)}`,
-    null, 'return=minimal');
-}
 // Phase 11C.4 — regenerate a node's relationship edges from its KOS data.
-// OPTIMIZED (incremental by default): fetch existing (dst,type), diff against desired,
-// INSERT only missing + DELETE only removed, and SKIP entirely when the set is identical
-// (0 writes). Final edge set is byte-identical to the old delete+reinsert, so integrity is
-// preserved. rebuild:true forces the legacy full delete+reinsert. FK-tolerant as before.
-export async function syncEdges(env, node, { rebuild = false } = {}) {
+// Idempotent (delete-by-src + per-edge insert). FK-tolerant: edges to nodes that do
+// not exist yet simply fail (inert by design — getNeighbors filters to PUBLISHED
+// nodes). With populate limit=1 the per-edge inserts stay well under the subrequest
+// budget for a single concept. Re-run via syncAllEdges once all nodes exist to
+// backfill concept→concept edges that were forward-referenced during population.
+export async function syncEdges(env, node) {
   if (!isConfigured(env) || !node?.id) return { synced: 0, configured: isConfigured(env) };
   const edges = deriveEdgesFromKOS(node);
-  if (rebuild) {
-    await deleteEdgesBySrc(env, node.id);
-    let synced = 0;
-    for (const e of edges) { if (await insertEdge(env, e.src, e.dst, e.type, e.weight, e.meta)) synced++; }
-    return { synced, configured: true, rebuilt: true };
-  }
-  const existing = await getRawEdgesBySrc(env, node.id);
-  const kExist = new Set(existing.map(e => e.type + '|' + e.dst));
-  const kWant  = new Set(edges.map(e => e.type + '|' + e.dst));
-  if (kExist.size === kWant.size && [...kWant].every(k => kExist.has(k))) {
-    return { synced: 0, skipped: true, configured: true };            // unchanged → 0 writes
-  }
-  let synced = 0, removed = 0;
-  for (const e of edges)    { if (!kExist.has(e.type + '|' + e.dst) && await insertEdge(env, e.src, e.dst, e.type, e.weight, e.meta)) synced++; }
-  for (const e of existing) { if (!kWant.has(e.type + '|' + e.dst) && await deleteEdge(env, node.id, e.dst, e.type)) removed++; }
-  return { synced, removed, configured: true };
+  await deleteEdgesBySrc(env, node.id);
+  let synced = 0;
+  for (const e of edges) { if (await insertEdge(env, e.src, e.dst, e.type, e.weight, e.meta)) synced++; }
+  return { synced, configured: true };
 }
 export async function insertSource(env, source) {
   return sb(env, 'POST', 'kb_sources', null, { ...source }, 'return=representation');
@@ -228,14 +205,14 @@ export async function backfillEmbeddings(env, { limit = 200, offset = 0, force =
 
 // ── EDGE BACKFILL (Phase 11C.4) — regenerate relationship edges for every
 // published concept (admin-run, idempotent, paginated). Graceful when unconfigured.
-export async function syncAllEdges(env, { limit = 200, offset = 0, rebuild = false } = {}) {
+export async function syncAllEdges(env, { limit = 200, offset = 0 } = {}) {
   if (!isConfigured(env)) return { configured: false, nodes: 0, edges: 0 };
   const rows = await sb(env, 'GET', 'kb_nodes',
     `type=eq.concept&status=eq.${STATUS.PUBLISHED}&order=id.asc&limit=${limit}&offset=${offset}`, null, null);
   if (!Array.isArray(rows)) return { configured: true, nodes: 0, edges: 0 };
-  let edges = 0, skipped = 0;
-  for (const row of rows) { const r = await syncEdges(env, row, { rebuild }); edges += r.synced || 0; if (r.skipped) skipped++; }
-  return { configured: true, nodes: rows.length, edges, skipped, nextOffset: rows.length === limit ? offset + limit : null };
+  let edges = 0;
+  for (const row of rows) { const r = await syncEdges(env, row); edges += r.synced || 0; }
+  return { configured: true, nodes: rows.length, edges, nextOffset: rows.length === limit ? offset + limit : null };
 }
 
 // Diagnostic node write — like upsertNode but surfaces the HTTP status + error

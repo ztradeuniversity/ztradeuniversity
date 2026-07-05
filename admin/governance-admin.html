@@ -166,13 +166,14 @@
 
     /* mobile */
     .menu-btn{display:none}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50}
+    .scrim.show{display:block}
     @media(max-width:900px){
       .layout{grid-template-columns:1fr}
       aside{position:fixed;left:0;top:0;z-index:60;width:var(--sidebar);transform:translateX(-100%);transition:.25s}
       aside.open{transform:none}
       .menu-btn{display:inline-flex}
       .grid.cols-4,.grid.cols-3,.grid.cols-2,.grid.cols-5{grid-template-columns:1fr}
-      .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none}.scrim.show{display:block}
     }
   </style>
 </head>
