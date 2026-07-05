@@ -1,0 +1,14 @@
+# Enterprise Admin Portal — backward-compatible redirects for admin pages that
+# moved into admin/pages/. 301s (not rewrites) since these are internal admin
+# bookmarks, not public/indexed URLs.
+/admin/kb-admin.html            /admin/pages/kb-admin.html            301
+/admin/signal-admin.html        /admin/pages/signal-admin.html        301
+/admin/governance-admin.html    /admin/pages/governance-admin.html    301
+/admin/ai-articles.html         /admin/pages/ai-articles.html         301
+/admin/ai-feedback.html         /admin/pages/ai-feedback.html         301
+/admin/admin-dashboard.html     /admin/pages/admin-dashboard.html     301
+/admin/system-architecture.html /admin/pages/system-architecture.html 301
+/journal-admin.html             /admin/pages/journal-admin.html       301
+/library/library-admin.html     /admin/pages/library-admin.html       301
+/admin                          /admin/index.html                     301
+/admin/                         /admin/index.html                     301

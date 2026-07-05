@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Article Manager | Z Trade University</title>
   <meta name="robots" content="noindex,nofollow" />
-  <link rel="icon" type="image/png" href="../assets/ztu-logo.png" />
+  <link rel="icon" type="image/png" href="../../assets/ztu-logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#0d0902;--bg2:#1a1410;--bg3:#221c15;--bg4:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;
@@ -61,21 +62,10 @@
 <body>
 <header>
   <div class="brand">AI Article Manager <small>Z Trade University · Knowledge Base</small></div>
-  <a href="../ai-trade-assistant.html" style="font-size:12px;text-decoration:none">← AI Assistant</a>
+  <a href="../../ai-trade-assistant.html" style="font-size:12px;text-decoration:none">← AI Assistant</a>
 </header>
 
-<!-- ADMIN KEY GATE -->
-<div class="gate" id="gate">
-  <div class="card">
-    <h2>🔐 Admin Access</h2>
-    <label for="adminKey">Admin Key</label>
-    <input id="adminKey" type="password" placeholder="Enter AI_ADMIN_KEY" autocomplete="off" />
-    <div class="btn-row"><button class="btn-gold" style="flex:1" onclick="unlock()">Unlock Manager</button></div>
-    <p class="note">The key is compared server-side (header <code>x-admin-key</code>) against the Cloudflare env var <b>AI_ADMIN_KEY</b>. It is never stored in the page source. Reads/search work without it; creating/editing requires it.</p>
-  </div>
-</div>
-
-<!-- MANAGER -->
+<!-- MANAGER (hidden behind AdminGate until unlocked) -->
 <div class="wrap hidden" id="manager">
   <!-- LEFT: list -->
   <div>
@@ -157,31 +147,17 @@ let KEY = '';
 let CATS = [], LANGS = [];
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
-function hdrs(){return {'Content-Type':'application/json','x-admin-key':KEY};}
+function hdrs(){return {'Content-Type':'application/json','Authorization':'Bearer '+KEY};}
 
-// BUG FIX: this previously hid the gate + wrote the typed key into the SHARED
-// sessionStorage slot ('ztu_kb_admin_key', also read by admin/ai-feedback.html
-// and admin/kb-admin.js) UNCONDITIONALLY — loadCategories() never even sends
-// the key, so an unvalidated/wrong key still "unlocked" this page AND poisoned
-// the shared slot for the other admin pages, which then auto-failed with
-// "Invalid admin key" using a key that was never actually correct. Fix:
-// validate first via the REAL authenticated call (loadList()), only commit
-// (hide gate, persist to the shared slot) on confirmed success.
-async function unlock(){
-  KEY=document.getElementById('adminKey').value.trim();
-  if(!KEY){toast('Enter the admin key');return;}
-  await loadCategories();   // unauthenticated metadata only — never used to validate
-  document.getElementById('gate').classList.add('hidden');
+async function boot(token){
+  KEY = token;
+  await loadCategories();
   document.getElementById('manager').classList.remove('hidden');
   const ok = await loadList();
   if(ok === false){
-    sessionStorage.removeItem('ztu_kb_admin_key');   // never poison the shared slot with a bad key
-    document.getElementById('gate').classList.remove('hidden');
-    document.getElementById('manager').classList.add('hidden');
-    toast('❌ Invalid admin key — check AI_ADMIN_KEY in Cloudflare and retry');
-    return;
+    toast('❌ Session rejected — reload and log in again');
+    sessionStorage.removeItem('ztu_admin_sess::articles');
   }
-  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin) — only stored once confirmed valid
 }
 
 async function loadCategories(){
@@ -469,8 +445,15 @@ function uploadImage(){
   reader.readAsDataURL(f);
 }
 
-// auto-unlock if key cached this session — canonical slot only (legacy ztu_art_key purged)
-(function(){try{sessionStorage.removeItem('ztu_art_key');}catch(_){}const k=sessionStorage.getItem('ztu_kb_admin_key');if(k){document.getElementById('adminKey').value=k;unlock();}})();
+</script>
+<script src="../js/admin-auth-client.js"></script>
+<script>
+  AdminGate.init({
+    module: 'articles',
+    title: 'AI Article Manager',
+    subtitle: 'Enter the Article Manager password to continue.',
+    onUnlock: function (token) { boot(token); }
+  });
 </script>
 </body>
 </html>

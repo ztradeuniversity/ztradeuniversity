@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Signal Manager | Z Trade University</title>
   <meta name="robots" content="noindex,nofollow" />
-  <link rel="icon" type="image/png" href="../assets/ztu-logo.png" />
+  <link rel="icon" type="image/png" href="../../assets/ztu-logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#0d0902;--bg2:#1a1410;--bg3:#221c15;--bg4:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;
@@ -65,21 +66,10 @@
 <body>
 <header>
   <div class="brand">Signal Manager <small>Z Trade University · Signal History</small></div>
-  <a href="../signal-history.html" target="_blank" style="font-size:12px;text-decoration:none">View public page ↗</a>
+  <a href="../../signal-history.html" target="_blank" style="font-size:12px;text-decoration:none">View public page ↗</a>
 </header>
 
-<!-- ADMIN KEY GATE -->
-<div class="gate" id="gate">
-  <div class="card">
-    <h2>🔐 Admin Access</h2>
-    <label for="adminKey">Admin Key</label>
-    <input id="adminKey" type="password" placeholder="Enter AI_ADMIN_KEY" autocomplete="off" />
-    <div class="btn-row"><button class="btn-gold" style="flex:1" onclick="unlock()">Unlock Manager</button></div>
-    <p class="note">Compared server-side (header <code>x-admin-key</code>) against the Cloudflare env var <b>AI_ADMIN_KEY</b> — the same key the Article Manager uses. Never stored in page source.</p>
-  </div>
-</div>
-
-<!-- MANAGER -->
+<!-- MANAGER (hidden behind AdminGate until unlocked) -->
 <div class="wrap hidden" id="manager">
   <!-- LEFT: editor -->
   <div>
@@ -144,23 +134,14 @@ let ROWS = [];
 
 const $ = (id) => document.getElementById(id);
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
-function hdrs(){ return { 'Content-Type':'application/json','x-admin-key':KEY }; }
+function hdrs(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+KEY }; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-async function unlock(){
-  KEY = $('adminKey').value.trim();
-  if(!KEY){ toast('Enter the admin key'); return; }
-  $('gate').classList.add('hidden');
+async function boot(token){
+  KEY = token;
   $('manager').classList.remove('hidden');
-  const ok = await loadList();
-  if(ok === false){
-    $('gate').classList.remove('hidden');
-    $('manager').classList.add('hidden');
-    toast('Invalid admin key');
-  } else {
-    try { sessionStorage.setItem('ztu_kb_admin_key', KEY); } catch(e){}
-    resetForm();
-  }
+  await loadList();
+  resetForm();
 }
 
 function rr(s){
@@ -173,7 +154,7 @@ function rr(s){
 async function loadList(){
   try {
     const r = await fetch(API + '?action=list&all=1', { headers: hdrs() });
-    if(r.status === 403) return false;
+    if(r.status === 403){ toast('Session expired — reload and log in again'); sessionStorage.removeItem('ztu_admin_sess::signals'); return false; }
     const res = await r.json();
     ROWS = Array.isArray(res.signals) ? res.signals : [];
     renderStats(res.stats);
@@ -272,8 +253,15 @@ async function removeSignal(id){
   } catch(e){ toast('Network error'); }
 }
 
-/* allow Enter-to-unlock */
-$('adminKey').addEventListener('keydown', e=>{ if(e.key==='Enter') unlock(); });
+</script>
+<script src="../js/admin-auth-client.js"></script>
+<script>
+  AdminGate.init({
+    module: 'signals',
+    title: 'Signal Manager',
+    subtitle: 'Enter the Signal Admin password to continue.',
+    onUnlock: function (token) { boot(token); }
+  });
 </script>
 </body>
 </html>

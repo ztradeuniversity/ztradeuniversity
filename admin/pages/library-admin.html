@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
 
   <style>
 /* =============================================================================
@@ -438,21 +439,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <body>
 
 <!-- ════════════════════════════════════════════════════════
-     PASSCODE GATE
-════════════════════════════════════════════════════════ -->
-<div id="passGate">
-  <div class="pass-card">
-    <div class="pass-logo">Z Trade University</div>
-    <h1 class="pass-title">Library Admin</h1>
-    <p class="pass-sub">Enter the admin passcode to continue.</p>
-    <input type="password" class="pass-input" id="passInput" placeholder="••••••••" autocomplete="current-password" />
-    <button class="pass-btn" onclick="checkPass()">Enter Dashboard</button>
-    <div class="pass-err" id="passErr">Incorrect passcode.</div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════
-     APP SHELL
+     APP SHELL (hidden behind AdminGate until unlocked)
 ════════════════════════════════════════════════════════ -->
 <div id="appShell">
 
@@ -462,6 +449,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="topbar-sep"></div>
     <div class="topbar-title">Content Management — System B (Library Supabase)</div>
     <div class="topbar-badge">Admin</div>
+    <button class="topbar-lock" onclick="window.AdminGate && window.AdminGate.openSettings('library')" style="margin-right:6px;">
+      ⚙ Settings
+    </button>
     <button class="topbar-lock" onclick="lockDashboard()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle;" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Lock
@@ -661,27 +651,24 @@ CREATE POLICY "Admin anon updates" ON storage.objects
 ============================================================================= */
 
 /* ── CONFIG ── */
-/* Change ADMIN_PASSCODE to your preferred passcode.
-   For production, consider using Supabase Auth instead. */
-const ADMIN_PASSCODE        = 'ztu-admin-2024';  /* TODO: change before going live */
 const LIBRARY_SUPABASE_URL  = 'https://dcgtmiduqxnmfjkimxeh.supabase.co';
 const LIBRARY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZ3RtaWR1cXhubWZqa2lteGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDU0OTcsImV4cCI6MjA5NTc4MTQ5N30.Sg64TwDYMoOCqkcJmhUTQ2i3IQZyTQIT5FIJVmwbkwg';
 /* NOTE: the above is the public ANON key (safe for reads/inserts under RLS).
    The privileged service_role key is NOT in this file — it lives in Cloudflare
    env vars and is used only by /api/library-storage (server-side). */
-const PASS_SESSION_KEY      = 'ztu_lib_admin_pass';
 
 /* Privileged storage ops (bucket status / init / signed uploads) run on the
    server via this Cloudflare Function. The Library service key lives in
-   Cloudflare env vars and NEVER reaches the browser — no manual key, no
-   sessionStorage. The admin passcode authenticates each call.               */
+   Cloudflare env vars and NEVER reaches the browser. Auth is the enterprise
+   admin-portal session (module 'library'), sent as Authorization: Bearer.   */
 const STORAGE_ENDPOINT = '/api/library-storage';
+let LIB_TOKEN = null;
 
 async function callStorage(action, payload = {}) {
   const res = await fetch(STORAGE_ENDPOINT, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ action, passcode: ADMIN_PASSCODE, ...payload })
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + LIB_TOKEN },
+    body:    JSON.stringify({ action, ...payload })
   });
   if (!res.ok && res.status !== 200) throw new Error(`storage endpoint HTTP ${res.status}`);
   return res.json();
@@ -696,43 +683,21 @@ let allItems    = [];
 let editingId   = null;
 
 /* =============================================================================
-   PASSCODE GATE
+   ADMIN GATE (module 'library' — enterprise admin portal)
 ============================================================================= */
-function checkPass() {
-  const val = document.getElementById('passInput').value;
-  if (val === ADMIN_PASSCODE) {
-    sessionStorage.setItem(PASS_SESSION_KEY, '1');
-    document.getElementById('passGate').style.display = 'none';
-    document.getElementById('appShell').classList.add('visible');
-    loadCurrentTab();
-    checkBucketStatus();   /* auto-load bucket status + clear warning badge */
-  } else {
-    const err = document.getElementById('passErr');
-    err.classList.add('show');
-    document.getElementById('passInput').value = '';
-    document.getElementById('passInput').focus();
-    setTimeout(() => err.classList.remove('show'), 3000);
-  }
+function libraryBoot(token) {
+  LIB_TOKEN = token;
+  document.getElementById('appShell').classList.add('visible');
+  loadCurrentTab();
+  checkBucketStatus();
 }
 
 function lockDashboard() {
-  sessionStorage.removeItem(PASS_SESSION_KEY);
-  document.getElementById('passGate').style.display = 'flex';
-  document.getElementById('appShell').classList.remove('visible');
-  document.getElementById('passInput').value = '';
+  sessionStorage.removeItem('ztu_admin_sess::library');
+  location.reload();
 }
 
-/* Auto-login if session stored */
 document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem(PASS_SESSION_KEY) === '1') {
-    document.getElementById('passGate').style.display = 'none';
-    document.getElementById('appShell').classList.add('visible');
-    loadCurrentTab();
-    checkBucketStatus();   /* auto-load bucket status + clear warning badge on reload */
-  }
-  document.getElementById('passInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') checkPass();
-  });
   document.getElementById('modalBg').addEventListener('click', e => {
     if (e.target === document.getElementById('modalBg')) closeModal();
   });
@@ -1557,6 +1522,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+</script>
+<script src="../js/admin-auth-client.js"></script>
+<script>
+  AdminGate.init({
+    module: 'library',
+    title: 'Library Admin',
+    subtitle: 'Enter the Library Admin password to continue.',
+    onUnlock: function (token) { libraryBoot(token); }
+  });
 </script>
 
 </body>

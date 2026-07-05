@@ -1,0 +1,137 @@
+/* admin/css/admin-portal.css
+   ════════════════════════════════════════════════════════════════════════
+   ENTERPRISE ADMIN PORTAL — shared dark-luxury theme for the login gate,
+   the shared chrome (header/breadcrumb/session-timer/sidebar-drawer/footer),
+   and the launcher (admin/index.html). Reuses the existing gold/dark palette
+   from journal-admin.html / admin-dashboard.css. Class names are prefixed
+   `zap-` (Ztu Admin Portal) so they never collide with a page's own bespoke
+   styles.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --zap-navy:#0d0902; --zap-ink:#1a1410; --zap-card:#15110a;
+  --zap-gold:#c89c3f; --zap-gold2:#d4ae5e; --zap-gold3:#e6c987; --zap-gold-deep:#8c6c1f;
+  --zap-text:rgba(255,255,255,.88); --zap-muted:rgba(255,255,255,.56);
+  --zap-line:rgba(200,156,63,.18); --zap-line2:rgba(200,156,63,.32);
+  --zap-danger:#ef4444; --zap-danger-bg:rgba(239,68,68,.12);
+  --zap-ok:#10b981; --zap-ok-bg:rgba(16,185,129,.12);
+}
+
+.zap-gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 50% 0%, #241c0d 0%, var(--zap-navy) 60%);padding:20px;
+  font-family:Inter,system-ui,Helvetica,Arial,sans-serif;}
+.zap-gate-card{width:100%;max-width:400px;background:var(--zap-card);border:1px solid var(--zap-line2);
+  border-radius:18px;padding:34px 28px;box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.zap-gate-card h1{font-size:20px;font-weight:900;color:#fff;margin:0 0 4px;}
+.zap-gate-card p.sub{font-size:13px;color:var(--zap-muted);margin:0 0 20px;}
+.zap-gate-card label{font-size:11.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--zap-muted);display:block;margin-bottom:6px;}
+.zap-gate-card input{width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.05);
+  border:1px solid var(--zap-line2);color:#fff;font-size:15px;box-sizing:border-box;}
+.zap-gate-card input:focus{outline:none;border-color:var(--zap-gold);}
+.zap-gate-card button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,var(--zap-gold3),var(--zap-gold) 50%,var(--zap-gold-deep));
+  color:#3a2c08;font-weight:900;font-size:14.5px;}
+.zap-gate-card button:disabled{opacity:.6;cursor:wait;}
+.zap-gate-err{color:#fca5a5;font-size:12.5px;margin-top:12px;display:none;background:var(--zap-danger-bg);
+  border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:8px 10px;}
+.zap-gate-ok{color:#6ee7b7;font-size:12.5px;margin-top:12px;display:none;background:var(--zap-ok-bg);
+  border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:8px 10px;}
+.zap-gate-link{display:inline-block;margin-top:16px;font-size:12.5px;color:var(--zap-gold3);cursor:pointer;text-decoration:underline;}
+.zap-gate-locked{opacity:.55;pointer-events:none;}
+
+.zap-btn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:8px 13px;
+  border-radius:9px;cursor:pointer;border:1px solid var(--zap-line2);background:rgba(21,17,10,.9);
+  color:var(--zap-text);backdrop-filter:blur(8px);text-decoration:none;white-space:nowrap;}
+.zap-btn:hover{background:rgba(200,156,63,.15);border-color:var(--zap-gold);}
+
+/* ── Shared chrome: header (breadcrumb/timer/back/settings/logout) ── */
+/* Deliberately static (NOT fixed/sticky) — first child of <body>, in normal
+   document flow — so it can never collide with a page's own sticky header. */
+.zap-chrome-header{position:relative;z-index:8000;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;padding:10px 16px;background:linear-gradient(180deg,#171209,#100d07);
+  border-bottom:1px solid var(--zap-line2);font-family:Inter,system-ui,Helvetica,Arial,sans-serif;}
+.zap-chrome-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.zap-chrome-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.zap-hamburger{font-size:15px;padding:7px 11px;}
+.zap-breadcrumb{font-size:12.5px;color:var(--zap-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.zap-breadcrumb a{color:var(--zap-gold3);text-decoration:none;font-weight:700;}
+.zap-breadcrumb a:hover{text-decoration:underline;}
+.zap-breadcrumb .sep{margin:0 8px;color:var(--zap-line2);}
+.zap-breadcrumb .cur{color:var(--zap-text);font-weight:700;}
+.zap-session-timer{font-size:11.5px;font-weight:700;color:var(--zap-gold3);background:rgba(200,156,63,.1);
+  border:1px solid var(--zap-line);border-radius:100px;padding:6px 12px;white-space:nowrap;}
+
+/* ── Common sidebar: off-canvas drawer of every module (doesn't collide with
+   any page's own internal-view sidebar, since it's hidden unless opened) ── */
+.zap-drawer{position:fixed;top:0;left:0;bottom:0;width:270px;max-width:82vw;z-index:9600;
+  background:var(--zap-card);border-right:1px solid var(--zap-line2);box-shadow:8px 0 30px rgba(0,0,0,.4);
+  transform:translateX(-100%);transition:transform .2s ease;overflow-y:auto;
+  font-family:Inter,system-ui,Helvetica,Arial,sans-serif;}
+.zap-drawer.open{transform:translateX(0);}
+.zap-drawer-head{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--zap-muted);
+  padding:18px 16px 10px;}
+.zap-drawer-item{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13.5px;font-weight:600;
+  color:var(--zap-text);text-decoration:none;border-left:2px solid transparent;}
+.zap-drawer-item:hover{background:rgba(200,156,63,.08);}
+.zap-drawer-item.active{color:var(--zap-gold3);border-left-color:var(--zap-gold);background:rgba(200,156,63,.06);}
+.zap-drawer-item .icon{width:18px;text-align:center;}
+.zap-drawer-portal{margin-top:8px;border-top:1px solid var(--zap-line);padding-top:14px;color:var(--zap-gold3);}
+.zap-drawer-scrim{position:fixed;inset:0;z-index:9550;background:rgba(0,0,0,.5);display:none;}
+.zap-drawer-scrim.open{display:block;}
+
+/* ── Common footer — static, end of <body>, never fixed (avoids covering the
+   toast notifications several pages already show near the bottom) ── */
+.zap-chrome-footer{padding:16px;text-align:center;font-size:11.5px;color:var(--zap-muted);
+  border-top:1px solid var(--zap-line);font-family:Inter,system-ui,Helvetica,Arial,sans-serif;}
+
+.zap-modal-backdrop{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);display:none;
+  align-items:center;justify-content:center;padding:20px;}
+.zap-modal-backdrop.open{display:flex;}
+.zap-modal{width:100%;max-width:420px;background:var(--zap-card);border:1px solid var(--zap-line2);
+  border-radius:16px;padding:26px;font-family:Inter,system-ui,Helvetica,Arial,sans-serif;}
+.zap-modal h2{font-size:17px;color:#fff;margin:0 0 4px;}
+.zap-modal .tabs{display:flex;gap:6px;margin:14px 0 16px;}
+.zap-modal .tab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12.5px;font-weight:700;
+  cursor:pointer;border:1px solid var(--zap-line);color:var(--zap-muted);}
+.zap-modal .tab.active{color:#3a2c08;background:linear-gradient(135deg,var(--zap-gold3),var(--zap-gold));border-color:transparent;}
+.zap-modal input{width:100%;padding:11px 13px;border-radius:9px;background:rgba(255,255,255,.05);
+  border:1px solid var(--zap-line2);color:#fff;font-size:14px;margin-bottom:10px;box-sizing:border-box;}
+.zap-modal .row{display:flex;gap:8px;margin-top:16px;}
+.zap-modal .row button{flex:1;padding:11px;border-radius:9px;font-weight:800;font-size:13.5px;cursor:pointer;border:0;}
+.zap-modal .row .primary{background:linear-gradient(135deg,var(--zap-gold3),var(--zap-gold));color:#3a2c08;}
+.zap-modal .row .ghost{background:rgba(255,255,255,.06);color:var(--zap-text);}
+.zap-modal .msg{font-size:12.5px;margin-top:4px;min-height:16px;}
+.zap-modal .msg.err{color:#fca5a5;}
+.zap-modal .msg.ok{color:#6ee7b7;}
+
+/* Recovery Center tab */
+.zap-recovery-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--zap-line);font-size:13px;}
+.zap-recovery-row:last-of-type{border-bottom:none;}
+.zap-recovery-row .l{color:var(--zap-muted);font-weight:600;}
+.zap-recovery-row .v{color:var(--zap-text);font-weight:700;text-align:right;}
+
+/* Launcher (admin/index.html) */
+.zap-launcher{min-height:100vh;background:radial-gradient(120% 120% at 50% 0%, #241c0d 0%, var(--zap-navy) 60%);
+  font-family:Inter,system-ui,Helvetica,Arial,sans-serif;padding:48px 24px 80px;}
+.zap-launcher .head{max-width:1100px;margin:0 auto 36px;text-align:center;}
+.zap-launcher .head h1{font-size:30px;color:#fff;font-weight:900;margin:0 0 8px;}
+.zap-launcher .head p{color:var(--zap-muted);font-size:14.5px;margin:0;}
+.zap-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;}
+.zap-card{background:var(--zap-card);border:1px solid var(--zap-line);border-radius:16px;padding:22px;
+  transition:border-color .15s, transform .15s;}
+.zap-card:hover{border-color:var(--zap-gold);transform:translateY(-2px);}
+.zap-card .icon{font-size:26px;margin-bottom:10px;}
+.zap-card h3{font-size:15.5px;color:#fff;font-weight:800;margin:0 0 6px;}
+.zap-card p{font-size:12.5px;color:var(--zap-muted);line-height:1.5;margin:0 0 16px;min-height:56px;}
+.zap-card a{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;padding:9px 16px;
+  border-radius:9px;text-decoration:none;background:linear-gradient(135deg,var(--zap-gold3),var(--zap-gold) 50%,var(--zap-gold-deep));
+  color:#3a2c08;}
+
+@media (max-width:640px){
+  .zap-launcher{padding:32px 16px 60px;}
+  .zap-launcher .head h1{font-size:24px;}
+  .zap-chrome-header{justify-content:flex-start;}
+  .zap-chrome-right{width:100%;justify-content:flex-start;}
+  .zap-session-timer{order:1;}
+}

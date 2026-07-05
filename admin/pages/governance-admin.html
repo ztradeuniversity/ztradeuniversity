@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
   <style>
     /* ── ZTU Governance Admin — dark + gold, evidence-first, component-based ── */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -229,10 +230,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── LIVE DATA SOURCES ─────────────────────────────────────────────────────
-   Each source is a real, existing endpoint. `auth:'admin'` requires the shared
-   AI_ADMIN_KEY (sessionStorage 'ztu_kb_admin_key', set by KB Admin / AI
-   Articles login). The secret is NEVER embedded in this page. */
-const ADMIN_KEY = () => { try { return sessionStorage.getItem('ztu_kb_admin_key') || ''; } catch (_) { return ''; } };
+   Each source is a real, existing endpoint. `auth:'admin'` requires this
+   page's own Governance session (issued by AdminGate after its own password
+   login) — sent as an Authorization: Bearer token, accepted by
+   /api/ai-kb-admin for both the 'kb' and 'governance' modules. */
+let GOV_TOKEN = null;
+const ADMIN_KEY = () => GOV_TOKEN || '';
 
 const STATE = {
   hydratedAt: null,
@@ -263,8 +266,8 @@ async function probe(stateKey, endpoint, auth){
   const headers = { 'Accept':'application/json' };
   if (auth==='admin'){
     const k = ADMIN_KEY();
-    if (!k){ s.status='idle'; s.reason='admin key not set — log in via KB Admin / AI Articles'; s.data=null; return s; }
-    headers['x-admin-key'] = k;
+    if (!k){ s.status='idle'; s.reason='governance session not set'; s.data=null; return s; }
+    headers['Authorization'] = 'Bearer ' + k;
   }
   try {
     const r = await fetch(endpoint, { method:'GET', headers });
@@ -970,7 +973,19 @@ document.getElementById('menuBtn').onclick=()=>{document.getElementById('sidebar
 document.getElementById('scrim').onclick=closeSidebar;
 document.getElementById('refreshBtn').onclick=()=>hydrate();
 
-buildNav(); renderModule('executive'); setConn('wait','Checking backend…'); hydrate();
+function boot(token){
+  GOV_TOKEN = token;
+  buildNav(); renderModule('executive'); setConn('wait','Checking backend…'); hydrate();
+}
+</script>
+<script src="../js/admin-auth-client.js"></script>
+<script>
+  AdminGate.init({
+    module: 'governance',
+    title: 'Governance Admin',
+    subtitle: 'Enter the Governance password to continue.',
+    onUnlock: function (token) { boot(token); }
+  });
 </script>
 </body>
 </html>

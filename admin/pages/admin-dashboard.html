@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin — Automation Command Center</title>
-  <link rel="stylesheet" href="admin-dashboard.css" />
+  <link rel="stylesheet" href="../css/admin-dashboard.css" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
 </head>
 <body>
 
@@ -257,6 +258,9 @@
 
       <div class="sidebar-footer">
         <span class="sidebar-version">Phase 14A &mdash; Campaign Builder</span>
+        <button class="sidebar-logout" id="btnAdminSettings" type="button" title="Change password / forgot password" style="margin-right:6px;">
+          ⚙ Settings
+        </button>
         <button class="sidebar-logout" id="btnAdminLogout" type="button" title="Lock dashboard + clear session">
           <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
             <path d="M11 13l4-4-4-4M15 9H6M9 16H4a1 1 0 01-1-1V3a1 1 0 011-1h5"/>
@@ -2251,6 +2255,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <!-- SheetJS (xlsx) — client-side XLSX/CSV parsing, no server upload needed -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="admin-dashboard.js"></script>
+  <script src="../js/admin-auth-client.js"></script>
+  <script src="../js/admin-dashboard.js"></script>
 </body>
 </html>

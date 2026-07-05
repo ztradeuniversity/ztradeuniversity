@@ -16,6 +16,7 @@
 import {
   isConfigured, listSignals, createSignal, updateSignal, deleteSignal, computeStats,
 } from '../utils/signal-store.js';
+import { requireAdminModule } from '../utils/admin-session.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -26,8 +27,7 @@ const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
 function isAdmin(request, env) {
-  const provided = request.headers.get('x-admin-key') || '';
-  return !!env.AI_ADMIN_KEY && provided === env.AI_ADMIN_KEY;
+  return requireAdminModule(env, request, 'signals', { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
 }
 
 export async function onRequest(context) {
@@ -46,7 +46,7 @@ export async function onRequest(context) {
       return json({ configured: false, signals: [], stats: computeStats([]), note: 'Signal store not connected yet.' });
     }
     // Drafts are admin-only even on GET.
-    const wantAll = u.searchParams.get('all') === '1' && isAdmin(request, env);
+    const wantAll = u.searchParams.get('all') === '1' && await isAdmin(request, env);
     const signals = await listSignals(env, { all: wantAll });
     // Stats are computed over PUBLISHED signals only (what the public sees).
     const publicSet = wantAll ? signals.filter((s) => s.is_published) : signals;
@@ -55,7 +55,7 @@ export async function onRequest(context) {
 
   // ── POST — admin writes ─────────────────────────────────────────────────────
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
-  if (!isAdmin(request, env)) return json({ error: 'admin only — missing/invalid x-admin-key' }, 403);
+  if (!(await isAdmin(request, env))) return json({ error: 'admin only — missing/invalid x-admin-key' }, 403);
   if (!cfg) return json({ configured: false, saved: false, note: 'Signal store not connected yet.' });
 
   let body;

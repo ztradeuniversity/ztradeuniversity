@@ -24,21 +24,15 @@
 //   JOURNAL_ADMIN_PASSWORD              (NEW — gates this API)
 // ════════════════════════════════════════════════════════════════════════════
 
+import { requireAdminModule } from '../utils/admin-session.js';
+
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-journal-admin-key',
+  'Access-Control-Allow-Headers': 'Content-Type, x-journal-admin-key, Authorization',
 };
 const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
-
-// timing-safe-ish string compare
-function safeEq(a, b) {
-  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
 
 function sbHeaders(env) {
   const key = env.JOURNAL_SUPABASE_SERVICE_ROLE_KEY;
@@ -125,11 +119,8 @@ export async function onRequest(context) {
   if (!env.JOURNAL_SUPABASE_URL || !env.JOURNAL_SUPABASE_SERVICE_ROLE_KEY) {
     return json({ error: 'server_not_configured', detail: 'JOURNAL_SUPABASE_URL / JOURNAL_SUPABASE_SERVICE_ROLE_KEY missing' }, 503);
   }
-  if (!env.JOURNAL_ADMIN_PASSWORD) {
-    return json({ error: 'server_not_configured', detail: 'JOURNAL_ADMIN_PASSWORD missing' }, 503);
-  }
-  const adminKey = request.headers.get('x-journal-admin-key') || '';
-  if (!safeEq(adminKey, env.JOURNAL_ADMIN_PASSWORD)) {
+  const authorized = await requireAdminModule(env, request, 'journal', { header: 'x-journal-admin-key', value: env.JOURNAL_ADMIN_PASSWORD });
+  if (!authorized) {
     return json({ error: 'unauthorized' }, 401);
   }
 

@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Feedback Analytics | Z Trade University</title>
   <meta name="robots" content="noindex,nofollow" />
-  <link rel="icon" type="image/png" href="../assets/ztu-logo.png" />
+  <link rel="icon" type="image/png" href="../../assets/ztu-logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/admin-portal.css" />
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#0d0902;--bg2:#1a1410;--bg3:#221c15;--bg4:#2b2520;--gold:#c89c3f;--gold2:#d4ae5e;--gold3:#e6c987;
@@ -60,21 +61,10 @@
 <body>
 <header>
   <div class="brand">AI Feedback Analytics <small>Z Trade University · Like / Dislike</small></div>
-  <a href="../ai-trade-assistant.html">← AI Assistant</a>
+  <a href="../../ai-trade-assistant.html">← AI Assistant</a>
 </header>
 
-<!-- ADMIN KEY GATE -->
-<div class="gate" id="gate">
-  <div class="card">
-    <h2>🔐 Admin Access</h2>
-    <label for="adminKey">Admin Key</label>
-    <input id="adminKey" type="password" placeholder="Enter AI_ADMIN_KEY" autocomplete="off" />
-    <div class="btn-row"><button class="btn-gold" style="flex:1" onclick="unlock()">Unlock Dashboard</button></div>
-    <p class="note">The key is compared server-side (header <code>x-admin-key</code>) against the Cloudflare env var <b>AI_ADMIN_KEY</b> — the SAME key used by the AI Article Manager / KB Admin. It is never stored in the page source.</p>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
+<!-- DASHBOARD (hidden behind AdminGate until unlocked) -->
 <div class="wrap hidden" id="dash">
   <div class="card">
     <h2>📊 Overview</h2>
@@ -120,30 +110,14 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
 function trunc(s,n){s=String(s||'');return s.length>n? s.slice(0,n)+'…' : s;}
 function fmtDate(iso){ if(!iso) return '—'; try{ return new Date(iso).toLocaleString(); }catch{ return iso; } }
 
-// BUG FIX: this previously hid the gate + persisted the key to sessionStorage
-// BEFORE the server confirmed it was valid. On an invalid key, load() would
-// 401 — but the gate was already gone with no way back to the input field,
-// and the next page load auto-re-tried the SAME bad cached key (the trap seen
-// in production: dashboard visible, "Invalid admin key" toast, no records).
-// Fix: validate FIRST, only commit (hide gate / persist key) on success; on
-// failure, clear the bad cached key and keep the gate visible so admin can retype.
-async function unlock(){
-  const typed = document.getElementById('adminKey').value.trim();
-  if(!typed){toast('Enter the admin key');return;}
-  KEY = typed;
+async function boot(token){
+  KEY = token;
   const ok = await load({ silentAuthError: true });
   if(ok === false){
-    sessionStorage.removeItem('ztu_kb_admin_key');   // never persist a key that failed validation
-    document.getElementById('gate').classList.remove('hidden');
-    document.getElementById('dash').classList.add('hidden');
-    const msg = lastAuthErrorReason === 'admin_key_not_configured'
-      ? '⚠️ Server has NO AI_ADMIN_KEY set at all — add it in Cloudflare Pages → Settings → Environment Variables'
-      : '❌ Admin key does not match — re-check the AI_ADMIN_KEY value in Cloudflare and retype it here';
-    toast(msg);
+    sessionStorage.removeItem('ztu_admin_sess::feedback');
+    toast('❌ Session rejected — reload and log in again');
     return;
   }
-  sessionStorage.setItem('ztu_kb_admin_key',KEY);   // shared master admin-key slot (same AI_ADMIN_KEY as KB Admin / Article Manager) — only stored once confirmed valid
-  document.getElementById('gate').classList.add('hidden');
   document.getElementById('dash').classList.remove('hidden');
 }
 
@@ -161,7 +135,7 @@ let lastAuthErrorReason = null;   // set on a 401 so unlock() can show a precise
 async function load(opts){
   opts = opts || {};
   try{
-    const r=await fetch(`${API}?limit=500`,{headers:{'x-admin-key':KEY}});
+    const r=await fetch(`${API}?limit=500`,{headers:{'Authorization':'Bearer '+KEY}});
     if(r.status===401){
       const ed = await r.json().catch(()=>null);
       lastAuthErrorReason = ed && ed.reason || null;
@@ -228,11 +202,15 @@ function renderTopics(items){
   </tr>`).join('');
 }
 
-// Auto-unlock if a key was already entered on another admin page this session.
-(function(){
-  const k=sessionStorage.getItem('ztu_kb_admin_key');
-  if(k){ document.getElementById('adminKey').value=k; unlock(); }
-})();
+</script>
+<script src="../js/admin-auth-client.js"></script>
+<script>
+  AdminGate.init({
+    module: 'feedback',
+    title: 'AI Feedback Analytics',
+    subtitle: 'Enter the Feedback Admin password to continue.',
+    onUnlock: function (token) { boot(token); }
+  });
 </script>
 </body>
 </html>

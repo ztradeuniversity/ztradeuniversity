@@ -37,6 +37,7 @@ import {
 } from '../utils/article-categories.js';
 import { generateArticleMeta } from '../utils/article-autometa.js';
 import { syncArticleToGraph } from '../utils/article-graph-sync.js';
+import { requireAdminModule } from '../utils/admin-session.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -47,8 +48,7 @@ const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
 function isAdmin(request, env) {
-  const provided = request.headers.get('x-admin-key') || '';
-  return !!env.AI_ADMIN_KEY && provided === env.AI_ADMIN_KEY;
+  return requireAdminModule(env, request, 'articles', { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
 }
 
 function decodeDataUrl(dataUrl) {
@@ -78,7 +78,7 @@ export async function onRequest(context) {
     if (!cfg) return json({ configured: false, results: [], note: 'AI Supabase (ZTU Chatbot) not connected yet.' });
 
     if (action === 'list') {
-      if (!isAdmin(request, env)) return json({ error: 'admin only' }, 403);
+      if (!(await isAdmin(request, env))) return json({ error: 'admin only' }, 403);
       const status = u.searchParams.get('status') || 'all';
       return json({ configured: true, articles: await listArticles(env, { status, category: u.searchParams.get('category') || undefined }) });
     }
@@ -112,7 +112,7 @@ export async function onRequest(context) {
 
   // ── POST (admin writes) ──────────────────────────────────────────────────────
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
-  if (!isAdmin(request, env)) return json({ error: 'admin only — missing/invalid x-admin-key' }, 403);
+  if (!(await isAdmin(request, env))) return json({ error: 'admin only — missing/invalid x-admin-key' }, 403);
   if (!cfg) return json({ configured: false, saved: false, note: 'AI Supabase not connected yet.' });
 
   let body;
