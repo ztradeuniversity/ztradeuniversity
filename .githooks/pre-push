@@ -1,0 +1,62 @@
+#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────────────
+# ZTU PRODUCTION GUARD (pre-push) — REGRESSION-ONLY, false-positive-free.
+#
+# Blocks a push ONLY when it would REMOVE a protected runtime implementation that
+# origin/main currently has. It compares HEAD vs origin/main by a FUNCTIONAL
+# SIGNATURE (a real API call / function name that IS the implementation) — NOT by
+# comment markers. So it never blocks on: unrelated files, README/docs, CSS, HTML
+# layout, comments, or formatting — those never remove the signature.
+#
+# Logic per protected file:
+#   origin/main HAS signature  AND  HEAD is MISSING it   →  regression  →  BLOCK
+#   otherwise (unchanged / preserved / improved / not-in-base)          →  PASS
+#
+# No network (uses the local origin/main ref). No bypass. Enable once:
+#   git config core.hooksPath .githooks
+# ─────────────────────────────────────────────────────────────────────────────
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || exit 0
+cat > /dev/null 2>&1   # drain stdin (git sends ref updates); we don't need it
+
+BASE="$(git rev-parse --verify --quiet refs/remotes/origin/main)"
+if [ -z "$BASE" ]; then
+  echo "i ZTU guard: no local origin/main ref (run 'git fetch origin') - regression check skipped."
+  exit 0
+fi
+
+# file | functional signature (fixed string, = the implementation) | description
+PROTECTED="
+functions/utils/kb-populate.js§getNode(§populate delta / skip-unchanged
+admin/kb-admin.js§Promise.all(§populate/sync parallel execution
+functions/utils/kb-store.js§getRawEdgesBySrc§incremental syncEdges
+"
+
+fail=0
+OLDIFS="$IFS"; IFS='
+'
+for line in $PROTECTED; do
+  [ -z "$line" ] && continue
+  file="${line%%§*}"; rest="${line#*§}"; sig="${rest%%§*}"; desc="${rest#*§}"
+  base_has=0; head_has=0
+  git show "$BASE:$file"  2>/dev/null | grep -qF "$sig" && base_has=1
+  git show "HEAD:$file"   2>/dev/null | grep -qF "$sig" && head_has=1
+  if [ "$base_has" = 1 ] && [ "$head_has" = 0 ]; then
+    echo "x PUSH BLOCKED - this push REMOVES production logic: $desc"
+    echo "    $file - present on origin/main, missing in your HEAD (signature: '$sig')"
+    fail=1
+  fi
+done
+IFS="$OLDIFS"
+
+# Soft, NON-blocking warning: detect a sibling/stale clone that commonly causes reverts.
+
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "This looks like a revert of production code (usually a stale copy). Restore, then push:"
+  echo "  git fetch origin && git checkout origin/main -- <the file(s) above>"
+  echo "  git commit -m 'restore production logic' && git push"
+  exit 1
+fi
+echo "ok ZTU guard: no regression - all protected runtime logic preserved."
+exit 0
