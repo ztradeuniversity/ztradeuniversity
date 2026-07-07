@@ -80,18 +80,37 @@ export function buildFaqSchema(concept = {}) {
 // draft — canonical URL, OG tags, keyword CSV, embedded FAQ schema. Read-only;
 // the draft's own `seo{}` (persisted to the graph) is left exactly as built by
 // buildConceptFromArticle.
-export function buildSeoSuggestion(draft = {}, { baseUrl = 'https://ztradeuniversity.com', urlPath = null } = {}) {
+//
+// `overrides` (optional) = an author's explicitly-entered ai_articles.seo_overrides
+// row (seoTitle/h1/metaTitle/metaDescription/canonicalUrl/focusKeyword/
+// secondaryKeywords/ogTitle/ogDescription/twitterCard/externalLinks/schemaOverride).
+// Every field falls back to the exact same computed value as before when the
+// override is blank — passing {} (the default) reproduces prior behavior exactly.
+export function buildSeoSuggestion(draft = {}, { baseUrl = 'https://ztradeuniversity.com', urlPath = null, overrides = {} } = {}) {
   const seo = draft.seo || {};
-  const canonicalUrl = urlPath ? `${baseUrl}${urlPath}` : `${baseUrl}/${draft.id}.html`;
+  const ov = overrides || {};
+  const computedCanonical = urlPath ? `${baseUrl}${urlPath}` : `${baseUrl}/${draft.id}.html`;
+  const canonicalUrl = ov.canonicalUrl || computedCanonical;
+  const baseTitle = seo.title || draft.title || '';
+  const metaDescription = ov.metaDescription || seo.description || '';
+  const keywords = (Array.isArray(ov.secondaryKeywords) && ov.secondaryKeywords.length) ? ov.secondaryKeywords : (seo.keywords || []);
   return {
     ...seo,
     slug: draft.id,
     canonicalUrl,
-    keywordsCsv: (seo.keywords || []).join(', '),
-    ogTitle: seo.title || draft.title || '',
-    ogDescription: seo.description || '',
+    seoTitle: ov.seoTitle || baseTitle,
+    h1: ov.h1 || draft.title || '',
+    metaTitle: ov.metaTitle || ov.seoTitle || baseTitle,
+    metaDescription,
+    focusKeyword: ov.focusKeyword || '',
+    secondaryKeywords: keywords,
+    keywordsCsv: keywords.join(', '),
+    ogTitle: ov.ogTitle || baseTitle,
+    ogDescription: ov.ogDescription || metaDescription,
     ogType: 'article',
     ogUrl: canonicalUrl,
-    faqSchema: buildFaqSchema(draft),
+    twitterCard: ov.twitterCard || 'summary_large_image',
+    externalLinks: Array.isArray(ov.externalLinks) ? ov.externalLinks : [],
+    faqSchema: ov.schemaOverride || buildFaqSchema(draft),
   };
 }

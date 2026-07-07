@@ -113,8 +113,16 @@ export async function onRequest(context) {
       const enriched = articles.map(a => {
         const node = nodeById.get(`article-${a.id}`);
         const graphLinked = !!(node && node.status === 'published');
+        // Independent SEO/Knowledge-Graph/Chatbot status (spec Phase 6) — read from
+        // the verification snapshot stored at the last publish/repair attempt when
+        // available; falls back to the single graphLinked signal for older rows
+        // published before last_verification existed (never blank/undefined).
+        const lv = a.last_verification && typeof a.last_verification === 'object' ? a.last_verification : null;
+        const seoStatus = lv ? !!lv.publicWebsite?.ok : graphLinked;
+        const kgStatus = lv ? !!lv.knowledgeGraph?.conceptPublished : graphLinked;
+        const chatbotStatus = lv ? !!lv.knowledgeGraph?.chatbotAnswersContextually : graphLinked;
         return {
-          ...a, graphLinked,
+          ...a, graphLinked, seoStatus, kgStatus, chatbotStatus,
           pipelineStatus: a.is_active ? (graphLinked ? 'published' : 'pipeline_failed') : 'draft',
         };
       });
@@ -205,6 +213,13 @@ export async function onRequest(context) {
       author:     d.author || 'ZTU',
       reading_time: estimateReadingTime(d.content),
       is_active:  d.is_active ?? false,   // default DRAFT
+      // Manual-mode SEO overrides (seoTitle/h1/metaTitle/metaDescription/canonicalUrl/
+      // focusKeyword/secondaryKeywords/ogTitle/ogDescription/twitterCard/externalLinks/
+      // schemaOverride) — see supabase/ai-articles-content-center-columns.sql. Blank
+      // fields fall back to article-enrich.js's computed defaults (buildSeoSuggestion),
+      // never stored twice. Only persisted when the object has keys, so articles saved
+      // before this column existed round-trip unchanged.
+      seo_overrides: (d.seo_overrides && typeof d.seo_overrides === 'object') ? d.seo_overrides : {},
     };
     const result = action === 'create'
       ? await createArticle(env, { ...payload, created_at: new Date().toISOString() })
@@ -234,12 +249,15 @@ export async function onRequest(context) {
     }
 
     if (verification.ok) {
-      const updated = await setArticleStatus(env, article.id, true);
+      const updated = await updateArticle(env, article.id, { is_active: true, last_verification: verification });
       return json({ configured: true, status: 'published', article: updated, graph, ecosystem, verification });
     }
 
     // Never touch is_active on failure — a failed re-publish/repair must not take
-    // down an already-live page; a brand-new draft simply stays a draft.
+    // down an already-live page; a brand-new draft simply stays a draft. Still
+    // persist last_verification (best-effort) so the Library's status columns and
+    // the Error Center can show WHY it failed without re-running the probe.
+    try { await updateArticle(env, article.id, { last_verification: verification }); } catch { /* non-fatal */ }
     const reason = !verification.knowledgeGraph.conceptPublished
       ? 'Knowledge graph write did not complete (see graph.authored/graph.published for the exact stage/error).'
       : 'SEO/canonical/sitemap fields incomplete — see verification.publicWebsite for the specific check that failed.';
@@ -307,7 +325,8 @@ export async function onRequest(context) {
 
     let { graph, ecosystem } = await syncArticleToGraph(env, current);
     let verification = await verifyPublishPipeline(env, { article: current, graph, ecosystem });
-    if (verification.ok) current = (await setArticleStatus(env, current.id, true)) || current;
+    if (verification.ok) current = (await updateArticle(env, current.id, { is_active: true, last_verification: verification })) || current;
+    else { try { await updateArticle(env, current.id, { last_verification: verification }); } catch { /* non-fatal */ } }
 
     return json({ configured: true, article: current, improved: Object.keys(patch), graph, ecosystem, verification });
   }

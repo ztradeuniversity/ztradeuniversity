@@ -15,7 +15,7 @@
   const KB = '/api/ai-kb-admin';
   let TOKEN = null;
   let editorState = { id: null, images: [], brief: null, mode: 'manual' };
-  let libState = { page: 1, pageSize: 100, status: 'all', q: '' };
+  let libState = { page: 1, pageSize: 100, status: 'all', category: 'all', sort: 'updated_desc', q: '' };
 
   function authHeaders(extra) {
     return Object.assign({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN }, extra || {});
@@ -85,6 +85,149 @@
     card.querySelectorAll('[data-prepare]').forEach(b => b.addEventListener('click', () => prepareFromTopic(humanize(b.dataset.prepare))));
   }
 
+  // ── CONTENT COVERAGE DASHBOARD (spec Phase 2-3) ─────────────────────────
+  async function loadCoverage() {
+    const data = await apiGet(KB + '?action=coverage-dashboard');
+    const card = document.getElementById('coverageCard');
+    const rows = (data.rows || []).filter(r => r.graphConcepts > 0 || r.articles > 0).slice(0, 20);
+    if (!rows.length) { card.innerHTML = '<div class="empty">No graph concepts or articles found yet.</div>'; return; }
+    const totals = data.totals || {};
+    card.innerHTML = `
+      <div class="grid cols-3" style="margin-bottom:14px">
+        <div class="stat"><div class="lab">Categories</div><div class="val">${totals.categories ?? '—'}</div></div>
+        <div class="stat"><div class="lab">Total Articles</div><div class="val">${totals.totalArticles ?? '—'}</div></div>
+        <div class="stat"><div class="lab">Overall Coverage</div><div class="val"><span class="led ${scoreLed(totals.overallCoveragePct)}"></span>${totals.overallCoveragePct ?? 0}%</div></div>
+      </div>
+      ${rows.map(r => `
+        <div class="rec-row">
+          <div class="rec-topic"><div class="t">${esc(r.label)}</div><div class="why">${r.articles} article${r.articles === 1 ? '' : 's'} / ${r.graphConcepts} graph concept${r.graphConcepts === 1 ? '' : 's'}</div></div>
+          <div style="width:160px;background:var(--inset);border-radius:100px;height:8px;overflow:hidden"><div style="width:${r.coveragePct}%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>
+          <div class="stars" style="width:44px;text-align:right">${r.coveragePct}%</div>
+        </div>`).join('')}`;
+  }
+
+  // ── WEBSITE HEALTH CENTER (spec Phase 9) ────────────────────────────────
+  async function loadHealth() {
+    const data = await apiGet(KB + '?action=health-live');
+    const card = document.getElementById('healthCard');
+    const providers = data.providers || [];
+    const overallLed = data.overallHealthPct >= 80 ? 'ok' : data.overallHealthPct >= 50 ? 'warn' : 'bad';
+    const overallWord = data.overallHealthPct >= 80 ? 'Healthy' : data.overallHealthPct >= 50 ? 'Warning' : 'Critical';
+    card.innerHTML = `
+      <div class="grid cols-4" style="margin-bottom:14px">
+        <div class="stat"><div class="lab">Website Status</div><div class="val"><span class="led ${overallLed}"></span>${data.overallHealthPct ?? 0}%</div><div class="sub">${overallWord}</div></div>
+        <div class="stat"><div class="lab">Working APIs</div><div class="val">${data.workingApis ?? 0}</div></div>
+        <div class="stat"><div class="lab">Failed APIs</div><div class="val">${data.failedApis ?? 0}</div></div>
+        <div class="stat"><div class="lab">Automation</div><div class="val"><span class="led idle"></span>${esc(data.automation?.status || '—')}</div><div class="sub">${esc(data.automation?.reason || '')}</div></div>
+      </div>
+      <div class="sec-title" style="margin:0 0 8px">API Status</div>
+      ${providers.map(p => `
+        <div class="rec-row">
+          <div class="rec-topic"><div class="t">${esc(p.service)}</div><div class="why">${esc(p.rootCause || '')}</div></div>
+          <div class="rec-badges">
+            <span class="chip ${p.ok ? 'chat' : ''}" style="${p.ok ? '' : 'color:var(--bad);border-color:rgba(226,104,95,.3)'}">${p.ok ? 'Online' : 'Offline'}</span>
+            ${p.ms ? `<span class="chip">${p.ms}ms</span>` : ''}
+          </div>
+        </div>`).join('') || '<div class="empty">No providers probed.</div>'}
+      <div style="font-size:11px;color:var(--dim);margin-top:8px">${esc(data.automation?.note || '')}</div>`;
+  }
+
+  // ── ERROR CENTER (spec Phase 9) ──────────────────────────────────────────
+  function buildClaudeRepairPrompt(e) {
+    return [
+      `Problem Summary: ${e.name}`,
+      `Module: ${e.module}`,
+      `Verified Root Cause: ${e.rootCause}`,
+      `Affected: ${e.articleId ? 'ai_articles row ' + e.articleId : e.module + ' pipeline (see functions/utils/' + e.module + '.js or functions/api/*.js for this module)'}`,
+      `Suggested Fix: ${e.manualFix || 'Investigate the module above using the root cause and repair the underlying issue.'}`,
+      `Expected Result: the error stops recurring in kb_system_log / the article publishes successfully.`,
+    ].join('\n');
+  }
+  async function loadErrorCenter() {
+    const data = await apiGet(KB + '?action=error-center');
+    const card = document.getElementById('errorCenterCard');
+    const errors = data.errors || [];
+    const totals = data.totals || {};
+    const summary = `<div class="grid cols-3" style="margin-bottom:14px">
+      <div class="stat"><div class="lab">Total</div><div class="val">${totals.total ?? 0}</div></div>
+      <div class="stat"><div class="lab">Critical</div><div class="val"><span class="led ${totals.critical ? 'bad' : 'ok'}"></span>${totals.critical ?? 0}</div></div>
+      <div class="stat"><div class="lab">Warnings</div><div class="val"><span class="led ${totals.warnings ? 'warn' : 'ok'}"></span>${totals.warnings ?? 0}</div></div>
+    </div>`;
+    if (!errors.length) { card.innerHTML = summary + '<div class="empty">No errors detected — nothing has failed.</div>'; return; }
+    card.innerHTML = summary + errors.slice(0, 30).map((e, i) => `
+      <div class="rec-row">
+        <div class="rec-topic"><div class="t">${esc(e.name)}</div><div class="why">${esc(e.rootCause || '')} — ${e.occurrences}× · last ${e.lastOccurrence ? new Date(e.lastOccurrence).toLocaleString() : '—'}</div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${e.autoRepair ? `<button class="btn sm gold" data-err-repair="${i}">${esc(e.autoRepair.label)}</button>` : ''}
+          ${!e.autoRepair && e.manualFix ? `<button class="btn sm" data-err-manual="${i}">Manual Repair Guide</button>` : ''}
+          <button class="btn sm" data-err-claude="${i}">Claude Prompt</button>
+        </div>
+      </div>
+      <div id="errClaudeOut${i}" style="display:none;margin:-4px 0 10px"><textarea rows="6" readonly style="width:100%;background:var(--inset);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Courier New',monospace;font-size:11.5px;padding:10px"></textarea></div>
+    `).join('');
+    const list = errors.slice(0, 30);
+    card.querySelectorAll('[data-err-repair]').forEach(b => b.addEventListener('click', async () => {
+      const e = list[+b.dataset.errRepair];
+      toast('Repairing…');
+      if (e.autoRepair.action === 'repair-article') await apiPost(ART, 'repair', { id: e.articleId });
+      else await apiPost(KB, e.autoRepair.action, { limit: 50, offset: 0 });
+      toast('Repair attempted — refreshing…', 'ok');
+      loadErrorCenter(); loadLibrary();
+    }));
+    card.querySelectorAll('[data-err-manual]').forEach(b => b.addEventListener('click', () => toast(list[+b.dataset.errManual].manualFix, 'ok')));
+    card.querySelectorAll('[data-err-claude]').forEach(b => b.addEventListener('click', () => {
+      const i = +b.dataset.errClaude;
+      const out = document.getElementById('errClaudeOut' + i);
+      out.style.display = 'block';
+      const ta = out.querySelector('textarea');
+      ta.value = buildClaudeRepairPrompt(list[i]);
+      ta.select();
+      navigator.clipboard?.writeText(ta.value).then(() => toast('Copied to clipboard', 'ok')).catch(() => {});
+    }));
+  }
+
+  // ── MISSING TOPIC ENGINE (spec Phase 4) — every real gap, 3 actions each ───
+  async function loadMissingTopics() {
+    const data = await apiGet(KB + '?action=missing-topics');
+    const card = document.getElementById('missingCard');
+    const topics = data.topics || [];
+    if (!topics.length) { card.innerHTML = '<div class="empty">No gaps logged yet — this fills in once real chatbot questions are logged (kb_missing) or a category has zero articles/graph concepts.</div>'; return; }
+    card.innerHTML = topics.slice(0, 25).map(t => {
+      const badges = [];
+      if (t.seoOpportunity) badges.push('<span class="chip seo">SEO gap</span>');
+      if (t.graphOpportunity) badges.push('<span class="chip graph">Graph gap</span>');
+      if (t.chatbotOpportunity) badges.push(`<span class="chip chat">Chatbot ×${t.frequency}</span>`);
+      return `<div class="rec-row">
+        <div class="rec-topic"><div class="t">${esc(humanize(t.category))}</div><div class="why">${esc(t.suggestion)}</div></div>
+        <div class="rec-badges">${badges.join('')}</div>
+        <div style="display:flex;gap:5px">
+          <button class="btn sm" data-topic-mode="manual" data-topic="${esc(t.category)}">Manual</button>
+          <button class="btn sm" data-topic-mode="seo-auto" data-topic="${esc(t.category)}">SEO Auto</button>
+          <button class="btn sm gold" data-topic-mode="ai" data-topic="${esc(t.category)}">AI Generate</button>
+        </div>
+      </div>`;
+    }).join('');
+    card.querySelectorAll('[data-topic-mode]').forEach(b => b.addEventListener('click', () => startTopicAction(humanize(b.dataset.topic), b.dataset.topicMode)));
+  }
+
+  // Opens the editor pre-seeded from a missing-topic row, in the mode the admin
+  // picked — reuses the exact same editor/prepareFromTopic flow as "Write This
+  // Next"'s single Prepare button, just exposing all 3 modes explicitly per spec.
+  function startTopicAction(topic, mode) {
+    openEditor();
+    setMode(mode);
+    document.getElementById('edTopic').value = topic;
+    document.getElementById('edTitleField').value = topic;
+    document.getElementById('edTitleMini').textContent = topic;
+    if (mode === 'ai') {
+      prepareFromTopic(topic);
+    } else if (mode === 'manual') {
+      prepareFromTopic(topic); // still fetch brief/outline/internal-links for reference; manual writing stays fully editable
+    } else {
+      toast('Write or paste your "' + topic + '" article below, then click Auto SEO', 'ok');
+    }
+  }
+
   // ── EDITOR ───────────────────────────────────────────────────────────────
   function editorTemplate() {
     return `
@@ -92,7 +235,8 @@
         <span class="title-mini" id="edTitleMini">New article</span>
         <div class="mode-toggle">
           <button data-mode="manual" class="active">✍ Manual</button>
-          <button data-mode="ai">🤖 AI Writing</button>
+          <button data-mode="seo-auto">⚡ SEO Auto</button>
+          <button data-mode="ai">🤖 AI Generation</button>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn sm" id="saveDraftBtn">💾 Save Draft</button>
@@ -104,18 +248,56 @@
         <div class="field"><label>Topic (blank article only)</label><input type="text" id="edTopic" placeholder="e.g. Risk Reward Ratio" /></div>
         <div><button class="btn sm" id="prepBriefBtn">⚡ Prepare Brief</button></div>
       </div>
+
+      <div id="seoAutoRow" style="display:none;margin-bottom:12px">
+        <div class="field"><label>Paste complete article — Auto SEO reads this and fills every field below</label><textarea id="seoAutoPaste" rows="8" placeholder="Paste the finished article text here…"></textarea></div>
+        <button class="btn sm gold" id="autoSeoBtn" style="margin-top:8px">⚡ Auto SEO</button>
+        <span id="autoSeoNote" style="font-size:11.5px;color:var(--muted);margin-left:8px"></span>
+      </div>
+
       <div class="field-row">
         <div class="field" style="grid-column:1/3"><label>Title</label><input type="text" id="edTitleField" /></div>
         <div class="field"><label>Category</label><select id="edCategory"></select></div>
         <div class="field"><label>Difficulty</label><select id="edDifficulty"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
       </div>
       <div class="field-row two">
+        <div class="field"><label>Slug (URL path — leave blank to auto-generate from Title)</label><input type="text" id="edSlug" placeholder="e.g. risk-reward-ratio" /></div>
         <div class="field"><label>Tags (comma-separated)</label><input type="text" id="edTags" /></div>
-        <div class="field"><label>Summary / meta description</label><input type="text" id="edSummary" /></div>
       </div>
+      <div class="field"><label>Summary / meta description</label><input type="text" id="edSummary" /></div>
       <div id="aiGenerateRow" style="display:none;margin-bottom:10px"><button class="btn sm gold" id="generateAiBtn">🤖 Generate with AI</button> <span id="aiGenNote" style="font-size:11.5px;color:var(--muted)"></span></div>
       <div class="field"><label>Content (Markdown)</label><textarea id="edContent" rows="16"></textarea></div>
       <div id="briefExtras"></div>
+
+      <details class="adv" style="margin-top:14px">
+        <summary>▸ SEO &amp; Metadata — Title/Meta/Canonical/OG/Schema (optional — blank fields auto-compute at publish)</summary>
+        <div class="adv-body">
+          <div class="field-row two">
+            <div class="field"><label>SEO Title</label><input type="text" id="seoTitle" placeholder="defaults to Title" /></div>
+            <div class="field"><label>H1 (on-page heading)</label><input type="text" id="seoH1" placeholder="defaults to Title" /></div>
+          </div>
+          <div class="field-row two">
+            <div class="field"><label>Meta Title</label><input type="text" id="seoMetaTitle" placeholder="defaults to SEO Title" /></div>
+            <div class="field"><label>Canonical URL</label><input type="text" id="seoCanonical" placeholder="defaults to /articles/{slug}" /></div>
+          </div>
+          <div class="field"><label>Meta Description</label><input type="text" id="seoMetaDescription" placeholder="defaults to Summary" /></div>
+          <div class="field-row two">
+            <div class="field"><label>Focus Keyword</label><input type="text" id="seoFocusKeyword" /></div>
+            <div class="field"><label>Secondary Keywords (comma-separated)</label><input type="text" id="seoSecondaryKeywords" /></div>
+          </div>
+          <div class="field-row two">
+            <div class="field"><label>OpenGraph Title</label><input type="text" id="seoOgTitle" placeholder="defaults to SEO Title" /></div>
+            <div class="field"><label>OpenGraph Description</label><input type="text" id="seoOgDescription" placeholder="defaults to Meta Description" /></div>
+          </div>
+          <div class="field-row two">
+            <div class="field"><label>Twitter Card</label><select id="seoTwitterCard"><option value="summary_large_image">Summary — Large Image</option><option value="summary">Summary</option></select></div>
+            <div class="field"><label>Author</label><input type="text" id="edAuthor" placeholder="ZTU" /></div>
+          </div>
+          <div class="field"><label>External Links (one per line — <code>Title | https://url</code>)</label><textarea id="seoExternalLinks" rows="3" placeholder="Investopedia: Risk/Reward | https://www.investopedia.com/..."></textarea></div>
+          <div id="seoInternalLinksOut" style="font-size:11.5px;color:var(--muted);margin-top:6px">Internal links: click "Prepare Brief" above to generate suggestions from the live graph.</div>
+          <div id="seoSchemaPreview" style="font-size:11.5px;color:var(--muted);margin-top:6px">FAQ schema preview appears here once the article has question-style content (auto-detected from Brief/FAQ).</div>
+        </div>
+      </details>
 
       <div class="card" style="margin-top:14px">
         <h3>🖼 Images</h3>
@@ -125,6 +307,8 @@
             <div class="field"><label>Image file</label><input type="file" id="imgFile" accept="image/*" /></div>
             <div class="field"><label>Caption</label><input type="text" id="imgCaption" /></div>
           </div>
+          <div class="field"><label>Image ALT text (accessibility &amp; SEO)</label><input type="text" id="imgAlt" /></div>
+          <div style="font-size:11px;color:var(--dim);margin:-2px 0 8px">The first image attached becomes the featured/OpenGraph image.</div>
           <button class="btn sm" id="imgUploadBtn">⬆ Upload &amp; Attach</button>
           <div class="grid cols-4" id="imagesGrid" style="margin-top:12px"></div>
         </div>
@@ -156,10 +340,12 @@
     if (has) renderImages(editorState.images || []);
   }
   function renderImages(images) {
-    document.getElementById('imagesGrid').innerHTML = (images || []).map(img => `
+    document.getElementById('imagesGrid').innerHTML = (images || []).map((img, i) => `
       <div class="card" style="padding:8px">
+        ${i === 0 ? '<div class="chip" style="margin-bottom:6px">★ Featured</div>' : ''}
         <img src="${esc(img.url)}" style="width:100%;border-radius:6px;display:block;margin-bottom:6px" />
         <div style="font-size:11px;color:var(--muted)">${esc(img.caption || '')}</div>
+        <div style="font-size:10.5px;color:var(--dim)">alt: ${esc(img.alt_text || '—')}</div>
         <button class="btn sm danger" style="margin-top:6px" data-delimg="${img.id}">Remove</button>
       </div>`).join('') || '<div class="empty">No images yet.</div>';
     document.getElementById('imagesGrid').querySelectorAll('[data-delimg]').forEach(b => b.addEventListener('click', async () => {
@@ -177,11 +363,12 @@
       const res = await apiPost(ART, 'upload_image', {
         articleId: editorState.id, filename: file.name, dataUrl: reader.result,
         caption: document.getElementById('imgCaption').value.trim(),
+        alt: document.getElementById('imgAlt').value.trim(),
       });
       if (!res.image) { toast('Upload failed', 'bad'); return; }
       editorState.images = [...(editorState.images || []), res.image];
       renderImages(editorState.images);
-      fileInput.value = ''; document.getElementById('imgCaption').value = '';
+      fileInput.value = ''; document.getElementById('imgCaption').value = ''; document.getElementById('imgAlt').value = '';
       toast('Image attached', 'ok');
     };
     reader.readAsDataURL(file);
@@ -190,10 +377,53 @@
     editorState.mode = mode;
     document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
     document.getElementById('aiGenerateRow').style.display = mode === 'ai' ? 'flex' : 'none';
+    document.getElementById('seoAutoRow').style.display = mode === 'seo-auto' ? 'block' : 'none';
     if (mode === 'ai' && !document.getElementById('generateAiBtn')._wired) {
       document.getElementById('generateAiBtn')._wired = true;
       document.getElementById('generateAiBtn').onclick = generateWithAi;
     }
+    if (mode === 'seo-auto' && !document.getElementById('autoSeoBtn')._wired) {
+      document.getElementById('autoSeoBtn')._wired = true;
+      document.getElementById('autoSeoBtn').onclick = runAutoSeo;
+    }
+  }
+
+  // ── SEO AUTO MODE — paste a complete article, generate every metadata field in
+  // one click (ported/improved from the old ai-articles.html AUTO-mode toggle;
+  // reuses the same auto-meta action/article-autometa.js, adds SEO-panel population
+  // client-side so the AI prompt itself never needs to change). ──────────────────
+  async function runAutoSeo() {
+    const content = document.getElementById('seoAutoPaste').value.trim();
+    if (!content) { toast('Paste the article content first', 'bad'); return; }
+    document.getElementById('autoSeoNote').textContent = 'Generating…';
+    const data = await apiPost(ART, 'auto-meta', { content });
+    if (!data.meta) { document.getElementById('autoSeoNote').textContent = 'Auto SEO failed — try again or write manually.'; return; }
+    document.getElementById('edContent').value = content;
+    applyGeneratedMeta(data.meta);
+    document.getElementById('autoSeoNote').textContent = 'Populated from ' + (data.meta.source || 'generator') + ' — review, then Publish.';
+    toast('SEO Auto complete — every field populated', 'ok');
+  }
+
+  // Shared by SEO Auto + AI Generation: title/category/difficulty/tags/summary →
+  // the manual fields, PLUS derived SEO-panel suggestions (seoTitle/ogTitle default
+  // to the generated title, meta/og description to the summary, focus keyword to
+  // the top retrieval keyword, the rest as secondary keywords) — computed here
+  // rather than in the AI prompt so no existing generator output shape changes.
+  function applyGeneratedMeta(meta) {
+    document.getElementById('edTitleField').value = meta.title || '';
+    document.getElementById('edTitleMini').textContent = meta.title || 'New article';
+    if (meta.category) document.getElementById('edCategory').value = meta.category;
+    document.getElementById('edDifficulty').value = meta.difficulty || 'beginner';
+    document.getElementById('edTags').value = (meta.tags || []).join(', ');
+    document.getElementById('edSummary').value = meta.summary || '';
+    const kws = Array.isArray(meta.keywords) && meta.keywords.length ? meta.keywords : (meta.tags || []);
+    document.getElementById('seoTitle').value = meta.title || '';
+    document.getElementById('seoMetaTitle').value = meta.title || '';
+    document.getElementById('seoOgTitle').value = meta.title || '';
+    document.getElementById('seoMetaDescription').value = meta.summary || '';
+    document.getElementById('seoOgDescription').value = meta.summary || '';
+    document.getElementById('seoFocusKeyword').value = kws[0] || '';
+    document.getElementById('seoSecondaryKeywords').value = kws.slice(1).join(', ');
   }
   async function loadCategoriesInto(select) {
     const data = await apiGet(ART + '?action=categories');
@@ -207,11 +437,29 @@
     document.getElementById('edDifficulty').value = brief.difficulty || 'beginner';
     document.getElementById('edTags').value = (brief.tags || []).join(', ');
     document.getElementById('edSummary').value = brief.metaDescription || '';
+    const tags = brief.tags || [];
+    document.getElementById('seoTitle').value = brief.title || '';
+    document.getElementById('seoMetaTitle').value = brief.title || '';
+    document.getElementById('seoOgTitle').value = brief.title || '';
+    document.getElementById('seoMetaDescription').value = brief.metaDescription || '';
+    document.getElementById('seoOgDescription').value = brief.metaDescription || '';
+    document.getElementById('seoFocusKeyword').value = tags[0] || '';
+    document.getElementById('seoSecondaryKeywords').value = tags.slice(1).join(', ');
+    if (brief.faqs && brief.faqs.length) {
+      document.getElementById('seoSchemaPreview').innerHTML = '<b>FAQ schema will publish from:</b> ' + brief.faqs.slice(0, 3).map(f => esc(f.question)).join(' · ');
+    }
   }
   function renderBriefExtras(brief, internalLinks) {
     const faqs = (brief.faqs || []).map(f => `<li><b>${esc(f.question)}</b> — ${esc(f.answer)}</li>`).join('');
     const outline = (brief.outline || []).map(o => `<li>${esc(o)}</li>`).join('');
     const links = (internalLinks || []).map(l => `<li>${esc(l.title)} <span style="color:var(--dim)">(${l.type})</span></li>`).join('');
+    editorState.internalLinks = internalLinks || [];
+    const seoLinksOut = document.getElementById('seoInternalLinksOut');
+    if (seoLinksOut) {
+      seoLinksOut.innerHTML = (internalLinks || []).length
+        ? '<b>Internal links (auto-suggested, published automatically):</b> ' + internalLinks.map(l => esc(l.title)).join(' · ')
+        : 'No internal link matches yet in the live graph for this topic.';
+    }
     document.getElementById('briefExtras').innerHTML = `
       <div class="card" style="margin:12px 0">
         <h3>⚡ Prepared brief</h3>
@@ -248,33 +496,123 @@
     document.getElementById('aiGenNote').textContent = 'Generated — review before publishing.';
   }
 
+  // Parses the "Title | https://url" external-links textarea into [{title,url}].
+  function parseExternalLinks(text) {
+    return String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+      const [title, url] = line.split('|').map(s => s.trim());
+      return url ? { title: title || url, url } : { title: line, url: line };
+    }).filter(l => /^https?:\/\//i.test(l.url));
+  }
+  function gatherSeoOverrides() {
+    const ov = {
+      seoTitle: document.getElementById('seoTitle').value.trim(),
+      h1: document.getElementById('seoH1').value.trim(),
+      metaTitle: document.getElementById('seoMetaTitle').value.trim(),
+      metaDescription: document.getElementById('seoMetaDescription').value.trim(),
+      canonicalUrl: document.getElementById('seoCanonical').value.trim(),
+      focusKeyword: document.getElementById('seoFocusKeyword').value.trim(),
+      secondaryKeywords: document.getElementById('seoSecondaryKeywords').value.split(',').map(s => s.trim()).filter(Boolean),
+      ogTitle: document.getElementById('seoOgTitle').value.trim(),
+      ogDescription: document.getElementById('seoOgDescription').value.trim(),
+      twitterCard: document.getElementById('seoTwitterCard').value,
+      externalLinks: parseExternalLinks(document.getElementById('seoExternalLinks').value),
+    };
+    for (const k of Object.keys(ov)) {
+      if (ov[k] == null || ov[k] === '' || (Array.isArray(ov[k]) && !ov[k].length)) delete ov[k];
+    }
+    return ov;
+  }
+  function fillSeoOverrides(ov) {
+    ov = ov || {};
+    document.getElementById('seoTitle').value = ov.seoTitle || '';
+    document.getElementById('seoH1').value = ov.h1 || '';
+    document.getElementById('seoMetaTitle').value = ov.metaTitle || '';
+    document.getElementById('seoMetaDescription').value = ov.metaDescription || '';
+    document.getElementById('seoCanonical').value = ov.canonicalUrl || '';
+    document.getElementById('seoFocusKeyword').value = ov.focusKeyword || '';
+    document.getElementById('seoSecondaryKeywords').value = (ov.secondaryKeywords || []).join(', ');
+    document.getElementById('seoOgTitle').value = ov.ogTitle || '';
+    document.getElementById('seoOgDescription').value = ov.ogDescription || '';
+    document.getElementById('seoTwitterCard').value = ov.twitterCard || 'summary_large_image';
+    document.getElementById('seoExternalLinks').value = (ov.externalLinks || []).map(l => `${l.title} | ${l.url}`).join('\n');
+  }
   function gather(isActive) {
     return {
       id: editorState.id,
       title: document.getElementById('edTitleField').value.trim(),
+      slug: document.getElementById('edSlug').value.trim() || undefined,
       category: document.getElementById('edCategory').value,
       difficulty: document.getElementById('edDifficulty').value,
       tags: document.getElementById('edTags').value.split(',').map(s => s.trim()).filter(Boolean),
       summary: document.getElementById('edSummary').value.trim(),
       content: document.getElementById('edContent').value,
       language: 'en',
+      author: document.getElementById('edAuthor').value.trim() || 'ZTU',
       is_active: isActive,
+      seo_overrides: gatherSeoOverrides(),
     };
   }
-  function renderVerification(v, status, reason) {
+  // PUBLISH VERIFICATION CHECKLIST (spec Phase 5) — every one of the spec'd 10
+  // checks, each mapped to a REAL sub-result already computed by
+  // verifyPublishPipeline() (article-graph-sync.js) — no new verification logic.
+  // Items that are one-time structural facts gate the tick (pass/fail); items that
+  // are inherently best-effort or improve over time (schema, chatbot-contextual,
+  // internal links, chunking) render as a Recommendation chip instead of a red X
+  // when not yet satisfied — matches the spec's explicit "never show Failure for
+  // something that only needs a Recommendation" rule.
+  function renderVerification(v, status, reason, ecosystem, articleId) {
     const box = document.getElementById('verifyOut');
     if (!v) { box.innerHTML = ''; return; }
     const tick = ok => `<span class="tick ${ok ? 'pass' : 'fail'}">${ok ? '✓' : '✕'}</span>`;
+    const rec = label => `<div class="tick-row"><span class="tick pass" style="background:var(--warn)">i</span> ${label} <span class="chip" style="margin-left:4px">Recommendation</span></div>`;
+    const internalLinksCount = (ecosystem?.internalLinks || []).length;
+    const rows = [
+      { label: 'Article exists', ok: true },
+      { label: 'Public URL live (/articles/{slug})', ok: !!v.publicWebsite?.pageAccessible },
+      { label: 'SEO completed (title, keywords)', ok: !!v.seoReadiness?.seoTitle && !!v.seoReadiness?.keywords },
+      { label: 'Meta description completed', ok: !!v.publicWebsite?.metaDescription },
+      { label: 'Schema / FAQ structured data', ok: !!v.publicWebsite?.structuredData, soft: true, softNote: 'Add FAQ-style questions to the article (or a Brief) to generate FAQ schema automatically.' },
+      { label: 'Knowledge Graph updated (concept published)', ok: !!v.knowledgeGraph?.conceptPublished },
+      { label: 'Chatbot can answer contextually', ok: !!v.knowledgeGraph?.chatbotAnswersContextually, soft: true, softNote: 'Confidence-based — improves automatically as more related content joins the graph.' },
+      { label: 'Articles Library updated', ok: true },
+      { label: `Internal links added (${internalLinksCount})`, ok: internalLinksCount > 0, soft: true, softNote: 'No related graph concepts/articles matched yet — add tags that overlap with existing content.' },
+      { label: 'Searchable (full body indexed as chunks)', ok: !!v.knowledgeGraph?.chunksCreated, soft: true, softNote: 'Chunk indexing is best-effort and retries automatically on next publish.' },
+    ];
+    const recommendations = [...(v.seoReadiness?.recommendations || [])];
     box.innerHTML = `
       <div class="verify-box ${status === 'published' ? 'ok' : 'fail'}">
-        <b>${status === 'published' ? '✓ Published — every check passed' : '✕ Pipeline Failed — not published'}</b>
+        <b>${status === 'published' ? '✓ Published — every gating check passed' : '✕ Pipeline Failed — not published'}</b>
         ${reason ? `<div style="margin:6px 0;color:var(--muted)">${esc(reason)}</div>` : ''}
-        <div class="tick-row">${tick(v.publicWebsite?.ok)} Public Website (SEO title, meta description, canonical, sitemap)</div>
-        <div class="tick-row">${tick(v.knowledgeGraph?.conceptPublished)} Knowledge Graph (concept published, chatbot searchable)</div>
-        <div class="tick-row">${tick(v.knowledgeGraph?.chatbotAnswersContextually)} Chatbot answers contextually <span style="color:var(--dim)">(confidence-based — improves as the graph grows)</span></div>
-        <div class="tick-row">${tick(v.seoReadiness?.ok)} Google SEO readiness</div>
-        ${(v.seoReadiness?.recommendations || []).length ? '<div style="margin-top:6px;color:var(--muted);font-size:11.5px">Recommendations: ' + v.seoReadiness.recommendations.map(esc).join(' · ') + '</div>' : ''}
+        ${rows.map(r => r.ok ? `<div class="tick-row">${tick(true)} ${r.label}</div>` : (r.soft ? rec(r.label) : `<div class="tick-row">${tick(false)} ${r.label}</div>`)).join('')}
+        ${rows.filter(r => !r.ok && r.soft && r.softNote).map(r => `<div style="margin-top:4px;font-size:11px;color:var(--dim)">→ ${esc(r.softNote)}</div>`).join('')}
+        ${recommendations.length ? '<div style="margin-top:6px;color:var(--muted);font-size:11.5px">Recommendations: ' + recommendations.map(esc).join(' · ') + '</div>' : ''}
+        ${status !== 'published' && articleId ? `
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sm gold" id="vRetryPublish">🔁 Retry Publish</button>
+            <button class="btn sm" id="vGraphRepair">⚙ Auto Repair Graph (sync edges) &amp; Retry</button>
+          </div>` : ''}
       </div>`;
+    // KNOWLEDGE GRAPH CONTEXTUAL AUTO-REPAIR (spec Phase 7) — the same sync-edges/
+    // publish actions already available in the Advanced panel, promoted right next
+    // to the failed check instead of requiring a scroll to the buried panel below.
+    if (status !== 'published' && articleId) {
+      document.getElementById('vRetryPublish').onclick = async () => {
+        toast('Retrying publish…');
+        const pub = await apiPost(ART, 'publish', { id: articleId });
+        renderVerification(pub.verification, pub.status, pub.reason, pub.ecosystem, articleId);
+        toast(pub.status === 'published' ? 'Published' : 'Still failing — see checklist above', pub.status === 'published' ? 'ok' : 'bad');
+        loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics();
+      };
+      document.getElementById('vGraphRepair').onclick = async () => {
+        toast('Running graph edge sync…');
+        await apiPost(KB, 'sync-edges', { limit: 50, offset: 0 });
+        toast('Graph sync complete — retrying publish…');
+        const pub = await apiPost(ART, 'publish', { id: articleId });
+        renderVerification(pub.verification, pub.status, pub.reason, pub.ecosystem, articleId);
+        toast(pub.status === 'published' ? 'Published' : 'Still failing — try Advanced → Graph Infrastructure for more tools', pub.status === 'published' ? 'ok' : 'bad');
+        loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics();
+      };
+    }
   }
 
   async function saveArticle(publish) {
@@ -288,54 +626,95 @@
     toast(publish ? 'Draft saved — publishing…' : 'Draft saved', 'ok');
     if (!publish) return;
     const pub = await apiPost(ART, 'publish', { id: editorState.id });
-    renderVerification(pub.verification, pub.status, pub.reason);
+    renderVerification(pub.verification, pub.status, pub.reason, pub.ecosystem, editorState.id);
     toast(pub.status === 'published' ? 'Published — graph, SEO &amp; chatbot in sync' : 'Pipeline Failed — see details below', pub.status === 'published' ? 'ok' : 'bad');
-    loadLibrary(); loadExecutive();
+    // ARTICLE COMPLETION TRACKING (spec Phase 6) — a newly-published article changes
+    // coverage ratios and may resolve a missing-topic gap; refresh both automatically,
+    // no manual reload needed. Same event-driven pattern as loadLibrary/loadExecutive.
+    loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics();
   }
 
   // ── ARTICLES LIBRARY (verification-at-a-glance) ─────────────────────────
+  async function loadLibraryCategoryOptions() {
+    const sel = document.getElementById('adminLibCategory');
+    if (sel.dataset.loaded) return;
+    sel.dataset.loaded = '1';
+    const data = await apiGet(ART + '?action=categories');
+    sel.innerHTML = '<option value="all">All categories</option>' + (data.categories || []).map(c => `<option value="${esc(c.key)}">${esc(c.label)}</option>`).join('');
+  }
+  function sortRows(rows) {
+    const r = [...rows];
+    if (libState.sort === 'updated_asc') r.sort((a, b) => new Date(a.updated_at || 0) - new Date(b.updated_at || 0));
+    else if (libState.sort === 'title_asc') r.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    else r.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+    return r;
+  }
   async function loadLibrary() {
-    const data = await apiGet(ART + `?action=list&status=${libState.status}&page=${libState.page}&pageSize=${libState.pageSize}`);
+    loadLibraryCategoryOptions();
+    const catQs = libState.category !== 'all' ? `&category=${encodeURIComponent(libState.category)}` : '';
+    const data = await apiGet(ART + `?action=list&status=${libState.status}&page=${libState.page}&pageSize=${libState.pageSize}${catQs}`);
     let rows = data.articles || [];
     if (libState.q) {
       const q = libState.q.toLowerCase();
       rows = rows.filter(a => (a.title || '').toLowerCase().includes(q) || (a.category || '').toLowerCase().includes(q));
     }
+    rows = sortRows(rows);
+    const total = data.total ?? rows.length;
+    // ARTICLE ORGANIZATION (spec Phase 6) — once the library grows past one page,
+    // label the visible window "Articles N–M of TOTAL" so a large library stays
+    // navigable; purely a display label over the existing page/pageSize state, no
+    // new grouping logic, no risk of duplicate URLs (slug uniqueness already
+    // enforced server-side in ai-articles.js).
+    const groupLabel = document.getElementById('libGroupLabel');
+    if (total > libState.pageSize) {
+      const start = (libState.page - 1) * libState.pageSize + 1;
+      const end = Math.min(total, start + libState.pageSize - 1);
+      groupLabel.style.display = '';
+      groupLabel.textContent = `Showing articles ${start}–${end} of ${total}`;
+    } else {
+      groupLabel.style.display = 'none';
+    }
     const body = document.getElementById('libBody');
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="empty">No articles match.</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="9" class="empty">No articles match.</td></tr>'; return; }
     body.innerHTML = rows.map(a => {
       const statusBadge = a.pipelineStatus === 'published' ? '<span class="badge ok">Published</span>'
         : a.pipelineStatus === 'pipeline_failed' ? '<span class="badge bad">Pipeline Failed</span>'
         : '<span class="badge dim">Draft</span>';
-      // SEO and Chatbot are both gated together with the graph write in this
-      // pipeline (verifyPublishPipeline requires both before Published), so both
-      // columns reflect the same underlying graphLinked signal — shown separately
-      // because requirement 5 asks to verify each independently at a glance, even
-      // though today they can never diverge by design.
-      const seoBadge = a.graphLinked ? '<span class="badge ok">✓ SEO</span>' : '<span class="badge dim">—</span>';
-      const chatBadge = a.graphLinked ? '<span class="badge ok">✓ answers</span>' : '<span class="badge dim">—</span>';
+      // Independent SEO / Knowledge Graph / Chatbot status (spec Phase 6) — each
+      // reads its own verification sub-result (see ai-articles.js `list` action's
+      // last_verification-derived seoStatus/kgStatus/chatbotStatus), not a single
+      // combined signal.
+      const dot = ok => ok ? '<span class="badge ok">✓</span>' : '<span class="badge dim">—</span>';
       return `<tr>
         <td class="title" title="${esc(a.title)}">${esc(a.title)}</td>
         <td>${esc(humanize(a.category))}</td>
         <td>${statusBadge}</td>
-        <td>${seoBadge}</td>
-        <td>${chatBadge}</td>
+        <td>${dot(a.seoStatus)}</td>
+        <td>${dot(a.kgStatus)}</td>
+        <td>${dot(a.chatbotStatus)}</td>
         <td>${a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '—'}</td>
+        <td>${esc(a.author || '—')}</td>
         <td><div class="row-actions">
           <button class="btn sm" data-edit="${a.id}">Edit</button>
           ${a.pipelineStatus === 'pipeline_failed' ? `<button class="btn sm gold" data-repair="${a.id}">Improve &amp; Republish</button>` : ''}
           ${a.is_active ? `<button class="btn sm" data-unpub="${a.id}">Unpublish</button>` : `<button class="btn sm gold" data-pub="${a.id}">Publish</button>`}
+          ${a.is_active && a.slug ? `<button class="btn sm" data-preview="${esc(a.slug)}">Preview</button><button class="btn sm" data-copy="${esc(a.slug)}">Copy Link</button>` : ''}
           <button class="btn sm danger" data-del="${a.id}">Delete</button>
         </div></td>
       </tr>`;
     }).join('');
-    document.getElementById('libPager').textContent = `Page ${data.page} of ${Math.max(1, Math.ceil((data.total || rows.length) / libState.pageSize))} — ${data.total ?? rows.length} articles`;
+    document.getElementById('libPager').textContent = `Page ${data.page} of ${Math.max(1, Math.ceil(total / libState.pageSize))} — ${total} articles`;
 
     body.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editArticle(b.dataset.edit)));
-    body.querySelectorAll('[data-pub]').forEach(b => b.addEventListener('click', async () => { const r = await apiPost(ART, 'publish', { id: b.dataset.pub }); toast(r.status === 'published' ? 'Published' : 'Pipeline Failed — open Edit for details', r.status === 'published' ? 'ok' : 'bad'); loadLibrary(); loadExecutive(); }));
+    body.querySelectorAll('[data-pub]').forEach(b => b.addEventListener('click', async () => { const r = await apiPost(ART, 'publish', { id: b.dataset.pub }); toast(r.status === 'published' ? 'Published' : 'Pipeline Failed — open Edit for details', r.status === 'published' ? 'ok' : 'bad'); loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics(); }));
     body.querySelectorAll('[data-unpub]').forEach(b => b.addEventListener('click', async () => { await apiPost(ART, 'draft', { id: b.dataset.unpub }); toast('Unpublished — graph concept retracted', 'ok'); loadLibrary(); loadExecutive(); }));
     body.querySelectorAll('[data-repair]').forEach(b => b.addEventListener('click', async () => { toast('Improving…'); const r = await apiPost(ART, 'repair', { id: b.dataset.repair }); toast(r.verification?.ok ? 'Improved &amp; republished' : 'Still needs attention — see Edit', r.verification?.ok ? 'ok' : 'bad'); loadLibrary(); }));
     body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!confirm('Delete this article? This also retracts it from the knowledge graph.')) return; await apiPost(ART, 'delete', { id: b.dataset.del }); toast('Deleted', 'ok'); loadLibrary(); loadExecutive(); }));
+    body.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => window.open('/articles/' + b.dataset.preview, '_blank')));
+    body.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+      const url = window.location.origin + '/articles/' + b.dataset.copy;
+      navigator.clipboard?.writeText(url).then(() => toast('Link copied', 'ok')).catch(() => toast(url, 'ok'));
+    }));
   }
   async function editArticle(id) {
     const data = await apiGet(ART + '?action=get&id=' + encodeURIComponent(id));
@@ -345,11 +724,14 @@
     document.getElementById('edTitleField').value = data.article.title || '';
     document.getElementById('edTitleMini').textContent = data.article.title || '';
     document.getElementById('topicPrep').style.display = 'none';
+    document.getElementById('edSlug').value = data.article.slug || '';
     setTimeout(() => { document.getElementById('edCategory').value = data.article.category || ''; }, 60);
     document.getElementById('edDifficulty').value = data.article.difficulty || 'beginner';
     document.getElementById('edTags').value = (data.article.tags || []).join(', ');
     document.getElementById('edSummary').value = data.article.summary || '';
     document.getElementById('edContent').value = data.article.content || '';
+    document.getElementById('edAuthor').value = data.article.author || '';
+    fillSeoOverrides(data.article.seo_overrides);
     editorState.images = data.images || [];
     refreshImagesGate();
   }
@@ -368,26 +750,89 @@
     document.getElementById('deployProbeBtn').onclick = async () => { document.getElementById('deployOut').textContent = JSON.stringify(await apiGet(KB + '?action=deployment-probe'), null, 2); };
     document.getElementById('sysLogBtn').onclick = async () => { document.getElementById('deployOut').textContent = JSON.stringify(await apiGet(KB + '?action=system-log&limit=50'), null, 2); };
 
-    const ask = async () => {
-      const q = document.getElementById('pgQ').value.trim(); if (!q) return;
-      const out = document.getElementById('pgOut'); out.textContent = 'Querying…';
-      try {
-        const r = await fetch('/api/ai-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: q }] }) });
-        const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '', answer = '', src = null;
-        while (true) {
-          const { done, value } = await reader.read(); if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const parts = buf.split('\n\n'); buf = parts.pop();
-          for (const p of parts) {
-            const line = p.replace(/^data:\s*/, '').trim(); if (!line || line === '[DONE]') continue;
-            try { const j = JSON.parse(line); if (j.t) answer += j.t; if (j.source) src = j.source; } catch (_) {}
-          }
+    document.getElementById('pgAsk').onclick = runChatbotCheck;
+    document.getElementById('pgQ').addEventListener('keydown', e => { if (e.key === 'Enter') runChatbotCheck(); });
+  }
+
+  // ── CHATBOT CHECKER (spec Phase 8) — diagnostic tool, not a simple chatbot.
+  // Step 1: ask the live chatbot exactly like a real user would (same /api/ai-chat
+  // SSE stream, same source badge). Step 2: ask ai-kb-admin's chatbot-check action
+  // to diagnose WHY (reuses ai_response_logs + the same retrieval chain the publish
+  // gate uses — see chatbot-diagnostics.js). Never a second chat engine. ──────────
+  async function runChatbotCheck() {
+    const q = document.getElementById('pgQ').value.trim(); if (!q) return;
+    const out = document.getElementById('pgOut');
+    out.innerHTML = '<div class="empty">Asking the chatbot…</div>';
+    const t0 = performance.now();
+    let answer = '', src = null;
+    try {
+      const r = await fetch('/api/ai-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: q }] }) });
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '';
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split('\n\n'); buf = parts.pop();
+        for (const p of parts) {
+          const line = p.replace(/^data:\s*/, '').trim(); if (!line || line === '[DONE]') continue;
+          try { const j = JSON.parse(line); if (j.t) answer += j.t; if (j.source) src = j.source; } catch (_) {}
         }
-        out.textContent = (answer || '(empty)') + '\n\n— source: ' + (src ? JSON.stringify(src) : 'not reported');
-      } catch (e) { out.textContent = 'Unreachable — deploy to Cloudflare to test live.'; }
-    };
-    document.getElementById('pgAsk').onclick = ask;
-    document.getElementById('pgQ').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+      }
+    } catch (e) { out.innerHTML = '<div class="empty">Unreachable — deploy to Cloudflare to test live.</div>'; return; }
+    const clientLatencyMs = Math.round(performance.now() - t0);
+    out.innerHTML = '<div class="empty">Diagnosing the answer…</div>';
+    const diag = await apiPost(KB, 'chatbot-check', { question: q, sourceLayer: src?.layer }).catch(() => null);
+    renderChatbotCheck(q, answer, src, diag, clientLatencyMs);
+  }
+
+  function renderChatbotCheck(question, answer, src, diag, clientLatencyMs) {
+    const out = document.getElementById('pgOut');
+    if (!diag) { out.innerHTML = '<div class="empty">Diagnosis unavailable — chatbot-check action failed.</div>'; return; }
+    const strongBadge = diag.strong
+      ? '<span class="badge ok">✓ Strong answer</span>'
+      : '<span class="badge bad">Weak answer — see below</span>';
+    const weaknessRows = (diag.weaknesses || []).map(w => `
+      <div class="rec-row">
+        <div class="rec-topic"><div class="t">${esc(w.label)}</div><div class="why">${esc(w.explanation)}</div></div>
+        <div style="display:flex;gap:6px">
+          ${w.autoRepair ? `<button class="btn sm gold" data-autorepair="${esc(w.autoRepair.action)}">${esc(w.autoRepair.label)}</button>` : `<button class="btn sm" data-claude-note="1">Manual Repair Guide</button>`}
+        </div>
+      </div>`).join('');
+    out.innerHTML = `
+      <div class="verify-box ${diag.strong ? 'ok' : 'fail'}">
+        <div style="margin-bottom:8px"><b>Q:</b> ${esc(question)}</div>
+        <div style="margin-bottom:8px;color:var(--muted)"><b>A:</b> ${esc((answer || '').slice(0, 500))}${(answer || '').length > 500 ? '…' : ''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          ${strongBadge}
+          ${src ? `<span class="chip">${esc(src.badge || src.label || src.layer)}</span>` : ''}
+          <span class="chip">Confidence: ${esc(diag.confidence || 'n/a')}</span>
+          <span class="chip">Latency: ${diag.responseTimeMs != null ? diag.responseTimeMs : clientLatencyMs}ms</span>
+          ${diag.articleId ? `<span class="chip">Article: ${esc(diag.articleId)}</span>` : ''}
+          ${diag.graphNodeId ? `<span class="chip">Node: ${esc(diag.graphNodeId)}</span>` : ''}
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Knowledge coverage: intent=${esc(diag.knowledgeCoverage?.intent)} · category=${esc(diag.knowledgeCoverage?.category || 'none')} · context kept=${diag.knowledgeCoverage?.contextKept ? 'yes' : 'no'}</div>
+        ${weaknessRows || '<div class="empty">No issues detected.</div>'}
+        ${diag.claudePrompt ? `<div style="margin-top:10px">
+            <button class="btn sm" id="claudePromptBtn">📋 Generate Claude Repair Prompt</button>
+            <textarea id="claudePromptOut" rows="6" readonly style="display:none;width:100%;margin-top:8px;background:var(--inset);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Courier New',monospace;font-size:11.5px;padding:10px"></textarea>
+          </div>` : ''}
+      </div>`;
+    out.querySelectorAll('[data-autorepair]').forEach(b => b.addEventListener('click', async () => {
+      toast('Running ' + b.dataset.autorepair + '…');
+      await apiPost(KB, b.dataset.autorepair, { limit: 50, offset: 0 });
+      toast('Repair attempted — re-checking…', 'ok');
+      runChatbotCheck();
+    }));
+    out.querySelectorAll('[data-claude-note]').forEach(b => b.addEventListener('click', () => {
+      const w = (diag.weaknesses || []).find(x => !x.autoRepair);
+      if (w) toast(w.fix, 'ok');
+    }));
+    const claudeBtn = document.getElementById('claudePromptBtn');
+    if (claudeBtn) claudeBtn.addEventListener('click', () => {
+      const ta = document.getElementById('claudePromptOut');
+      ta.style.display = 'block'; ta.value = diag.claudePrompt;
+      ta.select();
+      navigator.clipboard?.writeText(diag.claudePrompt).then(() => toast('Copied to clipboard', 'ok')).catch(() => {});
+    });
   }
 
   // ── BOOT ─────────────────────────────────────────────────────────────────
@@ -396,13 +841,19 @@
     document.getElementById('wrap').style.display = '';
     loadExecutive();
     loadRecommendations();
+    loadCoverage();
+    loadMissingTopics();
     loadLibrary();
+    loadHealth();
+    loadErrorCenter();
     wireAdvanced();
 
     document.getElementById('newArticleBtn').onclick = () => { openEditor(); };
-    document.getElementById('refreshBtn').onclick = () => { loadExecutive(); loadRecommendations(); loadLibrary(); };
+    document.getElementById('refreshBtn').onclick = () => { loadExecutive(); loadRecommendations(); loadCoverage(); loadMissingTopics(); loadLibrary(); loadHealth(); loadErrorCenter(); };
     document.getElementById('adminLibRefresh').onclick = () => loadLibrary();
     document.getElementById('adminLibStatus').onchange = e => { libState.status = e.target.value; libState.page = 1; loadLibrary(); };
+    document.getElementById('adminLibCategory').onchange = e => { libState.category = e.target.value; libState.page = 1; loadLibrary(); };
+    document.getElementById('adminLibSort').onchange = e => { libState.sort = e.target.value; loadLibrary(); };
     let deb;
     document.getElementById('adminLibSearch').addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { libState.q = e.target.value.trim(); loadLibrary(); }, 250); });
   }

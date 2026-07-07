@@ -13,6 +13,7 @@ import { getAnchorEntries } from './anchor-entries.js';
 import { getMissingKnowledge, graphActive, countConcepts } from './kb-store.js';
 import { buildEvolutionReport } from './evolution-engine.js';
 import { queryArticles } from './ai-supabase.js';
+import { ARTICLE_CATEGORIES } from './article-categories.js';
 
 function byCategoryCount(items, getCat) {
   const out = {};
@@ -73,7 +74,7 @@ export async function buildContentDashboard(env, { limit = 50 } = {}) {
 // "repeated questions" are proxied honestly from kb_missing (the only query-demand
 // signal that exists); beginner/advanced demand is inferred from the level mix of
 // each category's existing graph concepts.
-export async function buildAuthorRecommendations(env, { limit = 50 } = {}) {
+export async function buildAuthorRecommendations(env, { limit = 50, topN = 10 } = {}) {
   const entries = getAnchorEntries();
   const graphByCategory = byCategoryCount(entries, e => e.category);
 
@@ -118,11 +119,60 @@ export async function buildAuthorRecommendations(env, { limit = 50 } = {}) {
   }).sort((a, b) => b.priority - a.priority);
 
   return {
-    rankedTopics: rankedTopics.slice(0, 10),
+    rankedTopics: rankedTopics.slice(0, topN),
     repeatedQuestions,
     beginnerDemand: rankedTopics.filter(r => r.audience === 'beginner').reduce((s, r) => s + r.frequency, 0),
     advancedDemand: rankedTopics.filter(r => r.audience === 'advanced').reduce((s, r) => s + r.frequency, 0),
     lowCoverageTopics: rankedTopics.filter(r => r.coverageGap).map(r => r.category),
     note: '"Most searched"/"repeated questions" are proxied from kb_missing (logged unanswered queries) — the only demand signal available without new analytics. Beginner/advanced split is inferred from each category\'s existing concept levels.',
+  };
+}
+
+function humanizeCategory(key) {
+  const known = ARTICLE_CATEGORIES.find(c => c.key === key);
+  if (known) return known.label;
+  return String(key || 'Uncategorized').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// CONTENT COVERAGE DASHBOARD (spec Phase 2-3) — every trading topic category the
+// site actually has data for, published-article count vs graph-concept count, and
+// a REAL coverage ratio. Categories are discovered dynamically from whatever is
+// actually in the graph (getAnchorEntries) and ai_articles — the union of both —
+// never a hardcoded/invented "total addressable topics" number (there is no such
+// ground truth anywhere in this codebase). Reuses the exact same byCategory maps
+// buildContentDashboard already computes; this is a presentation reshape, not a
+// new data source.
+export async function buildCoverageDashboard(env) {
+  const dashboard = await buildContentDashboard(env);
+  const graphByCategory = dashboard.graphGrowth.byCategory || {};
+  const articlesByCategory = dashboard.articleCoverage.byCategory || {};
+  const allCategories = new Set([...Object.keys(graphByCategory), ...Object.keys(articlesByCategory), ...ARTICLE_CATEGORIES.map(c => c.key)]);
+
+  const rows = [...allCategories].map(category => {
+    const articles = articlesByCategory[category] || 0;
+    const graphConcepts = graphByCategory[category] || 0;
+    // Coverage = how much of what's already known about this topic (graph concepts)
+    // has been turned into a published article. 100% when concepts exist and every
+    // one has at least proportional article coverage; capped at 100.
+    const coveragePct = graphConcepts > 0
+      ? Math.min(100, Math.round((articles / graphConcepts) * 100))
+      : (articles > 0 ? 100 : 0);
+    return {
+      category, label: humanizeCategory(category),
+      articles, graphConcepts, coveragePct,
+      isCanonicalArticleCategory: ARTICLE_CATEGORIES.some(c => c.key === category),
+    };
+  }).sort((a, b) => (b.graphConcepts + b.articles) - (a.graphConcepts + a.articles));
+
+  const totalArticles = dashboard.articleCoverage.totalArticles;
+  const totalConcepts = dashboard.graphGrowth.totalConcepts;
+  return {
+    rows,
+    totals: {
+      categories: rows.length,
+      totalArticles, totalConcepts,
+      overallCoveragePct: totalConcepts > 0 ? Math.min(100, Math.round((totalArticles / totalConcepts) * 100)) : 0,
+    },
+    note: 'Coverage % = published articles ÷ graph concepts logged for that category — both are real, queryable numbers. No fixed "total topics" target is invented; categories are discovered from the live graph + article table, not a hardcoded taxonomy.',
   };
 }

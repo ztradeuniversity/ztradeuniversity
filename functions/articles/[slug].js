@@ -91,8 +91,9 @@ function notFoundPage() {
 }
 
 function renderPage({ article, seo, related, widget, chips, images }) {
-  const title = escapeHtml(article.title);
-  const summary = escapeHtml(article.summary || '');
+  const pageTitle = escapeHtml(seo.metaTitle || article.title);
+  const h1 = escapeHtml(seo.h1 || article.title);
+  const summary = escapeHtml(seo.metaDescription || article.summary || '');
   const bodyHtml = renderMarkdown(article.content);
   const catLabel = escapeHtml(categoryLabel(article.category));
   const readingTime = article.reading_time ? `${article.reading_time} min read` : null;
@@ -113,6 +114,15 @@ function renderPage({ article, seo, related, widget, chips, images }) {
       </section>`
     : '';
 
+  const externalLinksHtml = (seo.externalLinks && seo.externalLinks.length)
+    ? `<section class="related-section">
+        <h2>Sources &amp; Further Reading</h2>
+        <div class="chips-row">
+          ${seo.externalLinks.map(l => `<a class="chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer nofollow">${escapeHtml(l.title || l.url)}</a>`).join('\n')}
+        </div>
+      </section>`
+    : '';
+
   const chipsHtml = (chips && chips.length)
     ? `<section class="chips-section">
         <h2>Ask the AI Mentor</h2>
@@ -125,21 +135,26 @@ function renderPage({ article, seo, related, widget, chips, images }) {
   const faqJsonLd = seo.faqSchema
     ? `<script type="application/ld+json">${JSON.stringify(seo.faqSchema)}</script>`
     : '';
+  const twitterCard = escapeHtml(seo.twitterCard || 'summary_large_image');
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(article.language || 'en')}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title} – Z Trade University</title>
+  <title>${pageTitle} – Z Trade University</title>
   <meta name="description" content="${summary}" />
   <link rel="canonical" href="${seo.canonicalUrl}" />
   <meta property="og:title" content="${escapeHtml(seo.ogTitle)}" />
   <meta property="og:description" content="${escapeHtml(seo.ogDescription)}" />
   <meta property="og:type" content="${escapeHtml(seo.ogType)}" />
   <meta property="og:url" content="${seo.ogUrl}" />
+  <meta name="twitter:card" content="${twitterCard}" />
+  <meta name="twitter:title" content="${escapeHtml(seo.ogTitle)}" />
+  <meta name="twitter:description" content="${escapeHtml(seo.ogDescription)}" />
   ${seo.keywordsCsv ? `<meta name="keywords" content="${escapeHtml(seo.keywordsCsv)}" />` : ''}
   ${heroImage ? `<meta property="og:image" content="${escapeHtml(heroImage.url)}" />` : ''}
+  ${heroImage ? `<meta name="twitter:image" content="${escapeHtml(heroImage.url)}" />` : ''}
   ${faqJsonLd}
   <link rel="icon" type="image/png" href="/assets/ztu-logo.png" />
   <link rel="stylesheet" href="/assets/lux-global.css" />
@@ -222,12 +237,13 @@ function renderPage({ article, seo, related, widget, chips, images }) {
   <div class="container">
     <div class="article-head">
       <div class="article-meta">${metaBits}</div>
-      <h1>${title}</h1>
+      <h1>${h1}</h1>
       ${summary ? `<p class="article-summary">${summary}</p>` : ''}
     </div>
     <div class="article-body">
       ${bodyHtml}
     </div>
+    ${externalLinksHtml}
     ${relatedHtml}
     ${chipsHtml}
   </div>
@@ -279,7 +295,7 @@ export async function onRequestGet(context) {
   const concept = conceptFromArticle(article) || {};
   const seo = buildSeoSuggestion(
     { ...concept, id: article.slug, title: article.title, seo: { description: article.summary || '', keywords: article.tags || [] } },
-    { baseUrl: BASE_URL, urlPath: `/articles/${article.slug}` }
+    { baseUrl: BASE_URL, urlPath: `/articles/${article.slug}`, overrides: article.seo_overrides || {} }
   );
 
   const images = await listImages(env, article.id).catch(() => []);

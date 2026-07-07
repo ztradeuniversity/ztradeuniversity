@@ -180,6 +180,16 @@ export async function insertResponseLog(env, data = {}) {
   }, 'return=minimal');
 }
 
+// Read-side companion to insertResponseLog — used only by the admin Chatbot
+// Checker (chatbot-diagnostics.js) to look up the analytics row for the answer
+// it just triggered (confidence/response_time_ms/article_id/graph_node_id/
+// is_fallback already logged by the live /api/ai-chat call). Analytics-only read.
+export async function getLatestResponseLog(env) {
+  if (!isConfigured(env)) return null;
+  const rows = await sbFetch(env, 'GET', 'ai_response_logs', 'order=created_at.desc&limit=1', null, null);
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // ai_articles + ai_article_images  (Module 5)
 // ════════════════════════════════════════════════════════════════════════════

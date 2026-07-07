@@ -29,7 +29,7 @@ import { buildEvolutionReport } from '../utils/evolution-engine.js';
 import { buildConceptFromArticle, INGEST_NOTES } from '../utils/article-ingest.js';
 import { suggestLinks, buildFaqSchema, buildSeoSuggestion } from '../utils/article-enrich.js';
 import { suggestRelatedArticles, buildInternalLinks, suggestSmartChips, buildRecommendationWidget, buildSitemapEntry } from '../utils/article-seo.js';
-import { buildContentDashboard, buildAuthorRecommendations } from '../utils/content-dashboard.js';
+import { buildContentDashboard, buildAuthorRecommendations, buildCoverageDashboard } from '../utils/content-dashboard.js';
 import { getAnchorEntries } from '../utils/anchor-entries.js';
 import { queryArticles } from '../utils/ai-supabase.js';
 import { strengthenGraphConnections } from '../utils/graph-growth.js';
@@ -37,8 +37,11 @@ import { embedText, embeddingText, cosineSim, isEmbeddingConfigured } from '../u
 import { buildIntelligenceReport } from '../utils/intelligence-dashboard.js';
 import { buildFeedbackRecommendations } from '../utils/feedback-loop.js';
 import { buildHealthReport } from '../utils/health-report.js';
-import { systemLogSummary } from '../utils/system-log.js';
+import { systemLogSummary, logSystemEvent } from '../utils/system-log.js';
 import { requireAdminModule } from '../utils/admin-session.js';
+import { diagnoseChatbotAnswer } from '../utils/chatbot-diagnostics.js';
+import { runHealthProbes } from '../utils/health-probes.js';
+import { buildErrorCenter } from '../utils/error-center.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -302,6 +305,63 @@ export async function onRequest(context) {
     if (action === 'health') {
       return json(await buildHealthReport(env));
     }
+    // CONTENT COVERAGE DASHBOARD (spec Phase 2-3) — real articles÷graph-concepts
+    // ratio per category, categories discovered dynamically (no invented totals).
+    // Pure reshape of buildContentDashboard's existing byCategory maps.
+    if (action === 'coverage-dashboard') {
+      return json(await buildCoverageDashboard(env));
+    }
+    // MISSING TOPIC ENGINE (spec Phase 4) — every category with real demand/gap
+    // signal (not just the top-8 shown in "Write This Next"), each tagged with
+    // which opportunity type(s) it represents. Reuses buildAuthorRecommendations'
+    // exact ranking — this is the same engine, just the full list instead of the
+    // top slice, with explicit opportunity flags for the 3-action UI.
+    if (action === 'missing-topics') {
+      const recs = await buildAuthorRecommendations(env, { limit: 200, topN: 100 }).catch(() => ({ rankedTopics: [] }));
+      const topics = (recs.rankedTopics || []).map(t => ({
+        ...t,
+        seoOpportunity: t.coverageGap,
+        graphOpportunity: t.graphConcepts === 0,
+        chatbotOpportunity: t.frequency > 0,
+      }));
+      return json({ topics, repeatedQuestions: recs.repeatedQuestions || [], note: recs.note });
+    }
+    // WEBSITE HEALTH CENTER — API STATUS (spec Phase 9). Fans out the new OpenAI/
+    // Supabase/Cloudflare probes (health-probes.js) alongside the EXISTING FRED/
+    // Finnhub/TwelveData probes (reused via an internal fetch to /api/diagnose —
+    // not reimplemented) into one Online/Offline/Warning table. Every probe result
+    // is logged via the existing logSystemEvent() so "Last Successful Check" /
+    // "Last Failure" are derivable from kb_system_log history with no new table.
+    if (action === 'health-live') {
+      const [marketDiag, extraProbes] = await Promise.all([
+        fetch(new URL('/api/diagnose', request.url).toString()).then(r => r.json()).catch(() => ({ providers: [] })),
+        runHealthProbes(env),
+      ]);
+      const providers = [...(marketDiag.providers || []), ...extraProbes];
+      await Promise.all(providers.map(p => logSystemEvent(env, {
+        kind: 'health-probe', level: p.ok ? 'info' : 'error',
+        message: `${p.service}: ${p.ok ? 'OK' : (p.rootCause || 'failed')}`,
+        meta: { service: p.service, ok: p.ok, ms: p.ms, httpStatus: p.httpStatus },
+      }).catch(() => {})));
+      const workingApis = providers.filter(p => p.ok).length;
+      const overallHealthPct = providers.length ? Math.round((workingApis / providers.length) * 100) : 0;
+      return json({
+        providers, workingApis, failedApis: providers.length - workingApis, overallHealthPct,
+        // AUTOMATION STATUS — honest by design (spec Phase 9 decision #3): all real
+        // automation is offline PowerShell under /automation, run on an operator
+        // machine — a Cloudflare Worker has zero process visibility into it. Porting
+        // governance-admin.html's exact disclosure rather than fabricating a status.
+        automation: {
+          status: 'Not Connected', reason: 'no runtime automation API exists',
+          note: 'The automation in this repo is PowerShell scripts under /automation (master_engine.ps1, compile_queue_engine.ps1, send_delivery_email.ps1) run on an operator machine — there is no runtime jobs API exposing their state to the browser. "Not Connected" is correct by design, not a failure.',
+        },
+        checkedAt: new Date().toISOString(),
+      });
+    }
+    // ERROR CENTER (spec Phase 9) — see error-center.js for the aggregation.
+    if (action === 'error-center') {
+      return json(await buildErrorCenter(env));
+    }
     return json({ error: 'unknown action' }, 400);
   }
 
@@ -376,6 +436,13 @@ export async function onRequest(context) {
       // graphs (recommended journeys, smart chips) grow to include the new one.
       const growth = result.ok ? await strengthenGraphConnections(env, body.object) : { added: 0, targets: [] };
       return json({ ...result, graphGrowth: growth });
+    }
+    // CHATBOT CHECKER (spec Phase 8) — diagnoses the most recent chat answer to
+    // `question`, reusing the exact retrieval chain + ai_response_logs row the
+    // live chat call already produced. See chatbot-diagnostics.js.
+    if (a === 'chatbot-check') {
+      if (!body.question) return json({ error: 'question required' }, 400);
+      return json(await diagnoseChatbotAnswer(env, { question: body.question, sourceLayer: body.sourceLayer }));
     }
     if (a === 'reject')       return json(await rejectToDraft(env, body.id, body.reviewer || 'admin', body.notes));
     if (a === 'retire')       return json(await retire(env, body.id));

@@ -88,7 +88,7 @@ export async function syncArticleToGraph(env, article) {
     // never populates `.seo` itself, so without this, ogDescription/keywordsCsv here
     // would always compute empty even though the live page renders real values from
     // article.summary/article.tags. One source of truth for what "SEO fields" means.
-    const seoSuggestion = buildSeoSuggestion({ ...kos, seo: { description: article.summary || '', keywords: article.tags || [] } }, { urlPath });
+    const seoSuggestion = buildSeoSuggestion({ ...kos, seo: { description: article.summary || '', keywords: article.tags || [] } }, { urlPath, overrides: article.seo_overrides || {} });
     const internalLinks = buildInternalLinks(kos, { conceptEntries: linkedEntries, relatedArticles });
     const smartChips = suggestSmartChips(kos, { conceptEntries: linkedEntries, relatedArticles });
     const recommendationWidget = buildRecommendationWidget(kos, internalLinks);
