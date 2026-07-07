@@ -167,6 +167,10 @@
     <div id="exploreOut" style="margin-top:12px"></div>
   </div>
 
+  <div class="sec-title">Auto Knowledge Capture</div>
+  <div class="sec-hint">When the chatbot falls back to OpenAI for a question with no verified Database/Graph answer, that answer is captured as a review draft — and auto-promotes to a real published article + Knowledge Graph concept once it's been independently regenerated 3 times at real confidence. Next time, Database answers instead of OpenAI.</div>
+  <div class="card" id="learnedCard"><div class="empty">Loading…</div></div>
+
   <div class="sec-title">Editor</div>
   <div class="card" id="editorLauncher">
     <button class="btn gold" id="newArticleBtn">+ New Article</button>
@@ -234,19 +238,23 @@
     </div>
   </details>
 
-  <div class="sec-title">Chatbot Checker</div>
-  <div class="sec-hint">Diagnostic tool, not a simple chatbot — enter a question, see exactly what the chatbot used to answer it and why, with one-click repair when possible.</div>
+  <div class="sec-title">Chatbot Checker — Diagnostic Mode</div>
+  <div class="sec-hint">Testing only — never affects real visitors. Enter a question, see exactly what the chatbot used to answer it and why, with one-click repair when possible.</div>
   <div class="card">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <input class="input-inline" id="pgQ" placeholder="Ask the chatbot a question…" />
       <select id="pgSourceMode" style="background:var(--inset);border:1px solid var(--border2);border-radius:9px;padding:8px 12px;color:var(--text);font-size:12.5px">
-        <option value="production">Production (real pipeline)</option>
+        <option value="production">Production (all sources enabled)</option>
       </select>
       <button class="btn sm gold" id="pgAsk">Check</button>
     </div>
-    <div style="font-size:11px;color:var(--dim);margin-top:6px">Source list is detected automatically from the live pipeline — never hardcoded.</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:6px">Source list is detected automatically from the live pipeline — never hardcoded. This mode overrides sources for THIS test call only and never changes what real visitors receive.</div>
     <div id="pgOut" style="margin-top:12px"><div class="empty">Enter a question above to diagnose the chatbot's answer.</div></div>
   </div>
+
+  <div class="sec-title">Chatbot Checker — Production Routing</div>
+  <div class="sec-hint" style="color:var(--bad)">⚠ This controls what EVERY real visitor receives, immediately, until changed again. Separate from Diagnostic Mode above.</div>
+  <div class="card" id="routingCard"><div class="empty">Loading routing config…</div></div>
 
 </div>
 

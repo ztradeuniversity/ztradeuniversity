@@ -68,6 +68,7 @@ import { normalizeMultilang, refineLanguage } from '../utils/lang-assist.js';
 import { detectLearningSpeed, adaptiveStance, smartRecommendation } from '../utils/adaptive-mentor.js';
 import { fallbackPathChips } from '../utils/journey-flow.js';
 import { requireAdminModule } from '../utils/admin-session.js';
+import { getSetting } from '../utils/site-settings.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -514,11 +515,25 @@ function mergeProfileIntoContext(clientTC, profile) {
 // environment. Per instruction: implement the infrastructure, leave the
 // unverifiable switches at their safe (always-on) default rather than risk an
 // unverified behavior change to a production chatbot.
-function buildExecutionContext(body, isAdminDiagnostic) {
+// Three layers, each optional, each safely defaulting to "on":
+//   1. Hardcoded defaults — always {all: true} — the ultimate fail-safe.
+//   2. Persisted Production Routing config (site_settings key 'chatbot_routing',
+//      admin-configurable via Chatbot Checker, affects EVERY real visitor) — only
+//      applied when a real object was actually read (any fetch failure/timeout/
+//      unconfigured Supabase falls through to layer 1, never breaks live chat).
+//   3. Per-request admin-diagnostic override (sourceFlags in the request body) —
+//      ONLY honored for an authenticated admin-diagnostic call, and ONLY for that
+//      one test call — never persisted, never affects other visitors.
+function buildExecutionContext(persistedRouting, body, isAdminDiagnostic) {
   const ctx = { database: true, graph: true, live: true, calc: true, openai: true };
+  if (persistedRouting && typeof persistedRouting === 'object') {
+    for (const k of Object.keys(ctx)) {
+      if (persistedRouting[k] === false) ctx[k] = false;
+    }
+  }
   if (isAdminDiagnostic && body && body.sourceFlags && typeof body.sourceFlags === 'object') {
     for (const k of Object.keys(ctx)) {
-      if (body.sourceFlags[k] === false) ctx[k] = false;
+      ctx[k] = body.sourceFlags[k] !== false;
     }
   }
   return ctx;
@@ -598,10 +613,15 @@ export async function onRequest(context) {
   // Fetch live market data + user memory + pattern context in parallel (best-effort)
   const baseUrl = new URL(request.url).origin;
 
-  const [marketRes, memoryRes, patternRes] = await Promise.allSettled([
+  // routingRes (4th) — the persisted Production Routing config (Chatbot Checker),
+  // fetched here so its Supabase read runs CONCURRENTLY with market/memory/
+  // pattern, adding zero extra sequential latency to a real chat request. Used
+  // further below once isAdminDiagnostic is known (see buildExecutionContext).
+  const [marketRes, memoryRes, patternRes, routingRes] = await Promise.allSettled([
     fetch(`${baseUrl}/api/sentiment`,  { signal: AbortSignal.timeout(3000) }),
     userId ? fetch(`${baseUrl}/api/ai-memory?userId=${encodeURIComponent(userId)}`, { signal: AbortSignal.timeout(2500) }) : Promise.resolve(null),
     fetch(`${baseUrl}/api/ai-patterns`, { signal: AbortSignal.timeout(3000) }),
+    getSetting(env, 'chatbot_routing', null),
   ]);
 
   let marketData  = null;
@@ -745,7 +765,11 @@ export async function onRequest(context) {
   // request may set a flag to false, and it only ever narrows behavior (skips an
   // existing "try this source" block, exactly like the existing not-found case
   // already does) — it never adds new behavior. See buildExecutionContext().
-  const ctx = buildExecutionContext(body, isAdminDiagnostic);
+  // persistedRouting was fetched concurrently with market/memory/pattern data
+  // above (routingRes) — reading it here, after that Promise.allSettled already
+  // resolved, adds zero extra latency to this request.
+  const persistedRouting = routingRes.status === 'fulfilled' ? routingRes.value : null;
+  const ctx = buildExecutionContext(persistedRouting, body, isAdminDiagnostic);
   let guestSetCookie = null;
   if (tier !== 'unlimited' && !isAdminDiagnostic) {
     const used = await readGuestCount(env, request);

@@ -26,7 +26,7 @@ import { inferCategory, estimateReadingTime, rankArticles } from './article-cate
 import { syncArticleToGraph } from './article-graph-sync.js';
 import { graphActive } from './kb-store.js';
 
-const PROMOTE_AT = 3;                 // independent regenerations before auto-promotion
+export const PROMOTE_AT = 3;          // independent regenerations before auto-promotion
 const DRAFT_AUTHOR = 'AI-Draft';
 
 export function learnEnabled(env) {

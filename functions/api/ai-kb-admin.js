@@ -42,6 +42,9 @@ import { requireAdminModule } from '../utils/admin-session.js';
 import { diagnoseChatbotAnswer, getTestableSources } from '../utils/chatbot-diagnostics.js';
 import { runHealthProbes } from '../utils/health-probes.js';
 import { buildErrorCenter } from '../utils/error-center.js';
+import { getSetting, setSetting } from '../utils/site-settings.js';
+import { listArticles } from '../utils/article-store.js';
+import { learnEnabled, PROMOTE_AT } from '../utils/llm-learn.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -374,6 +377,44 @@ export async function onRequest(context) {
       const category = new URL(request.url).searchParams.get('category') || null;
       return json(await buildExploreTitles(env, { limit: 80, category }));
     }
+    // PRODUCTION ROUTING (spec Phase 7) — the PERSISTED source config that
+    // controls REAL visitor traffic (distinct from the per-call diagnostic
+    // sourceFlags override). Defaults to all-enabled when never configured.
+    if (action === 'routing-config') {
+      const config = await getSetting(env, 'chatbot_routing', { database: true, graph: true, live: true, calc: true, openai: true });
+      return json({ config });
+    }
+    // AUTO KNOWLEDGE CAPTURE (spec Phase 8) — this already exists end-to-end in
+    // llm-learn.js (captures an OpenAI fallback answer as an ai_articles draft,
+    // auto-promotes to a real published article + Knowledge Graph concept after
+    // PROMOTE_AT independent regenerations at non-LOW confidence) but was
+    // completely invisible in Content Center — an admin had no way to see how
+    // many drafts exist or how close each is to promotion. This surfaces the
+    // REAL stored state (tags: ai-draft, key:*, count:N), nothing simulated.
+    if (action === 'learned-drafts') {
+      const enabled = learnEnabled(env);
+      const all = await listArticles(env, { status: 'all', limit: 200 }).catch(() => []);
+      const drafts = all
+        .filter(a => Array.isArray(a.tags) && a.tags.includes('ai-draft'))
+        .map(a => {
+          const countTag = (a.tags || []).find(t => /^count:\d+$/.test(String(t)));
+          const count = countTag ? parseInt(String(countTag).split(':')[1], 10) || 1 : 1;
+          return {
+            id: a.id, title: a.title, category: a.category, count,
+            promoteAt: PROMOTE_AT, promoted: !!a.is_active,
+            progressPct: Math.min(100, Math.round((count / PROMOTE_AT) * 100)),
+            updatedAt: a.updated_at,
+          };
+        })
+        .sort((x, y) => new Date(y.updatedAt || 0) - new Date(x.updatedAt || 0));
+      return json({
+        enabled, drafts,
+        totals: { total: drafts.length, promoted: drafts.filter(d => d.promoted).length, pending: drafts.filter(d => !d.promoted).length },
+        note: enabled
+          ? 'AI_LEARN_ENABLED is on — OpenAI fallback answers are captured as review drafts and auto-promote to a real article + Knowledge Graph concept after 3 independent regenerations (never LOW confidence).'
+          : 'AI_LEARN_ENABLED is off (default) — OpenAI fallback answers are used once and not captured. Set AI_LEARN_ENABLED=true to enable capture.',
+      });
+    }
     return json({ error: 'unknown action' }, 400);
   }
 
@@ -455,6 +496,17 @@ export async function onRequest(context) {
     if (a === 'chatbot-check') {
       if (!body.question) return json({ error: 'question required' }, 400);
       return json(await diagnoseChatbotAnswer(env, { question: body.question, sourceLayer: body.sourceLayer }));
+    }
+    // PRODUCTION ROUTING — persists the source config every REAL /api/ai-chat
+    // request reads (see ai-chat.js's buildExecutionContext). Distinct and
+    // separate from the per-call diagnostic sourceFlags override — this
+    // affects every visitor until changed again.
+    if (a === 'routing-config') {
+      if (!body.config || typeof body.config !== 'object') return json({ error: 'config object required' }, 400);
+      const clean = {};
+      for (const k of ['database', 'graph', 'live', 'calc', 'openai']) clean[k] = body.config[k] !== false;
+      const saved = await setSetting(env, 'chatbot_routing', clean);
+      return json({ saved: !!saved, config: clean });
     }
     if (a === 'reject')       return json(await rejectToDraft(env, body.id, body.reviewer || 'admin', body.notes));
     if (a === 'retire')       return json(await retire(env, body.id));

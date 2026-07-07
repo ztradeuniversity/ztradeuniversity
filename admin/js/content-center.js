@@ -140,10 +140,11 @@
       `Problem Summary: ${e.name}`,
       `Module: ${e.module}`,
       `Verified Root Cause: ${e.rootCause}`,
+      e.detail ? `Real Error Detail (from kb_system_log.meta): ${e.detail}` : null,
       `Affected: ${e.articleId ? 'ai_articles row ' + e.articleId : e.module + ' pipeline (see functions/utils/' + e.module + '.js or functions/api/*.js for this module)'}`,
       `Suggested Fix: ${e.manualFix || 'Investigate the module above using the root cause and repair the underlying issue.'}`,
       `Expected Result: the error stops recurring in kb_system_log / the article publishes successfully.`,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
   }
   async function loadErrorCenter() {
     const data = await apiGet(KB + '?action=error-center');
@@ -158,7 +159,9 @@
     if (!errors.length) { card.innerHTML = summary + '<div class="empty">No errors detected — nothing has failed.</div>'; return; }
     card.innerHTML = summary + errors.slice(0, 30).map((e, i) => `
       <div class="rec-row">
-        <div class="rec-topic"><div class="t">${esc(e.name)}</div><div class="why">${esc(e.rootCause || '')} — ${e.occurrences}× · last ${e.lastOccurrence ? new Date(e.lastOccurrence).toLocaleString() : '—'}</div></div>
+        <div class="rec-topic"><div class="t">${esc(e.name)}</div><div class="why">${esc(e.rootCause || '')} — ${e.occurrences}× · last ${e.lastOccurrence ? new Date(e.lastOccurrence).toLocaleString() : '—'}</div>
+          ${e.detail ? `<div style="font-size:10.5px;color:var(--dim);font-family:'Courier New',monospace;margin-top:3px;word-break:break-word">${esc(e.detail)}</div>` : ''}
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${e.autoRepair ? `<button class="btn sm gold" data-err-repair="${i}">${esc(e.autoRepair.label)}</button>` : ''}
           ${!e.autoRepair && e.manualFix ? `<button class="btn sm" data-err-manual="${i}">Manual Repair Guide</button>` : ''}
@@ -240,6 +243,31 @@
         </div>
       </div>`).join('')}</div>`;
     out.querySelectorAll('[data-explore-mode]').forEach(b => b.addEventListener('click', () => startTopicAction(b.dataset.exploreTitle, b.dataset.exploreMode)));
+  }
+
+  // AUTO KNOWLEDGE CAPTURE (spec Phase 8) — surfaces the ALREADY-BUILT llm-learn.js
+  // system (was invisible before). Real stored data only: ai_articles rows tagged
+  // 'ai-draft' with their real regeneration count vs the real PROMOTE_AT threshold.
+  async function loadLearnedKnowledge() {
+    const card = document.getElementById('learnedCard');
+    const data = await apiGet(KB + '?action=learned-drafts');
+    const drafts = data.drafts || [];
+    const statusChip = data.enabled
+      ? '<span class="chip chat">AI_LEARN_ENABLED = on</span>'
+      : '<span class="chip">AI_LEARN_ENABLED = off (default)</span>';
+    if (!drafts.length) {
+      card.innerHTML = `<div style="margin-bottom:10px">${statusChip}</div><div class="empty">${esc(data.note || 'No captured drafts yet.')}</div>`;
+      return;
+    }
+    card.innerHTML = `
+      <div style="margin-bottom:10px">${statusChip} <span class="chip">${data.totals?.promoted ?? 0} promoted</span> <span class="chip">${data.totals?.pending ?? 0} pending</span></div>
+      ${drafts.slice(0, 20).map(d => `
+        <div class="rec-row">
+          <div class="rec-topic"><div class="t">${esc(d.title)}</div><div class="why">${esc(humanize(d.category))} · regenerated ${d.count}/${d.promoteAt} times</div></div>
+          <div style="width:120px;background:var(--inset);border-radius:100px;height:8px;overflow:hidden"><div style="width:${d.progressPct}%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>
+          <span class="badge ${d.promoted ? 'ok' : 'dim'}">${d.promoted ? 'Promoted' : 'Draft'}</span>
+        </div>`).join('')}
+      <div style="font-size:11px;color:var(--dim);margin-top:8px">${esc(data.note || '')}</div>`;
   }
 
   // Opens the editor pre-seeded from a missing-topic row, in the mode the admin
@@ -335,7 +363,19 @@
         <div class="field"><label>Tags (comma-separated)</label><input type="text" id="edTags" /></div>
       </div>
       <div class="field"><label>Summary / meta description</label><input type="text" id="edSummary" /></div>
-      <div id="aiGenerateRow" style="display:none;margin-bottom:10px"><button class="btn sm gold" id="generateAiBtn">🤖 Generate with AI</button> <span id="aiGenNote" style="font-size:11.5px;color:var(--muted)"></span></div>
+      <div id="aiGenerateRow" style="display:none;margin-bottom:10px;flex-wrap:wrap;align-items:center;gap:10px">
+        <select id="edWordCount" style="background:var(--inset);border:1px solid var(--border2);border-radius:9px;padding:8px 12px;color:var(--text);font-size:12.5px">
+          <option value="300-500">300–500 words</option>
+          <option value="500-800">500–800 words</option>
+          <option value="700-1100" selected>700–1100 words (default)</option>
+          <option value="800-1200">800–1200 words</option>
+          <option value="1200-2000">1200–2000 words</option>
+          <option value="2000-3000">2000–3000 words</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <input id="edWordCountCustom" type="text" placeholder="e.g. 1500-1800" style="display:none;width:120px;background:var(--inset);border:1px solid var(--border2);border-radius:9px;padding:8px 10px;color:var(--text);font-size:12.5px" />
+        <button class="btn sm gold" id="generateAiBtn">🤖 Generate with AI</button> <span id="aiGenNote" style="font-size:11.5px;color:var(--muted)"></span>
+      </div>
       <div class="field"><label>Content (Markdown)</label><textarea id="edContent" rows="16"></textarea></div>
       <div id="briefExtras"></div>
 
@@ -451,6 +491,9 @@
     if (mode === 'ai' && !document.getElementById('generateAiBtn')._wired) {
       document.getElementById('generateAiBtn')._wired = true;
       document.getElementById('generateAiBtn').onclick = generateWithAi;
+      document.getElementById('edWordCount').addEventListener('change', e => {
+        document.getElementById('edWordCountCustom').style.display = e.target.value === 'custom' ? 'inline-block' : 'none';
+      });
     }
     if (mode === 'seo-auto' && !document.getElementById('autoSeoBtn')._wired) {
       document.getElementById('autoSeoBtn')._wired = true;
@@ -554,13 +597,24 @@
     toast('Brief ready — write manually or switch to AI Writing', 'ok');
   }
 
+  // WORD COUNT SELECTOR (spec Phase 1) — parses the preset select (or the
+  // "custom" free-text field) into a real {min,max} pair; falls back to the
+  // 700-1100 default on anything unparseable, never throws.
+  function selectedWordRange() {
+    const sel = document.getElementById('edWordCount').value;
+    const raw = sel === 'custom' ? document.getElementById('edWordCountCustom').value : sel;
+    const m = String(raw || '').match(/(\d+)\s*-\s*(\d+)/);
+    if (!m) return { wordCountMin: 700, wordCountMax: 1100 };
+    const min = parseInt(m[1], 10), max = parseInt(m[2], 10);
+    return { wordCountMin: Math.min(min, max), wordCountMax: Math.max(min, max) };
+  }
   async function generateWithAi() {
     const brief = editorState.brief || {
       title: document.getElementById('edTitleField').value,
       tags: document.getElementById('edTags').value.split(',').map(s => s.trim()).filter(Boolean),
     };
     document.getElementById('aiGenNote').textContent = 'Generating…';
-    const data = await apiPost(ART, 'ai-generate', { brief });
+    const data = await apiPost(ART, 'ai-generate', { brief, ...selectedWordRange() });
     if (!data.generated) { document.getElementById('aiGenNote').textContent = data.note || 'AI writing unavailable — write manually.'; return; }
     document.getElementById('edContent').value = data.content;
     // AI GENERATION AUDIT (spec) — model/generation-time/tokens/cost are the REAL
@@ -569,6 +623,8 @@
     // per-1K pricing env vars; otherwise the honest costNote explains why.
     const u = data.usage || {};
     const bits = [];
+    const realWordCount = data.content.trim().split(/\s+/).filter(Boolean).length;
+    bits.push('Word count: ' + realWordCount);
     if (u.provider) bits.push('Provider: ' + u.provider);
     if (u.model) bits.push('Model: ' + u.model);
     if (u.ms != null) bits.push('Generation time: ' + u.ms + 'ms');
@@ -904,6 +960,41 @@
     chatbotSourceKeys = sources.map(s => s.key);
     sel.innerHTML = '<option value="production">Production (all sources enabled)</option>'
       + sources.map(s => `<option value="${esc(s.key)}"${s.note ? ` title="${esc(s.note)}"` : ''}>${esc(s.label)} Only</option>`).join('');
+    if (!routingSourceMeta.length) routingSourceMeta = sources;
+  }
+
+  // PRODUCTION ROUTING (spec Phase 7) — separate, persisted, affects real
+  // visitors immediately. Distinct control surface from the Diagnostic Mode
+  // dropdown above (which only overrides ONE test call, never persisted).
+  let routingSourceMeta = [];
+  async function loadRoutingConfig() {
+    const card = document.getElementById('routingCard');
+    const [cfgData] = await Promise.all([
+      apiGet(KB + '?action=routing-config'),
+      chatbotSourceKeys.length ? Promise.resolve() : loadChatbotSources(),
+    ]);
+    const cfg = cfgData.config || { database: true, graph: true, live: true, calc: true, openai: true };
+    let meta = routingSourceMeta.length ? routingSourceMeta : chatbotSourceKeys.map(k => ({ key: k, label: humanize(k) }));
+    // Fallback list (spec's own documented 5 sources) if the live source-detection
+    // call didn't return anything — keeps the panel usable instead of blank; the
+    // checkbox states themselves still only ever reflect the real persisted config.
+    if (!meta.length) meta = ['database', 'graph', 'live', 'calc', 'openai'].map(k => ({ key: k, label: humanize(k) }));
+    card.innerHTML = meta.map(s => `
+      <div class="rec-row">
+        <div class="rec-topic"><div class="t">${esc(s.label)}</div>${s.note ? `<div class="why">${esc(s.note)}</div>` : ''}</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" data-routing-key="${esc(s.key)}" ${cfg[s.key] !== false ? 'checked' : ''} />
+          <span style="font-size:11.5px;color:var(--muted)">${cfg[s.key] !== false ? 'Enabled for all visitors' : 'Disabled for all visitors'}</span>
+        </label>
+      </div>`).join('');
+    card.querySelectorAll('[data-routing-key]').forEach(cb => cb.addEventListener('change', async () => {
+      const newCfg = {};
+      card.querySelectorAll('[data-routing-key]').forEach(x => { newCfg[x.dataset.routingKey] = x.checked; });
+      toast('Updating production routing for all visitors…');
+      const r = await apiPost(KB, 'routing-config', { config: newCfg }).catch(() => null);
+      toast(r && r.saved ? 'Production routing updated — live now' : 'Failed to save — check Error Center', r && r.saved ? 'ok' : 'bad');
+      loadRoutingConfig();
+    }));
   }
 
   // ── CHATBOT CHECKER (spec Phase 8) — diagnostic tool, not a simple chatbot.
@@ -1040,11 +1131,13 @@
     loadLibrary();
     loadHealth();
     loadErrorCenter();
+    loadRoutingConfig();
+    loadLearnedKnowledge();
     wireAdvanced();
 
     document.getElementById('newArticleBtn').onclick = () => { openEditor(); };
     document.getElementById('exploreBtn').onclick = () => runExplore();
-    document.getElementById('refreshBtn').onclick = () => { loadExecutive(); loadRecommendations(); loadCoverage(); loadMissingTopics(); loadLibrary(); loadHealth(); loadErrorCenter(); };
+    document.getElementById('refreshBtn').onclick = () => { loadExecutive(); loadRecommendations(); loadCoverage(); loadMissingTopics(); loadLibrary(); loadHealth(); loadErrorCenter(); loadRoutingConfig(); loadLearnedKnowledge(); };
     document.getElementById('adminLibRefresh').onclick = () => loadLibrary();
     document.getElementById('adminLibStatus').onchange = e => { libState.status = e.target.value; libState.page = 1; loadLibrary(); };
     document.getElementById('adminLibCategory').onchange = e => { libState.category = e.target.value; libState.page = 1; loadLibrary(); };

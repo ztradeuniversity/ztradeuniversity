@@ -380,7 +380,11 @@ export async function onRequest(context) {
   // not a second AI system. Never persists; the admin reviews before publishing.
   if (action === 'ai-generate') {
     const brief = (data && data.brief) || {};
-    const { content, meta } = await generateArticleDraft(env, brief);
+    // WORD COUNT SELECTOR (spec Phase 1) — real range, clamped to sane bounds;
+    // falls back to the original 700-1100 default when the client sends nothing.
+    const wordCountMin = Math.max(50, Math.min(10000, parseInt(data?.wordCountMin, 10) || 700));
+    const wordCountMax = Math.max(wordCountMin, Math.min(10000, parseInt(data?.wordCountMax, 10) || 1100));
+    const { content, meta } = await generateArticleDraft(env, brief, { wordCountMin, wordCountMax });
     if (!content) return json({ configured: true, generated: false, note: 'AI writing is not configured, or the model call failed — write manually, or try again.', usage: meta });
     // AUDIT DATA (spec: "do not estimate, use real API response usage") — model/
     // generation-time/provider are always real (measured or echoed from the API

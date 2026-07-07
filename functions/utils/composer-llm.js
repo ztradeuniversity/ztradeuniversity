@@ -77,11 +77,11 @@ function withTimeout(promise, ms, label) {
 // total_tokens) plus the real model id. Never populated with an estimate — if
 // omitted (every existing caller of callModel/callOpenAI that doesn't pass one),
 // behavior is 100% unchanged.
-async function callOpenAIOnce(oa, messages, meta) {
+async function callOpenAIOnce(oa, messages, meta, maxTokens = 700) {
   const res = await fetch(oa.endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${oa.key}` },
-    body: JSON.stringify({ model: oa.model, messages, max_tokens: 700, temperature: 0.4 }),
+    body: JSON.stringify({ model: oa.model, messages, max_tokens: maxTokens, temperature: 0.4 }),
     signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) {
@@ -99,9 +99,9 @@ async function callOpenAIOnce(oa, messages, meta) {
 // transient failure (timeout, 429, 5xx) before giving up, and surface the failure
 // via system-log so admins can see it instead of it disappearing into a silent
 // fallback. Never throws — callers already treat a thrown error as "no LLM text".
-async function callOpenAI(oa, messages, env, meta) {
+async function callOpenAI(oa, messages, env, meta, maxTokens = 700) {
   try {
-    return await callOpenAIOnce(oa, messages, meta);
+    return await callOpenAIOnce(oa, messages, meta, maxTokens);
   } catch (e1) {
     const retryable = !e1.status || e1.status === 429 || e1.status >= 500;
     if (!retryable) {
@@ -109,7 +109,7 @@ async function callOpenAI(oa, messages, env, meta) {
       throw e1;
     }
     try {
-      return await callOpenAIOnce(oa, messages, meta);
+      return await callOpenAIOnce(oa, messages, meta, maxTokens);
     } catch (e2) {
       logLLMFailure(env, 'openai', e2);
       throw e2;
@@ -127,7 +127,11 @@ function logLLMFailure(env, engine, err) {
 // `meta` (optional, out-param) — same contract as callOpenAIOnce: only
 // populated for callers that pass an object (currently just generateArticleDraft
 // for the AI-generation audit trail). Every other existing caller is unaffected.
-async function callModel(env, system, user, meta) {
+// `maxTokens` (optional, default 700 — unchanged for every existing caller that
+// doesn't pass it: chat answers, translation, briefs). generateArticleDraft is
+// currently the only caller that overrides this, so a 2000-3000 word article
+// isn't silently truncated at the ~500-550-word ceiling 700 tokens allows.
+async function callModel(env, system, user, meta, maxTokens = 700) {
   const messages = [{ role: 'system', content: system }, { role: 'user', content: user }];
 
   // PRIMARY engine: Cloudflare Workers AI (default; free-tier, lowest cost). On a
@@ -140,7 +144,7 @@ async function callModel(env, system, user, meta) {
     try {
       // Workers AI has no built-in timeout — cap it so a hung binding never freezes the reply.
       const t0 = Date.now();
-      const r = await withTimeout(env.AI.run(model, { messages, max_tokens: 700, temperature: 0.4 }), 8000, 'workers-ai');
+      const r = await withTimeout(env.AI.run(model, { messages, max_tokens: maxTokens, temperature: 0.4 }), 8000, 'workers-ai');
       cfText = (r && (r.response || r.result || (typeof r === 'string' ? r : ''))) || '';
       // HONEST AUDIT DATA: Workers AI text-generation responses for this model do
       // not include a token-usage block (confirmed by the actual response shape
@@ -154,7 +158,7 @@ async function callModel(env, system, user, meta) {
     // when explicitly enabled (OPENAI_FALLBACK_ENABLED=true).
     const oa = resolveOpenAI(env);
     if (oa.usable && oa.fallbackEnabled) {
-      try { return await callOpenAI(oa, messages, env, meta); } catch { return ''; }
+      try { return await callOpenAI(oa, messages, env, meta, maxTokens); } catch { return ''; }
     }
     return '';
   }
@@ -164,7 +168,7 @@ async function callModel(env, system, user, meta) {
   // ultimate fallback if this returns empty.
   const oa = resolveOpenAI(env);
   if (oa.usable) {
-    try { return await callOpenAI(oa, messages, env, meta); } catch { return ''; }
+    try { return await callOpenAI(oa, messages, env, meta, maxTokens); } catch { return ''; }
   }
   return '';
 }
@@ -292,13 +296,27 @@ export async function generateArticleBrief(env, topic, overrides = {}) {
   return merged;
 }
 
-const DRAFT_SYSTEM = `You are a senior trading educator writing for Z Trade University (Gold XAU/USD, Bitcoin, and general trading education). Write a complete, well-structured article in Markdown (## headings, occasional bullet lists) following the given outline.
+// `wordRange` is interpolated into the system prompt (word-count selector,
+// spec Phase 1) — defaults to the original 700-1100 when the caller doesn't
+// specify a range, so existing behavior is unchanged unless a range is chosen.
+function draftSystem(wordRange) {
+  return `You are a senior trading educator writing for Z Trade University (Gold XAU/USD, Bitcoin, and general trading education). Write a complete, well-structured article in Markdown (## headings, occasional bullet lists) following the given outline.
 STRICT RULES:
 1. Educational only — never give a buy/sell signal or a specific entry/exit price.
 2. Do not invent specific prices, statistics, or current market data — teach concepts and frameworks, not live numbers.
 3. Confident, clear, human tone — no filler, no repeated disclaimers, no chain-of-thought.
-4. Follow the given outline order. Aim for 700-1100 words.
-5. Output ONLY the article body in Markdown — no title heading (handled separately), no preamble, no meta-commentary.`;
+4. Follow the given outline order. Target length: ${wordRange} words — stay inside this range; do not pad with filler to reach it, and do not run over it.
+5. If FAQ questions are provided, weave a "## Frequently Asked Questions" section near the end answering each one briefly.
+6. If related-topic hints are provided, naturally reference them once each where relevant (no forced list, no link syntax — plain mentions only).
+7. Output ONLY the article body in Markdown — no title heading (handled separately), no preamble, no meta-commentary.`;
+}
+
+// Word-count presets (spec Phase 1) → approximate max_tokens ceiling. ~1.5
+// tokens/word is a safe upper bound for English (never truncates early); capped
+// at 4000 to stay within a single completion call for every supported model.
+function tokensForWordCount(max) {
+  return Math.min(4000, Math.max(400, Math.ceil((max || 1100) * 1.5)));
+}
 
 // Returns { content, meta } — content is the generated Markdown body (or null
 // when the LLM is unconfigured or the call fails). `meta` is the REAL audit
@@ -310,14 +328,31 @@ STRICT RULES:
 // "write manually, or try again" note rather than silently producing empty
 // content, and surfaces meta as-is (spec: "AI Generation — do not estimate,
 // use real API response usage").
-export async function generateArticleDraft(env, brief = {}) {
+//
+// `wordCountMin`/`wordCountMax` (spec Phase 1 word-count selector) thread
+// through to BOTH the prompt's target-length instruction and the real
+// max_tokens budget sent to the model — a large range (e.g. 2000-3000 words)
+// no longer gets silently truncated at the old fixed 700-token ceiling.
+//
+// The full Prepared Brief now feeds generation, not just outline/keywords
+// (spec Phase 1: "everything generated ... must automatically feed the
+// article generation pipeline") — FAQ questions and internal-link hints are
+// passed through so the model weaves them in, instead of only ever being
+// displayed read-only in the editor.
+export async function generateArticleDraft(env, brief = {}, { wordCountMin = 700, wordCountMax = 1100 } = {}) {
   const meta = { provider: null, model: null, ms: null, usage: null };
   if (!llmConfigured(env)) return { content: null, meta };
   const outline = Array.isArray(brief.outline) && brief.outline.length ? brief.outline.join('\n- ') : '(no outline provided — use your own structure)';
-  const prompt = `Topic: ${brief.title || ''}\nOutline:\n- ${outline}\nKeywords to naturally include where relevant: ${(brief.keywords || []).join(', ')}`;
+  const faqLines = Array.isArray(brief.faqs) && brief.faqs.length
+    ? '\nFAQ questions to answer in the FAQ section:\n- ' + brief.faqs.map(f => f.question).filter(Boolean).join('\n- ')
+    : '';
+  const linkLines = Array.isArray(brief.internalLinkHints) && brief.internalLinkHints.length
+    ? '\nRelated topics to naturally mention once each: ' + brief.internalLinkHints.join(', ')
+    : '';
+  const prompt = `Topic: ${brief.title || ''}\nOutline:\n- ${outline}\nKeywords to naturally include where relevant: ${(brief.keywords || []).join(', ')}${faqLines}${linkLines}`;
   const t0 = Date.now();
   try {
-    const out = await callModel(env, DRAFT_SYSTEM, prompt, meta);
+    const out = await callModel(env, draftSystem(`${wordCountMin}-${wordCountMax}`), prompt, meta, tokensForWordCount(wordCountMax));
     if (meta.ms == null) meta.ms = Date.now() - t0; // OpenAI path doesn't set ms itself — measure it here
     const text = (out && typeof out === 'string') ? out.trim() : '';
     return { content: text.length > 80 ? text : null, meta };

@@ -19,6 +19,15 @@ export function classifyApiError(provider, err, status = null) {
   // Recover an HTTP status from the thrown message ("HTTP 429 …") when not passed.
   const m = msg.match(/\bHTTP (\d{3})\b/);
   const s = status != null ? status : (m ? Number(m[1]) : null);
+  // BUGFIX (found via live Error Center testing — "TwelveData: Unknown" with no
+  // useful detail): a native fetch/AbortController timeout throws a DOMException
+  // named 'AbortError' (message like "The operation was aborted"), which never
+  // matched the /Timeout \(/i pattern below (that literal-text pattern only
+  // matches the custom Error message health-probes.js's own timeout wrapper
+  // throws) — so every real network timeout from diagnose.js's probes
+  // (FRED/Finnhub/TwelveData) fell through to the generic 'Unknown' category
+  // instead of 'Timeout'. Recognize the real DOMException shape too.
+  const isAbort = (err && (err.name === 'AbortError' || err.name === 'TimeoutError'));
 
   let category = 'Unknown', phase = 'during-request', recommended_fix = '';
 
@@ -31,7 +40,7 @@ export function classifyApiError(provider, err, status = null) {
   } else if (s === 429 || /quota|rate.?limit|exceeded|too many requests/i.test(msg)) {
     category = 'Rate limit / quota exceeded'; phase = 'after-response';
     recommended_fix = `Lower request rate or fix ${provider} plan/billing; values resume when the limit clears.`;
-  } else if (/Timeout \(/i.test(msg) || s === 524) {
+  } else if (/Timeout \(/i.test(msg) || isAbort || s === 524) {
     category = 'Timeout'; phase = 'during-request';
     recommended_fix = `${provider} responded too slowly; check provider latency (raising the timeout only helps if it eventually returns valid data).`;
   } else if (s != null && s >= 520 && s <= 526) {
