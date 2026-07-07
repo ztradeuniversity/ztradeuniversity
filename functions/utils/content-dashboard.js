@@ -104,7 +104,7 @@ export async function buildAuthorRecommendations(env, { limit = 50, topN = 10 } 
     .sort((a, b) => b.frequency - a.frequency)
     .slice(0, 10);
 
-  const rankedTopics = Object.entries(byCategory).map(([category, data]) => {
+  let rankedTopics = Object.entries(byCategory).map(([category, data]) => {
     const coverageGap = !articlesByCategory[category];
     const lvl = levelByCategory[category] || { beginner: 0, total: 0 };
     const audience = (lvl.total ? lvl.beginner / lvl.total : 0) >= 0.5 ? 'beginner' : 'advanced';
@@ -118,13 +118,39 @@ export async function buildAuthorRecommendations(env, { limit = 50, topN = 10 } 
     };
   }).sort((a, b) => b.priority - a.priority);
 
+  // FALLBACK — "Write This Next" must never show an empty box when real gap
+  // data exists (no kb_missing demand logged yet is common on a fresh/low-
+  // traffic site). Falls back to a DIFFERENT real signal already computed
+  // above: Knowledge Graph categories with concepts but zero published
+  // articles. Still 100% real data (graphByCategory/articlesByCategory are the
+  // actual counts) — frequency stays 0 (never invented) and priority ranks by
+  // real graph-concept count instead.
+  let usedFallback = false;
+  if (!rankedTopics.length) {
+    usedFallback = true;
+    rankedTopics = Object.entries(graphByCategory)
+      .filter(([category]) => !articlesByCategory[category])
+      .map(([category, graphConcepts]) => {
+        const lvl = levelByCategory[category] || { beginner: 0, total: 0 };
+        const audience = (lvl.total ? lvl.beginner / lvl.total : 0) >= 0.5 ? 'beginner' : 'advanced';
+        return {
+          category, audience, frequency: 0, priority: graphConcepts,
+          coverageGap: true, graphConcepts, topQuestions: [],
+          suggestion: `${graphConcepts} graph concept${graphConcepts === 1 ? '' : 's'} already exist for "${category}" with zero published articles — no chatbot demand logged yet, but this is a real coverage gap worth writing for.`,
+        };
+      })
+      .sort((a, b) => b.priority - a.priority);
+  }
+
   return {
     rankedTopics: rankedTopics.slice(0, topN),
     repeatedQuestions,
     beginnerDemand: rankedTopics.filter(r => r.audience === 'beginner').reduce((s, r) => s + r.frequency, 0),
     advancedDemand: rankedTopics.filter(r => r.audience === 'advanced').reduce((s, r) => s + r.frequency, 0),
     lowCoverageTopics: rankedTopics.filter(r => r.coverageGap).map(r => r.category),
-    note: '"Most searched"/"repeated questions" are proxied from kb_missing (logged unanswered queries) — the only demand signal available without new analytics. Beginner/advanced split is inferred from each category\'s existing concept levels.',
+    note: usedFallback
+      ? 'No chatbot demand (kb_missing) logged yet — ranked instead by real Knowledge Graph coverage gaps (categories with concepts but no article).'
+      : '"Most searched"/"repeated questions" are proxied from kb_missing (logged unanswered queries) — the only demand signal available without new analytics. Beginner/advanced split is inferred from each category\'s existing concept levels.',
   };
 }
 
@@ -184,7 +210,12 @@ export async function buildCoverageDashboard(env) {
 // (2) every real unanswered chatbot question (kb_missing) verbatim, sentence-cased
 // into a title. Demand-sourced titles are deduped first (real user signal ranks
 // above a structural gap).
-export async function buildExploreTitles(env, { limit = 60 } = {}) {
+// `category` (optional) scopes to one Content Coverage row's "Explore" action —
+// when set, returns EVERY real candidate in that category (not capped by
+// `limit`, since a single category's real concept/demand count is already a
+// natural bound — e.g. up to ~38 for a 38-concept category), so "many real
+// titles" isn't artificially truncated to the global top-60.
+export async function buildExploreTitles(env, { limit = 60, category = null } = {}) {
   const entries = getAnchorEntries();
   const articles = await queryArticles(env, { limit: 500 }).catch(() => []);
   const articleTitles = new Set(articles.map(a => String(a.title || '').toLowerCase().trim()).filter(Boolean));
@@ -192,6 +223,7 @@ export async function buildExploreTitles(env, { limit = 60 } = {}) {
 
   const fromDemand = missing
     .filter(m => m.question && m.question.trim())
+    .filter(m => !category || (m.category || 'uncategorized') === category)
     .map(m => ({
       title: m.question.trim().charAt(0).toUpperCase() + m.question.trim().slice(1).replace(/\?+$/, ''),
       category: m.category || 'uncategorized', source: 'Real chatbot question — unanswered',
@@ -199,6 +231,7 @@ export async function buildExploreTitles(env, { limit = 60 } = {}) {
 
   const fromGraph = entries
     .filter(e => e && (e.title || e.topic))
+    .filter(e => !category || (e.category || 'uncategorized') === category)
     .map(e => ({ title: (e.title || e.topic).trim(), category: e.category || 'uncategorized', source: 'Graph concept with no matching article' }))
     .filter(t => t.title && !articleTitles.has(t.title.toLowerCase()));
 
@@ -210,8 +243,9 @@ export async function buildExploreTitles(env, { limit = 60 } = {}) {
     return true;
   });
 
+  const capped = category ? titles : titles.slice(0, limit);
   return {
-    titles: titles.slice(0, limit),
+    titles: capped,
     totalCandidates: titles.length,
     note: 'Every title is either a real logged chatbot question or an existing graph concept with no matching article — nothing invented.',
   };

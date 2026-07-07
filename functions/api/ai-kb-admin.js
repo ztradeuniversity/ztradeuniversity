@@ -371,7 +371,8 @@ export async function onRequest(context) {
     // suggested article titles, never empty when real gap data exists (graph
     // concepts without an article, or logged chatbot questions).
     if (action === 'explore-topics') {
-      return json(await buildExploreTitles(env, { limit: 80 }));
+      const category = new URL(request.url).searchParams.get('category') || null;
+      return json(await buildExploreTitles(env, { limit: 80, category }));
     }
     return json({ error: 'unknown action' }, 400);
   }

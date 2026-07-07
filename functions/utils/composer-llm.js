@@ -72,7 +72,12 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
 }
 
-async function callOpenAIOnce(oa, messages) {
+// `meta` (optional, out-param) — when the caller passes an object, this fills it
+// with the REAL usage block OpenAI's API returns (prompt_tokens/completion_tokens/
+// total_tokens) plus the real model id. Never populated with an estimate — if
+// omitted (every existing caller of callModel/callOpenAI that doesn't pass one),
+// behavior is 100% unchanged.
+async function callOpenAIOnce(oa, messages, meta) {
   const res = await fetch(oa.endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${oa.key}` },
@@ -86,6 +91,7 @@ async function callOpenAIOnce(oa, messages) {
     throw e;
   }
   const j = await res.json().catch(() => null);
+  if (meta) { meta.provider = 'openai'; meta.model = j?.model || oa.model; meta.usage = j?.usage || null; }
   return j?.choices?.[0]?.message?.content || '';
 }
 
@@ -93,9 +99,9 @@ async function callOpenAIOnce(oa, messages) {
 // transient failure (timeout, 429, 5xx) before giving up, and surface the failure
 // via system-log so admins can see it instead of it disappearing into a silent
 // fallback. Never throws — callers already treat a thrown error as "no LLM text".
-async function callOpenAI(oa, messages, env) {
+async function callOpenAI(oa, messages, env, meta) {
   try {
-    return await callOpenAIOnce(oa, messages);
+    return await callOpenAIOnce(oa, messages, meta);
   } catch (e1) {
     const retryable = !e1.status || e1.status === 429 || e1.status >= 500;
     if (!retryable) {
@@ -103,7 +109,7 @@ async function callOpenAI(oa, messages, env) {
       throw e1;
     }
     try {
-      return await callOpenAIOnce(oa, messages);
+      return await callOpenAIOnce(oa, messages, meta);
     } catch (e2) {
       logLLMFailure(env, 'openai', e2);
       throw e2;
@@ -118,20 +124,29 @@ function logLLMFailure(env, engine, err) {
   ).catch(() => {});
 }
 
-async function callModel(env, system, user) {
+// `meta` (optional, out-param) — same contract as callOpenAIOnce: only
+// populated for callers that pass an object (currently just generateArticleDraft
+// for the AI-generation audit trail). Every other existing caller is unaffected.
+async function callModel(env, system, user, meta) {
   const messages = [{ role: 'system', content: system }, { role: 'user', content: user }];
 
   // PRIMARY engine: Cloudflare Workers AI (default; free-tier, lowest cost). On a
   // non-empty success we return immediately so the paid OpenAI path is never touched.
   if (env.AI && typeof env.AI.run === 'function') {
     let cfText = '';
+    // Current supported Workers AI text model (the prior default @cf/meta/llama-3.1-8b-instruct
+    // was deprecated 2026-05-30 → CF error 5028). Overridable via LLM_MODEL.
+    const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast';
     try {
-      // Current supported Workers AI text model (the prior default @cf/meta/llama-3.1-8b-instruct
-      // was deprecated 2026-05-30 → CF error 5028). Overridable via LLM_MODEL.
-      const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast';
       // Workers AI has no built-in timeout — cap it so a hung binding never freezes the reply.
+      const t0 = Date.now();
       const r = await withTimeout(env.AI.run(model, { messages, max_tokens: 700, temperature: 0.4 }), 8000, 'workers-ai');
       cfText = (r && (r.response || r.result || (typeof r === 'string' ? r : ''))) || '';
+      // HONEST AUDIT DATA: Workers AI text-generation responses for this model do
+      // not include a token-usage block (confirmed by the actual response shape
+      // here — r.usage is checked, never fabricated if absent). Report exactly
+      // what the API returned, nothing invented.
+      if (meta) { meta.provider = 'workers-ai'; meta.model = model; meta.ms = Date.now() - t0; meta.usage = r?.usage || null; }
     } catch { cfText = ''; }
     if (cfText && cfText.trim()) return cfText;
     if (!cfText) logLLMFailure(env, 'workers-ai', new Error('empty/failed response'));
@@ -139,7 +154,7 @@ async function callModel(env, system, user) {
     // when explicitly enabled (OPENAI_FALLBACK_ENABLED=true).
     const oa = resolveOpenAI(env);
     if (oa.usable && oa.fallbackEnabled) {
-      try { return await callOpenAI(oa, messages, env); } catch { return ''; }
+      try { return await callOpenAI(oa, messages, env, meta); } catch { return ''; }
     }
     return '';
   }
@@ -149,7 +164,7 @@ async function callModel(env, system, user) {
   // ultimate fallback if this returns empty.
   const oa = resolveOpenAI(env);
   if (oa.usable) {
-    try { return await callOpenAI(oa, messages, env); } catch { return ''; }
+    try { return await callOpenAI(oa, messages, env, meta); } catch { return ''; }
   }
   return '';
 }
@@ -285,18 +300,31 @@ STRICT RULES:
 4. Follow the given outline order. Aim for 700-1100 words.
 5. Output ONLY the article body in Markdown — no title heading (handled separately), no preamble, no meta-commentary.`;
 
-// Returns the generated Markdown body, or null when the LLM is unconfigured or the
-// call fails — the caller (ai-articles.js `ai-generate`) surfaces this as an honest
-// "write manually, or try again" note rather than silently producing empty content.
+// Returns { content, meta } — content is the generated Markdown body (or null
+// when the LLM is unconfigured or the call fails). `meta` is the REAL audit
+// trail from the actual API response (provider, model, generation time measured
+// with Date.now(), and token usage ONLY when the provider's response actually
+// included it — never estimated; Workers AI responses for this model do not
+// include token usage, so meta.usage stays null in that case, honestly). The
+// caller (ai-articles.js `ai-generate`) surfaces content:null as an honest
+// "write manually, or try again" note rather than silently producing empty
+// content, and surfaces meta as-is (spec: "AI Generation — do not estimate,
+// use real API response usage").
 export async function generateArticleDraft(env, brief = {}) {
-  if (!llmConfigured(env)) return null;
+  const meta = { provider: null, model: null, ms: null, usage: null };
+  if (!llmConfigured(env)) return { content: null, meta };
   const outline = Array.isArray(brief.outline) && brief.outline.length ? brief.outline.join('\n- ') : '(no outline provided — use your own structure)';
   const prompt = `Topic: ${brief.title || ''}\nOutline:\n- ${outline}\nKeywords to naturally include where relevant: ${(brief.keywords || []).join(', ')}`;
+  const t0 = Date.now();
   try {
-    const out = await callModel(env, DRAFT_SYSTEM, prompt);
+    const out = await callModel(env, DRAFT_SYSTEM, prompt, meta);
+    if (meta.ms == null) meta.ms = Date.now() - t0; // OpenAI path doesn't set ms itself — measure it here
     const text = (out && typeof out === 'string') ? out.trim() : '';
-    return text.length > 80 ? text : null;
-  } catch { return null; }
+    return { content: text.length > 80 ? text : null, meta };
+  } catch {
+    if (meta.ms == null) meta.ms = Date.now() - t0;
+    return { content: null, meta };
+  }
 }
 
 // Returns a composer fn (parts, ctx) → string | null. null → rule-assembler fallback.

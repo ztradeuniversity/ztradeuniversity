@@ -101,9 +101,11 @@
       ${rows.map(r => `
         <div class="rec-row">
           <div class="rec-topic"><div class="t">${esc(r.label)}</div><div class="why">${r.articles} article${r.articles === 1 ? '' : 's'} / ${r.graphConcepts} graph concept${r.graphConcepts === 1 ? '' : 's'}</div></div>
-          <div style="width:160px;background:var(--inset);border-radius:100px;height:8px;overflow:hidden"><div style="width:${r.coveragePct}%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>
-          <div class="stars" style="width:44px;text-align:right">${r.coveragePct}%</div>
+          <div style="width:120px;background:var(--inset);border-radius:100px;height:8px;overflow:hidden"><div style="width:${r.coveragePct}%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>
+          <div class="stars" style="width:38px;text-align:right">${r.coveragePct}%</div>
+          <button class="btn sm" data-explore-cat="${esc(r.category)}">Explore</button>
         </div>`).join('')}`;
+    card.querySelectorAll('[data-explore-cat]').forEach(b => b.addEventListener('click', () => runExplore(b.dataset.exploreCat)));
   }
 
   // ── WEBSITE HEALTH CENTER (spec Phase 9) ────────────────────────────────
@@ -214,13 +216,21 @@
   // many concrete suggested article TITLES (not just categories) from real graph/
   // demand data and renders the same Manual/SEO Auto/AI Generate 3-button row per
   // title, reusing the exact same startTopicAction/editor flow — no second editor.
-  async function runExplore() {
+  // `category` (optional) scopes Explore to one Content Coverage row — reuses
+  // the SAME explore-topics action/#exploreOut panel as the global Explore
+  // button, just filtered server-side, so there is exactly one Explore
+  // implementation, not a duplicate per-category one.
+  async function runExplore(category) {
     const out = document.getElementById('exploreOut');
     out.innerHTML = '<div class="empty">Exploring…</div>';
-    const data = await apiGet(KB + '?action=explore-topics');
+    out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const qs = category ? '&category=' + encodeURIComponent(category) : '';
+    const data = await apiGet(KB + '?action=explore-topics' + qs);
     const titles = data.titles || [];
-    if (!titles.length) { out.innerHTML = '<div class="empty">No real gap data yet — this fills in as the graph grows or chatbot questions are logged.</div>'; return; }
-    out.innerHTML = `<div style="max-height:420px;overflow-y:auto">${titles.map(t => `
+    if (!titles.length) { out.innerHTML = `<div class="empty">No real gap data yet${category ? ' for "' + esc(humanize(category)) + '"' : ''} — this fills in as the graph grows or chatbot questions are logged.</div>`; return; }
+    out.innerHTML = `
+      ${category ? `<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">${titles.length} real candidate${titles.length === 1 ? '' : 's'} for "${esc(humanize(category))}"</div>` : ''}
+      <div style="max-height:420px;overflow-y:auto">${titles.map(t => `
       <div class="rec-row">
         <div class="rec-topic"><div class="t">${esc(t.title)}</div><div class="why">${esc(humanize(t.category))} · ${esc(t.source)}</div></div>
         <div style="display:flex;gap:5px">
@@ -275,7 +285,17 @@
       // case anything above raced ahead of it (defensive, cheap, idempotent).
       if (!document.getElementById('edContent').value.trim()) document.getElementById('edContent').value = String(answer || '').trim();
     }
-    toast('Draft prepared from the chatbot’s answer — review, then Publish', 'ok');
+    // AUTO-PUBLISH POLICY (default off, server-controlled via
+    // AI_AUTO_PUBLISH_CAPTURED_KNOWLEDGE — see ai-brief's autoPublishAllowed) —
+    // only when the site owner has explicitly opted in does this skip the manual
+    // Save & Publish click; reuses the exact same saveArticle(true) path a human
+    // click would use, so the pipeline is identical either way.
+    if (data.autoPublishAllowed) {
+      toast('Auto-publish policy enabled — saving and publishing…', 'ok');
+      await saveArticle(true);
+    } else {
+      toast('Draft prepared from the chatbot’s answer — review, then Publish', 'ok');
+    }
   }
 
   // ── EDITOR ───────────────────────────────────────────────────────────────
@@ -543,7 +563,19 @@
     const data = await apiPost(ART, 'ai-generate', { brief });
     if (!data.generated) { document.getElementById('aiGenNote').textContent = data.note || 'AI writing unavailable — write manually.'; return; }
     document.getElementById('edContent').value = data.content;
-    document.getElementById('aiGenNote').textContent = 'Generated — review before publishing.';
+    // AI GENERATION AUDIT (spec) — model/generation-time/tokens/cost are the REAL
+    // values echoed from the API response (composer-llm.js's generateArticleDraft),
+    // never estimated. Cost only appears when the admin has configured real
+    // per-1K pricing env vars; otherwise the honest costNote explains why.
+    const u = data.usage || {};
+    const bits = [];
+    if (u.provider) bits.push('Provider: ' + u.provider);
+    if (u.model) bits.push('Model: ' + u.model);
+    if (u.ms != null) bits.push('Generation time: ' + u.ms + 'ms');
+    if (u.usage) bits.push(`Tokens: ${u.usage.prompt_tokens ?? '?'} in / ${u.usage.completion_tokens ?? '?'} out / ${u.usage.total_tokens ?? '?'} total`);
+    if (u.costUsd != null) bits.push('Est. cost: $' + u.costUsd.toFixed(5));
+    else if (u.costNote) bits.push(u.costNote);
+    document.getElementById('aiGenNote').innerHTML = 'Generated — review before publishing.' + (bits.length ? '<br><span style="color:var(--dim)">' + bits.map(esc).join(' · ') + '</span>' : '');
   }
 
   // Parses the "Title | https://url" external-links textarea into [{title,url}].
@@ -741,9 +773,9 @@
         <td class="title" title="${esc(a.title)}">${esc(a.title)}</td>
         <td>${esc(humanize(a.category))}</td>
         <td>${statusBadge}</td>
-        <td>${dot(a.seoStatus)}</td>
-        <td>${dot(a.kgStatus)}</td>
-        <td>${dot(a.chatbotStatus)}</td>
+        <td><button class="btn sm" style="padding:2px 8px" data-detail="${a.id}" data-detail-tab="seo">${dot(a.seoStatus)}</button></td>
+        <td><button class="btn sm" style="padding:2px 8px" data-detail="${a.id}" data-detail-tab="graph">${dot(a.kgStatus)}</button></td>
+        <td><button class="btn sm" style="padding:2px 8px" data-detail="${a.id}" data-detail-tab="chatbot">${dot(a.chatbotStatus)}</button></td>
         <td>${a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '—'}</td>
         <td>${esc(a.author || '—')}</td>
         <td><div class="row-actions">
@@ -753,7 +785,8 @@
           ${a.is_active && a.slug ? `<button class="btn sm" data-preview="${esc(a.slug)}">Preview</button><button class="btn sm" data-copy="${esc(a.slug)}">Copy Link</button>` : ''}
           <button class="btn sm danger" data-del="${a.id}">Delete</button>
         </div></td>
-      </tr>`;
+      </tr>
+      <tr id="detailRow-${a.id}" style="display:none"><td colspan="9"><div id="detailOut-${a.id}"></div></td></tr>`;
     }).join('');
     document.getElementById('libPager').textContent = `Page ${data.page} of ${Math.max(1, Math.ceil(total / libState.pageSize))} — ${total} articles`;
 
@@ -767,6 +800,58 @@
       const url = window.location.origin + '/articles/' + b.dataset.copy;
       navigator.clipboard?.writeText(url).then(() => toast('Link copied', 'ok')).catch(() => toast(url, 'ok'));
     }));
+    body.querySelectorAll('[data-detail]').forEach(b => b.addEventListener('click', () => toggleArticleDetail(b.dataset.detail, b.dataset.detailTab)));
+  }
+
+  // ARTICLE STATUS DETAILS (spec) — clicking a SEO/Graph/Chatbot dot expands a row
+  // showing the REAL stored data behind that checkmark (?action=article-detail),
+  // not just a boolean. Cached per article id per library render so re-opening
+  // the same tab doesn't re-fetch; switching tabs on an already-open row re-uses
+  // the same fetched data.
+  const detailCache = {};
+  async function toggleArticleDetail(id, tab) {
+    const row = document.getElementById('detailRow-' + id);
+    const out = document.getElementById('detailOut-' + id);
+    if (row.style.display !== 'none' && detailCache[id]?.tab === tab) { row.style.display = 'none'; return; }
+    row.style.display = '';
+    if (!detailCache[id] || detailCache[id].tab !== tab) {
+      out.innerHTML = '<div class="empty">Loading details…</div>';
+      const data = await apiGet(ART + '?action=article-detail&id=' + encodeURIComponent(id)).catch(() => null);
+      detailCache[id] = { tab, data };
+    }
+    renderArticleDetail(out, tab, detailCache[id].data);
+  }
+  function renderArticleDetail(out, tab, data) {
+    if (!data) { out.innerHTML = '<div class="empty">Details unavailable.</div>'; return; }
+    if (tab === 'seo') {
+      const ov = data.seo?.overrides || {}, c = data.seo?.computed || {};
+      const row = (label, key) => `<div class="tick-row"><b style="min-width:160px;display:inline-block">${esc(label)}</b> ${esc(ov[key] || c[key] || '—')}</div>`;
+      out.innerHTML = `<div class="card" style="background:var(--inset)">
+        ${row('SEO Title', 'seoTitle')}${row('Meta Title', 'metaTitle')}${row('Meta Description', 'metaDescription')}
+        ${row('Focus Keyword', 'focusKeyword')}<div class="tick-row"><b style="min-width:160px;display:inline-block">Secondary Keywords</b> ${esc((ov.secondaryKeywords || c.secondaryKeywords || []).join(', ') || '—')}</div>
+        ${row('Slug', 'slug')}${row('Canonical URL', 'canonicalUrl')}${row('OpenGraph Title', 'ogTitle')}${row('OpenGraph Description', 'ogDescription')}${row('Twitter Card', 'twitterCard')}
+        <div class="tick-row"><b style="min-width:160px;display:inline-block">Structured Data (FAQ)</b> ${c.faqSchema ? '✓ present' : '— none yet'}</div>
+      </div>`;
+    } else if (tab === 'graph') {
+      const g = data.graph || {};
+      out.innerHTML = `<div class="card" style="background:var(--inset)">
+        <div class="tick-row"><b style="min-width:160px;display:inline-block">Graph node</b> ${g.nodeExists ? '✓ ' + esc(g.nodeId) : '— not published'}</div>
+        <div class="tick-row"><b style="min-width:160px;display:inline-block">Status</b> ${esc(g.status || '—')}</div>
+        <div class="tick-row"><b style="min-width:160px;display:inline-block">Embedding</b> ${g.hasEmbedding ? '✓ present' : '— none'}</div>
+        <div class="tick-row"><b style="min-width:160px;display:inline-block">Chunks</b> ${g.chunks?.published ?? 0} / ${g.chunks?.total ?? 0} published</div>
+        <div class="tick-row"><b style="min-width:160px;display:inline-block">Linked concepts</b> ${(g.neighbors || []).length ? (g.neighbors || []).map(n => esc(n.title || n.id)).join(', ') : '— none yet'}</div>
+      </div>`;
+    } else if (tab === 'chatbot') {
+      const c = data.chatbot || {};
+      out.innerHTML = `<div class="card" style="background:var(--inset)">
+        ${c.probe ? `
+          <div class="tick-row"><b style="min-width:160px;display:inline-block">Retrieval source</b> ${esc(c.probe.topConcept || '—')}</div>
+          <div class="tick-row"><b style="min-width:160px;display:inline-block">Confidence</b> ${esc(c.probe.confidence || '—')}</div>
+          <div class="tick-row"><b style="min-width:160px;display:inline-block">Answers contextually</b> ${c.probe.contextual ? '✓ yes' : '— no'}</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:6px">As of ${c.asOf ? new Date(c.asOf).toLocaleString() : '—'} — ${esc(c.note || '')}</div>
+        ` : `<div class="empty">${esc(c.note || 'No verification recorded yet.')}</div>`}
+      </div>`;
+    }
   }
   async function editArticle(id) {
     const data = await apiGet(ART + '?action=get&id=' + encodeURIComponent(id));
@@ -958,7 +1043,7 @@
     wireAdvanced();
 
     document.getElementById('newArticleBtn').onclick = () => { openEditor(); };
-    document.getElementById('exploreBtn').onclick = runExplore;
+    document.getElementById('exploreBtn').onclick = () => runExplore();
     document.getElementById('refreshBtn').onclick = () => { loadExecutive(); loadRecommendations(); loadCoverage(); loadMissingTopics(); loadLibrary(); loadHealth(); loadErrorCenter(); };
     document.getElementById('adminLibRefresh').onclick = () => loadLibrary();
     document.getElementById('adminLibStatus').onchange = e => { libState.status = e.target.value; libState.page = 1; loadLibrary(); };

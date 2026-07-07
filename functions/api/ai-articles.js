@@ -46,8 +46,9 @@ import {
 import { generateArticleMeta } from '../utils/article-autometa.js';
 import { generateArticleBrief, generateArticleDraft } from '../utils/composer-llm.js';
 import { syncArticleToGraph, retireArticleConcepts, verifyPublishPipeline } from '../utils/article-graph-sync.js';
-import { getNodesByIds } from '../utils/kb-store.js';
+import { getNodesByIds, getNode, getNeighbors, getNodesByIdPrefix } from '../utils/kb-store.js';
 import { requireAdminModule } from '../utils/admin-session.js';
+import { logSystemEvent } from '../utils/system-log.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -160,6 +161,48 @@ export async function onRequest(context) {
         lang: u.searchParams.get('lang') || 'en',
       })) });
     }
+    // ARTICLE STATUS DETAILS (spec) — real stored data only, no new verification
+    // run: SEO overrides + the exact computed fallback (same buildSeoSuggestion
+    // the publish pipeline uses); Graph node existence/embedding/relationships
+    // via kb-store's real getNode/getNeighbors; Chatbot preview from the
+    // last_verification snapshot already stored at the last publish/repair
+    // (labeled "as of" so it's never mistaken for a live re-check).
+    if (action === 'article-detail') {
+      if (!(await isAdmin(request, env))) return json({ error: 'admin only' }, 403);
+      const id = u.searchParams.get('id');
+      const article = await getArticle(env, id);
+      if (!article) return json({ error: 'article not found' }, 404);
+      const mainNodeId = `article-${article.id}`;
+      const mainNode = await getNode(env, mainNodeId).catch(() => null);
+      const neighbors = mainNode ? await getNeighbors(env, mainNodeId, [], 8).catch(() => []) : [];
+      const chunkNodes = await getNodesByIdPrefix(env, `article-chunk-${article.id}-`).catch(() => []);
+      const seoComputed = buildSeoSuggestion(
+        { ...(conceptFromArticle(article) || {}), id: article.slug, title: article.title, seo: { description: article.summary || '', keywords: article.tags || [] } },
+        { urlPath: article.slug ? `/articles/${article.slug}` : null, overrides: article.seo_overrides || {} }
+      );
+      return json({
+        configured: true,
+        seo: { overrides: article.seo_overrides || {}, computed: seoComputed },
+        graph: {
+          nodeExists: !!mainNode,
+          nodeId: mainNode?.id || null,
+          status: mainNode?.status || null,
+          hasEmbedding: !!(mainNode && mainNode.embedding),
+          relatedConcepts: (mainNode && mainNode.related) || [],
+          nextSteps: (mainNode && mainNode.nextSteps) || [],
+          neighbors: neighbors.map(n => ({ edgeType: n.edgeType, weight: n.weight, id: n.node?.id, title: n.node?.title || n.node?.topic })),
+          chunks: { total: chunkNodes.length, published: chunkNodes.filter(c => c.status === 'published').length },
+        },
+        chatbot: article.last_verification && article.last_verification.knowledgeGraph
+          ? {
+              probe: article.last_verification.knowledgeGraph.probe || null,
+              conceptPublished: article.last_verification.knowledgeGraph.conceptPublished,
+              asOf: article.updated_at,
+              note: 'From the last publish/repair verification — click Publish or Improve & Republish to refresh.',
+            }
+          : { note: 'No verification recorded yet — publish or repair this article to generate one.' },
+      });
+    }
     return json({ error: `unknown action: ${action}` }, 400);
   }
 
@@ -224,7 +267,13 @@ export async function onRequest(context) {
     const result = action === 'create'
       ? await createArticle(env, { ...payload, created_at: new Date().toISOString() })
       : await updateArticle(env, d.id, payload);
-    return json({ configured: true, saved: !!result, article: result });
+    // article-store.js's sb() already logs the REAL PostgREST error to
+    // kb_system_log (Error Center) on failure — this just gives the client a
+    // pointer to it instead of a bare "saved:false" with no explanation.
+    return json({
+      configured: true, saved: !!result, article: result,
+      reason: result ? undefined : 'Save failed — the database rejected the write. Check Content Center → Error Center for the exact reason (often a missing column from a pending migration — see supabase/ai-articles-content-center-columns.sql).',
+    });
   }
 
   if (action === 'publish') {
@@ -250,6 +299,25 @@ export async function onRequest(context) {
 
     if (verification.ok) {
       const updated = await updateArticle(env, article.id, { is_active: true, last_verification: verification });
+      // BUGFIX (found via live testing — "Published" toast but the Library kept
+      // showing Draft): this used to report status:'published' unconditionally
+      // whenever verification passed, even if the actual database write that
+      // flips is_active failed (e.g. PostgREST rejects the whole PATCH with an
+      // unknown-column error when a pending migration — like
+      // supabase/ai-articles-content-center-columns.sql — hasn't been run yet).
+      // The verification result and the database write are two different facts;
+      // "published" must only be reported when BOTH are true.
+      if (!updated) {
+        await logSystemEvent(env, {
+          kind: 'publish-write', level: 'error',
+          message: `Publish verification passed but the database write (is_active/last_verification) failed for article ${article.id}.`,
+          meta: { articleId: article.id, title: article.title },
+        }).catch(() => {});
+        return json({
+          configured: true, status: 'pipeline_failed', article, graph, ecosystem, verification,
+          reason: 'Verification passed, but saving the published status to the database failed — the article was NOT published. Check Content Center → Error Center for the exact database error (often a missing column from a pending migration — see supabase/ai-articles-content-center-columns.sql). Safe to retry once fixed.',
+        }, 200);
+      }
       return json({ configured: true, status: 'published', article: updated, graph, ecosystem, verification });
     }
 
@@ -296,7 +364,15 @@ export async function onRequest(context) {
     const relatedArticlesList = suggestRelatedArticles(draftLike, articles);
     const linkedEntries = [...links.related, ...links.nextSteps].map(id => entries.find(e => e.id === id)).filter(Boolean);
     const internalLinks = buildInternalLinks(draftLike, { conceptEntries: linkedEntries, relatedArticles: relatedArticlesList });
-    return json({ configured: true, brief, internalLinks, relatedArticles: relatedArticlesList });
+    // AUTO KNOWLEDGE CAPTURE — auto-publish policy (spec item 5, explicitly
+    // conditional: "if auto-publish policy allows"). Default OFF, same gating
+    // pattern as AI_LEARN_ENABLED elsewhere in this codebase — auto-publishing
+    // AI-generated content without human review is a real content-quality/
+    // liability decision the site owner must explicitly opt into; the existing
+    // architecture's review-queue/approval workflow is never bypassed unless
+    // this is deliberately turned on.
+    const autoPublishAllowed = String(env.AI_AUTO_PUBLISH_CAPTURED_KNOWLEDGE).toLowerCase() === 'true';
+    return json({ configured: true, brief, internalLinks, relatedArticles: relatedArticlesList, autoPublishAllowed });
   }
 
   // Step 2, Option B ("Generate with AI"): brief → full Markdown body via the SAME
@@ -304,9 +380,30 @@ export async function onRequest(context) {
   // not a second AI system. Never persists; the admin reviews before publishing.
   if (action === 'ai-generate') {
     const brief = (data && data.brief) || {};
-    const content = await generateArticleDraft(env, brief);
-    if (!content) return json({ configured: true, generated: false, note: 'AI writing is not configured, or the model call failed — write manually, or try again.' });
-    return json({ configured: true, generated: true, content });
+    const { content, meta } = await generateArticleDraft(env, brief);
+    if (!content) return json({ configured: true, generated: false, note: 'AI writing is not configured, or the model call failed — write manually, or try again.', usage: meta });
+    // AUDIT DATA (spec: "do not estimate, use real API response usage") — model/
+    // generation-time/provider are always real (measured or echoed from the API
+    // response). Cost is computed ONLY when both a real token count exists
+    // (OpenAI's response includes usage; Workers AI's does not for this model —
+    // reported honestly as unavailable, never guessed) AND the admin has
+    // configured real per-1K-token pricing via env vars — never a hardcoded/
+    // guessed rate, since published prices change over time.
+    const usage = { ...meta, costUsd: null, costNote: null };
+    if (meta.usage && meta.usage.prompt_tokens != null && env.OPENAI_PRICE_PER_1K_INPUT_USD && env.OPENAI_PRICE_PER_1K_OUTPUT_USD) {
+      const inRate = parseFloat(env.OPENAI_PRICE_PER_1K_INPUT_USD);
+      const outRate = parseFloat(env.OPENAI_PRICE_PER_1K_OUTPUT_USD);
+      if (Number.isFinite(inRate) && Number.isFinite(outRate)) {
+        usage.costUsd = ((meta.usage.prompt_tokens / 1000) * inRate) + ((meta.usage.completion_tokens / 1000) * outRate);
+      }
+    } else if (!meta.usage) {
+      usage.costNote = meta.provider === 'workers-ai'
+        ? 'Workers AI did not return token usage for this call — cost cannot be computed (never estimated).'
+        : 'No token usage available from this provider response.';
+    } else {
+      usage.costNote = 'Set OPENAI_PRICE_PER_1K_INPUT_USD and OPENAI_PRICE_PER_1K_OUTPUT_USD to compute real cost from the actual token counts above.';
+    }
+    return json({ configured: true, generated: true, content, usage });
   }
 
   // AUTOMATIC QUALITY IMPROVEMENT (requirement 4) — one click regenerates weak
@@ -325,10 +422,31 @@ export async function onRequest(context) {
 
     let { graph, ecosystem } = await syncArticleToGraph(env, current);
     let verification = await verifyPublishPipeline(env, { article: current, graph, ecosystem });
-    if (verification.ok) current = (await updateArticle(env, current.id, { is_active: true, last_verification: verification })) || current;
-    else { try { await updateArticle(env, current.id, { last_verification: verification }); } catch { /* non-fatal */ } }
+    let dbWriteFailed = false;
+    if (verification.ok) {
+      const updated = await updateArticle(env, current.id, { is_active: true, last_verification: verification });
+      // BUGFIX (same class as the publish handler): don't silently fall back to
+      // the pre-update `current` and still report verification.ok===true when
+      // the actual is_active write failed — the client renders its toast from
+      // verification.ok, so this used to say "Improved & republished" even when
+      // nothing was actually published.
+      if (updated) current = updated; else dbWriteFailed = true;
+    } else {
+      try { await updateArticle(env, current.id, { last_verification: verification }); } catch { /* non-fatal */ }
+    }
+    if (dbWriteFailed) {
+      await logSystemEvent(env, {
+        kind: 'publish-write', level: 'error',
+        message: `Repair verification passed but the database write failed for article ${current.id}.`,
+        meta: { articleId: current.id, title: current.title },
+      }).catch(() => {});
+      verification = { ...verification, ok: false };
+    }
 
-    return json({ configured: true, article: current, improved: Object.keys(patch), graph, ecosystem, verification });
+    return json({
+      configured: true, article: current, improved: Object.keys(patch), graph, ecosystem, verification,
+      reason: dbWriteFailed ? 'Verification passed, but saving the published status failed — check Error Center for the database error.' : undefined,
+    });
   }
 
   if (action === 'upload_image') {

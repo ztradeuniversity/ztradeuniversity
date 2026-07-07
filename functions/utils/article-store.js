@@ -11,6 +11,8 @@
 // credentials (AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY) are configured.
 // ════════════════════════════════════════════════════════════════════════════
 
+import { logSystemEvent } from './system-log.js';
+
 export const ARTICLE_BUCKET = 'article-images';
 
 export function isConfigured(env) {
@@ -34,7 +36,20 @@ async function sb(env, method, table, qs, body, prefer) {
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) {
-      if (env.DEBUG === 'true') console.error(`[article-store] ${method} ${table} ${res.status}: ${(await res.text().catch(()=>'')) .slice(0,200)}`);
+      const errText = await res.text().catch(() => '');
+      if (env.DEBUG === 'true') console.error(`[article-store] ${method} ${table} ${res.status}: ${errText.slice(0,200)}`);
+      // REAL-FAILURE VISIBILITY (never silent) — a write failure here (e.g. an
+      // unknown-column error from a migration that hasn't been run yet) used to
+      // be invisible outside DEBUG mode, so "Save failed" / a publish that
+      // silently didn't persist gave the admin zero diagnostic information.
+      // Logs the ACTUAL PostgREST error text via the existing system-log
+      // mechanism (visible in Content Center's Error Center) — does not change
+      // the null-on-failure return contract any caller already relies on.
+      logSystemEvent(env, {
+        kind: 'article-store', level: 'error',
+        message: `${method} ${table} failed (HTTP ${res.status})`,
+        meta: { status: res.status, body: errText.slice(0, 500) },
+      }).catch(() => {});
       return null;
     }
     if (method === 'DELETE' || prefer === 'return=minimal') return true;
