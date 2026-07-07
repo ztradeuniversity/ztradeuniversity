@@ -162,6 +162,10 @@
   <div class="sec-title">Missing Topics</div>
   <div class="sec-hint">Every category with a real gap signal (no article, no graph concept, or unanswered chatbot questions) — pick how you want to write it.</div>
   <div class="card" id="missingCard"><div class="empty">Loading missing topics…</div></div>
+  <div class="card" style="margin-top:10px">
+    <button class="btn sm gold" id="exploreBtn">🔎 Explore — suggest many article titles</button>
+    <div id="exploreOut" style="margin-top:12px"></div>
+  </div>
 
   <div class="sec-title">Editor</div>
   <div class="card" id="editorLauncher">
@@ -235,8 +239,12 @@
   <div class="card">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <input class="input-inline" id="pgQ" placeholder="Ask the chatbot a question…" />
+      <select id="pgSourceMode" style="background:var(--inset);border:1px solid var(--border2);border-radius:9px;padding:8px 12px;color:var(--text);font-size:12.5px">
+        <option value="production">Production (real pipeline)</option>
+      </select>
       <button class="btn sm gold" id="pgAsk">Check</button>
     </div>
+    <div style="font-size:11px;color:var(--dim);margin-top:6px">Source list is detected automatically from the live pipeline — never hardcoded.</div>
     <div id="pgOut" style="margin-top:12px"><div class="empty">Enter a question above to diagnose the chatbot's answer.</div></div>
   </div>
 

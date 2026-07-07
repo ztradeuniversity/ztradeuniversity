@@ -8,6 +8,9 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { classifyApiError } from './api-error.js';
+import { graphActive } from './kb-store.js';
+import { scoreEntry } from './semantic-retrieval.js';
+import { enforceRelevance } from './relevance-engine.js';
 
 const TIMEOUT_MS = 8000;
 
@@ -43,8 +46,11 @@ export async function probeOpenAI(env) {
     const t0 = Date.now();
     try {
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout (Workers AI binding)')), TIMEOUT_MS));
+      // Same corrected model as composer-llm.js/article-autometa.js — the prior
+      // default @cf/meta/llama-3.1-8b-instruct was deprecated 2026-05-30 (CF 5028).
+      const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast';
       await Promise.race([
-        env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages: [{ role: 'user', content: 'ping' }], max_tokens: 4 }),
+        env.AI.run(model, { messages: [{ role: 'user', content: 'ping' }], max_tokens: 4 }),
         timeout,
       ]);
       return {
@@ -127,18 +133,41 @@ export async function probeSupabase(env) {
 }
 
 // ── CLOUDFLARE PAGES ─────────────────────────────────────────────────────────
-// Honest by design: there is no external "Cloudflare platform health" endpoint
-// to ping that would mean anything more than what's already true — this code is
-// a Cloudflare Pages Function, so if it's executing, Cloudflare is serving
-// requests. Fabricating a separate network call here would not prove anything
-// this one fact doesn't already prove.
+// CORRECTED (violated the "never simulate a green check" rule): this previously
+// returned an unconditional ok:true — a tautology, not a verified execution.
+// Fixed by reusing the EXACT SAME behavioral checks ai-kb-admin.js's existing
+// `deployment-probe` action already performs — real calls to graphActive/
+// scoreEntry/enforceRelevance, checking their ACTUAL returned behavior against
+// the expected latest-version output. This is a genuine verified-execution
+// check (it can really fail, e.g. if a stale bundle is deployed) and reuses the
+// existing verification logic rather than inventing a second one.
 export async function probeCloudflare(env) {
-  return {
-    service: 'Cloudflare Pages', endpoint: '(self — this request)', keyPresent: true, keyLength: null,
-    httpStatus: 200, ok: true, errorCategory: null,
-    rootCause: 'None — this response was served by Cloudflare Pages Functions, which is proof the platform is up.',
-    recommendedFix: '', responseSnippet: '(self-evident)', ms: 0, timestamp: new Date().toISOString(),
-  };
+  const t0 = Date.now();
+  try {
+    const graphV = graphActive({ AI_SUPABASE_URL: 'x', AI_SUPABASE_SERVICE_KEY: 'y', KB_GRAPH_ENABLED: 'false' }) ? 'v2' : 'v1';
+    const probeEntry = { questionPatterns: ['what is a liquidity sweep'], concepts: ['liquidity sweep'], category: 'liquidity', subcategory: 'Liquidity Sweep' };
+    const retrievalV = scoreEntry('what is a liquidity sweep', probeEntry).confidence === 'HIGH' ? 'v2' : 'v1';
+    const relevanceV = enforceRelevance({ category: 'liquidity', relevanceTags: ['liquidity', 'sweep'] }, { forbiddenTopics: ['broker'], allowedTopics: ['technical'], confidence: 'HIGH' }) ? 'v2' : 'v1';
+    const allLatest = graphV === 'v2' && retrievalV === 'v2' && relevanceV === 'v2';
+    return {
+      service: 'Cloudflare Pages', endpoint: 'behavioral deployment check (same functions as ai-kb-admin.js deployment-probe)',
+      keyPresent: true, keyLength: null, httpStatus: null, ok: allLatest,
+      errorCategory: allLatest ? null : 'Stale deployment',
+      rootCause: allLatest
+        ? 'Verified — graphActive/scoreEntry/enforceRelevance all behaved as the expected latest version on this live call.'
+        : `One or more runtime behavior checks did not match the expected latest version (graph=${graphV} retrieval=${retrievalV} relevance=${relevanceV}) — this Worker may be running a stale bundle.`,
+      recommendedFix: allLatest ? '' : 'Redeploy the Cloudflare Pages project so the running Worker picks up the latest bundle.',
+      responseSnippet: `graph=${graphV} retrieval=${retrievalV} relevance=${relevanceV}`,
+      ms: Date.now() - t0, timestamp: new Date().toISOString(),
+    };
+  } catch (err) {
+    return {
+      service: 'Cloudflare Pages', endpoint: 'behavioral deployment check', keyPresent: true, keyLength: null,
+      httpStatus: null, ok: false, errorCategory: 'Check threw',
+      rootCause: String(err?.message || err), recommendedFix: 'Investigate the exception in probeCloudflare().',
+      responseSnippet: '', ms: Date.now() - t0, timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 export async function runHealthProbes(env) {

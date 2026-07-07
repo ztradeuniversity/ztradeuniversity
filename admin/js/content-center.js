@@ -210,6 +210,28 @@
     card.querySelectorAll('[data-topic-mode]').forEach(b => b.addEventListener('click', () => startTopicAction(humanize(b.dataset.topic), b.dataset.topicMode)));
   }
 
+  // EXPLORE — MISSING TOPICS (spec: never empty when real gap data exists). Fetches
+  // many concrete suggested article TITLES (not just categories) from real graph/
+  // demand data and renders the same Manual/SEO Auto/AI Generate 3-button row per
+  // title, reusing the exact same startTopicAction/editor flow — no second editor.
+  async function runExplore() {
+    const out = document.getElementById('exploreOut');
+    out.innerHTML = '<div class="empty">Exploring…</div>';
+    const data = await apiGet(KB + '?action=explore-topics');
+    const titles = data.titles || [];
+    if (!titles.length) { out.innerHTML = '<div class="empty">No real gap data yet — this fills in as the graph grows or chatbot questions are logged.</div>'; return; }
+    out.innerHTML = `<div style="max-height:420px;overflow-y:auto">${titles.map(t => `
+      <div class="rec-row">
+        <div class="rec-topic"><div class="t">${esc(t.title)}</div><div class="why">${esc(humanize(t.category))} · ${esc(t.source)}</div></div>
+        <div style="display:flex;gap:5px">
+          <button class="btn sm" data-explore-mode="manual" data-explore-title="${esc(t.title)}">Manual</button>
+          <button class="btn sm" data-explore-mode="seo-auto" data-explore-title="${esc(t.title)}">SEO Auto</button>
+          <button class="btn sm gold" data-explore-mode="ai" data-explore-title="${esc(t.title)}">AI Generate</button>
+        </div>
+      </div>`).join('')}</div>`;
+    out.querySelectorAll('[data-explore-mode]').forEach(b => b.addEventListener('click', () => startTopicAction(b.dataset.exploreTitle, b.dataset.exploreMode)));
+  }
+
   // Opens the editor pre-seeded from a missing-topic row, in the mode the admin
   // picked — reuses the exact same editor/prepareFromTopic flow as "Write This
   // Next"'s single Prepare button, just exposing all 3 modes explicitly per spec.
@@ -226,6 +248,34 @@
     } else {
       toast('Write or paste your "' + topic + '" article below, then click Auto SEO', 'ok');
     }
+  }
+
+  // AUTO KNOWLEDGE CAPTURE — when the chatbot answered from OpenAI (no verified
+  // Database/Graph source existed), prepare that already-generated, already-
+  // validated answer as a review-ready article draft instead of discarding it and
+  // making the admin recreate it from scratch. Reuses the EXISTING ai-brief
+  // generator (same as prepareFromTopic) for metadata/outline/internal-links, but
+  // seeds Content with the chatbot's actual answer text — never lost. Still opens
+  // as a DRAFT: the existing Save/Publish review workflow is completely unchanged,
+  // nothing here bypasses approval or auto-publishes.
+  async function captureAsArticleDraft(question, answer) {
+    openEditor();
+    setMode('ai');
+    document.getElementById('edTopic').value = question;
+    document.getElementById('edTitleField').value = question;
+    document.getElementById('edTitleMini').textContent = question;
+    document.getElementById('edContent').value = String(answer || '').trim();
+    toast('Preparing brief from the chatbot’s answer…');
+    const data = await apiPost(ART, 'ai-brief', { topic: question });
+    if (data.brief) {
+      editorState.brief = data.brief;
+      fillEditorFromBrief(data.brief);
+      renderBriefExtras(data.brief, data.internalLinks);
+      // fillEditorFromBrief doesn't touch Content — re-assert the real answer in
+      // case anything above raced ahead of it (defensive, cheap, idempotent).
+      if (!document.getElementById('edContent').value.trim()) document.getElementById('edContent').value = String(answer || '').trim();
+    }
+    toast('Draft prepared from the chatbot’s answer — review, then Publish', 'ok');
   }
 
   // ── EDITOR ───────────────────────────────────────────────────────────────
@@ -628,10 +678,12 @@
     const pub = await apiPost(ART, 'publish', { id: editorState.id });
     renderVerification(pub.verification, pub.status, pub.reason, pub.ecosystem, editorState.id);
     toast(pub.status === 'published' ? 'Published — graph, SEO &amp; chatbot in sync' : 'Pipeline Failed — see details below', pub.status === 'published' ? 'ok' : 'bad');
-    // ARTICLE COMPLETION TRACKING (spec Phase 6) — a newly-published article changes
-    // coverage ratios and may resolve a missing-topic gap; refresh both automatically,
-    // no manual reload needed. Same event-driven pattern as loadLibrary/loadExecutive.
-    loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics();
+    // ARTICLE COMPLETION TRACKING (spec Phase 6 + production addendum) — a newly-
+    // published article changes coverage ratios, may resolve a missing-topic gap,
+    // and changes Knowledge Graph/Chatbot/SEO/Website Health status; refresh
+    // everything automatically, no manual reload needed. Same event-driven pattern
+    // already used for loadLibrary/loadExecutive.
+    loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics(); loadHealth(); loadErrorCenter();
   }
 
   // ── ARTICLES LIBRARY (verification-at-a-glance) ─────────────────────────
@@ -706,7 +758,7 @@
     document.getElementById('libPager').textContent = `Page ${data.page} of ${Math.max(1, Math.ceil(total / libState.pageSize))} — ${total} articles`;
 
     body.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editArticle(b.dataset.edit)));
-    body.querySelectorAll('[data-pub]').forEach(b => b.addEventListener('click', async () => { const r = await apiPost(ART, 'publish', { id: b.dataset.pub }); toast(r.status === 'published' ? 'Published' : 'Pipeline Failed — open Edit for details', r.status === 'published' ? 'ok' : 'bad'); loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics(); }));
+    body.querySelectorAll('[data-pub]').forEach(b => b.addEventListener('click', async () => { const r = await apiPost(ART, 'publish', { id: b.dataset.pub }); toast(r.status === 'published' ? 'Published' : 'Pipeline Failed — open Edit for details', r.status === 'published' ? 'ok' : 'bad'); loadLibrary(); loadExecutive(); loadCoverage(); loadMissingTopics(); loadHealth(); loadErrorCenter(); }));
     body.querySelectorAll('[data-unpub]').forEach(b => b.addEventListener('click', async () => { await apiPost(ART, 'draft', { id: b.dataset.unpub }); toast('Unpublished — graph concept retracted', 'ok'); loadLibrary(); loadExecutive(); }));
     body.querySelectorAll('[data-repair]').forEach(b => b.addEventListener('click', async () => { toast('Improving…'); const r = await apiPost(ART, 'repair', { id: b.dataset.repair }); toast(r.verification?.ok ? 'Improved &amp; republished' : 'Still needs attention — see Edit', r.verification?.ok ? 'ok' : 'bad'); loadLibrary(); }));
     body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!confirm('Delete this article? This also retracts it from the knowledge graph.')) return; await apiPost(ART, 'delete', { id: b.dataset.del }); toast('Deleted', 'ok'); loadLibrary(); loadExecutive(); }));
@@ -752,6 +804,21 @@
 
     document.getElementById('pgAsk').onclick = runChatbotCheck;
     document.getElementById('pgQ').addEventListener('keydown', e => { if (e.key === 'Enter') runChatbotCheck(); });
+    loadChatbotSources();
+  }
+
+  // AUTOMATIC SOURCE DETECTION — populates the mode select from the live pipeline's
+  // own SOURCE_STAGES (chatbot-diagnostics.js::getTestableSources), never hardcoded.
+  // Every option drives the REAL production /api/ai-chat pipeline via sourceFlags
+  // (see runChatbotCheck) — there is no separate diagnostic engine.
+  let chatbotSourceKeys = [];
+  async function loadChatbotSources() {
+    const data = await apiGet(KB + '?action=chatbot-sources');
+    const sel = document.getElementById('pgSourceMode');
+    const sources = data.sources || [];
+    chatbotSourceKeys = sources.map(s => s.key);
+    sel.innerHTML = '<option value="production">Production (all sources enabled)</option>'
+      + sources.map(s => `<option value="${esc(s.key)}"${s.note ? ` title="${esc(s.note)}"` : ''}>${esc(s.label)} Only</option>`).join('');
   }
 
   // ── CHATBOT CHECKER (spec Phase 8) — diagnostic tool, not a simple chatbot.
@@ -759,14 +826,44 @@
   // SSE stream, same source badge). Step 2: ask ai-kb-admin's chatbot-check action
   // to diagnose WHY (reuses ai_response_logs + the same retrieval chain the publish
   // gate uses — see chatbot-diagnostics.js). Never a second chat engine. ──────────
+  // Builds the sourceFlags body for a "X Only" test mode: every detected source
+  // disabled except the selected one. 'production' (or an unrecognized mode)
+  // sends no override at all, so the request is byte-for-byte the same as a real
+  // visitor's — see buildExecutionContext() in ai-chat.js.
+  function sourceFlagsForMode(mode) {
+    if (mode === 'production' || !chatbotSourceKeys.includes(mode)) return null;
+    const flags = {};
+    for (const k of chatbotSourceKeys) flags[k] = (k === mode);
+    return flags;
+  }
+
   async function runChatbotCheck() {
     const q = document.getElementById('pgQ').value.trim(); if (!q) return;
     const out = document.getElementById('pgOut');
-    out.innerHTML = '<div class="empty">Asking the chatbot…</div>';
+    const mode = document.getElementById('pgSourceMode').value;
+    const sourceFlags = sourceFlagsForMode(mode);
+    out.innerHTML = '<div class="empty">Asking the chatbot' + (sourceFlags ? ' (' + esc(mode) + ' only)' : '') + '…</div>';
     const t0 = performance.now();
     let answer = '', src = null;
     try {
-      const r = await fetch('/api/ai-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: q }] }) });
+      // Sends the admin session Bearer token so ai-chat.js's admin-diagnostic
+      // bypass exempts this call from the public visitor guest-message limit —
+      // otherwise an already-tested admin browser can silently get a JSON "limit
+      // reached" response instead of a real answer, misreporting a healthy
+      // chatbot as broken (found via live testing). sourceFlags (only honored for
+      // an authenticated admin-diagnostic call) drives the SAME production
+      // routing decisions via the execution-context layer — this is the real
+      // pipeline in every mode, never a second implementation.
+      const body = { messages: [{ role: 'user', content: q }], debug: true };
+      if (sourceFlags) body.sourceFlags = sourceFlags;
+      const r = await fetch('/api/ai-chat', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      const contentType = r.headers.get('content-type') || '';
+      if (!contentType.includes('text/event-stream')) {
+        // Not a stream — either a validation error or the visitor limit response.
+        const j = await r.json().catch(() => null);
+        out.innerHTML = `<div class="verify-box fail"><b>Chatbot call did not return an answer</b><div style="margin-top:6px;color:var(--muted)">${esc((j && (j.title || j.error)) || 'HTTP ' + r.status + ' — non-streaming response.')}</div><div style="margin-top:6px;font-size:11.5px;color:var(--dim)">This is a chat-access response, not a weak-answer diagnosis — it does not reflect the chatbot's real answer quality.</div></div>`;
+        return;
+      }
       const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '';
       while (true) {
         const { done, value } = await reader.read(); if (done) break;
@@ -781,10 +878,10 @@
     const clientLatencyMs = Math.round(performance.now() - t0);
     out.innerHTML = '<div class="empty">Diagnosing the answer…</div>';
     const diag = await apiPost(KB, 'chatbot-check', { question: q, sourceLayer: src?.layer }).catch(() => null);
-    renderChatbotCheck(q, answer, src, diag, clientLatencyMs);
+    renderChatbotCheck(q, answer, src, diag, clientLatencyMs, mode);
   }
 
-  function renderChatbotCheck(question, answer, src, diag, clientLatencyMs) {
+  function renderChatbotCheck(question, answer, src, diag, clientLatencyMs, mode) {
     const out = document.getElementById('pgOut');
     if (!diag) { out.innerHTML = '<div class="empty">Diagnosis unavailable — chatbot-check action failed.</div>'; return; }
     const strongBadge = diag.strong
@@ -799,6 +896,7 @@
       </div>`).join('');
     out.innerHTML = `
       <div class="verify-box ${diag.strong ? 'ok' : 'fail'}">
+        ${mode && mode !== 'production' ? `<div style="margin-bottom:8px"><span class="chip seo">Mode: ${esc(humanize(mode))} Only — other sources disabled for this call via the real production routing</span></div>` : ''}
         <div style="margin-bottom:8px"><b>Q:</b> ${esc(question)}</div>
         <div style="margin-bottom:8px;color:var(--muted)"><b>A:</b> ${esc((answer || '').slice(0, 500))}${(answer || '').length > 500 ? '…' : ''}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
@@ -809,13 +907,24 @@
           ${diag.articleId ? `<span class="chip">Article: ${esc(diag.articleId)}</span>` : ''}
           ${diag.graphNodeId ? `<span class="chip">Node: ${esc(diag.graphNodeId)}</span>` : ''}
         </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px"><b>Source used:</b> ${esc(diag.sourceUsed)} — ${esc(diag.whySelected)}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px"><b>Retrieval summary:</b> ${esc(diag.retrievalSummary)}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Knowledge coverage: intent=${esc(diag.knowledgeCoverage?.intent)} · category=${esc(diag.knowledgeCoverage?.category || 'none')} · context kept=${diag.knowledgeCoverage?.contextKept ? 'yes' : 'no'}</div>
         ${weaknessRows || '<div class="empty">No issues detected.</div>'}
         ${diag.claudePrompt ? `<div style="margin-top:10px">
             <button class="btn sm" id="claudePromptBtn">📋 Generate Claude Repair Prompt</button>
             <textarea id="claudePromptOut" rows="6" readonly style="display:none;width:100%;margin-top:8px;background:var(--inset);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Courier New',monospace;font-size:11.5px;padding:10px"></textarea>
           </div>` : ''}
+        ${!diag.strong ? `<div style="margin-top:10px"><button class="btn sm" id="captureKnowledgeBtn">📥 Auto Knowledge Capture — prepare as article draft</button></div>` : ''}
       </div>`;
+    // AUTO KNOWLEDGE CAPTURE (spec) — reuses the EXISTING ai-brief → editor draft
+    // flow (same as Missing Topics' Manual/SEO Auto/AI Generate actions), never a
+    // second publishing path, and never loses the already-generated OpenAI answer
+    // by discarding it and regenerating from scratch — see captureAsArticleDraft.
+    // Opens a DRAFT for review — the existing Save/Publish approval gate is
+    // untouched, nothing bypasses it or auto-publishes.
+    const captureBtn = document.getElementById('captureKnowledgeBtn');
+    if (captureBtn) captureBtn.addEventListener('click', () => captureAsArticleDraft(question, answer));
     out.querySelectorAll('[data-autorepair]').forEach(b => b.addEventListener('click', async () => {
       toast('Running ' + b.dataset.autorepair + '…');
       await apiPost(KB, b.dataset.autorepair, { limit: 50, offset: 0 });
@@ -849,6 +958,7 @@
     wireAdvanced();
 
     document.getElementById('newArticleBtn').onclick = () => { openEditor(); };
+    document.getElementById('exploreBtn').onclick = runExplore;
     document.getElementById('refreshBtn').onclick = () => { loadExecutive(); loadRecommendations(); loadCoverage(); loadMissingTopics(); loadLibrary(); loadHealth(); loadErrorCenter(); };
     document.getElementById('adminLibRefresh').onclick = () => loadLibrary();
     document.getElementById('adminLibStatus').onchange = e => { libState.status = e.target.value; libState.page = 1; loadLibrary(); };

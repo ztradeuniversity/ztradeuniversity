@@ -12,6 +12,7 @@ import { getLatestResponseLog } from './ai-supabase.js';
 import { retrieveBest } from './graph-retrieval.js';
 import { classifyIntent } from './intent-engine.js';
 import { relevanceEngine, enforceRelevance } from './relevance-engine.js';
+import { SOURCE_STAGES } from './answer-source.js';
 
 // Each weakness maps to: a clear explanation, an auto-repair action when one
 // genuinely exists in this codebase (kb-admin actions only — never invented),
@@ -86,21 +87,64 @@ export async function diagnoseChatbotAnswer(env, { question, sourceLayer } = {})
   const isFallback = !!log?.is_fallback || sourceLayer === 'safe';
   const responseTimeMs = log?.response_time_ms ?? null;
 
+  // BUGFIX (found via live testing): 'no-graph-node' must only fire when NEITHER
+  // an article nor a graph node was found — a real Database-sourced answer (has
+  // articleId, no graphNodeId, by design) was previously flagged with a spurious
+  // "Knowledge Missing" weakness alongside a correct "Strong answer" verdict.
+  const nothingFound = !articleId && !graphNodeId;
   const codes = [];
-  if (!articleId && !graphNodeId) codes.push('no-article');
-  if (!graphNodeId) codes.push('no-graph-node');
+  if (nothingFound) { codes.push('no-article'); codes.push('no-graph-node'); }
   if (graphNodeId && top && !kept) codes.push('poor-context');
-  if (confidence && confidence !== 'HIGH') codes.push('low-confidence');
+  if (confidence && confidence !== 'HIGH' && !articleId) codes.push('low-confidence');
   if (isFallback) codes.push('is-fallback');
 
   const weaknesses = [...new Set(codes)].map(code => ({ code, ...WEAKNESS_LIBRARY[code] }));
   const strong = !isFallback && !!(articleId || (graphNodeId && confidence === 'HIGH' && kept));
 
+  // SOURCE USED + WHY (spec: "Response Diagnostics" — Final Answer/Source Used/Why
+  // selected/Retrieval Summary). Derived from the same real signals above, mirroring
+  // the priority order answer-source.js documents (Database → Graph → Live → OpenAI → Safe).
+  let sourceUsed = 'safe', whySelected = 'No database, graph, live-data, or OpenAI source produced a confident answer.';
+  if (articleId) { sourceUsed = 'database'; whySelected = `A published article (id ${articleId}) matched this question — Database always wins first in the retrieval priority order.`; }
+  else if (graphNodeId && confidence === 'HIGH' && kept) { sourceUsed = 'graph'; whySelected = `Knowledge-graph concept "${graphNodeId}" matched at HIGH confidence and passed the relevance gate.`; }
+  else if (sourceLayer && sourceLayer !== 'safe') { sourceUsed = sourceLayer; whySelected = `Reported by the live chat call as the "${sourceLayer}" layer.`; }
+  else if (isFallback) { sourceUsed = 'safe'; whySelected = 'Fell through to Safe Reply / OpenAI fallback — no higher-priority source matched.'; }
+
+  const retrievalSummary = nothingFound
+    ? `No article and no graph concept matched "${question}" (intent=${intent}).`
+    : `${articleId ? 'Article ' + articleId : ''}${articleId && graphNodeId ? ' + ' : ''}${graphNodeId ? 'graph concept ' + graphNodeId : ''} matched (confidence=${confidence || 'n/a'}, relevance kept=${kept ? 'yes' : 'no'}).`;
+
   return {
     question, confidence, responseTimeMs, articleId, graphNodeId, isFallback,
+    sourceUsed, whySelected, retrievalSummary,
     knowledgeCoverage: { intent, category: top?.item?.category || null, contextKept: kept },
     strong,
     weaknesses,
     claudePrompt: strong ? null : buildClaudePrompt(question, weaknesses),
   };
+}
+
+// AUTOMATIC SOURCE DETECTION — the testable source list comes directly from
+// answer-source.js's SOURCE_STAGES (the same 5-stage priority order the real
+// chatbot already implements), not a hardcoded UI list.
+//
+// gateAvailable=true means /api/ai-chat's execution-context layer (see
+// buildExecutionContext in ai-chat.js) has a REAL `ctx.<source>` check wired
+// into that source's existing routing block — toggling it off makes the real
+// production pipeline skip that source, exactly like its existing "not found"
+// fallthrough already does. This is the ONLY chatbot execution path — there is
+// no separate diagnostic engine. 'live' is gate-backed at 4 of its 5 producing
+// call sites; one narrow branch (an explicit short-status market-dump reply) is
+// intentionally left ungated because it's a branch of a mutually-exclusive
+// intent/depth reasoning chain, not an independent source call (see the inline
+// comment in ai-chat.js) — so a "Live disabled" test may occasionally still show
+// a live-sourced answer from that one branch. 'safe' is the terminal fallback
+// and has no "disable" concept (it's what happens when everything else is off).
+const GATE_NOTES = {
+  live: 'Gate-backed at 4 of 5 producing call sites in ai-chat.js; one short-status branch is a reasoning-chain branch, not an independent source call, and is intentionally left always-on.',
+};
+export function getTestableSources() {
+  return SOURCE_STAGES
+    .filter(s => s.layer !== 'safe')
+    .map(s => ({ key: s.layer, label: s.label, gateAvailable: true, note: GATE_NOTES[s.layer] || null }));
 }

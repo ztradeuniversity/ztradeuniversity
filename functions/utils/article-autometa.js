@@ -74,7 +74,10 @@ export function parseJsonBlock(text) {
 }
 
 async function aiMeta(env, content) {
-  const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct';
+  // Current supported Workers AI text model (the prior default
+  // @cf/meta/llama-3.1-8b-instruct was deprecated 2026-05-30 → CF error 5028,
+  // same fix already applied in composer-llm.js — this call site was missed).
+  const model = env.LLM_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast';
   const sys = SYS.replace('__CATS__', CATEGORY_KEYS.join(', '));
   const r = await env.AI.run(model, {
     messages: [{ role: 'system', content: sys }, { role: 'user', content: String(content).slice(0, 6000) }],

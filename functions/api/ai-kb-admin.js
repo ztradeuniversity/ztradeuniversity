@@ -29,7 +29,7 @@ import { buildEvolutionReport } from '../utils/evolution-engine.js';
 import { buildConceptFromArticle, INGEST_NOTES } from '../utils/article-ingest.js';
 import { suggestLinks, buildFaqSchema, buildSeoSuggestion } from '../utils/article-enrich.js';
 import { suggestRelatedArticles, buildInternalLinks, suggestSmartChips, buildRecommendationWidget, buildSitemapEntry } from '../utils/article-seo.js';
-import { buildContentDashboard, buildAuthorRecommendations, buildCoverageDashboard } from '../utils/content-dashboard.js';
+import { buildContentDashboard, buildAuthorRecommendations, buildCoverageDashboard, buildExploreTitles } from '../utils/content-dashboard.js';
 import { getAnchorEntries } from '../utils/anchor-entries.js';
 import { queryArticles } from '../utils/ai-supabase.js';
 import { strengthenGraphConnections } from '../utils/graph-growth.js';
@@ -39,7 +39,7 @@ import { buildFeedbackRecommendations } from '../utils/feedback-loop.js';
 import { buildHealthReport } from '../utils/health-report.js';
 import { systemLogSummary, logSystemEvent } from '../utils/system-log.js';
 import { requireAdminModule } from '../utils/admin-session.js';
-import { diagnoseChatbotAnswer } from '../utils/chatbot-diagnostics.js';
+import { diagnoseChatbotAnswer, getTestableSources } from '../utils/chatbot-diagnostics.js';
 import { runHealthProbes } from '../utils/health-probes.js';
 import { buildErrorCenter } from '../utils/error-center.js';
 
@@ -361,6 +361,17 @@ export async function onRequest(context) {
     // ERROR CENTER (spec Phase 9) — see error-center.js for the aggregation.
     if (action === 'error-center') {
       return json(await buildErrorCenter(env));
+    }
+    // CHATBOT CHECKER — automatic source detection (never hardcoded — derived
+    // from answer-source.js's SOURCE_STAGES, the same list the real chatbot uses).
+    if (action === 'chatbot-sources') {
+      return json({ sources: getTestableSources() });
+    }
+    // EXPLORE — MISSING TOPICS (spec Phase 4/production addendum) — many concrete
+    // suggested article titles, never empty when real gap data exists (graph
+    // concepts without an article, or logged chatbot questions).
+    if (action === 'explore-topics') {
+      return json(await buildExploreTitles(env, { limit: 80 }));
     }
     return json({ error: 'unknown action' }, 400);
   }

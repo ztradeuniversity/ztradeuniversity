@@ -176,3 +176,43 @@ export async function buildCoverageDashboard(env) {
     note: 'Coverage % = published articles ÷ graph concepts logged for that category — both are real, queryable numbers. No fixed "total topics" target is invented; categories are discovered from the live graph + article table, not a hardcoded taxonomy.',
   };
 }
+
+// EXPLORE — MISSING TOPICS (spec: "Explore" button must surface many concrete
+// suggested article TITLES, not just category-level gaps, even when kb_missing
+// demand hasn't been logged yet). Two real sources, no invented titles: (1) every
+// graph concept (getAnchorEntries) that has no article with a matching title yet,
+// (2) every real unanswered chatbot question (kb_missing) verbatim, sentence-cased
+// into a title. Demand-sourced titles are deduped first (real user signal ranks
+// above a structural gap).
+export async function buildExploreTitles(env, { limit = 60 } = {}) {
+  const entries = getAnchorEntries();
+  const articles = await queryArticles(env, { limit: 500 }).catch(() => []);
+  const articleTitles = new Set(articles.map(a => String(a.title || '').toLowerCase().trim()).filter(Boolean));
+  const missing = await getMissingKnowledge(env, { limit: 150 }).catch(() => []);
+
+  const fromDemand = missing
+    .filter(m => m.question && m.question.trim())
+    .map(m => ({
+      title: m.question.trim().charAt(0).toUpperCase() + m.question.trim().slice(1).replace(/\?+$/, ''),
+      category: m.category || 'uncategorized', source: 'Real chatbot question — unanswered',
+    }));
+
+  const fromGraph = entries
+    .filter(e => e && (e.title || e.topic))
+    .map(e => ({ title: (e.title || e.topic).trim(), category: e.category || 'uncategorized', source: 'Graph concept with no matching article' }))
+    .filter(t => t.title && !articleTitles.has(t.title.toLowerCase()));
+
+  const seen = new Set();
+  const titles = [...fromDemand, ...fromGraph].filter(t => {
+    const key = t.title.toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return {
+    titles: titles.slice(0, limit),
+    totalCandidates: titles.length,
+    note: 'Every title is either a real logged chatbot question or an existing graph concept with no matching article — nothing invented.',
+  };
+}

@@ -67,6 +67,7 @@ import { detectConversationMove, conversationLead } from '../utils/conversation-
 import { normalizeMultilang, refineLanguage } from '../utils/lang-assist.js';
 import { detectLearningSpeed, adaptiveStance, smartRecommendation } from '../utils/adaptive-mentor.js';
 import { fallbackPathChips } from '../utils/journey-flow.js';
+import { requireAdminModule } from '../utils/admin-session.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -495,6 +496,34 @@ function mergeProfileIntoContext(clientTC, profile) {
   };
 }
 
+// ── EXECUTION CONTEXT (Chatbot Checker one-click source testing) ─────────────
+// A single, additive, default-safe configuration layer the EXISTING routing
+// decisions read via `ctx.<source>` checks — the routing logic itself (the
+// if/else priority chain below) is completely unchanged; each check only adds
+// `&& ctx.<source>` to an already-existing condition, so when every flag is true
+// (the only possible state for a real visitor, and the default for an admin call
+// too) the pipeline is byte-for-byte identical to before this layer existed.
+//
+// Only 3 of the 5 documented sources (database/graph/openai) are wired to a gate.
+// 'live' and 'calc' are intentionally left partially/un-wired at a few call sites
+// (documented inline at each one) where the source-producing code is a branch of
+// a broader intent/depth cognitive-reasoning if/else-if chain rather than an
+// independent "try this source, else fall through" block — forcing a gate there
+// would change WHICH REASONING BRANCH executes, not just which source answers,
+// and that could not be verified safely without live execution in this
+// environment. Per instruction: implement the infrastructure, leave the
+// unverifiable switches at their safe (always-on) default rather than risk an
+// unverified behavior change to a production chatbot.
+function buildExecutionContext(body, isAdminDiagnostic) {
+  const ctx = { database: true, graph: true, live: true, calc: true, openai: true };
+  if (isAdminDiagnostic && body && body.sourceFlags && typeof body.sourceFlags === 'object') {
+    for (const k of Object.keys(ctx)) {
+      if (body.sourceFlags[k] === false) ctx[k] = false;
+    }
+  }
+  return ctx;
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const waitUntil = (p) => { try { context.waitUntil?.(p); } catch {} };   // background persistence
@@ -701,8 +730,24 @@ export async function onRequest(context) {
   // limit-reached card, which the client renders + opens the existing modal.
   const { tier } = await resolveTier(env, identityToken);
   const visitorLimit = parseInt(env.AI_VISITOR_MESSAGE_LIMIT ?? '5', 10) || 5;
+  // ADMIN DIAGNOSTIC BYPASS (Chatbot Checker) — the Content Center's Chatbot
+  // Checker calls this exact endpoint to diagnose real answers; it must never be
+  // blocked by the visitor guest-message limit, which exists to gate REAL public
+  // usage, not an internal admin diagnostic. Reuses the SAME admin-session check
+  // ai-articles.js/ai-kb-admin.js already gate on (Bearer admin session for
+  // module 'articles'/'kb', or the legacy x-admin-key) — no new auth system.
+  const isAdminDiagnostic = await requireAdminModule(env, request, ['articles', 'kb'], { header: 'x-admin-key', value: env.AI_ADMIN_KEY }).catch(() => false);
+  // EXECUTION CONTEXT (Chatbot Checker source ON/OFF testing) — a small, additive,
+  // default-safe configuration layer the EXISTING routing decisions below read.
+  // Every flag defaults to true, so with no override (every real visitor, and any
+  // admin call that doesn't pass sourceFlags) the pipeline is byte-for-byte
+  // identical to before this layer existed. Only an authenticated admin-diagnostic
+  // request may set a flag to false, and it only ever narrows behavior (skips an
+  // existing "try this source" block, exactly like the existing not-found case
+  // already does) — it never adds new behavior. See buildExecutionContext().
+  const ctx = buildExecutionContext(body, isAdminDiagnostic);
   let guestSetCookie = null;
-  if (tier !== 'unlimited') {
+  if (tier !== 'unlimited' && !isAdminDiagnostic) {
     const used = await readGuestCount(env, request);
     if (used >= visitorLimit) {
       // 6th message → block. Do not call the AI; do not increment further.
@@ -879,6 +924,15 @@ export async function onRequest(context) {
         p10Followups   = singleFollowup(cognition, lang);
       } else if (plan.marketDump && (depth === 'MICRO' || depth === 'SHORT')) {
         // Explicit short status → one concise line + ONE natural follow-up.
+        // NOT gated by ctx.live (unlike the other 4 live-source blocks below):
+        // this is one branch of a mutually-exclusive intent/depth reasoning
+        // if/else-if chain (see kConf.level==='UNKNOWN' / analysis.multi / this /
+        // !plan.marketDump above and below) — disabling it would make control
+        // fall into the SIBLING branch (`!plan.marketDump`, a completely
+        // different CTA/follow-up reasoning path), not simply "skip live, try
+        // the next source." That's a different behavior change than source
+        // testing intends, and isn't verifiable without live execution, so it's
+        // deliberately left out of the execution-context gating.
         directAnswer = shortStatusAnswer({ ...analysis, suggestedFollowups: [] }, marketData, lang, singleFollowup(cognition, lang)); directSource = 'live';
       } else if (!plan.marketDump) {
         // CTA intelligence: intents whose body already invites the user (or are
@@ -897,7 +951,7 @@ export async function onRequest(context) {
         // ── PHASE 11A.4: SEMANTIC RETRIEVAL — answer from the KB by meaning when a
         // high-confidence match exists. English-only for now (localized KB lands in
         // 11B); depth-aware; curated (short/deep), never a raw article dump.
-        if (lang === 'en' && kConf.level !== 'LOW') {
+        if (lang === 'en' && kConf.level !== 'LOW' && ctx.graph) {
           const m = await retrieveBest(env, aText, { lang, category: analysis.category });   // graph-backed when enabled, else KB_SEED; category narrows candidates at scale
           // Phase 11C.0B: only use a KB hit that passes relevance (no topic drift).
           if (m && m.confidence === 'HIGH' && enforceRelevance({ category: m.item.category, concepts: m.item.concepts, relevanceTags: m.item.relevanceTags }, rel)) {
@@ -1134,7 +1188,7 @@ export async function onRequest(context) {
   // header + related chips, and OVERRIDE any misfired clarification so a price ask
   // can never be answered with a clarification menu or an unrelated concept.
   let _awChips = [];
-  if (!chartAnalysis && !followup && !_unsupported) {
+  if (!chartAnalysis && !followup && !_unsupported && ctx.live) {
     try {
       const _aw = marketAwareness({ text: genText, marketData, calendarData, lang });
       if (_aw && _aw.answer) { directAnswer = _aw.answer; directSource = 'live'; clarifyAnswer = null; _awChips = _aw.chips || []; }
@@ -1144,7 +1198,7 @@ export async function onRequest(context) {
   // ── ACTIVATION: DETERMINISTIC CALCULATORS — when the user gives the numbers for a
   // lot-size / risk-reward / pip-value question, compute the EXACT answer (pure math,
   // never hallucinated) and short-circuit the engine. Highest content priority.
-  if (!_unsupported && !chartAnalysis && !followup) {
+  if (!_unsupported && !chartAnalysis && !followup && ctx.calc) {
     try {
       const _calc = detectCalcRequest(genText);
       if (_calc.ready) { const _out = runCalculator(_calc, lang); if (_out) { directAnswer = _out; directSource = 'calc'; clarifyAnswer = null; } }
@@ -1156,7 +1210,7 @@ export async function onRequest(context) {
   // probability not certainty, never a signal) from the already-fetched marketData;
   // for a live-price ask on an instrument we have NO feed for (EUR/USD, indices,
   // oil), say so honestly instead of inventing a number (STEP 9). Additive.
-  if (!chartAnalysis && !followup && !_unsupported) {
+  if (!chartAnalysis && !followup && !_unsupported && ctx.live) {
     try {
       const _decInst = marketDecisionInstrument(genText);
       const _pxAsk   = livePriceInstrument(genText);
@@ -1177,7 +1231,7 @@ export async function onRequest(context) {
   // indices, oil) → conceptual Technical/Fundamental/Risk/Confirmation/Conclusion
   // analysis without inventing a price (STEP 8). Additive; only when nothing
   // confident was already produced.
-  if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported) {
+  if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported && ctx.live) {
     try {
       const _why = detectMarketWhy(genText);
       if (_why.topic) {
@@ -1196,7 +1250,7 @@ export async function onRequest(context) {
   // market-context engine; the rest get driver-based educational analysis with an
   // honest "can't verify live price" (no invented prices, never a signal). Only
   // when nothing confident was already produced. Additive.
-  if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported) {
+  if (!directAnswer && !clarifyAnswer && !chartAnalysis && !followup && !_unsupported && ctx.live) {
     try {
       const _iq = detectInstrumentQuery(genText);
       if (_iq) { directAnswer = buildInstrumentAnalysis({ symbol: _iq.symbol, marketData, calendarData, lang, kind: _iq.kind }); directSource = 'live'; }
@@ -1278,7 +1332,7 @@ export async function onRequest(context) {
   // safe reply stays). Runs BEFORE the OpenAI fallback so DB precedes OpenAI.
   let _dbArticleAnswered = false;
   if (aiSbConfigured(env) && lang === 'en' && !chartAnalysis && !_unsupported
-      && !directAnswer && !clarifyAnswer && !kbAnswer) {
+      && !directAnswer && !clarifyAnswer && !kbAnswer && ctx.database) {
     try {
       const _arts = await searchArticles(env, { q: genText, limit: 1 });
       const _art  = _arts && _arts[0];
@@ -1356,7 +1410,7 @@ export async function onRequest(context) {
   // generator (off-domain/signal/price guards); on any miss the existing safe reply stays.
   if (learnEnabled(env) && lang === 'en' && !chartAnalysis && !_unsupported
       && !kbAnswer && !directAnswer && !_dbArticleAnswered
-      && (p10Intent === 'fallback' || cls.intent === 'fallback')) {
+      && (p10Intent === 'fallback' || cls.intent === 'fallback') && ctx.openai) {
     try {
       // STABILIZATION FIX: use the handler-scoped genText. `aText` is const-scoped to
       // the (!followup && !chartAnalysis) block above (closes ~L1091) and is OUT of
