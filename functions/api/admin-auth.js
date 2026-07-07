@@ -2,10 +2,13 @@
 // ════════════════════════════════════════════════════════════════════════════
 // ENTERPRISE ADMIN PORTAL — one shared login/session/recovery endpoint for all
 // 9 admin modules (dashboard/kb/signals/governance/articles/feedback/
-// architecture/journal/library). Each module has its OWN independent password
-// (admin_modules table) — this endpoint never grants access to a module other
-// than the one requested. See supabase/admin-auth-schema.sql,
-// functions/utils/admin-store.js, functions/utils/admin-session.js.
+// architecture/journal/library). Authentication is a single path: the
+// Universal Admin Password (admin-store.js's legacySecretFor) always works for
+// every module; a module may ALSO set its own custom password (admin_modules
+// table) as an additional option, but that never disables the universal one.
+// This endpoint never grants access to a module other than the one requested.
+// See supabase/admin-auth-schema.sql, functions/utils/admin-store.js,
+// functions/utils/admin-session.js.
 //
 // Journal and Library's own DATA APIs (journal-admin.js / library-storage.js)
 // are untouched — they still check JOURNAL_ADMIN_PASSWORD / LIBRARY_ADMIN_PASSCODE
@@ -71,28 +74,46 @@ export async function onRequest(context) {
 }
 
 // Shared by change-password and request-email-change: verify the module's
-// CURRENT admin password, whether it already has its own hashed row or is
-// still on the day-1 master password. Returns the row (creating it from the
-// verified password if this is the module's very first authenticated action).
+// CURRENT admin password. The Universal Admin Password (see legacySecretFor)
+// always counts as valid, in addition to the module's own custom password if
+// it has one — so an admin who set a custom password but remembers the
+// universal one can still use Change Password / verified-email-change instead
+// of being forced through the Forgot-Password OTP flow.
 async function verifyCurrentPassword(env, moduleKey, password) {
   if (!password) return { valid: false, row: null };
+  const universal = legacySecretFor(env, moduleKey);
+  if (universal && timingSafeEqual(password, universal)) {
+    return { valid: true, row: await getModuleRow(env, moduleKey) };
+  }
   const row = await getModuleRow(env, moduleKey);
   if (row) {
     const valid = await verifyPassword(password, row.password_hash, row.salt, row.iterations);
     return { valid, row };
   }
-  const legacy = legacySecretFor(env, moduleKey);
-  if (!legacy || !timingSafeEqual(password, legacy)) return { valid: false, row: null };
-  const { hash, salt, iterations } = await hashPassword(password);
-  await upsertModuleRow(env, moduleKey, { password_hash: hash, salt, iterations, failed_attempts: 0, locked_until: null });
-  return { valid: true, row: await getModuleRow(env, moduleKey) };
+  return { valid: false, row: null };
 }
 
 // ── LOGIN ────────────────────────────────────────────────────────────────────
+// UNIVERSAL ADMIN PASSWORD (see admin-store.js's legacySecretFor) is checked
+// FIRST and always works, for every module, with no expiry — this replaces
+// the previous "day-1 only" design, which silently stopped accepting the
+// shared password for a module the instant that module's password was ever
+// changed (Change Password, or a completed Forgot-Password reset). That was
+// the exact cause of the Content Intelligence Center (module 'articles',
+// carried over from the retired ai-articles.html, which had already been
+// migrated off the day-1 password at some point) rejecting the same password
+// every still-unmigrated module accepted. There is now exactly one universal
+// credential that always works everywhere; a module's own custom password (if
+// it has one) remains valid too, so nothing that currently works stops working.
 async function handleLogin(env, moduleKey, password) {
   if (!password) return { ok: false, reason: 'invalid' };
-  const row = await getModuleRow(env, moduleKey);
 
+  const universal = legacySecretFor(env, moduleKey);
+  if (universal && timingSafeEqual(password, universal)) {
+    return { ok: true, token: await signAdminSession(env, moduleKey) };
+  }
+
+  const row = await getModuleRow(env, moduleKey);
   if (row) {
     if (row.locked_until && Date.now() < row.locked_until) return { ok: false, reason: 'locked' };
     const valid = await verifyPassword(password, row.password_hash, row.salt, row.iterations);
@@ -106,13 +127,9 @@ async function handleLogin(env, moduleKey, password) {
     return { ok: true, token: await signAdminSession(env, moduleKey) };
   }
 
-  // No row yet — this module's very first login. Accept its pre-existing
-  // legacy secret, then adopt the entered password as its own from now on.
-  const legacy = legacySecretFor(env, moduleKey);
-  if (!legacy || !timingSafeEqual(password, legacy)) return { ok: false, reason: 'invalid' };
-  const { hash, salt, iterations } = await hashPassword(password);
-  await upsertModuleRow(env, moduleKey, { password_hash: hash, salt, iterations, failed_attempts: 0, locked_until: null });
-  return { ok: true, token: await signAdminSession(env, moduleKey) };
+  // No row yet and the entered password wasn't the universal one — nothing
+  // else can authenticate this module.
+  return { ok: false, reason: 'invalid' };
 }
 
 // ── CHANGE PASSWORD ──────────────────────────────────────────────────────────

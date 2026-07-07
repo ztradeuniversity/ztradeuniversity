@@ -53,10 +53,12 @@ export async function onRequest(context) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 
   // Admin gate — never expose provisioning to the public. Accepts a signed
-  // admin-portal session (module 'kb' or 'governance' — both front-end tools
-  // share this backend) or, as a back-compat fallback, the legacy shared
-  // AI_ADMIN_KEY header.
-  const authorized = await requireAdminModule(env, request, ['kb', 'governance'], { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
+  // admin-portal session (module 'kb', 'governance', or 'articles' — 'articles'
+  // added so the unified Content Intelligence Center, which authenticates once as
+  // 'articles', can also call this file's health/content-dashboard/author-assistant
+  // etc. in the same session; mirrors ai-articles.js's symmetric widening to accept
+  // 'kb') or, as a back-compat fallback, the legacy shared AI_ADMIN_KEY header.
+  const authorized = await requireAdminModule(env, request, ['kb', 'governance', 'articles'], { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
   if (!authorized) {
     return json({ error: 'admin only' }, 403);
   }

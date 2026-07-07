@@ -153,6 +153,17 @@
     .articles-header h2 { font-family: 'Manrope','Inter',sans-serif; font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
     .articles-count { font-size: 13px; color: var(--muted); font-weight: 500; }
 
+    /* ── ARTICLES LIBRARY toolbar + pager (search/filter/auto-pagination) ── */
+    .lib-toolbar { display: flex; gap: 12px; flex-wrap: wrap; margin: -12px 0 28px; }
+    .lib-search { flex: 1; min-width: 220px; padding: 11px 16px; border-radius: 100px; border: 1.5px solid var(--border); font-size: 13.5px; font-family: 'Inter', sans-serif; color: var(--text); background: var(--white); }
+    .lib-search:focus { outline: none; border-color: var(--purple2); }
+    .lib-category { padding: 11px 16px; border-radius: 100px; border: 1.5px solid var(--border); font-size: 13.5px; font-family: 'Inter', sans-serif; color: var(--text); background: var(--white); cursor: pointer; }
+    .lib-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 36px; flex-wrap: wrap; }
+    .lib-pager button { padding: 8px 16px; border-radius: 100px; border: 1.5px solid var(--border); background: var(--white); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; transition: .18s; }
+    .lib-pager button:hover:not(:disabled) { border-color: var(--purple2); color: var(--purple2); }
+    .lib-pager button:disabled { opacity: .4; cursor: not-allowed; }
+    .lib-pager .lib-pageinfo { font-size: 13px; color: var(--muted); font-weight: 600; }
+
     .articles-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1719,14 +1730,21 @@
   </div>
 </section>
 
-<!-- ── LATEST FROM THE KNOWLEDGE BASE (auto-populated from admin/ai-articles.html publishes) ── -->
+<!-- ── ARTICLES LIBRARY (auto-populated + auto-paginated from published articles;
+     every article published via the Content Intelligence Center appears here
+     automatically — no manual HTML edit, no separate listing to maintain) ── -->
 <section class="articles-section" id="liveArticlesSection" style="display:none;">
   <div class="container">
     <div class="articles-header">
-      <h2>Latest Articles</h2>
+      <h2 id="liveArticlesTitle">Articles Library</h2>
       <span class="articles-count" id="liveArticleCount"></span>
     </div>
+    <div class="lib-toolbar">
+      <input type="search" id="libSearch" class="lib-search" placeholder="Search articles…" aria-label="Search articles" />
+      <select id="libCategory" class="lib-category" aria-label="Filter by category"><option value="">All categories</option></select>
+    </div>
     <div class="articles-grid" id="liveArticlesGrid"></div>
+    <div class="lib-pager" id="libPager"></div>
   </div>
 </section>
 
@@ -1872,10 +1890,17 @@
     });
   })();
 
-  // Latest Articles — published via admin/ai-articles.html appear here automatically,
-  // no manual HTML edit. Public, published-only (article-store.searchCandidates always
-  // filters is_active=true), no admin key needed. Hidden entirely if unconfigured/empty.
-  (function loadLiveArticles() {
+  // ARTICLES LIBRARY — every published article, searchable, filterable, and
+  // auto-paginated as the library grows (requirement 2). Public, published-only
+  // (article-store.searchCandidates always filters is_active=true), no admin key
+  // needed. Reuses the SAME /api/ai-articles?action=search endpoint the old
+  // "Latest Articles" widget used — just with real offset/page support added to
+  // the data layer, not a second listing system. Hidden entirely if unconfigured.
+  (function loadArticlesLibrary() {
+    const PAGE_SIZE = 24;
+    let state = { page: 1, q: '', category: '', total: 0 };
+    let debounceT = null;
+
     function escapeHtml(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
@@ -1885,42 +1910,106 @@
       for (const ch of String(cat || '')) h = (h * 31 + ch.charCodeAt(0)) % VARIANTS.length;
       return VARIANTS[h];
     }
-    fetch('/api/ai-articles?action=search&limit=20')
-      .then(r => r.json())
-      .then(data => {
-        if (!data || !data.configured || !Array.isArray(data.results) || !data.results.length) return;
-        const grid = document.getElementById('liveArticlesGrid');
-        const frag = document.createDocumentFragment();
-        data.results.forEach(a => {
-          if (!a || !a.slug) return; // no public page without a slug
-          const v = variantFor(a.category);
-          const card = document.createElement('article');
-          card.className = 'ac';
-          card.innerHTML =
-            '<div class="ac-visual v-' + v + '">' +
-              '<span class="ac-visual-label">' + escapeHtml(a.category || 'Trading') + '</span>' +
+    function pad3(n) { return String(n).padStart(3, '0'); }
+
+    function renderCards(results) {
+      const grid = document.getElementById('liveArticlesGrid');
+      grid.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      results.forEach(a => {
+        if (!a || !a.slug) return; // no public page without a slug
+        const v = variantFor(a.category);
+        const card = document.createElement('article');
+        card.className = 'ac';
+        card.innerHTML =
+          '<div class="ac-visual v-' + v + '">' +
+            '<span class="ac-visual-label">' + escapeHtml(a.category || 'Trading') + '</span>' +
+          '</div>' +
+          '<div class="ac-body">' +
+            '<span class="ac-cat c-' + v + '">' + escapeHtml(a.category || 'Article') + '</span>' +
+            '<h2 class="ac-title">' + escapeHtml(a.title || '') + '</h2>' +
+            '<p class="ac-excerpt">' + escapeHtml(a.summary || '') + '</p>' +
+            '<div class="ac-footer">' +
+              '<a href="/articles/' + encodeURIComponent(a.slug) + '" class="ac-read">Read Article ' +
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+              '</a>' +
+              '<span class="ac-date">' + escapeHtml(a.difficulty ? a.difficulty.charAt(0).toUpperCase() + a.difficulty.slice(1) : '') + '</span>' +
             '</div>' +
-            '<div class="ac-body">' +
-              '<span class="ac-cat c-' + v + '">' + escapeHtml(a.category || 'Article') + '</span>' +
-              '<h2 class="ac-title">' + escapeHtml(a.title || '') + '</h2>' +
-              '<p class="ac-excerpt">' + escapeHtml(a.summary || '') + '</p>' +
-              '<div class="ac-footer">' +
-                '<a href="/articles/' + encodeURIComponent(a.slug) + '" class="ac-read">Read Article ' +
-                  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
-                '</a>' +
-                '<span class="ac-date">' + escapeHtml(a.difficulty ? a.difficulty.charAt(0).toUpperCase() + a.difficulty.slice(1) : '') + '</span>' +
-              '</div>' +
-            '</div>';
-          frag.appendChild(card);
-        });
-        const count = frag.childNodes.length;
-        if (!count) return;
-        grid.appendChild(frag);
-        document.getElementById('liveArticleCount').textContent =
-          count + ' article' + (count !== 1 ? 's' : '');
-        document.getElementById('liveArticlesSection').style.display = '';
-      })
-      .catch(() => { /* graceful: section stays hidden if API unreachable */ });
+          '</div>';
+        frag.appendChild(card);
+      });
+      grid.appendChild(frag);
+    }
+
+    function renderPager() {
+      const pager = document.getElementById('libPager');
+      const totalPages = Math.max(1, Math.ceil(state.total / PAGE_SIZE));
+      if (totalPages <= 1) { pager.innerHTML = ''; return; }
+      pager.innerHTML =
+        '<button id="libPrev"' + (state.page <= 1 ? ' disabled' : '') + '>← Previous</button>' +
+        '<span class="lib-pageinfo">Page ' + state.page + ' of ' + totalPages + '</span>' +
+        '<button id="libNext"' + (state.page >= totalPages ? ' disabled' : '') + '>Next →</button>';
+      const prev = document.getElementById('libPrev'), next = document.getElementById('libNext');
+      if (prev) prev.addEventListener('click', () => { state.page--; load(); window.scrollTo({ top: document.getElementById('liveArticlesSection').offsetTop - 90, behavior: 'smooth' }); });
+      if (next) next.addEventListener('click', () => { state.page++; load(); window.scrollTo({ top: document.getElementById('liveArticlesSection').offsetTop - 90, behavior: 'smooth' }); });
+    }
+
+    function updateTitle() {
+      const title = document.getElementById('liveArticlesTitle');
+      if (state.q || state.category) { title.textContent = 'Articles Library'; return; }
+      const start = (state.page - 1) * PAGE_SIZE + 1;
+      const end = Math.min(state.page * PAGE_SIZE, state.total);
+      title.textContent = state.total ? ('Articles ' + pad3(start) + '–' + pad3(end)) : 'Articles Library';
+    }
+
+    function load() {
+      const params = new URLSearchParams({ page: String(state.page), limit: String(PAGE_SIZE) });
+      if (state.q) params.set('q', state.q);
+      if (state.category) params.set('category', state.category);
+      fetch('/api/ai-articles?action=search&' + params.toString())
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.configured || !Array.isArray(data.results)) return;
+          state.total = data.total != null ? data.total : data.results.length;
+          if (!state.total && !data.results.length) {
+            document.getElementById('liveArticlesSection').style.display = state.q || state.category ? '' : 'none';
+            document.getElementById('liveArticleCount').textContent = (state.q || state.category) ? 'No articles match your search' : '';
+            document.getElementById('liveArticlesGrid').innerHTML = '';
+            document.getElementById('libPager').innerHTML = '';
+            return;
+          }
+          renderCards(data.results);
+          renderPager();
+          updateTitle();
+          document.getElementById('liveArticleCount').textContent = state.total + ' article' + (state.total !== 1 ? 's' : '');
+          document.getElementById('liveArticlesSection').style.display = '';
+        })
+        .catch(() => { /* graceful: section stays hidden if API unreachable */ });
+    }
+
+    function loadCategoriesInto(select) {
+      fetch('/api/ai-articles?action=categories')
+        .then(r => r.json())
+        .then(data => {
+          (data.categories || []).forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.key || c.id || c; opt.textContent = c.label || c.name || c;
+            select.appendChild(opt);
+          });
+        })
+        .catch(() => {});
+    }
+
+    const searchInput = document.getElementById('libSearch');
+    const categorySelect = document.getElementById('libCategory');
+    loadCategoriesInto(categorySelect);
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceT);
+      debounceT = setTimeout(() => { state.q = searchInput.value.trim(); state.page = 1; load(); }, 300);
+    });
+    categorySelect.addEventListener('change', () => { state.category = categorySelect.value; state.page = 1; load(); });
+
+    load();
   })();
 </script>
 

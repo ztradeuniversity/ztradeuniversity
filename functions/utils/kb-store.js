@@ -64,6 +64,26 @@ export async function getNode(env, id) {
   return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
+// Enumerate node ids by prefix — needed because article chunk ids
+// (article-chunk-<articleId>-<i>, see article-chunker.js) are deterministic but
+// their count is never persisted anywhere; this is the only way to find them all
+// when retiring a deleted/unpublished article's chunks (article-graph-sync.js).
+// PostgREST `like` filter: a literal `*` in the value becomes SQL `%`.
+export async function getNodesByIdPrefix(env, prefix) {
+  if (!isConfigured(env) || !prefix) return [];
+  const rows = await sb(env, 'GET', 'kb_nodes', `id=like.${encodeURIComponent(prefix)}*&select=id,status`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+
+// Batched existence/status lookup for a set of ids — one query instead of N. Used
+// by the Articles Library list view to show a "graph-linked" indicator per row
+// without a round trip per article.
+export async function getNodesByIds(env, ids = []) {
+  if (!isConfigured(env) || !ids.length) return [];
+  const rows = await sb(env, 'GET', 'kb_nodes', `id=in.(${ids.map(encodeURIComponent).join(',')})&select=id,status`, null, null);
+  return Array.isArray(rows) ? rows : [];
+}
+
 export async function countConcepts(env) {
   const range = await sb(env, 'HEAD', 'kb_nodes', `type=eq.concept&status=eq.${STATUS.PUBLISHED}`, null, 'count=exact');
   if (!range) return 0;

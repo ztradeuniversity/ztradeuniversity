@@ -7,17 +7,17 @@
 // Graceful: every call returns null/false when AI Supabase isn't configured,
 // matching the rest of the codebase's zero-regression pattern.
 //
-// DAY-1 MIGRATION — MASTER PASSWORD (mandatory, overrides all prior per-module
-// legacy-secret behavior). Every protected module (present AND future — this
-// is a flat constant, not a per-module switch, so a new module automatically
-// inherits it) accepts ONE shared password, ZTU-Admin-2026, for its very
-// first login ONLY. The instant that module's password is ever changed
-// (Change Password or a completed Forgot-Password reset), its admin_modules
-// row holds a hash of the NEW password and this constant stops working for
-// THAT module — it is never consulted again once a row exists. Modules not
-// yet migrated keep accepting it indefinitely. Overridable via
-// ADMIN_MASTER_PASSWORD for deployments that want a different master value;
-// defaults to the literal required password otherwise.
+// UNIVERSAL ADMIN PASSWORD (mandatory, single shared credential for every
+// module — present AND future, since this is a flat constant, not a
+// per-module switch). ZTU-Admin-2026 (or ADMIN_MASTER_PASSWORD, if set)
+// ALWAYS works for every module's login, Change Password, and
+// verified-email-change — permanently, with no expiry and no "only until a
+// custom password is set" cutoff. A module MAY also set its own additional
+// custom password (Change Password / Forgot Password reset); that stays
+// valid too, but never disables the universal one. This is the single
+// authentication path shared across the whole admin portal — see
+// functions/api/admin-auth.js's handleLogin/verifyCurrentPassword for the
+// exact check order (universal password first, then the module's own hash).
 // ════════════════════════════════════════════════════════════════════════════
 
 const enc = new TextEncoder();
@@ -34,10 +34,10 @@ export const MASTER_PASSWORD = 'ZTU-Admin-2026';
 // for THAT module and this constant is no longer consulted for it.
 export const MASTER_RECOVERY_EMAIL = 'sirmzubair@gmail.com';
 
-// Day-1 fallback secret — used ONLY while no admin_modules row exists yet for
-// a given module. Once that module logs in (or changes/resets its password)
-// successfully once, its own hashed row takes over and this is never
-// consulted again for it.
+// The Universal Admin Password for the given module — always the same flat
+// constant (or its env override) for every module, checked first and always
+// valid by functions/api/admin-auth.js, independent of whether that module
+// also has its own custom password row.
 export function legacySecretFor(env, moduleKey) {
   return env.ADMIN_MASTER_PASSWORD || MASTER_PASSWORD;
 }

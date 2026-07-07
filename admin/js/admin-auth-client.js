@@ -19,12 +19,17 @@
   // Every module page now lives in admin/pages/, side-by-side, with the
   // launcher one level up at admin/index.html — so these paths are the same
   // relative to EVERY module page. Kept in sync with admin/index.html's TOOLS.
+  //
+  // 'kb' and 'governance' no longer have their own pages (kb-admin.html and
+  // governance-admin.html were merged into content-center.html and deleted) —
+  // removed from this list so the shared drawer/breadcrumb never links to a
+  // 404. Both module keys remain valid on the backend (ai-kb-admin.js still
+  // accepts 'kb'/'governance'/'articles' tokens) since content-center.html
+  // authenticates as 'articles' and calls that API in the same session.
   const MODULES = [
     { key: 'dashboard',    icon: '🏛', title: 'Executive Dashboard',    href: 'admin-dashboard.html' },
-    { key: 'kb',           icon: '🕸', title: 'Knowledge Graph Admin',  href: 'kb-admin.html' },
     { key: 'signals',      icon: '📡', title: 'Signal Admin',           href: 'signal-admin.html' },
-    { key: 'governance',   icon: '⚖️', title: 'Governance',             href: 'governance-admin.html' },
-    { key: 'articles',     icon: '📰', title: 'AI Article Manager',     href: 'ai-articles.html' },
+    { key: 'articles',     icon: '🧠', title: 'Content Intelligence Center', href: 'content-center.html' },
     { key: 'feedback',     icon: '💬', title: 'AI Feedback',            href: 'ai-feedback.html' },
     { key: 'architecture', icon: '🧭', title: 'System Architecture',    href: 'system-architecture.html' },
     { key: 'journal',      icon: '📓', title: 'Journal Admin',          href: 'journal-admin.html' },

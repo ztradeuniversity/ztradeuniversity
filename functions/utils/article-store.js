@@ -46,13 +46,34 @@ async function sb(env, method, table, qs, body, prefer) {
 }
 
 // ── ARTICLES ─────────────────────────────────────────────────────────────────
-export async function listArticles(env, { status, category, limit = 100 } = {}) {
+export async function listArticles(env, { status, category, limit = 100, offset = 0 } = {}) {
   let qs = `order=updated_at.desc&limit=${limit}`;
+  if (offset)                 qs += `&offset=${offset}`;
   if (status === 'published') qs += '&is_active=eq.true';
   if (status === 'draft')     qs += '&is_active=eq.false';
   if (category)               qs += `&category=eq.${encodeURIComponent(category)}`;
   const rows = await sb(env, 'GET', 'ai_articles', qs, null, null);
   return Array.isArray(rows) ? rows : [];
+}
+
+// Total row count for a status/category filter — used only to render page numbers
+// for the paginated Articles Library (public + admin). One HEAD request via
+// PostgREST's exact-count Prefer header; no rows are transferred.
+export async function countArticles(env, { status, category } = {}) {
+  if (!isConfigured(env)) return 0;
+  let qs = '';
+  if (status === 'published') qs += 'is_active=eq.true';
+  if (status === 'draft')     qs += (qs ? '&' : '') + 'is_active=eq.false';
+  if (category)               qs += (qs ? '&' : '') + `category=eq.${encodeURIComponent(category)}`;
+  try {
+    const res = await fetch(rest(env, 'ai_articles', qs), {
+      method: 'HEAD', headers: hdr(env, { Prefer: 'count=exact' }), signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return 0;
+    const total = (res.headers.get('content-range') || '').split('/').pop();
+    const n = parseInt(total, 10);
+    return Number.isFinite(n) ? n : 0;
+  } catch { return 0; }
 }
 
 export async function getArticle(env, idOrSlug) {
@@ -63,8 +84,9 @@ export async function getArticle(env, idOrSlug) {
 }
 
 // Candidate fetch for search (filtered set; ranking done in article-knowledge.js)
-export async function searchCandidates(env, { category, tags, limit = 40 } = {}) {
+export async function searchCandidates(env, { category, tags, limit = 40, offset = 0 } = {}) {
   let qs = `is_active=eq.true&order=updated_at.desc&limit=${limit}`;
+  if (offset)        qs += `&offset=${offset}`;
   if (category)     qs += `&category=eq.${encodeURIComponent(category)}`;
   if (tags?.length) qs += `&tags=ov.{${tags.map(t => encodeURIComponent(t)).join(',')}}`;
   const rows = await sb(env, 'GET', 'ai_articles', qs, null, null);

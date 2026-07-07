@@ -62,7 +62,10 @@ function deterministicMeta(content, overrides = {}) {
 
 const SYS = `You generate retrieval metadata for a Gold/Forex/Crypto trading-education knowledge base. Output ONLY a compact JSON object (no prose, no code fence) with keys: title (SEO-friendly, <=70 chars), aiTitle (clear natural-question phrasing a student would type), category (EXACTLY one of: __CATS__), difficulty (beginner|intermediate|advanced), tags (array of 5-8 short lowercase keywords), keywords (array of 5-10 retrieval phrases a user might search), summary (2-3 plain sentences the chatbot can cite), caption (short image caption). Base everything ONLY on the provided content.`;
 
-function parseJson(text) {
+// Exported (not just used locally) so other generative helpers — e.g. composer-llm.js's
+// article-brief generator — parse model JSON output the exact same way, instead of a
+// second copy of the same strip-fences-then-extract-braces logic.
+export function parseJsonBlock(text) {
   if (!text) return null;
   let t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
@@ -77,7 +80,7 @@ async function aiMeta(env, content) {
     messages: [{ role: 'system', content: sys }, { role: 'user', content: String(content).slice(0, 6000) }],
     max_tokens: 500, temperature: 0.3,
   });
-  return parseJson(r && (r.response || r.result || (typeof r === 'string' ? r : '')));
+  return parseJsonBlock(r && (r.response || r.result || (typeof r === 'string' ? r : '')));
 }
 
 function arr(v) { return Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean) : []; }

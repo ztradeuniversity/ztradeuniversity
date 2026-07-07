@@ -25,14 +25,16 @@ export const KNOWLEDGE_PRIORITY = [
 
 // ── MODULE 4 — SEARCH ────────────────────────────────────────────────────────
 // Fetch a candidate set (filtered) then fuzzy-rank in JS.
-export async function searchArticles(env, { q, category, tags, limit = 5 } = {}) {
+export async function searchArticles(env, { q, category, tags, limit = 5, offset = 0 } = {}) {
   if (!isConfigured(env)) return [];
   const cat = category || (q ? inferCategory(q) : null);
+  // Browse mode (Articles Library, no query text): stable-ordered, directly paginated —
+  // there's nothing to rank without a query, so offset/limit pass straight to the DB.
+  if (!q) return searchCandidates(env, { category: cat || undefined, tags, limit, offset });
   // Pull a generous candidate pool by category/tags, then rank by the full query.
   let candidates = await searchCandidates(env, { category: cat || undefined, tags, limit: 40 });
   // If category filter returned nothing, retry without it (broaden).
   if (!candidates.length && cat) candidates = await searchCandidates(env, { tags, limit: 40 });
-  if (!q) return candidates.slice(0, limit);
   return rankArticles(q, candidates, limit);
 }
 

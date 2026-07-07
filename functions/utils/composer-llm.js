@@ -14,6 +14,8 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { formInstruction } from './intent-form.js';
+import { CATEGORY_KEYS, inferCategory, slugify } from './article-categories.js';
+import { parseJsonBlock } from './article-autometa.js';
 
 // Configured when a Cloudflare Workers AI binding (env.AI) exists, OR a legacy
 // OpenAI-compatible endpoint (LLM_ENDPOINT + LLM_API_KEY) is provided, OR the new
@@ -218,6 +220,82 @@ export async function generateEducationalAnswer(env, question, lang = 'en', form
     if (/\bNOT_TRADING\b/i.test(text)) return null;        // model judged it off-domain → no answer
     if (/\b(buy now|sell now|go long now|go short now|enter (now|here) at)\b/i.test(text)) return null; // safety
     return text;
+  } catch { return null; }
+}
+
+// ── ARTICLE BRIEF + DRAFT GENERATION (Content Intelligence Center) ──────────
+// From a bare topic (or an existing article's current fields, for the "repair
+// weak metadata" flow), produce every field the editor needs before any body
+// text is written: SEO/meta fields, keywords, an outline, FAQ suggestions, an
+// image prompt. Reuses the SAME Workers-AI→OpenAI engine chain as every other
+// function in this file (callModel) — no parallel LLM path, no second engine to
+// configure/maintain. Always returns a usable object: a deterministic fallback
+// (topic-derived, no LLM required) fills every field when the model is
+// unconfigured, times out, or returns unusable JSON — mirrors the
+// "always-valid baseline" pattern already established in article-autometa.js,
+// for the same reason (the editor must never be blocked by an LLM outage).
+const BRIEF_SYSTEM = `You are a content strategist for a Gold (XAU/USD), Bitcoin, and trading-education knowledge base. Given a topic, output ONLY a compact JSON object (no prose, no code fence) with keys:
+title (<=70 chars), seoTitle (<=60 chars, keyword-forward), metaTitle (<=60 chars), metaDescription (140-160 chars), keywords (array of 6-10 search phrases), category (one short lowercase word), tags (array of 5-8 lowercase keywords), difficulty (beginner|intermediate|advanced), outline (array of 4-7 section heading strings), faqs (array of 3-5 {question, answer} objects, answers 1-2 sentences), imagePrompt (one sentence describing a header illustration), internalLinkHints (array of 2-4 short related-topic phrases).
+Base everything only on the given topic — do not invent facts, prices, or statistics.`;
+
+function deterministicBrief(topic, overrides = {}) {
+  const t = String(topic || overrides.title || '').trim() || 'Untitled Topic';
+  const cat = overrides.category || inferCategory(t) || 'beginner-guides';
+  const kws = t.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2).slice(0, 8);
+  return {
+    title: t, seoTitle: t.slice(0, 60), metaTitle: t.slice(0, 60),
+    metaDescription: `Learn ${t.toLowerCase()} — a clear, practical guide for Gold and crypto traders.`.slice(0, 160),
+    keywords: kws.length ? kws : [t.toLowerCase()],
+    category: CATEGORY_KEYS.includes(cat) ? cat : 'beginner-guides',
+    tags: kws.slice(0, 6), difficulty: overrides.difficulty || 'beginner',
+    outline: [`What is ${t}?`, 'Why it matters', 'How to use it', 'Common mistakes'],
+    faqs: [{ question: `What is ${t}?`, answer: `${t} is a trading concept every ZTU student should understand before applying it live.` }],
+    imagePrompt: `A clean, professional illustration representing ${t} for a trading-education article.`,
+    internalLinkHints: [],
+    source: 'deterministic',
+  };
+}
+
+export async function generateArticleBrief(env, topic, overrides = {}) {
+  const base = deterministicBrief(topic, overrides);
+  let merged = base;
+  if (llmConfigured(env)) {
+    try {
+      const out = await callModel(env, BRIEF_SYSTEM, String(topic || base.title).slice(0, 300));
+      const ai = parseJsonBlock(out);
+      if (ai && typeof ai === 'object') {
+        const clean = Object.fromEntries(Object.entries(ai).filter(([, v]) => v != null && v !== ''));
+        merged = { ...base, ...clean, source: 'llm' };
+      }
+    } catch { /* keep deterministic base */ }
+  }
+  // Slug is always deterministic (slugify), regardless of source — guarantees a
+  // URL-safe value even if the model's own "slug" field (not requested above) or
+  // title contains characters slugify would otherwise need to clean up anyway.
+  merged.slug = slugify(merged.title || String(topic || ''));
+  merged.category = CATEGORY_KEYS.includes(merged.category) ? merged.category : (inferCategory(merged.title || String(topic || '')) || 'beginner-guides');
+  return merged;
+}
+
+const DRAFT_SYSTEM = `You are a senior trading educator writing for Z Trade University (Gold XAU/USD, Bitcoin, and general trading education). Write a complete, well-structured article in Markdown (## headings, occasional bullet lists) following the given outline.
+STRICT RULES:
+1. Educational only — never give a buy/sell signal or a specific entry/exit price.
+2. Do not invent specific prices, statistics, or current market data — teach concepts and frameworks, not live numbers.
+3. Confident, clear, human tone — no filler, no repeated disclaimers, no chain-of-thought.
+4. Follow the given outline order. Aim for 700-1100 words.
+5. Output ONLY the article body in Markdown — no title heading (handled separately), no preamble, no meta-commentary.`;
+
+// Returns the generated Markdown body, or null when the LLM is unconfigured or the
+// call fails — the caller (ai-articles.js `ai-generate`) surfaces this as an honest
+// "write manually, or try again" note rather than silently producing empty content.
+export async function generateArticleDraft(env, brief = {}) {
+  if (!llmConfigured(env)) return null;
+  const outline = Array.isArray(brief.outline) && brief.outline.length ? brief.outline.join('\n- ') : '(no outline provided — use your own structure)';
+  const prompt = `Topic: ${brief.title || ''}\nOutline:\n- ${outline}\nKeywords to naturally include where relevant: ${(brief.keywords || []).join(', ')}`;
+  try {
+    const out = await callModel(env, DRAFT_SYSTEM, prompt);
+    const text = (out && typeof out === 'string') ? out.trim() : '';
+    return text.length > 80 ? text : null;
   } catch { return null; }
 }
 

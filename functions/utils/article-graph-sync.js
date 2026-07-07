@@ -25,6 +25,11 @@ import { authorConcept, publishConcept } from './authoring-workflow.js';
 import { strengthenGraphConnections } from './graph-growth.js';
 import { chunkConceptsFromArticle } from './article-chunker.js';
 import { logSystemEvent } from './system-log.js';
+import { retire } from './review-runtime.js';
+import { getNodesByIdPrefix } from './kb-store.js';
+import { retrieveBest } from './graph-retrieval.js';
+import { classifyIntent } from './intent-engine.js';
+import { relevanceEngine, enforceRelevance } from './relevance-engine.js';
 
 export async function syncArticleToGraph(env, article) {
   let graph = null, ecosystem = null;
@@ -66,13 +71,24 @@ export async function syncArticleToGraph(env, article) {
       if (published.ok) strengthen = await strengthenGraphConnections(env, kos);
     }
     graph = { authored, published, strengthen };
+    // conceptFromArticle hardcodes status:'ai_draft' (correct pre-publish); reflect
+    // reality here so downstream builders (buildSitemapEntry's readyForSitemap, which
+    // gates on status==='published') see the true post-publish state instead of a
+    // permanently-stale draft flag. Merged content counts too — the survivor concept
+    // it was folded into is itself published.
+    if (published?.ok || authored.action === 'merged') kos.status = 'published';
 
     // STAGE 1 (cont.) — SEO/FAQ/smart chips/internal links/recommendation widget/
     // sitemap entry, same builders + shapes as ai-kb-admin's ingest-article.
     const linkedEntries = [...links.related, ...links.nextSteps]
       .map(id => entries.find(e => e.id === id)).filter(Boolean);
     const urlPath = article.slug ? `/articles/${article.slug}` : null;
-    const seoSuggestion = buildSeoSuggestion(kos, { urlPath });
+    // Inject the article's own summary/tags as `.seo`, exactly matching the enrichment
+    // functions/articles/[slug].js already applies at request time — conceptFromArticle
+    // never populates `.seo` itself, so without this, ogDescription/keywordsCsv here
+    // would always compute empty even though the live page renders real values from
+    // article.summary/article.tags. One source of truth for what "SEO fields" means.
+    const seoSuggestion = buildSeoSuggestion({ ...kos, seo: { description: article.summary || '', keywords: article.tags || [] } }, { urlPath });
     const internalLinks = buildInternalLinks(kos, { conceptEntries: linkedEntries, relatedArticles });
     const smartChips = suggestSmartChips(kos, { conceptEntries: linkedEntries, relatedArticles });
     const recommendationWidget = buildRecommendationWidget(kos, internalLinks);
@@ -105,4 +121,96 @@ export async function syncArticleToGraph(env, article) {
     }
   }
   return { graph, ecosystem };
+}
+
+// INVERSE of syncArticleToGraph — retires the main concept + every chunk when an
+// article is unpublished or deleted, so the chatbot stops answering from content
+// the admin took down (the graph-drift bug found in audit). Best-effort/non-fatal,
+// same resilience posture as publish: draft/delete must never be blocked by a
+// graph-side failure. Reuses retire() (review-runtime.js) — no new lifecycle logic.
+export async function retireArticleConcepts(env, articleId) {
+  if (!articleId) return { ok: false, reason: 'no-id' };
+  const mainId = `article-${articleId}`;
+  const result = { main: null, chunks: [] };
+  try {
+    result.main = await retire(env, mainId);
+    const chunkNodes = await getNodesByIdPrefix(env, `article-chunk-${articleId}-`);
+    for (const n of chunkNodes) result.chunks.push(await retire(env, n.id));
+    return { ok: true, ...result };
+  } catch (e) {
+    return { ok: false, reason: String(e?.message || e), partial: result };
+  }
+}
+
+// PUBLISH VERIFICATION GATE — an article counts as "Published" only when the
+// graph write and its SEO/sitemap by-products actually succeeded, not merely
+// attempted (non-negotiable requirement: publishing is not complete until
+// verified). Pure given already-computed {graph, ecosystem} — the one extra read
+// is a REAL contextual-retrieval probe: the exact same retrieveBest/classifyIntent/
+// relevanceEngine chain ai-kb-admin.js's `retrieval-probe` action already uses to
+// answer "would the live chatbot actually accept this concept, at HIGH confidence,
+// past the relevance gate?" — so "chatbot can answer contextually" is verified
+// against the real acceptance gate, not guessed from a database row existing.
+//
+// Gate design (deliberate, documented): the structural checks below (SEO fields,
+// canonical, sitemap-ready, graph concept published) are one-time, deterministic
+// facts about THIS publish call, so they gate the is_active flip. Chunk
+// completeness and the contextual-confidence probe are reported as quality
+// signals but do not gate — chunk coverage is best-effort by nature, and
+// retrieval confidence is a RELATIVE signal that naturally improves as more
+// related content joins the graph, so it isn't this one publish call's fact to
+// fail on. Embeddings and "search index" are excluded entirely: embeddings are an
+// environment-wide switch (KB_EMBEDDINGS_ENABLED), not a per-article concern, and
+// there is no separate search index to go stale (search reads ai_articles live).
+export async function verifyPublishPipeline(env, { article, graph, ecosystem } = {}) {
+  const seo = ecosystem?.seoSuggestion || {};
+  const graphOk = !!(graph?.published?.ok || graph?.authored?.action === 'merged');
+
+  const publicWebsite = {
+    pageAccessible: !!article?.slug,
+    seoTitle: !!seo.ogTitle,
+    metaDescription: !!seo.ogDescription,
+    canonical: !!seo.canonicalUrl,
+    structuredData: !!seo.faqSchema,                 // optional-by-design — see seoReadiness.recommendations
+    sitemap: !!ecosystem?.sitemapEntry?.readyForSitemap,
+    internalLinks: (ecosystem?.internalLinks || []).length,
+  };
+  publicWebsite.ok = publicWebsite.pageAccessible && publicWebsite.seoTitle
+    && publicWebsite.metaDescription && publicWebsite.canonical && publicWebsite.sitemap;
+
+  const seoReadiness = {
+    seoTitle: publicWebsite.seoTitle, metaDescription: publicWebsite.metaDescription,
+    keywords: (seo.keywordsCsv || '').length > 0, canonical: publicWebsite.canonical,
+    openGraph: !!seo.ogType, structuredData: publicWebsite.structuredData,
+    recommendations: [
+      ...(publicWebsite.structuredData ? [] : ['FAQ schema needs at least one question pattern with a real answer — it will appear automatically once the article/concept has one.']),
+      'Submit the URL to Google Search Console for faster indexing (external action — outside this pipeline).',
+    ],
+  };
+  seoReadiness.ok = seoReadiness.seoTitle && seoReadiness.metaDescription && seoReadiness.keywords && seoReadiness.canonical && seoReadiness.openGraph;
+
+  let chatbotProbe = null;
+  if (graphOk && article?.title) {
+    try {
+      const q = String(article.title).toLowerCase();
+      const top = await retrieveBest(env, q, { lang: 'en' });
+      const cls = classifyIntent(q);
+      const intent = (cls && cls.intent) || 'fallback';
+      const rel = relevanceEngine(q, { intent, category: top?.item?.category });
+      const kept = top ? enforceRelevance({ category: top.item.category, concepts: top.item.concepts, relevanceTags: top.item.relevanceTags }, rel) : false;
+      chatbotProbe = { topConcept: top?.item?.id || null, confidence: top?.confidence || null, contextual: !!(top && top.confidence === 'HIGH' && kept) };
+    } catch { chatbotProbe = { error: true, contextual: false }; }
+  }
+  const knowledgeGraph = {
+    conceptPublished: graphOk,
+    chunksCreated: !graph?.chunks || graph.chunks.total === 0 || (graph.chunks.results || []).some(r => r.published),
+    chatbotAnswersContextually: !!chatbotProbe?.contextual,
+    probe: chatbotProbe,
+  };
+  // Gate on the structural write; contextual confidence is a quality signal that
+  // improves as the graph grows around this concept, not a one-time pass/fail.
+  knowledgeGraph.ok = knowledgeGraph.conceptPublished;
+
+  const ok = publicWebsite.ok && knowledgeGraph.conceptPublished;
+  return { ok, publicWebsite, seoReadiness, knowledgeGraph };
 }

@@ -3,22 +3,30 @@
 // ARTICLE KNOWLEDGE API — admin management + AI retrieval.
 //
 //   GET  ?action=categories
-//        ?action=search&q=&category=&tags=
+//        ?action=search&q=&category=&tags=&limit=&offset=|page=   (paginated browse when q is empty)
 //        ?action=get&id=<id|slug>
 //        ?action=related&id=<id>
 //        ?action=ai_context&q=&intent=&lang=        (AI knowledge injection)
-//        ?action=list&status=published|draft|all    (admin)
+//        ?action=list&status=published|draft|all&page=&pageSize=  (admin — Articles Library, graph-linked status enriched)
 //   POST {action:create|update|delete|publish|draft|upload_image|delete_image}
+//        {action:ai-brief|ai-generate|repair}         (Content Intelligence Center)
 //        (admin — requires header  x-admin-key: <AI_ADMIN_KEY>)
 //
 // Tables: ai_articles, ai_article_images   ·   Bucket: article-images
 // Graceful: returns {configured:false} until ZTU Chatbot creds exist.
 // Service key stays server-side (article-store.js). Admin key never shipped to client.
+//
+// PUBLISH VERIFICATION GATE (Content Intelligence Center): `publish` now runs the
+// graph sync BEFORE flipping is_active, and only flips it when verifyPublishPipeline
+// says every structural check passed — otherwise the row stays a draft with
+// status:'pipeline_failed' and a reason, and never regresses an already-live page
+// (failure never calls setArticleStatus(false); it simply doesn't call it at all).
 // ════════════════════════════════════════════════════════════════════════════
 
 import {
   isConfigured, listArticles, getArticle, createArticle, updateArticle,
   setArticleStatus, deleteArticle, listImages, insertImage, deleteImage, uploadImage,
+  countArticles,
 } from '../utils/article-store.js';
 import { searchArticles, relatedArticles, buildKnowledgeInjection, conceptFromArticle } from '../utils/article-knowledge.js';
 import { authorConcept, publishConcept } from '../utils/authoring-workflow.js';
@@ -36,7 +44,9 @@ import {
   slugify, estimateReadingTime,
 } from '../utils/article-categories.js';
 import { generateArticleMeta } from '../utils/article-autometa.js';
-import { syncArticleToGraph } from '../utils/article-graph-sync.js';
+import { generateArticleBrief, generateArticleDraft } from '../utils/composer-llm.js';
+import { syncArticleToGraph, retireArticleConcepts, verifyPublishPipeline } from '../utils/article-graph-sync.js';
+import { getNodesByIds } from '../utils/kb-store.js';
 import { requireAdminModule } from '../utils/admin-session.js';
 
 const CORS = {
@@ -47,8 +57,13 @@ const CORS = {
 const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
+// Accepts an 'articles' OR 'kb' session (mirrors the multi-module allow-list
+// ai-kb-admin.js already uses for ['kb','governance']) — the unified Content
+// Intelligence Center authenticates once (as 'articles') and needs to call BOTH
+// this file and ai-kb-admin.js in the same session; widened symmetrically on
+// both sides rather than requiring two separate logins for one page.
 function isAdmin(request, env) {
-  return requireAdminModule(env, request, 'articles', { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
+  return requireAdminModule(env, request, ['articles', 'kb'], { header: 'x-admin-key', value: env.AI_ADMIN_KEY });
 }
 
 function decodeDataUrl(dataUrl) {
@@ -78,18 +93,48 @@ export async function onRequest(context) {
     if (!cfg) return json({ configured: false, results: [], note: 'AI Supabase (ZTU Chatbot) not connected yet.' });
 
     if (action === 'list') {
+      // ARTICLES LIBRARY (admin) — single place to verify every published article.
+      // Paginated; each row is enriched with a real graph-linked signal (one batched
+      // kb_nodes lookup, not N round trips) so pipelineStatus reflects requirement 3's
+      // published/draft/pipeline_failed distinction honestly rather than guessing from
+      // is_active alone.
       if (!(await isAdmin(request, env))) return json({ error: 'admin only' }, 403);
       const status = u.searchParams.get('status') || 'all';
-      return json({ configured: true, articles: await listArticles(env, { status, category: u.searchParams.get('category') || undefined }) });
+      const category = u.searchParams.get('category') || undefined;
+      const page = Math.max(1, parseInt(u.searchParams.get('page') || '1', 10));
+      const pageSize = Math.min(parseInt(u.searchParams.get('pageSize') || '100', 10), 200);
+      const [articles, total] = await Promise.all([
+        listArticles(env, { status, category, limit: pageSize, offset: (page - 1) * pageSize }),
+        countArticles(env, { status, category }),
+      ]);
+      const ids = articles.map(a => `article-${a.id}`);
+      const nodes = ids.length ? await getNodesByIds(env, ids) : [];
+      const nodeById = new Map(nodes.map(n => [n.id, n]));
+      const enriched = articles.map(a => {
+        const node = nodeById.get(`article-${a.id}`);
+        const graphLinked = !!(node && node.status === 'published');
+        return {
+          ...a, graphLinked,
+          pipelineStatus: a.is_active ? (graphLinked ? 'published' : 'pipeline_failed') : 'draft',
+        };
+      });
+      return json({ configured: true, articles: enriched, total, page, pageSize });
     }
     if (action === 'search') {
+      // q empty → browse mode (Articles Library, public + admin): stable pagination.
+      // q present → ranked search (unchanged behavior; offset ignored, as before).
+      const page = parseInt(u.searchParams.get('page') || '', 10);
+      const limit = Math.min(parseInt(u.searchParams.get('limit') || '5', 10), 100);
+      const offset = Number.isFinite(page) && page > 1 ? (page - 1) * limit : (parseInt(u.searchParams.get('offset') || '0', 10) || 0);
+      const q = u.searchParams.get('q') || '';
+      const category = u.searchParams.get('category') || undefined;
       const results = await searchArticles(env, {
-        q: u.searchParams.get('q') || '',
-        category: u.searchParams.get('category') || undefined,
+        q, category,
         tags: (u.searchParams.get('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
-        limit: Math.min(parseInt(u.searchParams.get('limit') || '5', 10), 20),
+        limit, offset,
       });
-      return json({ configured: true, results });
+      const total = !q ? await countArticles(env, { status: 'published', category }) : null;
+      return json({ configured: true, results, total, page: Number.isFinite(page) ? page : 1, pageSize: limit });
     }
     if (action === 'get') {
       const id = u.searchParams.get('id');
@@ -168,22 +213,104 @@ export async function onRequest(context) {
   }
 
   if (action === 'publish') {
-    const article = await setArticleStatus(env, data?.id, true);
-    // ARTICLE → ECOSYSTEM + GRAPH (best-effort; article is already live above either way).
-    // Reuses the SAME builders/pipeline as ai-kb-admin's ingest-article — no duplicate
-    // logic. KOS validation (draft + strict) and dedup-on-ingest are unchanged; the only
-    // behavior change vs before is that an operator-published article is promoted
-    // straight to the live graph (publishConcept) instead of sitting in the review
-    // queue, since the operator already reviewed it by clicking Publish.
-    // ARTICLE → GRAPH + SEO ECOSYSTEM via the shared single-source pipeline
-    // (the SAME function auto-promotion of learned drafts uses — no parallel path).
-    // Best-effort; the article is already live via is_active above either way.
-    let graph = null, ecosystem = null;
-    if (article) ({ graph, ecosystem } = await syncArticleToGraph(env, article));
-    return json({ configured: true, article, graph, ecosystem });
+    // VERIFY-THEN-GATE (non-negotiable requirement 3): the graph sync now runs
+    // FIRST, while the row is still whatever it was before (draft, or already
+    // published if this is a re-publish/repair). Reuses the SAME single-source
+    // pipeline as before (syncArticleToGraph → ai-kb-admin's ingest-article
+    // builders) — no duplicate logic, just reordered.
+    const article = await getArticle(env, data?.id);
+    if (!article) return json({ error: 'article not found' }, 404);
+
+    let { graph, ecosystem } = await syncArticleToGraph(env, article);
+    let verification = await verifyPublishPipeline(env, { article, graph, ecosystem });
+
+    // RELIABILITY (requirement 4) — one automatic retry on a failed/incomplete
+    // graph write before giving up, mirroring the retry-once-on-transient-failure
+    // pattern already used for the OpenAI call in composer-llm.js. Resolves the
+    // common transient case (a momentary Supabase timeout) with no admin action.
+    if (!verification.knowledgeGraph.conceptPublished) {
+      ({ graph, ecosystem } = await syncArticleToGraph(env, article));
+      verification = await verifyPublishPipeline(env, { article, graph, ecosystem });
+    }
+
+    if (verification.ok) {
+      const updated = await setArticleStatus(env, article.id, true);
+      return json({ configured: true, status: 'published', article: updated, graph, ecosystem, verification });
+    }
+
+    // Never touch is_active on failure — a failed re-publish/repair must not take
+    // down an already-live page; a brand-new draft simply stays a draft.
+    const reason = !verification.knowledgeGraph.conceptPublished
+      ? 'Knowledge graph write did not complete (see graph.authored/graph.published for the exact stage/error).'
+      : 'SEO/canonical/sitemap fields incomplete — see verification.publicWebsite for the specific check that failed.';
+    return json({
+      configured: true, status: 'pipeline_failed', article, graph, ecosystem, verification,
+      reason: `Pipeline verification failed: ${reason} Fix the underlying issue and click Publish again — this action is safe to retry.`,
+    }, 200);
   }
-  if (action === 'draft')   return json({ configured: true, article: await setArticleStatus(env, data?.id, false) });
-  if (action === 'delete')  return json({ configured: true, deleted: await deleteArticle(env, data?.id) });
+  if (action === 'draft') {
+    const article = await setArticleStatus(env, data?.id, false);
+    // Best-effort, non-fatal — retracting the graph concept must never block the
+    // unpublish itself (closes the "graph not retracted on unpublish" audit bug).
+    if (data?.id) { try { await retireArticleConcepts(env, data.id); } catch { /* logged inside retireArticleConcepts's own try/catch */ } }
+    return json({ configured: true, article });
+  }
+  if (action === 'delete') {
+    if (data?.id) { try { await retireArticleConcepts(env, data.id); } catch { /* non-fatal, see above */ } }
+    return json({ configured: true, deleted: await deleteArticle(env, data?.id) });
+  }
+
+  // ── AI-ASSISTED AUTHORING (Content Intelligence Center, additive) ───────────
+  // Step 2 of the 3-step workflow: a bare topic → full metadata/outline/FAQ/
+  // image-prompt/internal-link brief, BEFORE any content is written. Reuses the
+  // exact same link/FAQ/SEO builders as the publish pipeline (article-enrich.js /
+  // article-seo.js), fed by the CURRENT published graph/articles — the same
+  // "draft-like object" technique functions/articles/[slug].js already uses for
+  // an existing article, just applied one step earlier.
+  if (action === 'ai-brief') {
+    const topic = ((data && data.topic) || '').trim();
+    if (!topic) return json({ error: 'topic required' }, 400);
+    const brief = await generateArticleBrief(env, topic, (data && data.overrides) || {});
+    const entries = getAnchorEntries();
+    const articles = await listArticles(env, { status: 'published', limit: 200 }).catch(() => []);
+    const draftLike = { id: brief.slug, category: brief.category, concepts: brief.tags, relevanceTags: brief.tags, level: brief.difficulty };
+    const links = suggestLinks(draftLike, entries);
+    const relatedArticlesList = suggestRelatedArticles(draftLike, articles);
+    const linkedEntries = [...links.related, ...links.nextSteps].map(id => entries.find(e => e.id === id)).filter(Boolean);
+    const internalLinks = buildInternalLinks(draftLike, { conceptEntries: linkedEntries, relatedArticles: relatedArticlesList });
+    return json({ configured: true, brief, internalLinks, relatedArticles: relatedArticlesList });
+  }
+
+  // Step 2, Option B ("Generate with AI"): brief → full Markdown body via the SAME
+  // Workers-AI→OpenAI engine already wired for chat answers (composer-llm.js) —
+  // not a second AI system. Never persists; the admin reviews before publishing.
+  if (action === 'ai-generate') {
+    const brief = (data && data.brief) || {};
+    const content = await generateArticleDraft(env, brief);
+    if (!content) return json({ configured: true, generated: false, note: 'AI writing is not configured, or the model call failed — write manually, or try again.' });
+    return json({ configured: true, generated: true, content });
+  }
+
+  // AUTOMATIC QUALITY IMPROVEMENT (requirement 4) — one click regenerates weak
+  // metadata (thin tags / missing summary) for an EXISTING article via the same
+  // brief generator, then re-runs the (now-gated) publish path to resync graph/
+  // links/sitemap from current state. No new verification logic beyond §publish.
+  if (action === 'repair') {
+    const article = await getArticle(env, data?.id);
+    if (!article) return json({ error: 'article not found' }, 404);
+    const brief = await generateArticleBrief(env, article.title, { category: article.category, difficulty: article.difficulty });
+    const patch = {};
+    if (!Array.isArray(article.tags) || article.tags.length < 3) patch.tags = brief.tags;
+    if (!article.summary || article.summary.length < 40) patch.summary = brief.metaDescription;
+    let current = article;
+    if (Object.keys(patch).length) current = (await updateArticle(env, article.id, patch)) || article;
+
+    let { graph, ecosystem } = await syncArticleToGraph(env, current);
+    let verification = await verifyPublishPipeline(env, { article: current, graph, ecosystem });
+    if (verification.ok) current = (await setArticleStatus(env, current.id, true)) || current;
+
+    return json({ configured: true, article: current, improved: Object.keys(patch), graph, ecosystem, verification });
+  }
 
   if (action === 'upload_image') {
     const { articleId, filename, dataUrl, caption, alt, tags } = data || {};
