@@ -46,6 +46,21 @@ function groupSystemLogErrors(rows) {
 // never claim auto-repair is available when nothing in this codebase does it.
 const AUTO_REPAIRABLE_KINDS = new Set(['graph-sync', 'chunking', 'embedding']);
 
+// Interprets the ACTUAL captured error text (e.detail — the real PostgREST/
+// provider response) into specific guidance, instead of a static "check the
+// module" line that never changes regardless of what really went wrong.
+function manualFixFor(module, detail) {
+  if (AUTO_REPAIRABLE_KINDS.has(module)) return null;
+  if (detail) {
+    const col = /Could not find the '([^']+)' column of '([^']+)'/i.exec(detail);
+    if (col) return `Verified root cause: Supabase's schema (or PostgREST's schema cache) is missing column "${col[1]}" on table "${col[2]}". Run the pending migration for this column, then run NOTIFY pgrst, 'reload schema'; in the Supabase SQL Editor.`;
+    const rel = /relation "([^"]+)" does not exist/i.exec(detail);
+    if (rel) return `Verified root cause: table "${rel[1]}" does not exist yet in Supabase. Create it via the required migration, then retry.`;
+    return `Verified root cause (actual error from the last occurrence): ${detail}`;
+  }
+  return `${module} failed — no captured error detail for this occurrence (check kb_system_log directly).`;
+}
+
 export async function buildErrorCenter(env) {
   const logRows = await getSystemLog(env, { limit: 300 }).catch(() => []);
 
@@ -81,21 +96,36 @@ export async function buildErrorCenter(env) {
   const logErrors = groupSystemLogErrors(nonProbeErrors).map(e => ({
     ...e,
     autoRepair: AUTO_REPAIRABLE_KINDS.has(e.module) ? { action: 'sync-edges', label: 'Sync graph edges' } : null,
-    manualFix: AUTO_REPAIRABLE_KINDS.has(e.module) ? null : `Check ${e.module} — real error detail above (from kb_system_log.meta).`,
+    manualFix: manualFixFor(e.module, e.detail),
   }));
 
   const articles = await listArticles(env, { status: 'all', limit: 200 }).catch(() => []);
   const articleById = new Map(articles.map(a => [a.id, a]));
-  // A 'publish-write' log entry names the specific article that failed — if that
-  // SAME article's current last_verification.ok is now true, a later publish
-  // attempt succeeded and this historical failure is resolved; drop it instead
-  // of showing a permanently-stuck error for something that's since been fixed.
+  // BUGFIX (found via live testing — a fixed migration still showed the old
+  // "PATCH ai_articles failed" error hours later): 'publish-write' already had
+  // a resolution check, but generic 'article-store' write failures (logged by
+  // article-store.js's sb() on ANY create/update/PATCH rejection — e.g. the
+  // exact "Could not find the 'last_verification' column" error) had none at
+  // all, so they showed forever once logged, even after the underlying cause
+  // was fixed. Resolution signal: article-store.js only sets `updated_at` on a
+  // row that ACTUALLY wrote successfully (a failed write never reaches that
+  // code) — so if ANY article has a real updated_at newer than this error's
+  // last occurrence, the write path has since succeeded and this is stale.
+  const newestArticleWrite = articles.reduce((max, a) => {
+    const t = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+    return t > max ? t : max;
+  }, 0);
   const relevantLogErrors = logErrors.filter(e => {
-    if (e.module !== 'publish-write') return true;
-    const meta = parseMeta(nonProbeErrors.find(r => r.message === e.rootCause)?.meta);
-    const articleId = meta?.articleId;
-    const current = articleId ? articleById.get(articleId) : null;
-    return !(current && current.last_verification && current.last_verification.ok === true);
+    if (e.module === 'publish-write') {
+      const meta = parseMeta(nonProbeErrors.find(r => r.message === e.rootCause)?.meta);
+      const articleId = meta?.articleId;
+      const current = articleId ? articleById.get(articleId) : null;
+      return !(current && current.last_verification && current.last_verification.ok === true);
+    }
+    if (e.module === 'article-store') {
+      return !(newestArticleWrite > new Date(e.lastOccurrence).getTime());
+    }
+    return true;
   });
 
   const failedArticles = articles

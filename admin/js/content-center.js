@@ -135,8 +135,14 @@
   }
 
   // ── ERROR CENTER (spec Phase 9) ──────────────────────────────────────────
+  // AI FIX PROMPT — AI-agnostic (works with Claude, ChatGPT, Gemini, Copilot, or
+  // any coding AI): opens with enough project context that it's usable standalone,
+  // with no extra explanation needed from the person pasting it in.
+  const PROJECT_CONTEXT = 'Project: Z Trade University — a Cloudflare Pages + Supabase (Postgres via PostgREST) trading-education website. Backend: Cloudflare Pages Functions (JavaScript ES modules) under functions/api/*.js and functions/utils/*.js. This issue was detected by its admin "Content Intelligence Center" dashboard.';
   function buildClaudeRepairPrompt(e) {
     return [
+      PROJECT_CONTEXT,
+      '',
       `Problem Summary: ${e.name}`,
       `Module: ${e.module}`,
       `Verified Root Cause: ${e.rootCause}`,
@@ -144,7 +150,9 @@
       `Affected: ${e.articleId ? 'ai_articles row ' + e.articleId : e.module + ' pipeline (see functions/utils/' + e.module + '.js or functions/api/*.js for this module)'}`,
       `Suggested Fix: ${e.manualFix || 'Investigate the module above using the root cause and repair the underlying issue.'}`,
       `Expected Result: the error stops recurring in kb_system_log / the article publishes successfully.`,
-    ].filter(Boolean).join('\n');
+      '',
+      'Please review the affected file(s) in this codebase and propose the exact code change needed to fix the verified root cause above.',
+    ].filter(x => x !== null).join('\n');
   }
   async function loadErrorCenter() {
     const data = await apiGet(KB + '?action=error-center');
@@ -165,7 +173,7 @@
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${e.autoRepair ? `<button class="btn sm gold" data-err-repair="${i}">${esc(e.autoRepair.label)}</button>` : ''}
           ${!e.autoRepair && e.manualFix ? `<button class="btn sm" data-err-manual="${i}">Manual Repair Guide</button>` : ''}
-          <button class="btn sm" data-err-claude="${i}">Claude Prompt</button>
+          <button class="btn sm" data-err-claude="${i}">AI Fix Prompt</button>
         </div>
       </div>
       <div id="errClaudeOut${i}" style="display:none;margin:-4px 0 10px"><textarea rows="6" readonly style="width:100%;background:var(--inset);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Courier New',monospace;font-size:11.5px;padding:10px"></textarea></div>
@@ -1088,7 +1096,7 @@
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Knowledge coverage: intent=${esc(diag.knowledgeCoverage?.intent)} · category=${esc(diag.knowledgeCoverage?.category || 'none')} · context kept=${diag.knowledgeCoverage?.contextKept ? 'yes' : 'no'}</div>
         ${weaknessRows || '<div class="empty">No issues detected.</div>'}
         ${diag.claudePrompt ? `<div style="margin-top:10px">
-            <button class="btn sm" id="claudePromptBtn">📋 Generate Claude Repair Prompt</button>
+            <button class="btn sm" id="claudePromptBtn">📋 Generate AI Fix Prompt</button>
             <textarea id="claudePromptOut" rows="6" readonly style="display:none;width:100%;margin-top:8px;background:var(--inset);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Courier New',monospace;font-size:11.5px;padding:10px"></textarea>
           </div>` : ''}
         ${!diag.strong ? `<div style="margin-top:10px"><button class="btn sm" id="captureKnowledgeBtn">📥 Auto Knowledge Capture — prepare as article draft</button></div>` : ''}

@@ -56,16 +56,23 @@ export const WEAKNESS_LIBRARY = {
   },
 };
 
+// AI FIX PROMPT — AI-agnostic (Claude/ChatGPT/Gemini/any coding AI), self-
+// contained with project context so it works pasted into a fresh chat with no
+// extra explanation needed.
 function buildClaudePrompt(question, weaknesses) {
   if (!weaknesses.length) return null;
   const w = weaknesses[0];
   const def = WEAKNESS_LIBRARY[w.code] || {};
   return [
+    'Project: Z Trade University — a Cloudflare Pages + Supabase (Postgres via PostgREST) trading-education website. Backend: Cloudflare Pages Functions (JavaScript ES modules) under functions/api/*.js and functions/utils/*.js. This issue was detected by its admin Chatbot Checker diagnostic tool.',
+    '',
     `Problem: The ZTU chatbot answered "${question}" weakly — diagnosed as: ${def.label || w.code}.`,
     `Root cause: ${def.explanation || 'unknown'}`,
     `Affected files: ${(def.files || []).join(', ') || 'unknown'}`,
     `Suggested fix: ${def.fix || 'investigate the retrieval pipeline for this topic.'}`,
     `Expected result: the chatbot answers "${question}" from a real Database/Graph source at HIGH confidence, not a fallback.`,
+    '',
+    'Please review the affected file(s) in this codebase and propose the exact code change needed to fix the root cause above.',
   ].join('\n');
 }
 

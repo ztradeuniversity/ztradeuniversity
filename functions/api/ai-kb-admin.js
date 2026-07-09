@@ -51,7 +51,11 @@ const CORS = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, x-admin-key',
 };
-const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
+// no-store: this file serves live admin diagnostics (Error Center, Website
+// Health, coverage) — a cached response would show a resolved issue as still
+// broken (or vice versa). Same practice diagnose.js already uses for the same
+// reason.
+const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
 export async function onRequest(context) {
