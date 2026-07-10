@@ -953,27 +953,42 @@
 
     document.getElementById('pgAsk').onclick = runChatbotCheck;
     document.getElementById('pgQ').addEventListener('keydown', e => { if (e.key === 'Enter') runChatbotCheck(); });
+    // DIAGNOSTIC MODE SOURCE PICKER — "Simulate real visitor" is the safe default
+    // (byte-for-byte the same request a real visitor sends, per spec "Real Visitor
+    // Simulation"); switching to Custom reveals the checkboxes and re-validates.
+    const toggleCustom = () => {
+      document.getElementById('pgCustomSources').style.display = document.getElementById('pgModeCustom').checked ? 'block' : 'none';
+      validateSourceSelection();
+    };
+    document.getElementById('pgModeProd').addEventListener('change', toggleCustom);
+    document.getElementById('pgModeCustom').addEventListener('change', toggleCustom);
+    document.getElementById('pgSourceChecks').addEventListener('change', e => { if (e.target.matches('[data-source-check]')) validateSourceSelection(); });
     loadChatbotSources();
   }
 
-  // AUTOMATIC SOURCE DETECTION — populates the mode select from the live pipeline's
-  // own SOURCE_STAGES (chatbot-diagnostics.js::getTestableSources), never hardcoded.
-  // Every option drives the REAL production /api/ai-chat pipeline via sourceFlags
-  // (see runChatbotCheck) — there is no separate diagnostic engine.
+  // AUTOMATIC SOURCE DETECTION — populates the Custom-mode checkboxes from the
+  // live pipeline's own SOURCE_STAGES (chatbot-diagnostics.js::getTestableSources),
+  // never hardcoded. Every checkbox drives the REAL production /api/ai-chat
+  // pipeline via sourceFlags (see runChatbotCheck) — there is no separate
+  // diagnostic engine.
   let chatbotSourceKeys = [];
   async function loadChatbotSources() {
     const data = await apiGet(KB + '?action=chatbot-sources');
-    const sel = document.getElementById('pgSourceMode');
+    const box = document.getElementById('pgSourceChecks');
     const sources = data.sources || [];
     chatbotSourceKeys = sources.map(s => s.key);
-    sel.innerHTML = '<option value="production">Production (all sources enabled)</option>'
-      + sources.map(s => `<option value="${esc(s.key)}"${s.note ? ` title="${esc(s.note)}"` : ''}>${esc(s.label)} Only</option>`).join('');
+    if (box) {
+      box.innerHTML = sources.map(s => `
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px" title="${esc(s.note || '')}">
+          <input type="checkbox" data-source-check="${esc(s.key)}" checked /> ${esc(s.label)}
+        </label>`).join('');
+    }
     if (!routingSourceMeta.length) routingSourceMeta = sources;
   }
 
   // PRODUCTION ROUTING (spec Phase 7) — separate, persisted, affects real
   // visitors immediately. Distinct control surface from the Diagnostic Mode
-  // dropdown above (which only overrides ONE test call, never persisted).
+  // source picker above (which only overrides ONE test call, never persisted).
   let routingSourceMeta = [];
   async function loadRoutingConfig() {
     const card = document.getElementById('routingCard');
@@ -995,12 +1010,21 @@
           <span style="font-size:11.5px;color:var(--muted)">${cfg[s.key] !== false ? 'Enabled for all visitors' : 'Disabled for all visitors'}</span>
         </label>
       </div>`).join('');
-    card.querySelectorAll('[data-routing-key]').forEach(cb => cb.addEventListener('change', async () => {
+    card.querySelectorAll('[data-routing-key]').forEach(cb => cb.addEventListener('change', async (e) => {
       const newCfg = {};
       card.querySelectorAll('[data-routing-key]').forEach(x => { newCfg[x.dataset.routingKey] = x.checked; });
+      // VALIDATION (spec Example F: "Nothing checked → show a clear validation
+      // error, do not silently fall back") — checked client-side before the
+      // network round-trip so the admin sees the error instantly; the server
+      // (routing-config action) enforces the same rule as the real gate.
+      if (!Object.values(newCfg).some(Boolean)) {
+        e.target.checked = true;   // revert the click that would have zeroed every source
+        toast('At least one source must stay enabled — every visitor would silently get Safe Reply with nothing checked.', 'bad');
+        return;
+      }
       toast('Updating production routing for all visitors…');
       const r = await apiPost(KB, 'routing-config', { config: newCfg }).catch(() => null);
-      toast(r && r.saved ? 'Production routing updated — live now' : 'Failed to save — check Error Center', r && r.saved ? 'ok' : 'bad');
+      toast(r && r.saved ? 'Production routing updated — live now' : (r && r.error) || 'Failed to save — check Error Center', r && r.saved ? 'ok' : 'bad');
       loadRoutingConfig();
     }));
   }
@@ -1010,23 +1034,37 @@
   // SSE stream, same source badge). Step 2: ask ai-kb-admin's chatbot-check action
   // to diagnose WHY (reuses ai_response_logs + the same retrieval chain the publish
   // gate uses — see chatbot-diagnostics.js). Never a second chat engine. ──────────
-  // Builds the sourceFlags body for a "X Only" test mode: every detected source
-  // disabled except the selected one. 'production' (or an unrecognized mode)
-  // sends no override at all, so the request is byte-for-byte the same as a real
-  // visitor's — see buildExecutionContext() in ai-chat.js.
-  function sourceFlagsForMode(mode) {
-    if (mode === 'production' || !chatbotSourceKeys.includes(mode)) return null;
+  // Builds the sourceFlags body from the Custom-mode checkboxes: every detected
+  // source disabled except the ones checked. "Simulate real visitor" (or an
+  // empty detected-source list) sends no override at all, so the request is
+  // byte-for-byte the same as a real visitor's — see buildExecutionContext()
+  // in ai-chat.js. Returns null (no override) OR a flags object; never an
+  // object with every key false (see validateSourceSelection — Example F).
+  function sourceFlagsForSelection() {
+    const custom = document.getElementById('pgModeCustom').checked;
+    if (!custom || !chatbotSourceKeys.length) return null;
     const flags = {};
-    for (const k of chatbotSourceKeys) flags[k] = (k === mode);
+    document.querySelectorAll('[data-source-check]').forEach(cb => { flags[cb.dataset.sourceCheck] = cb.checked; });
     return flags;
+  }
+  // VALIDATION (spec Example F) — Custom mode with nothing checked must show a
+  // clear error and refuse to call, exactly like Production Routing above.
+  function validateSourceSelection() {
+    const custom = document.getElementById('pgModeCustom').checked;
+    const err = document.getElementById('pgSourceError');
+    if (!custom) { err.style.display = 'none'; return true; }
+    const anyChecked = Array.from(document.querySelectorAll('[data-source-check]')).some(cb => cb.checked);
+    err.style.display = anyChecked ? 'none' : 'block';
+    return anyChecked;
   }
 
   async function runChatbotCheck() {
     const q = document.getElementById('pgQ').value.trim(); if (!q) return;
+    if (!validateSourceSelection()) return;
     const out = document.getElementById('pgOut');
-    const mode = document.getElementById('pgSourceMode').value;
-    const sourceFlags = sourceFlagsForMode(mode);
-    out.innerHTML = '<div class="empty">Asking the chatbot' + (sourceFlags ? ' (' + esc(mode) + ' only)' : '') + '…</div>';
+    const sourceFlags = sourceFlagsForSelection();
+    const mode = sourceFlags ? 'custom' : 'production';
+    out.innerHTML = '<div class="empty">Asking the chatbot' + (sourceFlags ? ' (custom sources)' : ' (production)') + '…</div>';
     const t0 = performance.now();
     let answer = '', src = null;
     try {
@@ -1061,7 +1099,8 @@
     } catch (e) { out.innerHTML = '<div class="empty">Unreachable — deploy to Cloudflare to test live.</div>'; return; }
     const clientLatencyMs = Math.round(performance.now() - t0);
     out.innerHTML = '<div class="empty">Diagnosing the answer…</div>';
-    const diag = await apiPost(KB, 'chatbot-check', { question: q, sourceLayer: src?.layer }).catch(() => null);
+    const diag = await apiPost(KB, 'chatbot-check', { question: q, sourceLayer: src?.layer, sourceFlags }).catch(() => null);
+    if (diag && diag.error) { out.innerHTML = `<div class="verify-box fail"><b>${esc(diag.error)}</b></div>`; return; }
     renderChatbotCheck(q, answer, src, diag, clientLatencyMs, mode);
   }
 
@@ -1078,20 +1117,25 @@
           ${w.autoRepair ? `<button class="btn sm gold" data-autorepair="${esc(w.autoRepair.action)}">${esc(w.autoRepair.label)}</button>` : `<button class="btn sm" data-claude-note="1">Manual Repair Guide</button>`}
         </div>
       </div>`).join('');
+    const attempted = (diag.sourcesAttempted || []).map(s => esc(s.label)).join(', ') || '—';
+    const skipped = (diag.sourcesSkipped || []).map(s => esc(s.label)).join(', ') || 'none';
     out.innerHTML = `
       <div class="verify-box ${diag.strong ? 'ok' : 'fail'}">
-        ${mode && mode !== 'production' ? `<div style="margin-bottom:8px"><span class="chip seo">Mode: ${esc(humanize(mode))} Only — other sources disabled for this call via the real production routing</span></div>` : ''}
+        <div style="margin-bottom:8px"><span class="chip ${mode === 'custom' ? 'seo' : 'chat'}">${mode === 'custom' ? 'Mode: Custom sources — bypasses Production Routing for this call only' : 'Mode: Production — simulating a real visitor'}</span></div>
         <div style="margin-bottom:8px"><b>Q:</b> ${esc(question)}</div>
-        <div style="margin-bottom:8px;color:var(--muted)"><b>A:</b> ${esc((answer || '').slice(0, 500))}${(answer || '').length > 500 ? '…' : ''}</div>
+        <div style="margin-bottom:8px;color:var(--muted)"><b>A (final answer):</b> ${esc((answer || '').slice(0, 500))}${(answer || '').length > 500 ? '…' : ''}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
           ${strongBadge}
-          ${src ? `<span class="chip">${esc(src.badge || src.label || src.layer)}</span>` : ''}
+          ${src ? `<span class="chip">Winning source: ${esc(src.badge || src.label || src.layer)}</span>` : ''}
           <span class="chip">Confidence: ${esc(diag.confidence || 'n/a')}</span>
-          <span class="chip">Latency: ${diag.responseTimeMs != null ? diag.responseTimeMs : clientLatencyMs}ms</span>
+          <span class="chip">Response time: ${diag.responseTimeMs != null ? diag.responseTimeMs : clientLatencyMs}ms</span>
+          <span class="chip" title="${esc(diag.tokensNote || '')}">Tokens: ${diag.tokens != null ? diag.tokens : 'not tracked'}</span>
           ${diag.articleId ? `<span class="chip">Article: ${esc(diag.articleId)}</span>` : ''}
           ${diag.graphNodeId ? `<span class="chip">Node: ${esc(diag.graphNodeId)}</span>` : ''}
         </div>
-        <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px"><b>Source used:</b> ${esc(diag.sourceUsed)} — ${esc(diag.whySelected)}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px"><b>Why this source won:</b> ${esc(diag.whySelected)}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px"><b>Sources attempted:</b> ${attempted}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px"><b>Sources skipped:</b> ${skipped}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px"><b>Retrieval summary:</b> ${esc(diag.retrievalSummary)}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Knowledge coverage: intent=${esc(diag.knowledgeCoverage?.intent)} · category=${esc(diag.knowledgeCoverage?.category || 'none')} · context kept=${diag.knowledgeCoverage?.contextKept ? 'yes' : 'no'}</div>
         ${weaknessRows || '<div class="empty">No issues detected.</div>'}

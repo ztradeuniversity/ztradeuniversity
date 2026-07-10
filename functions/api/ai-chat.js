@@ -1402,7 +1402,14 @@ export async function onRequest(context) {
   // skipped for uploaded-chart turns, and English knowledge bodies are injected
   // ONLY for English so the Language Lock is never violated (localized memory
   // recall is safe in any language). Raw memory rows are never exposed.
-  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge && !_dbArticleAnswered) {
+  // BUGFIX (Chatbot Checker audit): this call was not gated by ctx.database,
+  // so a "Database disabled" test (Diagnostic single-source or Production
+  // Routing) could still inject article/broker content here and even flip
+  // answerSource to 'database' below — breaking source isolation for every
+  // other single-source test (e.g. "OpenAI Only" could still show a database
+  // answer). ctx.database defaults true, so real visitors and an unmodified
+  // Production Routing config see zero behavior change.
+  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge && !_dbArticleAnswered && ctx.database) {
     try {
       const kl = await buildKnowledgeLayer(env, {
         intent:  p10Intent,
@@ -1527,7 +1534,11 @@ export async function onRequest(context) {
     try {
       const seed = ((p10KbCat || '').length + (messages.length || 0)) % 4;   // 0..3
       const channel = ['article', 'reflect', 'none', 'article'][seed];
-      if (channel === 'article' && aiSbConfigured(env)) {
+      // BUGFIX (Chatbot Checker audit): gated on ctx.database — this tail can
+      // append a database-sourced link even when Database is disabled for a
+      // diagnostic/routing test (e.g. "Knowledge Graph Only" should never
+      // touch the database at all, per spec Example C).
+      if (channel === 'article' && aiSbConfigured(env) && ctx.database) {
         // STABILIZATION FIX: genText (handler-scoped). `aText` is out of scope here
         // (block-scoped above ~L1091) → its ReferenceError was swallowed by the
         // try/catch, so the Related Article tail never ran. genText is the in-scope
@@ -1651,6 +1662,7 @@ export async function onRequest(context) {
       available: {
         database: aiSbConfigured(env),
         graph:    graphActive(env),
+        calc:     true,   // pure deterministic math — always available, no external config
         live:     !!(marketData && marketData.status === 'ok'),
         openai:   llmConfigured(env) || learnEnabled(env),
         safe:     true,

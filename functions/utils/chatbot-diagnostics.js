@@ -13,6 +13,28 @@ import { retrieveBest } from './graph-retrieval.js';
 import { classifyIntent } from './intent-engine.js';
 import { relevanceEngine, enforceRelevance } from './relevance-engine.js';
 import { SOURCE_STAGES } from './answer-source.js';
+import { getSetting } from './site-settings.js';
+
+const ROUTING_KEYS = ['database', 'graph', 'calc', 'live', 'openai'];
+const ROUTING_LABEL = Object.fromEntries(SOURCE_STAGES.map(s => [s.layer, s.label]));
+const ROUTING_DEFAULT = { database: true, graph: true, live: true, calc: true, openai: true };
+
+// SOURCES ATTEMPTED / SKIPPED (spec: "Explain Every Answer") — mirrors
+// buildExecutionContext() in ai-chat.js exactly: sourceFlags (when the
+// diagnostic call forced specific sources) fully replaces the routing state
+// for that one call; with no override, the REAL persisted Production Routing
+// config is read so "Production" mode reports the truth a real visitor got.
+async function resolveRoutingState(env, sourceFlags) {
+  if (sourceFlags && typeof sourceFlags === 'object') {
+    const ctx = {};
+    for (const k of ROUTING_KEYS) ctx[k] = sourceFlags[k] !== false;
+    return ctx;
+  }
+  const persisted = await getSetting(env, 'chatbot_routing', ROUTING_DEFAULT).catch(() => ROUTING_DEFAULT);
+  const ctx = {};
+  for (const k of ROUTING_KEYS) ctx[k] = persisted && persisted[k] === false ? false : true;
+  return ctx;
+}
 
 // Each weakness maps to: a clear explanation, an auto-repair action when one
 // genuinely exists in this codebase (kb-admin actions only — never invented),
@@ -80,8 +102,11 @@ function buildClaudePrompt(question, weaknesses) {
 // is the source.layer badge the client already received from the SSE stream
 // (see answer-source.js) — passed through so is-fallback detection doesn't
 // depend solely on the analytics row landing in time.
-export async function diagnoseChatbotAnswer(env, { question, sourceLayer } = {}) {
+export async function diagnoseChatbotAnswer(env, { question, sourceLayer, sourceFlags = null } = {}) {
   const log = await getLatestResponseLog(env).catch(() => null);
+  const routingState = await resolveRoutingState(env, sourceFlags);
+  const sourcesAttempted = ROUTING_KEYS.filter(k => routingState[k]).map(k => ({ key: k, label: ROUTING_LABEL[k] }));
+  const sourcesSkipped = ROUTING_KEYS.filter(k => !routingState[k]).map(k => ({ key: k, label: ROUTING_LABEL[k] }));
   const cls = classifyIntent(question) || {};
   const intent = cls.intent || 'fallback';
   const top = await retrieveBest(env, question, { lang: 'en' }).catch(() => null);
@@ -109,12 +134,20 @@ export async function diagnoseChatbotAnswer(env, { question, sourceLayer } = {})
   const strong = !isFallback && !!(articleId || (graphNodeId && confidence === 'HIGH' && kept));
 
   // SOURCE USED + WHY (spec: "Response Diagnostics" — Final Answer/Source Used/Why
-  // selected/Retrieval Summary). Derived from the same real signals above, mirroring
-  // the priority order answer-source.js documents (Database → Graph → Live → OpenAI → Safe).
+  // selected/Retrieval Summary). Derived from the same real signals above.
+  // CORRECTED (Chatbot Checker audit): the previous copy claimed "Database
+  // always wins first in the retrieval priority order" — traced against
+  // ai-chat.js's actual merge (~L1296 `if(directAnswer)...else if(kbAnswer)`
+  // then the Database blocks at ~L1359/1405, each guarded by
+  // `!directAnswer && !kbAnswer`), the REAL execution order is:
+  // Live/Calculator (directAnswer) → Knowledge Graph (kbAnswer) → Database →
+  // OpenAI → Safe Reply. Database only gets a turn when Live/Calculator AND
+  // the Knowledge Graph both miss — the opposite of "always wins first". This
+  // is a documentation fix only; no routing/business logic changed.
   let sourceUsed = 'safe', whySelected = 'No database, graph, live-data, or OpenAI source produced a confident answer.';
-  if (articleId) { sourceUsed = 'database'; whySelected = `A published article (id ${articleId}) matched this question — Database always wins first in the retrieval priority order.`; }
-  else if (graphNodeId && confidence === 'HIGH' && kept) { sourceUsed = 'graph'; whySelected = `Knowledge-graph concept "${graphNodeId}" matched at HIGH confidence and passed the relevance gate.`; }
-  else if (sourceLayer && sourceLayer !== 'safe') { sourceUsed = sourceLayer; whySelected = `Reported by the live chat call as the "${sourceLayer}" layer.`; }
+  if (articleId) { sourceUsed = 'database'; whySelected = `A published article (id ${articleId}) matched this question. Database is checked after Live/Calculator and the Knowledge Graph in the real execution order, so this means neither of those produced an answer first.`; }
+  else if (graphNodeId && confidence === 'HIGH' && kept) { sourceUsed = 'graph'; whySelected = `Knowledge-graph concept "${graphNodeId}" matched at HIGH confidence and passed the relevance gate before Database was ever checked.`; }
+  else if (sourceLayer && sourceLayer !== 'safe') { sourceUsed = sourceLayer; whySelected = `Reported by the live chat call as the "${sourceLayer}" layer${sourceLayer === 'live' || sourceLayer === 'calc' ? ' — Live/Calculator are checked first, before Knowledge Graph or Database' : ''}.`; }
   else if (isFallback) { sourceUsed = 'safe'; whySelected = 'Fell through to Safe Reply / OpenAI fallback — no higher-priority source matched.'; }
 
   const retrievalSummary = nothingFound
@@ -124,6 +157,19 @@ export async function diagnoseChatbotAnswer(env, { question, sourceLayer } = {})
   return {
     question, confidence, responseTimeMs, articleId, graphNodeId, isFallback,
     sourceUsed, whySelected, retrievalSummary,
+    // EXPLAIN EVERY ANSWER (spec) — sources attempted/skipped for THIS call,
+    // derived from the same routing state ai-chat.js's buildExecutionContext
+    // actually used (either the diagnostic sourceFlags override, or — when
+    // simulating a real visitor — the real persisted Production Routing
+    // config, read fresh so it reflects the truth even if it changed since
+    // the last save).
+    sourcesAttempted, sourcesSkipped,
+    // Tokens: honest "not tracked" rather than fabricated — the live chat
+    // pipeline's OpenAI fallback (composer-llm.js generateEducationalAnswer)
+    // does not currently return usage/token counts (only the separate
+    // article-generation path does). See README note in the report.
+    tokens: null,
+    tokensNote: 'Not tracked for the live chat pipeline — token usage is only recorded for AI-assisted article generation, not chat replies.',
     knowledgeCoverage: { intent, category: top?.item?.category || null, contextKept: kept },
     strong,
     weaknesses,
@@ -132,8 +178,9 @@ export async function diagnoseChatbotAnswer(env, { question, sourceLayer } = {})
 }
 
 // AUTOMATIC SOURCE DETECTION — the testable source list comes directly from
-// answer-source.js's SOURCE_STAGES (the same 5-stage priority order the real
-// chatbot already implements), not a hardcoded UI list.
+// answer-source.js's SOURCE_STAGES (the same 6-stage chain — 5 testable
+// sources + the terminal Safe Reply — the real chatbot already implements),
+// not a hardcoded UI list.
 //
 // gateAvailable=true means /api/ai-chat's execution-context layer (see
 // buildExecutionContext in ai-chat.js) has a REAL `ctx.<source>` check wired

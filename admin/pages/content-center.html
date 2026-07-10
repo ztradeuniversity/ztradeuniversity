@@ -238,22 +238,33 @@
     </div>
   </details>
 
-  <div class="sec-title">Chatbot Checker — Diagnostic Mode</div>
-  <div class="sec-hint">Testing only — never affects real visitors. Enter a question, see exactly what the chatbot used to answer it and why, with one-click repair when possible.</div>
+  <div class="sec-title">🟢 Chatbot Checker — Diagnostic Mode <span class="chip chat" style="text-transform:none;font-size:10px">Safe · Admin only</span></div>
+  <div class="sec-hint">Testing only — <b>never affects real visitors</b> and <b>never changes Production Routing</b>. Enter a question, choose which sources this ONE test call is allowed to use, and see exactly what the chatbot used to answer it and why, with one-click repair when possible.</div>
   <div class="card">
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <input class="input-inline" id="pgQ" placeholder="Ask the chatbot a question…" />
-      <select id="pgSourceMode" style="background:var(--inset);border:1px solid var(--border2);border-radius:9px;padding:8px 12px;color:var(--text);font-size:12.5px">
-        <option value="production">Production (all sources enabled)</option>
-      </select>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">
+      <input class="input-inline" id="pgQ" placeholder="Ask the chatbot a question…" style="flex:1;min-width:220px" />
       <button class="btn sm gold" id="pgAsk">Check</button>
     </div>
-    <div style="font-size:11px;color:var(--dim);margin-top:6px">Source list is detected automatically from the live pipeline — never hardcoded. This mode overrides sources for THIS test call only and never changes what real visitors receive.</div>
+    <div id="pgSourcePicker" style="margin-top:12px">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12.5px">
+          <input type="radio" name="pgMode" id="pgModeProd" value="production" checked /> Simulate real visitor (uses live Production Routing)
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12.5px">
+          <input type="radio" name="pgMode" id="pgModeCustom" value="custom" /> Custom source selection — bypasses Production Routing for this test only
+        </label>
+      </div>
+      <div id="pgCustomSources" style="display:none;margin-top:10px;padding:10px 12px;background:var(--inset);border:1px solid var(--border2);border-radius:9px">
+        <div id="pgSourceChecks" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+        <div id="pgSourceError" style="display:none;color:var(--bad);font-size:11.5px;margin-top:8px">⚠ Select at least one source before checking — with nothing selected the call cannot answer anything.</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-top:8px">Source list is detected automatically from the live pipeline — never hardcoded. A custom selection overrides sources for THIS test call only and is never persisted or applied to real visitors.</div>
     <div id="pgOut" style="margin-top:12px"><div class="empty">Enter a question above to diagnose the chatbot's answer.</div></div>
   </div>
 
-  <div class="sec-title">Chatbot Checker — Production Routing</div>
-  <div class="sec-hint" style="color:var(--bad)">⚠ This controls what EVERY real visitor receives, immediately, until changed again. Separate from Diagnostic Mode above.</div>
+  <div class="sec-title">🔴 Chatbot Checker — Production Routing <span class="chip" style="color:var(--bad);border-color:rgba(226,104,95,.4);background:rgba(226,104,95,.08);text-transform:none;font-size:10px">Danger zone · Live now</span></div>
+  <div class="sec-hint" style="color:var(--bad)">⚠ This controls what EVERY real visitor receives, immediately, the moment you change it — it stays changed until you change it again. Completely separate from Diagnostic Mode above, which never touches this.</div>
   <div class="card" id="routingCard"><div class="empty">Loading routing config…</div></div>
 
 </div>

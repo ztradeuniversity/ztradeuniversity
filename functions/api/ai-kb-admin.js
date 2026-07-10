@@ -499,7 +499,14 @@ export async function onRequest(context) {
     // live chat call already produced. See chatbot-diagnostics.js.
     if (a === 'chatbot-check') {
       if (!body.question) return json({ error: 'question required' }, 400);
-      return json(await diagnoseChatbotAnswer(env, { question: body.question, sourceLayer: body.sourceLayer }));
+      // VALIDATION (spec Example F) — mirrors the Production Routing check
+      // below: an explicit sourceFlags override with every key false must
+      // fail loudly, not silently diagnose a call that would have dropped to
+      // Safe Reply with no source attempted at all.
+      if (body.sourceFlags && typeof body.sourceFlags === 'object' && !Object.values(body.sourceFlags).some(Boolean)) {
+        return json({ error: 'Select at least one source to test.' }, 400);
+      }
+      return json(await diagnoseChatbotAnswer(env, { question: body.question, sourceLayer: body.sourceLayer, sourceFlags: body.sourceFlags || null }));
     }
     // PRODUCTION ROUTING — persists the source config every REAL /api/ai-chat
     // request reads (see ai-chat.js's buildExecutionContext). Distinct and
@@ -509,6 +516,13 @@ export async function onRequest(context) {
       if (!body.config || typeof body.config !== 'object') return json({ error: 'config object required' }, 400);
       const clean = {};
       for (const k of ['database', 'graph', 'live', 'calc', 'openai']) clean[k] = body.config[k] !== false;
+      // VALIDATION (spec Example F: "Nothing checked → show a clear validation
+      // error, do not silently fall back") — with every source disabled, every
+      // real visitor would silently drop to Safe Reply forever with no way to
+      // notice from this panel. Reject instead of persisting that state.
+      if (!Object.values(clean).some(Boolean)) {
+        return json({ error: 'At least one source must stay enabled. Disabling every source would silently drop every real visitor to Safe Reply.' }, 400);
+      }
       const saved = await setSetting(env, 'chatbot_routing', clean);
       return json({ saved: !!saved, config: clean });
     }

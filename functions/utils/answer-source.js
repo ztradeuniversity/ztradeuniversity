@@ -5,7 +5,14 @@
 // payload. Additive only: it reports which existing layer answered; it does NOT
 // change routing, retrieval, or the priority chain.
 //
-// Retrieval priority (unchanged): Database → Knowledge Graph → Live API → OpenAI → Safe Reply.
+// Retrieval priority, as actually resolved in ai-chat.js's final merge
+// (verified during the Chatbot Checker audit — this replaces a previously
+// stale "Database → Graph → Live → OpenAI → Safe" claim that did not match
+// the code): Live API / Calculator (directAnswer) → Knowledge Graph
+// (kbAnswer) → Database → OpenAI → Safe Reply. Database's two answer paths
+// (article search, knowledge-orchestrator) are both explicitly gated on
+// `!directAnswer && !kbAnswer`, so Database only gets a turn once Live,
+// Calculator, and the Knowledge Graph have all missed.
 //   database  📚  Supabase article (ai_articles, knowledge-orchestrator)
 //   graph     🕸  Knowledge-graph concept (retrieveBest — kb_nodes live, else offline anchors)
 //   live      📡  Live market intelligence (sentiment/calendar/market-context)
@@ -24,10 +31,18 @@ const MAP = {
   safe:     { icon: '🛟', label: 'Safe Reply' },
 };
 
-// The five priority stages, in order, for the admin debug panel.
+// The six priority stages, in order, for the admin debug panel.
+// BUGFIX (Chatbot Checker audit): 'calc' was missing here even though
+// ctx.calc is a real, gated source in ai-chat.js (deterministic lot/risk/pip
+// calculator) and 'calc' is one of the 5 keys in the persisted routing config
+// (site_settings 'chatbot_routing') and the debug `available` map below.
+// Its absence made the Calculator source invisible and untestable in both
+// Diagnostic Mode and Production Routing (getTestableSources() derives from
+// this array) — Content Center could not show it, disable it, or explain it.
 export const SOURCE_STAGES = [
   { layer: 'database', label: 'Database' },
   { layer: 'graph',    label: 'Knowledge Graph' },
+  { layer: 'calc',     label: 'Calculator' },
   { layer: 'live',     label: 'Live API' },
   { layer: 'openai',   label: 'OpenAI' },
   { layer: 'safe',     label: 'Safe Reply' },
