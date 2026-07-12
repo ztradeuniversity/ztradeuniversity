@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Trading Discipline — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>Trading Discipline</h1>
+        <p class="ceo-text-secondary">Process supervision, never signals — the No-Advice Line applies structurally here (Intelligence Blueprint §8). Tables (<code>trading_rules</code>, <code>trading_records</code>, <code>rule_violations</code>) are not yet migrated; every section below shows its real, correct empty state.</p>
+
+        <div id="ceo-trading-tabs-group">
+          <div class="ceo-tabs">
+            <button class="ceo-tab" data-tab="journal" aria-selected="true">Journal</button>
+            <button class="ceo-tab" data-tab="review">Trade Review</button>
+            <button class="ceo-tab" data-tab="psychology">Psychology</button>
+            <button class="ceo-tab" data-tab="rules">Rules Checklist</button>
+            <button class="ceo-tab" data-tab="session">Session Review</button>
+          </div>
+
+          <!-- Journal -->
+          <div class="ceo-tab-panel" data-tab-panel="journal">
+            <div class="ceo-card" data-operational-section data-skeleton-rows="4">
+              <div class="ceo-flex ceo-justify-between ceo-items-center" style="margin-bottom: var(--ceo-space-4);">
+                <h3 style="margin: 0;">Trading Journal</h3>
+                <button class="ceo-btn ceo-btn-primary" disabled title="Activates once trading_records exists">New entry</button>
+              </div>
+              <div data-section-body>
+                <table class="ceo-table">
+                  <thead>
+                    <tr><th>Date</th><th>Instrument</th><th>Direction</th><th>Outcome</th><th>Compliant</th></tr>
+                  </thead>
+                </table>
+                <div class="ceo-empty-state">
+                  <h3>No journal entries yet</h3>
+                  <p>Entries land here once <code>trading_records</code> is migrated and the daily loop is live.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trade Review -->
+          <div class="ceo-tab-panel" data-tab-panel="review" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Trade Review</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>Nothing to review yet</h3>
+                  <p>Weekly trade review pulls from the journal above once real entries exist. AI Coach pattern summaries (Wave 5) never generate trade advice — process observations only.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Psychology -->
+          <div class="ceo-tab-panel" data-tab-panel="psychology" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Psychology Workspace</h3>
+              <div data-section-body>
+                <div class="ceo-field">
+                  <label class="ceo-label" for="ceo-psych-note">Session reflection</label>
+                  <textarea class="ceo-input" id="ceo-psych-note" rows="4" disabled placeholder="Not yet active — journaling of emotional state lands with trading_records"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rules Checklist -->
+          <div class="ceo-tab-panel" data-tab-panel="rules" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <div class="ceo-flex ceo-justify-between ceo-items-center" style="margin-bottom: var(--ceo-space-4);">
+                <h3 style="margin: 0;">Rules Checklist</h3>
+                <button class="ceo-btn ceo-btn-secondary" disabled title="Activates once trading_rules exists">Edit rules</button>
+              </div>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No rules defined yet</h3>
+                  <p>Your versioned rule set (<code>trading_rules</code>) lives here. A rule edit takes effect next session, never mid-trade, once this is live.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session Review -->
+          <div class="ceo-tab-panel" data-tab-panel="session" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Session Review Summary</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No sessions logged yet</h3>
+                  <p>A per-session summary (compliance rate, violation count) appears here once at least one trading day is journaled.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
+    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    initLayout('trading').then((user) => {
+      if (!user) return;
+      initTabs('#ceo-trading-tabs-group');
+      initAllOperationalSections();
+    });
+  </script>
+</body>
+</html>

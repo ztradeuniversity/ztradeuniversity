@@ -1,0 +1,93 @@
+/* theme.css — AI CEO OS design tokens (Dark Luxury)
+ *
+ * Fixed once, held permanently (Frontend Constitution §4): a token changes
+ * here, centrally, never patched per-screen. A screen-level override of a
+ * token below is a Major finding, not a style choice.
+ *
+ * Palette rationale: near-black surfaces (not pure black — softer, less
+ * harsh under long daily use); a warm gold accent, both a "CEO/luxury" cue
+ * and a deliberate nod to the business's own gold-trading identity; status
+ * colors form ONE vocabulary reused everywhere a state is shown — KPI
+ * threshold state, notification class, module-health chips — never a
+ * second color meaning "amber" on one screen and something else elsewhere.
+ */
+
+:root {
+  /* --- Surfaces --- */
+  --ceo-bg: #0b0d12;
+  --ceo-surface: #12151c;
+  --ceo-surface-raised: #181c25;
+  --ceo-border: #262b36;
+  --ceo-border-subtle: #1c202a;
+  --ceo-overlay: rgba(6, 7, 10, 0.72);
+
+  /* --- Text --- */
+  --ceo-text-primary: #e8e6df;
+  --ceo-text-secondary: #9a9fab;
+  --ceo-text-muted: #666b78;
+  --ceo-text-on-accent: #1a1608;
+
+  /* --- Accent (primary action, brand) --- */
+  --ceo-accent: #c9a227;
+  --ceo-accent-hover: #ddb541;
+  --ceo-accent-active: #b8931f;
+
+  /* --- Secondary action --- */
+  --ceo-secondary: #2a3040;
+  --ceo-secondary-hover: #333a4d;
+
+  /* --- Status colors — the ONE shared vocabulary (Frontend Constitution §4) --- */
+  --ceo-status-success: #3fae6a;
+  --ceo-status-success-bg: rgba(63, 174, 106, 0.12);
+  --ceo-status-warning: #d69a2d;
+  --ceo-status-warning-bg: rgba(214, 154, 45, 0.12);
+  --ceo-status-critical: #d64545;
+  --ceo-status-critical-bg: rgba(214, 69, 69, 0.12);
+  --ceo-status-info: #4a90d9;
+  --ceo-status-info-bg: rgba(74, 144, 217, 0.12);
+
+  /* --- Spacing scale (4px base, fixed — Frontend Constitution §4) --- */
+  --ceo-space-1: 4px;
+  --ceo-space-2: 8px;
+  --ceo-space-3: 12px;
+  --ceo-space-4: 16px;
+  --ceo-space-6: 24px;
+  --ceo-space-8: 32px;
+  --ceo-space-12: 48px;
+  --ceo-space-16: 64px;
+
+  /* --- Typography --- */
+  --ceo-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --ceo-font-size-xs: 0.75rem;
+  --ceo-font-size-sm: 0.875rem;
+  --ceo-font-size-base: 1rem;
+  --ceo-font-size-lg: 1.25rem;
+  --ceo-font-size-xl: 1.75rem;
+  --ceo-font-size-2xl: 2.25rem;
+  --ceo-line-height: 1.5;
+
+  /* --- Radius --- */
+  --ceo-radius-sm: 6px;
+  --ceo-radius-md: 10px;
+  --ceo-radius-lg: 16px;
+  --ceo-radius-full: 999px;
+
+  /* --- Elevation (soft, not harsh — luxury cue) --- */
+  --ceo-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+  --ceo-shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 48px rgba(0, 0, 0, 0.35);
+
+  /* --- Motion --- */
+  --ceo-transition-fast: 120ms ease;
+  --ceo-transition-base: 200ms ease;
+
+  /* --- Layout --- */
+  --ceo-sidebar-width: 240px;
+  --ceo-header-height: 64px;
+  --ceo-content-max-width: 1400px;
+
+  /* Breakpoints, documented for reference — CSS custom properties cannot be
+     used inside @media conditions, so these are restated as literal values
+     wherever a media query needs them: mobile <768px, tablet 768-1279px,
+     desktop >=1280px. */
+}

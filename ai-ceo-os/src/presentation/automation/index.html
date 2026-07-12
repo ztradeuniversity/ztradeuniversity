@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Automation Center — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>Automation Center</h1>
+        <p class="ceo-text-secondary">The registry and conscience of everything the machine does unattended (Business Architecture §2 — M6). Tables (<code>automation_registry</code>, <code>automation_run_ledger</code>, <code>approval_queue</code>) are not yet migrated. The approval queue is the structural Automation-Line enforcement point — no code path skips it for client-facing output.</p>
+
+        <div id="ceo-automation-tabs-group">
+          <div class="ceo-tabs">
+            <button class="ceo-tab" data-tab="list" aria-selected="true">Automation List</button>
+            <button class="ceo-tab" data-tab="history">Job History</button>
+            <button class="ceo-tab" data-tab="queue">Queue Monitor</button>
+            <button class="ceo-tab" data-tab="execution">Execution Status</button>
+            <button class="ceo-tab" data-tab="scheduler">Scheduler</button>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="list">
+            <div class="ceo-card" data-operational-section data-skeleton-rows="4">
+              <h3>Automation List</h3>
+              <div data-section-body>
+                <table class="ceo-table">
+                  <thead><tr><th>Name</th><th>Class</th><th>Module</th><th>Status</th></tr></thead>
+                </table>
+                <div class="ceo-empty-state">
+                  <h3>No automations registered yet</h3>
+                  <p>Every entry carries a Matrix-3 classification (Full / AI-assisted / Human-approval / Human-only, Technical Architecture §7) once registered.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="history" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="4">
+              <h3>Job History</h3>
+              <div data-section-body>
+                <table class="ceo-table">
+                  <thead><tr><th>Job</th><th>Started</th><th>Status</th><th>Details</th></tr></thead>
+                </table>
+                <div class="ceo-empty-state">
+                  <h3>No runs logged yet</h3>
+                  <p><code>automation_run_ledger</code> is append-only — every run, success or failure, stays permanent once this table exists.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="queue" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Queue Monitor</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>Nothing pending</h3>
+                  <p>Client-facing drafts from any module (M3, M4) queue here before any send — approve, edit, or reject, one item at a time.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="execution" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Execution Status</h3>
+              <div data-section-body>
+                <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Running</div>
+                    <div class="ceo-badge ceo-badge-neutral">0</div>
+                  </div>
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Pending</div>
+                    <div class="ceo-badge ceo-badge-neutral">0</div>
+                  </div>
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Failed</div>
+                    <div class="ceo-badge ceo-badge-neutral">0</div>
+                  </div>
+                </div>
+                <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-4);">Real counts once the expected-run monitor is live (2 consecutive failures auto-pause a job).</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="scheduler" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Scheduler</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No scheduled jobs yet</h3>
+                  <p>L4 automation runs via Cloudflare Cron Triggers calling Pages Functions (Technical Architecture §1) — no separate job-queue infrastructure.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
+    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    initLayout('automation').then((user) => {
+      if (!user) return;
+      initTabs('#ceo-automation-tabs-group');
+      initAllOperationalSections();
+    });
+  </script>
+</body>
+</html>

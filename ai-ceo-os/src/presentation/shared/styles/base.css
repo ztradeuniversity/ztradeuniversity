@@ -1,0 +1,247 @@
+/* base.css — resets, typography, and layout primitives. Loaded after theme.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--ceo-bg);
+  color: var(--ceo-text-primary);
+  font-family: var(--ceo-font-family);
+  font-size: var(--ceo-font-size-base);
+  line-height: var(--ceo-line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Auth-guard pattern (session-guard.js): every protected page starts hidden
+   and is revealed only after the server confirms authorization, avoiding a
+   flash of protected content. */
+body.ceo-auth-pending {
+  visibility: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0 0 var(--ceo-space-4) 0;
+}
+
+h1 {
+  font-size: var(--ceo-font-size-2xl);
+  font-weight: 600;
+}
+
+h2 {
+  font-size: var(--ceo-font-size-xl);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: var(--ceo-font-size-lg);
+  font-weight: 600;
+}
+
+a {
+  color: var(--ceo-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--ceo-accent-hover);
+  text-decoration: underline;
+}
+
+/* --- Sidebar navigation --- */
+
+.ceo-sidebar-brand {
+  font-size: var(--ceo-font-size-lg);
+  font-weight: 700;
+  color: var(--ceo-accent);
+  padding: var(--ceo-space-6) var(--ceo-space-4);
+  border-bottom: 1px solid var(--ceo-border-subtle);
+}
+
+.ceo-nav {
+  display: flex;
+  flex-direction: column;
+  padding: var(--ceo-space-4) var(--ceo-space-2);
+  gap: var(--ceo-space-1);
+}
+
+.ceo-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ceo-space-2);
+  padding: var(--ceo-space-3) var(--ceo-space-4);
+  border-radius: var(--ceo-radius-sm);
+  color: var(--ceo-text-secondary);
+  font-size: var(--ceo-font-size-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--ceo-transition-fast), color var(--ceo-transition-fast);
+}
+
+.ceo-nav-link:hover {
+  background: var(--ceo-surface-raised);
+  color: var(--ceo-text-primary);
+  text-decoration: none;
+}
+
+.ceo-nav-link-active {
+  background: var(--ceo-surface-raised);
+  color: var(--ceo-accent);
+  font-weight: 600;
+}
+
+.ceo-header-title {
+  font-size: var(--ceo-font-size-lg);
+  font-weight: 600;
+}
+
+.ceo-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ceo-radius-sm);
+  color: var(--ceo-text-secondary);
+  font-size: var(--ceo-font-size-lg);
+  text-decoration: none;
+  transition: background var(--ceo-transition-fast), color var(--ceo-transition-fast);
+}
+
+.ceo-icon-btn:hover {
+  background: var(--ceo-surface-raised);
+  color: var(--ceo-accent);
+  text-decoration: none;
+}
+
+/* --- App shell layout primitives --- */
+
+.ceo-app-shell {
+  display: grid;
+  grid-template-columns: var(--ceo-sidebar-width) 1fr;
+  grid-template-rows: var(--ceo-header-height) 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  min-height: 100vh;
+}
+
+.ceo-app-sidebar {
+  grid-area: sidebar;
+  background: var(--ceo-surface);
+  border-right: 1px solid var(--ceo-border);
+  overflow-y: auto;
+}
+
+.ceo-app-header {
+  grid-area: header;
+  background: var(--ceo-surface);
+  border-bottom: 1px solid var(--ceo-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--ceo-space-6);
+}
+
+.ceo-app-main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: var(--ceo-space-8);
+}
+
+.ceo-content {
+  max-width: var(--ceo-content-max-width);
+  margin: 0 auto;
+}
+
+.ceo-app-footer {
+  padding: var(--ceo-space-6) var(--ceo-space-8);
+  color: var(--ceo-text-muted);
+  font-size: var(--ceo-font-size-xs);
+  border-top: 1px solid var(--ceo-border-subtle);
+}
+
+/* --- Responsive: mobile collapses the sidebar (Frontend Constitution §9 —
+   desktop-first, mobile is read-mostly + daily-loop only; a full off-canvas
+   sidebar toggle is a Wave 8 refinement, not required now) --- */
+@media (max-width: 767px) {
+  .ceo-app-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main";
+  }
+
+  .ceo-app-sidebar {
+    display: none;
+  }
+}
+
+/* --- Utility classes --- */
+
+.ceo-flex {
+  display: flex;
+}
+
+.ceo-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.ceo-gap-2 {
+  gap: var(--ceo-space-2);
+}
+
+.ceo-gap-4 {
+  gap: var(--ceo-space-4);
+}
+
+.ceo-items-center {
+  align-items: center;
+}
+
+.ceo-justify-between {
+  justify-content: space-between;
+}
+
+.ceo-text-secondary {
+  color: var(--ceo-text-secondary);
+}
+
+.ceo-text-muted {
+  color: var(--ceo-text-muted);
+}
+
+.ceo-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visible focus outline everywhere — keyboard navigation (Frontend
+   Constitution §10) is a real requirement, not an afterthought. */
+:focus-visible {
+  outline: 2px solid var(--ceo-accent);
+  outline-offset: 2px;
+}

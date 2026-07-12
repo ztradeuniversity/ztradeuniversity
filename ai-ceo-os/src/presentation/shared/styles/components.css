@@ -1,0 +1,489 @@
+/* components.css — the eleven shared component categories (Frontend
+ * Constitution §3), styled once, reused everywhere. A module needing a
+ * variant configures these classes; it never gets a bespoke component. */
+
+/* --- Card (base pattern reused by KPI cards, list items, approval items) --- */
+.ceo-card {
+  background: var(--ceo-surface);
+  border: 1px solid var(--ceo-border);
+  border-radius: var(--ceo-radius-md);
+  box-shadow: var(--ceo-shadow-card);
+  padding: var(--ceo-space-6);
+}
+
+.ceo-card-title {
+  font-size: var(--ceo-font-size-sm);
+  color: var(--ceo-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--ceo-space-2);
+}
+
+.ceo-card-value {
+  font-size: var(--ceo-font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--ceo-space-1);
+}
+
+/* --- Buttons: primary / secondary / destructive — no fourth tier --- */
+.ceo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ceo-space-2);
+  font-family: inherit;
+  font-size: var(--ceo-font-size-sm);
+  font-weight: 600;
+  padding: var(--ceo-space-2) var(--ceo-space-4);
+  border-radius: var(--ceo-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--ceo-transition-fast), border-color var(--ceo-transition-fast);
+}
+
+.ceo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ceo-btn-primary {
+  background: var(--ceo-accent);
+  color: var(--ceo-text-on-accent);
+}
+
+.ceo-btn-primary:hover:not(:disabled) {
+  background: var(--ceo-accent-hover);
+}
+
+.ceo-btn-secondary {
+  background: var(--ceo-secondary);
+  color: var(--ceo-text-primary);
+  border-color: var(--ceo-border);
+}
+
+.ceo-btn-secondary:hover:not(:disabled) {
+  background: var(--ceo-secondary-hover);
+}
+
+.ceo-btn-destructive {
+  background: transparent;
+  color: var(--ceo-status-critical);
+  border-color: var(--ceo-status-critical);
+}
+
+.ceo-btn-destructive:hover:not(:disabled) {
+  background: var(--ceo-status-critical-bg);
+}
+
+/* --- Badges / status pills — the shared status vocabulary, visually --- */
+.ceo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ceo-space-1);
+  font-size: var(--ceo-font-size-xs);
+  font-weight: 600;
+  padding: 2px var(--ceo-space-2);
+  border-radius: var(--ceo-radius-full);
+}
+
+.ceo-badge-success {
+  background: var(--ceo-status-success-bg);
+  color: var(--ceo-status-success);
+}
+
+.ceo-badge-warning {
+  background: var(--ceo-status-warning-bg);
+  color: var(--ceo-status-warning);
+}
+
+.ceo-badge-critical {
+  background: var(--ceo-status-critical-bg);
+  color: var(--ceo-status-critical);
+}
+
+.ceo-badge-info {
+  background: var(--ceo-status-info-bg);
+  color: var(--ceo-status-info);
+}
+
+.ceo-badge-neutral {
+  background: var(--ceo-secondary);
+  color: var(--ceo-text-secondary);
+}
+
+/* --- Table --- */
+.ceo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ceo-font-size-sm);
+}
+
+.ceo-table th {
+  text-align: left;
+  color: var(--ceo-text-secondary);
+  font-weight: 600;
+  padding: var(--ceo-space-3) var(--ceo-space-4);
+  border-bottom: 1px solid var(--ceo-border);
+}
+
+.ceo-table td {
+  padding: var(--ceo-space-3) var(--ceo-space-4);
+  border-bottom: 1px solid var(--ceo-border-subtle);
+}
+
+.ceo-table tr:hover td {
+  background: var(--ceo-surface-raised);
+}
+
+/* --- Forms --- */
+.ceo-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ceo-space-1);
+  margin-bottom: var(--ceo-space-4);
+}
+
+.ceo-label {
+  font-size: var(--ceo-font-size-sm);
+  color: var(--ceo-text-secondary);
+}
+
+.ceo-input {
+  font-family: inherit;
+  font-size: var(--ceo-font-size-base);
+  background: var(--ceo-bg);
+  color: var(--ceo-text-primary);
+  border: 1px solid var(--ceo-border);
+  border-radius: var(--ceo-radius-sm);
+  padding: var(--ceo-space-2) var(--ceo-space-3);
+}
+
+.ceo-input:focus {
+  border-color: var(--ceo-accent);
+}
+
+.ceo-input-error {
+  border-color: var(--ceo-status-critical);
+}
+
+.ceo-field-error {
+  font-size: var(--ceo-font-size-xs);
+  color: var(--ceo-status-critical);
+}
+
+/* --- Alerts (distinct from toasts — inline, persistent until dismissed) --- */
+.ceo-alert {
+  display: flex;
+  gap: var(--ceo-space-3);
+  padding: var(--ceo-space-4);
+  border-radius: var(--ceo-radius-md);
+  border: 1px solid;
+  margin-bottom: var(--ceo-space-4);
+}
+
+.ceo-alert-info {
+  background: var(--ceo-status-info-bg);
+  border-color: var(--ceo-status-info);
+  color: var(--ceo-status-info);
+}
+
+.ceo-alert-warning {
+  background: var(--ceo-status-warning-bg);
+  border-color: var(--ceo-status-warning);
+  color: var(--ceo-status-warning);
+}
+
+.ceo-alert-critical {
+  background: var(--ceo-status-critical-bg);
+  border-color: var(--ceo-status-critical);
+  color: var(--ceo-status-critical);
+}
+
+/* --- Tabs --- */
+.ceo-tabs {
+  display: flex;
+  gap: var(--ceo-space-2);
+  border-bottom: 1px solid var(--ceo-border);
+  margin-bottom: var(--ceo-space-6);
+}
+
+.ceo-tab {
+  background: none;
+  border: none;
+  color: var(--ceo-text-secondary);
+  font-family: inherit;
+  font-size: var(--ceo-font-size-sm);
+  font-weight: 600;
+  padding: var(--ceo-space-3) var(--ceo-space-4);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--ceo-transition-fast);
+}
+
+.ceo-tab:hover {
+  color: var(--ceo-text-primary);
+}
+
+.ceo-tab[aria-selected="true"] {
+  color: var(--ceo-accent);
+  border-bottom-color: var(--ceo-accent);
+}
+
+.ceo-tab-panel[hidden] {
+  display: none;
+}
+
+/* --- Progress indicators --- */
+.ceo-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--ceo-surface-raised);
+  border-radius: var(--ceo-radius-full);
+  overflow: hidden;
+}
+
+.ceo-progress-bar {
+  height: 100%;
+  background: var(--ceo-accent);
+  transition: width var(--ceo-transition-base);
+}
+
+/* --- Empty states --- */
+.ceo-empty-state {
+  text-align: center;
+  padding: var(--ceo-space-16) var(--ceo-space-8);
+  color: var(--ceo-text-secondary);
+}
+
+.ceo-empty-state h3 {
+  color: var(--ceo-text-primary);
+}
+
+/* --- Skeleton loaders (pure CSS, no JS needed) --- */
+.ceo-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--ceo-surface-raised) 25%,
+    var(--ceo-border) 50%,
+    var(--ceo-surface-raised) 75%
+  );
+  background-size: 200% 100%;
+  animation: ceo-skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--ceo-radius-sm);
+}
+
+@keyframes ceo-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.ceo-skeleton-text {
+  height: 1em;
+  margin-bottom: var(--ceo-space-2);
+}
+
+.ceo-skeleton-card {
+  height: 96px;
+}
+
+/* --- Modal (JS-controlled via modal.js) --- */
+.ceo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ceo-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ceo-modal-overlay[hidden] {
+  display: none;
+}
+
+.ceo-modal {
+  background: var(--ceo-surface-raised);
+  border: 1px solid var(--ceo-border);
+  border-radius: var(--ceo-radius-lg);
+  box-shadow: var(--ceo-shadow-modal);
+  padding: var(--ceo-space-6);
+  max-width: 480px;
+  width: calc(100% - var(--ceo-space-8));
+}
+
+.ceo-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ceo-space-3);
+  margin-top: var(--ceo-space-6);
+}
+
+/* --- Toast notifications (JS-controlled via toast.js) --- */
+.ceo-toast-region {
+  position: fixed;
+  bottom: var(--ceo-space-6);
+  right: var(--ceo-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ceo-space-2);
+  z-index: 1100;
+}
+
+.ceo-toast {
+  background: var(--ceo-surface-raised);
+  border: 1px solid var(--ceo-border);
+  border-left: 3px solid var(--ceo-status-info);
+  border-radius: var(--ceo-radius-sm);
+  box-shadow: var(--ceo-shadow-card);
+  padding: var(--ceo-space-3) var(--ceo-space-4);
+  min-width: 260px;
+  font-size: var(--ceo-font-size-sm);
+  animation: ceo-toast-in var(--ceo-transition-base);
+}
+
+.ceo-toast-success {
+  border-left-color: var(--ceo-status-success);
+}
+
+.ceo-toast-warning {
+  border-left-color: var(--ceo-status-warning);
+}
+
+.ceo-toast-critical {
+  border-left-color: var(--ceo-status-critical);
+}
+
+@keyframes ceo-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Loading spinner (small, inline) --- */
+.ceo-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ceo-border);
+  border-top-color: var(--ceo-accent);
+  border-radius: 50%;
+  animation: ceo-spin 0.6s linear infinite;
+}
+
+@keyframes ceo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Wave 4 additions: kanban, timeline, checklist, generic list ---
+ * Extends the Wave 3 component set rather than restructuring it — same
+ * design tokens, same status-color vocabulary, no new palette. */
+
+/* Kanban (Status Workflow, Content Workspace) */
+.ceo-kanban {
+  display: flex;
+  gap: var(--ceo-space-4);
+  overflow-x: auto;
+  padding-bottom: var(--ceo-space-2);
+}
+
+.ceo-kanban-column {
+  flex: 0 0 240px;
+  background: var(--ceo-surface);
+  border: 1px solid var(--ceo-border);
+  border-radius: var(--ceo-radius-md);
+  padding: var(--ceo-space-3);
+}
+
+.ceo-kanban-column-header {
+  font-size: var(--ceo-font-size-sm);
+  font-weight: 600;
+  color: var(--ceo-text-secondary);
+  margin-bottom: var(--ceo-space-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ceo-kanban-empty {
+  font-size: var(--ceo-font-size-xs);
+  color: var(--ceo-text-muted);
+  text-align: center;
+  padding: var(--ceo-space-4) 0;
+}
+
+/* Timeline (Activity Timeline, Research History) */
+.ceo-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ceo-timeline-item {
+  position: relative;
+  padding-left: var(--ceo-space-6);
+  padding-bottom: var(--ceo-space-4);
+  border-left: 2px solid var(--ceo-border);
+  margin-left: var(--ceo-space-2);
+}
+
+.ceo-timeline-item:last-child {
+  border-left-color: transparent;
+}
+
+.ceo-timeline-dot {
+  position: absolute;
+  left: -5px;
+  top: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ceo-accent);
+}
+
+.ceo-timeline-time {
+  font-size: var(--ceo-font-size-xs);
+  color: var(--ceo-text-muted);
+}
+
+/* Checklist (Rules Checklist, Action Tracker) */
+.ceo-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ceo-space-3);
+  padding: var(--ceo-space-3) var(--ceo-space-2);
+  border-bottom: 1px solid var(--ceo-border-subtle);
+}
+
+.ceo-checklist-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ceo-accent);
+}
+
+/* Generic list (simpler than a table — Notification area, Job History) */
+.ceo-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ceo-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ceo-space-3);
+  padding: var(--ceo-space-3) 0;
+  border-bottom: 1px solid var(--ceo-border-subtle);
+}
+
+.ceo-list-item:last-child {
+  border-bottom: none;
+}

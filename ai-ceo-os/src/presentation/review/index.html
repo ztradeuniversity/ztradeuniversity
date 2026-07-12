@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Reviews — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>Reviews</h1>
+        <p class="ceo-text-secondary">The heartbeat — one <code>reviews</code> table, four cadences, typed by a <code>review_cadence</code> enum, not four separate tables (Database Blueprint §4). Not yet migrated — every tab below is a real, honest empty state.</p>
+
+        <div id="ceo-review-tabs-group">
+          <div class="ceo-tabs">
+            <button class="ceo-tab" data-tab="weekly" aria-selected="true">Weekly</button>
+            <button class="ceo-tab" data-tab="monthly">Monthly</button>
+            <button class="ceo-tab" data-tab="quarterly">Quarterly</button>
+            <button class="ceo-tab" data-tab="notes">Founder Notes</button>
+            <button class="ceo-tab" data-tab="actions">Action Tracker</button>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="weekly">
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Weekly Review</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No reviews logged yet</h3>
+                  <p>What blocked execution this week? What took longer than planned? One lesson, one friction removed — every week, ≤15 minutes (Execution Playbook §12).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="monthly" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Monthly Review</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No reviews logged yet</h3>
+                  <p>KPI-vs-threshold, eliminations (at least one, mandatory), next automation candidate — populates once KPI history exists.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="quarterly" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Quarterly Review</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No reviews logged yet</h3>
+                  <p>Pareto re-cut, TRIAL kill/keep decisions, risk register review, evidence re-check refresh — calendar-gated as much as build-gated (Implementation Blueprint §4, P6).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="notes" hidden>
+            <div class="ceo-card">
+              <h3>Founder Notes</h3>
+              <div class="ceo-field">
+                <label class="ceo-label" for="ceo-founder-notes">Freeform notes</label>
+                <textarea class="ceo-input" id="ceo-founder-notes" rows="6" disabled placeholder="Not yet active — persists to the reviews table once migrated"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="actions" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Action Tracker</h3>
+              <div data-section-body>
+                <div class="ceo-checklist-item">
+                  <input type="checkbox" disabled />
+                  <span class="ceo-text-muted">No actions tracked yet — populated from review outputs once reviews are live.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
+    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    initLayout('review').then((user) => {
+      if (!user) return;
+      initTabs('#ceo-review-tabs-group');
+      initAllOperationalSections();
+    });
+  </script>
+</body>
+</html>

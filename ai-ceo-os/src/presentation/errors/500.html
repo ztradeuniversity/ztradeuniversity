@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Something went wrong — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+  <style>
+    .ceo-error-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--ceo-space-6); }
+    .ceo-error-card { max-width: 420px; text-align: center; }
+    .ceo-error-code { font-size: 3rem; font-weight: 700; color: var(--ceo-status-critical); margin-bottom: var(--ceo-space-2); }
+  </style>
+</head>
+<body>
+  <main class="ceo-error-page">
+    <div class="ceo-card ceo-error-card">
+      <div class="ceo-error-code">500</div>
+      <h2>Something went wrong</h2>
+      <p class="ceo-text-secondary">
+        An unexpected error occurred. It's already logged — try again in a moment,
+        or come back later if it persists.
+      </p>
+      <a href="/ai-ceo-os/src/presentation/command-center/index.html" class="ceo-btn ceo-btn-primary">Go to Home</a>
+    </div>
+  </main>
+</body>
+</html>

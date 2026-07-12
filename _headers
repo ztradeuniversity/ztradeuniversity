@@ -24,3 +24,11 @@
 /assets/*.js
   Cache-Control: public, max-age=3600, must-revalidate
   X-Content-Type-Options: nosniff
+
+# AI CEO Operating System — private admin area, shares this Cloudflare Pages
+# project with the public site (see ai-ceo-os/docs/decisions/
+# DEC-002-cloudflare-shared-project.md). Never indexed, never cached publicly.
+/ai-ceo-os/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: private, no-store
+  X-Frame-Options: DENY

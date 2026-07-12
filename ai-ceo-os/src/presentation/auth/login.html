@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Sign in — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+  <style>
+    .ceo-auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--ceo-space-6);
+    }
+    .ceo-auth-card {
+      width: 100%;
+      max-width: 380px;
+    }
+    .ceo-auth-brand {
+      text-align: center;
+      font-size: var(--ceo-font-size-xl);
+      font-weight: 700;
+      color: var(--ceo-accent);
+      margin-bottom: var(--ceo-space-2);
+    }
+    .ceo-auth-subtitle {
+      text-align: center;
+      color: var(--ceo-text-secondary);
+      font-size: var(--ceo-font-size-sm);
+      margin-bottom: var(--ceo-space-8);
+    }
+  </style>
+</head>
+<body>
+  <main class="ceo-auth-page">
+    <div class="ceo-auth-card">
+      <div class="ceo-auth-brand">AI CEO OS</div>
+      <p class="ceo-auth-subtitle">Private admin access</p>
+
+      <div class="ceo-card">
+        <form id="ceo-login-form" novalidate>
+          <div id="ceo-login-error" class="ceo-alert ceo-alert-critical" hidden></div>
+
+          <div class="ceo-field">
+            <label class="ceo-label" for="ceo-email">Email</label>
+            <input class="ceo-input" type="email" id="ceo-email" name="email" autocomplete="username" required />
+          </div>
+
+          <div class="ceo-field">
+            <label class="ceo-label" for="ceo-password">Password</label>
+            <input class="ceo-input" type="password" id="ceo-password" name="password" autocomplete="current-password" required />
+          </div>
+
+          <button type="submit" class="ceo-btn ceo-btn-primary" id="ceo-login-submit" style="width: 100%; justify-content: center; margin-top: var(--ceo-space-2);">
+            <span id="ceo-login-spinner" class="ceo-spinner" hidden></span>
+            <span>Sign in</span>
+          </button>
+
+          <div style="text-align: center; margin-top: var(--ceo-space-4);">
+            <a href="/ai-ceo-os/src/presentation/auth/reset-password.html" style="font-size: var(--ceo-font-size-sm);">Forgot your password?</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/ai-ceo-os/src/presentation/auth/login.js"></script>
+</body>
+</html>

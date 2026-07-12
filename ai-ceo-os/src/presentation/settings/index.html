@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Settings — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>Settings</h1>
+        <p class="ceo-text-secondary">System-level utilities — not a business module, so it stays outside the primary navigation (Dashboard Blueprint §2).</p>
+
+        <div id="ceo-settings-tabs-group">
+          <div class="ceo-tabs">
+            <button class="ceo-tab" data-tab="settings" aria-selected="true">Settings</button>
+            <button class="ceo-tab" data-tab="notifications">Notifications</button>
+            <button class="ceo-tab" data-tab="audit">Audit Center</button>
+            <button class="ceo-tab" data-tab="health">System Health</button>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="settings">
+            <div class="ceo-card">
+              <div class="ceo-empty-state">
+                <h3>Feature flags &amp; preferences</h3>
+                <p>15 flags are seeded (all off) in the database. A real editing UI arrives once a module needs its flag flipped — Wave 4 onward.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="notifications" hidden>
+            <div class="ceo-card">
+              <div class="ceo-empty-state">
+                <h3>Not yet active</h3>
+                <p>The five-class notification engine (Info/Reminder/Warning/Critical/Approval-Required) arrives alongside Wave 6's automation infrastructure.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="audit" hidden>
+            <div class="ceo-card">
+              <div class="ceo-empty-state">
+                <h3>Not yet active</h3>
+                <p>The audit log table exists and is already capturing events (logins, denials) — a viewing UI arrives with Wave 4.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="health" hidden>
+            <div class="ceo-card">
+              <div class="ceo-empty-state">
+                <h3>Not yet active</h3>
+                <p>System-health observability (job runs, integration status, errors) arrives as each module ships its own monitored surface.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
+    initLayout('settings').then(() => initTabs('#ceo-settings-tabs-group'));
+  </script>
+</body>
+</html>

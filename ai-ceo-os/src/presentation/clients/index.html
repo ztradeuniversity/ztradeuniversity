@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>IB Client Engine — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>IB Client Engine</h1>
+        <p class="ceo-text-secondary">Full relationship lifecycle (Business Architecture §5). Tables (<code>ib_clients</code>, <code>lead_pipeline</code>, <code>client_touches</code>) are not yet migrated — every view below is a real, honest empty state, not a live query.</p>
+
+        <div id="ceo-clients-tabs-group">
+          <div class="ceo-tabs">
+            <button class="ceo-tab" data-tab="directory" aria-selected="true">Client Directory</button>
+            <button class="ceo-tab" data-tab="profile">Client Profile</button>
+            <button class="ceo-tab" data-tab="ib-overview">IB Overview</button>
+            <button class="ceo-tab" data-tab="approvals">Approval Queue</button>
+            <button class="ceo-tab" data-tab="workflow">Status Workflow</button>
+          </div>
+
+          <!-- Client Directory -->
+          <div class="ceo-tab-panel" data-tab-panel="directory">
+            <div class="ceo-card" data-operational-section data-skeleton-rows="4">
+              <div class="ceo-flex ceo-justify-between ceo-items-center" style="margin-bottom: var(--ceo-space-4);">
+                <h3 style="margin: 0;">Client Directory</h3>
+                <button class="ceo-btn ceo-btn-primary" disabled title="Activates once ib_clients exists">Add client</button>
+              </div>
+              <div data-section-body>
+                <table class="ceo-table">
+                  <thead>
+                    <tr><th>Name</th><th>Stage</th><th>Broker</th><th>Equity band</th><th>Last touch</th></tr>
+                  </thead>
+                </table>
+                <div class="ceo-empty-state">
+                  <h3>No clients yet</h3>
+                  <p>The directory populates once <code>ib_clients</code> is migrated (manual entry mode first — Exness API sync is Future, gated on portal verification).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Client Profile -->
+          <div class="ceo-tab-panel" data-tab-panel="profile" hidden>
+            <div class="ceo-card">
+              <h3>Client Profile</h3>
+              <div class="ceo-empty-state">
+                <h3>No client selected</h3>
+                <p>Select a client from the Directory tab to see their full lifecycle detail (touches, equity, referral status) here — the detail-view tier of this module's three-tier screen structure.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- IB Overview -->
+          <div class="ceo-tab-panel" data-tab-panel="ib-overview" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="4">
+              <h3>IB Overview</h3>
+              <div data-section-body>
+                <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Active clients</div>
+                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
+                  </div>
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Dormant clients</div>
+                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
+                  </div>
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">High-equity clients</div>
+                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Approval Queue -->
+          <div class="ceo-tab-panel" data-tab-panel="approvals" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Approval Queue</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>Nothing pending</h3>
+                  <p>Client-facing drafts (onboarding messages, outreach) queue here before any send — the structural Automation Line enforcement point (<code>approval_queue</code>, Wave 6). Nothing can bypass this screen.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Workflow -->
+          <div class="ceo-tab-panel" data-tab-panel="workflow" hidden>
+            <div class="ceo-card">
+              <h3>Status Workflow</h3>
+              <div class="ceo-kanban">
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Lead</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Qualified</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Onboarding</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Activated</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Engaged</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">At Risk</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Retained</div><div class="ceo-kanban-empty">Empty</div></div>
+              </div>
+              <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-4);">Mirrors the <code>client_lifecycle_stage</code> enum exactly (Database Blueprint). Columns populate once clients exist.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
+    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    initLayout('clients').then((user) => {
+      if (!user) return;
+      initTabs('#ceo-clients-tabs-group');
+      initAllOperationalSections();
+    });
+  </script>
+</body>
+</html>

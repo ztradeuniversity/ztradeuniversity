@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Growth Engine — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>Growth Engine</h1>
+        <p class="ceo-text-secondary">Demand intelligence → production → publication → distribution → conversion, one pipeline (Business Architecture §6 — M4). Tables (<code>content_library</code>, <code>growth_tasks</code>, <code>marketing_campaigns</code>) are not yet migrated. The OS never auto-publishes to the live ZTU site — that stays a founder action through the existing warehouse workflow.</p>
+
+        <div id="ceo-growth-tabs-group">
+          <div class="ceo-tabs">
+            <button class="ceo-tab" data-tab="content" aria-selected="true">Content Workspace</button>
+            <button class="ceo-tab" data-tab="campaigns">Campaign Workspace</button>
+            <button class="ceo-tab" data-tab="social">Social Publishing</button>
+            <button class="ceo-tab" data-tab="video">Video Planning</button>
+            <button class="ceo-tab" data-tab="marketing">Marketing Dashboard</button>
+          </div>
+
+          <!-- Content Workspace -->
+          <div class="ceo-tab-panel" data-tab-panel="content">
+            <div class="ceo-card">
+              <div class="ceo-flex ceo-justify-between ceo-items-center" style="margin-bottom: var(--ceo-space-4);">
+                <h3 style="margin: 0;">Content Workspace</h3>
+                <button class="ceo-btn ceo-btn-primary" disabled title="Activates once content_library exists">New idea</button>
+              </div>
+              <div class="ceo-kanban">
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Idea</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Production</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Published</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Evergreen</div><div class="ceo-kanban-empty">Empty</div></div>
+                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Retired</div><div class="ceo-kanban-empty">Empty</div></div>
+              </div>
+              <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-4);">Mirrors <code>content_library.status</code> exactly. The 300+ topic framework reuses this same table (status=idea), no separate topic table.</p>
+            </div>
+          </div>
+
+          <!-- Campaign Workspace -->
+          <div class="ceo-tab-panel" data-tab-panel="campaigns" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Campaign Workspace</h3>
+              <div data-section-body>
+                <table class="ceo-table">
+                  <thead><tr><th>Channel</th><th>Name</th><th>Status</th><th>Leads sourced</th></tr></thead>
+                </table>
+                <div class="ceo-empty-state">
+                  <h3>No campaigns yet</h3>
+                  <p>Every campaign requires a forced evaluation step before it can be marked complete (Database Blueprint).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Social Publishing -->
+          <div class="ceo-tab-panel" data-tab-panel="social" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Social Publishing</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>Nothing scheduled</h3>
+                  <p>Adopted channels only (YouTube, WhatsApp/Telegram community, Facebook — per Step 7/8 research). Any client/public-facing post queues through the Automation Center's approval queue before sending.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Video Planning -->
+          <div class="ceo-tab-panel" data-tab-panel="video" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
+              <h3>Video Planning</h3>
+              <div data-section-body>
+                <div class="ceo-empty-state">
+                  <h3>No videos planned yet</h3>
+                  <p>The weekly founder-voiced piece is the seed for the repurposing chain (article → shorts → chatbot knowledge). AI dubbing (ElevenLabs) stays TRIAL-gated per Step 7 research.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Marketing Dashboard -->
+          <div class="ceo-tab-panel" data-tab-panel="marketing" hidden>
+            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
+              <h3>Marketing Dashboard</h3>
+              <div data-section-body>
+                <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Organic sessions</div>
+                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
+                  </div>
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">CAC by channel</div>
+                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
+                  </div>
+                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
+                    <div class="ceo-card-title">Content cadence</div>
+                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
+    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    initLayout('growth').then((user) => {
+      if (!user) return;
+      initTabs('#ceo-growth-tabs-group');
+      initAllOperationalSections();
+    });
+  </script>
+</body>
+</html>
