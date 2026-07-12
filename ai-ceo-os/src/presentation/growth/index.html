@@ -122,6 +122,7 @@
       if (!user) return;
       initTabs('#ceo-growth-tabs-group');
       initAllOperationalSections();
+      import('/ai-ceo-os/src/presentation/growth/growth-page.js').then((m) => m.initGrowthPage());
     });
   </script>
 </body>

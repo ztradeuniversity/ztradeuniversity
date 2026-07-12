@@ -6,6 +6,48 @@ Log is the *why*.
 
 ## Unreleased
 
+### Added — Implementation Batches 2-6: Mission Engine, Dashboard, Growth, Retention, Mentor wiring
+- Seven new Cloudflare Functions under `functions/api/ceo/`: `mission.js` (Today's Mission engine —
+  instantiates daily_activities from seeded cadence templates once per day, ranks tier→time,
+  computes needs-attention + headline KPI + mentor morning line), `activities.js` (complete/skip
+  with reason taxonomy + shutdown note + coaching responses), `trading.js` (journal + rules +
+  violations), `clients.js` (directory, touches, stage transitions with lead_pipeline history),
+  `retention.js` (daily due-list: milestone ladder, at-risk silence flags, dormant checkpoints),
+  `growth.js` (content kanban + campaigns), `kpis.js` (definitions + manual entry with correction
+  semantics). Plus `functions/utils/ceo/db.js` — shared REST helper; all data ops run under the
+  USER's token so RLS enforces exactly as designed (service_role stays allowlist-check-only).
+- Frontend wiring: `shared/api.js` (authenticated fetch wrapper), Home rebuilt as Today's Mission
+  (PX Constitution fixed order: warnings→banner→Top 3→core block→attention→KPI→shutdown) via new
+  `command-center/home.js`; `trading/trading-page.js`, `clients/clients-page.js` (includes the
+  Retention Today panel), `growth/growth-page.js` wired into the existing Wave-4 tab shells.
+- Mentor floor delivered through the mission payload (day-type morning templates) + coaching
+  lines on every complete/skip — deterministic, grounded in seeded rules; LLM phrasing remains
+  the dormant seam by design.
+- Skip reasons stored by appending `| skipped:<reason>` to the activity description (schema
+  frozen — no new column; documented parse contract).
+- QA fixes during implementation: toast levels corrected to the component's real API
+  (`critical`, not `danger`); CSS classes reconciled to the actual design system
+  (`ceo-badge-critical`, `ceo-alert-critical`, `ceo-field`; selects use `ceo-input`).
+- Honest scope notes: trading review/psychology tabs, approval queue, and automation execution
+  remain designed empty states (Batches 7-8 per the roadmap — reviews and automation were not in
+  this batch set and were not faked).
+
+### Added — Implementation Batch 1: Seed files (Final Implementation, Batch 1)
+- Three founder-reviewable seed files in `supabase/seed/`: `seed-01-foundation.sql` (25 KPI
+  definitions across 11 proposed categories — the standing category-naming decision closes at
+  founder review; 15 settings keys; 15 research verdicts; 10 locked decisions; 10 risks; 5 broker
+  rules), `seed-02-operations.sql` (15 cadence templates, 7 mission rules, 12 execution
+  checklists, 10 platform playbooks, 5 country playbooks, 12 audience cards, 8 growth-stage
+  rules, 10 automation registry entries — all inactive, 8 founder trading rules, 40 content
+  ideas), `seed-03-retention-mentor.sql` (10 lifecycle rules, 15 retention templates, 15
+  VIP/recovery/referral/recognition/leadership rules, 15 mentor scenario rules, 20 conversation
+  templates, 25 mental models, 6 mentor config rules).
+- ~250 rows total, all into existing tables — zero schema changes (the freeze holds through
+  implementation). Every file: run-once semantics, inline verification queries, commented
+  rollback block, founder-email parameter at top.
+- Zero demo/client/trade data anywhere (2C §7). All automation entries seeded `is_active=false`
+  (Module Gate). Not executed — founder reviews then runs in the Supabase SQL Editor.
+
 ### Fixed — Database Production Readiness Review, corrective migration 031 (Prompt 4, Step 4)
 - Full audit of migrations `001`-`030`: numbering, dependencies, foreign keys, RLS, indexes,
   constraints, naming, enum usage, soft-delete compliance — one real finding.

@@ -15,117 +15,51 @@
     <header class="ceo-app-header" id="ceo-header-slot"></header>
     <main class="ceo-app-main">
       <div class="ceo-content">
-        <h1>Home</h1>
+        <h1>Today's Mission</h1>
 
-        <!-- North-star strip -->
+        <!-- ① Critical warnings (hidden when empty — never "no warnings" noise) -->
+        <section id="home-warnings" hidden style="margin-bottom: var(--ceo-space-4);"></section>
+
+        <!-- ② Mission banner: day type + mentor line + time -->
+        <section class="ceo-card" id="home-mission-banner" style="margin-bottom: var(--ceo-space-6);">
+          <div class="ceo-skeleton" style="height: 3em;"></div>
+        </section>
+
+        <!-- ③ Today's Top 3 -->
         <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <div class="ceo-card-title">Net Commission — 3-Month Rolling</div>
-          <div class="ceo-empty-state" style="padding: var(--ceo-space-8) 0;">
-            <p>No data yet — this fills in once IB Client Engine's tables (Wave 4 migrations) and Domain-0 baselines exist.</p>
-          </div>
+          <h3>Today's Top 3</h3>
+          <div id="home-top3"><div class="ceo-skeleton" style="height: 8em;"></div></div>
+          <div id="home-rest" style="margin-top: var(--ceo-space-4);"></div>
         </section>
 
-        <!-- KPI containers -->
-        <section class="ceo-card" data-operational-section data-skeleton-rows="4" style="margin-bottom: var(--ceo-space-6);">
-          <h3>KPI Overview</h3>
-          <div data-section-body>
-            <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
-              <div class="ceo-card" style="flex: 1; min-width: 180px; box-shadow: none; background: var(--ceo-surface-raised);">
-                <div class="ceo-card-title">IB Growth</div>
-                <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Awaiting client data</div>
-              </div>
-              <div class="ceo-card" style="flex: 1; min-width: 180px; box-shadow: none; background: var(--ceo-surface-raised);">
-                <div class="ceo-card-title">Trading Discipline</div>
-                <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Awaiting journal data</div>
-              </div>
-              <div class="ceo-card" style="flex: 1; min-width: 180px; box-shadow: none; background: var(--ceo-surface-raised);">
-                <div class="ceo-card-title">Content Production</div>
-                <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Awaiting content data</div>
-              </div>
-              <div class="ceo-card" style="flex: 1; min-width: 180px; box-shadow: none; background: var(--ceo-surface-raised);">
-                <div class="ceo-card-title">Founder Productivity</div>
-                <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Awaiting loop data</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div class="ceo-flex ceo-gap-4" style="margin-bottom: var(--ceo-space-6); flex-wrap: wrap;">
-          <!-- Core loop -->
-          <section class="ceo-card" style="flex: 1; min-width: 280px;">
-            <h3>Today</h3>
-            <div class="ceo-empty-state" style="padding: var(--ceo-space-6) 0;">
-              <p>The daily loop (trading prep, journal, shutdown) activates once M7's tables exist.</p>
-            </div>
-          </section>
-
-          <!-- AI recommendations -->
-          <section class="ceo-card" style="flex: 1; min-width: 280px;">
-            <h3>AI Recommendations</h3>
-            <div class="ceo-empty-state" style="padding: var(--ceo-space-6) 0;">
-              <p>The mentor layer activates in Wave 5, once real module data exists to observe.</p>
-            </div>
-          </section>
-        </div>
-
-        <!-- Notification area -->
-        <section class="ceo-card" data-operational-section data-skeleton-rows="2" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Notifications</h3>
-          <div data-section-body>
-            <div class="ceo-empty-state" style="padding: var(--ceo-space-6) 0;">
-              <p>No notifications yet. The five-class engine (Info/Reminder/Warning/Critical/Approval-Required) activates alongside Wave 6's automation infrastructure.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- Activity timeline -->
-        <section class="ceo-card" data-operational-section data-skeleton-rows="3" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Activity Timeline</h3>
-          <div data-section-body>
-            <ul class="ceo-timeline" style="list-style: none; padding: 0; margin: 0;">
-              <li class="ceo-timeline-item">
-                <span class="ceo-timeline-dot"></span>
-                <span class="ceo-timeline-time">Just now</span>
-                <p style="margin: var(--ceo-space-1) 0 0 0;">You signed in.</p>
-              </li>
-            </ul>
-            <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-3);">
-              Full activity history (from audit_log) gets a real viewing UI once the Audit Center screen is wired up.
-            </p>
-          </div>
-        </section>
-
-        <!-- Quick actions -->
+        <!-- ④ Core block -->
         <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Quick Actions</h3>
-          <div class="ceo-flex ceo-gap-2" style="flex-wrap: wrap;">
-            <button class="ceo-btn ceo-btn-secondary" disabled title="Activates once M2's tables exist">New journal entry</button>
-            <button class="ceo-btn ceo-btn-secondary" disabled title="Activates once M3's tables exist">Add client</button>
-            <button class="ceo-btn ceo-btn-secondary" disabled title="Activates once M4's tables exist">New content idea</button>
-            <button class="ceo-btn ceo-btn-secondary" disabled title="Activates once M7's tables exist">Start weekly review</button>
-          </div>
+          <h3>Core Block <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— the daily non-negotiables</span></h3>
+          <div id="home-core"><div class="ceo-skeleton" style="height: 3em;"></div></div>
         </section>
 
-        <!-- Module status -->
+        <!-- ⑤ Needs attention -->
         <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Module Status</h3>
-          <div class="ceo-flex ceo-gap-2" style="flex-wrap: wrap;">
-            <span class="ceo-badge ceo-badge-success">Command Center — active</span>
-            <span class="ceo-badge ceo-badge-info">Trading Discipline — UI ready, data pending</span>
-            <span class="ceo-badge ceo-badge-info">IB Client Engine — UI ready, data pending</span>
-            <span class="ceo-badge ceo-badge-info">Growth Engine — UI ready, data pending</span>
-            <span class="ceo-badge ceo-badge-info">Intelligence Center — UI ready, data pending</span>
-            <span class="ceo-badge ceo-badge-info">Automation Center — UI ready, data pending</span>
-            <span class="ceo-badge ceo-badge-info">Reviews — UI ready, data pending</span>
-          </div>
+          <h3>Needs Attention</h3>
+          <div id="home-attention"><div class="ceo-skeleton" style="height: 3em;"></div></div>
         </section>
 
-        <!-- Performance score -->
-        <section class="ceo-card">
-          <div class="ceo-card-title">Performance Score</div>
-          <div class="ceo-empty-state" style="padding: var(--ceo-space-6) 0;">
-            <p>A transparent composite of execution quality — shown with its components, never as a bare number. Populates once real module data exists.</p>
+        <!-- ⑥ Headline KPI -->
+        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+          <h3 id="home-kpi-label">This Week's Number</h3>
+          <div id="home-kpi"><div class="ceo-skeleton" style="height: 3em;"></div></div>
+        </section>
+
+        <!-- ⑦ Shutdown -->
+        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+          <h3>End of Day</h3>
+          <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);">2 minutes: mark the day, one honest line. Tomorrow's plan learns from it.</p>
+          <div class="ceo-field">
+            <label class="ceo-label" for="home-shutdown-note">One line about today</label>
+            <input class="ceo-input" id="home-shutdown-note" maxlength="500" placeholder="Aaj kya seekha / kya atka..." />
           </div>
+          <button class="ceo-btn ceo-btn-primary" id="home-shutdown-btn">Complete shutdown</button>
+          <span id="home-shutdown-msg" class="ceo-text-muted" style="margin-left: var(--ceo-space-3); font-size: var(--ceo-font-size-sm);"></span>
         </section>
       </div>
     </main>
@@ -134,10 +68,9 @@
 
   <script type="module">
     import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
-    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
-    initLayout('command-center').then((user) => {
-      if (user) initAllOperationalSections();
-    });
+    import { initHome } from '/ai-ceo-os/src/presentation/command-center/home.js';
+    const user = await initLayout('command-center');
+    if (user) initHome();
   </script>
 </body>
 </html>

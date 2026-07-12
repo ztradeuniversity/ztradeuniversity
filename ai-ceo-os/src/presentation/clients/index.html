@@ -124,6 +124,7 @@
       if (!user) return;
       initTabs('#ceo-clients-tabs-group');
       initAllOperationalSections();
+      import('/ai-ceo-os/src/presentation/clients/clients-page.js').then((m) => m.initClientsPage());
     });
   </script>
 </body>

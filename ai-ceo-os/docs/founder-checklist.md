@@ -81,6 +81,19 @@ action here.
 - [ ] Test the "forgot password" flow once, end to end, from the real deployed site
 - [ ] Spot-check that an existing ZTU page/function is completely unaffected by this deploy
 
+## Implementation Batches 1-6 (seeds + wiring) — built, awaiting your actions
+
+- [ ] Review + run the three seed files in the Supabase SQL Editor, in order:
+      `supabase/seed/seed-01-foundation.sql` (confirm the 11 KPI category names + your email at
+      the top of each file), `seed-02-operations.sql`, `seed-03-retention-mentor.sql` — each file
+      ends with its verification queries
+- [ ] After the production deploy: log in → Home should show Today's Mission generated from the
+      seeds (day type, Top 3, core block, mentor line)
+- [ ] Walk one full loop once: complete a task → see the coaching toast → log a journal entry in
+      Trading → add one real client in Clients → complete shutdown with a one-line note
+- [ ] No new environment variables and no new Supabase config are needed — the wiring reuses the
+      four existing `CEO_` vars
+
 ## Every wave, standing rule
 
 - [ ] Nothing deploys to Production without your explicit approval — recorded in the Decision Log

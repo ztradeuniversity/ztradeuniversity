@@ -111,10 +111,12 @@
     import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
     import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
     import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    import { initTradingPage } from '/ai-ceo-os/src/presentation/trading/trading-page.js';
     initLayout('trading').then((user) => {
       if (!user) return;
       initTabs('#ceo-trading-tabs-group');
       initAllOperationalSections();
+      initTradingPage();
     });
   </script>
 </body>
