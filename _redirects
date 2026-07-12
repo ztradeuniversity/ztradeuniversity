@@ -1,0 +1,25 @@
+# Enterprise Admin Portal — backward-compatible redirects for admin pages that
+# moved into admin/pages/. 301s (not rewrites) since these are internal admin
+# bookmarks, not public/indexed URLs.
+# kb-admin.html, governance-admin.html, and ai-articles.html were merged into
+# content-center.html and deleted — their legacy bookmarks now land on the
+# merged page instead of dead-ending on a 404.
+/admin/kb-admin.html            /admin/pages/content-center.html       301
+/admin/signal-admin.html        /admin/pages/signal-admin.html        301
+/admin/governance-admin.html    /admin/pages/content-center.html       301
+/admin/ai-articles.html         /admin/pages/content-center.html       301
+/admin/pages/kb-admin.html          /admin/pages/content-center.html  301
+/admin/pages/governance-admin.html  /admin/pages/content-center.html  301
+/admin/pages/ai-articles.html       /admin/pages/content-center.html  301
+/admin/ai-feedback.html         /admin/pages/ai-feedback.html         301
+/admin/admin-dashboard.html     /admin/pages/admin-dashboard.html     301
+/admin/system-architecture.html /admin/pages/system-architecture.html 301
+/journal-admin.html             /admin/pages/journal-admin.html       301
+/library/library-admin.html     /admin/pages/library-admin.html       301
+/admin                          /admin/index.html                     301
+/admin/                         /admin/index.html                     301
+
+# AI CEO OS — friendly entry point: the bare path has no index.html by design;
+# send it to the login page (302: entry may later point at Home post-session).
+/ai-ceo-os/  /ai-ceo-os/src/presentation/auth/login.html  302
+/ai-ceo-os   /ai-ceo-os/src/presentation/auth/login.html  302
