@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Intelligence Center — AI CEO OS</title>
+  <title>Playbooks — AI CEO OS</title>
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
@@ -15,79 +15,51 @@
     <header class="ceo-app-header" id="ceo-header-slot"></header>
     <main class="ceo-app-main">
       <div class="ceo-content">
-        <h1>Intelligence Center</h1>
-        <p class="ceo-text-secondary">The institutional memory (Business Architecture §2 — M5). Tables (<code>research_library</code>, <code>knowledge_base</code>, <code>decision_log</code>, <code>prompt_archive</code>) are not yet migrated.</p>
+        <h1>Playbooks</h1>
+        <p class="ceo-text-secondary">The locked research rendered as execution playbooks — what to do, where, in which language, and why. Everything below is read from the seeded verdicts; nothing is re-searched or invented here.</p>
 
-        <div id="ceo-intel-tabs-group">
+        <div id="ceo-playbooks-tabs-group">
           <div class="ceo-tabs">
-            <button class="ceo-tab" data-tab="research" aria-selected="true">Research</button>
-            <button class="ceo-tab" data-tab="knowledge">Knowledge Library</button>
-            <button class="ceo-tab" data-tab="prompts">Prompt Archive</button>
-            <button class="ceo-tab" data-tab="decisions">Decision Archive</button>
-            <button class="ceo-tab" data-tab="history">Research History</button>
+            <button class="ceo-tab" data-tab="countries" aria-selected="true">Countries</button>
+            <button class="ceo-tab" data-tab="languages">Languages</button>
+            <button class="ceo-tab" data-tab="platforms">Platforms</button>
+            <button class="ceo-tab" data-tab="funnel">Funnel</button>
+            <button class="ceo-tab" data-tab="physical">Physical</button>
+            <button class="ceo-tab" data-tab="tools">Founder Tools</button>
+            <button class="ceo-tab" data-tab="roadmap">Roadmap</button>
+            <button class="ceo-tab" data-tab="automation">Automation</button>
           </div>
 
-          <div class="ceo-tab-panel" data-tab-panel="research">
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Research Workspace</h3>
-              <div data-section-body>
-                <div class="ceo-empty-state">
-                  <h3>No research entries yet</h3>
-                  <p>Evidence-tiered findings (confidence, verified-as-of, re-check due) land here once <code>research_library</code> is migrated. The Research Library documents already exist as markdown under <code>docs/research/</code> — this screen will index them, not replace them.</p>
-                </div>
-              </div>
-            </div>
+          <div class="ceo-tab-panel" data-tab-panel="countries">
+            <div id="pb-countries"><div class="ceo-skeleton" style="height: 10em;"></div></div>
           </div>
 
-          <div class="ceo-tab-panel" data-tab-panel="knowledge" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Knowledge Library</h3>
-              <div data-section-body>
-                <div class="ceo-empty-state">
-                  <h3>No entries yet</h3>
-                  <p>Lessons, including failed experiments with their kill criteria, land here once <code>knowledge_base</code> is migrated. The no-repeat rule checks this table before any future TRIAL is approved.</p>
-                </div>
-              </div>
-            </div>
+          <div class="ceo-tab-panel" data-tab-panel="languages" hidden>
+            <div id="pb-languages"><div class="ceo-skeleton" style="height: 8em;"></div></div>
           </div>
 
-          <div class="ceo-tab-panel" data-tab-panel="prompts" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Prompt Archive</h3>
-              <div data-section-body>
-                <div class="ceo-empty-state">
-                  <h3>No indexed prompts yet</h3>
-                  <p>Every instruction that shaped this project already lives verbatim under <code>docs/prompts/</code>. This screen indexes them for search once <code>prompt_archive</code> is migrated — it never duplicates the full text into the database.</p>
-                </div>
-              </div>
-            </div>
+          <div class="ceo-tab-panel" data-tab-panel="platforms" hidden>
+            <div id="pb-platforms"><div class="ceo-skeleton" style="height: 8em;"></div></div>
           </div>
 
-          <div class="ceo-tab-panel" data-tab-panel="decisions" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Decision Archive</h3>
-              <div data-section-body>
-                <div class="ceo-empty-state">
-                  <h3>No indexed decisions yet</h3>
-                  <p>Every Structural decision already lives in <code>docs/decisions/DEC-*.md</code> (append-only, immutable). This screen surfaces them queryably once <code>decision_log</code> is migrated.</p>
-                </div>
-              </div>
-            </div>
+          <div class="ceo-tab-panel" data-tab-panel="funnel" hidden>
+            <div id="pb-funnel"><div class="ceo-skeleton" style="height: 10em;"></div></div>
           </div>
 
-          <div class="ceo-tab-panel" data-tab-panel="history" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Research History</h3>
-              <div data-section-body>
-                <ul class="ceo-timeline" style="list-style: none; padding: 0; margin: 0;">
-                  <li class="ceo-timeline-item">
-                    <span class="ceo-timeline-dot"></span>
-                    <span class="ceo-timeline-time">Prompt 0</span>
-                    <p style="margin: var(--ceo-space-1) 0 0 0;">Live market research completed (brokers, countries, languages) — see <code>docs/research/</code>.</p>
-                  </li>
-                </ul>
-              </div>
-            </div>
+          <div class="ceo-tab-panel" data-tab-panel="physical" hidden>
+            <div id="pb-physical"><div class="ceo-skeleton" style="height: 10em;"></div></div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="tools" hidden>
+            <div id="pb-tools"><div class="ceo-skeleton" style="height: 8em;"></div></div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="roadmap" hidden>
+            <div id="pb-roadmap"><div class="ceo-skeleton" style="height: 8em;"></div></div>
+          </div>
+
+          <div class="ceo-tab-panel" data-tab-panel="automation" hidden>
+            <div id="pb-automation"><div class="ceo-skeleton" style="height: 8em;"></div></div>
           </div>
         </div>
       </div>
@@ -97,11 +69,11 @@
   <script type="module">
     import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
     import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
-    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    import { initPlaybooksPage } from '/ai-ceo-os/src/presentation/intelligence/playbooks-page.js';
     initLayout('intelligence').then((user) => {
       if (!user) return;
-      initTabs('#ceo-intel-tabs-group');
-      initAllOperationalSections();
+      initTabs('#ceo-playbooks-tabs-group');
+      initPlaybooksPage();
     });
   </script>
 </body>

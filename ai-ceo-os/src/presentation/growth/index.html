@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Growth Engine — AI CEO OS</title>
+  <title>Growth — AI CEO OS</title>
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
@@ -15,98 +15,73 @@
     <header class="ceo-app-header" id="ceo-header-slot"></header>
     <main class="ceo-app-main">
       <div class="ceo-content">
-        <h1>Growth Engine</h1>
-        <p class="ceo-text-secondary">Demand intelligence → production → publication → distribution → conversion, one pipeline (Business Architecture §6 — M4). Tables (<code>content_library</code>, <code>growth_tasks</code>, <code>marketing_campaigns</code>) are not yet migrated. The OS never auto-publishes to the live ZTU site — that stays a founder action through the existing warehouse workflow.</p>
+        <h1>Founder Growth System</h1>
+        <p class="ceo-text-secondary">One funnel, two sections: bring new IB clients in, keep existing ones. The OS never auto-publishes to the live ZTU site — that stays a founder action through the existing warehouse workflow; this only tracks status.</p>
 
         <div id="ceo-growth-tabs-group">
           <div class="ceo-tabs">
-            <button class="ceo-tab" data-tab="content" aria-selected="true">Content Workspace</button>
-            <button class="ceo-tab" data-tab="campaigns">Campaign Workspace</button>
-            <button class="ceo-tab" data-tab="social">Social Publishing</button>
-            <button class="ceo-tab" data-tab="video">Video Planning</button>
-            <button class="ceo-tab" data-tab="marketing">Marketing Dashboard</button>
+            <button class="ceo-tab" data-tab="acquisition" aria-selected="true">Acquisition</button>
+            <button class="ceo-tab" data-tab="retention">Retention</button>
           </div>
 
-          <!-- Content Workspace -->
-          <div class="ceo-tab-panel" data-tab-panel="content">
+          <!-- ACQUISITION: new IB clients — content engine + funnel + pre-activation directory -->
+          <div class="ceo-tab-panel" data-tab-panel="acquisition">
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>New IB lead</h3>
+              <div id="gr-add-lead"><div class="ceo-skeleton" style="height: 3em;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Funnel overview <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— lead → retained, mirrors <code>client_lifecycle_stage</code></span></h3>
+              <div id="gr-funnel" class="ceo-kanban"><div class="ceo-skeleton" style="height: 8em; width: 100%;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Prospects <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— lead / qualified / onboarding</span></h3>
+              <div id="gr-prospects"><div class="ceo-skeleton" style="height: 4em;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Physical Growth Engine — 15-day area cycle <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="One area per 15 days: research institutes → contact → proposal → negotiate → classes → batch end → next area automatically. Area playbooks live on the Playbooks → Physical tab.">ⓘ</span></h3>
+              <div id="gr-physical"><div class="ceo-skeleton" style="height: 6em;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Content Production Engine <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Every topic carries its full execution context — country, language, platform, format, hook, keyword, CTA — stored on the existing content card, parsed back on render. The 300+ topic framework lives HERE (status=idea), never a separate table.">ⓘ</span></h3>
+              <div id="gr-add-idea"><div class="ceo-skeleton" style="height: 3em;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Content pipeline</h3>
+              <div id="gr-kanban" class="ceo-kanban"><div class="ceo-skeleton" style="height: 10em; width: 100%;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Open growth tasks</h3>
+              <div id="gr-tasks"><div class="ceo-skeleton" style="height: 3em;"></div></div>
+            </div>
+
             <div class="ceo-card">
-              <div class="ceo-flex ceo-justify-between ceo-items-center" style="margin-bottom: var(--ceo-space-4);">
-                <h3 style="margin: 0;">Content Workspace</h3>
-                <button class="ceo-btn ceo-btn-primary" disabled title="Activates once content_library exists">New idea</button>
-              </div>
-              <div class="ceo-kanban">
-                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Idea</div><div class="ceo-kanban-empty">Empty</div></div>
-                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Production</div><div class="ceo-kanban-empty">Empty</div></div>
-                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Published</div><div class="ceo-kanban-empty">Empty</div></div>
-                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Evergreen</div><div class="ceo-kanban-empty">Empty</div></div>
-                <div class="ceo-kanban-column"><div class="ceo-kanban-column-header">Retired</div><div class="ceo-kanban-empty">Empty</div></div>
-              </div>
-              <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-4);">Mirrors <code>content_library.status</code> exactly. The 300+ topic framework reuses this same table (status=idea), no separate topic table.</p>
+              <h3>Campaigns</h3>
+              <div id="gr-campaigns"><div class="ceo-skeleton" style="height: 3em;"></div></div>
             </div>
           </div>
 
-          <!-- Campaign Workspace -->
-          <div class="ceo-tab-panel" data-tab-panel="campaigns" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Campaign Workspace</h3>
-              <div data-section-body>
-                <table class="ceo-table">
-                  <thead><tr><th>Channel</th><th>Name</th><th>Status</th><th>Leads sourced</th></tr></thead>
-                </table>
-                <div class="ceo-empty-state">
-                  <h3>No campaigns yet</h3>
-                  <p>Every campaign requires a forced evaluation step before it can be marked complete (Database Blueprint).</p>
-                </div>
-              </div>
+          <!-- RETENTION: existing IB clients — daily due-list + active-client directory -->
+          <div class="ceo-tab-panel" data-tab-panel="retention" hidden>
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Retention today <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Milestone ladder + 14-day silence flags — max 5 each, LTV-ranked. ~15 min of the day's highest-trust work.">ⓘ</span></h3>
+              <div id="gr-retention"><div class="ceo-skeleton" style="height: 4em;"></div></div>
             </div>
-          </div>
 
-          <!-- Social Publishing -->
-          <div class="ceo-tab-panel" data-tab-panel="social" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
-              <h3>Social Publishing</h3>
-              <div data-section-body>
-                <div class="ceo-empty-state">
-                  <h3>Nothing scheduled</h3>
-                  <p>Adopted channels only (YouTube, WhatsApp/Telegram community, Facebook — per Step 7/8 research). Any client/public-facing post queues through the Automation Center's approval queue before sending.</p>
-                </div>
-              </div>
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Execution segments <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Same client rows, grouped by what they need today — one action, one reason, one expected outcome per group">ⓘ</span></h3>
+              <div id="gr-segments"><div class="ceo-skeleton" style="height: 6em;"></div></div>
             </div>
-          </div>
 
-          <!-- Video Planning -->
-          <div class="ceo-tab-panel" data-tab-panel="video" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="2">
-              <h3>Video Planning</h3>
-              <div data-section-body>
-                <div class="ceo-empty-state">
-                  <h3>No videos planned yet</h3>
-                  <p>The weekly founder-voiced piece is the seed for the repurposing chain (article → shorts → chatbot knowledge). AI dubbing (ElevenLabs) stays TRIAL-gated per Step 7 research.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Marketing Dashboard -->
-          <div class="ceo-tab-panel" data-tab-panel="marketing" hidden>
-            <div class="ceo-card" data-operational-section data-skeleton-rows="3">
-              <h3>Marketing Dashboard</h3>
-              <div data-section-body>
-                <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
-                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
-                    <div class="ceo-card-title">Organic sessions</div>
-                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
-                  </div>
-                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
-                    <div class="ceo-card-title">CAC by channel</div>
-                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
-                  </div>
-                  <div class="ceo-card" style="flex: 1; min-width: 160px; box-shadow: none; background: var(--ceo-surface-raised);">
-                    <div class="ceo-card-title">Content cadence</div>
-                    <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">No data yet</div>
-                  </div>
-                </div>
-              </div>
+            <div class="ceo-card">
+              <h3>Retained clients <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— activated / engaged / at risk / retained</span></h3>
+              <div id="gr-retained-table"><div class="ceo-skeleton" style="height: 6em;"></div></div>
             </div>
           </div>
         </div>
@@ -117,12 +92,14 @@
   <script type="module">
     import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
     import { initTabs } from '/ai-ceo-os/src/presentation/shared/components/tabs.js';
-    import { initAllOperationalSections } from '/ai-ceo-os/src/presentation/shared/components/operational-section.js';
+    import { initGrowthPage } from '/ai-ceo-os/src/presentation/growth/growth-page.js';
     initLayout('growth').then((user) => {
       if (!user) return;
       initTabs('#ceo-growth-tabs-group');
-      initAllOperationalSections();
-      import('/ai-ceo-os/src/presentation/growth/growth-page.js').then((m) => m.initGrowthPage());
+      if (location.hash === '#retention') {
+        document.querySelector('[data-tab="retention"]')?.click();
+      }
+      initGrowthPage();
     });
   </script>
 </body>

@@ -105,6 +105,42 @@ a:hover {
   font-weight: 600;
 }
 
+/* "More" utility disclosure — collapses Playbooks/Automation/Reviews/Settings
+   behind one row so the primary sidebar always reads as exactly 4 items. */
+.ceo-nav-more > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.ceo-nav-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ceo-nav-more > summary::after {
+  content: '›';
+  margin-left: auto;
+  transform: rotate(90deg);
+  transition: transform var(--ceo-transition-fast);
+  color: var(--ceo-text-muted);
+}
+
+.ceo-nav-more[open] > summary::after {
+  transform: rotate(270deg);
+}
+
+.ceo-nav-more-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ceo-space-1);
+  padding-left: var(--ceo-space-4);
+  margin-top: var(--ceo-space-1);
+}
+
+.ceo-nav-more-items .ceo-nav-link {
+  font-size: var(--ceo-font-size-xs, var(--ceo-font-size-sm));
+  color: var(--ceo-text-muted);
+}
+
 .ceo-header-title {
   font-size: var(--ceo-font-size-lg);
   font-weight: 600;

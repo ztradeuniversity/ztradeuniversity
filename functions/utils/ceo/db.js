@@ -57,3 +57,59 @@ export async function requireFounder(request, env) {
   const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
   return { user: result.user, token };
 }
+
+// --- Execution-state tag ---------------------------------------------
+//
+// daily_activities.status is frozen to ('pending','completed','skipped') —
+// there is no 'partial' value and no real_minutes/notes columns (Founder OS
+// Restructure Step 3 forbids new migrations). This generalizes the pattern
+// Step 2 already used for skip reasons (appending "| skipped:<reason>" to
+// description) into one parse-safe tag covering all four founder-facing
+// states. DB status stays a valid enum member; the tag carries the richer
+// UI state on top of it:
+//   not_started -> DB status 'pending', no tag
+//   partial     -> DB status stays 'pending', tag records real minutes + note
+//   completed   -> DB status 'completed', tag optionally records real minutes + note
+//   skipped     -> DB status 'skipped', tag records the reason as note
+//
+// Old Step-2 rows using the bare "| skipped:<reason>" convention are still
+// read correctly (see parseExecTag's fallback) — no historical data is lost.
+const EXEC_TAG_RE = / ?#EXEC#(.*?)#$/;
+const LEGACY_SKIP_RE = / ?\| skipped:(.*)$/;
+
+export function stripExecTag(description) {
+  return String(description || '').replace(EXEC_TAG_RE, '').replace(LEGACY_SKIP_RE, '');
+}
+
+export function parseExecTag(description) {
+  const raw = String(description || '');
+  const tagged = EXEC_TAG_RE.exec(raw);
+  if (tagged) {
+    const fields = Object.fromEntries(
+      tagged[1].split(';').map((kv) => {
+        const i = kv.indexOf('=');
+        return i === -1 ? [kv, ''] : [kv.slice(0, i), kv.slice(i + 1)];
+      })
+    );
+    return {
+      state: fields.state || 'not_started',
+      realMinutes: fields.real ? Number(fields.real) : null,
+      note: fields.note ? decodeURIComponent(fields.note) : '',
+    };
+  }
+  const legacy = LEGACY_SKIP_RE.exec(raw);
+  if (legacy) return { state: 'skipped', realMinutes: null, note: legacy[1] || '' };
+  return { state: 'not_started', realMinutes: null, note: '' };
+}
+
+export function buildExecTag(state, realMinutes, note) {
+  const real = Number.isFinite(realMinutes) ? realMinutes : '';
+  const noteEnc = note ? encodeURIComponent(String(note).slice(0, 300)) : '';
+  return ` #EXEC#state=${state};real=${real};note=${noteEnc}#`;
+}
+
+// Applies a new exec state to a description, replacing any prior tag
+// (old or new format) rather than stacking — every update is idempotent.
+export function withExecTag(description, state, realMinutes, note) {
+  return stripExecTag(description) + buildExecTag(state, realMinutes, note);
+}

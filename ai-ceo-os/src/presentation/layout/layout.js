@@ -8,18 +8,26 @@
 import { guardPage } from '../shared/session-guard.js';
 import { getSupabaseClient } from '../shared/supabase-client.js';
 
-// Per-module "wave" badges were removed from here (2026-07-11, Wave 5 audit):
-// they drifted out of sync with the Home page's Module Status card once Wave 4
-// gave every module a real UI shell. Data-readiness status has exactly one
-// home now — the Module Status card on Home — so it can't drift again.
-const NAV_ITEMS = [
-  { key: 'command-center', label: 'Home', href: '/ai-ceo-os/src/presentation/command-center/index.html' },
-  { key: 'trading', label: 'Trading Discipline', href: '/ai-ceo-os/src/presentation/trading/index.html' },
-  { key: 'clients', label: 'IB Client Engine', href: '/ai-ceo-os/src/presentation/clients/index.html' },
-  { key: 'growth', label: 'Growth Engine', href: '/ai-ceo-os/src/presentation/growth/index.html' },
-  { key: 'intelligence', label: 'Intelligence Center', href: '/ai-ceo-os/src/presentation/intelligence/index.html' },
-  { key: 'automation', label: 'Automation Center', href: '/ai-ceo-os/src/presentation/automation/index.html' },
+// Founder OS Restructure, Step 2 (2026-07-12): nav collapsed from 7 equal
+// destinations to Today/Trading/Growth (the two business outcomes + the
+// daily anchor) + a "More" utility group. Per-module "wave" badges stay
+// removed (2026-07-11, Wave 5 audit) — data-readiness status has exactly one
+// home, the Module Status card on Home.
+const PRIMARY_NAV = [
+  { key: 'command-center', label: 'Today', href: '/ai-ceo-os/src/presentation/command-center/index.html' },
+  { key: 'trading', label: 'Trading', href: '/ai-ceo-os/src/presentation/trading/index.html' },
+  { key: 'growth', label: 'Growth', href: '/ai-ceo-os/src/presentation/growth/index.html' },
+];
+
+// Utility cluster — supports the two pillars, isn't a destination visited on
+// its own. Reviews joins this group too (not named in the Step 2 spec's list,
+// but folding it out of primary nav without a "More" home would orphan a real
+// working page — kept reachable, not deleted, per "no dead code").
+const MORE_NAV = [
+  { key: 'intelligence', label: 'Playbooks', href: '/ai-ceo-os/src/presentation/intelligence/index.html' },
+  { key: 'automation', label: 'Automation', href: '/ai-ceo-os/src/presentation/automation/index.html' },
   { key: 'review', label: 'Reviews', href: '/ai-ceo-os/src/presentation/review/index.html' },
+  { key: 'settings', label: 'Settings', href: '/ai-ceo-os/src/presentation/settings/index.html' },
 ];
 
 export async function initLayout(activeKey) {
@@ -35,17 +43,27 @@ export async function initLayout(activeKey) {
 }
 
 function sidebarHtml(activeKey) {
-  const items = NAV_ITEMS.map((item) => {
-    const isActive = item.key === activeKey;
-    return `
-      <a href="${item.href}" class="ceo-nav-link${isActive ? ' ceo-nav-link-active' : ''}">
-        <span>${item.label}</span>
-      </a>`;
-  }).join('');
+  const primaryItems = PRIMARY_NAV.map((item) => navLink(item, activeKey)).join('');
+  const moreItems = MORE_NAV.map((item) => navLink(item, activeKey)).join('');
+  const moreIsActive = MORE_NAV.some((item) => item.key === activeKey);
 
   return `
     <div class="ceo-sidebar-brand">AI CEO OS</div>
-    <nav class="ceo-nav" aria-label="Primary">${items}</nav>`;
+    <nav class="ceo-nav" aria-label="Primary">
+      ${primaryItems}
+      <details class="ceo-nav-more"${moreIsActive ? ' open' : ''}>
+        <summary class="ceo-nav-link${moreIsActive ? ' ceo-nav-link-active' : ''}">More</summary>
+        <div class="ceo-nav-more-items">${moreItems}</div>
+      </details>
+    </nav>`;
+}
+
+function navLink(item, activeKey) {
+  const isActive = item.key === activeKey;
+  return `
+      <a href="${item.href}" class="ceo-nav-link${isActive ? ' ceo-nav-link-active' : ''}">
+        <span>${item.label}</span>
+      </a>`;
 }
 
 function headerHtml(user) {
