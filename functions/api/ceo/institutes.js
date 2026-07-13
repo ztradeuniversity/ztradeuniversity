@@ -10,6 +10,7 @@
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { currentAreaAssignment } from '../../utils/ceo/physical-logic.js';
+import { instituteNextStep, pipelineSummary } from '../../utils/ceo/coach-logic.js';
 
 const STAGES = [
   'cold_contact', 'proposal_sent', 'meeting', 'negotiation',
@@ -34,13 +35,23 @@ export async function onRequestGet({ request, env }) {
   const db = rest(env, auth.token);
   const uid = auth.user.id;
   try {
-    const [cycle, institutes] = await Promise.all([
+    const [cycle, institutes, salesRows] = await Promise.all([
       readCycle(db),
       db.select('institutes', `select=id,name,institute_type,city,area,contact_name,contact_phone,stage,next_follow_up,batch_end_date,students_registered,notes,updated_at&owner_user_id=eq.${uid}&order=updated_at.desc&limit=300`),
+      db.select('knowledge_base', `select=title,content&owner_user_id=eq.${uid}&category=eq.sales-template`),
     ]);
     const today = new Date().toISOString().slice(0, 10);
     const followUpsDue = institutes.filter((i) => i.next_follow_up && i.next_follow_up <= today && i.stage !== 'rejected');
-    return json({ cycle, institutes, followUpsDue });
+
+    // Coaching layer (Business Execution patch): per-institute next action +
+    // the current-area pipeline summary. All derived from real stage rows;
+    // the full negotiation text is the seeded sales-template, returned as
+    // salesGuidance so the UI never carries a second copy.
+    const withCoaching = institutes.map((i) => ({ ...i, nextStep: instituteNextStep(i.stage) }));
+    const summary = pipelineSummary(institutes, cycle?.assignment?.current || null);
+    const salesGuidance = Object.fromEntries(salesRows.map((r) => [r.title, r.content]));
+
+    return json({ cycle, institutes: withCoaching, followUpsDue, summary, salesGuidance });
   } catch (err) {
     return json({ error: 'institutes_load_failed', detail: String(err.message || err).slice(0, 300) }, 500);
   }

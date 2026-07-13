@@ -26,6 +26,7 @@ export async function initHome() {
   try {
     const m = await getJson('/api/ceo/mission');
     renderBanner(m);
+    renderTriage(m);
     renderFocus(m.focus);
     renderTop(m);
     renderCore(m.coreBlock);
@@ -40,6 +41,76 @@ export async function initHome() {
     document.getElementById('home-mission-banner').innerHTML =
       `<div class="ceo-alert ceo-alert-critical">Mission load nahin hui: ${escapeHtml(err.message)}. Refresh karein — agar barqarar rahe, seeds check karein.</div>`;
   }
+  // Physical engine nudge — separate, non-blocking fetch (its endpoint may
+  // 500 until migration 032 runs; that must never break the mission view).
+  renderPhysicalNudge();
+}
+
+// Mentor nudge only: the current area's single next step + due follow-ups,
+// deep-linking to the full engine on the Growth page (Home nudges, the
+// module executes — the established pattern, not a duplicate CRM).
+async function renderPhysicalNudge() {
+  try {
+    const data = await getJson('/api/ceo/institutes');
+    const a = data.cycle?.assignment || {};
+    if (!a.started && (a.remaining || []).length === 0) return; // physical engine not seeded
+    const card = document.getElementById('home-physical-card');
+    const el = document.getElementById('home-physical');
+    const dueCount = (data.followUpsDue || []).length;
+    let line;
+    if (!a.started) {
+      line = `Cycle not started. First area: <strong>${escapeHtml((a.remaining || [])[0] || '')}</strong> — start it on the Growth page.`;
+    } else if (a.exhausted) {
+      line = 'Area queue complete — schedule the next round on the Growth page.';
+    } else {
+      const focus = data.summary?.focus?.label;
+      line = `Current area: <strong>${escapeHtml(a.current)}</strong> (${a.daysLeft} day${a.daysLeft === 1 ? '' : 's'} left).${focus ? ' Push now: ' + escapeHtml(focus) + '.' : ' No institutes logged yet — start researching this area.'}${dueCount ? ` <span class="ceo-badge ceo-badge-warning">${dueCount} follow-up${dueCount === 1 ? '' : 's'} due</span>` : ''}`;
+    }
+    el.innerHTML = `<p style="margin: 0;">${line}</p>
+      <a class="ceo-btn ceo-btn-secondary" style="margin-top: var(--ceo-space-3);" href="/ai-ceo-os/src/presentation/growth/index.html">Open Physical Growth Engine</a>`;
+    card.style.display = '';
+
+    // Progressive enhancement of the triage's NOW bucket — physical data
+    // arrives on a separate, later fetch than mission.js, so this appends
+    // rather than re-rendering the whole triage.
+    const nowList = document.getElementById('home-triage-now');
+    if (nowList && dueCount > 0) {
+      nowList.insertAdjacentHTML('beforeend', `<div style="font-size: var(--ceo-font-size-sm); padding: 2px 0;">${dueCount} institute follow-up${dueCount === 1 ? '' : 's'} due</div>`);
+    }
+  } catch {
+    // Silent — endpoint not live yet (pre-migration). No mission disruption.
+  }
+}
+
+// Unified NOW/NEXT/LATER triage — re-buckets the SAME tier-ranked arrays
+// mission.js already computed (top/rest/coreBlock), so it can never disagree
+// with the detailed sections below it. No second scoring system invented:
+// NOW = non-negotiable core block + today's top-ranked items; NEXT = the
+// remaining Critical/Important items; LATER = Optional-tier only.
+function renderTriage(m) {
+  const el = document.getElementById('home-triage');
+  if (!el) return;
+  const label = (t) => t.key.replace(/^(daily|weekly|monthly|quarterly)\./, '').replace(/_/g, ' ');
+  const now = [
+    ...(m.coreBlock || []).filter((c) => c.key !== 'daily.shutdown' && c.status !== 'completed'),
+    ...(m.top || []),
+  ];
+  const rest = m.rest || [];
+  const next = rest.filter((t) => t.tierRank <= 1);
+  const later = rest.filter((t) => t.tierRank === 2);
+  const bucket = (title, cls, items, listId) => `
+    <div style="flex: 1; min-width: 190px;">
+      <span class="ceo-badge ${cls}">${title}</span>
+      <div ${listId ? `id="${listId}"` : ''} style="margin-top: var(--ceo-space-2);">
+        ${items.length === 0 ? '<p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin:0;">Nothing</p>' :
+          items.map((t) => `<div style="font-size: var(--ceo-font-size-sm); padding: 2px 0;">${escapeHtml(label(t))}</div>`).join('')}
+      </div>
+    </div>`;
+  el.innerHTML = `<div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
+    ${bucket('DO NOW', 'ceo-badge-critical', now, 'home-triage-now')}
+    ${bucket('DO NEXT', 'ceo-badge-warning', next, null)}
+    ${bucket('DO LATER', 'ceo-badge-neutral', later, null)}
+  </div>`;
 }
 
 function renderBanner(m) {
@@ -110,6 +181,8 @@ function taskRow(t, rank) {
       <span style="flex: 1; min-width: 14em;">
         ${escapeHtml(label)}
         ${t.why ? `<div class="ceo-text-muted" style="font-size: 0.75rem;">${escapeHtml(t.why)}${t.expectedOutcome ? ' · Moves: ' + escapeHtml(t.expectedOutcome) : ''}</div>` : ''}
+        ${t.delayCost ? `<div class="ceo-text-muted" style="font-size: 0.72rem;">Delay cost: ${escapeHtml(t.delayCost)}</div>` : ''}
+        ${t.automationStatus ? `<div class="ceo-text-muted" style="font-size: 0.72rem;">${escapeHtml(t.automationStatus)}</div>` : ''}
       </span>
       <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${t.minutes}m${t.realMinutes ? ` (actual ${t.realMinutes}m)` : ''}</span>
       ${controls}
@@ -246,13 +319,27 @@ function renderTradingCheckin(t) {
   if (!t.rulesCheckin || t.rulesCheckin.length === 0) {
     parts.push('<div class="ceo-empty-state"><p>Koi active trading rule nahin — Trading page se rules set karein.</p></div>');
   } else {
-    parts.push(t.rulesCheckin.map((r) => `
+    // Split by the rule's OWN seeded category (no invented emotion tracker):
+    // discipline rules = the before-session prep checklist (analysis, zones,
+    // plan); psychology/risk/integrity = the after-session reflection (FOMO,
+    // revenge, overtrading, rule adherence). Anything else falls to "after".
+    const before = t.rulesCheckin.filter((r) => r.category === 'discipline');
+    const after = t.rulesCheckin.filter((r) => r.category !== 'discipline');
+    const ruleRow = (r) => `
       <div class="ceo-flex ceo-items-center ceo-gap-3" style="padding: var(--ceo-space-2) 0; border-bottom: 1px solid var(--ceo-border); flex-wrap: wrap;" data-rule-id="${r.id}">
         <span style="flex:1; min-width: 14em;">Did you follow: <strong>${escapeHtml(r.title)}</strong>?</span>
         <button class="ceo-btn ceo-btn-secondary" data-rule-ok>Yes — full</button>
         <button class="ceo-btn ceo-btn-secondary" data-rule-partial title="Logs a minor violation with a 'partial compliance' note — honesty is the discipline metric">Partial</button>
         <button class="ceo-btn ceo-btn-secondary" data-rule-violated>No — log it</button>
-      </div>`).join(''));
+      </div>`;
+    if (before.length) {
+      parts.push(`<div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-top: var(--ceo-space-3);">Before the session</div>`);
+      parts.push(before.map(ruleRow).join(''));
+    }
+    if (after.length) {
+      parts.push(`<div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-top: var(--ceo-space-3);">After the session — FOMO / revenge / overtrading / emotional decisions</div>`);
+      parts.push(after.map(ruleRow).join(''));
+    }
   }
   el.innerHTML = parts.join('');
 

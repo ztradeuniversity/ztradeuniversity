@@ -25,6 +25,39 @@ export function parsePlaybookFields(content) {
   return { intro, fields };
 }
 
+// Splits a seeded WARNING field ("7d silence -> auto nudge email.") into the
+// trigger and its recovery action — every lifecycle-rule WARNING already
+// contains this "-> " separator in the seed text; this reads it, never
+// authors a recovery action that isn't already there. Exported pure for QA.
+export function splitWarning(warningText) {
+  const t = String(warningText || '');
+  if (!t) return { trigger: null, recovery: null };
+  const idx = t.indexOf('->');
+  if (idx === -1) return { trigger: t.trim(), recovery: null };
+  return { trigger: t.slice(0, idx).trim(), recovery: t.slice(idx + 2).trim() };
+}
+
+// Buckets REAL scheduled decision_log.review_date rows into 30/90/365-day
+// windows — the only honest "roadmap calendar" this system can show, since
+// no other date-bearing founder-execution data exists. Overdue rows (negative
+// daysUntil) sort first inside the 30-day bucket — never dropped, so the
+// founder can't silently lose track of a missed re-check. Exported pure for QA.
+export function bucketByWindow(decisions, now = Date.now()) {
+  const DAY = 86400000;
+  const buckets = { within30: [], within90: [], within365: [], beyond: [] };
+  for (const d of decisions || []) {
+    if (!d.review_date) continue;
+    const daysUntil = Math.ceil((Date.parse(d.review_date) - now) / DAY);
+    const item = { ...d, daysUntil };
+    if (daysUntil <= 30) buckets.within30.push(item);
+    else if (daysUntil <= 90) buckets.within90.push(item);
+    else if (daysUntil <= 365) buckets.within365.push(item);
+    else buckets.beyond.push(item);
+  }
+  Object.values(buckets).forEach((arr) => arr.sort((a, b) => a.daysUntil - b.daysUntil));
+  return buckets;
+}
+
 // Locked seed-title joins (country playbook row -> its research verdict rows).
 const COUNTRY_RESEARCH = {
   pakistan: ['Pakistan — launch market'],
@@ -97,7 +130,8 @@ function renderFunnel(data) {
           ${chip('Automation', automations.length ? automations.map((a) => `${a.label} — ${MATRIX_LABEL[a.matrix_class] || a.matrix_class}${a.is_active ? '' : ' (inactive: founder manual today)'}`).join(' · ') : 'None — this stage is founder-manual by design (trust moments are never delegated)')}
           ${chip('KPIs', kpis.length ? kpis.map((k) => k.label).join(' · ') : null)}
           ${chip('Success criteria', p.fields.EXIT || p.fields.SUCCESS)}
-          ${chip('Warning sign', p.fields.WARNING)}
+          ${chip('Warning sign', splitWarning(p.fields.WARNING).trigger)}
+          ${chip('Recovery action', splitWarning(p.fields.WARNING).recovery)}
         </div>
         ${stage.checklistKeys.filter((k) => checklists[k]).map((k) => `
           <details style="margin-top: var(--ceo-space-3);">
@@ -106,6 +140,31 @@ function renderFunnel(data) {
           </details>`).join('')}
       </div>`;
   }).join('');
+
+  // 100,000 → 5,000 volume framing — HONEST: no conversion rates are seeded
+  // or invented. The funnel shape is real; the multipliers between stages are
+  // exactly what the founder's own cohort data will reveal (the first tracked
+  // cohort calibrates them — same rule as the Home execution plan).
+  const volumeNote = `
+    <div class="ceo-card" style="margin-top: var(--ceo-space-6); background: var(--ceo-surface-raised); box-shadow: none;">
+      <h4 style="margin: 0 0 var(--ceo-space-2) 0;">100,000 → 5,000: the volume view</h4>
+      <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: 0;">Reaching 5,000 <em>active retained</em> clients means feeding the top of this same funnel at scale — but the drop-off between each stage is <strong>not yet known and is not invented here</strong>. Your first tracked cohort produces the real stage-to-stage rates; until then, the leverage is the bottleneck stage, not a projected number. Bottlenecks and their prevention are below.</p>
+    </div>`;
+
+  // "Why IB clients leave" → prevention checklist, straight from the seeded
+  // recovery-rule rows (causes + detection). No new advice authored here.
+  const recovery = Object.fromEntries((data.playbooks?.['recovery-rule'] || []).map((r) => [r.title, r.content]));
+  const preventionCard = (recovery.causes || recovery.detection) ? `
+    <div class="ceo-card" style="margin-top: var(--ceo-space-4);">
+      <h4 style="margin: 0 0 var(--ceo-space-2) 0;">Why IB clients leave — prevention checklist</h4>
+      ${recovery.causes ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Causes (most common first):</strong> ${esc(recovery.causes)}</p>` : ''}
+      ${recovery.detection ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Early-warning signals to watch:</strong> ${esc(recovery.detection)}</p>` : ''}
+      ${recovery.ethics ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Never:</strong> ${esc(recovery.ethics)}</p>` : ''}
+      <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-bottom: 0;">These fire automatically on the Growth → Retention segments (sleeping / inactive / milestone) — this is the reasoning behind them.</p>
+    </div>`
+    : '';
+
+  el.innerHTML += volumeNote + preventionCard;
 }
 const MATRIX_LABEL = {
   full: 'Fully Automated',
@@ -504,6 +563,26 @@ function notRecommendedCard(e) {
     </div>`;
 }
 
+// Lower bound of a growth-stage title ("stage_300_500" -> 300, "stage_2000_plus"
+// -> 2000) so the roadmap renders in true client-count order, not seed order.
+// Exported pure for QA.
+export function stageLowerBound(title) {
+  const m = /stage_(\d+)/.exec(String(title || ''));
+  return m ? Number(m[1]) : 0;
+}
+
+// Extracts the founder DECISION this stage gates, read from the seeded stage
+// text — never authored here. Returns [] when the stage gates no structural
+// decision (pure execution stage). Exported pure for QA.
+export function stageDecisionTags(content) {
+  const c = String(content || '').toLowerCase();
+  const tags = [];
+  if (/\bhire|delegate|first hire\b/.test(c)) tags.push('When to hire');
+  if (/automation|systemi/.test(c)) tags.push('When to automate');
+  if (/gate opens|paid|probe|cac/.test(c)) tags.push('When to expand / start paid ads');
+  return tags;
+}
+
 function renderRoadmap(data) {
   const el = document.getElementById('pb-roadmap');
   const cadence = data.playbooks?.['cadence-template'] || [];
@@ -512,6 +591,65 @@ function renderRoadmap(data) {
     el.innerHTML = '<div class="ceo-empty-state"><p>Roadmap seeds nahin mile.</p></div>';
     return;
   }
+
+  // The single founder execution roadmap: growth stages in client-count order,
+  // each with its objective, focus, exit criteria, and the structural decision
+  // it gates (hire / automate / expand / paid). All from the seed rows.
+  const orderedStages = stages.slice().sort((a, b) => stageLowerBound(a.title) - stageLowerBound(b.title));
+  const lastStage = orderedStages[orderedStages.length - 1];
+  const milestoneNote = lastStage ? `
+    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: 0 0 var(--ceo-space-3) 0;">
+      North-star: <strong>5,000+ active retained clients.</strong> The seeded gates below use 100 / 300 / 500 / 1,000 / 2,000 client breakpoints (not round numbers like 250 or 2,500) — each stage's upper bound is the practical milestone. The last seeded gate is "${esc(lastStage.title.replace('stage_', '').replace(/_/g, '–').replace('–plus', '+'))}" (portfolio stage); reaching 5,000 means repeating that stage's playbook — quarterly kill/scale per market — at greater scale, not a new undiscovered stage.
+    </p>` : '';
+  const roadmapHtml = orderedStages.length === 0 ? '' : `
+    <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+      <h3>Founder execution roadmap <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— one path, first → last; what never to delay, and when each big decision unlocks</span></h3>
+      ${milestoneNote}
+      ${orderedStages.map((s, i) => {
+        const p = parsePlaybookFields(s.content);
+        const tags = stageDecisionTags(s.content);
+        const range = s.title.replace('stage_', '').replace(/_/g, '–').replace('–plus', '+');
+        return `
+          ${i > 0 ? '<div style="text-align:center; color: var(--ceo-text-muted);">↓</div>' : ''}
+          <div style="padding: var(--ceo-space-3) 0; border-bottom: 1px solid var(--ceo-border);">
+            <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+              <strong>${i + 1}. ${esc(range)} clients</strong>
+              ${tags.map((t) => `<span class="ceo-badge ceo-badge-warning">${esc(t)}</span>`).join('')}
+            </div>
+            <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; row-gap: var(--ceo-space-2); margin-top: var(--ceo-space-1);">
+              ${chip('Objective', p.fields.OBJECTIVE)}
+              ${chip('Focus', p.fields.FOCUS)}
+              ${chip('Never delay', p.fields.RISK)}
+              ${chip('Exit to next', p.fields.EXIT)}
+            </div>
+          </div>`;
+      }).join('')}
+      <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-3) 0 0 0;">City expansion order (when to move to the next city) is on the Countries tab; the operating rhythm (daily → quarterly) is below.</p>
+    </div>`;
+
+  // 30/90/365-day view — REAL scheduled decision_log.review_date rows only.
+  // No day-by-day plan is invented; this is honestly just "what's actually
+  // on the calendar in each window," which is the only truthful answer this
+  // system can give without fabricating dates.
+  const windows = bucketByWindow(data.decisions || []);
+  const windowCard = (title, items) => {
+    if (items.length === 0) return '';
+    return `
+      <div style="flex: 1; min-width: 220px;">
+        <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">${title}</div>
+        ${items.map((d) => `<div style="font-size: var(--ceo-font-size-sm); padding: 2px 0;">${d.daysUntil < 0 ? `<span class="ceo-badge ceo-badge-critical" style="font-size: 0.7em;">overdue</span> ` : ''}${esc(d.title)}<span class="ceo-text-muted"> — ${esc(d.review_date)}</span></div>`).join('')}
+      </div>`;
+  };
+  const anyWindowItems = windows.within30.length || windows.within90.length || windows.within365.length;
+  const checkpointsHtml = !anyWindowItems ? '' : `
+    <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+      <h3>Real checkpoints — 30 / 90 / 365 days <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Scheduled decision re-checks (decision_log.review_date) — not an invented calendar">ⓘ</span></h3>
+      <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
+        ${windowCard('Next 30 days', windows.within30)}
+        ${windowCard('31–90 days', windows.within90)}
+        ${windowCard('91–365 days', windows.within365)}
+      </div>
+    </div>`;
   const groups = { daily: [], weekly: [], monthly: [], quarterly: [] };
   for (const c of cadence) {
     const prefix = c.title.split('.')[0];
@@ -535,16 +673,10 @@ function renderRoadmap(data) {
             </div>`;
         }).join('')}
       </div>`).join('');
-  const stagesHtml = stages.length === 0 ? '' : `
-    <div class="ceo-card">
-      <h3>Growth-stage gates <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— what opens (and stays closed) at each client count</span></h3>
-      ${stages.map((s) => `
-        <div style="padding: var(--ceo-space-2) 0; border-bottom: 1px solid var(--ceo-border);">
-          <strong>${esc(s.title.replace('stage_', '').replace(/_/g, '–').replace('–plus', '+'))}</strong>
-          <span class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-left: var(--ceo-space-2);">${esc(s.content)}</span>
-        </div>`).join('')}
-    </div>`;
-  el.innerHTML = cadenceHtml + stagesHtml;
+  // roadmapHtml (ordered stages + decision gates) replaces the former flat
+  // "growth-stage gates" list — same rows, now sequenced with triggers.
+  const rhythmHeading = cadenceHtml ? `<h3 style="margin-top: var(--ceo-space-2);">Operating rhythm — daily → quarterly</h3>` : '';
+  el.innerHTML = roadmapHtml + checkpointsHtml + rhythmHeading + cadenceHtml;
 }
 
 function renderAutomation(data) {

@@ -23,6 +23,7 @@ const KB_CATEGORIES = [
   'sales-template',
   'physical-funnel',
   'marketing-rule',
+  'recovery-rule',
 ];
 
 export async function onRequestGet({ request, env }) {
@@ -31,7 +32,7 @@ export async function onRequestGet({ request, env }) {
   const db = rest(env, auth.token);
   const uid = auth.user.id;
   try {
-    const [kb, research, automation, registers, kpis] = await Promise.all([
+    const [kb, research, automation, registers, kpis, decisions] = await Promise.all([
       db.select(
         'knowledge_base',
         `select=category,title,content&owner_user_id=eq.${uid}&category=in.(${KB_CATEGORIES.join(',')})&is_active=eq.true&order=category.asc,title.asc`
@@ -51,6 +52,10 @@ export async function onRequestGet({ request, env }) {
       // KPI catalog (admin-managed, no owner) — the Funnel and Founder Tools
       // tabs join stages/tools to their owning KPIs by locked seed key.
       db.select('kpi_definitions', 'select=key,label,category,description&is_active=eq.true&order=category.asc,key.asc'),
+      // Real scheduled re-check dates (seed-01's locked decisions) — the
+      // Roadmap's 30/90/365-day windows bucket THESE actual dates, never an
+      // invented calendar.
+      db.select('decision_log', `select=title,decision,review_date,status&owner_user_id=eq.${uid}&status=eq.open&review_date=not.is.null&order=review_date.asc`),
     ]);
 
     // Physical-engine config (city + area queue order) so the Physical tab
@@ -67,6 +72,7 @@ export async function onRequestGet({ request, env }) {
       automation,
       registers: Object.fromEntries(registers.map((r) => [r.title, r.content])),
       kpis,
+      decisions,
       physical: {
         city: phys('physical.city') ? String(phys('physical.city')).replace(/"/g, '') : null,
         cycleDays: Number(phys('physical.cycle_days') || 15),

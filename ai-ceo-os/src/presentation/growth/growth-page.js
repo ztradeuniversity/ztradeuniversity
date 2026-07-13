@@ -14,6 +14,11 @@ const ALL_STAGES = ['lead', 'qualified', 'onboarding', 'activated', 'engaged', '
 const ACQUISITION_STAGES = ['lead', 'qualified', 'onboarding'];
 const RETENTION_STAGES = ['activated', 'engaged', 'at_risk', 'retained'];
 const CONTENT_FLOW = ['idea', 'production', 'published', 'evergreen', 'retired'];
+// Mirrors mission.js's computeAcquisition impact rule exactly (production
+// is near-complete investment = high; idea is not yet started = medium) —
+// same signal, not a second invented scoring system.
+const CONTENT_IMPACT = { idea: 'medium', production: 'high' };
+const IMPACT_BADGE = { high: 'ceo-badge-critical', medium: 'ceo-badge-warning', low: 'ceo-badge-neutral' };
 
 // Groups retention-stage clients into execution segments (Founder OS
 // Restructure Step 4). Pure function, exported for QA. Membership is
@@ -190,6 +195,7 @@ export async function initGrowthPage() {
             <div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-2);">
               <div style="font-size: var(--ceo-font-size-sm);" title="${esc(detail)}">${esc(c.title)}${detail ? ' <span class="ceo-text-muted">ⓘ</span>' : ''}</div>
               <div class="ceo-flex ceo-gap-2" style="margin-top: var(--ceo-space-2); flex-wrap: wrap;">
+                ${CONTENT_IMPACT[status] ? `<span class="ceo-badge ${IMPACT_BADGE[CONTENT_IMPACT[status]]}" style="font-size: 0.7em;">${CONTENT_IMPACT[status]}</span>` : ''}
                 <span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(c.pillar || '')}</span>
                 ${meta.lang ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.lang)}</span>` : ''}
                 ${meta.country ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.country)}</span>` : ''}
@@ -243,7 +249,7 @@ export async function initGrowthPage() {
         <input class="ceo-input" id="gr-country" list="gr-country-list" placeholder="Country (pk)" style="max-width: 8em;" />
         <datalist id="gr-country-list"><option value="pk"></option><option value="gcc"></option><option value="ng"></option><option value="ke"></option><option value="bd"></option><option value="eg"></option></datalist>
         <input class="ceo-input" id="gr-platform" list="gr-platform-list" placeholder="Platform" style="max-width: 9em;" />
-        <datalist id="gr-platform-list"><option value="youtube"></option><option value="telegram"></option><option value="whatsapp"></option><option value="facebook"></option><option value="website"></option></datalist>
+        <datalist id="gr-platform-list"><option value="youtube"></option><option value="telegram"></option><option value="whatsapp"></option><option value="facebook"></option><option value="website"></option><option value="tiktok"></option><option value="instagram"></option><option value="shorts"></option><option value="linkedin"></option><option value="x"></option></datalist>
         <input class="ceo-input" id="gr-audience" placeholder="Audience (beginner-pk)" style="max-width: 11em;" />
         <input class="ceo-input" id="gr-keyword" placeholder="Keyword (SEO)" style="max-width: 11em;" />
       </div>
@@ -355,11 +361,36 @@ export async function initGrowthPage() {
       ? `<div class="ceo-alert ceo-alert-warning" style="margin-top: var(--ceo-space-3);">Follow-ups due: ${due.map((i) => `${esc(i.name)} (${esc(i.stage.replace(/_/g, ' '))})`).join(' · ')}</div>`
       : '';
 
+    // Mentor hand-holding: this area's real pipeline numbers + the single
+    // phase to push on now (coach-logic.pipelineSummary, from stage counts).
+    const s = data.summary;
+    const summaryHtml = (s && s.total > 0)
+      ? `<div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); margin-top: var(--ceo-space-3);">
+          <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; row-gap: var(--ceo-space-2);">
+            ${s.questions.map((q) => `<div><span class="ceo-text-muted" style="font-size: 0.72rem;">${esc(q.q)}</span><div style="font-weight: 700;">${q.a}</div></div>`).join('')}
+          </div>
+          ${s.focus ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-2) 0 0 0;"><strong>Push now:</strong> ${esc(s.focus.label)}</p>` : ''}
+        </div>`
+      : '';
+
+    // Negotiation coach — appears only when an institute is actually at a
+    // negotiation-phase stage; the text is the seeded sales-template.
+    const g = data.salesGuidance || {};
+    const inNegotiation = (data.institutes || []).some((i) => ['proposal_sent', 'meeting', 'negotiation'].includes(i.stage));
+    const negotiationHtml = (inNegotiation && (g.negotiation || g.objections))
+      ? `<details class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); margin-top: var(--ceo-space-3);">
+          <summary style="cursor: pointer; font-weight: 600;">Negotiation coach — you have institutes in the meeting/negotiation phase</summary>
+          ${g.negotiation ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Strategy:</strong> ${esc(g.negotiation)}</p>` : ''}
+          ${g.objections ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Objections:</strong> ${esc(g.objections)}</p>` : ''}
+          ${g.follow_up ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Follow-up timing:</strong> ${esc(g.follow_up)}</p>` : ''}
+        </details>`
+      : '';
+
     const rows = data.institutes || [];
     const tableHtml = rows.length === 0
       ? '<div class="ceo-empty-state" style="margin-top: var(--ceo-space-3);"><p>Koi institute nahin — current area research se shuru karein (Playbooks → Physical mein search method hai).</p></div>'
       : `<div style="overflow-x:auto; margin-top: var(--ceo-space-3);"><table class="ceo-table">
-          <thead><tr><th>Institute</th><th>Area</th><th>Stage</th><th>Follow-up</th><th>Batch end</th><th>Students</th></tr></thead>
+          <thead><tr><th>Institute</th><th>Area</th><th>Stage</th><th>Next step</th><th>Follow-up</th><th>Batch end</th><th>Students</th></tr></thead>
           <tbody>${rows.map((i) => `
             <tr>
               <td title="${esc(i.notes || '')}">${esc(i.name)}${i.institute_type ? ` <span class="ceo-text-muted" style="font-size: 0.75rem;">(${esc(i.institute_type)})</span>` : ''}</td>
@@ -367,6 +398,7 @@ export async function initGrowthPage() {
               <td><select class="ceo-input" data-inst-stage="${i.id}" style="min-width: 10em;">
                 ${INSTITUTE_STAGES.map((s) => `<option value="${s}" ${s === i.stage ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
               </select></td>
+              <td class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); max-width: 18em;">${esc(i.nextStep?.label || '')}</td>
               <td><input class="ceo-input" type="date" data-inst-followup="${i.id}" value="${esc(i.next_follow_up || '')}" style="min-width: 9em;" /></td>
               <td><input class="ceo-input" type="date" data-inst-batchend="${i.id}" value="${esc(i.batch_end_date || '')}" style="min-width: 9em;" /></td>
               <td><input class="ceo-input" type="number" min="0" data-inst-students="${i.id}" value="${i.students_registered ?? ''}" style="max-width: 6em;" /></td>
@@ -382,7 +414,7 @@ export async function initGrowthPage() {
         <button class="ceo-btn ceo-btn-primary" id="gr-inst-add">Add institute</button>
       </div>`;
 
-    el.innerHTML = cycleHtml + dueHtml + tableHtml + formHtml;
+    el.innerHTML = cycleHtml + summaryHtml + dueHtml + negotiationHtml + tableHtml + formHtml;
     wirePhysicalEngine(el);
   }
 

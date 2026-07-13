@@ -18,6 +18,7 @@
 
 import { rest, json, requireFounder, parseExecTag, stripExecTag } from '../../utils/ceo/db.js';
 import { computeRetention } from '../../utils/ceo/retention-logic.js';
+import { delayCostLabel, automationStatusLabel } from '../../utils/ceo/coach-logic.js';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const TIER_ORDER = { CRITICAL: 0, IMPORTANT: 1, OPTIONAL: 2 };
@@ -34,22 +35,25 @@ const REVIEW_DAY = 'friday';
 // it, where one exists. Grounded in the real key sets seeded in seed-01/02 —
 // not every activity has a checklist counterpart, and that's shown honestly
 // (falls back to the activity's own embedded rule text) rather than invented.
+// automationKeys join to automation_registry.key — which real automations
+// touch this activity, if any (empty = Founder Manual by design, e.g. trust
+// moments like community_touch/ib_followups/live_class are never delegated).
 const ACTIVITY_META = {
-  'daily.core_block': { kpiKey: 'trading.journal_streak', checklistKey: null },
-  'daily.community_touch': { kpiKey: 'community.reply_rate', checklistKey: 'community_touch' },
-  'daily.retention_touches': { kpiKey: 'retention.at_risk_recovery', checklistKey: 'retention_touch' },
-  'daily.ib_followups': { kpiKey: 'clients.activation_rate', checklistKey: 'ib_conversation' },
-  'daily.shutdown': { kpiKey: 'founder.core_block_streak', checklistKey: null },
-  'weekly.film_video': { kpiKey: 'content.videos_published', checklistKey: 'weekly_video' },
-  'weekly.live_class': { kpiKey: 'community.members', checklistKey: 'live_class' },
-  'weekly.publish_chain': { kpiKey: 'content.chain_completion', checklistKey: 'publish_chain' },
-  'weekly.review': { kpiKey: 'founder.critical_completion', checklistKey: 'weekly_review' },
-  'weekly.kpi_entry': { kpiKey: null, checklistKey: 'kpi_entry' },
-  'weekly.email_digest': { kpiKey: null, checklistKey: null },
-  'weekly.learning_slot': { kpiKey: 'learning.weekly_slot', checklistKey: null },
-  'monthly.transparency_report': { kpiKey: 'retention.survival_90d', checklistKey: 'transparency_report' },
-  'monthly.content_audit': { kpiKey: 'content.watch_time', checklistKey: 'monthly_audit' },
-  'quarterly.review_gates': { kpiKey: null, checklistKey: null },
+  'daily.core_block': { kpiKey: 'trading.journal_streak', checklistKey: null, automationKeys: [] },
+  'daily.community_touch': { kpiKey: 'community.reply_rate', checklistKey: 'community_touch', automationKeys: [] },
+  'daily.retention_touches': { kpiKey: 'retention.at_risk_recovery', checklistKey: 'retention_touch', automationKeys: ['retention.milestone_due', 'retention.at_risk_flags'] },
+  'daily.ib_followups': { kpiKey: 'clients.activation_rate', checklistKey: 'ib_conversation', automationKeys: [] },
+  'daily.shutdown': { kpiKey: 'founder.core_block_streak', checklistKey: null, automationKeys: [] },
+  'weekly.film_video': { kpiKey: 'content.videos_published', checklistKey: 'weekly_video', automationKeys: [] },
+  'weekly.live_class': { kpiKey: 'community.members', checklistKey: 'live_class', automationKeys: [] },
+  'weekly.publish_chain': { kpiKey: 'content.chain_completion', checklistKey: 'publish_chain', automationKeys: ['content.transcript_draft', 'content.clip_queue'] },
+  'weekly.review': { kpiKey: 'founder.critical_completion', checklistKey: 'weekly_review', automationKeys: ['mentor.review_prefill'] },
+  'weekly.kpi_entry': { kpiKey: null, checklistKey: 'kpi_entry', automationKeys: ['kpi.weekly_snapshot'] },
+  'weekly.email_digest': { kpiKey: null, checklistKey: null, automationKeys: ['email.weekly_digest'] },
+  'weekly.learning_slot': { kpiKey: 'learning.weekly_slot', checklistKey: null, automationKeys: [] },
+  'monthly.transparency_report': { kpiKey: 'retention.survival_90d', checklistKey: 'transparency_report', automationKeys: [] },
+  'monthly.content_audit': { kpiKey: 'content.watch_time', checklistKey: 'monthly_audit', automationKeys: [] },
+  'quarterly.review_gates': { kpiKey: null, checklistKey: null, automationKeys: [] },
 };
 
 // Day-type -> the platform whose cadence is active today (Business Architecture
@@ -119,14 +123,19 @@ export async function onRequestGet({ request, env }) {
     // 1b) Section 1 enrichment sources — KPI labels + execution-checklist WHY
     // text, fetched once and joined onto every parsed item below.
     const neededKpiKeys = [...new Set(Object.values(ACTIVITY_META).map((m) => m.kpiKey).filter(Boolean))];
-    const [kpiDefs, checklistDocs] = await Promise.all([
+    const [kpiDefs, checklistDocs, automationRows] = await Promise.all([
       neededKpiKeys.length
         ? db.select('kpi_definitions', `select=key,label&key=in.(${neededKpiKeys.join(',')})`)
         : Promise.resolve([]),
       db.select('knowledge_base', `select=title,content&owner_user_id=eq.${uid}&category=eq.execution-checklist`),
+      // Fetched once here (ALL rows, active or not) and reused by both the
+      // parsed mission items below and computeAcquisition — one query, not
+      // a second copy of the same registry read.
+      db.select('automation_registry', 'select=key,label,matrix_class,is_active'),
     ]);
     const kpiLabelByKey = Object.fromEntries(kpiDefs.map((k) => [k.key, k.label]));
     const checklistByKey = Object.fromEntries(checklistDocs.map((c) => [c.title, c.content]));
+    const automationByKey = Object.fromEntries(automationRows.map((a) => [a.key, a]));
 
     // 2) Parse + enrich + rank: tier -> time (shorter first among equals keeps momentum).
     const parsed = activities.map((a) => {
@@ -150,6 +159,11 @@ export async function onRequestGet({ request, env }) {
         rule,
         expectedOutcome: meta.kpiKey ? kpiLabelByKey[meta.kpiKey] || null : null,
         why: (meta.checklistKey && extractChecklistField(checklistByKey[meta.checklistKey], 'WHY')) || rule || null,
+        // Delay cost is a LABEL derived from the locked tier, never a number.
+        // A CRITICAL item still pending on its own day carries the highest
+        // cost of slipping; Optional work is safe to defer.
+        delayCost: delayCostLabel(tierRank, false),
+        automationStatus: automationStatusLabel((meta.automationKeys || []).map((k) => automationByKey[k]).filter(Boolean)),
       };
     });
     const core = parsed.filter((p) => p.key === 'daily.core_block' || p.key === 'daily.shutdown');
@@ -190,7 +204,7 @@ export async function onRequestGet({ request, env }) {
 
     // 7) Section 3 — IB Growth: Acquisition + Retention.
     const [acquisition, retention] = await Promise.all([
-      computeAcquisition(db, uid, dayType),
+      computeAcquisition(db, uid, dayType, automationRows),
       computeRetention(db, uid, { silenceDays, maxTouches }),
     ]);
 
@@ -335,17 +349,18 @@ async function computeTradingCheckin(db, uid, today) {
 // actions come from real content_library/growth_tasks rows; the platform
 // suggestion is looked up from the seeded platform-playbook row for today's
 // already-known day type — no random task generation.
-async function computeAcquisition(db, uid, dayType) {
-  const [clients, touches, content, tasks, platformDocs, registry] = await Promise.all([
+async function computeAcquisition(db, uid, dayType, automationRows) {
+  const [clients, touches, content, tasks, platformDocs] = await Promise.all([
     db.select('ib_clients', `select=id,full_name,stage&owner_user_id=eq.${uid}&stage=in.(${ACQUISITION_STAGES.join(',')})&limit=200`),
     db.select('client_touches', `select=ib_client_id,occurred_at&owner_user_id=eq.${uid}&order=occurred_at.desc&limit=500`),
     db.select('content_library', `select=id,title,status,pillar,target_audience&owner_user_id=eq.${uid}&status=in.(idea,production)&order=created_at.asc&limit=20`),
     db.select('growth_tasks', `select=id,title,due_date&owner_user_id=eq.${uid}&status=neq.done&order=due_date.asc.nullslast&limit=10`),
     db.select('knowledge_base', `select=title,content&owner_user_id=eq.${uid}&category=eq.platform-playbook`),
-    // Manual-vs-Automated classification for the execution plan: the honest
-    // answer comes from the registry's is_active flags, never hardcoded.
-    db.select('automation_registry', 'select=key,label&is_active=eq.true'),
   ]);
+  // Manual-vs-Automated classification for the execution plan: the honest
+  // answer comes from the registry's is_active flags, never hardcoded — reuses
+  // the ONE registry fetch already made by the caller, not a second query.
+  const registry = (automationRows || []).filter((r) => r.is_active);
 
   const lastTouch = {};
   for (const t of touches) if (!lastTouch[t.ib_client_id]) lastTouch[t.ib_client_id] = t.occurred_at;
