@@ -167,7 +167,7 @@ function renderIbGrowth(m) {
     const d = m.plannedDay;
     el.innerHTML = `
       <div class="ceo-alert" style="border: 1px solid var(--ceo-border); border-radius: var(--ceo-radius-sm); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-3);">
-        <strong>Day ${d.day} of 365</strong> · ${escapeHtml(d.stage)}
+        <strong>Day ${d.day} of ${d.totalDays || 1825}</strong> · ${escapeHtml(d.stage)}
         <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: 2px;">Planned roadmap for this date — tasks become actionable (Done/Partial/Skip) on the day itself.</div>
       </div>
       <ul style="margin: 0; padding-left: 1.2em;">${d.activities.map((a) => `<li style="padding: 2px 0;">${escapeHtml(a)}</li>`).join('')}</ul>

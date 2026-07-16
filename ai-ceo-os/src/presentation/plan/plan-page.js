@@ -18,7 +18,7 @@ const STAGES = [
   'cold_contact', 'proposal_sent', 'meeting', 'negotiation',
   'accepted', 'rejected', 'classes_running', 'batch_complete', 'follow_up_later',
 ];
-const state = { tab: 'growth', offset: { growth: 0, physical: 0 }, done: { growth: false, physical: false }, queue: [] };
+const state = { tab: 'growth', offset: { growth: 0, physical: 0 }, done: { growth: false, physical: false }, queue: [], firstUpcoming: 0 };
 
 export function initPlanPage() {
   const params = new URLSearchParams(window.location.search);
@@ -32,8 +32,8 @@ export function initPlanPage() {
 }
 
 const SUBTITLES = {
-  growth: 'The yearly roadmap toward 50,000 IB clients — generated from the locked research (countries, brokers, platforms, languages, budget gates), shifted automatically around approved leave, re-weighted monthly by your own completion history. Loaded 15 days at a time.',
-  physical: 'Pakistan-wide offline expansion: province → division → city → area → institutes. Reorder areas with ▲▼; record every visit, proposal, and follow-up per institute.',
+  growth: 'The 5-year (1,825-day) roadmap toward 50,000 active IB clients — sized by the feasibility model below, generated from the locked research (countries, brokers, platforms, languages, budget gates), shifted automatically around approved leave, re-weighted monthly by your own completion history. Loaded 15 days at a time.',
+  physical: 'Pakistan-wide offline expansion: province → division → city → area → institutes. Type a position number to resequence upcoming areas; record every visit, proposal, and follow-up per institute.',
   review: 'The Monthly AI Review + Growth Intelligence Report — funnel, Pareto 80/20, trajectory toward 50,000 active IB clients, and next month\'s focus. Generated on demand from your real data.',
 };
 
@@ -89,8 +89,29 @@ async function loadMore(fresh) {
 // --- IB Growth Master Plan table ----------------------------------------
 function appendGrowth(body, res, fresh) {
   if (fresh && res.countryStrategy) {
+    const f = res.feasibility;
     body.insertAdjacentHTML('beforeend', `
       ${res.autoLearn ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-3);">🧠 ${escapeHtml(res.autoLearn)}</div>` : ''}
+      ${f ? `
+        <h3 style="margin-top: 0;">Feasibility Model — the path to ${Number(f.target).toLocaleString()}</h3>
+        <div class="ceo-alert" style="border: 1px solid var(--ceo-border); border-radius: var(--ceo-radius-sm); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-3);">
+          <strong>Audit verdict:</strong> ${escapeHtml(f.verdict)}
+        </div>
+        <div style="overflow-x: auto; margin-bottom: var(--ceo-space-2);">
+          <table class="ceo-table" style="min-width: 700px;">
+            <thead><tr><th>Funnel Stage</th><th>Required</th><th>Basis</th><th>Assumption</th></tr></thead>
+            <tbody>
+              ${f.stages.map((s) => `
+                <tr>
+                  <td><strong>${escapeHtml(s.stage)}</strong></td>
+                  <td>${escapeHtml(s.required)}</td>
+                  <td><span class="ceo-badge ${s.basis === 'FOUNDER GOAL' ? 'ceo-badge-critical' : s.basis === 'VERIFIED RANGE' ? 'ceo-badge-success' : 'ceo-badge-neutral'}">${escapeHtml(s.basis)}</span></td>
+                  <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(s.note)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <p class="ceo-text-muted" style="font-size: 0.75rem; margin-bottom: var(--ceo-space-4);">${escapeHtml(f.assumptionNote)}</p>` : ''}
       <h3 style="margin-top: 0;">Country Strategy — the multi-market master table</h3>
       <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
         <table class="ceo-table" style="min-width: 1200px;">
@@ -164,11 +185,12 @@ function statusBadge(status) {
 // --- Physical IB Expansion roadmap --------------------------------------
 function appendPhysical(body, res, fresh) {
   if (Array.isArray(res.queue)) state.queue = res.queue;
+  if (res.cycle && typeof res.cycle.firstUpcomingIndex === 'number') state.firstUpcoming = res.cycle.firstUpcomingIndex;
   if (fresh) {
     body.insertAdjacentHTML('beforeend', `
       <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">
         Country: <strong>Pakistan</strong> · cycle: ${res.cycle?.cycleDays || 15} days per area · current: <strong>${escapeHtml(res.cycle?.current || 'not started')}</strong>
-        · ▲▼ reorders the execution sequence (done areas stay in place)
+        · type a position number to move an upcoming area (done/current areas stay in place)
       </p>
       <div id="plan-physical-rows"></div>`);
   }
@@ -179,8 +201,9 @@ function appendPhysical(body, res, fresh) {
         <span class="ceo-badge ${r.state === 'current' ? 'ceo-badge-warning' : r.state === 'done' ? 'ceo-badge-success' : 'ceo-badge-neutral'}">${escapeHtml(r.state)}</span>
         <strong style="flex: 1; min-width: 12em;">#${r.index + 1} — ${escapeHtml(r.entry)}</strong>
         ${r.state === 'upcoming' ? `
-          <button class="ceo-btn ceo-btn-secondary" data-move-up title="Move this area earlier in the sequence">▲</button>
-          <button class="ceo-btn ceo-btn-secondary" data-move-down title="Move this area later in the sequence">▼</button>` : ''}
+          <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Move to #</span>
+          <input class="ceo-input" type="number" data-pos-input min="1" max="${state.queue.length}" placeholder="${r.index + 1}" style="max-width: 5em;" title="Exact position in the execution sequence" />
+          <button class="ceo-btn ceo-btn-secondary" data-move-to>Go</button>` : ''}
         <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${r.windowStart ? `${escapeHtml(r.windowStart)} → ${escapeHtml(r.windowEnd)}` : 'not scheduled'}</span>
       </div>
       <div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-1) 0 var(--ceo-space-2);">
@@ -196,31 +219,38 @@ function appendPhysical(body, res, fresh) {
   wireAreaReorder(holder);
 }
 
-// Move Area Up/Down (Section 4) — builds the swapped order from the full
-// queue and posts it to institutes.js's EXISTING reorder_queue action (a
-// strict same-set permutation, so nothing can be lost). Done/current areas
-// keep their position; only upcoming areas move.
+// Exact-position move (Section 5) — "Move Area to Position 6": the entry is
+// lifted out and re-inserted at the typed 1-based position; everything else
+// shifts automatically. Posts the full new order to institutes.js's EXISTING
+// reorder_queue action (a strict same-set permutation, so nothing can be
+// lost). Positions before the first upcoming slot are history (done/current
+// areas) and are refused, never rewritten.
 function wireAreaReorder(holder) {
-  holder.querySelectorAll('[data-move-up]:not([data-wired]), [data-move-down]:not([data-wired])').forEach((btn) => {
+  holder.querySelectorAll('[data-move-to]:not([data-wired])').forEach((btn) => {
     btn.setAttribute('data-wired', '1');
     btn.addEventListener('click', async () => {
-      const idx = parseInt(btn.closest('[data-area-index]').getAttribute('data-area-index'), 10);
-      const dir = btn.hasAttribute('data-move-up') ? -1 : 1;
-      const target = idx + dir;
-      if (target < 0 || target >= state.queue.length) return;
-      // Never swap into a done/current slot — position IS the schedule, so
-      // that would rewrite history instead of resequencing the future.
-      const targetRow = holder.querySelector(`[data-area-index="${target}"]`);
-      if (targetRow && !targetRow.querySelector('[data-move-up]')) {
-        showToast('Current/done area se pehle nahin le ja sakte — sirf aane wale areas resequence hote hain.', 'info');
+      const row = btn.closest('[data-area-index]');
+      const idx = parseInt(row.getAttribute('data-area-index'), 10);
+      const raw = parseInt(row.querySelector('[data-pos-input]').value, 10);
+      if (!Number.isFinite(raw)) { showToast('Position number likhein pehle.', 'info'); return; }
+      const target = raw - 1; // 1-based UI -> 0-based index
+      const minPos = (state.firstUpcoming ?? 0);
+      if (target < minPos) {
+        showToast(`Position ${raw} guzar chuki hai — pehli available position #${minPos + 1} hai.`, 'info');
         return;
       }
+      if (target >= state.queue.length) {
+        showToast(`Aakhri position #${state.queue.length} hai.`, 'info');
+        return;
+      }
+      if (target === idx) return;
       const newOrder = state.queue.slice();
-      [newOrder[idx], newOrder[target]] = [newOrder[target], newOrder[idx]];
+      const [entry] = newOrder.splice(idx, 1);
+      newOrder.splice(target, 0, entry);
       btn.disabled = true;
       try {
         await postJson('/api/ceo/institutes', { action: 'reorder_queue', order: newOrder });
-        showToast('Sequence updated — windows recalculated.', 'success');
+        showToast(`"${entry}" moved to position ${raw} — windows recalculated.`, 'success');
         switchTab('physical'); // reload with the new order + fresh windows
       } catch (err) {
         btn.disabled = false;

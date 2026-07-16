@@ -17,45 +17,56 @@
 
 const DAY_MS = 86400000;
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-export const PLAN_TOTAL_DAYS = 365;
+// Feasibility audit verdict (see FEASIBILITY below): 365 days cannot carry
+// a 50,000-active-client funnel — the practical horizon is 5 phased years.
+export const PLAN_TOTAL_DAYS = 1825;
 
-// Growth stages projected onto the year (growth-stage seeds; client-count
-// gates shown honestly as gates, the day ranges are planning windows only).
+// Growth phases projected onto the 5-year horizon. Year 1 keeps the seeded
+// growth-stage discipline; the founder's directive moves EN markets up to
+// day 91 (was: the 300-client research gate) — recorded as a FOUNDER
+// DECISION over the prior gate, with the risk stated, not silently blended.
 const PHASES = [
   {
-    untilDay: 84,
-    stage: 'Stage 1 — Prove the funnel (0→10 activated)',
-    countries: 'Pakistan (Priority 1) + GCC (rides PK assets)',
+    untilDay: 90,
+    stage: 'Phase 1 (Day 1–90) — Foundation: prove the funnel (0→50 activated)',
+    countries: 'Pakistan + GCC dual-launch (one Urdu content engine serves both from day 1)',
     language: 'Urdu / Roman-Urdu (+EN titles for GCC)',
-    budget: 'PKR 0 — organic only (paid is GATED until the 300-client stage)',
+    budget: 'PKR 0 — organic only (paid stays gated until 300 activated clients)',
   },
   {
-    untilDay: 168,
-    stage: 'Stage 2 — Repeatability (10→50): course→IB conversion',
-    countries: 'Pakistan + GCC',
-    language: 'Urdu / Roman-Urdu (+EN titles for GCC)',
-    budget: 'PKR 0 — organic only (paid still gated)',
-  },
-  {
-    untilDay: 252,
-    stage: 'Stage 3 — Retention proof + community energy (50→300)',
-    countries: 'Pakistan + GCC — existing clients over new',
-    language: 'Urdu / Roman-Urdu (+EN titles for GCC)',
-    budget: 'PKR 0 — organic only (at-risk list is Critical tier, not ads)',
-  },
-  {
-    untilDay: 336,
-    stage: 'Stage 4 — Second engine (300→500): EN gate opens',
-    countries: 'PK + GCC; Nigeria/Kenya open AT the 300-activated-client gate (EN mirrors of proven winners only)',
+    untilDay: 365,
+    stage: 'Phase 2 (Day 91–365) — Multi-market ignition (50→1,000): EN mirrors begin',
+    countries: 'PK + GCC + Nigeria/Kenya EN mirrors from day 91 (FOUNDER DECISION — earlier than the researched 300-client gate; mirror only proven PK winners to contain the risk)',
     language: 'Urdu + English',
-    budget: 'Organic + capped-CAC paid probes (opens at this gate; cap set at the gate review)',
+    budget: 'Organic; capped-CAC paid probes open at 300 activated clients',
+  },
+  {
+    untilDay: 730,
+    stage: 'Phase 3 (Year 2) — Scale the engines (1,000→5,000): first hire',
+    countries: 'PK + GCC + NG/KE full cadence; South Africa EN added (~day 540) if NG/KE CAC holds',
+    language: 'Urdu + English',
+    budget: 'Paid scales while CAC ≤ target; editing/clips delegated (never voice or trust-touches)',
+  },
+  {
+    untilDay: 1095,
+    stage: 'Phase 4 (Year 3) — Systemized growth (5,000→15,000): team executes',
+    countries: 'All active markets + BD (Bengali) / EG (Arabic) IF their content trials passed',
+    language: 'Urdu + English (+Bengali/Arabic behind their gates)',
+    budget: 'Multi-market paid engine, per-market CAC lines reviewed monthly',
+  },
+  {
+    untilDay: 1460,
+    stage: 'Phase 5 (Year 4) — Compounding (15,000→30,000): retention economics lead',
+    countries: 'Portfolio of proven markets — quarterly kill/scale per market',
+    language: 'Per-market as proven',
+    budget: 'Reinvest commission into the winning-market ads; kill losers on data',
   },
   {
     untilDay: PLAN_TOTAL_DAYS,
-    stage: 'Stage 5 — Systemized machine (500→1000): founder hours flat',
-    countries: 'PK + GCC + EN markets (NG/KE); BD/EG stay content-gated trials',
-    language: 'Urdu + English (BD/EG localization only if trials pass)',
-    budget: 'Paid probes continue only while CAC target holds',
+    stage: 'Phase 6 (Year 5) — The 50k push (30,000→50,000)',
+    countries: 'Scaled portfolio; new markets only with dedicated per-market owners',
+    language: 'Per-market',
+    budget: 'Per-market P&L discipline — transparency spine and No-Advice line never change',
   },
 ];
 
@@ -92,14 +103,20 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
     expected = 'Attendance + replay views — the weekly conversion moment';
   }
 
-  // The daily non-negotiables (cadence templates, seed-02 §1 + seed-07).
+  // The daily non-negotiables (cadence templates, seed-02 §1 + seed-07) —
+  // the online engine AND the physical engine run together every day.
   activities.push('Telegram community touch: 1–2 posts, all questions <24h (20m)');
   activities.push('Technical analysis post — levels/structure, education never signals (20m)');
   activities.push('Retention due-list touches (15m) + IB follow-ups (15m)');
+  activities.push('Physical IB Expansion: today\'s area outreach — visit/call/proposal (30m, see Physical tab)');
 
-  // Facebook is a discovery skim — 2-3 clip reposts/wk (platform playbook).
+  // Facebook is a discovery skim — 2-3 clip reposts/wk (platform playbook);
+  // TikTok/IG are auto-repost shelves (zero native minutes, locked verdict).
   if (['tuesday', 'thursday', 'saturday'].includes(weekdayName)) {
     activities.push('Facebook groups: 2–3 clip reposts into PK groups (10m)');
+  }
+  if (weekdayName === publishDay) {
+    activities.push('Auto-repost clips to TikTok + Instagram (one-click only — zero native effort by locked verdict)');
   }
 
   // Monthly anchors on a 28-day planning rhythm; quarterly gate every 91 days.
@@ -112,8 +129,11 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
   if (dayNumber % 91 === 0) {
     activities.push('QUARTERLY GATE REVIEW: expansion gates (EN? probes? localization?) decided on data, not mood');
   }
-  if (dayNumber === 77) {
-    activities.push('GATE CHECK: Nigeria/Kenya EN engine opens only at 300 activated clients — verify count, do not force by calendar');
+  if (dayNumber === 84) {
+    activities.push('EN ENGINE PREP: Nigeria/Kenya mirrors begin day 91 (founder decision) — pick the 5 proven PK winners to mirror first; if fewer than 5 winners exist yet, that is the risk signal to slow down');
+  }
+  if (dayNumber === 540) {
+    activities.push('SOUTH AFRICA GATE: add SA EN market only if NG/KE CAC is at or under target — check the Monthly AI Review first');
   }
 
   return { platform, activities, expected };
@@ -157,6 +177,7 @@ function buildDayRow(dayNumber, dateStr, weekdayName, o, opts) {
   }
   return {
     day: dayNumber,
+    totalDays: PLAN_TOTAL_DAYS,
     date: dateStr,
     weekday: weekdayName,
     stage: phase.stage,
@@ -183,7 +204,7 @@ export function generateGrowthDays(startDateStr, offset, count, opts = {}) {
   const days = [];
   let dayNumber = 0;
   // Walk calendar dates from the start; each non-leave date is a plan day.
-  // Bounded: 365 plan days + leave span (cap the walk at 500 calendar days).
+  // Bounded: PLAN_TOTAL_DAYS + a 135-day leave allowance caps the walk.
   for (let cal = 0; cal < PLAN_TOTAL_DAYS + 135 && dayNumber < offset + count; cal++) {
     const date = new Date(start + cal * DAY_MS);
     const dateStr = date.toISOString().slice(0, 10);
@@ -199,8 +220,8 @@ export function generateGrowthDays(startDateStr, offset, count, opts = {}) {
 // The single plan day scheduled on a specific calendar DATE (Section 1,
 // date-first execution): same walk, same leave-shifting, so picking Day 2 or
 // Day 250 in the Home date picker shows exactly what the roadmap holds for
-// that date. Returns null when the date is before Day 1, past Day 365, or an
-// approved leave day (callers show the leave banner instead).
+// that date. Returns null when the date is before Day 1, past the final plan
+// day, or an approved leave day (callers show the leave banner instead).
 export function planDayForDate(startDateStr, targetDateStr, opts = {}) {
   const start = Date.parse(startDateStr);
   if (!Number.isFinite(start) || !targetDateStr || targetDateStr < startDateStr) return null;
@@ -222,6 +243,32 @@ export function planDayForDate(startDateStr, targetDateStr, opts = {}) {
   }
   return null;
 }
+
+// --- Feasibility model (the audit that sized this roadmap) ---------------
+//
+// Backward funnel from the founder-defined 50,000-active target. Each stage
+// states its basis: FOUNDER GOAL (given), PLANNING ASSUMPTION (conservative
+// mid-range figure, replaced by real funnel data as the Monthly AI Review
+// accumulates it), or VERIFIED RANGE (industry-typical band for niche
+// education content). Verdict: 365 days cannot carry ~67M cumulative reach
+// on one founder's organic output — the practical horizon is 5 phased years
+// with EN markets, paid probes behind their CAC gate, and delegation of
+// non-trust work from Year 2.
+export const FEASIBILITY = {
+  target: 50000,
+  horizonDays: PLAN_TOTAL_DAYS,
+  verdict: '365 days is NOT enough. The funnel below needs ~67M cumulative reach; a single-founder organic engine peaks near ~1M reach/month even when mature. Practical horizon: 5 years (1,825 days), phased — Year 1 proves the machine, Years 2–3 scale it with EN markets + gated paid + a first hire, Years 4–5 compound it.',
+  stages: [
+    { stage: 'Total Audience Reached', required: '~67,000,000 (cumulative)', basis: 'Derived — from the chain below', note: 'Across all markets and 5 years; ≈1.1M/month average, weighted toward later years' },
+    { stage: 'Engaged Users', required: '~4,000,000', basis: 'VERIFIED RANGE', note: '6% reach→engaged (niche education content typically 3–8%)' },
+    { stage: 'Qualified Leads', required: '~323,000', basis: 'PLANNING ASSUMPTION', note: '8% engaged→qualified (course start / community join)' },
+    { stage: 'Broker Account Opens', required: '~113,000', basis: 'PLANNING ASSUMPTION', note: '35% qualified→open — education-first funnels convert warm, not wide' },
+    { stage: 'IB Registrations', required: '~96,000', basis: 'PLANNING ASSUMPTION', note: '85% of opens complete registration under the IB link' },
+    { stage: 'Active Traders', required: '~77,000', basis: 'PLANNING ASSUMPTION', note: '80% of registrations place trades' },
+    { stage: 'Active IB Clients', required: '50,000', basis: 'FOUNDER GOAL', note: '65% of traders stay active — retention economics carry the last mile' },
+  ],
+  assumptionNote: 'Every percentage above is a planning assumption or verified band, not a promise — the Monthly AI Review recalibrates this model against your real funnel every month.',
+};
 
 // --- Country strategy (Section 3: the multi-country master table) --------
 //
@@ -246,7 +293,7 @@ export const COUNTRY_STRATEGY = [
     expectedGrowth: 'Primary engine — majority of the first 1,000 activated clients',
   },
   {
-    country: 'GCC (UAE/Saudi expats)', priority: 'P1.5 — active, rides PK assets', broker: 'Exness Islamic — lead with it',
+    country: 'GCC (UAE/KSA/Qatar/Oman/Kuwait/Bahrain expats)', priority: 'P1 — dual-launch with Pakistan: international from day 1', broker: 'Exness Islamic — lead with it',
     language: 'Urdu + English', platform: 'YouTube + WhatsApp (Gulf evenings 8–11pm GST)',
     contentType: 'Halal-clarity (scholarly views, never verdicts), remittance-vs-investing, Eid/Ramadan gold timing',
     audience: 'Expat professionals 28–45, time-poor, highest LTV segment',
@@ -257,15 +304,34 @@ export const COUNTRY_STRATEGY = [
     expectedGrowth: 'Highest-LTV layer on the PK engine',
   },
   {
-    country: 'Nigeria + Kenya', priority: 'P2 — GATED: opens at 300 activated clients', broker: 'Exness + Vantage trial in parallel',
+    country: 'Nigeria + Kenya', priority: 'P2 — EN mirrors from Day 91 (FOUNDER DECISION; researched gate was 300 clients — mirror only proven winners to contain the risk)', broker: 'Exness + Vantage trial in parallel (both accept PK-based partners for these markets)',
     language: 'English', platform: 'YouTube EN + WhatsApp-heavy (KE), faster pace than ur market',
     contentType: 'EN mirrors of PROVEN winners only — small-account truth, prop-firm reality',
     audience: 'Young mobile-first traders; small accounts',
-    postingFrequency: 'Mirror cadence of proven PK winners once gate opens',
-    promotion: 'Capped-CAC probes allowed from the same gate',
+    postingFrequency: 'Start 1 EN mirror/wk at day 91; full cadence when 5+ winners are mirrored',
+    promotion: 'Capped-CAC probes still wait for the 300-client gate',
     expectedConversion: 'Faster funnel, lower LTV than GCC (planning assumption)',
     expectedCac: 'Probe target set at gate review; watch regulatory tightening both markets',
     expectedGrowth: 'The second engine — scales the path from 1,000 toward 10,000+',
+  },
+  {
+    country: 'South Africa', priority: 'P3 — enters ~Day 540, ONLY if NG/KE CAC holds (planning assumption, verify broker terms first)', broker: 'Exness (verify SA partner acceptance at the gate); alternative: Vantage',
+    language: 'English', platform: 'YouTube EN (rides the NG/KE library), FB groups',
+    contentType: 'Same EN library + SA-specific broker/regulatory clarity (FSCA-aware framing)',
+    audience: 'Retail forex traders — one of Africa\'s largest regulated retail markets',
+    postingFrequency: 'No new production — EN library + 1 SA-specific piece/month',
+    promotion: 'Paid probes from entry (market is paid-mature), same CAC discipline',
+    expectedConversion: 'Between NG/KE and GCC (planning assumption)',
+    expectedCac: 'Set from NG/KE actuals at the gate',
+    expectedGrowth: 'Third engine — Year 2–3 scale layer',
+  },
+  {
+    country: 'India', priority: 'DEFERRED — RBI hostility to forex IB models (verified research); re-check yearly', broker: 'None practical from Pakistan today',
+    language: '—', platform: '—', contentType: '—',
+    audience: 'Largest Urdu/Hindi-understanding audience — the content already serves diaspora viewers organically',
+    postingFrequency: '—', promotion: 'Zero minutes; organic diaspora views are free upside, never a target',
+    expectedConversion: '—', expectedCac: '—',
+    expectedGrowth: 'None until the regulatory picture changes',
   },
   {
     country: 'Bangladesh', priority: 'GATE — Bengali AI-localization trial first', broker: 'Exness (verify partner terms at trial)',

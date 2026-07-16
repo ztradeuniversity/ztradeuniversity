@@ -14,7 +14,7 @@
 // leave/reset, institutes.js for institute records).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { generateGrowthDays, buildPhysicalRows, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE } from '../../utils/ceo/plan-logic.js';
+import { generateGrowthDays, buildPhysicalRows, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY } from '../../utils/ceo/plan-logic.js';
 import { currentAreaAssignment } from '../../utils/ceo/physical-logic.js';
 import { instituteNextStep } from '../../utils/ceo/coach-logic.js';
 
@@ -72,9 +72,14 @@ export async function onRequestGet({ request, env }) {
         row.institutes = matches.map((i) => ({ ...i, nextStep: instituteNextStep(i.stage) }));
         row.studentsAcquired = matches.reduce((s, i) => s + (i.students_registered || 0), 0);
       }
-      // Full queue included so the page can reorder areas (Move Up/Down posts
-      // a same-set permutation to institutes.js's existing reorder_queue).
-      return json({ section, offset, count, rows, hasMore, totalEntries, queue, cycle: { startDate, cycleDays, current: assignment.current, exhausted: assignment.exhausted } });
+      // Full queue included so the page can reorder areas (exact-position
+      // moves post a same-set permutation to institutes.js's existing
+      // reorder_queue). firstUpcomingIndex marks the first slot that may be
+      // resequenced — done/current positions are history, never rewritten.
+      const firstUpcomingIndex = !assignment.started ? 0
+        : assignment.exhausted ? queue.length
+        : (assignment.index ?? -1) + 1;
+      return json({ section, offset, count, rows, hasMore, totalEntries, queue, cycle: { startDate, cycleDays, current: assignment.current, exhausted: assignment.exhausted, firstUpcomingIndex } });
     }
 
     // --- growth section ---
@@ -135,6 +140,7 @@ export async function onRequestGet({ request, env }) {
       totalDays: totalDays || PLAN_TOTAL_DAYS,
       countryStrategy: COUNTRY_STRATEGY,
       assumptionNote: ASSUMPTION_NOTE,
+      feasibility: FEASIBILITY,
       autoLearn: learn.summary,
     });
   } catch (err) {
