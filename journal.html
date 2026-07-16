@@ -355,6 +355,61 @@
     }
     .plan-btn[data-plan="yes"].is-on { background: var(--win-bg); border-color: rgba(16,185,129,0.45); color: #6ee7b7; }
     .plan-btn[data-plan="no"].is-on { background: var(--loss-bg); border-color: rgba(239,68,68,0.45); color: #fca5a5; }
+    .plan-btn[data-risk="yes"].is-on { background: var(--win-bg); border-color: rgba(16,185,129,0.45); color: #6ee7b7; }
+    .plan-btn[data-risk="no"].is-on { background: var(--loss-bg); border-color: rgba(239,68,68,0.45); color: #fca5a5; }
+
+    /* ── TRADE RESULT SELECTOR (Phase 6) ── */
+    .result-toggle { display: flex; gap: 8px; }
+    .result-btn {
+      flex: 1; padding: 13px; text-align: center; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--text);
+      font-weight: 800; font-size: 14px; letter-spacing: .3px; transition: all .18s;
+    }
+    .result-btn[data-result="PROFIT"].is-on { background: var(--win-bg); border-color: rgba(16,185,129,0.55); color: var(--win); }
+    .result-btn[data-result="LOSS"].is-on { background: var(--loss-bg); border-color: rgba(239,68,68,0.55); color: var(--loss); }
+    .result-btn[data-result="BREAKEVEN"].is-on { background: rgba(168,162,158,0.16); border-color: rgba(168,162,158,0.45); color: var(--be); }
+    .req-mark { color: var(--loss); font-weight: 800; }
+    .field-hint { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
+    /* The global lux-global.css sets `html body input[type="number"] { border-color: … !important }`,
+       which outranks a plain `input.is-loss`. These selectors are deliberately
+       specific enough to win, so Profit stays green and Loss stays red. */
+    html body .field input.is-profit { border-color: rgba(16,185,129,0.55) !important; color: var(--win) !important; font-weight: 700; }
+    html body .field input.is-loss { border-color: rgba(239,68,68,0.55) !important; color: var(--loss) !important; font-weight: 700; }
+
+    /* Result badge — intentionally NOT `.badge`: lux-global.css rewrites
+       `html body .badge:not(…)` to a neutral gold pill, which would strip the
+       green/red that the whole Profit-vs-Loss distinction depends on. */
+    .result-badge {
+      display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px;
+      font-size: 11px; font-weight: 800; letter-spacing: .3px;
+    }
+    html body .result-badge.win { background: var(--win-bg) !important; color: var(--win) !important; border: 1px solid rgba(16,185,129,0.34) !important; }
+    html body .result-badge.loss { background: var(--loss-bg) !important; color: var(--loss) !important; border: 1px solid rgba(239,68,68,0.34) !important; }
+    html body .result-badge.be { background: rgba(168,162,158,0.16) !important; color: var(--be) !important; border: 1px solid rgba(168,162,158,0.34) !important; }
+
+    /* ── AI TRADE AUDIT (Phase 6) ── */
+    .ai-audit {
+      margin-top: 14px; padding: 14px 16px; border-radius: 12px;
+      background: rgba(200,156,63,0.06); border: 1px solid var(--line2);
+    }
+    .ai-audit-head {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+      font-weight: 800; font-size: 13px; color: var(--gold3);
+    }
+    .ai-audit-row { font-size: 13px; color: var(--text); margin: 5px 0; }
+    .ai-audit-row span.k { color: var(--muted); font-weight: 600; }
+    .weak-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+    .weak-pill {
+      display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 100px;
+      font-size: 11px; font-weight: 700; background: var(--loss-bg); color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.24);
+    }
+    .weak-pill.sev-low { background: rgba(234,179,8,0.12); color: #fde047; border-color: rgba(234,179,8,0.24); }
+    .weak-pill.clean { background: var(--win-bg); color: #6ee7b7; border-color: rgba(16,185,129,0.24); }
+    .ai-rec {
+      margin-top: 9px; padding: 9px 11px; border-radius: 9px; font-size: 12.5px; line-height: 1.55;
+      background: rgba(255,255,255,0.04); border-left: 3px solid var(--gold); color: var(--text);
+    }
 
     /* ── PSYCHOLOGY DASHBOARD / BAR CHARTS ── */
     .psych-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -651,6 +706,8 @@
           </div>
         </div>
         <div class="psych-summary" id="psychSummary"></div>
+        <h4 style="margin:18px 0 8px;">Recurring Mistakes (AI Coach)</h4>
+        <div id="recurringMistakes"></div>
       </div>
 
       <!-- ── AI COACH ENGINE (Phase 2 — read-only analysis) ── -->
@@ -746,12 +803,37 @@
               <label>Take Profit</label>
               <input type="number" step="any" id="fTP" placeholder="2401.00" />
             </div>
+            <!-- ── Trade Result (Phase 6) — explicit + mandatory ── -->
+            <div class="field full">
+              <label>Trade Result <span class="req-mark">*</span></label>
+              <div class="result-toggle" id="resultToggle">
+                <div class="result-btn" data-result="PROFIT">Profit</div>
+                <div class="result-btn" data-result="LOSS">Loss</div>
+                <div class="result-btn" data-result="BREAKEVEN">Breakeven</div>
+              </div>
+            </div>
             <div class="field">
-              <label>Profit / Loss Result ($)</label>
-              <input type="number" step="any" id="fPnl" placeholder="e.g. 145.20 or -60" required />
+              <label><span id="amountLabel">Result Amount</span> <span class="req-mark">*</span></label>
+              <input type="number" step="any" min="0" id="fAmount" placeholder="e.g. 125.00" />
+              <p class="field-hint" id="amountHint">Enter a positive amount — the result above sets profit or loss.</p>
+            </div>
+            <div class="field">
+              <label>Currency</label>
+              <select id="fCurrency">
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="PKR">PKR (₨)</option>
+                <option value="AED">AED (د.إ)</option>
+                <option value="INR">INR (₹)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Points / Pips <span style="color:var(--muted);font-weight:500;">(optional)</span></label>
+              <input type="number" step="any" id="fPips" placeholder="e.g. 42.5" />
             </div>
             <div class="field full">
-              <label>Trade Reason</label>
+              <label>Why did you enter this trade? <span class="req-mark">*</span></label>
               <textarea id="fReason" rows="2" maxlength="1000" placeholder="e.g. Liquidity sweep + bullish FVG retest on M15"></textarea>
             </div>
             <div class="field full">
@@ -769,9 +851,12 @@
               </div>
             </div>
             <div class="field full">
-              <label>Emotion</label>
+              <label>How did you feel during the trade? <span class="req-mark">*</span></label>
               <div class="chip-toggle" id="emotionToggle">
                 <div class="chip-btn is-on" data-emotion="Calm">Calm</div>
+                <div class="chip-btn" data-emotion="Confidence">Confidence</div>
+                <div class="chip-btn" data-emotion="Patience">Patience</div>
+                <div class="chip-btn" data-emotion="Discipline">Discipline</div>
                 <div class="chip-btn" data-emotion="Fear">Fear</div>
                 <div class="chip-btn" data-emotion="Greed">Greed</div>
                 <div class="chip-btn" data-emotion="FOMO">FOMO</div>
@@ -779,10 +864,17 @@
               </div>
             </div>
             <div class="field">
-              <label>Followed Plan?</label>
-              <div class="plan-toggle">
+              <label>Did you follow your trading plan? <span class="req-mark">*</span></label>
+              <div class="plan-toggle" id="planToggle">
                 <div class="plan-btn is-on" data-plan="yes">Yes</div>
                 <div class="plan-btn" data-plan="no">No</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Did you follow your risk management rules? <span class="req-mark">*</span></label>
+              <div class="plan-toggle" id="riskToggle">
+                <div class="plan-btn is-on" data-risk="yes">Yes</div>
+                <div class="plan-btn" data-risk="no">No</div>
               </div>
             </div>
             <div class="field">
@@ -815,7 +907,7 @@
             <thead>
               <tr>
                 <th>Trade ID</th><th>Date</th><th>Pair</th><th>Dir</th><th>Entry</th><th>SL</th><th>TP</th>
-                <th>RR</th><th>P/L</th><th>Status</th><th>Reason</th><th>Actions</th>
+                <th>RR</th><th>Result</th><th>Amount</th><th>Pips</th><th>Reason</th><th>AI Analysis</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="historyTableBody"></tbody>
@@ -1215,6 +1307,8 @@
     // ── Psychology field toggles (Phase 2) ──
     let currentEmotion = 'Calm';
     let currentFollowedPlan = true;
+    let currentFollowedRisk = true;   // Phase 6 — psychology question 3
+    let currentResult = null;         // Phase 6 — PROFIT | LOSS | BREAKEVEN (mandatory)
     $('fConfidence').addEventListener('input', () => { $('confValDisplay').textContent = $('fConfidence').value; });
     document.querySelectorAll('#emotionToggle .chip-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1223,11 +1317,56 @@
         currentEmotion = btn.dataset.emotion;
       });
     });
-    document.querySelectorAll('.plan-btn').forEach((btn) => {
+    // Both toggles below use .plan-btn, so every query MUST stay scoped to its
+    // own container — an unscoped '.plan-btn' would clear the other toggle.
+    document.querySelectorAll('#planToggle .plan-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.plan-btn').forEach((b) => b.classList.remove('is-on'));
+        document.querySelectorAll('#planToggle .plan-btn').forEach((b) => b.classList.remove('is-on'));
         btn.classList.add('is-on');
         currentFollowedPlan = btn.dataset.plan === 'yes';
+      });
+    });
+    document.querySelectorAll('#riskToggle .plan-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#riskToggle .plan-btn').forEach((b) => b.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        currentFollowedRisk = btn.dataset.risk === 'yes';
+      });
+    });
+
+    // ── Trade Result selector (Phase 6) ──
+    // Picking a result re-labels the amount field and colours the input, so the
+    // sign of the stored pnl is never ambiguous to the user.
+    function applyResultUI() {
+      document.querySelectorAll('#resultToggle .result-btn').forEach((b) =>
+        b.classList.toggle('is-on', b.dataset.result === currentResult));
+      const amt = $('fAmount');
+      amt.classList.remove('is-profit', 'is-loss');
+      if (currentResult === 'PROFIT') {
+        $('amountLabel').textContent = 'Profit Amount';
+        $('amountHint').textContent = 'Positive amount — will be stored as a gain.';
+        amt.classList.add('is-profit');
+        amt.disabled = false;
+      } else if (currentResult === 'LOSS') {
+        $('amountLabel').textContent = 'Loss Amount';
+        $('amountHint').textContent = 'Positive amount — will be stored as a loss.';
+        amt.classList.add('is-loss');
+        amt.disabled = false;
+      } else if (currentResult === 'BREAKEVEN') {
+        $('amountLabel').textContent = 'Result Amount';
+        $('amountHint').textContent = 'Breakeven trades are recorded as zero.';
+        amt.value = '0';
+        amt.disabled = true;
+      } else {
+        $('amountLabel').textContent = 'Result Amount';
+        $('amountHint').textContent = 'Select Profit or Loss above first.';
+        amt.disabled = false;
+      }
+    }
+    document.querySelectorAll('#resultToggle .result-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentResult = btn.dataset.result;
+        applyResultUI();
       });
     });
     function updateLiveRR() {
@@ -1253,10 +1392,16 @@
       // psychology defaults
       currentEmotion = 'Calm';
       currentFollowedPlan = true;
+      currentFollowedRisk = true;
       $('fConfidence').value = 5;
       $('confValDisplay').textContent = '5';
       document.querySelectorAll('#emotionToggle .chip-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.emotion === 'Calm'));
-      document.querySelectorAll('.plan-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.plan === 'yes'));
+      document.querySelectorAll('#planToggle .plan-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.plan === 'yes'));
+      document.querySelectorAll('#riskToggle .plan-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.risk === 'yes'));
+      // Phase 6: result starts unselected so the user must consciously pick one.
+      currentResult = null;
+      $('fAmount').disabled = false;
+      applyResultUI();
       $('entryCardTitle').textContent = 'Log a New Trade';
       $('btnSaveTrade').textContent = 'Save Trade';
     }
@@ -1273,17 +1418,25 @@
 
     $('tradeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const rawAmount = parseFloat($('fAmount').value);
       const payload = {
         pair: $('fPair').value.trim().toUpperCase(),
         direction: currentDir,
         entry_price: parseFloat($('fEntry').value),
         stop_loss: parseFloat($('fSL').value),
         take_profit: $('fTP').value ? parseFloat($('fTP').value) : null,
-        pnl: parseFloat($('fPnl').value),
+        // Phase 6: the user states the result explicitly and always types a
+        // POSITIVE magnitude. `pnl` is derived from these two by the
+        // sync_trade_result DB trigger, so it is intentionally NOT sent here.
+        result: currentResult,
+        result_amount: currentResult === 'BREAKEVEN' ? 0 : Math.abs(rawAmount),
+        currency: $('fCurrency').value,
+        points_pips: $('fPips').value ? parseFloat($('fPips').value) : null,
         trade_reason: $('fReason').value.trim() || null,
         confidence_level: parseInt($('fConfidence').value, 10),
         emotion: currentEmotion,
         followed_plan: currentFollowedPlan,
+        followed_risk: currentFollowedRisk,
         session_name: $('fSession').value.trim() || null,
         setup_type: $('fSetupType').value.trim() || null,
       };
@@ -1298,20 +1451,35 @@
       if (!Number.isFinite(payload.entry_price) || payload.entry_price <= 0) { toast('Entry price must be a positive number.', true); return; }
       if (!Number.isFinite(payload.stop_loss) || payload.stop_loss <= 0) { toast('Stop loss must be a positive number.', true); return; }
       if (payload.take_profit != null && (!Number.isFinite(payload.take_profit) || payload.take_profit <= 0)) { toast('Take profit must be a positive number.', true); return; }
-      if (!Number.isFinite(payload.pnl)) { toast('Profit/Loss result must be a number.', true); return; }
+      if (!payload.result) { toast('Select a Trade Result — Profit, Loss or Breakeven.', true); return; }
+      if (payload.result !== 'BREAKEVEN') {
+        if (!Number.isFinite(rawAmount)) { toast(`Enter the ${payload.result === 'PROFIT' ? 'profit' : 'loss'} amount.`, true); return; }
+        if (rawAmount < 0) { toast('Enter the amount as a positive number — Profit or Loss above sets the sign.', true); return; }
+      }
+      if (payload.points_pips != null && !Number.isFinite(payload.points_pips)) { toast('Points / pips must be a number.', true); return; }
       if (payload.entry_price === payload.stop_loss) { toast('Entry price and stop loss cannot be identical.', true); return; }
+      // The four psychological audit questions are mandatory — the AI audit is
+      // only meaningful when all four are answered.
+      if (!payload.trade_reason) { toast('Tell us why you entered this trade — it is required for the AI audit.', true); return; }
+      if (!payload.emotion) { toast('Select how you felt during the trade.', true); return; }
 
       const btn = $('btnSaveTrade');
       btn.disabled = true;
       try {
         let tradeRowId = editingTradeId;
+        let savedRow = null;
+        // Select the saved row back so the audit runs on the DB's own derived
+        // values (pnl, status, rr_ratio, created_at) rather than on guesses.
+        const RETURN_COLS = 'id, pnl, result, result_amount, rr_ratio, take_profit, trade_reason, confidence_level, emotion, followed_plan, followed_risk, created_at';
         if (editingTradeId) {
-          const { error } = await supabase.from('journal_trades').update(payload).eq('id', editingTradeId);
+          const { data, error } = await supabase.from('journal_trades').update(payload).eq('id', editingTradeId).select(RETURN_COLS).single();
           if (error) throw error;
+          savedRow = data;
         } else {
           payload.user_id = currentUserId();
-          const { data, error } = await supabase.from('journal_trades').insert(payload).select('id').single();
+          const { data, error } = await supabase.from('journal_trades').insert(payload).select(RETURN_COLS).single();
           if (error) throw error;
+          savedRow = data;
           tradeRowId = data.id;
         }
 
@@ -1319,9 +1487,15 @@
         if (tradeRowId) {
           await supabase.from('trade_tags').delete().eq('trade_id', tradeRowId);
           if (tagList.length) {
-            await supabase.from('trade_tags').insert(tagList.map((tag) => ({ trade_id: tradeRowId, tag })));
+            // Live column is `tag_name` (verified via Supabase audit), not `tag`.
+            await supabase.from('trade_tags').insert(tagList.map((tag) => ({ trade_id: tradeRowId, tag_name: tag })));
           }
         }
+
+        // ── AI audit (Phase 6) — runs automatically on every completed trade ──
+        // Deliberately best-effort and AFTER the row is committed: the trade is
+        // already safely saved, so an audit failure must never lose the entry.
+        if (savedRow) await runTradeAudit(savedRow);
 
         toast(editingTradeId ? 'Trade updated.' : 'Trade saved.');
         $('entryCard').style.display = 'none';
@@ -1333,6 +1507,94 @@
         btn.disabled = false;
       }
     });
+
+    // ════════════════════════════════════════════════════════════════════
+    // AI TRADE AUDIT (Phase 6)
+    // ════════════════════════════════════════════════════════════════════
+    // The rules engine lives server-side (functions/utils/journal-analysis.js)
+    // and is shared with the admin panel, so the weakness a trader is shown is
+    // byte-identical to the one the admin distributions count.
+    async function runTradeAudit(row) {
+      try {
+        const res = await fetch('/api/journal-analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            trade: row,
+            // Context for the overtrading / revenge-window rules AND the
+            // recurring-mistake detector (each past trade's already-stored
+            // primary weakness code — no re-scoring of history needed).
+            recentTrades: trades.map((t) => ({
+              id: t.id, result: t.result, pnl: t.pnl, created_at: t.created_at,
+              ai_primary_code: (t.ai_analysis && t.ai_analysis.primary_code) || null,
+            })),
+          }),
+        });
+        const out = await res.json().catch(() => null);
+        if (!out || !out.ok || !out.analysis) return;
+        // Written by the owner through RLS — a user can only ever stamp an
+        // analysis onto their own trade.
+        await supabase.from('journal_trades').update({ ai_analysis: out.analysis }).eq('id', row.id);
+      } catch {
+        /* Audit is advisory. The trade is already saved; never surface an error. */
+      }
+    }
+
+    function severityClass(sev) { return Number(sev) >= 70 ? '' : 'sev-low'; }
+
+    // Compact history-table cell: primary weakness, click to expand the full audit.
+    function auditCell(t) {
+      const a = t.ai_analysis;
+      if (!a || typeof a !== 'object' || !a.engine) return '<span style="color:var(--muted);">—</span>';
+      const label = a.primary || 'No rule breaks';
+      const cls = a.primary ? severityClass((a.weaknesses && a.weaknesses[0] && a.weaknesses[0].severity) || 0) : 'clean';
+      return `<span class="weak-pill ${cls}" data-audit-toggle="${t.id}" style="cursor:pointer;" title="${escapeHtml(a.summary || '')} — click for detail">${escapeHtml(label)}</span>`;
+    }
+
+    // Renders a stored ai_analysis object into the shared audit card markup.
+    // Reads like a coach's note: strengths first, then what actually cost or
+    // earned the result, then a recurring-pattern flag if one exists, then
+    // one concrete next action — not a bare list of system flags.
+    function renderAuditCard(a) {
+      if (!a || typeof a !== 'object' || !a.engine) {
+        return '<p class="field-hint">No AI audit stored for this trade yet.</p>';
+      }
+      const weak = Array.isArray(a.weaknesses) ? a.weaknesses : [];
+      const strong = Array.isArray(a.strengths) ? a.strengths : [];
+      const recurring = Array.isArray(a.recurringPatterns) ? a.recurringPatterns : [];
+
+      const weakPills = weak.length
+        ? weak.map((w) => `<span class="weak-pill ${severityClass(w.severity)}" title="${escapeHtml(w.why || '')}">${escapeHtml(w.label)}</span>`).join('')
+        : '<span class="weak-pill clean">No rule breaks detected</span>';
+      const strongPills = strong.length
+        ? strong.map((s) => `<span class="weak-pill clean" title="${escapeHtml(s.why || '')}">${escapeHtml(s.label)}</span>`).join('')
+        : '';
+      const recurringHtml = recurring.length
+        ? `<div class="ai-audit-row" style="margin-top:8px;color:var(--loss);">
+             ⚠ Recurring pattern: <b>${escapeHtml(recurring[0].label)}</b> — the main issue on
+             ${recurring[0].occurrences} of your last ${recurring[0].windowSize} trades.
+           </div>`
+        : '';
+      const scores = a.scores || {};
+      const scoreRow = (label, v) => v != null ? `<span class="k">${label}</span> <b>${v}</b>` : '';
+      const scoreParts = [
+        scoreRow('Risk', scores.risk), scoreRow('Psychology', scores.psychology),
+        scoreRow('Discipline', scores.discipline), scoreRow('Technical', scores.technical),
+        scoreRow('Fundamental', scores.fundamental),
+      ].filter(Boolean).join(' · ');
+
+      return `
+        <div class="ai-audit">
+          <div class="ai-audit-head">🧠 AI Trade Coach</div>
+          ${a.coachNote ? `<div class="ai-audit-row" style="line-height:1.6;">${escapeHtml(a.coachNote)}</div>` : `<div class="ai-audit-row"><b>${escapeHtml(a.summary || '')}</b></div>`}
+          ${strongPills ? `<div class="ai-audit-row" style="margin-top:10px;font-size:11.5px;color:var(--muted);font-weight:700;">STRENGTHS</div><div class="weak-list">${strongPills}</div>` : ''}
+          <div class="ai-audit-row" style="margin-top:10px;font-size:11.5px;color:var(--muted);font-weight:700;">WEAKNESSES</div>
+          <div class="weak-list">${weakPills}</div>
+          ${recurringHtml}
+          ${scoreParts ? `<div class="ai-audit-row" style="margin-top:8px;">${scoreParts}</div>` : ''}
+          ${a.nextAction ? `<div class="ai-rec"><b>Next Action:</b> ${escapeHtml(a.nextAction)}</div>` : ''}
+        </div>`;
+    }
 
     // ════════════════════════════════════════════════════════════════════
     // LOAD + RENDER
@@ -1358,6 +1620,7 @@
       renderStats();
       renderPairAnalytics();
       renderPsychology();
+      renderRecurringMistakes();
       renderPersonalityIntelligence();
       renderHistory();
     }
@@ -1365,6 +1628,21 @@
     function fmtMoney(n) {
       const v = Number(n) || 0;
       return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+    }
+    // Phase 6 — per-trade amounts carry their own currency.
+    const CCY_SYMBOL = { USD: '$', EUR: '€', GBP: '£', PKR: '₨', AED: 'د.إ', INR: '₹' };
+    function ccySym(c) { return CCY_SYMBOL[c] || ((c ? c + ' ' : '$')); }
+    // Explicitly signed so a Profit and a Loss can never be misread as the same
+    // number: always "+125.00" / "-62.00", never a bare magnitude.
+    function fmtResultAmount(t) {
+      const sym = ccySym(t.currency);
+      const result = t.result || (Number(t.pnl) > 0 ? 'PROFIT' : Number(t.pnl) < 0 ? 'LOSS' : 'BREAKEVEN');
+      const mag = t.result_amount != null ? Math.abs(Number(t.result_amount)) : Math.abs(Number(t.pnl) || 0);
+      if (result === 'BREAKEVEN') return `${sym}0.00`;
+      return `${result === 'PROFIT' ? '+' : '-'}${sym}${mag.toFixed(2)}`;
+    }
+    function resultOf(t) {
+      return t.result || (Number(t.pnl) > 0 ? 'PROFIT' : Number(t.pnl) < 0 ? 'LOSS' : 'BREAKEVEN');
     }
     function fmtDate(d) {
       return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -1409,11 +1687,32 @@
         } else { curStreakType = null; curStreakLen = 0; }
       }
 
+      // Phase 6 — averages per outcome, and the three behavioural scores rolled
+      // up from each trade's stored AI audit. (The audit itself is produced by
+      // the shared engine; this only averages the numbers it already wrote.)
+      const avgWin  = wins.length   ? grossWin  / wins.length   : null;
+      const avgLoss = losses.length ? grossLoss / losses.length : null;
+
+      const audited = list.filter((t) => t.ai_analysis && typeof t.ai_analysis === 'object' && t.ai_analysis.scores);
+      const avgScore = (k) => (audited.length
+        ? Math.round(audited.reduce((s, t) => s + Number(t.ai_analysis.scores[k] ?? 100), 0) / audited.length)
+        : null);
+      const scores = {
+        risk:        avgScore('risk'),
+        psychology:  avgScore('psychology'),
+        discipline:  avgScore('discipline'),
+        technical:   avgScore('technical'),
+        fundamental: avgScore('fundamental'),
+      };
+
       return {
         total, wins: wins.length, losses: losses.length, breakeven: total - wins.length - losses.length,
         winRate, grossWin, grossLoss, profitFactor, avgRR, best, worst, netProfit, maxWinStreak, maxLossStreak,
+        avgWin, avgLoss, scores, audited: audited.length,
       };
     }
+    // Score colour: green ≥75, amber ≥50, red below.
+    function scoreCls(v) { return v == null ? '' : v >= 75 ? 'pos' : v >= 50 ? '' : 'neg'; }
 
     function renderStats() {
       const a = computeAnalytics(trades);
@@ -1425,9 +1724,20 @@
         { label: 'Net Profit', value: fmtMoney(a.netProfit), cls: a.netProfit >= 0 ? 'pos' : 'neg' },
         { label: 'Winning Trades', value: a.wins, sub: `${a.breakeven} breakeven` },
         { label: 'Losing Trades', value: a.losses },
-        { label: 'Best Trade', value: a.best ? fmtMoney(a.best.pnl) : '—', cls: 'pos', sub: a.best ? `${a.best.pair} · ${a.best.trade_id}` : '' },
-        { label: 'Worst Trade', value: a.worst ? fmtMoney(a.worst.pnl) : '—', cls: 'neg', sub: a.worst ? `${a.worst.pair} · ${a.worst.trade_id}` : '' },
+        // Phase 6 — profit and loss are now reported separately, never netted
+        // into a single ambiguous number.
+        { label: 'Total Profit', value: fmtMoney(a.grossWin), cls: 'pos', sub: `${a.wins} winning trades` },
+        { label: 'Total Loss', value: '-' + fmtMoney(a.grossLoss), cls: 'neg', sub: `${a.losses} losing trades` },
+        { label: 'Average Profit', value: a.avgWin != null ? fmtMoney(a.avgWin) : '—', cls: 'pos' },
+        { label: 'Average Loss', value: a.avgLoss != null ? '-' + fmtMoney(a.avgLoss) : '—', cls: 'neg' },
+        { label: 'Largest Win', value: a.best ? fmtMoney(a.best.pnl) : '—', cls: 'pos', sub: a.best ? `${a.best.pair} · ${a.best.trade_id}` : '' },
+        { label: 'Largest Loss', value: a.worst ? fmtMoney(a.worst.pnl) : '—', cls: 'neg', sub: a.worst ? `${a.worst.pair} · ${a.worst.trade_id}` : '' },
         { label: 'Win / Loss Streak', value: `${a.maxWinStreak}W / ${a.maxLossStreak}L` },
+        { label: 'Risk Score', value: a.scores.risk != null ? a.scores.risk + '/100' : '—', cls: scoreCls(a.scores.risk), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
+        { label: 'Psychology Score', value: a.scores.psychology != null ? a.scores.psychology + '/100' : '—', cls: scoreCls(a.scores.psychology), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
+        { label: 'Discipline Score', value: a.scores.discipline != null ? a.scores.discipline + '/100' : '—', cls: scoreCls(a.scores.discipline), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
+        { label: 'Technical Score', value: a.scores.technical != null ? a.scores.technical + '/100' : '—', cls: scoreCls(a.scores.technical), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
+        { label: 'Fundamental Score', value: a.scores.fundamental != null ? a.scores.fundamental + '/100' : '—', cls: scoreCls(a.scores.fundamental), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
       ];
       $('statsGrid').innerHTML = cards.map((c) => `
         <div class="stat-card">
@@ -1546,6 +1856,41 @@
 
     function toRateMap(rows) {
       return rows.reduce((m, r) => { m[r.label] = r.rate; return m; }, {});
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // RECURRING MISTAKES PANEL (Phase 6 follow-up)
+    // Reads the weaknesses the server-side engine (functions/utils/journal-
+    // analysis.js) already stored on each trade's ai_analysis — this is a
+    // MINIMAL, intentional duplicate of that engine's mostCommonMistakes
+    // ranking, not a re-implementation of the audit itself. It can't import
+    // the engine module directly: functions/** is Cloudflare Pages Functions
+    // source, not a static asset, so it isn't reachable over HTTP from the
+    // browser. Keep this in lockstep with aggregateAnalyses() if that ranking
+    // logic ever changes.
+    function rankTradeWeaknesses(list) {
+      const counts = {};
+      for (const t of list) {
+        const a = t && t.ai_analysis;
+        if (!a || !Array.isArray(a.weaknesses)) continue;
+        for (const w of a.weaknesses) { if (w && w.label) counts[w.label] = (counts[w.label] || 0) + 1; }
+      }
+      return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([label, count]) => ({ label, count }));
+    }
+
+    function renderRecurringMistakes() {
+      const el = $('recurringMistakes');
+      if (!el) return;
+      const ranked = rankTradeWeaknesses(trades);
+      if (!ranked.length) {
+        el.innerHTML = '<p style="color:var(--muted);font-size:12.5px;">No AI-audited trades yet — log a completed trade to see your recurring patterns here.</p>';
+        return;
+      }
+      el.innerHTML = ranked.slice(0, 5).map((m, i) => `
+        <div class="insight-card ${i === 0 ? 'bad' : ''}">
+          <span class="ic-dot"></span>
+          <p><b>${escapeHtml(m.label)}</b> — flagged on ${m.count} trade${m.count === 1 ? '' : 's'}${i === 0 && m.count >= 3 ? ' <span style="color:var(--loss);">(your most repeated issue)</span>' : ''}</p>
+        </div>`).join('');
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -2348,9 +2693,11 @@
           <td>${Number(t.stop_loss)}</td>
           <td>${t.take_profit != null ? Number(t.take_profit) : '—'}</td>
           <td>${t.rr_ratio != null ? '1:' + Number(t.rr_ratio).toFixed(2) : '—'}</td>
-          <td style="color:${Number(t.pnl) >= 0 ? 'var(--win)' : 'var(--loss)'}">${fmtMoney(t.pnl)}</td>
-          <td><span class="badge ${t.status === 'WIN' ? 'win' : t.status === 'LOSS' ? 'loss' : 'be'}">${t.status}</span></td>
-          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t.trade_reason || '')}">${t.trade_reason ? escapeHtml(t.trade_reason) : '—'}</td>
+          <td><span class="result-badge ${resultOf(t) === 'PROFIT' ? 'win' : resultOf(t) === 'LOSS' ? 'loss' : 'be'}">${resultOf(t)}</span></td>
+          <td style="font-weight:800;color:${resultOf(t) === 'PROFIT' ? 'var(--win)' : resultOf(t) === 'LOSS' ? 'var(--loss)' : 'var(--be)'}">${fmtResultAmount(t)}</td>
+          <td>${t.points_pips != null ? Number(t.points_pips) : '—'}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t.trade_reason || '')}">${t.trade_reason ? escapeHtml(t.trade_reason) : '—'}</td>
+          <td>${auditCell(t)}</td>
           <td>
             <div class="row-actions">
               <button class="icon-btn" data-edit="${t.id}" title="Edit">
@@ -2361,7 +2708,18 @@
               </button>
             </div>
           </td>
+        </tr>
+        <tr class="audit-detail-row" data-audit-row="${t.id}" style="display:none;">
+          <td colspan="14" style="padding:0 14px 14px;">${renderAuditCard(t.ai_analysis)}</td>
         </tr>`).join('');
+
+      // Expand/collapse the full audit for a trade.
+      $('historyTableBody').querySelectorAll('[data-audit-toggle]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const row = $('historyTableBody').querySelector(`[data-audit-row="${el.dataset.auditToggle}"]`);
+          if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        });
+      });
 
       $('historyTableBody').querySelectorAll('[data-edit]').forEach((btn) => {
         btn.addEventListener('click', () => openEdit(btn.dataset.edit));
@@ -2380,7 +2738,13 @@
       $('fEntry').value = t.entry_price;
       $('fSL').value = t.stop_loss;
       $('fTP').value = t.take_profit ?? '';
-      $('fPnl').value = t.pnl;
+      // Phase 6: prefer the explicit fields; fall back to the pnl sign so
+      // pre-Phase-6 rows still open with the correct result pre-selected.
+      currentResult = t.result || (Number(t.pnl) > 0 ? 'PROFIT' : Number(t.pnl) < 0 ? 'LOSS' : 'BREAKEVEN');
+      $('fAmount').value = t.result_amount != null ? Number(t.result_amount) : Math.abs(Number(t.pnl) || 0);
+      $('fCurrency').value = t.currency || 'USD';
+      $('fPips').value = t.points_pips ?? '';
+      applyResultUI();
       $('fReason').value = t.trade_reason || '';
       currentDir = t.direction;
       document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.dir === t.direction));
@@ -2388,14 +2752,16 @@
       // psychology fields
       currentEmotion = t.emotion || 'Calm';
       currentFollowedPlan = t.followed_plan !== false;
+      currentFollowedRisk = t.followed_risk !== false;
       $('fConfidence').value = t.confidence_level || 5;
       $('confValDisplay').textContent = String(t.confidence_level || 5);
       $('fSession').value = t.session_name || '';
       $('fSetupType').value = t.setup_type || '';
       document.querySelectorAll('#emotionToggle .chip-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.emotion === currentEmotion));
-      document.querySelectorAll('.plan-btn').forEach((b) => b.classList.toggle('is-on', (b.dataset.plan === 'yes') === currentFollowedPlan));
-      const { data: tagRows } = await supabase.from('trade_tags').select('tag').eq('trade_id', id);
-      $('fTags').value = (tagRows || []).map((r) => r.tag).join(', ');
+      document.querySelectorAll('#planToggle .plan-btn').forEach((b) => b.classList.toggle('is-on', (b.dataset.plan === 'yes') === currentFollowedPlan));
+      document.querySelectorAll('#riskToggle .plan-btn').forEach((b) => b.classList.toggle('is-on', (b.dataset.risk === 'yes') === currentFollowedRisk));
+      const { data: tagRows } = await supabase.from('trade_tags').select('tag_name').eq('trade_id', id);
+      $('fTags').value = (tagRows || []).map((r) => r.tag_name).join(', ');
       $('entryCardTitle').textContent = `Edit Trade ${t.trade_id}`;
       $('btnSaveTrade').textContent = 'Update Trade';
       $('entryCard').style.display = 'block';
