@@ -1074,6 +1074,7 @@
     let isSignup = false;
     let editingTradeId = null;
     let pendingDeleteId = null;
+    let lastActivityWrite = 0;   // throttle for the 48h sliding-session activity stamp
 
     // Single source of truth for "whose rows are these" — works for BOTH the
     // unified-JWT identity (uuid) and the legacy Supabase Auth session.
@@ -1192,6 +1193,15 @@
       }
     }
 
+    // Session-persistence constants — declared BEFORE the INIT block below,
+    // because INIT calls hydrateUnifiedAccess() synchronously and it reads
+    // these. (They previously sat after INIT, leaving them in the temporal
+    // dead zone at restore time, so the silent session restore threw and every
+    // reopen fell through to the OTP card — the root cause of this fix.)
+    const JOURNAL_STORE_KEY = 'ztu_journal_v1';
+    const INACTIVITY_MS = 48 * 60 * 60 * 1000;              // 48h sliding window
+    const ABSOLUTE_MAX_MS = 15 * 24 * 60 * 60 * 1000;       // 15-day hard cap (lockstep)
+
     // ── INIT — pick the auth model per flag ──
     if (!FLAGS.TRADING_JOURNAL_ENABLED) {
       showDisabledScreen();
@@ -1218,13 +1228,21 @@
     // PHASE 4A — UNIFIED ACCESS (account # + OTP via /api/journal-access)
     // One approval (ib_stars_active → special_access, enforced server-side by
     // the shared library-auth gate) unlocks Journal + Library + AI Unlimited.
-    // On success we receive a Supabase JWT, re-create the supabase client with
-    // it as the Authorization bearer, and self-provision the user's profile row
-    // (RLS users_insert_own permits auth.uid() = id). The JWT is NEVER persisted
-    // — only { account, sessionStart } is stored; the JWT is re-minted on each
-    // load via the 'session' action so a revoked account loses access at once.
+    //
+    // SESSION PERSISTENCE (48h sliding — updated):
+    // On a successful OTP grant we now persist the minted Supabase JWT (plus
+    // uuid/expiresAt/lastActivity) in the SAME localStorage key the shared
+    // ZTUPremiumCard already writes. On reopen, if the stored JWT is still
+    // valid and the user was active within the last 48h, the session is
+    // restored INSTANTLY from that JWT with NO server round-trip and NO OTP —
+    // then a background 'session' re-mint silently refreshes the JWT and
+    // catches revocation. The 'session' action never sends an OTP, so this
+    // path generates zero verification emails. A new OTP is required ONLY on
+    // manual Sign Out or after 48h of inactivity (or the pre-existing 15-day
+    // absolute cap kept in lockstep with Library/AI).
     // ════════════════════════════════════════════════════════════════════
-    const JOURNAL_STORE_KEY = 'ztu_journal_v1';
+    // (JOURNAL_STORE_KEY / INACTIVITY_MS / ABSOLUTE_MAX_MS are declared above
+    //  the INIT block so they're initialized before hydrateUnifiedAccess runs.)
 
     // Used only by the silent page-load re-validation (hydrateUnifiedAccess).
     // The interactive OTP flow now lives entirely in the shared ZTUPremiumCard.
@@ -1241,17 +1259,35 @@
         const raw = localStorage.getItem(JOURNAL_STORE_KEY);
         if (!raw) return null;
         const s = JSON.parse(raw);
-        if (!s || !s.account || !s.sessionStart) return null;
-        // 15-day hard expiry from login (lockstep with Library/AI).
-        if (Date.now() - s.sessionStart > 15 * 24 * 60 * 60 * 1000) { localStorage.removeItem(JOURNAL_STORE_KEY); return null; }
+        if (!s || !s.account) return null;
+        const start = s.sessionStart || 0;
+        const last  = s.lastActivity || start;   // legacy records have no lastActivity
+        // 48h SLIDING inactivity window — the primary gate.
+        if (last && Date.now() - last > INACTIVITY_MS) { localStorage.removeItem(JOURNAL_STORE_KEY); return null; }
+        // Pre-existing 15-day absolute cap from login (lockstep with Library/AI).
+        if (start && Date.now() - start > ABSOLUTE_MAX_MS) { localStorage.removeItem(JOURNAL_STORE_KEY); return null; }
         return s;
       } catch { return null; }
     }
-    function persistAccess(account, sessionStart) {
-      try { localStorage.setItem(JOURNAL_STORE_KEY, JSON.stringify({ account, sessionStart })); } catch {}
+    // Merge-write so a partial update (e.g. just lastActivity) never drops the
+    // stored jwt/uuid. Shares the key with ZTUPremiumCard; only journal.html
+    // reads it, so the richer shape is safe.
+    function persistAccess(fields) {
+      try {
+        const prev = JSON.parse(localStorage.getItem(JOURNAL_STORE_KEY) || 'null') || {};
+        localStorage.setItem(JOURNAL_STORE_KEY, JSON.stringify(Object.assign(prev, fields)));
+      } catch {}
     }
     function clearStoredAccess() {
       try { localStorage.removeItem(JOURNAL_STORE_KEY); } catch {}
+    }
+    // Slide the 48h window forward on real user activity (throttled to 1/min).
+    function touchActivity() {
+      if (!journalIdentity) return;
+      const now = Date.now();
+      if (now - lastActivityWrite < 60000) return;
+      lastActivityWrite = now;
+      persistAccess({ lastActivity: now });
     }
 
     // Re-create the Supabase client so every PostgREST call carries the minted
@@ -1285,7 +1321,17 @@
         expiresAt: res.expiresAt,
         sessionStart: fresh ? Date.now() : (sessionStart || Date.now()),
       };
-      persistAccess(journalIdentity.account, journalIdentity.sessionStart);
+      // Persist the full record so a browser reopen within 48h can restore the
+      // session straight from the stored JWT — no server round-trip, no OTP.
+      lastActivityWrite = Date.now();
+      persistAccess({
+        account: journalIdentity.account,
+        sessionStart: journalIdentity.sessionStart,
+        uuid: journalIdentity.uuid,
+        jwt: journalIdentity.jwt,
+        expiresAt: journalIdentity.expiresAt,
+        lastActivity: Date.now(),
+      });
       createAuthedClient(res.jwt);
       await provisionUser();
       showApp();
@@ -1296,17 +1342,66 @@
       // fresh grant; hydrate (fresh:false) is silent.
     }
 
-    async function hydrateUnifiedAccess() {
-      const stored = readStoredAccess();
-      if (!stored) { showUnifiedAuth(); return; }
+    // Instant restore from a still-valid stored JWT — no network, no OTP.
+    function restoreFromStoredJwt(stored) {
+      journalIdentity = {
+        uuid: stored.uuid || null, account: stored.account, jwt: stored.jwt,
+        expiresAt: stored.expiresAt, sessionStart: stored.sessionStart,
+      };
+      createAuthedClient(stored.jwt);
+      lastActivityWrite = 0; touchActivity();   // slide the 48h window on this visit
+      showApp();
+      loadTrades();
+      loadReports();
+      loadMentorFeedback();
+    }
+
+    // Silent, non-blocking: refresh the rotating JWT AND catch revocation. The
+    // 'session' action never sends an OTP. Runs AFTER the UI is already up, so
+    // a transient failure never disturbs the restored session — only an
+    // explicit "invalid" (revoked account) signs the user out.
+    async function backgroundRevalidate(stored) {
       try {
         const res = await callJournalAccess({ action: 'session', account: stored.account, sessionStart: stored.sessionStart });
-        if (res.valid) { await onUnifiedGranted(res, { fresh: false, sessionStart: stored.sessionStart }); }
-        else { clearStoredAccess(); showUnifiedAuth(); }
+        if (res && res.valid) {
+          journalIdentity.jwt = res.jwt;
+          journalIdentity.expiresAt = res.expiresAt;
+          journalIdentity.uuid = res.uuid || journalIdentity.uuid;
+          createAuthedClient(res.jwt);
+          persistAccess({ jwt: res.jwt, expiresAt: res.expiresAt, uuid: journalIdentity.uuid, lastActivity: Date.now() });
+        } else if (res && res.valid === false) {
+          clearStoredAccess();
+          showUnifiedAuth();   // account revoked/invalid → require a fresh grant
+        }
+        // no res / thrown error → keep the already-restored session as-is
+      } catch { /* keep session; already restored from the stored JWT */ }
+    }
+
+    async function hydrateUnifiedAccess() {
+      const stored = readStoredAccess();
+      if (!stored) { showUnifiedAuth(); return; }   // no session, or 48h elapsed → OTP
+
+      // FAST PATH — a still-valid stored JWT restores the session instantly,
+      // with no server round-trip and no OTP, even if the network is briefly
+      // unavailable. This is what makes reopening the browser seamless.
+      if (stored.jwt && stored.expiresAt && stored.expiresAt - Date.now() > 60000) {
+        restoreFromStoredJwt(stored);
+        backgroundRevalidate(stored);   // refresh JWT + catch revocation, non-blocking
+        return;
+      }
+
+      // SLOW PATH — JWT missing/expired but still inside the 48h window (e.g. a
+      // legacy record from before this change). Silently re-mint via 'session'
+      // (never an OTP). Only an explicit invalid signs out; a transient network
+      // error keeps the stored session so the next reload restores it.
+      try {
+        const res = await callJournalAccess({ action: 'session', account: stored.account, sessionStart: stored.sessionStart });
+        if (res && res.valid) { await onUnifiedGranted(res, { fresh: false, sessionStart: stored.sessionStart }); }
+        else if (res && res.valid === false) { clearStoredAccess(); showUnifiedAuth(); }
+        else { showUnifiedAuth(); }   // ambiguous server response: don't destroy the session
       } catch {
-        // Network failure on load: we cannot mint a JWT, so authed calls would
-        // fail anyway → fail closed to the auth screen (the user can retry).
-        clearStoredAccess();
+        // Transient failure with no usable JWT: DO NOT clear the session — show
+        // the card so the user isn't stuck, but a reload will silently restore.
         showUnifiedAuth();
       }
     }
@@ -1314,6 +1409,12 @@
     // (The interactive account#+OTP flow is provided by the shared
     //  ZTUPremiumCard component; journal.html only handles silent session
     //  restore via hydrateUnifiedAccess + the onApproved finalization above.)
+
+    // Slide the 48h inactivity window forward while the user is actually using
+    // the journal (throttled to once/min inside touchActivity). Passive so it
+    // never affects scroll/typing performance.
+    ['click', 'keydown', 'visibilitychange'].forEach((ev) =>
+      window.addEventListener(ev, touchActivity, { passive: true }));
 
     // ════════════════════════════════════════════════════════════════════
     // TRADE FORM — direction toggle + live RR preview
