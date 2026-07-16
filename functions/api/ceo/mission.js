@@ -44,6 +44,8 @@ const ACTIVITY_META = {
   'daily.retention_touches': { kpiKey: 'retention.at_risk_recovery', checklistKey: 'retention_touch', automationKeys: ['retention.milestone_due', 'retention.at_risk_flags'] },
   'daily.ib_followups': { kpiKey: 'clients.activation_rate', checklistKey: 'ib_conversation', automationKeys: [] },
   'daily.shutdown': { kpiKey: 'founder.core_block_streak', checklistKey: null, automationKeys: [] },
+  'daily.technical_analysis': { kpiKey: 'content.chain_completion', checklistKey: null, automationKeys: [] },
+  'daily.physical_outreach': { kpiKey: null, checklistKey: null, automationKeys: [] },
   'weekly.film_video': { kpiKey: 'content.videos_published', checklistKey: 'weekly_video', automationKeys: [] },
   'weekly.live_class': { kpiKey: 'community.members', checklistKey: 'live_class', automationKeys: [] },
   'weekly.publish_chain': { kpiKey: 'content.chain_completion', checklistKey: 'publish_chain', automationKeys: ['content.transcript_draft', 'content.clip_queue'] },
@@ -62,14 +64,20 @@ const ACTIVITY_META = {
 // Telegram/WhatsApp).
 const DAY_PLATFORM = { production: 'youtube', publish: 'website', community: 'telegram', review: 'youtube' };
 const ACQUISITION_STAGES = ['lead', 'qualified', 'onboarding'];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function onRequestGet({ request, env }) {
   const auth = await requireFounder(request, env);
   if (auth.response) return auth.response;
   const db = rest(env, auth.token);
   const uid = auth.user.id;
-  const today = new Date().toISOString().slice(0, 10);
-  const dayName = DAY_NAMES[new Date().getDay()];
+  const realToday = new Date().toISOString().slice(0, 10);
+  // Date-first Home: the founder picks a date before the day's plan loads.
+  // Cadence instantiation (below) still only ever fires for the REAL today —
+  // viewing a past/future date must never create daily_activities rows.
+  const reqUrl = new URL(request.url);
+  const viewDate = DATE_RE.test(reqUrl.searchParams.get('date') || '') ? reqUrl.searchParams.get('date') : realToday;
+  const dayName = DAY_NAMES[new Date(viewDate + 'T00:00:00Z').getDay()];
 
   try {
     const settings = await db.select('settings', 'select=key,value&scope=eq.global');
@@ -87,15 +95,17 @@ export async function onRequestGet({ request, env }) {
       : 'community';
 
     // 1) Instantiate today's activities from templates, once per day. This
-    // query stays scoped to today=eq — a separate query below (1c) fetches
+    // query stays scoped to viewDate=eq — a separate query below (1c) fetches
     // any still-open activity from EARLIER dates, so a missed day/week/month
     // stays visible as Overdue instead of silently vanishing (Founder OS
     // Refinement Patch 1 — "nothing disappears automatically").
     let activities = await db.select(
       'daily_activities',
-      `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=eq.${today}&order=created_at.asc`
+      `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=eq.${viewDate}&order=created_at.asc`
     );
-    if (activities.length === 0) {
+    // Never auto-create rows for a past/future date merely being VIEWED —
+    // instantiation only fires when the picker is on the real today.
+    if (activities.length === 0 && viewDate === realToday) {
       const templates = await db.select(
         'knowledge_base',
         `select=title,content&owner_user_id=eq.${uid}&category=eq.cadence-template&is_active=eq.true`
@@ -115,7 +125,7 @@ export async function onRequestGet({ request, env }) {
           'daily_activities',
           wanted.map((t) => ({
             owner_user_id: uid,
-            activity_date: today,
+            activity_date: viewDate,
             activity_type: t.title,
             description: t.content,
             status: 'pending',
@@ -140,7 +150,7 @@ export async function onRequestGet({ request, env }) {
       // Capped at 500 (a technical bound only, never a business rule — oldest
       // sorts first via the owner_date index, so a founder who somehow has
       // 500+ backlog rows still sees the most urgent ones first).
-      db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=lt.${today}&status=eq.pending&order=activity_date.asc&limit=500`),
+      db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=lt.${realToday}&status=eq.pending&order=activity_date.asc&limit=500`),
     ]);
     const kpiLabelByKey = Object.fromEntries(kpiDefs.map((k) => [k.key, k.label]));
     const checklistByKey = Object.fromEntries(checklistDocs.map((c) => [c.title, c.content]));
@@ -220,7 +230,7 @@ export async function onRequestGet({ request, env }) {
       .replace('[highlight]', 'retention');
 
     // 6) Section 2 — Self Trading mentor check-in.
-    const trading = await computeTradingCheckin(db, uid, today);
+    const trading = await computeTradingCheckin(db, uid, viewDate);
 
     // 7) Section 3 — IB Growth: Acquisition + Retention.
     const [acquisition, retention] = await Promise.all([
@@ -234,7 +244,7 @@ export async function onRequestGet({ request, env }) {
     const research = await computeResearchFocus(db, uid);
 
     return json({
-      date: today,
+      date: viewDate,
       dayType,
       estimatedMinutes: totalMinutes,
       mentorMessage,

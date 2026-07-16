@@ -15,108 +15,36 @@
     <header class="ceo-app-header" id="ceo-header-slot"></header>
     <main class="ceo-app-main">
       <div class="ceo-content">
-        <h1>Today's Mission</h1>
-
-        <!-- ① Critical warnings (hidden when empty — never "no warnings" noise) -->
-        <section id="home-warnings" hidden style="margin-bottom: var(--ceo-space-4);"></section>
-
-        <!-- ② Mission banner: day type + mentor line + time -->
-        <section class="ceo-card" id="home-mission-banner" style="margin-bottom: var(--ceo-space-6);">
-          <div class="ceo-skeleton" style="height: 3em;"></div>
-        </section>
-
-        <!-- ②a Overdue: activities from before today that never disappeared -->
-        <section id="home-overdue-card" style="margin-bottom: var(--ceo-space-6); display: none;">
-          <h3>Overdue <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Pending activities from earlier days — nothing is auto-skipped to today or the future; they stay here until you complete, partial, or skip them">ⓘ</span></h3>
-          <div id="home-overdue"></div>
-        </section>
-
-        <!-- ②b Unified triage: OVERDUE / NOW / NEXT / LATER across every pillar -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3 style="margin-top: 0;">Overdue / Now / Next / Later <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Re-buckets the same tier-ranked items already below — no separate scoring system, so it can never disagree with the detail sections">ⓘ</span></h3>
-          <div id="home-triage"><div class="ceo-skeleton" style="height: 5em;"></div></div>
-        </section>
-
-        <!-- ③ Today's Focus: the single highest-leverage item -->
-        <section class="ceo-card" id="home-focus" style="margin-bottom: var(--ceo-space-6);">
-          <div class="ceo-skeleton" style="height: 4em;"></div>
-        </section>
-
-        <!-- ④ Today's Top 3 -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Today's Top 3</h3>
-          <div id="home-top3"><div class="ceo-skeleton" style="height: 8em;"></div></div>
-          <div id="home-rest" style="margin-top: var(--ceo-space-4);"></div>
-        </section>
-
-        <!-- ⑤ Core block -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Core Block <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— the daily non-negotiables</span></h3>
-          <div id="home-core"><div class="ceo-skeleton" style="height: 3em;"></div></div>
-        </section>
-
-        <hr style="border-color: var(--ceo-border-subtle); margin: var(--ceo-space-6) 0;" />
-        <h2 style="margin-bottom: var(--ceo-space-2);">Self Trading</h2>
-        <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">A daily mentor check-in built from your own rule set — never trade signals.</p>
-
-        <!-- ⑥ Trading check-in -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <div id="home-trading-checkin"><div class="ceo-skeleton" style="height: 6em;"></div></div>
-        </section>
-
-        <hr style="border-color: var(--ceo-border-subtle); margin: var(--ceo-space-6) 0;" />
-        <h2 style="margin-bottom: var(--ceo-space-2);">IB Growth</h2>
-        <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">New client acquisition and existing client retention — nothing else competes for this space.</p>
-
-        <!-- ⑦ Today's Execution Plan — the locked research verdicts rendered as
-             today's WHAT/WHERE/WHO, not informational cards -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Today's Execution Plan <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Built from the locked research verdicts and today's mission — never re-searched, never rotated">ⓘ</span></h3>
-          <div id="home-execution-plan"><div class="ceo-skeleton" style="height: 5em;"></div></div>
-        </section>
-
-        <!-- ⑧ Growth: Acquisition -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>New Client Acquisition</h3>
-          <div id="home-acquisition"><div class="ceo-skeleton" style="height: 6em;"></div></div>
-        </section>
-
-        <!-- ⑧ Growth: Retention -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Client Retention</h3>
-          <div id="home-retention"><div class="ceo-skeleton" style="height: 6em;"></div></div>
-        </section>
-
-        <!-- ⑧b Physical growth — mentor nudge (full engine on Growth page) -->
-        <section class="ceo-card" id="home-physical-card" style="margin-bottom: var(--ceo-space-6); display: none;">
-          <h3>Physical Growth — today's step</h3>
-          <div id="home-physical"></div>
-        </section>
-
-        <hr style="border-color: var(--ceo-border-subtle); margin: var(--ceo-space-6) 0;" />
-
-        <!-- ⑩ Needs attention -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>Needs Attention</h3>
-          <div id="home-attention"><div class="ceo-skeleton" style="height: 3em;"></div></div>
-        </section>
-
-        <!-- ⑪ Headline KPI -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3 id="home-kpi-label">This Week's Number</h3>
-          <div id="home-kpi"><div class="ceo-skeleton" style="height: 3em;"></div></div>
-        </section>
-
-        <!-- ⑫ Shutdown -->
-        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3>End of Day</h3>
-          <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);">2 minutes: mark the day, one honest line. Tomorrow's plan learns from it.</p>
-          <div class="ceo-field">
-            <label class="ceo-label" for="home-shutdown-note">One line about today</label>
-            <input class="ceo-input" id="home-shutdown-note" maxlength="500" placeholder="Aaj kya seekha / kya atka..." />
+        <div class="ceo-flex ceo-items-center ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-2);">
+          <h1 style="margin: 0;">Today</h1>
+          <div class="ceo-field" style="margin: 0;">
+            <input class="ceo-input" type="date" id="home-date-picker" style="max-width: 12em;" />
           </div>
-          <button class="ceo-btn ceo-btn-primary" id="home-shutdown-btn">Complete shutdown</button>
-          <span id="home-shutdown-msg" class="ceo-text-muted" style="margin-left: var(--ceo-space-3); font-size: var(--ceo-font-size-sm);"></span>
+        </div>
+        <p id="home-mentor-line" class="ceo-text-secondary" style="margin-top: 0; margin-bottom: var(--ceo-space-6);"></p>
+
+        <!-- 1. IB Growth -->
+        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+          <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+            <h3 style="margin: 0; flex: 1;">IB Growth</h3>
+            <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/intelligence/index.html">See Complete Plan →</a>
+          </div>
+          <div id="home-ib-growth" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
+        </section>
+
+        <!-- 2. Physical Activity -->
+        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+          <h3 style="margin-top: 0;">Physical Activity</h3>
+          <div id="home-physical"><div class="ceo-skeleton" style="height: 5em;"></div></div>
+        </section>
+
+        <!-- 3. Personal Trading -->
+        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+          <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+            <h3 style="margin: 0; flex: 1;">Personal Trading</h3>
+            <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/trading/index.html">Open full Trading module →</a>
+          </div>
+          <div id="home-trading-checkin" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
         </section>
       </div>
     </main>
