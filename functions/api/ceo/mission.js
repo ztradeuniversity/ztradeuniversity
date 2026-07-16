@@ -86,7 +86,11 @@ export async function onRequestGet({ request, env }) {
       : dayName === REVIEW_DAY ? 'review'
       : 'community';
 
-    // 1) Instantiate today's activities from templates, once per day.
+    // 1) Instantiate today's activities from templates, once per day. This
+    // query stays scoped to today=eq — a separate query below (1c) fetches
+    // any still-open activity from EARLIER dates, so a missed day/week/month
+    // stays visible as Overdue instead of silently vanishing (Founder OS
+    // Refinement Patch 1 — "nothing disappears automatically").
     let activities = await db.select(
       'daily_activities',
       `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=eq.${today}&order=created_at.asc`
@@ -123,7 +127,7 @@ export async function onRequestGet({ request, env }) {
     // 1b) Section 1 enrichment sources — KPI labels + execution-checklist WHY
     // text, fetched once and joined onto every parsed item below.
     const neededKpiKeys = [...new Set(Object.values(ACTIVITY_META).map((m) => m.kpiKey).filter(Boolean))];
-    const [kpiDefs, checklistDocs, automationRows] = await Promise.all([
+    const [kpiDefs, checklistDocs, automationRows, overdueRows] = await Promise.all([
       neededKpiKeys.length
         ? db.select('kpi_definitions', `select=key,label&key=in.(${neededKpiKeys.join(',')})`)
         : Promise.resolve([]),
@@ -132,13 +136,21 @@ export async function onRequestGet({ request, env }) {
       // parsed mission items below and computeAcquisition — one query, not
       // a second copy of the same registry read.
       db.select('automation_registry', 'select=key,label,matrix_class,is_active'),
+      // 1c) Overdue — still-pending activities from BEFORE today, any age.
+      // Capped at 500 (a technical bound only, never a business rule — oldest
+      // sorts first via the owner_date index, so a founder who somehow has
+      // 500+ backlog rows still sees the most urgent ones first).
+      db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=lt.${today}&status=eq.pending&order=activity_date.asc&limit=500`),
     ]);
     const kpiLabelByKey = Object.fromEntries(kpiDefs.map((k) => [k.key, k.label]));
     const checklistByKey = Object.fromEntries(checklistDocs.map((c) => [c.title, c.content]));
     const automationByKey = Object.fromEntries(automationRows.map((a) => [a.key, a]));
 
-    // 2) Parse + enrich + rank: tier -> time (shorter first among equals keeps momentum).
-    const parsed = activities.map((a) => {
+    // 2) Parse + enrich + rank: tier -> time (shorter first among equals keeps
+    // momentum). enrichActivity is shared with the overdue backlog below so
+    // both get identical why/expectedOutcome/automationStatus treatment —
+    // one enrichment path, not a second copy.
+    const enrichActivity = (a, isOverdue) => {
       const execMeta = parseExecTag(a.description);
       const base = stripExecTag(a.description);
       const [tierStr, time] = (base || '').split('|').map((s) => s.trim());
@@ -159,13 +171,14 @@ export async function onRequestGet({ request, env }) {
         rule,
         expectedOutcome: meta.kpiKey ? kpiLabelByKey[meta.kpiKey] || null : null,
         why: (meta.checklistKey && extractChecklistField(checklistByKey[meta.checklistKey], 'WHY')) || rule || null,
-        // Delay cost is a LABEL derived from the locked tier, never a number.
-        // A CRITICAL item still pending on its own day carries the highest
-        // cost of slipping; Optional work is safe to defer.
-        delayCost: delayCostLabel(tierRank, false),
+        // Delay cost is a LABEL derived from the locked tier (+ whether it's
+        // already overdue), never a fabricated number.
+        delayCost: delayCostLabel(tierRank, isOverdue),
         automationStatus: automationStatusLabel((meta.automationKeys || []).map((k) => automationByKey[k]).filter(Boolean)),
+        ...(isOverdue ? { activityDate: a.activity_date, daysOverdue: Math.floor((Date.now() - new Date(a.activity_date).getTime()) / 86400000) } : {}),
       };
-    });
+    };
+    const parsed = activities.map((a) => enrichActivity(a, false));
     const core = parsed.filter((p) => p.key === 'daily.core_block' || p.key === 'daily.shutdown');
     const rankable = parsed
       .filter((p) => !core.includes(p) && p.status === 'pending')
@@ -174,6 +187,13 @@ export async function onRequestGet({ request, env }) {
     const maxTop = Number(setting('mission.max_top_items', 3));
     const totalMinutes = parsed.filter((p) => p.status === 'pending').reduce((s, p) => s + p.minutes, 0);
     const focus = rankable[0] || null;
+
+    // Overdue backlog — ranked oldest-and-most-critical first (Patch 1's
+    // "Overdue" priority tier). Never merged into today's rankable list, so
+    // today's own tier ranking (and the 80/20 focus) stays exactly as before.
+    const overdue = overdueRows
+      .map((a) => enrichActivity(a, true))
+      .sort((a, b) => b.daysOverdue - a.daysOverdue || a.tierRank - b.tierRank);
 
     // 3) Needs attention (silence-based, all clients — unchanged from Step 2).
     const silenceDays = Number(setting('retention.at_risk_silence_days', 14));
@@ -219,6 +239,7 @@ export async function onRequestGet({ request, env }) {
       estimatedMinutes: totalMinutes,
       mentorMessage,
       focus,
+      overdue,
       top: rankable.slice(0, maxTop),
       rest: rankable.slice(maxTop),
       done,

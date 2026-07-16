@@ -17,6 +17,9 @@
 //   create-review  { userId, account, category, comment, mentorName, tradeId? }
 //   list-reviews   { userId? , limit? }→ recent reviews (all, or for one trader)
 //   stats                             → { totalReviews, byCategory, reviewedTraders, totalTraders }
+//   result-analytics                  → PHASE 6: win/loss %, profit/loss totals and the
+//                                       AI weakness / psychology / recommendation
+//                                       distributions across ALL traders.
 //
 // Env vars (server-side only):
 //   JOURNAL_SUPABASE_URL                (already used by journal.html client too)
@@ -25,6 +28,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { requireAdminModule } from '../utils/admin-session.js';
+import { aggregateAnalyses } from '../utils/journal-analysis.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -229,6 +233,64 @@ export async function onRequest(context) {
         byCategory,
         reviewedTraders: reviewedTraders.size,
         totalTraders: users.length,
+      });
+    }
+
+    // ── PHASE 6 RESULT ANALYTICS — profit/loss + AI audit distributions ────
+    //    Reads the audits the shared engine already stored on each trade, so
+    //    these numbers always match what each trader was individually shown.
+    if (action === 'result-analytics') {
+      const [users, trades] = await Promise.all([
+        sbGet(env, 'users?select=id'),
+        // sbGetSafe: the Phase 6 columns are absent until the migration runs,
+        // so the admin panel degrades instead of 400-ing on an unknown column.
+        sbGetSafe(env, 'journal_trades?select=user_id,pnl,result,result_amount,currency,status,emotion,followed_plan,followed_risk,ai_analysis'),
+      ]);
+
+      let wins = 0, losses = 0, breakeven = 0, grossWin = 0, grossLoss = 0;
+      const perUser = {};
+      for (const t of trades) {
+        const r = t.result || (tStatus(t) === 'WIN' ? 'PROFIT' : tStatus(t) === 'LOSS' ? 'LOSS' : 'BREAKEVEN');
+        const p = tPnl(t) ?? 0;
+        if (r === 'PROFIT') { wins++; grossWin += Math.abs(p); }
+        else if (r === 'LOSS') { losses++; grossLoss += Math.abs(p); }
+        else breakeven++;
+        const u = (perUser[t.user_id] = perUser[t.user_id] || { w: 0, l: 0, n: 0 });
+        u.n++; if (r === 'PROFIT') u.w++; else if (r === 'LOSS') u.l++;
+      }
+      const decided = wins + losses;
+      // Average WIN RATE is averaged per-trader (each trader counts once),
+      // which is not the same as the pooled win % above — both are reported.
+      const traderRates = Object.values(perUser).filter((u) => u.w + u.l > 0)
+        .map((u) => (u.w / (u.w + u.l)) * 100);
+      const avgWinRate = traderRates.length
+        ? traderRates.reduce((s, v) => s + v, 0) / traderRates.length : null;
+
+      const agg = aggregateAnalyses(trades);
+
+      // Split the weakness distribution into the buckets the admin UI shows.
+      const pick = (codes) => agg.mostCommonMistakes.filter((m) => codes.includes(m.label));
+      return json({
+        ok: true,
+        totalUsers: users.length,
+        totalTrades: trades.length,
+        wins, losses, breakeven,
+        winPct:  decided ? (wins / decided) * 100 : null,
+        lossPct: decided ? (losses / decided) * 100 : null,
+        avgWinRate,
+        avgLossRate: avgWinRate != null ? 100 - avgWinRate : null,
+        grossWin, grossLoss, netProfit: grossWin - grossLoss,
+        analyzedTrades: agg.analyzed,
+        mostCommonMistakes:     agg.mostCommonMistakes,
+        psychologyDistribution: agg.psychologyDistribution,
+        riskDistribution:       pick(['Risk Management Weak', 'Poor Exit', 'Poor Entry']),
+        technicalMistakes:      pick(['Technical Analysis Weak', 'Poor Entry', 'Poor Exit']),
+        fundamentalMistakes:    pick(['Fundamental Analysis Weak']),
+        topRecommendations:     agg.topRecommendations,
+        mostCommonRecommendation: agg.topRecommendations[0] ? agg.topRecommendations[0].label : null,
+        avgScores: agg.avgScores,
+        planBreakRate: agg.planBreakRate,
+        riskBreakRate: agg.riskBreakRate,
       });
     }
 

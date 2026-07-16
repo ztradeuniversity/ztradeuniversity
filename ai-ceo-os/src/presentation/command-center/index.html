@@ -25,9 +25,15 @@
           <div class="ceo-skeleton" style="height: 3em;"></div>
         </section>
 
-        <!-- ②b Unified triage: NOW / NEXT / LATER across every pillar -->
+        <!-- ②a Overdue: activities from before today that never disappeared -->
+        <section id="home-overdue-card" style="margin-bottom: var(--ceo-space-6); display: none;">
+          <h3>Overdue <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Pending activities from earlier days — nothing is auto-skipped to today or the future; they stay here until you complete, partial, or skip them">ⓘ</span></h3>
+          <div id="home-overdue"></div>
+        </section>
+
+        <!-- ②b Unified triage: OVERDUE / NOW / NEXT / LATER across every pillar -->
         <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3 style="margin-top: 0;">Do Now / Next / Later <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Re-buckets the same tier-ranked items already below — no separate scoring system, so it can never disagree with the detail sections">ⓘ</span></h3>
+          <h3 style="margin-top: 0;">Overdue / Now / Next / Later <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Re-buckets the same tier-ranked items already below — no separate scoring system, so it can never disagree with the detail sections">ⓘ</span></h3>
           <div id="home-triage"><div class="ceo-skeleton" style="height: 5em;"></div></div>
         </section>
 

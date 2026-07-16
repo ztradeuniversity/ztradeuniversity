@@ -160,6 +160,7 @@
       <div class="tab on" data-view="dashboard">Dashboard</div>
       <div class="tab" data-view="traders">Traders</div>
       <div class="tab" data-view="analytics">Analytics</div>
+      <div class="tab" data-view="results">Trade Results</div>
     </div>
 
     <!-- ════ DASHBOARD VIEW (5B.1) ════ -->
@@ -199,6 +200,22 @@
         <div class="panel quick-section"><h2>Risk Issues</h2><div id="anRisk"></div></div>
       </div>
       <div class="panel quick-section" style="margin-top:14px;"><h2>Trade Grade Distribution</h2><div id="anGrades"></div></div>
+    </div>
+
+    <!-- ════ PHASE 6 — TRADE RESULTS / AI AUDIT ANALYTICS ════ -->
+    <div class="view" id="view-results">
+      <div class="dash-cards" id="resCards"></div>
+      <div class="analytics-grid">
+        <div class="panel quick-section"><h2>Most Common Mistakes</h2><div id="resMistakes"></div></div>
+        <div class="panel quick-section"><h2>Psychology Distribution</h2><div id="resPsych"></div></div>
+        <div class="panel quick-section"><h2>Risk Management Distribution</h2><div id="resRisk"></div></div>
+      </div>
+      <div class="analytics-grid" style="margin-top:14px;">
+        <div class="panel quick-section"><h2>Technical Mistakes</h2><div id="resTech"></div></div>
+        <div class="panel quick-section"><h2>Fundamental Mistakes</h2><div id="resFund"></div></div>
+        <div class="panel quick-section"><h2>Average Scores</h2><div id="resScores"></div></div>
+      </div>
+      <div class="panel quick-section" style="margin-top:14px;"><h2>Most Common AI Recommendation</h2><div id="resRecs"></div></div>
     </div>
   </main>
 
@@ -502,7 +519,7 @@
     function kv(l,v,cls){ return '<div class="kv"><div class="l">'+esc(l)+'</div><div class="v '+(cls||'')+'">'+v+'</div></div>'; }
 
     // ════ Phase 5B — VIEW SWITCHING ════
-    var currentView='dashboard', dashLoaded=false, analyticsLoaded=false;
+    var currentView='dashboard', dashLoaded=false, analyticsLoaded=false, resultsLoaded=false;
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
       t.addEventListener('click', function(){ showView(t.getAttribute('data-view')); });
     });
@@ -513,6 +530,48 @@
       if(v==='dashboard' && !dashLoaded) loadDashboard();
       if(v==='traders'){ if(!traders.length) loadTraders(); loadStats(); }
       if(v==='analytics' && !analyticsLoaded) loadAnalytics();
+      if(v==='results' && !resultsLoaded) loadResultAnalytics();
+    }
+
+    // ════ Phase 6 — TRADE RESULT / AI AUDIT ANALYTICS ════
+    // Reads the audits the shared rules engine stored per trade, so these
+    // distributions always match what each trader saw on their own journal.
+    function pctTxt(v){ return v==null?'—':(Math.round(v*10)/10)+'%'; }
+    function money(v){ v=Number(v)||0; return (v<0?'-$':'$')+Math.abs(v).toFixed(2); }
+    // The API returns {label,count}; the shared bars() helper expects {k,n}.
+    function toBars(list){ return (list||[]).map(function(x){ return { k:x.label, n:x.count }; }); }
+    function loadResultAnalytics(){
+      api('result-analytics').then(function(res){
+        if(res.status!==200){ handleApiErr(res); return; }
+        resultsLoaded=true; var d=res.data;
+        $('resCards').innerHTML=
+          dcard('Total Users', d.totalUsers)+
+          dcard('Total Trades', d.totalTrades)+
+          dcard('Winning %', pctTxt(d.winPct))+
+          dcard('Losing %', pctTxt(d.lossPct),'warn')+
+          dcard('Average Win Rate', pctTxt(d.avgWinRate))+
+          dcard('Average Loss Rate', pctTxt(d.avgLossRate),'warn')+
+          dcard('Total Profit', money(d.grossWin))+
+          dcard('Total Loss', money(-Math.abs(d.grossLoss)),'warn')+
+          dcard('Net Profit', money(d.netProfit))+
+          dcard('AI Audited Trades', d.analyzedTrades);
+        $('resMistakes').innerHTML=bars(toBars(d.mostCommonMistakes))||emptyP('No AI audits yet.');
+        $('resPsych').innerHTML=bars(toBars(d.psychologyDistribution))||emptyP('No psychology data yet.');
+        $('resRisk').innerHTML=bars(toBars(d.riskDistribution))||emptyP('No risk issues detected.');
+        $('resTech').innerHTML=bars(toBars(d.technicalMistakes))||emptyP('No technical mistakes detected.');
+        $('resFund').innerHTML=bars(toBars(d.fundamentalMistakes))||emptyP('No fundamental mistakes detected.');
+        var s=d.avgScores;
+        $('resScores').innerHTML=s
+          ? barRow('Risk', s.risk, 100)+barRow('Psychology', s.psychology, 100)+barRow('Discipline', s.discipline, 100)
+            +barRow('Technical', s.technical, 100)+barRow('Fundamental', s.fundamental, 100)
+            +'<p class="sub" style="margin-top:8px;">Plan-break rate: '+pctTxt(d.planBreakRate)+' · Risk-rule break rate: '+pctTxt(d.riskBreakRate)+'</p>'
+          : emptyP('No scores yet.');
+        $('resRecs').innerHTML=(d.topRecommendations&&d.topRecommendations.length)
+          ? d.topRecommendations.slice(0,5).map(function(r){
+              return '<div class="qrow"><span class="nm" style="white-space:normal;">'+esc(r.label)+'</span><span class="sub">'+r.count+'×</span></div>';
+            }).join('')
+          : emptyP('No recommendations generated yet.');
+      }).catch(function(){ showConfigWarn('Network error reaching /api/journal-admin.'); });
     }
 
     // ════ 5B.1 DASHBOARD ════
@@ -591,9 +650,10 @@
     }
 
     $('btnRefresh').addEventListener('click', function(){
-      dashLoaded=false; analyticsLoaded=false;
+      dashLoaded=false; analyticsLoaded=false; resultsLoaded=false;
       if(currentView==='dashboard') loadDashboard();
       else if(currentView==='analytics') loadAnalytics();
+      else if(currentView==='results') loadResultAnalytics();
       else { loadStats(); loadTraders(); if(selectedId) openTrader(selectedId); }
     });
 

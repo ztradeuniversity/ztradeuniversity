@@ -6,7 +6,9 @@
 // HOW to parse their locked "FIELD: value." text format and which locked
 // titles join to which (same precedent as mission.js's ACTIVITY_META).
 
-import { getJson } from '../shared/api.js';
+import { getJson, postJson } from '../shared/api.js';
+import { openModal, closeModal } from '../shared/components/modal.js';
+import { showToast } from '../shared/components/toast.js';
 
 // Splits a seeded playbook row ("PRIORITY 1, active. LANG: ur. BROKER: ...")
 // into its intro sentence and an UPPERCASE-FIELD map. Exported pure for QA.
@@ -42,6 +44,34 @@ export function splitWarning(warningText) {
 // no other date-bearing founder-execution data exists. Overdue rows (negative
 // daysUntil) sort first inside the 30-day bucket — never dropped, so the
 // founder can't silently lose track of a missed re-check. Exported pure for QA.
+// Derived "next review due" (Refinement Patch 3) — research_library has no
+// forward-looking review-date column, only reviewed_at (when it was last
+// checked). Every research doc in this project states the same 90-day
+// freshness cadence (mentor-rule 'staleness_volunteer': "this verdict is 80
+// days old — re-research due"), so this reads that already-established
+// convention rather than inventing a number. Exported pure for QA.
+// Reformats an existing seeded "(1) ... (2) ... (3) ..." numbered clause
+// list into checklist items — reads the founder's own already-written sales
+// rules (seed-04's negotiation row), never authors new advice. Exported
+// pure for QA.
+export function splitNumberedList(text) {
+  const t = String(text || '');
+  const matches = [...t.matchAll(/\((\d+)\)\s*/g)];
+  if (matches.length === 0) return [];
+  return matches.map((m, i) => {
+    const start = m.index + m[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : t.length;
+    return t.slice(start, end).trim().replace(/;\s*$/, '');
+  });
+}
+
+export function nextReviewDue(reviewedAt, cadenceDays = 90) {
+  if (!reviewedAt) return null;
+  const ms = Date.parse(reviewedAt);
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms + cadenceDays * 86400000).toISOString().slice(0, 10);
+}
+
 export function bucketByWindow(decisions, now = Date.now()) {
   const DAY = 86400000;
   const buckets = { within30: [], within90: [], within365: [], beyond: [] };
@@ -174,10 +204,18 @@ const MATRIX_LABEL = {
 };
 const VERDICT_BADGE = { adopt: 'ceo-badge-success', trial: 'ceo-badge-warning', defer: 'ceo-badge-neutral', reject: 'ceo-badge-critical' };
 
+let playbooksCache = null;
+let notesCache = {};
+
 export async function initPlaybooksPage() {
   const countriesEl = document.getElementById('pb-countries');
   try {
-    const data = await getJson('/api/ceo/playbooks');
+    const [data, notesResp] = await Promise.all([
+      getJson('/api/ceo/playbooks'),
+      getJson('/api/ceo/notes').catch(() => ({ notes: {} })),
+    ]);
+    playbooksCache = data;
+    notesCache = notesResp.notes || {};
     renderCountries(data);
     renderLanguages(data);
     renderPlatforms(data);
@@ -186,9 +224,84 @@ export async function initPlaybooksPage() {
     renderTools(data);
     renderRoadmap(data);
     renderAutomation(data);
+    wireCompletePlanButtons();
   } catch (err) {
     countriesEl.innerHTML = `<div class="ceo-alert ceo-alert-critical">Playbooks load fail: ${esc(err.message)}</div>`;
   }
+}
+
+// Complete Plan viewer (Refinement Patch 2/3/4) — a built-in document view,
+// not a PDF: reuses the shared modal component and the EXACT HTML each tab
+// already rendered (no second fetch of research/countries/languages/etc —
+// nothing there is re-fetched or duplicated). Two things ARE genuinely
+// editable inside it, saved with no SQL and live on the very next fetch:
+// Founder Notes (every domain, via notes.js -> knowledge_base) and, on the
+// Physical domain only, the area/region execution order itself (via
+// institutes.js's edit_queue). Everything else (research, verdicts, KPIs,
+// automation classes) stays read-only — it's either locked research or
+// computed data, never hand-edited (the project's standing integrity rule).
+function wireCompletePlanButtons() {
+  document.querySelectorAll('[data-complete-plan]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sourceId = btn.getAttribute('data-complete-plan');
+      const source = document.getElementById(sourceId);
+      const title = btn.getAttribute('data-plan-title') || 'Plan';
+      const domain = sourceId.replace(/^pb-/, '');
+      const existingNote = notesCache[domain]?.content || '';
+      const queue = domain === 'physical' ? (playbooksCache?.physical?.areaQueue || []) : null;
+
+      openModal(`
+        <div class="ceo-flex ceo-justify-between ceo-items-center" style="margin-bottom: var(--ceo-space-4); position: sticky; top: 0; background: var(--ceo-surface-raised); padding-bottom: var(--ceo-space-2); z-index: 1;">
+          <h2 style="margin: 0;">${esc(title)} — Complete Plan</h2>
+          <button class="ceo-btn ceo-btn-secondary" id="ceo-plan-close">Close</button>
+        </div>
+        ${queue ? `
+          <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);">
+            <h3 style="margin-top: 0;">Execution order <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— one area per line, in the order you want them run. Add a new area by typing its name on a new line; remove one by deleting its line. Save updates the live plan immediately — Home, the Growth page, and the roadmap all read this same order on their next load.</span></h3>
+            <textarea class="ceo-input" id="ceo-plan-queue" rows="${Math.min(20, Math.max(6, queue.length))}" style="width: 100%; font-family: inherit;">${esc(queue.join('\n'))}</textarea>
+            <button class="ceo-btn ceo-btn-primary" id="ceo-plan-queue-save" style="margin-top: var(--ceo-space-3);">Save order</button>
+          </div>` : ''}
+        ${source ? source.innerHTML : '<p class="ceo-text-muted">Nothing rendered yet.</p>'}
+        <div class="ceo-card" style="margin-top: var(--ceo-space-4);">
+          <h3 style="margin-top: 0;">Founder Notes</h3>
+          <textarea class="ceo-input" id="ceo-plan-note" rows="4" style="width: 100%; font-family: inherit;" placeholder="Your own notes on this plan...">${esc(existingNote)}</textarea>
+          <button class="ceo-btn ceo-btn-primary" id="ceo-plan-note-save" style="margin-top: var(--ceo-space-3);">Save note</button>
+        </div>
+      `);
+      document.querySelector('.ceo-modal')?.classList.add('ceo-modal-doc');
+      document.getElementById('ceo-plan-close')?.addEventListener('click', closeModal);
+
+      document.getElementById('ceo-plan-note-save')?.addEventListener('click', async (e) => {
+        e.target.disabled = true;
+        try {
+          const content = document.getElementById('ceo-plan-note').value;
+          await postJson('/api/ceo/notes', { domain, content });
+          notesCache[domain] = { content };
+          showToast('Note saved.', 'success');
+        } catch (err) {
+          showToast('Save fail: ' + err.message, 'critical');
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+
+      document.getElementById('ceo-plan-queue-save')?.addEventListener('click', async (e) => {
+        e.target.disabled = true;
+        try {
+          const areas = document.getElementById('ceo-plan-queue').value.split('\n');
+          const resp = await postJson('/api/ceo/institutes', { action: 'edit_queue', areas });
+          if (playbooksCache?.physical) playbooksCache.physical.areaQueue = resp.cycle?.queue || areas;
+          showToast('Execution order saved — live everywhere now.', 'success');
+          closeModal();
+          renderPhysical(playbooksCache);
+        } catch (err) {
+          showToast('Save fail: ' + err.message, 'critical');
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+    });
+  });
 }
 
 function researchByTitle(data) {
@@ -241,6 +354,7 @@ function renderCountries(data) {
           ${chip('Funnel', funnel)}
           ${chip('Difficulty', difficultyOf(verdicts, p.intro))}
           ${chip('Broker', p.fields.BROKER)}
+          ${chip('Next review due', nextReviewDue(verdicts[0]?.reviewed_at))}
         </div>
         ${guardrails(p.fields)}
         ${whyRank ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-3);"><strong>Why this rank:</strong> ${esc(whyRank)} <span class="ceo-text-muted">(${esc(confidence)})</span></p>` : ''}
@@ -305,7 +419,7 @@ function renderTools(data) {
         return `
           <div class="ceo-card" style="margin-bottom: var(--ceo-space-4); opacity: 0.85;">
             <div class="ceo-flex ceo-items-center ceo-gap-3"><h4 style="margin: 0;">${esc(tool.name)}</h4><span class="ceo-badge ceo-badge-neutral">Pending seed</span></div>
-            <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-2);">Usage rules arrive with seed-04-physical.sql (physical-funnel rows) — nothing is shown until the seed row exists.</p>
+            <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-2);">Usage guidance for this tool hasn't been added yet.</p>
           </div>`;
       }
       const p = parsePlaybookFields(row);
@@ -360,7 +474,7 @@ function renderPhysical(data) {
   const funnel = Object.fromEntries((data.playbooks?.['physical-funnel'] || []).map((p) => [p.title, p.content]));
   const marketing = data.playbooks?.['marketing-rule'] || [];
   if (areas.length === 0 && sales.length === 0) {
-    el.innerHTML = '<div class="ceo-empty-state"><h3>Physical seeds not loaded</h3><p>Run migration <code>032_institutes.sql</code> and <code>seed-04-physical.sql</code> — the area playbooks, sales templates, and physical funnel render from those rows.</p></div>';
+    el.innerHTML = '<div class="ceo-empty-state"><h3>Physical Expansion isn\'t set up yet</h3><p>This is a one-time setup step — ask whoever manages your Founder OS account to turn it on. Nothing here needs any action from you until then.</p></div>';
     return;
   }
   // Rotation order comes from the physical.area_queue setting; area rows are
@@ -383,18 +497,36 @@ function renderPhysical(data) {
         </div>
         <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; row-gap: var(--ceo-space-3); margin-top: var(--ceo-space-2);">
           ${chip('Why this area', p.fields.WHY)}
-          ${chip('Institute types to search', p.fields.TYPES)}
-          ${chip('How to search', p.fields.SEARCH)}
-          ${chip('Pitch angle', p.fields.PITCH)}
+          ${chip('Suggested institute categories', p.fields.TYPES)}
+          ${chip('Suggested search keywords', p.fields.SEARCH)}
+          ${chip('Proposal / pitch angle', p.fields.PITCH)}
         </div>
       </div>`;
   }).join('');
 
+  const salesByTitle = Object.fromEntries(sales.map((s) => [s.title, s.content]));
   const salesCards = sales.map((s) => `
     <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);">
       <h4 style="margin: 0 0 var(--ceo-space-2) 0;">${esc(cap(s.title.replace(/_/g, ' ')))}</h4>
       <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: 0;">${esc(s.content)}</p>
     </div>`).join('');
+
+  // Meeting/Negotiation checklists — reformatted from the SAME seeded sales
+  // rules above (negotiation's numbered clauses, proposal's structure),
+  // never new advice. splitNumberedList reads the founder's own text.
+  const negotiationItems = splitNumberedList(salesByTitle.negotiation);
+  const checklistCard = (heading, items) => items.length === 0 ? '' : `
+    <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);">
+      <h4 style="margin: 0 0 var(--ceo-space-2) 0;">${esc(heading)}</h4>
+      ${items.map((it) => `<div class="ceo-checklist-item"><input type="checkbox" disabled /><span>${esc(it)}</span></div>`).join('')}
+    </div>`;
+  const meetingItems = [
+    'Bring the track record link — let them verify, never assert',
+    salesByTitle.proposal ? 'One-page proposal ready (what institute gets, what founder gets — full disclosure)' : null,
+    'Confirm logistics: projector, 1.5h slot, batch size 15-40',
+    'Do not mention IB, revenue, or urgency unless asked',
+  ].filter(Boolean);
+  const checklistsHtml = checklistCard('Meeting checklist', meetingItems) + checklistCard('Negotiation checklist', negotiationItems);
 
   const funnelCards = PHYSICAL_FUNNEL_ORDER.filter((k) => funnel[k]).map((k, i) => {
     const p = parsePlaybookFields(funnel[k]);
@@ -422,10 +554,11 @@ function renderPhysical(data) {
   el.innerHTML = `
     <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);">15-day rolling system: one area per cycle — research institutes → contact → proposal → negotiate → run classes → finish batch → next area automatically. The live cycle state and Institute CRM are on the <a href="/ai-ceo-os/src/presentation/growth/index.html">Growth page</a>; this tab is the playbook.</p>
     <h3>Areas — rotation order (${esc(data.physical?.city || 'Lahore')})</h3>
-    ${areaCards || '<div class="ceo-empty-state"><p>Area playbooks arrive with seed-04.</p></div>'}
+    ${areaCards || '<div class="ceo-empty-state"><p>No area playbooks yet.</p></div>'}
     <h3 style="margin-top: var(--ceo-space-6);">Founder sales pipeline</h3>
     <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Cold contact → proposal → meeting → negotiation → accepted → classes running → batch complete. Stages tracked per institute in the CRM.</p>
     ${salesCards}
+    ${checklistsHtml}
     <h3 style="margin-top: var(--ceo-space-6);">Physical student funnel</h3>
     ${funnelCards}
     <h3 style="margin-top: var(--ceo-space-6);">Local marketing & paid ads</h3>
@@ -458,6 +591,7 @@ function renderLanguages(data) {
           ${chip('Countries using it', usedBy.length ? usedBy.join(' · ') : 'Gated — no active market yet (see verdict)')}
           ${chip('Execution order', i === 0 ? '#1 — active now' : i === 1 ? '#2 — second engine (Wk 11+ / 300-client gate)' : `#${i + 1} — gated trial`)}
           ${chip('Content & CTA style', register || 'No register defined yet — written when this language’s localization trial passes')}
+          ${chip('Next review due', nextReviewDue(lang.reviewed_at))}
         </div>
         <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-3);"><strong>Why:</strong> ${esc(lang.summary)}</p>
       </div>`;
@@ -541,6 +675,7 @@ function platformCard(e) {
         ${chip('Founder time', p.fields.TIME)}
         ${chip('Rule', p.fields.RULE)}
         ${chip('Times', p.fields.TIMES)}
+        ${chip('Next review due', nextReviewDue(e.verdict?.reviewed_at))}
       </div>
     </div>`;
 }

@@ -330,7 +330,7 @@ export async function initGrowthPage() {
     const el = document.getElementById('gr-physical');
     if (!el) return;
     if (!data || data._error) {
-      el.innerHTML = `<div class="ceo-empty-state"><p>Physical engine not live yet — run migration <code>032_institutes.sql</code> + <code>seed-04-physical.sql</code>, then reload. (${esc(data?._error || '')})</p></div>`;
+      el.innerHTML = `<div class="ceo-empty-state"><p>Physical Expansion isn't set up yet — this is a one-time step for whoever manages your Founder OS account. Nothing to do here until then.</p></div>`;
       return;
     }
     const a = data.cycle?.assignment || {};
@@ -343,7 +343,7 @@ export async function initGrowthPage() {
         </div>`;
     } else if (a.exhausted) {
       cycleHtml = `
-        <div class="ceo-alert ceo-alert-warning">Area queue complete — every scheduled area has had its cycle. Schedule the next round deliberately (edit <code>physical.area_queue</code> + restart) — areas never repeat automatically.</div>`;
+        <div class="ceo-alert ceo-alert-warning">Every scheduled area has had its cycle. Add more areas or start a new round from <a href="/ai-ceo-os/src/presentation/intelligence/index.html">Playbooks → Physical → Complete Plan</a> — areas never repeat automatically unless you add them back.</div>`;
     } else {
       cycleHtml = `
         <div class="ceo-flex ceo-items-center ceo-gap-4" style="flex-wrap: wrap;">
@@ -359,6 +359,16 @@ export async function initGrowthPage() {
     const due = data.followUpsDue || [];
     const dueHtml = due.length
       ? `<div class="ceo-alert ceo-alert-warning" style="margin-top: var(--ceo-space-3);">Follow-ups due: ${due.map((i) => `${esc(i.name)} (${esc(i.stage.replace(/_/g, ' '))})`).join(' · ')}</div>`
+      : '';
+
+    // Region view (Refinement Patch 5) — current/next/remaining REGIONS
+    // (cities), not just areas, + an honestly-computed timeline (cycle days
+    // x entries left, real config arithmetic, never a fabricated estimate).
+    const r = data.cycle?.region;
+    const regionHtml = (r && (r.currentRegion || r.remainingRegions?.length))
+      ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-2);">
+          Region: <strong>${esc(r.currentRegion || '—')}</strong>${r.nextRegion ? ` · Next region: <strong>${esc(r.nextRegion)}</strong>` : ''}${r.remainingRegions?.length ? ` · Remaining: ${esc(r.remainingRegions.join(', '))}` : ''}${Number.isFinite(r.estimatedDaysRemaining) ? ` · Est. ${r.estimatedDaysRemaining} days left in the current plan (${data.cycle.cycleDays}d/area × entries left)` : ''}
+        </p>`
       : '';
 
     // Mentor hand-holding: this area's real pipeline numbers + the single
@@ -414,8 +424,63 @@ export async function initGrowthPage() {
         <button class="ceo-btn ceo-btn-primary" id="gr-inst-add">Add institute</button>
       </div>`;
 
-    el.innerHTML = cycleHtml + summaryHtml + dueHtml + negotiationHtml + tableHtml + formHtml;
+    // Editable execution order (Refinement Patch 4) — the founder's own
+    // sequence, preserved exactly; reordering never regenerates the queue,
+    // it only rewrites physical.area_queue's array order via reorder_queue.
+    const queue = data.cycle?.queue || [];
+    const orderHtml = queue.length === 0 ? '' : `
+      <details style="margin-top: var(--ceo-space-3);">
+        <summary style="cursor: pointer; font-weight: 600;">Execution order — ${queue.length} areas/regions <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">(edit freely; never auto-regenerated)</span></summary>
+        <div id="gr-queue-order" style="margin-top: var(--ceo-space-2);">
+          ${queue.map((name, i) => {
+            const isDone = a.exhausted || i < (a.index ?? -1);
+            const isRunning = !a.exhausted && i === a.index;
+            const label = isDone ? 'Completed' : isRunning ? 'Running' : 'Pending';
+            const cls = isDone ? 'ceo-badge-success' : isRunning ? 'ceo-badge-warning' : 'ceo-badge-neutral';
+            return `
+            <div class="ceo-flex ceo-items-center ceo-gap-2" style="padding: 2px 0;" data-queue-item="${esc(name)}">
+              <span class="ceo-badge ${cls}" style="min-width: 4.5em; text-align: center;">${label}</span>
+              <span style="flex: 1;">${esc(name)}</span>
+              <button class="ceo-btn ceo-btn-secondary" data-queue-up="${i}" ${i === 0 ? 'disabled' : ''} title="Move earlier">↑</button>
+              <button class="ceo-btn ceo-btn-secondary" data-queue-down="${i}" ${i === queue.length - 1 ? 'disabled' : ''} title="Move later">↓</button>
+            </div>`;
+          }).join('')}
+        </div>
+      </details>`;
+
+    el.innerHTML = cycleHtml + regionHtml + summaryHtml + dueHtml + negotiationHtml + orderHtml + tableHtml + formHtml;
     wirePhysicalEngine(el);
+    wireQueueReorder(el, queue);
+  }
+
+  function wireQueueReorder(el, queue) {
+    const submit = async (newOrder) => {
+      try {
+        await postJson('/api/ceo/institutes', { action: 'reorder_queue', order: newOrder });
+        showToast('Execution order updated.', 'success');
+        await load();
+      } catch (err) {
+        showToast('Reorder fail: ' + err.message, 'critical');
+      }
+    };
+    el.querySelectorAll('[data-queue-up]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const i = Number(b.getAttribute('data-queue-up'));
+        if (i <= 0) return;
+        const next = queue.slice();
+        [next[i - 1], next[i]] = [next[i], next[i - 1]];
+        submit(next);
+      })
+    );
+    el.querySelectorAll('[data-queue-down]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const i = Number(b.getAttribute('data-queue-down'));
+        if (i >= queue.length - 1) return;
+        const next = queue.slice();
+        [next[i + 1], next[i]] = [next[i], next[i + 1]];
+        submit(next);
+      })
+    );
   }
 
   function wirePhysicalEngine(el) {

@@ -3,13 +3,14 @@
 // Institute CRM + 15-day area cycle (Physical IB Expansion patch). GET
 // returns the cycle state (computed by utils/ceo/physical-logic.js from
 // the physical.* settings) plus the institute pipeline with today's due
-// follow-ups first. POST actions: start_cycle (writes physical.start_date —
-// global settings are admin-writable and the founder is admin), add an
-// institute, advance its stage, set follow-up/batch dates. Stage values
-// mirror migration 032's CHECK constraint exactly.
+// follow-ups first. POST actions: start_cycle (writes physical.start_date),
+// reorder_queue (Refinement Patch 4 — founder-set execution order, same-set
+// permutation only, never regenerated), add an institute, advance its
+// stage, set follow-up/batch dates. Global settings are admin-writable and
+// the founder is admin. Stage values mirror migration 032's CHECK exactly.
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { currentAreaAssignment } from '../../utils/ceo/physical-logic.js';
+import { currentAreaAssignment, regionSummary } from '../../utils/ceo/physical-logic.js';
 import { instituteNextStep, pipelineSummary } from '../../utils/ceo/coach-logic.js';
 
 const STAGES = [
@@ -26,7 +27,8 @@ async function readCycle(db) {
   const cycleDays = Number(get('physical.cycle_days') || 15);
   const startDate = get('physical.start_date') ? String(get('physical.start_date')).replace(/"/g, '') : null;
   const city = String(get('physical.city') || '"Lahore"').replace(/"/g, '');
-  return { city, cycleDays, queue, startDate, assignment: currentAreaAssignment(queue, startDate, cycleDays) };
+  const assignment = currentAreaAssignment(queue, startDate, cycleDays);
+  return { city, cycleDays, queue, startDate, assignment, region: regionSummary(queue, assignment, cycleDays) };
 }
 
 export async function onRequestGet({ request, env }) {
@@ -78,6 +80,48 @@ export async function onRequestPost({ request, env }) {
         await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(start), updated_at: new Date().toISOString() });
       } else {
         await db.insert('settings', [{ scope: 'global', key: 'physical.start_date', value: JSON.stringify(start) }]);
+      }
+      const cycle = await readCycle(db);
+      return json({ ok: true, cycle });
+    }
+
+    if (body.action === 'reorder_queue') {
+      // Founder-set execution order (Refinement Patch 4) — accepted ONLY as
+      // a permutation of the CURRENT queue. The sequence is never
+      // regenerated: adding/removing/renaming an entry through this action
+      // is rejected, so a typo can't silently drop a city from the plan.
+      const newOrder = Array.isArray(body.order) ? body.order.map(String) : null;
+      if (!newOrder || newOrder.length === 0) return json({ error: 'invalid_order' }, 400);
+      const current = await readCycle(db);
+      const sameSet = newOrder.length === current.queue.length
+        && [...newOrder].sort().join('') === [...current.queue].sort().join('');
+      if (!sameSet) return json({ error: 'order_must_be_a_permutation_of_the_current_queue' }, 400);
+      const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.physical.area_queue`);
+      if (existing.length === 0) return json({ error: 'queue_not_seeded' }, 404);
+      await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(newOrder), updated_at: new Date().toISOString() });
+      const cycle = await readCycle(db);
+      return json({ ok: true, cycle });
+    }
+
+    if (body.action === 'edit_queue') {
+      // Live, freeform plan editing (Final Refinement Patch) — the
+      // founder's document editor: add/remove/rename/reorder in one save,
+      // no SQL, no restart. Unlike reorder_queue this is NOT restricted to
+      // a same-set permutation (a founder-typed area like "Cantt" is a
+      // legitimate real neighborhood the founder is adding themselves, not
+      // an invented institute — that restriction is about institute NAMES,
+      // never about the founder's own area list). Every module that reads
+      // physical.area_queue fetches it fresh per-request, so this is live
+      // immediately on the next call — no cache to invalidate.
+      const raw = Array.isArray(body.areas) ? body.areas : null;
+      if (!raw) return json({ error: 'invalid_areas' }, 400);
+      const cleaned = [...new Set(raw.map((s) => String(s || '').trim()).filter(Boolean))].map((s) => s.slice(0, 80));
+      if (cleaned.length === 0) return json({ error: 'areas_cannot_be_empty' }, 400);
+      const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.physical.area_queue`);
+      if (existing.length > 0) {
+        await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(cleaned), updated_at: new Date().toISOString() });
+      } else {
+        await db.insert('settings', [{ scope: 'global', key: 'physical.area_queue', value: JSON.stringify(cleaned) }]);
       }
       const cycle = await readCycle(db);
       return json({ ok: true, cycle });

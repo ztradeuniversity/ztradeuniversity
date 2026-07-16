@@ -314,6 +314,16 @@
   width: calc(100% - var(--ceo-space-8));
 }
 
+/* Wide, scrollable variant for the Complete Plan document viewer — the
+   default .ceo-modal (480px, no scroll) is sized for short confirmations,
+   not a full document; toggled on via JS, no change to the default. */
+.ceo-modal-doc {
+  max-width: min(760px, 92vw);
+  width: 100%;
+  max-height: 84vh;
+  overflow-y: auto;
+}
+
 .ceo-modal-actions {
   display: flex;
   justify-content: flex-end;

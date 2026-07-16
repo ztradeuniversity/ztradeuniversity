@@ -26,6 +26,7 @@ export async function initHome() {
   try {
     const m = await getJson('/api/ceo/mission');
     renderBanner(m);
+    renderOverdue(m.overdue);
     renderTriage(m);
     renderFocus(m.focus);
     renderTop(m);
@@ -106,7 +107,11 @@ function renderTriage(m) {
           items.map((t) => `<div style="font-size: var(--ceo-font-size-sm); padding: 2px 0;">${escapeHtml(label(t))}</div>`).join('')}
       </div>
     </div>`;
+  const overdueBucket = (m.overdue && m.overdue.length)
+    ? bucket(`OVERDUE (${m.overdue.length})`, 'ceo-badge-critical', m.overdue, null)
+    : '';
   el.innerHTML = `<div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap;">
+    ${overdueBucket}
     ${bucket('DO NOW', 'ceo-badge-critical', now, 'home-triage-now')}
     ${bucket('DO NEXT', 'ceo-badge-warning', next, null)}
     ${bucket('DO LATER', 'ceo-badge-neutral', later, null)}
@@ -162,10 +167,27 @@ function renderTop(m) {
     ? `<div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-bottom: var(--ceo-space-2);">Baaqi aaj:</div>` +
       m.rest.map((t) => taskRow(t, null)).join('')
     : '';
-  wireTaskButtons();
+  wireTaskButtons(document.querySelectorAll('#home-top3 [data-task-id], #home-rest [data-task-id]'));
 }
 
-function taskRow(t, rank) {
+// Overdue — pending activities from before today. Reuses taskRow() exactly
+// (same Done/Partial/Skip controls, same enrichment) so acting on an overdue
+// item works identically to acting on a today item; only the data source and
+// the days-overdue badge differ.
+function renderOverdue(overdue) {
+  const card = document.getElementById('home-overdue-card');
+  const el = document.getElementById('home-overdue');
+  if (!overdue || overdue.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  el.innerHTML = `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-3);">${overdue.length} activit${overdue.length === 1 ? 'y' : 'ies'} still pending from earlier days — nothing was auto-skipped.</div>`
+    + overdue.map((t) => taskRow(t, null, true)).join('');
+  wireTaskButtons(document.querySelectorAll('#home-overdue [data-task-id]'));
+}
+
+function taskRow(t, rank, isOverdue) {
   const label = t.key.replace(/^(daily|weekly|monthly|quarterly)\./, '').replace(/_/g, ' ');
   const isOpen = t.execState !== 'completed' && t.execState !== 'skipped';
   const controls = isOpen
@@ -176,6 +198,7 @@ function taskRow(t, rank) {
   return `
     <div class="ceo-flex ceo-items-center ceo-gap-3" style="padding: var(--ceo-space-3) 0; border-bottom: 1px solid var(--ceo-border); flex-wrap: wrap;" data-task-id="${t.id}">
       ${rank ? `<strong style="min-width: 1.2em;">${rank}</strong>` : '<span style="min-width: 1.2em;"></span>'}
+      ${isOverdue ? `<span class="ceo-badge ceo-badge-critical">${t.daysOverdue}d overdue</span>` : ''}
       <span class="ceo-badge ${TIER_BADGE[t.tierRank] || 'ceo-badge-neutral'}">${escapeHtml(t.priority)}</span>
       ${execStateBadge(t.execState)}
       <span style="flex: 1; min-width: 14em;">
@@ -196,8 +219,12 @@ function execStateBadge(state) {
   return '<span class="ceo-badge ceo-badge-neutral" style="opacity:0.6;">Not started</span>';
 }
 
-function wireTaskButtons() {
-  document.querySelectorAll('[data-task-id]').forEach((row) => {
+// Scoped to an explicit row list (not a global querySelectorAll) — Overdue
+// and Top-3/Rest are rendered by separate functions using the same taskRow()
+// markup; wiring globally would double-attach listeners to whichever
+// section rendered first.
+function wireTaskButtons(rows) {
+  rows.forEach((row) => {
     const id = row.getAttribute('data-task-id');
     row.querySelectorAll('[data-act]').forEach((btn) =>
       btn.addEventListener('click', () => actionFlow(row, id, btn.getAttribute('data-act')))
