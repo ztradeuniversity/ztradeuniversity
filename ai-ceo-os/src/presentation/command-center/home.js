@@ -12,6 +12,7 @@
 
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
+import { confirmDialog } from '../shared/components/confirm-dialog.js';
 
 const TIER_BADGE = { 0: 'ceo-badge-critical', 1: 'ceo-badge-warning', 2: 'ceo-badge-neutral' };
 const IMPACT_RANK = { high: 0, medium: 1, low: 2 };
@@ -30,7 +31,83 @@ export async function initHome() {
   const realToday = new Date().toISOString().slice(0, 10);
   picker.value = realToday;
   picker.addEventListener('change', () => loadDay(picker.value || realToday));
+  wireLeaveButton(picker);
+  wireResetButton(picker);
   await loadDay(picker.value);
+}
+
+// --- Submit Leave (Section 2) -------------------------------------------
+// Inline form; the backend answers needsConfirmation when work is still open
+// before the leave starts ("Was this activity completed?") and the retry
+// carries the founder's Yes/No.
+function wireLeaveButton(picker) {
+  const btn = document.getElementById('home-leave-btn');
+  const holder = document.getElementById('home-leave-form');
+  btn.addEventListener('click', () => {
+    if (holder.style.display !== 'none') { holder.style.display = 'none'; return; }
+    holder.style.display = '';
+    holder.innerHTML = `
+      <div class="ceo-card">
+        <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+          <div class="ceo-field" style="margin: 0;"><label class="ceo-label">Start date</label><input class="ceo-input" type="date" id="leave-start" /></div>
+          <div class="ceo-field" style="margin: 0;"><label class="ceo-label">End date</label><input class="ceo-input" type="date" id="leave-end" /></div>
+          <div class="ceo-field" style="margin: 0; flex: 1; min-width: 12em;"><label class="ceo-label">Reason (optional)</label><input class="ceo-input" id="leave-reason" maxlength="200" placeholder="e.g. family, travel, weekend" /></div>
+          <button class="ceo-btn ceo-btn-primary" id="leave-submit" style="align-self: end;">Submit</button>
+        </div>
+        <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-2) 0 0;">Leave days get no tasks and never go overdue — the whole plan shifts forward automatically.</p>
+      </div>`;
+    holder.querySelector('#leave-submit').addEventListener('click', () => submitLeave(holder, picker));
+  });
+}
+
+async function submitLeave(holder, picker, priorComplete) {
+  const start = holder.querySelector('#leave-start').value;
+  const end = holder.querySelector('#leave-end').value;
+  const reason = holder.querySelector('#leave-reason').value;
+  if (!start || !end || start > end) {
+    showToast('Start aur end date sahi chunein.', 'critical');
+    return;
+  }
+  try {
+    const body = { action: 'submit_leave', start_date: start, end_date: end, reason };
+    if (typeof priorComplete === 'boolean') body.prior_complete = priorComplete;
+    const res = await postJson('/api/ceo/activities', body);
+    if (res.needsConfirmation) {
+      const yes = await confirmDialog({
+        title: 'Was this activity completed?',
+        message: `${res.pendingCount} task(s) from before the leave (last: ${res.lastPendingDate}) are still open. "Yes" marks them completed and you continue fresh after leave; "Cancel" means No — they stay as your resume point after leave.`,
+        confirmLabel: 'Yes — completed',
+      });
+      return submitLeave(holder, picker, yes);
+    }
+    holder.style.display = 'none';
+    showToast(res.coaching || 'Leave saved.', 'success');
+    loadDay(picker.value);
+  } catch (err) {
+    showToast('Leave save fail: ' + err.message, 'critical');
+  }
+}
+
+// --- Reset Plan (Section 3) ----------------------------------------------
+function wireResetButton(picker) {
+  document.getElementById('home-reset-btn').addEventListener('click', async () => {
+    const ok = await confirmDialog({
+      title: 'Reset the entire plan?',
+      message: 'The complete execution roadmap restarts from Day 1 — today becomes Day 1, the yearly IB Growth plan and the Physical IB Expansion cycle both regenerate from today, and every old pending task is closed out. This cannot be undone.',
+      confirmLabel: 'Reset — today is Day 1',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      const res = await postJson('/api/ceo/activities', { action: 'reset_plan' });
+      showToast(res.coaching || 'Plan reset.', 'success');
+      const realToday = new Date().toISOString().slice(0, 10);
+      picker.value = realToday;
+      loadDay(realToday);
+    } catch (err) {
+      showToast('Reset fail: ' + err.message, 'critical');
+    }
+  });
 }
 
 async function loadDay(date) {
@@ -39,6 +116,10 @@ async function loadDay(date) {
   try {
     m = await getJson('/api/ceo/mission?date=' + encodeURIComponent(date));
     document.getElementById('home-mentor-line').textContent = m.mentorMessage || '';
+    const banner = document.getElementById('home-leave-banner');
+    banner.innerHTML = m.leave?.onLeave
+      ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-4);">On leave ${escapeHtml(m.leave.start)} → ${escapeHtml(m.leave.end)}${m.leave.reason ? ' (' + escapeHtml(m.leave.reason) + ')' : ''} — no tasks scheduled; the plan has shifted forward.</div>`
+      : '';
   } catch (err) {
     document.getElementById('home-mentor-line').textContent = '';
     document.getElementById('home-ib-growth').innerHTML =
@@ -128,7 +209,9 @@ function actionEntry(label, impact, hrefSuffix) {
 
 // Shared row markup for any daily_activities-backed item (cadence tasks,
 // the Physical checklist item) — Not Started/Partial/Complete via the exact
-// same Done/Partial/Skip controls the old Home used.
+// same Done/Partial/Skip controls, now with full execution guidance
+// (purpose, micro-steps, best time, expected outcome) so the founder never
+// has to guess what "community touch" actually means today.
 function taskRowHtml(t) {
   const label = t.key.replace(/^(daily|weekly|monthly|quarterly)\./, '').replace(/_/g, ' ');
   const isOpen = t.execState !== 'completed' && t.execState !== 'skipped';
@@ -137,14 +220,26 @@ function taskRowHtml(t) {
        <button class="ceo-btn ceo-btn-secondary" data-act="partial">Partial</button>
        <button class="ceo-btn ceo-btn-secondary" data-act="skipped">Skip</button>`
     : `<span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${t.note ? escapeHtml(t.note) : ''}</span>`;
+  const steps = (t.steps || []).length
+    ? `<ol style="margin: var(--ceo-space-1) 0 0; padding-left: 1.3em; font-size: var(--ceo-font-size-sm);">${t.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol>`
+    : '';
+  const metaLine = [
+    t.bestTime ? `Best time: ${escapeHtml(t.bestTime)}` : '',
+    t.outcomeLine ? `Expected: ${escapeHtml(t.outcomeLine)}` : (t.expectedOutcome ? `Moves: ${escapeHtml(t.expectedOutcome)}` : ''),
+  ].filter(Boolean).join(' · ');
   return `
-    <div class="ceo-flex ceo-items-center ceo-gap-3" style="padding: var(--ceo-space-3) 0; border-bottom: 1px solid var(--ceo-border); flex-wrap: wrap;" data-task-id="${t.id}">
-      ${t.daysOverdue ? `<span class="ceo-badge ceo-badge-critical">${t.daysOverdue}d overdue</span>` : ''}
-      <span class="ceo-badge ${TIER_BADGE[t.tierRank] || 'ceo-badge-neutral'}">${escapeHtml(t.priority)}</span>
-      ${execStateBadge(t.execState)}
-      <span style="flex: 1; min-width: 14em;">${escapeHtml(label)}</span>
-      <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${t.minutes}m${t.realMinutes ? ` (actual ${t.realMinutes}m)` : ''}</span>
-      ${controls}
+    <div style="padding: var(--ceo-space-3) 0; border-bottom: 1px solid var(--ceo-border);" data-task-id="${t.id}">
+      <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+        ${t.daysOverdue ? `<span class="ceo-badge ceo-badge-critical">${t.daysOverdue}d overdue</span>` : ''}
+        <span class="ceo-badge ${TIER_BADGE[t.tierRank] || 'ceo-badge-neutral'}">${escapeHtml(t.priority)}</span>
+        ${execStateBadge(t.execState)}
+        <strong style="flex: 1; min-width: 12em; text-transform: capitalize;">${escapeHtml(label)}</strong>
+        <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${t.minutes}m${t.realMinutes ? ` (actual ${t.realMinutes}m)` : ''}</span>
+        ${controls}
+      </div>
+      ${t.why ? `<div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-1);">${escapeHtml(t.why)}</div>` : ''}
+      ${steps}
+      ${metaLine ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: var(--ceo-space-1);">${metaLine}</div>` : ''}
     </div>`;
 }
 
@@ -278,11 +373,11 @@ function renderTradingCheckin(trading, date) {
       <label class="ceo-flex ceo-items-center ceo-gap-1"><input type="radio" name="${name}" value="false" ${current === false ? 'checked' : ''} /> No</label>
     </div>`;
 
+  const coachingLines = (c.coaching || []).map((line) =>
+    `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-2);">🧠 ${escapeHtml(line)}</div>`
+  ).join('');
   el.innerHTML = `
-    ${c.recurringWeakness ? `
-      <div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-3);">
-        Recurring weakness: <strong>${escapeHtml(c.recurringWeakness.text)}</strong> mentioned ${c.recurringWeakness.count}× recently — that's a pattern, not an accident.
-      </div>` : ''}
+    ${coachingLines}
     ${yesNo('analyzed_chart', 'Did I analyze the charts today?', c.analyzed_chart)}
     ${yesNo('took_trade', 'Did I take any trade today?', c.took_trade)}
     ${yesNo('followed_rules', 'Did I follow my trading rules and risk management?', c.followed_rules)}
@@ -313,7 +408,10 @@ function renderTradingCheckin(trading, date) {
         avoided_repeat: radioVal('avoided_repeat'),
       });
       document.getElementById('home-trading-checkin-msg').textContent = 'Saved.';
-      showToast('Check-in saved.', res.ok ? 'success' : 'info');
+      showToast((res.coaching && res.coaching[0]) || 'Check-in saved.', res.ok ? 'success' : 'info');
+      // Refresh the coaching alerts with the just-saved history.
+      const refreshed = { ...trading, checkin: { ...res.checkin, date, coaching: res.coaching || [], recurringWeakness: null } };
+      renderTradingCheckin(refreshed, date);
     } catch (err) {
       showToast('Save fail: ' + err.message, 'critical');
     } finally {

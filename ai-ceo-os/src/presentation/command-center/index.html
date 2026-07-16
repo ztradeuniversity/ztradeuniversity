@@ -20,22 +20,30 @@
           <div class="ceo-field" style="margin: 0;">
             <input class="ceo-input" type="date" id="home-date-picker" style="max-width: 12em;" />
           </div>
+          <span style="flex: 1;"></span>
+          <button class="ceo-btn ceo-btn-secondary" id="home-leave-btn">Submit Leave</button>
+          <button class="ceo-btn ceo-btn-destructive" id="home-reset-btn">Reset Plan</button>
         </div>
+        <div id="home-leave-form" style="display: none; margin-bottom: var(--ceo-space-4);"></div>
+        <div id="home-leave-banner"></div>
         <p id="home-mentor-line" class="ceo-text-secondary" style="margin-top: 0; margin-bottom: var(--ceo-space-6);"></p>
 
         <!-- 1. IB Growth -->
         <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
           <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
             <h3 style="margin: 0; flex: 1;">IB Growth</h3>
-            <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/intelligence/index.html">See Complete Plan →</a>
+            <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/plan/index.html?tab=growth">See Complete Plan →</a>
           </div>
           <div id="home-ib-growth" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
         </section>
 
-        <!-- 2. Physical Activity -->
+        <!-- 2. Physical IB Expansion -->
         <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-          <h3 style="margin-top: 0;">Physical Activity</h3>
-          <div id="home-physical"><div class="ceo-skeleton" style="height: 5em;"></div></div>
+          <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+            <h3 style="margin: 0; flex: 1;">Physical IB Expansion</h3>
+            <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/plan/index.html?tab=physical">See Complete Plan →</a>
+          </div>
+          <div id="home-physical" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 5em;"></div></div>
         </section>
 
         <!-- 3. Personal Trading -->

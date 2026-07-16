@@ -66,6 +66,57 @@ const DAY_PLATFORM = { production: 'youtube', publish: 'website', community: 'te
 const ACQUISITION_STAGES = ['lead', 'qualified', 'onboarding'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+// Per-activity execution guidance (Section 1, "complete hand-holding").
+// Steps come FIRST from the seeded execution-checklist STEPS field where one
+// exists (parsed in enrichActivity); GUIDE_STEPS only fills the few cadence
+// keys that have no checklist. Best times trace to the seeded platform
+// playbooks (PK evenings 7-11pm PKT serves GCC same upload) — defaults, not
+// rules, per the seeded posting_times_note.
+const BEST_TIME = {
+  'daily.core_block': 'First 15 minutes of the work day',
+  'daily.community_touch': 'Evening 7–11pm PKT (peak PK + GCC hours)',
+  'daily.retention_touches': 'Right after the community block',
+  'daily.ib_followups': 'Evening 8–10pm (decision conversations land at night)',
+  'daily.technical_analysis': 'Session overlap 6–8pm PKT (gold most active)',
+  'daily.physical_outreach': '10am–1pm (institute office hours)',
+  'weekly.film_video': 'Morning deep-work block, before messages open',
+  'weekly.publish_chain': 'Morning after production day',
+  'weekly.live_class': 'Saturday evening fixed slot',
+  'weekly.review': 'Friday, close of day',
+  'weekly.kpi_entry': 'Inside the review block',
+  'weekly.email_digest': 'Inside the review block',
+  'weekly.learning_slot': 'Any low-energy slot — freely movable',
+};
+const GUIDE_STEPS = {
+  'daily.technical_analysis': [
+    'Open the gold (XAUUSD) or BTC chart',
+    "Mark today's key levels and structure",
+    'Post a 2-line educational read on Telegram — analysis, never a signal',
+    'Answer replies; point serious questioners to the free course',
+  ],
+  'daily.physical_outreach': [
+    "Check the current cycle area (Physical IB Expansion section)",
+    'Pick 1–2 institutes from the CRM — or add ones you found today',
+    'Visit or call: intro → free-class offer → proposal if warm',
+    'Log the visit + set the follow-up date in the CRM',
+  ],
+  'weekly.email_digest': ['Write the one founder paragraph', 'Queue the digest — sequences do the rest'],
+  'weekly.learning_slot': ['Open the reading queue', '30 focused minutes; save one applicable note'],
+};
+// Concrete outcome line per activity (target, not a promise) — shown as
+// "Expected outcome" alongside the KPI it moves.
+const OUTCOME_LINE = {
+  'daily.community_touch': '~2 qualified conversations; every question answered <24h',
+  'daily.retention_touches': "Today's due-list cleared; Day-1 voice notes same-day",
+  'daily.ib_followups': '1 flagged conversation advanced a stage',
+  'daily.technical_analysis': '1 authority post with real replies',
+  'daily.physical_outreach': '1–2 institutes contacted; every contact logged with a follow-up date',
+  'weekly.film_video': '1 long-form filmed; watch-time >40% target',
+  'weekly.publish_chain': 'Article live ≤48h after the video + 3–5 clips queued',
+  'weekly.live_class': 'Attendance + replay views — the weekly conversion moment',
+  'weekly.review': "Review complete; next week's Focus picked",
+};
+
 export async function onRequestGet({ request, env }) {
   const auth = await requireFounder(request, env);
   if (auth.response) return auth.response;
@@ -88,6 +139,14 @@ export async function onRequestGet({ request, env }) {
     const productionDay = String(setting('week.production_day', 'monday')).replace(/"/g, '');
     const publishDay = DAY_NAMES[(DAY_NAMES.indexOf(productionDay) + 1) % 7];
 
+    // Approved leave periods (written by activities.js submit_leave). A day
+    // inside a leave period gets no activities instantiated and can never
+    // surface as overdue — the plan shifts forward instead (plan-logic.js
+    // skips leave dates without consuming a plan day).
+    const leavePeriods = asLeaveArray(setting('leave.periods', []));
+    const inLeave = (d) => leavePeriods.some((p) => p && p.start <= d && d <= p.end);
+    const onLeave = inLeave(viewDate);
+
     const dayType =
       dayName === productionDay ? 'production'
       : dayName === publishDay ? 'publish'
@@ -104,8 +163,9 @@ export async function onRequestGet({ request, env }) {
       `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=eq.${viewDate}&order=created_at.asc`
     );
     // Never auto-create rows for a past/future date merely being VIEWED —
-    // instantiation only fires when the picker is on the real today.
-    if (activities.length === 0 && viewDate === realToday) {
+    // instantiation only fires when the picker is on the real today, and
+    // never on an approved leave day.
+    if (activities.length === 0 && viewDate === realToday && !onLeave) {
       const templates = await db.select(
         'knowledge_base',
         `select=title,content&owner_user_id=eq.${uid}&category=eq.cadence-template&is_active=eq.true`
@@ -167,7 +227,21 @@ export async function onRequestGet({ request, env }) {
       const tierRank = TIER_ORDER[tierStr] ?? 1;
       const meta = ACTIVITY_META[a.activity_type] || {};
       const rule = (base || '').split('|').slice(3).join('|').trim();
+      // Micro-steps: the seeded checklist's STEPS field where one exists,
+      // else the GUIDE_STEPS fallback for checklist-less cadence keys.
+      const checklistSteps = meta.checklistKey
+        ? extractChecklistField(checklistByKey[meta.checklistKey], 'STEPS')
+        : '';
+      const steps = checklistSteps
+        ? checklistSteps.split(/\s*->\s*/).map((s) => s.trim()).filter(Boolean)
+        : GUIDE_STEPS[a.activity_type] || [];
+      const kpiTarget = meta.checklistKey
+        ? extractChecklistField(checklistByKey[meta.checklistKey], 'KPI')
+        : '';
       return {
+        steps,
+        bestTime: BEST_TIME[a.activity_type] || null,
+        outcomeLine: OUTCOME_LINE[a.activity_type] || kpiTarget || null,
         id: a.id,
         key: a.activity_type,
         status: a.status,
@@ -201,7 +275,11 @@ export async function onRequestGet({ request, env }) {
     // Overdue backlog — ranked oldest-and-most-critical first (Patch 1's
     // "Overdue" priority tier). Never merged into today's rankable list, so
     // today's own tier ranking (and the 80/20 focus) stays exactly as before.
+    // Rows dated inside an approved leave period are excluded — leave days
+    // never become pending (submit_leave also skips them at write time; this
+    // covers periods approved from another device before that patch ran).
     const overdue = overdueRows
+      .filter((a) => !inLeave(a.activity_date))
       .map((a) => enrichActivity(a, true))
       .sort((a, b) => b.daysOverdue - a.daysOverdue || a.tierRank - b.tierRank);
 
@@ -243,9 +321,13 @@ export async function onRequestGet({ request, env }) {
     // rotation or new lookup.
     const research = await computeResearchFocus(db, uid);
 
+    const leavePeriod = onLeave ? leavePeriods.find((p) => p.start <= viewDate && viewDate <= p.end) : null;
     return json({
       date: viewDate,
       dayType,
+      leave: onLeave
+        ? { onLeave: true, start: leavePeriod.start, end: leavePeriod.end, reason: leavePeriod.reason || '' }
+        : { onLeave: false },
       estimatedMinutes: totalMinutes,
       mentorMessage,
       focus,
@@ -263,6 +345,16 @@ export async function onRequestGet({ request, env }) {
   } catch (err) {
     return json({ error: 'mission_failed', detail: String(err.message || err).slice(0, 300) }, 500);
   }
+}
+
+// settings.value arrives as parsed jsonb, but rows written through the REST
+// helper may hold a JSON-encoded string — accept both.
+function asLeaveArray(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+  }
+  return [];
 }
 
 function parseMinutes(str) {

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Complete Plan — AI CEO OS</title>
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
+  <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+</head>
+<body class="ceo-auth-pending">
+  <div class="ceo-app-shell">
+    <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
+    <header class="ceo-app-header" id="ceo-header-slot"></header>
+    <main class="ceo-app-main">
+      <div class="ceo-content">
+        <h1>Complete Plan</h1>
+        <div class="ceo-flex ceo-gap-3" style="margin-bottom: var(--ceo-space-4); flex-wrap: wrap;">
+          <button class="ceo-btn ceo-btn-secondary" id="plan-tab-growth">IB Growth Master Plan</button>
+          <button class="ceo-btn ceo-btn-secondary" id="plan-tab-physical">Physical IB Expansion</button>
+        </div>
+        <p id="plan-subtitle" class="ceo-text-secondary" style="margin-top: 0;"></p>
+        <div id="plan-body"><div class="ceo-skeleton" style="height: 12em;"></div></div>
+        <div style="margin: var(--ceo-space-4) 0;">
+          <button class="ceo-btn ceo-btn-primary" id="plan-load-more" style="display: none;">Load More</button>
+          <span id="plan-progress" class="ceo-text-muted" style="margin-left: var(--ceo-space-3); font-size: var(--ceo-font-size-sm);"></span>
+        </div>
+      </div>
+    </main>
+    <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>
+  </div>
+
+  <script type="module">
+    import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
+    import { initPlanPage } from '/ai-ceo-os/src/presentation/plan/plan-page.js';
+    const user = await initLayout('growth');
+    if (user) initPlanPage();
+  </script>
+</body>
+</html>

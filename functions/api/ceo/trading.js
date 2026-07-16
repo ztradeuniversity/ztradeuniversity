@@ -6,7 +6,7 @@
 // founder-side violation detector is deliberately not faked here).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { detectRecurringWeakness } from '../../utils/ceo/psychology-logic.js';
+import { detectRecurringWeakness, buildCoaching } from '../../utils/ceo/psychology-logic.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const CHECKIN_LOOKBACK_DAYS = 14;
@@ -27,13 +27,14 @@ export async function onRequestGet({ request, env }) {
       db.select('trading_records', `select=id,instrument,direction,entry_price,exit_price,outcome,pnl,notes,opened_at,source&owner_user_id=eq.${uid}&order=opened_at.desc.nullslast&limit=50`),
       db.select('rule_violations', `select=id,trading_rule_id,severity,notes,created_at&owner_user_id=eq.${uid}&order=created_at.desc&limit=50`),
       db.select('trading_checkin', `select=*&owner_user_id=eq.${uid}&checkin_date=eq.${date}`),
-      db.select('trading_checkin', `select=weakness,checkin_date&owner_user_id=eq.${uid}&checkin_date=gte.${lookbackStart}`),
+      db.select('trading_checkin', `select=weakness,followed_rules,avoided_repeat,analyzed_chart,checkin_date&owner_user_id=eq.${uid}&checkin_date=gte.${lookbackStart}`),
     ]);
     const todayCheckin = checkinRows[0] || null;
     const recurringWeakness = todayCheckin?.weakness
       ? detectRecurringWeakness(recentCheckins, todayCheckin.weakness)
       : null;
-    return json({ rules, records, violations, checkin: { ...todayCheckin, date, recurringWeakness } });
+    const coaching = buildCoaching(recentCheckins, todayCheckin);
+    return json({ rules, records, violations, checkin: { ...todayCheckin, date, recurringWeakness, coaching } });
   } catch (err) {
     return json({ error: 'trading_load_failed', detail: String(err.message || err).slice(0, 300) }, 500);
   }
@@ -74,7 +75,14 @@ export async function onRequestPost({ request, env }) {
         const rows = await db.insert('trading_checkin', [{ owner_user_id: uid, checkin_date: date, ...patch }]);
         row = rows[0];
       }
-      return json({ ok: true, checkin: row });
+      // Coaching reflects the row just saved — fetch the fresh 14-day window
+      // (it now includes this save) and build the mentor lines from it.
+      const lookback = new Date(Date.now() - CHECKIN_LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10);
+      const windowRows = await db.select(
+        'trading_checkin',
+        `select=weakness,followed_rules,avoided_repeat,analyzed_chart,checkin_date&owner_user_id=eq.${uid}&checkin_date=gte.${lookback}`
+      );
+      return json({ ok: true, checkin: row, coaching: buildCoaching(windowRows, row) });
     }
 
     if (body.action === 'violation') {
