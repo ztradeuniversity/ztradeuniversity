@@ -14,7 +14,7 @@
 // leave/reset, institutes.js for institute records).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { generateGrowthDays, buildPhysicalRows, PLAN_TOTAL_DAYS } from '../../utils/ceo/plan-logic.js';
+import { generateGrowthDays, buildPhysicalRows, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE } from '../../utils/ceo/plan-logic.js';
 import { currentAreaAssignment } from '../../utils/ceo/physical-logic.js';
 import { instituteNextStep } from '../../utils/ceo/coach-logic.js';
 
@@ -72,7 +72,9 @@ export async function onRequestGet({ request, env }) {
         row.institutes = matches.map((i) => ({ ...i, nextStep: instituteNextStep(i.stage) }));
         row.studentsAcquired = matches.reduce((s, i) => s + (i.students_registered || 0), 0);
       }
-      return json({ section, offset, count, rows, hasMore, totalEntries, cycle: { startDate, cycleDays, current: assignment.current, exhausted: assignment.exhausted } });
+      // Full queue included so the page can reorder areas (Move Up/Down posts
+      // a same-set permutation to institutes.js's existing reorder_queue).
+      return json({ section, offset, count, rows, hasMore, totalEntries, queue, cycle: { startDate, cycleDays, current: assignment.current, exhausted: assignment.exhausted } });
     }
 
     // --- growth section ---
@@ -88,15 +90,23 @@ export async function onRequestGet({ request, env }) {
     const publishDay = DAY_NAMES[(DAY_NAMES.indexOf(productionDay) + 1) % 7];
     const leavePeriods = asArray(setting('leave.periods', []));
 
+    // Self-optimizing layer (Section 6): learn the last 28 days' winner and
+    // loser from real completion history, and let the generator annotate
+    // every FUTURE day with FOCUS/REDUCE lines. Fully automatic — no toggle.
+    const today = new Date().toISOString().slice(0, 10);
+    const learn = await learnActivityWeights(db, uid, today);
+
     const { days, hasMore, totalDays } = generateGrowthDays(startDate, offset, count, {
       productionDay,
       publishDay,
       leavePeriods,
+      todayStr: today,
+      focusLabel: learn.focusLabel,
+      reduceLabel: learn.reduceLabel,
     });
 
     // Real completion status for days that have already happened: one
     // range query over daily_activities, aggregated per date.
-    const today = new Date().toISOString().slice(0, 10);
     const pastDates = days.filter((d) => d.date <= today).map((d) => d.date);
     if (pastDates.length > 0) {
       const acts = await db.select(
@@ -120,8 +130,51 @@ export async function onRequestGet({ request, env }) {
       for (const d of days) d.status = 'Planned';
     }
 
-    return json({ section, offset, count, startDate, days, hasMore, totalDays: totalDays || PLAN_TOTAL_DAYS });
+    return json({
+      section, offset, count, startDate, days, hasMore,
+      totalDays: totalDays || PLAN_TOTAL_DAYS,
+      countryStrategy: COUNTRY_STRATEGY,
+      assumptionNote: ASSUMPTION_NOTE,
+      autoLearn: learn.summary,
+    });
   } catch (err) {
     return json({ error: 'plan_load_failed', detail: String(err.message || err).slice(0, 300) }, 500);
   }
+}
+
+// 28-day completion learning: the highest-impact reliably-completed activity
+// becomes FOCUS; an activity skipped more than done (3+ decisions) becomes
+// REDUCE. Pure aggregation over real rows — no model, no randomness, so the
+// plan re-weights the same way every time until the founder's behavior
+// changes it.
+async function learnActivityWeights(db, uid, today) {
+  const since = new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10);
+  const rows = await db.select(
+    'daily_activities',
+    `select=activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${since}&activity_date=lte.${today}&limit=2000`
+  );
+  const TIER_WEIGHT = { CRITICAL: 3, IMPORTANT: 2, OPTIONAL: 1 };
+  const agg = {};
+  for (const r of rows) {
+    if (r.activity_type === 'daily.shutdown_note' || r.activity_type === 'daily.core_block' || r.activity_type === 'daily.shutdown') continue;
+    const tier = String(r.description || '').trim().split('|')[0].trim();
+    const a = (agg[r.activity_type] ||= { completed: 0, skipped: 0, weight: TIER_WEIGHT[tier] || 2 });
+    if (r.status === 'completed') a.completed += 1;
+    else if (r.status === 'skipped') a.skipped += 1;
+  }
+  const label = (k) => k.replace(/^(daily|weekly|monthly|quarterly)\./, '').replace(/_/g, ' ');
+  const entries = Object.entries(agg);
+  const focus = entries
+    .filter(([, a]) => a.completed >= 3)
+    .sort((x, y) => y[1].completed * y[1].weight - x[1].completed * x[1].weight)[0] || null;
+  const reduce = entries
+    .filter(([, a]) => a.completed + a.skipped >= 3 && a.skipped > a.completed)
+    .sort((x, y) => y[1].skipped - x[1].skipped)[0] || null;
+  return {
+    focusLabel: focus ? label(focus[0]) : null,
+    reduceLabel: reduce ? label(reduce[0]) : null,
+    summary: focus || reduce
+      ? `Auto-learned from your last 28 days: ${focus ? `FOCUS on "${label(focus[0])}" (${focus[1].completed}× completed, highest impact)` : ''}${focus && reduce ? '; ' : ''}${reduce ? `REDUCE "${label(reduce[0])}" (skipped ${reduce[1].skipped}×)` : ''}. Future plan days are annotated accordingly.`
+      : 'Auto-learning active — needs ~1 week of completion history before it re-weights the plan.',
+  };
 }

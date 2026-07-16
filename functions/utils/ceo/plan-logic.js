@@ -130,6 +130,46 @@ const NOTES = [
   'TikTok/Instagram: auto-repost only, zero native minutes (locked verdict).',
 ];
 
+function normalizeOpts(opts) {
+  return {
+    productionDay: opts.productionDay || 'monday',
+    publishDay: opts.publishDay || 'tuesday',
+    reviewDay: opts.reviewDay || 'friday',
+    classDay: opts.classDay || 'saturday',
+  };
+}
+
+function buildDayRow(dayNumber, dateStr, weekdayName, o, opts) {
+  const phase = phaseForDay(dayNumber);
+  const content = dayContent(dayNumber, dateStr, weekdayName, o);
+  // Self-optimizing layer (Section 6): the caller passes the 28-day
+  // learned winners/losers from real completion history; future days get
+  // annotated so the plan visibly re-weights itself — never rewritten,
+  // always explained.
+  const todayStr = opts.todayStr || null;
+  if (todayStr && dateStr > todayStr) {
+    if (opts.focusLabel) {
+      content.activities.unshift(`FOCUS (auto-learned): ${opts.focusLabel} — your highest-completing, highest-impact activity; do it first`);
+    }
+    if (opts.reduceLabel) {
+      content.activities.push(`REDUCE (auto-learned): ${opts.reduceLabel} — high skip-rate in your history; halve its slot or fix its template`);
+    }
+  }
+  return {
+    day: dayNumber,
+    date: dateStr,
+    weekday: weekdayName,
+    stage: phase.stage,
+    country: phase.countries,
+    language: phase.language,
+    budget: phase.budget,
+    platform: content.platform,
+    activities: content.activities,
+    expectedResult: content.expected,
+    note: NOTES[(dayNumber - 1) % NOTES.length],
+  };
+}
+
 // Generate roadmap rows [offset, offset+count). Leave dates are skipped
 // WITHOUT consuming a plan day — that is the "shift forward" rule: a 3-day
 // leave pushes every later plan day 3 calendar days into the future.
@@ -138,12 +178,7 @@ export function generateGrowthDays(startDateStr, offset, count, opts = {}) {
   if (!Number.isFinite(start)) return { days: [], hasMore: false };
   const leave = Array.isArray(opts.leavePeriods) ? opts.leavePeriods : [];
   const inLeave = (d) => leave.some((p) => p && p.start <= d && d <= p.end);
-  const o = {
-    productionDay: opts.productionDay || 'monday',
-    publishDay: opts.publishDay || 'tuesday',
-    reviewDay: opts.reviewDay || 'friday',
-    classDay: opts.classDay || 'saturday',
-  };
+  const o = normalizeOpts(opts);
 
   const days = [];
   let dayNumber = 0;
@@ -156,25 +191,105 @@ export function generateGrowthDays(startDateStr, offset, count, opts = {}) {
     dayNumber += 1;
     if (dayNumber > PLAN_TOTAL_DAYS) break;
     if (dayNumber <= offset) continue;
-    const weekdayName = DAY_NAMES[date.getUTCDay()];
-    const phase = phaseForDay(dayNumber);
-    const content = dayContent(dayNumber, dateStr, weekdayName, o);
-    days.push({
-      day: dayNumber,
-      date: dateStr,
-      weekday: weekdayName,
-      stage: phase.stage,
-      country: phase.countries,
-      language: phase.language,
-      budget: phase.budget,
-      platform: content.platform,
-      activities: content.activities,
-      expectedResult: content.expected,
-      note: NOTES[(dayNumber - 1) % NOTES.length],
-    });
+    days.push(buildDayRow(dayNumber, dateStr, DAY_NAMES[date.getUTCDay()], o, opts));
   }
   return { days, hasMore: days.length > 0 && days[days.length - 1].day < PLAN_TOTAL_DAYS, totalDays: PLAN_TOTAL_DAYS };
 }
+
+// The single plan day scheduled on a specific calendar DATE (Section 1,
+// date-first execution): same walk, same leave-shifting, so picking Day 2 or
+// Day 250 in the Home date picker shows exactly what the roadmap holds for
+// that date. Returns null when the date is before Day 1, past Day 365, or an
+// approved leave day (callers show the leave banner instead).
+export function planDayForDate(startDateStr, targetDateStr, opts = {}) {
+  const start = Date.parse(startDateStr);
+  if (!Number.isFinite(start) || !targetDateStr || targetDateStr < startDateStr) return null;
+  const leave = Array.isArray(opts.leavePeriods) ? opts.leavePeriods : [];
+  const inLeave = (d) => leave.some((p) => p && p.start <= d && d <= p.end);
+  if (inLeave(targetDateStr)) return null;
+  const o = normalizeOpts(opts);
+  let dayNumber = 0;
+  for (let cal = 0; cal < PLAN_TOTAL_DAYS + 135; cal++) {
+    const date = new Date(start + cal * DAY_MS);
+    const dateStr = date.toISOString().slice(0, 10);
+    if (inLeave(dateStr)) continue;
+    dayNumber += 1;
+    if (dayNumber > PLAN_TOTAL_DAYS) return null;
+    if (dateStr === targetDateStr) {
+      return buildDayRow(dayNumber, dateStr, DAY_NAMES[date.getUTCDay()], o, opts);
+    }
+    if (dateStr > targetDateStr) return null;
+  }
+  return null;
+}
+
+// --- Country strategy (Section 3: the multi-country master table) --------
+//
+// One row per market, every verdict from the seeded country playbooks
+// (broker, language, platform, content, culture rules) and growth-stage
+// gates. Conversion/CAC figures are PLANNING ASSUMPTIONS — clearly labeled,
+// conservative, and replaced by real funnel numbers as the Monthly AI Review
+// accumulates data (the ASSUMPTION_NOTE ships with the payload so the UI
+// must show it).
+export const ASSUMPTION_NOTE = 'Conversion/CAC figures are conservative planning assumptions — the Monthly AI Review replaces them with your real funnel numbers as data accumulates.';
+
+export const COUNTRY_STRATEGY = [
+  {
+    country: 'Pakistan', priority: 'P1 — active', broker: 'Exness',
+    language: 'Urdu / Roman-Urdu', platform: 'YouTube + Telegram + WhatsApp + FB groups',
+    contentType: 'Gold-led education, scam-anatomy, halal series, honest small-account math',
+    audience: 'Beginners, small accounts, gold traders, jewellers, business owners',
+    postingFrequency: '1 long-form + 1 live class + 3–5 clips/wk; TG 1–2 posts daily',
+    promotion: 'Organic-first; FB Ads capped-CAC probes only after the 300-client gate',
+    expectedConversion: '~1–2% viewer→course, ~10–15% course→IB (planning assumption)',
+    expectedCac: 'PKR 0 organic; probe target <PKR 1,500/activated client when paid opens',
+    expectedGrowth: 'Primary engine — majority of the first 1,000 activated clients',
+  },
+  {
+    country: 'GCC (UAE/Saudi expats)', priority: 'P1.5 — active, rides PK assets', broker: 'Exness Islamic — lead with it',
+    language: 'Urdu + English', platform: 'YouTube + WhatsApp (Gulf evenings 8–11pm GST)',
+    contentType: 'Halal-clarity (scholarly views, never verdicts), remittance-vs-investing, Eid/Ramadan gold timing',
+    audience: 'Expat professionals 28–45, time-poor, highest LTV segment',
+    postingFrequency: 'Same PK uploads timed for Gulf evenings (+1h/wk extra)',
+    promotion: 'Organic only — trust-first segment; paid never leads here',
+    expectedConversion: 'Higher per-lead value, lower volume (planning assumption)',
+    expectedCac: '≈PKR 0 (marginal — rides Pakistan content)',
+    expectedGrowth: 'Highest-LTV layer on the PK engine',
+  },
+  {
+    country: 'Nigeria + Kenya', priority: 'P2 — GATED: opens at 300 activated clients', broker: 'Exness + Vantage trial in parallel',
+    language: 'English', platform: 'YouTube EN + WhatsApp-heavy (KE), faster pace than ur market',
+    contentType: 'EN mirrors of PROVEN winners only — small-account truth, prop-firm reality',
+    audience: 'Young mobile-first traders; small accounts',
+    postingFrequency: 'Mirror cadence of proven PK winners once gate opens',
+    promotion: 'Capped-CAC probes allowed from the same gate',
+    expectedConversion: 'Faster funnel, lower LTV than GCC (planning assumption)',
+    expectedCac: 'Probe target set at gate review; watch regulatory tightening both markets',
+    expectedGrowth: 'The second engine — scales the path from 1,000 toward 10,000+',
+  },
+  {
+    country: 'Bangladesh', priority: 'GATE — Bengali AI-localization trial first', broker: 'Exness (verify partner terms at trial)',
+    language: 'Bengali (trial: 5–10 pieces, native QC must pass)', platform: 'Decided by trial',
+    contentType: 'Localized mirrors of proven winners', audience: 'TBD by trial',
+    postingFrequency: '—', promotion: 'None before the content gate passes',
+    expectedConversion: 'Unknown — that is what the trial measures', expectedCac: '—',
+    expectedGrowth: 'Never build an audience you cannot yet serve — content gate first',
+  },
+  {
+    country: 'Egypt', priority: 'GATE — Exness client-acceptance verification FIRST', broker: 'Verify before ANY minutes spent',
+    language: 'Arabic (MSA-vs-dialect decided inside trial)', platform: 'Decided by trial',
+    contentType: '"Protect what you have" framing (devaluation trauma) — never "grow what you have"',
+    audience: 'TBD by trial', postingFrequency: '—', promotion: 'None before verification',
+    expectedConversion: '—', expectedCac: '—',
+    expectedGrowth: 'Zero minutes before broker verification — locked rule',
+  },
+  {
+    country: 'Rejected/Deferred', priority: 'Malaysia REJECT (Exness structural) · Indonesia DEFER 2027-07 · India DEFER (RBI) · EU/UK/US/AU REJECT (regulatory)',
+    broker: '—', language: '—', platform: '—', contentType: '—', audience: '—',
+    postingFrequency: '—', promotion: 'Zero minutes by locked verdict — re-read the opportunity-cost analysis if tempted',
+    expectedConversion: '—', expectedCac: '—', expectedGrowth: '—',
+  },
+];
 
 // --- Physical IB Expansion geography -----------------------------------
 //

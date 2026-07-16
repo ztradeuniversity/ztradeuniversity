@@ -160,6 +160,24 @@ function renderIbGrowth(m) {
   const cadenceItems = [...(m.top || []), ...(m.rest || []), ...(m.overdue || []), ...(m.done || [])]
     .filter((t) => !HIDDEN_ON_HOME.has(t.key));
 
+  // Date-first execution: a date with no stored rows (any past day never
+  // opened, or any future day) shows its deterministic roadmap day —
+  // exactly what the Complete Plan holds for that date, leave-shifted.
+  if (cadenceItems.length === 0 && m.plannedDay) {
+    const d = m.plannedDay;
+    el.innerHTML = `
+      <div class="ceo-alert" style="border: 1px solid var(--ceo-border); border-radius: var(--ceo-radius-sm); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-3);">
+        <strong>Day ${d.day} of 365</strong> · ${escapeHtml(d.stage)}
+        <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: 2px;">Planned roadmap for this date — tasks become actionable (Done/Partial/Skip) on the day itself.</div>
+      </div>
+      <ul style="margin: 0; padding-left: 1.2em;">${d.activities.map((a) => `<li style="padding: 2px 0;">${escapeHtml(a)}</li>`).join('')}</ul>
+      <div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: var(--ceo-space-2);">
+        Platform: ${escapeHtml(d.platform)} · ${escapeHtml(d.country)} · ${escapeHtml(d.language)}<br />
+        Budget: ${escapeHtml(d.budget)} · Expected: ${escapeHtml(d.expectedResult)}
+      </div>`;
+    return;
+  }
+
   const rows = cadenceItems.map((t) => ({
     impactRank: IMPACT_RANK[t.impact] ?? 1,
     kind: 'cadence',
@@ -240,7 +258,37 @@ function taskRowHtml(t) {
       ${t.why ? `<div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-1);">${escapeHtml(t.why)}</div>` : ''}
       ${steps}
       ${metaLine ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: var(--ceo-space-1);">${metaLine}</div>` : ''}
+      ${kitHtml(t.kit)}
     </div>`;
+}
+
+// Ready-to-use execution guide (Section 2) — collapsed by default so the
+// list stays scannable; one click opens copy-ready questions, messages,
+// scripts, CTAs, follow-ups, and mistakes to avoid.
+function kitHtml(kit) {
+  if (!kit) return '';
+  const block = (title, content) => {
+    if (!content) return '';
+    const body = Array.isArray(content)
+      ? `<ul style="margin: 2px 0 0; padding-left: 1.2em;">${content.map((q) => `<li>${escapeHtml(q)}</li>`).join('')}</ul>`
+      : `<div>${escapeHtml(content)}</div>`;
+    return `<div style="margin-top: var(--ceo-space-2);"><strong style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">${title}</strong>${body}</div>`;
+  };
+  return `
+    <details style="margin-top: var(--ceo-space-2);">
+      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📋 Ready-to-use guide — questions, scripts, CTA, mistakes</summary>
+      <div class="ceo-card" style="margin-top: var(--ceo-space-2); font-size: var(--ceo-font-size-sm);">
+        ${block('Recommended questions', kit.questions)}
+        ${block('Recommended message', kit.message)}
+        ${block('Recommended script', kit.script)}
+        ${block('Recommended example', kit.example)}
+        ${block('Recommended CTA', kit.cta)}
+        ${block('Recommended follow-up', kit.followUp)}
+        ${block('Mistakes to avoid', kit.mistakes)}
+        ${block('Recommended timing', kit.timing)}
+        ${block('Expected result', kit.expected)}
+      </div>
+    </details>`;
 }
 
 function execStateBadge(state) {

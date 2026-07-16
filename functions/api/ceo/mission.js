@@ -19,6 +19,8 @@
 import { rest, json, requireFounder, parseExecTag, stripExecTag } from '../../utils/ceo/db.js';
 import { computeRetention } from '../../utils/ceo/retention-logic.js';
 import { delayCostLabel, automationStatusLabel } from '../../utils/ceo/coach-logic.js';
+import { EXECUTION_KITS } from '../../utils/ceo/execution-kits.js';
+import { planDayForDate } from '../../utils/ceo/plan-logic.js';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const TIER_ORDER = { CRITICAL: 0, IMPORTANT: 1, OPTIONAL: 2 };
@@ -197,7 +199,7 @@ export async function onRequestGet({ request, env }) {
     // 1b) Section 1 enrichment sources — KPI labels + execution-checklist WHY
     // text, fetched once and joined onto every parsed item below.
     const neededKpiKeys = [...new Set(Object.values(ACTIVITY_META).map((m) => m.kpiKey).filter(Boolean))];
-    const [kpiDefs, checklistDocs, automationRows, overdueRows] = await Promise.all([
+    const [kpiDefs, checklistDocs, automationRows, overdueRows, histRows] = await Promise.all([
       neededKpiKeys.length
         ? db.select('kpi_definitions', `select=key,label&key=in.(${neededKpiKeys.join(',')})`)
         : Promise.resolve([]),
@@ -211,10 +213,29 @@ export async function onRequestGet({ request, env }) {
       // sorts first via the owner_date index, so a founder who somehow has
       // 500+ backlog rows still sees the most urgent ones first).
       db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=lt.${realToday}&status=eq.pending&order=activity_date.asc&limit=500`),
+      // 1d) 28-day completion history — the self-optimizing layer's input:
+      // within a tier, what the founder reliably completes ranks first.
+      db.select('daily_activities', `select=activity_type,status&owner_user_id=eq.${uid}&activity_date=gte.${new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10)}&activity_date=lt.${realToday}&limit=2000`),
     ]);
     const kpiLabelByKey = Object.fromEntries(kpiDefs.map((k) => [k.key, k.label]));
     const checklistByKey = Object.fromEntries(checklistDocs.map((c) => [c.title, c.content]));
     const automationByKey = Object.fromEntries(automationRows.map((a) => [a.key, a]));
+
+    // Historical completion rate per activity key (decided outcomes only:
+    // completed vs skipped; 0.5 neutral prior when no history). Used as the
+    // within-tier tiebreaker — what reliably gets done ranks first, what
+    // keeps getting skipped drifts down. Automatic, deterministic.
+    const histAgg = {};
+    for (const h of histRows) {
+      const a = (histAgg[h.activity_type] ||= { completed: 0, skipped: 0 });
+      if (h.status === 'completed') a.completed += 1;
+      else if (h.status === 'skipped') a.skipped += 1;
+    }
+    const perfScoreOf = (key) => {
+      const a = histAgg[key];
+      const decided = a ? a.completed + a.skipped : 0;
+      return decided >= 3 ? a.completed / decided : 0.5;
+    };
 
     // 2) Parse + enrich + rank: tier -> time (shorter first among equals keeps
     // momentum). enrichActivity is shared with the overdue backlog below so
@@ -238,8 +259,18 @@ export async function onRequestGet({ request, env }) {
       const kpiTarget = meta.checklistKey
         ? extractChecklistField(checklistByKey[meta.checklistKey], 'KPI')
         : '';
+      // Ready-to-execute kit (Section 2): curated scripts/questions/CTAs
+      // from execution-kits.js, with the seeded checklist's EXAMPLE and
+      // MISTAKES fields merged in where the kit doesn't already carry them.
+      const kit = EXECUTION_KITS[a.activity_type] ? { ...EXECUTION_KITS[a.activity_type] } : null;
+      if (kit && meta.checklistKey && checklistByKey[meta.checklistKey]) {
+        if (!kit.mistakes) kit.mistakes = extractChecklistField(checklistByKey[meta.checklistKey], 'MISTAKES') || null;
+        const example = extractChecklistField(checklistByKey[meta.checklistKey], 'EXAMPLE');
+        if (example && !kit.example) kit.example = example;
+      }
       return {
         steps,
+        kit,
         bestTime: BEST_TIME[a.activity_type] || null,
         outcomeLine: OUTCOME_LINE[a.activity_type] || kpiTarget || null,
         id: a.id,
@@ -264,9 +295,12 @@ export async function onRequestGet({ request, env }) {
     };
     const parsed = activities.map((a) => enrichActivity(a, false));
     const core = parsed.filter((p) => p.key === 'daily.core_block' || p.key === 'daily.shutdown');
+    // Rank: tier first (locked), then learned completion rate (the
+    // self-optimizing layer — do-what-works first), then shorter-first.
     const rankable = parsed
       .filter((p) => !core.includes(p) && p.status === 'pending')
-      .sort((a, b) => a.tierRank - b.tierRank || a.minutes - b.minutes);
+      .map((p) => ({ ...p, perfScore: Math.round(perfScoreOf(p.key) * 100) / 100 }))
+      .sort((a, b) => a.tierRank - b.tierRank || b.perfScore - a.perfScore || a.minutes - b.minutes);
     const done = parsed.filter((p) => p.status !== 'pending' && !core.includes(p));
     const maxTop = Number(setting('mission.max_top_items', 3));
     const totalMinutes = parsed.filter((p) => p.status === 'pending').reduce((s, p) => s + p.minutes, 0);
@@ -321,10 +355,26 @@ export async function onRequestGet({ request, env }) {
     // rotation or new lookup.
     const research = await computeResearchFocus(db, uid);
 
+    // Date-first execution (Section 1): when the picked date has no stored
+    // rows (any past day never opened, or any future day), return the
+    // deterministic roadmap day for that exact date from the SAME generator
+    // the Complete Plan uses — so Day 2 and Day 250 both show their real
+    // scheduled activities, leave-shifted identically everywhere.
+    let plannedDay = null;
+    if (activities.length === 0 && viewDate !== realToday && !onLeave) {
+      let planStart = String(setting('plan.start_date', '')).replace(/"/g, '');
+      if (!DATE_RE.test(planStart)) {
+        const first = await db.select('daily_activities', `select=activity_date&owner_user_id=eq.${uid}&order=activity_date.asc&limit=1`);
+        planStart = first[0]?.activity_date || realToday;
+      }
+      plannedDay = planDayForDate(planStart, viewDate, { productionDay, publishDay, leavePeriods });
+    }
+
     const leavePeriod = onLeave ? leavePeriods.find((p) => p.start <= viewDate && viewDate <= p.end) : null;
     return json({
       date: viewDate,
       dayType,
+      plannedDay,
       leave: onLeave
         ? { onLeave: true, start: leavePeriod.start, end: leavePeriod.end, reason: leavePeriod.reason || '' }
         : { onLeave: false },

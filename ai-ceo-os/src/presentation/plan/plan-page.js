@@ -18,28 +18,41 @@ const STAGES = [
   'cold_contact', 'proposal_sent', 'meeting', 'negotiation',
   'accepted', 'rejected', 'classes_running', 'batch_complete', 'follow_up_later',
 ];
-const state = { tab: 'growth', offset: { growth: 0, physical: 0 }, done: { growth: false, physical: false } };
+const state = { tab: 'growth', offset: { growth: 0, physical: 0 }, done: { growth: false, physical: false }, queue: [] };
 
 export function initPlanPage() {
   const params = new URLSearchParams(window.location.search);
-  state.tab = params.get('tab') === 'physical' ? 'physical' : 'growth';
+  const t = params.get('tab');
+  state.tab = t === 'physical' ? 'physical' : t === 'review' ? 'review' : 'growth';
   document.getElementById('plan-tab-growth').addEventListener('click', () => switchTab('growth'));
   document.getElementById('plan-tab-physical').addEventListener('click', () => switchTab('physical'));
+  document.getElementById('plan-tab-review').addEventListener('click', () => switchTab('review'));
   document.getElementById('plan-load-more').addEventListener('click', () => loadMore());
   switchTab(state.tab);
 }
+
+const SUBTITLES = {
+  growth: 'The yearly roadmap toward 50,000 IB clients — generated from the locked research (countries, brokers, platforms, languages, budget gates), shifted automatically around approved leave, re-weighted monthly by your own completion history. Loaded 15 days at a time.',
+  physical: 'Pakistan-wide offline expansion: province → division → city → area → institutes. Reorder areas with ▲▼; record every visit, proposal, and follow-up per institute.',
+  review: 'The Monthly AI Review + Growth Intelligence Report — funnel, Pareto 80/20, trajectory toward 50,000 active IB clients, and next month\'s focus. Generated on demand from your real data.',
+};
 
 function switchTab(tab) {
   state.tab = tab;
   state.offset = { growth: 0, physical: 0 };
   state.done = { growth: false, physical: false };
-  document.getElementById('plan-tab-growth').className = 'ceo-btn ' + (tab === 'growth' ? 'ceo-btn-primary' : 'ceo-btn-secondary');
-  document.getElementById('plan-tab-physical').className = 'ceo-btn ' + (tab === 'physical' ? 'ceo-btn-primary' : 'ceo-btn-secondary');
-  document.getElementById('plan-subtitle').textContent = tab === 'growth'
-    ? 'The yearly roadmap toward 50,000 IB clients — generated from the locked research (countries, platforms, languages, budget gates), shifted automatically around approved leave. Loaded 15 days at a time.'
-    : 'Pakistan-wide offline expansion: province → division → city → area → institutes. Every visit, proposal, and follow-up recorded per institute.';
+  for (const key of ['growth', 'physical', 'review']) {
+    document.getElementById(`plan-tab-${key}`).className = 'ceo-btn ' + (tab === key ? 'ceo-btn-primary' : 'ceo-btn-secondary');
+  }
+  document.getElementById('plan-subtitle').textContent = SUBTITLES[tab];
   document.getElementById('plan-body').innerHTML = '<div class="ceo-skeleton" style="height: 12em;"></div>';
-  loadMore(true);
+  document.getElementById('plan-progress').textContent = '';
+  if (tab === 'review') {
+    document.getElementById('plan-load-more').style.display = 'none';
+    loadReview(new Date().toISOString().slice(0, 7));
+  } else {
+    loadMore(true);
+  }
 }
 
 async function loadMore(fresh) {
@@ -75,6 +88,39 @@ async function loadMore(fresh) {
 
 // --- IB Growth Master Plan table ----------------------------------------
 function appendGrowth(body, res, fresh) {
+  if (fresh && res.countryStrategy) {
+    body.insertAdjacentHTML('beforeend', `
+      ${res.autoLearn ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-3);">🧠 ${escapeHtml(res.autoLearn)}</div>` : ''}
+      <h3 style="margin-top: 0;">Country Strategy — the multi-market master table</h3>
+      <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
+        <table class="ceo-table" style="min-width: 1200px;">
+          <thead><tr>
+            <th>Country</th><th>Priority / Gate</th><th>Preferred Broker</th><th>Language</th><th>Platform</th>
+            <th>Content Type</th><th>Audience</th><th>Posting Frequency</th><th>Promotion</th>
+            <th>Expected Conversion</th><th>Budget / Expected CAC</th><th>Expected IB Growth</th>
+          </tr></thead>
+          <tbody>
+            ${res.countryStrategy.map((c) => `
+              <tr>
+                <td><strong>${escapeHtml(c.country)}</strong></td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.priority)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.broker)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.language)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.platform)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.contentType)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.audience)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.postingFrequency)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.promotion)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.expectedConversion)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.expectedCac)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.expectedGrowth)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <p class="ceo-text-muted" style="font-size: 0.75rem;">${escapeHtml(res.assumptionNote || '')}</p>
+      <h3>Day-by-Day Roadmap</h3>`);
+  }
   let tbody = body.querySelector('#plan-growth-tbody');
   if (fresh || !tbody) {
     body.insertAdjacentHTML('beforeend', `
@@ -117,19 +163,24 @@ function statusBadge(status) {
 
 // --- Physical IB Expansion roadmap --------------------------------------
 function appendPhysical(body, res, fresh) {
+  if (Array.isArray(res.queue)) state.queue = res.queue;
   if (fresh) {
     body.insertAdjacentHTML('beforeend', `
       <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">
         Country: <strong>Pakistan</strong> · cycle: ${res.cycle?.cycleDays || 15} days per area · current: <strong>${escapeHtml(res.cycle?.current || 'not started')}</strong>
+        · ▲▼ reorders the execution sequence (done areas stay in place)
       </p>
       <div id="plan-physical-rows"></div>`);
   }
   const holder = body.querySelector('#plan-physical-rows');
   holder.insertAdjacentHTML('beforeend', (res.rows || []).map((r) => `
-    <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);">
+    <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);" data-area-index="${r.index}">
       <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
         <span class="ceo-badge ${r.state === 'current' ? 'ceo-badge-warning' : r.state === 'done' ? 'ceo-badge-success' : 'ceo-badge-neutral'}">${escapeHtml(r.state)}</span>
         <strong style="flex: 1; min-width: 12em;">#${r.index + 1} — ${escapeHtml(r.entry)}</strong>
+        ${r.state === 'upcoming' ? `
+          <button class="ceo-btn ceo-btn-secondary" data-move-up title="Move this area earlier in the sequence">▲</button>
+          <button class="ceo-btn ceo-btn-secondary" data-move-down title="Move this area later in the sequence">▼</button>` : ''}
         <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${r.windowStart ? `${escapeHtml(r.windowStart)} → ${escapeHtml(r.windowEnd)}` : 'not scheduled'}</span>
       </div>
       <div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-1) 0 var(--ceo-space-2);">
@@ -142,6 +193,41 @@ function appendPhysical(body, res, fresh) {
       <a class="ceo-btn ceo-btn-secondary" style="margin-top: var(--ceo-space-2);" href="/ai-ceo-os/src/presentation/growth/index.html">Open in CRM</a>
     </div>`).join(''));
   wireInstituteForms(holder);
+  wireAreaReorder(holder);
+}
+
+// Move Area Up/Down (Section 4) — builds the swapped order from the full
+// queue and posts it to institutes.js's EXISTING reorder_queue action (a
+// strict same-set permutation, so nothing can be lost). Done/current areas
+// keep their position; only upcoming areas move.
+function wireAreaReorder(holder) {
+  holder.querySelectorAll('[data-move-up]:not([data-wired]), [data-move-down]:not([data-wired])').forEach((btn) => {
+    btn.setAttribute('data-wired', '1');
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.closest('[data-area-index]').getAttribute('data-area-index'), 10);
+      const dir = btn.hasAttribute('data-move-up') ? -1 : 1;
+      const target = idx + dir;
+      if (target < 0 || target >= state.queue.length) return;
+      // Never swap into a done/current slot — position IS the schedule, so
+      // that would rewrite history instead of resequencing the future.
+      const targetRow = holder.querySelector(`[data-area-index="${target}"]`);
+      if (targetRow && !targetRow.querySelector('[data-move-up]')) {
+        showToast('Current/done area se pehle nahin le ja sakte — sirf aane wale areas resequence hote hain.', 'info');
+        return;
+      }
+      const newOrder = state.queue.slice();
+      [newOrder[idx], newOrder[target]] = [newOrder[target], newOrder[idx]];
+      btn.disabled = true;
+      try {
+        await postJson('/api/ceo/institutes', { action: 'reorder_queue', order: newOrder });
+        showToast('Sequence updated — windows recalculated.', 'success');
+        switchTab('physical'); // reload with the new order + fresh windows
+      } catch (err) {
+        btn.disabled = false;
+        showToast('Reorder fail: ' + err.message, 'critical');
+      }
+    });
+  });
 }
 
 function instituteHtml(i) {
@@ -208,6 +294,104 @@ function wireInstituteForms(holder) {
       });
     });
   });
+}
+
+// --- Monthly AI Review + Growth Intelligence (Sections 5 + 8) ------------
+async function loadReview(month) {
+  const body = document.getElementById('plan-body');
+  body.innerHTML = '<div class="ceo-skeleton" style="height: 12em;"></div>';
+  try {
+    const r = await getJson(`/api/ceo/intelligence?month=${encodeURIComponent(month)}`);
+    const t = r.trajectory;
+    const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
+    const num = (v) => (v === null || v === undefined ? '—' : String(v));
+    body.innerHTML = `
+      <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-4);">
+        <label class="ceo-label" for="review-month" style="margin: 0;">Month</label>
+        <input class="ceo-input" type="month" id="review-month" value="${escapeAttr(r.month)}" style="max-width: 11em;" />
+      </div>
+
+      <div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-4);">
+        <strong>What should I focus on next month?</strong><br />${escapeHtml(r.executiveSummary)}
+      </div>
+
+      <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-4);">
+        ${statCard('Progress to 50,000', `${t.progressPct}%`, `${t.activeClients} active IB clients`)}
+        ${statCard('Target achievement score', `${t.targetScore}/100`, 'execution 40% · consistency 30% · momentum 30%')}
+        ${statCard('50k probability', `${t.probability50k}%`, t.probabilityNote)}
+        ${statCard('Activations', `${t.activationsThisMonth}`, `vs ${t.activationsLastMonth} last month (${t.trendPct >= 0 ? '+' : ''}${t.trendPct}%)`)}
+        ${statCard('Execution quality (30d)', pct(r.executionQuality30), 'Critical-tier completion')}
+        ${statCard('Consistency (30d)', pct(r.consistency30), 'daily anchor kept')}
+      </div>
+
+      <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);">
+        <h3 style="margin-top: 0;">Trajectory</h3>
+        <p style="margin: 0;"><strong>Current:</strong> ${escapeHtml(t.currentTrajectory)}</p>
+        <p style="margin: var(--ceo-space-2) 0 0;"><strong>Expected:</strong> ${escapeHtml(t.expectedTrajectory)}</p>
+      </div>
+
+      <h3>IB Acquisition Funnel</h3>
+      <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
+        <table class="ceo-table" style="min-width: 800px;">
+          <thead><tr><th>Stage</th><th>Count</th><th>Conversion</th><th>Drop-off</th><th>Est. Cost</th><th>Est. ROI</th><th>Source</th></tr></thead>
+          <tbody>
+            ${r.funnel.map((s) => `
+              <tr${r.biggestLeak && r.biggestLeak.stage === s.stage ? ' style="outline: 1px solid var(--ceo-border);"' : ''}>
+                <td><strong>${escapeHtml(s.stage)}</strong>${r.biggestLeak && r.biggestLeak.stage === s.stage ? ' <span class="ceo-badge ceo-badge-critical">biggest leak</span>' : ''}</td>
+                <td>${num(s.count)}</td><td>${pct(s.conversionRate)}</td><td>${pct(s.dropOffRate)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(s.estimatedCost)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(s.estimatedRoi)}</td>
+                <td class="ceo-text-muted" style="font-size: 0.75rem;">${escapeHtml(s.source)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-4);">
+        <div class="ceo-card" style="flex: 1; min-width: 280px;">
+          <h3 style="margin-top: 0;">Top 20% — kept &amp; doubled</h3>
+          ${r.pareto.top.length === 0 ? '<p class="ceo-text-muted">No completed activities this month yet.</p>'
+            : `<ul style="margin: 0; padding-left: 1.2em;">${r.pareto.top.map((x) => `<li>${escapeHtml(x.label)} — ${x.completed}× completed · ${x.share}% of impact</li>`).join('')}</ul>`}
+        </div>
+        <div class="ceo-card" style="flex: 1; min-width: 280px;">
+          <h3 style="margin-top: 0;">Reduce / fix</h3>
+          ${r.pareto.low.length === 0 ? '<p class="ceo-text-muted">No consistently-skipped activities — nothing to cut.</p>'
+            : `<ul style="margin: 0; padding-left: 1.2em;">${r.pareto.low.map((x) => `<li>${escapeHtml(x.label)} — skipped ${x.skipped}×, done ${x.completed}×</li>`).join('')}</ul>`}
+        </div>
+      </div>
+
+      <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-4);">
+        ${dimCard('Brokers (by active clients)', r.dimensions.brokers.map((b) => `${b.name} — ${b.active} active / ${b.total} total`))}
+        ${dimCard('Platforms (by referral source)', r.dimensions.platforms.map((p) => `${p.name} — ${p.active} active / ${p.total} total`))}
+        ${dimCard('Content types (published)', r.dimensions.contentTypes.map((c) => `${c.name} — ${c.published} published`))}
+        ${dimCard('Countries', r.dimensions.countries.map((c) => `${c.name}: ${c.note}`))}
+        ${dimCard('Languages', r.dimensions.languages.map((l) => `${l.name}: ${l.note}`))}
+      </div>
+      <p class="ceo-text-muted" style="font-size: 0.75rem;">${escapeHtml(r.dimensions.dimensionNote)}</p>`;
+    document.getElementById('review-month').addEventListener('change', (e) => {
+      if (e.target.value) loadReview(e.target.value);
+    });
+  } catch (err) {
+    body.innerHTML = `<div class="ceo-alert ceo-alert-critical">Review load fail: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function statCard(label, value, hint) {
+  return `
+    <div class="ceo-card" style="flex: 1; min-width: 160px;">
+      <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">${escapeHtml(label)}</div>
+      <div style="font-size: 1.6rem; font-weight: 700;">${escapeHtml(value)}</div>
+      <div class="ceo-text-muted" style="font-size: 0.75rem;">${escapeHtml(hint)}</div>
+    </div>`;
+}
+
+function dimCard(title, lines) {
+  return `
+    <div class="ceo-card" style="flex: 1; min-width: 240px;">
+      <h4 style="margin: 0 0 var(--ceo-space-2);">${escapeHtml(title)}</h4>
+      ${lines.length === 0 ? '<p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: 0;">No data yet — fill this field on client records.</p>'
+        : `<ul style="margin: 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`}
+    </div>`;
 }
 
 function escapeHtml(str) {
