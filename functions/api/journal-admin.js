@@ -133,6 +133,18 @@ export async function onRequest(context) {
   const action = body?.action;
 
   try {
+    // ── TASK 4 — MENTOR MODE (Manual Mentor / AI Mentor) ────────────────────
+    if (action === 'get-mentor-mode') {
+      const rows = await sbGetSafe(env, 'journal_admin_settings?select=mentor_mode&id=eq.1');
+      return json({ ok: true, mentorMode: rows?.[0]?.mentor_mode || 'MANUAL' });
+    }
+    if (action === 'set-mentor-mode') {
+      const mode = String(body?.mentorMode || '').toUpperCase();
+      if (mode !== 'MANUAL' && mode !== 'AI') return json({ ok: false, error: 'invalid_mode' }, 400);
+      await sbUpsert(env, 'journal_admin_settings', 'id', { id: 1, mentor_mode: mode });
+      return json({ ok: true, mentorMode: mode });
+    }
+
     // ── LIST TRADERS (with per-trader totals) ──────────────────────────────
     if (action === 'list-traders') {
       // select=* so we never 400 on a column the live schema doesn't have.

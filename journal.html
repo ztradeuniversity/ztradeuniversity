@@ -266,18 +266,19 @@
     .btn-sm svg { width: 15px; height: 15px; }
 
     /* ── ANALYTICS GRID ── */
-    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 26px; }
-    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+    /* Compact premium overview grid (Task 1) — auto-fits 7 cards cleanly at
+       any width instead of a fixed 5-column grid built for 19 cards. */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; margin-bottom: 22px; }
     @media (max-width: 680px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     .stat-card {
-      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-      padding: 18px 18px;
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px;
     }
-    .stat-label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-    .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--white); }
+    .stat-label { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--white); }
     .stat-value.pos { color: var(--win); }
     .stat-value.neg { color: var(--loss); }
-    .stat-sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
     /* ── CARD / SECTION ── */
     .section-card {
@@ -368,6 +369,8 @@
     .result-btn[data-result="PROFIT"].is-on { background: var(--win-bg); border-color: rgba(16,185,129,0.55); color: var(--win); }
     .result-btn[data-result="LOSS"].is-on { background: var(--loss-bg); border-color: rgba(239,68,68,0.55); color: var(--loss); }
     .result-btn[data-result="BREAKEVEN"].is-on { background: rgba(168,162,158,0.16); border-color: rgba(168,162,158,0.45); color: var(--be); }
+    /* Neutral selected state for non-result toggles reusing .result-btn (e.g. Entry Type). */
+    .result-btn.is-on:not([data-result]) { background: rgba(200,156,63,0.14); border-color: var(--gold); color: var(--gold3); }
     .req-mark { color: var(--loss); font-weight: 800; }
     .field-hint { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
     /* The global lux-global.css sets `html body input[type="number"] { border-color: … !important }`,
@@ -410,6 +413,12 @@
       margin-top: 9px; padding: 9px 11px; border-radius: 9px; font-size: 12.5px; line-height: 1.55;
       background: rgba(255,255,255,0.04); border-left: 3px solid var(--gold); color: var(--text);
     }
+    /* Compact "AI Comment" table cell (Task 2) — one sentence + Read More. */
+    .ai-comment-cell { max-width: 220px; }
+    .ai-comment-label { font-size: 10px; font-weight: 800; letter-spacing: .4px; color: var(--gold3); text-transform: uppercase; }
+    .ai-comment-text { font-size: 12px; color: var(--text); font-style: italic; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .ai-read-more { font-size: 11px; font-weight: 700; color: var(--gold); cursor: pointer; }
+    .ai-read-more:hover { text-decoration: underline; }
 
     /* ── PSYCHOLOGY DASHBOARD / BAR CHARTS ── */
     .psych-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -791,9 +800,25 @@
                 <div class="seg-btn" data-active="sell" data-dir="SELL">Sell</div>
               </div>
             </div>
-            <div class="field">
+            <!-- ── Entry Type (Task 3) — Single Entry vs Entry Zone ── -->
+            <div class="field full">
+              <label>Entry Type</label>
+              <div class="result-toggle" id="entryTypeToggle" style="max-width:320px;">
+                <div class="result-btn is-on" data-entry-type="SINGLE">Single Entry</div>
+                <div class="result-btn" data-entry-type="ZONE">Entry Zone</div>
+              </div>
+            </div>
+            <div class="field" id="fEntrySingleField">
               <label>Entry Price</label>
-              <input type="number" step="any" id="fEntry" placeholder="2385.50" required />
+              <input type="number" step="any" id="fEntry" placeholder="2385.50" />
+            </div>
+            <div class="field" id="fEntryFromField" style="display:none;">
+              <label>From Price</label>
+              <input type="number" step="any" id="fEntryFrom" placeholder="2383.00" />
+            </div>
+            <div class="field" id="fEntryToField" style="display:none;">
+              <label>To Price</label>
+              <input type="number" step="any" id="fEntryTo" placeholder="2387.00" />
             </div>
             <div class="field">
               <label>Stop Loss</label>
@@ -1294,6 +1319,35 @@
     // TRADE FORM — direction toggle + live RR preview
     // ════════════════════════════════════════════════════════════════════
     let currentDir = 'BUY';
+    // Entry Type (Task 3) — Single Entry uses fEntry; Entry Zone uses
+    // fEntryFrom/fEntryTo and derives an effective entry_price as their
+    // midpoint, so RR/status/every downstream calc keeps working unchanged.
+    let currentEntryType = 'SINGLE';
+    function applyEntryTypeUI() {
+      const isZone = currentEntryType === 'ZONE';
+      document.querySelectorAll('#entryTypeToggle .result-btn').forEach((b) =>
+        b.classList.toggle('is-on', b.dataset.entryType === currentEntryType));
+      $('fEntrySingleField').style.display = isZone ? 'none' : '';
+      $('fEntryFromField').style.display = isZone ? '' : 'none';
+      $('fEntryToField').style.display = isZone ? '' : 'none';
+      updateLiveRR();
+    }
+    document.querySelectorAll('#entryTypeToggle .result-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentEntryType = btn.dataset.entryType;
+        applyEntryTypeUI();
+      });
+    });
+    // Effective entry price used everywhere else (RR calc, DB entry_price):
+    // the exact value for Single Entry, or the zone's midpoint for Entry Zone.
+    function effectiveEntryPrice() {
+      if (currentEntryType === 'ZONE') {
+        const from = parseFloat($('fEntryFrom').value), to = parseFloat($('fEntryTo').value);
+        return (Number.isFinite(from) && Number.isFinite(to)) ? (from + to) / 2 : NaN;
+      }
+      return parseFloat($('fEntry').value);
+    }
+    ['fEntryFrom', 'fEntryTo'].forEach((id) => $(id).addEventListener('input', updateLiveRR));
     document.querySelectorAll('.seg-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.seg-btn').forEach((b) => b.classList.remove('is-on'));
@@ -1370,7 +1424,7 @@
       });
     });
     function updateLiveRR() {
-      const entry = parseFloat($('fEntry').value);
+      const entry = effectiveEntryPrice();
       const sl = parseFloat($('fSL').value);
       const tp = parseFloat($('fTP').value);
       const el = $('liveRR');
@@ -1388,7 +1442,8 @@
       editingTradeId = null;
       currentDir = 'BUY';
       document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.dir === 'BUY'));
-      updateLiveRR();
+      currentEntryType = 'SINGLE';
+      applyEntryTypeUI();
       // psychology defaults
       currentEmotion = 'Calm';
       currentFollowedPlan = true;
@@ -1422,7 +1477,13 @@
       const payload = {
         pair: $('fPair').value.trim().toUpperCase(),
         direction: currentDir,
-        entry_price: parseFloat($('fEntry').value),
+        // Task 3: entry_price is always the EFFECTIVE price (exact for Single
+        // Entry, midpoint for Entry Zone) so RR/status/every existing query
+        // keeps working unchanged; entry_type/from/to are the new detail.
+        entry_price: effectiveEntryPrice(),
+        entry_type: currentEntryType,
+        entry_from: currentEntryType === 'ZONE' ? parseFloat($('fEntryFrom').value) : null,
+        entry_to:   currentEntryType === 'ZONE' ? parseFloat($('fEntryTo').value)   : null,
         stop_loss: parseFloat($('fSL').value),
         take_profit: $('fTP').value ? parseFloat($('fTP').value) : null,
         // Phase 6: the user states the result explicitly and always types a
@@ -1448,6 +1509,11 @@
       // constraint-violation error. The DB CHECK constraints remain the
       // real enforcement boundary; this is purely a UX improvement.
       if (!payload.pair) { toast('Pair is required.', true); return; }
+      if (payload.entry_type === 'ZONE') {
+        if (!Number.isFinite(payload.entry_from) || payload.entry_from <= 0) { toast('Enter a valid From Price.', true); return; }
+        if (!Number.isFinite(payload.entry_to) || payload.entry_to <= 0) { toast('Enter a valid To Price.', true); return; }
+        if (payload.entry_from === payload.entry_to) { toast('From Price and To Price cannot be identical — use Single Entry instead.', true); return; }
+      }
       if (!Number.isFinite(payload.entry_price) || payload.entry_price <= 0) { toast('Entry price must be a positive number.', true); return; }
       if (!Number.isFinite(payload.stop_loss) || payload.stop_loss <= 0) { toast('Stop loss must be a positive number.', true); return; }
       if (payload.take_profit != null && (!Number.isFinite(payload.take_profit) || payload.take_profit <= 0)) { toast('Take profit must be a positive number.', true); return; }
@@ -1470,7 +1536,7 @@
         let savedRow = null;
         // Select the saved row back so the audit runs on the DB's own derived
         // values (pnl, status, rr_ratio, created_at) rather than on guesses.
-        const RETURN_COLS = 'id, pnl, result, result_amount, rr_ratio, take_profit, trade_reason, confidence_level, emotion, followed_plan, followed_risk, created_at';
+        const RETURN_COLS = 'id, trade_id, pnl, result, result_amount, rr_ratio, take_profit, trade_reason, confidence_level, emotion, followed_plan, followed_risk, created_at, entry_type, entry_from, entry_to, entry_price, stop_loss';
         if (editingTradeId) {
           const { data, error } = await supabase.from('journal_trades').update(payload).eq('id', editingTradeId).select(RETURN_COLS).single();
           if (error) throw error;
@@ -1518,7 +1584,13 @@
       try {
         const res = await fetch('/api/journal-analyze', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            // Task 4 — lets the server verify who this trade really belongs
+            // to (HMAC-checked, same JWT RLS already trusts) before it will
+            // ever auto-create an AI Mentor review under this account.
+            ...(journalIdentity?.jwt ? { Authorization: `Bearer ${journalIdentity.jwt}` } : {}),
+          },
           body: JSON.stringify({
             trade: row,
             // Context for the overtrading / revenge-window rules AND the
@@ -1542,13 +1614,18 @@
 
     function severityClass(sev) { return Number(sev) >= 70 ? '' : 'sev-low'; }
 
-    // Compact history-table cell: primary weakness, click to expand the full audit.
+    // Compact history-table cell (Task 2): one short "AI Comment" sentence +
+    // Read More — NOT the full assessment. Clicking Read More expands the
+    // renderAuditCard() detail row (Strengths/Weaknesses/scores/Next Action).
     function auditCell(t) {
       const a = t.ai_analysis;
       if (!a || typeof a !== 'object' || !a.engine) return '<span style="color:var(--muted);">—</span>';
-      const label = a.primary || 'No rule breaks';
-      const cls = a.primary ? severityClass((a.weaknesses && a.weaknesses[0] && a.weaknesses[0].severity) || 0) : 'clean';
-      return `<span class="weak-pill ${cls}" data-audit-toggle="${t.id}" style="cursor:pointer;" title="${escapeHtml(a.summary || '')} — click for detail">${escapeHtml(label)}</span>`;
+      const comment = a.aiComment || a.primary || 'No rule breaks detected.';
+      return `<div class="ai-comment-cell">
+        <div class="ai-comment-label">AI Comment</div>
+        <div class="ai-comment-text" title="${escapeHtml(comment)}">"${escapeHtml(comment)}"</div>
+        <span class="ai-read-more" data-audit-toggle="${t.id}">Read More ▾</span>
+      </div>`;
     }
 
     // Renders a stored ai_analysis object into the shared audit card markup.
@@ -1576,22 +1653,32 @@
            </div>`
         : '';
       const scores = a.scores || {};
-      const scoreRow = (label, v) => v != null ? `<span class="k">${label}</span> <b>${v}</b>` : '';
-      const scoreParts = [
-        scoreRow('Risk', scores.risk), scoreRow('Psychology', scores.psychology),
-        scoreRow('Discipline', scores.discipline), scoreRow('Technical', scores.technical),
-        scoreRow('Fundamental', scores.fundamental),
-      ].filter(Boolean).join(' · ');
+      const scoreLabel = (label, v) => v != null
+        ? `<div class="ai-audit-row"><span class="k">${label}</span> <b class="${scoreCls(v)}">${v}/100</b></div>` : '';
+      // "Improvement Areas" = every detected weakness beyond the primary one
+      // (which the coach note already names as the thing that cost/earned
+      // the result) — a distinct, non-duplicate list per the requested layout.
+      const improvementAreas = weak.slice(1);
+      const improvementHtml = improvementAreas.length
+        ? `<div class="ai-audit-row" style="margin-top:10px;font-size:11.5px;color:var(--muted);font-weight:700;">IMPROVEMENT AREAS</div>
+           <div class="weak-list">${improvementAreas.map((w) => `<span class="weak-pill ${severityClass(w.severity)}" title="${escapeHtml(w.why || '')}">${escapeHtml(w.label)}</span>`).join('')}</div>`
+        : '';
 
       return `
         <div class="ai-audit">
-          <div class="ai-audit-head">🧠 AI Trade Coach</div>
+          <div class="ai-audit-head">🧠 AI Trade Coach — Full Assessment</div>
           ${a.coachNote ? `<div class="ai-audit-row" style="line-height:1.6;">${escapeHtml(a.coachNote)}</div>` : `<div class="ai-audit-row"><b>${escapeHtml(a.summary || '')}</b></div>`}
           ${strongPills ? `<div class="ai-audit-row" style="margin-top:10px;font-size:11.5px;color:var(--muted);font-weight:700;">STRENGTHS</div><div class="weak-list">${strongPills}</div>` : ''}
           <div class="ai-audit-row" style="margin-top:10px;font-size:11.5px;color:var(--muted);font-weight:700;">WEAKNESSES</div>
           <div class="weak-list">${weakPills}</div>
+          ${improvementHtml}
           ${recurringHtml}
-          ${scoreParts ? `<div class="ai-audit-row" style="margin-top:8px;">${scoreParts}</div>` : ''}
+          <div class="ai-audit-row" style="margin-top:10px;font-size:11.5px;color:var(--muted);font-weight:700;">SCORES</div>
+          ${scoreLabel('Psychology', scores.psychology)}
+          ${scoreLabel('Risk Management', scores.risk)}
+          ${scoreLabel('Technical Analysis', scores.technical)}
+          ${scoreLabel('Discipline', scores.discipline)}
+          ${scoreLabel('Fundamental', scores.fundamental)}
           ${a.nextAction ? `<div class="ai-rec"><b>Next Action:</b> ${escapeHtml(a.nextAction)}</div>` : ''}
         </div>`;
     }
@@ -1714,30 +1801,27 @@
     // Score colour: green ≥75, amber ≥50, red below.
     function scoreCls(v) { return v == null ? '' : v >= 75 ? 'pos' : v >= 50 ? '' : 'neg'; }
 
+    // Compact premium overview — 7 cards (down from 19), each earning its
+    // place: no metric that's just a re-slice of another card on this grid.
+    // Everything trimmed here (win/loss counts, gross totals, per-dimension
+    // scores, streaks) still exists — in the trade table, the per-trade AI
+    // audit, and the Psychology Dashboard below — this is the AT-A-GLANCE
+    // layer only.
     function renderStats() {
       const a = computeAnalytics(trades);
+      const s = a.scores;
+      const dims = [s.risk, s.psychology, s.discipline, s.technical, s.fundamental].filter((v) => v != null);
+      const coachScore = dims.length ? Math.round(dims.reduce((x, y) => x + y, 0) / dims.length) : null;
+
       const cards = [
-        { label: 'Total Trades', value: a.total },
+        { label: 'Total Trades', value: a.total, sub: `${a.wins}W · ${a.losses}L · ${a.breakeven}BE` },
         { label: 'Win Rate', value: a.total ? a.winRate.toFixed(1) + '%' : '—', cls: a.winRate >= 50 ? 'pos' : (a.total ? 'neg' : '') },
-        { label: 'Profit Factor', value: a.profitFactor === Infinity ? '∞' : a.total ? a.profitFactor.toFixed(2) : '—', cls: a.profitFactor >= 1 ? 'pos' : (a.total ? 'neg' : '') },
-        { label: 'Avg RR', value: a.avgRR != null ? `1 : ${a.avgRR.toFixed(2)}` : '—' },
         { label: 'Net Profit', value: fmtMoney(a.netProfit), cls: a.netProfit >= 0 ? 'pos' : 'neg' },
-        { label: 'Winning Trades', value: a.wins, sub: `${a.breakeven} breakeven` },
-        { label: 'Losing Trades', value: a.losses },
-        // Phase 6 — profit and loss are now reported separately, never netted
-        // into a single ambiguous number.
-        { label: 'Total Profit', value: fmtMoney(a.grossWin), cls: 'pos', sub: `${a.wins} winning trades` },
-        { label: 'Total Loss', value: '-' + fmtMoney(a.grossLoss), cls: 'neg', sub: `${a.losses} losing trades` },
-        { label: 'Average Profit', value: a.avgWin != null ? fmtMoney(a.avgWin) : '—', cls: 'pos' },
-        { label: 'Average Loss', value: a.avgLoss != null ? '-' + fmtMoney(a.avgLoss) : '—', cls: 'neg' },
-        { label: 'Largest Win', value: a.best ? fmtMoney(a.best.pnl) : '—', cls: 'pos', sub: a.best ? `${a.best.pair} · ${a.best.trade_id}` : '' },
-        { label: 'Largest Loss', value: a.worst ? fmtMoney(a.worst.pnl) : '—', cls: 'neg', sub: a.worst ? `${a.worst.pair} · ${a.worst.trade_id}` : '' },
-        { label: 'Win / Loss Streak', value: `${a.maxWinStreak}W / ${a.maxLossStreak}L` },
-        { label: 'Risk Score', value: a.scores.risk != null ? a.scores.risk + '/100' : '—', cls: scoreCls(a.scores.risk), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
-        { label: 'Psychology Score', value: a.scores.psychology != null ? a.scores.psychology + '/100' : '—', cls: scoreCls(a.scores.psychology), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
-        { label: 'Discipline Score', value: a.scores.discipline != null ? a.scores.discipline + '/100' : '—', cls: scoreCls(a.scores.discipline), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
-        { label: 'Technical Score', value: a.scores.technical != null ? a.scores.technical + '/100' : '—', cls: scoreCls(a.scores.technical), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
-        { label: 'Fundamental Score', value: a.scores.fundamental != null ? a.scores.fundamental + '/100' : '—', cls: scoreCls(a.scores.fundamental), sub: a.audited ? `${a.audited} audited trades` : 'awaiting AI audit' },
+        { label: 'Profit Factor', value: a.profitFactor === Infinity ? '∞' : a.total ? a.profitFactor.toFixed(2) : '—', cls: a.profitFactor >= 1 ? 'pos' : (a.total ? 'neg' : '') },
+        { label: 'Avg Win / Loss', value: `${a.avgWin != null ? fmtMoney(a.avgWin) : '—'} / ${a.avgLoss != null ? '-' + fmtMoney(a.avgLoss) : '—'}` },
+        { label: 'Best / Worst Trade', value: `${a.best ? fmtMoney(a.best.pnl) : '—'} / ${a.worst ? fmtMoney(a.worst.pnl) : '—'}` },
+        { label: 'AI Coach Score', value: coachScore != null ? coachScore + '/100' : '—', cls: scoreCls(coachScore),
+          sub: a.audited ? `R${s.risk} · P${s.psychology} · D${s.discipline} · T${s.technical} · F${s.fundamental}` : 'awaiting AI audit' },
       ];
       $('statsGrid').innerHTML = cards.map((c) => `
         <div class="stat-card">
@@ -2717,7 +2801,10 @@
       $('historyTableBody').querySelectorAll('[data-audit-toggle]').forEach((el) => {
         el.addEventListener('click', () => {
           const row = $('historyTableBody').querySelector(`[data-audit-row="${el.dataset.auditToggle}"]`);
-          if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+          if (!row) return;
+          const opening = row.style.display === 'none';
+          row.style.display = opening ? 'table-row' : 'none';
+          el.textContent = opening ? 'Read Less ▴' : 'Read More ▾';
         });
       });
 
@@ -2735,7 +2822,12 @@
       editingTradeId = id;
       $('tradeId').value = id;
       $('fPair').value = t.pair;
+      // Task 3: pre-Phase-8 rows have no entry_type — treat as Single Entry.
+      currentEntryType = t.entry_type === 'ZONE' ? 'ZONE' : 'SINGLE';
       $('fEntry').value = t.entry_price;
+      $('fEntryFrom').value = t.entry_from ?? '';
+      $('fEntryTo').value = t.entry_to ?? '';
+      applyEntryTypeUI();
       $('fSL').value = t.stop_loss;
       $('fTP').value = t.take_profit ?? '';
       // Phase 6: prefer the explicit fields; fall back to the pnl sign so

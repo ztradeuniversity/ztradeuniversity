@@ -155,6 +155,21 @@
   <main class="container">
     <div class="config-warn" id="configWarn"></div>
 
+    <!-- Task 4 — Mentor Mode: site-wide, so it sits above the tabs rather
+         than inside one view. Manual Mentor = current human review workflow
+         (unchanged). AI Mentor = /api/journal-analyze auto-creates a
+         mentor_reviews row for every submitted trade, no admin action. -->
+    <div class="panel quick-section" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin-bottom:2px;">Mentor Mode</h2>
+        <p class="sub" id="mentorModeHint">Loading…</p>
+      </div>
+      <div class="tabs" id="mentorModeToggle" style="margin:0;">
+        <div class="tab" data-mode="MANUAL">Manual Mentor</div>
+        <div class="tab" data-mode="AI">AI Mentor</div>
+      </div>
+    </div>
+
     <!-- Phase 5B — view tabs -->
     <div class="tabs">
       <div class="tab on" data-view="dashboard">Dashboard</div>
@@ -519,13 +534,16 @@
     function kv(l,v,cls){ return '<div class="kv"><div class="l">'+esc(l)+'</div><div class="v '+(cls||'')+'">'+v+'</div></div>'; }
 
     // ════ Phase 5B — VIEW SWITCHING ════
+    // Scoped to [data-view] only — #mentorModeToggle's .tab buttons use
+    // [data-mode] instead and are wired separately below, so they never
+    // trigger showView(null) and blank the page.
     var currentView='dashboard', dashLoaded=false, analyticsLoaded=false, resultsLoaded=false;
-    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
+    Array.prototype.forEach.call(document.querySelectorAll('.tab[data-view]'), function(t){
       t.addEventListener('click', function(){ showView(t.getAttribute('data-view')); });
     });
     function showView(v){
       currentView=v;
-      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){ t.classList.toggle('on', t.getAttribute('data-view')===v); });
+      Array.prototype.forEach.call(document.querySelectorAll('.tab[data-view]'), function(t){ t.classList.toggle('on', t.getAttribute('data-view')===v); });
       Array.prototype.forEach.call(document.querySelectorAll('.view'), function(el){ el.classList.toggle('on', el.id==='view-'+v); });
       if(v==='dashboard' && !dashLoaded) loadDashboard();
       if(v==='traders'){ if(!traders.length) loadTraders(); loadStats(); }
@@ -657,7 +675,33 @@
       else { loadStats(); loadTraders(); if(selectedId) openTrader(selectedId); }
     });
 
-    window.__journalBoot = function(token){ ADMIN_KEY = token; loadDashboard(); };   // dashboard is the default view
+    // ════ Task 4 — Mentor Mode selector ════
+    function renderMentorMode(mode){
+      Array.prototype.forEach.call(document.querySelectorAll('#mentorModeToggle .tab'), function(t){
+        t.classList.toggle('on', t.getAttribute('data-mode')===mode);
+      });
+      $('mentorModeHint').textContent = mode==='AI'
+        ? 'AI Mentor is ACTIVE — every submitted trade is auto-reviewed and sent to the student\'s journal with no manual action.'
+        : 'Manual Mentor is active — reviews are created by mentors via the Traders tab, as before.';
+    }
+    function loadMentorMode(){
+      api('get-mentor-mode').then(function(res){
+        if(res.status!==200){ $('mentorModeHint').textContent='Could not load Mentor Mode.'; return; }
+        renderMentorMode(res.data.mentorMode||'MANUAL');
+      }).catch(function(){ $('mentorModeHint').textContent='Network error loading Mentor Mode.'; });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#mentorModeToggle .tab[data-mode]'), function(t){
+      t.addEventListener('click', function(){
+        var mode = t.getAttribute('data-mode');
+        renderMentorMode(mode); // optimistic
+        api('set-mentor-mode', { mentorMode: mode }).then(function(res){
+          if(res.status!==200){ toast('Could not update Mentor Mode.', true); loadMentorMode(); return; }
+          toast('Mentor Mode set to '+(mode==='AI'?'AI Mentor':'Manual Mentor')+'.');
+        }).catch(function(){ toast('Network error updating Mentor Mode.', true); loadMentorMode(); });
+      });
+    });
+
+    window.__journalBoot = function(token){ ADMIN_KEY = token; loadDashboard(); loadMentorMode(); };   // dashboard is the default view
   })();
   </script>
   <script src="../js/admin-auth-client.js"></script>

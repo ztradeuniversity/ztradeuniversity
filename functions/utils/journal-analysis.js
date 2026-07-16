@@ -27,6 +27,7 @@ export const WEAKNESS = {
   EMOTIONAL:   { code: 'emotional-trading',       label: 'Emotional Trading' },
   POOR_ENTRY:  { code: 'poor-entry',              label: 'Poor Entry' },
   POOR_EXIT:   { code: 'poor-exit',               label: 'Poor Exit' },
+  WIDE_ZONE:   { code: 'wide-entry-zone',          label: 'Wide Entry Zone' },
 };
 const WEAKNESS_BY_CODE = Object.fromEntries(Object.values(WEAKNESS).map((w) => [w.code, w]));
 
@@ -40,6 +41,7 @@ export const STRENGTH = {
   CLEAR_SETUP:     { code: 'clear-setup-reasoning',     label: 'Clear Setup Reasoning' },
   GOOD_RR:         { code: 'good-risk-reward',          label: 'Strong Risk/Reward Planning' },
   DEFINED_EXIT:    { code: 'defined-exit',              label: 'Defined Exit Before Entry' },
+  PRECISE_ENTRY:   { code: 'precise-entry-zone',        label: 'Precise Entry Zone' },
 };
 
 // One recommendation per primary weakness — concrete and actionable.
@@ -55,6 +57,7 @@ const RECOMMENDATION = {
   'emotional-trading':         'Trade your plan, not your feelings. Use a fixed pre-trade checklist so entries stay mechanical.',
   'poor-entry':                'Wait for confirmation before entering — a late or unconfirmed entry ruins an otherwise valid setup.',
   'poor-exit':                 'Always set a take profit and honour it. Define your exit at the same moment you define your entry.',
+  'wide-entry-zone':           'Narrow your entry zone before placing the trade — a zone this wide relative to your stop reduces your risk/reward precision.',
 };
 
 const num = (v) => (v == null || v === '' ? null : (Number.isFinite(Number(v)) ? Number(v) : null));
@@ -151,6 +154,32 @@ export function analyzeTrade(trade, ctx = {}) {
       'This losing trade referenced a news/fundamental event — event volatility appears to have worked against you.');
   }
 
+  // ── Entry Zone precision (Task 3) — the AI must understand and comment on
+  //    whether the trader used a wide zone or a precise entry level. ───────
+  let entryZoneNote = null;
+  if (t.entry_type === 'ZONE' && t.entry_from != null && t.entry_to != null) {
+    const zoneWidth = Math.abs(num(t.entry_to) - num(t.entry_from));
+    const stopDist  = (t.entry_price != null && t.stop_loss != null) ? Math.abs(num(t.entry_price) - num(t.stop_loss)) : null;
+    const ratio = (stopDist && stopDist > 0) ? zoneWidth / stopDist : null;
+    if (ratio != null) {
+      const pct = Math.round(ratio * 100);
+      if (ratio > 0.5) {
+        add(WEAKNESS.WIDE_ZONE, isLoss ? 55 : 38,
+          `You entered from a zone ${pct}% as wide as your stop distance — that is a wide, imprecise entry.`);
+        entryZoneNote = `You entered from a wide zone (${pct}% of your stop distance) rather than a precise level.`;
+      } else if (ratio < 0.15) {
+        entryZoneNote = `You entered from a tight, precise zone (only ${pct}% of your stop distance).`;
+      } else {
+        entryZoneNote = `You entered from a moderate zone (${pct}% of your stop distance).`;
+      }
+    } else {
+      entryZoneNote = 'You entered from a price zone rather than a single precise level.';
+    }
+  }
+  if (entryZoneNote && entryZoneNote.startsWith('You entered from a tight')) {
+    addStrength(STRENGTH.PRECISE_ENTRY, entryZoneNote);
+  }
+
   // ── Strengths — the positive counterpart, so a clean trade is credited for
   //    what it did right rather than just "no weaknesses found". ──────────
   if (risk === true) addStrength(STRENGTH.RISK_FOLLOWED, 'You confirmed you followed your risk management rules.');
@@ -223,6 +252,15 @@ export function analyzeTrade(trade, ctx = {}) {
         ? 'Clean, rule-following trade. Repeat this process — the process is the edge, not the result.'
         : 'No rule breaks detected. This loss looks like normal strategy variance — keep following the plan.');
 
+  // One short, plain sentence for the compact "AI Comment" view — reuses the
+  // primary weakness's own `why` text, which is already phrased in second
+  // person ("You entered too early…"), so no separate summarizer is needed.
+  const aiComment = primary
+    ? primary.why
+    : (result === 'PROFIT' ? 'Clean, rule-following trade — no weaknesses detected.'
+      : result === 'LOSS'  ? 'No rule breaks found — this loss looks like normal strategy variance.'
+      : 'Breakeven — no weaknesses detected.');
+
   return {
     result,
     weaknesses,
@@ -233,8 +271,10 @@ export function analyzeTrade(trade, ctx = {}) {
     primary_code: primary ? primary.code : null,
     recommendation,
     nextAction: recommendation,
+    aiComment,
     summary: buildSummary(result, primary, secondary),
-    coachNote: buildCoachNote(result, primary, strengths, recurringPatterns, recommendation),
+    entryZoneNote,
+    coachNote: buildCoachNote(result, primary, strengths, recurringPatterns, recommendation, entryZoneNote),
     scores: scoreTrade(t, weaknesses),
     engine: 'ztu-journal-rules-v1',
     at: new Date().toISOString(),
@@ -268,7 +308,7 @@ function buildRecurringPatterns(primary, recent, currentId) {
 // note, not a system log: leads with a real strength, names the thing that
 // actually cost or earned the result, flags a recurring pattern if one
 // exists, and closes on the single next action.
-function buildCoachNote(result, primary, strengths, recurringPatterns, recommendation) {
+function buildCoachNote(result, primary, strengths, recurringPatterns, recommendation, entryZoneNote) {
   const parts = [];
   if (strengths.length) {
     parts.push(`You did ${strengths.length > 1 ? 'several things' : 'one thing'} right here — ${strengths.map((s) => s.label.toLowerCase()).join(', ')}. Keep that.`);
@@ -280,6 +320,10 @@ function buildCoachNote(result, primary, strengths, recurringPatterns, recommend
       ? 'This trade was executed cleanly with no rule breaks — the result followed the process.'
       : 'No rule breaks were found on this one; treat it as normal variance, not a mistake to fix.');
   }
+  // Only add the zone note as its own sentence if it isn't already covered by
+  // the primary-weakness or strengths sentences above (avoid saying it twice).
+  const already = parts.join(' ');
+  if (entryZoneNote && !already.includes(entryZoneNote)) parts.push(entryZoneNote);
   if (recurringPatterns.length) {
     const top = recurringPatterns[0];
     parts.push(`This is trade ${top.occurrences} of your last ${top.windowSize} where ${top.label.toLowerCase()} was the main issue — that is a pattern, not a one-off.`);
@@ -316,6 +360,7 @@ function scoreTrade(t, weaknesses) {
     'overtrading':             ['discipline'],
     'technical-analysis-weak': ['technical'],
     'fundamental-analysis-weak': ['fundamental'],
+    'wide-entry-zone':         ['technical'],
   };
   const out = { risk: 100, psychology: 100, discipline: 100, technical: 100, fundamental: 100 };
   for (const w of weaknesses) {
