@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Signal History &amp; Performance – Z Trade University</title>
-  <meta name="description" content="Full, transparent history of every Z Trade University trading signal — entry, stop loss, take profit, and the real result (Win/Loss/Breakeven/Running) with live performance statistics." />
+  <meta name="description" content="Full, transparent history of every Z Trade University trading signal — entry zone, the pips won or lost, and the real result (Win/Loss/Breakeven/Running) with live performance statistics." />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
   <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
   <meta name="theme-color" content="#FAFAFA" />
@@ -60,13 +60,39 @@
     .hero p { max-width:640px; margin:14px auto 0; font-size:16px; color:var(--muted); }
 
     /* ── STATS ── */
-    .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin:30px 0 8px; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:30px 0 8px; }
     .stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 16px; text-align:center; box-shadow:var(--shadow-sm); }
     .stat .v { font-family:'Poppins',sans-serif; font-size:26px; font-weight:800; color:var(--heading); letter-spacing:-.5px; }
     .stat .v.win { color:var(--win); } .stat .v.loss { color:var(--loss); } .stat .v.acc { color:var(--orange); }
     .stat .k { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); margin-top:6px; }
-    @media(max-width:880px){ .stats{ grid-template-columns:repeat(3,1fr); } }
-    @media(max-width:460px){ .stats{ grid-template-columns:repeat(2,1fr); gap:10px; } .stat .v{font-size:22px;} }
+    @media(max-width:460px){ .stats{ gap:10px; } .stat{ padding:14px 8px; } .stat .v{font-size:20px;} .stat .k{font-size:9.5px; letter-spacing:.3px;} }
+
+    /* ── PERFORMANCE SUMMARY (pips ledger) ── */
+    .perf { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); padding:20px; margin:14px 0 4px; }
+    .perf-title { font-family:'Poppins',sans-serif; font-size:14px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:16px; }
+    .perf-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+    .perf-cell { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; text-align:center; }
+    .pk { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); }
+    .pv { font-family:'Poppins',sans-serif; font-size:28px; font-weight:800; letter-spacing:-.5px; margin-top:6px; font-variant-numeric:tabular-nums; }
+    .pv.win { color:var(--win); } .pv.loss { color:var(--loss); }
+    .perf-total { margin-top:14px; padding:18px 16px; border-radius:var(--radius); text-align:center; border:1px solid var(--border); background:var(--bg); }
+    .perf-total .pv { font-size:36px; }
+    .perf-total.pos { border-color:var(--win); background:var(--win-soft); }
+    .perf-total.pos .pv { color:var(--win); }
+    .perf-total.neg { border-color:var(--loss); background:var(--loss-soft); }
+    .perf-total.neg .pv { color:var(--loss); }
+    .perf-note { font-size:12px; color:var(--muted); margin-top:4px; }
+    @media(max-width:460px){ .perf-grid{ grid-template-columns:1fr; } .perf-total .pv{ font-size:30px; } }
+
+    /* ── ZTU Bot TP/SL cell ── */
+    .bot-cell { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+    .bot-line { font-size:12.5px; font-weight:700; color:var(--text); white-space:nowrap; }
+    .bot-line b { color:var(--muted); font-weight:700; margin-right:4px; }
+    .bot-tag { display:inline-flex; align-items:center; gap:4px; color:var(--orange); background:var(--orange-soft); padding:2px 9px; border-radius:100px; font-weight:800; font-size:11.5px; }
+    .bot-btn { display:inline-flex; align-items:center; gap:5px; margin-top:2px; padding:6px 12px; border-radius:100px; border:1px solid var(--orange); background:transparent; color:var(--orange); font-family:'Inter',sans-serif; font-weight:800; font-size:11.5px; cursor:pointer; white-space:nowrap; transition:background .2s,color .2s; }
+    .bot-btn:hover { background:var(--orange); color:#fff; }
+    .pips { font-family:'Poppins',sans-serif; font-weight:800; font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .pips.win { color:var(--win); } .pips.loss { color:var(--loss); } .pips.flat { color:var(--muted); }
 
     /* ── FILTERS ── */
     .filters { display:flex; flex-wrap:wrap; gap:10px; margin:24px 0 6px; align-items:center; }
@@ -128,14 +154,14 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Z Trade University" />
   <meta property="og:title" content="Signal History &amp;amp; Performance" />
-  <meta property="og:description" content="Full, transparent history of every Z Trade University trading signal — entry, stop loss, take profit, and the real result (Win/Loss/Breakeven/Running) with live performance statistics." />
+  <meta property="og:description" content="Full, transparent history of every Z Trade University trading signal — entry zone, the pips won or lost, and the real result (Win/Loss/Breakeven/Running) with live performance statistics." />
   <meta property="og:url" content="https://ztradeuniversity.com/signal-history.html" />
   <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Signal History &amp;amp; Performance" />
-  <meta name="twitter:description" content="Full, transparent history of every Z Trade University trading signal — entry, stop loss, take profit, and the real result (Win/Loss/Breakeven/Running) with live performance statistics." />
+  <meta name="twitter:description" content="Full, transparent history of every Z Trade University trading signal — entry zone, the pips won or lost, and the real result (Win/Loss/Breakeven/Running) with live performance statistics." />
   <meta name="twitter:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Signal History &amp; Performance", "description": "Full, transparent history of every Z Trade University trading signal \u2014 entry, stop loss, take profit, and the real result (Win/Loss/Breakeven/Running) with live performance statistics.", "url": "https://ztradeuniversity.com/signal-history.html", "isPartOf": {"@type": "WebSite", "name": "Z Trade University", "url": "https://ztradeuniversity.com/"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Signal History &amp; Performance", "description": "Full, transparent history of every Z Trade University trading signal \u2014 entry zone, the pips won or lost, and the real result (Win/Loss/Breakeven/Running) with live performance statistics.", "url": "https://ztradeuniversity.com/signal-history.html", "isPartOf": {"@type": "WebSite", "name": "Z Trade University", "url": "https://ztradeuniversity.com/"}, "publisher": {"@type": "Organization", "name": "Z Trade University", "logo": {"@type": "ImageObject", "url": "https://ztradeuniversity.com/assets/ztu-logo.png"}}}</script>
 </head>
 <body>
   <!-- NAV -->
@@ -166,7 +192,7 @@
         Full Transparency
       </div>
       <h1>Signal History &amp; Performance</h1>
-      <p>Every signal we have published — entry, stop loss, take profit, and the <strong>real result</strong>. No cherry-picking, no hiding losers. Verify exactly what was called, when, and how it played out.</p>
+      <p>Every signal we have published — entry zone, the pips won or lost, and the <strong>real result</strong>. No cherry-picking, no hiding losers. Verify exactly what was called, when, and how it played out.</p>
     </div>
   </section>
 
@@ -174,12 +200,23 @@
     <!-- STATS -->
     <div class="stats" id="stats">
       <div class="stat"><div class="v" id="sTotal">—</div><div class="k">Total Signals</div></div>
-      <div class="stat"><div class="v win" id="sWins">—</div><div class="k">Winning</div></div>
-      <div class="stat"><div class="v loss" id="sLosses">—</div><div class="k">Losing</div></div>
-      <div class="stat"><div class="v" id="sBE">—</div><div class="k">Breakeven</div></div>
-      <div class="stat"><div class="v acc" id="sWinRate">—</div><div class="k">Win Rate</div></div>
-      <div class="stat"><div class="v acc" id="sRR">—</div><div class="k">Avg R:R</div></div>
+      <div class="stat"><div class="v win" id="sWins">—</div><div class="k">Winning Signals</div></div>
+      <div class="stat"><div class="v loss" id="sLosses">—</div><div class="k">Losing Signals</div></div>
     </div>
+
+    <!-- PERFORMANCE SUMMARY -->
+    <section class="perf" aria-label="Performance summary">
+      <h2 class="perf-title">Performance Summary</h2>
+      <div class="perf-grid">
+        <div class="perf-cell"><div class="pk">Overall Winning Pips</div><div class="pv win" id="pWin">—</div></div>
+        <div class="perf-cell"><div class="pk">Overall Losing Pips</div><div class="pv loss" id="pLoss">—</div></div>
+      </div>
+      <div class="perf-total" id="pTotalBox">
+        <div class="pk">Overall Outcome</div>
+        <div class="pv" id="pNet">—</div>
+        <div class="perf-note" id="pNote">The complete historical result — every signal, wins and losses.</div>
+      </div>
+    </section>
 
     <!-- FILTERS -->
     <div class="filters">
@@ -202,8 +239,8 @@
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Market</th><th>Type</th><th>Entry</th>
-            <th>Stop Loss</th><th>Take Profit</th><th>R:R</th><th>Status</th><th>Result</th>
+            <th>Date</th><th>Market</th><th>Type</th><th>Entry Zone</th>
+            <th>TP / SL</th><th>Pips</th><th>Status</th><th>Result</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -240,6 +277,13 @@
       try { localStorage.setItem('ztu-theme', dark ? 'light' : 'dark'); } catch(e){}
     }
 
+    /* ══════════════════════════════════════════════════════════════════
+       ZTU BOT DESTINATION — set this to the real link when it is ready.
+       Empty string = the button still renders but tells visitors the link
+       is coming, instead of routing them to a dead page.
+       ══════════════════════════════════════════════════════════════════ */
+    var ZTU_BOT_URL = '';
+
     var ALL = [];
     var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     var $ = function(id){ return document.getElementById(id); };
@@ -250,21 +294,53 @@
       return dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
     }
     function fmtPx(v){ if (v === null || v === undefined || v === '') return '—'; var n = Number(v); return Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: 5 }) : '—'; }
-    function rr(s){
-      var e = Number(s.entry_price), sl = Number(s.stop_loss), tp = Number(s.take_profit);
-      if (![e,sl,tp].every(Number.isFinite)) return null;
-      var risk = Math.abs(e - sl); if (risk === 0) return null;
-      return Math.abs(tp - e) / risk;
-    }
+    function fmtPips(v){ var n = Number(v) || 0; return Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 1 }); }
     function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
+    /* Entry is published as a ZONE. Legacy signals recorded before the zone
+       existed arrive with start === end, and render as a single price. */
+    function zoneTxt(s){
+      var zs = s.entry_zone_start, ze = s.entry_zone_end;
+      if (zs == null && ze == null) return '—';
+      if (zs == null || ze == null) return fmtPx(zs == null ? ze : zs);
+      if (Number(zs) === Number(ze)) return fmtPx(zs);
+      return fmtPx(zs) + ' – ' + fmtPx(ze);
+    }
+
+    /* TP/SL are never published as numbers — the bot manages the exit. */
+    function botCell(){
+      return '<div class="bot-cell">'
+        + '<div class="bot-line"><b>TP:</b><span class="bot-tag">ZTU Bot</span></div>'
+        + '<div class="bot-line"><b>SL:</b><span class="bot-tag">ZTU Bot</span></div>'
+        + '<button class="bot-btn" type="button" onclick="openBot()">Get Free ZTU Bot</button>'
+        + '</div>';
+    }
+    function openBot(){
+      if (!ZTU_BOT_URL){ alert('The free ZTU Bot link is coming soon — check back shortly.'); return; }
+      window.open(ZTU_BOT_URL, '_blank', 'noopener');
+    }
+
+    function pipsCell(s){
+      if (s.result_pips == null || s.result_pips === '') return '<span class="pips flat">—</span>';
+      var p = Number(s.result_pips);
+      if (!Number.isFinite(p)) return '<span class="pips flat">—</span>';
+      var cls = p > 0 ? 'win' : (p < 0 ? 'loss' : 'flat');
+      var sign = p > 0 ? '+' : (p < 0 ? '−' : '');
+      return '<span class="pips ' + cls + '">' + sign + fmtPips(p) + '</span>';
+    }
+
     function renderStats(st){
-      $('sTotal').textContent   = st.total;
-      $('sWins').textContent    = st.wins;
-      $('sLosses').textContent  = st.losses;
-      $('sBE').textContent      = st.breakeven;
-      $('sWinRate').textContent = st.winRate == null ? '—' : st.winRate + '%';
-      $('sRR').textContent      = st.avgRR  == null ? '—' : st.avgRR + 'R';
+      $('sTotal').textContent  = st.total;
+      $('sWins').textContent   = st.wins;
+      $('sLosses').textContent = st.losses;
+      /* a bare 0 reads better than "+0" / "−0" when nothing is recorded yet */
+      $('pWin').textContent    = (st.winningPips > 0 ? '+' : '') + fmtPips(st.winningPips);
+      $('pLoss').textContent   = (st.losingPips  > 0 ? '−' : '') + fmtPips(st.losingPips);
+      var net = Number(st.netPips) || 0;
+      $('pNet').textContent = (net > 0 ? '+' : (net < 0 ? '−' : '')) + fmtPips(net) + ' pips';
+      var box = $('pTotalBox');
+      box.classList.toggle('pos', net > 0);
+      box.classList.toggle('neg', net < 0);
     }
 
     /* stats recomputed live from the currently FILTERED set (transparency = honest) */
@@ -273,11 +349,15 @@
       var losses = rows.filter(function(s){ return s.status==='Loss'; }).length;
       var be = rows.filter(function(s){ return s.status==='Breakeven'; }).length;
       var decided = wins + losses + be;
-      var rrs = rows.map(rr).filter(function(v){ return v != null; });
+      var r1 = function(n){ return Math.round(n*10)/10; };
+      var pips = rows.map(function(s){ return Number(s.result_pips); }).filter(function(v){ return Number.isFinite(v); });
+      var sum = function(a){ return a.reduce(function(x,y){ return x+y; }, 0); };
+      var winningPips = r1(sum(pips.filter(function(p){ return p > 0; })));
+      var losingPips  = r1(Math.abs(sum(pips.filter(function(p){ return p < 0; }))));
       return {
         total: rows.length, wins: wins, losses: losses, breakeven: be,
         winRate: decided ? Math.round((wins/decided)*1000)/10 : null,
-        avgRR: rrs.length ? Math.round((rrs.reduce(function(a,b){return a+b;},0)/rrs.length)*100)/100 : null
+        winningPips: winningPips, losingPips: losingPips, netPips: r1(winningPips - losingPips)
       };
     }
 
@@ -317,33 +397,30 @@
       empty.style.display='none';
 
       tb.innerHTML = rows.map(function(s){
-        var r = rr(s); var rtxt = r == null ? '—' : r.toFixed(2) + 'R';
         var result = (s.result_summary ? '<span class="summary">'+esc(s.result_summary)+'</span>' : '<span class="summary" style="opacity:.5">—</span>')
                    + (s.mentor_notes ? '<span class="notes">'+esc(s.mentor_notes)+'</span>' : '');
         return '<tr>'
           + '<td class="date">'+fmtDate(s.signal_date)+'</td>'
           + '<td class="mkt">'+esc(s.market)+'</td>'
           + '<td><span class="type '+esc(s.signal_type)+'">'+esc(s.signal_type)+'</span></td>'
-          + '<td class="px">'+fmtPx(s.entry_price)+'</td>'
-          + '<td class="px">'+fmtPx(s.stop_loss)+'</td>'
-          + '<td class="px">'+fmtPx(s.take_profit)+'</td>'
-          + '<td class="px">'+rtxt+'</td>'
+          + '<td class="px">'+zoneTxt(s)+'</td>'
+          + '<td>'+botCell()+'</td>'
+          + '<td>'+pipsCell(s)+'</td>'
           + '<td>'+badge(s.status)+'</td>'
           + '<td>'+result+'</td>'
           + '</tr>';
       }).join('');
 
       cards.innerHTML = rows.map(function(s){
-        var r = rr(s); var rtxt = r == null ? '—' : r.toFixed(2) + 'R';
         return '<div class="scard">'
           + '<div class="top"><div class="l"><span class="mkt">'+esc(s.market)+'</span>'
           + '<span class="type '+esc(s.signal_type)+'">'+esc(s.signal_type)+'</span></div>'+badge(s.status)+'</div>'
-          + '<div class="date">'+fmtDate(s.signal_date)+' · R:R '+rtxt+'</div>'
-          + '<div class="px-grid">'
-          + '<div><div class="lab">Entry</div><div class="val">'+fmtPx(s.entry_price)+'</div></div>'
-          + '<div><div class="lab">Stop</div><div class="val">'+fmtPx(s.stop_loss)+'</div></div>'
-          + '<div><div class="lab">Target</div><div class="val">'+fmtPx(s.take_profit)+'</div></div>'
+          + '<div class="date">'+fmtDate(s.signal_date)+'</div>'
+          + '<div class="px-grid" style="grid-template-columns:repeat(2,1fr)">'
+          + '<div><div class="lab">Entry Zone</div><div class="val">'+zoneTxt(s)+'</div></div>'
+          + '<div><div class="lab">Pips</div><div class="val">'+pipsCell(s)+'</div></div>'
           + '</div>'
+          + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px">'+botCell()+'</div>'
           + (s.result_summary ? '<div class="summary">'+esc(s.result_summary)+'</div>' : '')
           + (s.mentor_notes ? '<span class="notes">'+esc(s.mentor_notes)+'</span>' : '')
           + '</div>';

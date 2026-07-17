@@ -73,6 +73,14 @@
 <div class="wrap hidden" id="manager">
   <!-- LEFT: editor -->
   <div>
+    <div class="card hidden" id="cfgWarn" style="border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)">
+      <h2 style="color:#fca5a5">⚠ Signal store not connected</h2>
+      <p class="note" style="color:var(--text)">
+        <code>AI_SUPABASE_URL</code> / <code>AI_SUPABASE_SERVICE_KEY</code> are missing from the
+        Cloudflare Pages environment, so nothing you save here can reach the database or the
+        public page. Saving is blocked until they are set.
+      </p>
+    </div>
     <div class="card">
       <h2 id="editorTitle">＋ New Signal</h2>
       <input type="hidden" id="sigId" />
@@ -83,14 +91,32 @@
       <div class="row">
         <div><label for="signal_type">Type</label><select id="signal_type"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
         <div><label for="status">Status / Result</label>
-          <select id="status"><option>Running</option><option>Win</option><option>Loss</option><option>Breakeven</option></select>
+          <select id="status" onchange="syncStatus()"><option>Running</option><option>Win</option><option>Loss</option><option>Breakeven</option></select>
         </div>
       </div>
       <div class="row">
-        <div><label for="entry_price">Entry</label><input id="entry_price" type="number" step="any" placeholder="2310.0" /></div>
+        <div><label for="entry_zone_start">Entry Zone Start</label><input id="entry_zone_start" type="number" step="any" placeholder="2308.0" /></div>
+        <div><label for="entry_zone_end">Entry Zone End</label><input id="entry_zone_end" type="number" step="any" placeholder="2312.0" /></div>
+      </div>
+      <p class="note">The zone is the acceptable entry range — same for BUY and SELL.</p>
+
+      <label for="tp_sl_mode">TP / SL</label>
+      <select id="tp_sl_mode" onchange="syncTpSlMode()">
+        <option value="ztu_bot">ZTU Bot — managed by the bot</option>
+        <option value="manual">Manual TP / SL — your internal record</option>
+      </select>
+      <div class="row hidden" id="tpSlManual">
         <div><label for="stop_loss">Stop Loss</label><input id="stop_loss" type="number" step="any" placeholder="2298.0" /></div>
         <div><label for="take_profit">Take Profit</label><input id="take_profit" type="number" step="any" placeholder="2346.0" /></div>
       </div>
+      <p class="note" id="tpSlNote"></p>
+
+      <div id="pipsWrap">
+        <label for="result_pips" id="pipsLabel">Result Pips</label>
+        <input id="result_pips" type="number" step="any" min="0" placeholder="120" />
+        <p class="note" id="pipsNote"></p>
+      </div>
+
       <label for="result_summary">Result Summary</label>
       <textarea id="result_summary" placeholder="e.g. TP hit, +3R clean trend continuation."></textarea>
       <label for="mentor_notes">Mentor Notes (optional)</label>
@@ -103,7 +129,7 @@
         <button class="btn-ghost" onclick="resetForm()">✨ New</button>
         <button class="btn-danger hidden" id="delBtn" onclick="removeSignal()">🗑 Delete</button>
       </div>
-      <p class="note" id="formNote">R:R is auto-computed from Entry / Stop / Target. Status “Running” = trade still open.</p>
+      <p class="note" id="formNote">Status “Running” = trade still open. Public visitors never see numeric TP / SL — they see “ZTU Bot” and the Get Free ZTU Bot button.</p>
     </div>
   </div>
 
@@ -113,9 +139,15 @@
       <h2>📊 Performance</h2>
       <div class="stats-row">
         <div class="mini"><div class="v" id="mTotal">—</div><div class="k">Total</div></div>
-        <div class="mini"><div class="v" id="mWinRate">—</div><div class="k">Win Rate</div></div>
-        <div class="mini"><div class="v" id="mRR">—</div><div class="k">Avg R:R</div></div>
+        <div class="mini"><div class="v" id="mWins">—</div><div class="k">Winning</div></div>
+        <div class="mini"><div class="v" id="mLosses">—</div><div class="k">Losing</div></div>
       </div>
+      <div class="stats-row" style="margin-top:8px">
+        <div class="mini"><div class="v" id="mWinPips" style="color:var(--bull)">—</div><div class="k">Winning Pips</div></div>
+        <div class="mini"><div class="v" id="mLossPips" style="color:#fca5a5">—</div><div class="k">Losing Pips</div></div>
+        <div class="mini"><div class="v" id="mNetPips">—</div><div class="k">Overall</div></div>
+      </div>
+      <p class="note">Live figures from published signals — exactly what the public page shows.</p>
     </div>
     <div class="card">
       <h2>🗂 All Signals <button class="btn-ghost" style="float:right;padding:5px 10px;font-size:11px" onclick="loadList()">↻ Refresh</button></h2>
@@ -144,18 +176,14 @@ async function boot(token){
   resetForm();
 }
 
-function rr(s){
-  const e=Number(s.entry_price), sl=Number(s.stop_loss), tp=Number(s.take_profit);
-  if(![e,sl,tp].every(Number.isFinite)) return null;
-  const risk=Math.abs(e-sl); if(risk===0) return null;
-  return Math.abs(tp-e)/risk;
-}
-
 async function loadList(){
   try {
-    const r = await fetch(API + '?action=list&all=1', { headers: hdrs() });
+    const r = await fetch(API + '?action=list&all=1', { headers: hdrs(), cache: 'no-store' });
     if(r.status === 403){ toast('Session expired — reload and log in again'); sessionStorage.removeItem('ztu_admin_sess::signals'); return false; }
     const res = await r.json();
+    // Surface a disconnected store instead of rendering a normal-looking empty
+    // list — an unconfigured store silently discards every signal you create.
+    $('cfgWarn').classList.toggle('hidden', res.configured !== false);
     ROWS = Array.isArray(res.signals) ? res.signals : [];
     renderStats(res.stats);
     renderList();
@@ -163,25 +191,36 @@ async function loadList(){
   } catch(e){ toast('Load failed'); return null; }
 }
 
+function pipTxt(v){ return (v > 0 ? '+' : '') + (Number(v)||0); }
+
 function renderStats(st){
   if(!st) return;
-  $('mTotal').textContent  = st.total;
-  $('mWinRate').textContent = st.winRate == null ? '—' : st.winRate + '%';
-  $('mRR').textContent = st.avgRR == null ? '—' : st.avgRR + 'R';
+  $('mTotal').textContent    = st.total;
+  $('mWins').textContent     = st.wins;
+  $('mLosses').textContent   = st.losses;
+  $('mWinPips').textContent  = '+' + (st.winningPips || 0);
+  $('mLossPips').textContent = '-' + (st.losingPips || 0);
+  const net = st.netPips || 0;
+  const el = $('mNetPips');
+  el.textContent = pipTxt(net);
+  el.style.color = net > 0 ? 'var(--bull)' : (net < 0 ? '#fca5a5' : 'var(--gold3)');
 }
 
 function renderList(){
   const el = $('list');
   if(!ROWS.length){ el.innerHTML = '<p class="note">No signals yet. Create one on the left.</p>'; return; }
   el.innerHTML = ROWS.map(s=>{
-    const r = rr(s); const rtxt = r==null ? '—' : r.toFixed(2)+'R';
+    const zs = s.entry_zone_start ?? s.entry_price, ze = s.entry_zone_end ?? s.entry_price;
+    const zone = (zs==null && ze==null) ? '—' : (zs===ze ? esc(zs) : esc(zs)+' – '+esc(ze));
+    const pips = s.result_pips==null ? '' : '<span>·</span><span style="color:'+(s.result_pips>=0?'var(--bull)':'#fca5a5')+'">'+pipTxt(s.result_pips)+' pips</span>';
     return '<div class="list-item">'
       + '<div class="li-main" onclick="editSignal(\''+s.id+'\')">'
       + '<div class="t">'+esc(s.market)+' <span class="pill '+esc(s.signal_type)+'">'+esc(s.signal_type)+'</span>'
       + '<span class="pill '+esc(s.status)+'">'+esc(s.status)+'</span>'
       + (s.is_published ? '' : ' <span class="pill draft">draft</span>')+'</div>'
-      + '<div class="m"><span>'+esc(s.signal_date)+'</span><span>·</span><span>R:R '+rtxt+'</span>'
-      + (s.entry_price!=null?'<span>·</span><span>@ '+esc(s.entry_price)+'</span>':'')+'</div></div>'
+      + '<div class="m"><span>'+esc(s.signal_date)+'</span><span>·</span><span>Zone '+zone+'</span>'
+      + '<span>·</span><span>'+(s.tp_sl_mode==='manual'?'Manual TP/SL':'ZTU Bot')+'</span>'
+      + pips+'</div></div>'
       + '<div class="li-acts">'
       + '<button class="row-btn" onclick="editSignal(\''+s.id+'\')">Edit</button>'
       + '<button class="row-btn danger" onclick="removeSignal(\''+s.id+'\')">Delete</button>'
@@ -189,14 +228,41 @@ function renderList(){
   }).join('');
 }
 
+// Manual TP/SL inputs only exist for the admin's own record — the public page
+// shows "ZTU Bot" for TP and SL in BOTH modes, and the API never sends the
+// numbers to public callers.
+function syncTpSlMode(){
+  const manual = $('tp_sl_mode').value === 'manual';
+  $('tpSlManual').classList.toggle('hidden', !manual);
+  $('tpSlNote').textContent = manual
+    ? 'Stored for your records only. Public visitors still see “TP: ZTU Bot / SL: ZTU Bot”.'
+    : 'TP and SL are managed by the ZTU Bot. Public visitors see “TP: ZTU Bot / SL: ZTU Bot”.';
+}
+
+// One pips field, relabelled by status — a signal either won pips or lost
+// them, never both. The sign is applied server-side from the status.
+function syncStatus(){
+  const st = $('status').value;
+  const open = st === 'Running', be = st === 'Breakeven';
+  $('pipsWrap').classList.toggle('hidden', open || be);
+  $('pipsLabel').textContent = st === 'Loss' ? 'Losing Pips' : 'Winning Pips';
+  $('pipsNote').textContent = st === 'Loss'
+    ? 'Enter a positive number — it counts toward Overall Losing Pips.'
+    : 'Enter a positive number — it counts toward Overall Winning Pips.';
+  if (open || be) $('result_pips').value = '';
+}
+
 function resetForm(){
   $('editorTitle').textContent = '＋ New Signal';
   $('sigId').value = '';
   $('signal_date').value = new Date().toISOString().slice(0,10);
   $('market').value=''; $('signal_type').value='BUY'; $('status').value='Running';
-  $('entry_price').value=''; $('stop_loss').value=''; $('take_profit').value='';
+  $('entry_zone_start').value=''; $('entry_zone_end').value='';
+  $('tp_sl_mode').value='ztu_bot'; $('stop_loss').value=''; $('take_profit').value='';
+  $('result_pips').value='';
   $('result_summary').value=''; $('mentor_notes').value=''; $('is_published').checked=true;
   $('delBtn').classList.add('hidden');
+  syncTpSlMode(); syncStatus();
 }
 
 function editSignal(id){
@@ -205,35 +271,59 @@ function editSignal(id){
   $('sigId').value = s.id;
   $('signal_date').value = (s.signal_date||'').slice(0,10);
   $('market').value = s.market||''; $('signal_type').value = s.signal_type||'BUY'; $('status').value = s.status||'Running';
-  $('entry_price').value = s.entry_price ?? ''; $('stop_loss').value = s.stop_loss ?? ''; $('take_profit').value = s.take_profit ?? '';
+  // Legacy rows predate the zone and carry only entry_price — show it as a
+  // zero-width zone so an old signal can be edited without retyping it.
+  $('entry_zone_start').value = s.entry_zone_start ?? s.entry_price ?? '';
+  $('entry_zone_end').value   = s.entry_zone_end   ?? s.entry_price ?? '';
+  $('tp_sl_mode').value = s.tp_sl_mode === 'manual' ? 'manual' : 'ztu_bot';
+  $('stop_loss').value = s.stop_loss ?? ''; $('take_profit').value = s.take_profit ?? '';
+  $('result_pips').value = s.result_pips == null ? '' : Math.abs(s.result_pips);
   $('result_summary').value = s.result_summary||''; $('mentor_notes').value = s.mentor_notes||'';
   $('is_published').checked = s.is_published !== false;
   $('delBtn').classList.remove('hidden');
+  syncTpSlMode(); syncStatus();
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
 async function saveSignal(){
   const id = $('sigId').value;
+  const manual = $('tp_sl_mode').value === 'manual';
   const data = {
     id: id || undefined,
     signal_date: $('signal_date').value,
     market: $('market').value.trim(),
     signal_type: $('signal_type').value,
     status: $('status').value,
-    entry_price: $('entry_price').value,
-    stop_loss: $('stop_loss').value,
-    take_profit: $('take_profit').value,
+    entry_zone_start: $('entry_zone_start').value,
+    entry_zone_end: $('entry_zone_end').value,
+    tp_sl_mode: manual ? 'manual' : 'ztu_bot',
+    // In ZTU Bot mode the numbers are cleared, not just hidden, so a value
+    // typed before switching mode is never persisted.
+    stop_loss: manual ? $('stop_loss').value : '',
+    take_profit: manual ? $('take_profit').value : '',
+    result_pips: $('result_pips').value,
     result_summary: $('result_summary').value.trim(),
     mentor_notes: $('mentor_notes').value.trim(),
     is_published: $('is_published').checked
   };
   if(!data.signal_date || !data.market){ toast('Date and Market are required'); return; }
+  const zs = data.entry_zone_start, ze = data.entry_zone_end;
+  if(zs === '' || ze === ''){ toast('Entry Zone Start and End are both required'); return; }
+  if(Number(zs) > Number(ze)){ toast('Entry Zone Start must be lower than End'); return; }
+  const st = data.status;
+  if((st === 'Win' || st === 'Loss') && data.result_pips === ''){
+    toast((st === 'Loss' ? 'Losing' : 'Winning') + ' Pips is required for a ' + st); return;
+  }
   const action = id ? 'update' : 'create';
   try {
     const r = await fetch(API, { method:'POST', headers:hdrs(), body:JSON.stringify({ action, data }) });
-    const res = await r.json();
-    if(!r.ok || res.error){ toast(res.error || 'Save failed'); return; }
-    toast(id ? 'Signal updated' : 'Signal created');
+    const res = await r.json().catch(()=>({}));
+    if(!r.ok || res.error){ toast(res.error || ('Save failed (HTTP ' + r.status + ')')); return; }
+    // Guard against a 200 that did not actually write — the API used to answer
+    // {configured:false, saved:false} with no error, which read as success here
+    // while nothing reached the database and nothing reached the public page.
+    if(res.saved === false || !res.signal || !res.signal.id){ toast('Not saved — the signal store did not confirm the write'); return; }
+    toast(id ? 'Signal updated — live on the public page' : 'Signal created — live on the public page');
     await loadList();
     resetForm();
   } catch(e){ toast('Network error'); }
