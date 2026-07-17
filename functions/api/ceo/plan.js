@@ -14,8 +14,20 @@
 // leave/reset, institutes.js for institute records).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { generateGrowthDays, buildPhysicalRows, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY } from '../../utils/ceo/plan-logic.js';
+import { generateGrowthDays, buildPhysicalRows, planDayForDate, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY, EXECUTIVE_OVERVIEW, SOCIAL_STRATEGY, PROVEN_WORKFLOW, currentPhaseContext } from '../../utils/ceo/plan-logic.js';
 import { CONTENT_LIBRARY, CONTENT_CATEGORIES } from '../../utils/ceo/content-kits.js';
+
+// Country validation (Section 2): derive a status badge from the locked
+// priority/gate verdict already in the strategy row — active markets have a
+// confirmed practical broker (Exness for PK/GCC, +Vantage for NG/KE/SA),
+// gated ones wait on a trial/verification, excluded ones have no practical
+// broker from Pakistan.
+function countryStatus(c) {
+  const p = String(c.priority || '').toUpperCase();
+  if (p.includes('REJECT') || p.includes('DEFER')) return 'excluded';
+  if (p.includes('GATE')) return 'gated';
+  return 'active';
+}
 import { currentAreaAssignment } from '../../utils/ceo/physical-logic.js';
 import { instituteNextStep } from '../../utils/ceo/coach-logic.js';
 
@@ -151,12 +163,29 @@ export async function onRequestGet({ request, env }) {
       for (const d of days) d.status = 'Planned';
     }
 
+    // Executive Overview live context (Section 1) — real active-client count
+    // + the current plan day (leave-aware, via the same generator) → phase +
+    // monthly target. One extra CRM read, only on the first page.
+    let overviewLive = null;
+    if (offset === 0) {
+      const clients = await db.select('ib_clients', `select=stage&owner_user_id=eq.${uid}&limit=2000`);
+      const active = clients.filter((c) => ['activated', 'engaged', 'retained'].includes(c.stage)).length;
+      const todayPlan = planDayForDate(startDate, today, { productionDay, publishDay, leavePeriods });
+      const dayNumber = todayPlan?.day || Math.max(1, Math.floor((Date.parse(today) - Date.parse(startDate)) / 86400000) + 1);
+      overviewLive = currentPhaseContext(dayNumber, active);
+    }
+
     return json({
       section, offset, count, startDate, days, hasMore,
       totalDays: totalDays || PLAN_TOTAL_DAYS,
-      countryStrategy: COUNTRY_STRATEGY,
+      countryStrategy: COUNTRY_STRATEGY.map((c) => ({ ...c, status: countryStatus(c) })),
+      countryValidationNote: 'Active markets have a confirmed practical broker promotable from Pakistan (Exness for PK/GCC; Exness + Vantage for NG/KE/SA). Gated markets wait on a content/verification trial. Excluded markets (India, Malaysia, Indonesia, EU/UK/US/AU) have no practical broker or a regulatory block — kept off the plan by design.',
       assumptionNote: ASSUMPTION_NOTE,
       feasibility: FEASIBILITY,
+      executiveOverview: EXECUTIVE_OVERVIEW,
+      overviewLive,
+      socialStrategy: SOCIAL_STRATEGY,
+      provenWorkflow: PROVEN_WORKFLOW,
       autoLearn: learn.summary,
     });
   } catch (err) {

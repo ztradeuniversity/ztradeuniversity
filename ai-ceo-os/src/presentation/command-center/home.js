@@ -13,6 +13,7 @@
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
 import { confirmDialog } from '../shared/components/confirm-dialog.js';
+import { wireGlossary } from '../shared/glossary.js';
 
 const TIER_BADGE = { 0: 'ceo-badge-critical', 1: 'ceo-badge-warning', 2: 'ceo-badge-neutral' };
 const IMPACT_RANK = { high: 0, medium: 1, low: 2 };
@@ -42,6 +43,53 @@ export async function initHome() {
 // existing leave. The plan's leave-shifting is untouched — it re-derives from
 // leave.periods on every read, so any edit/cancel re-shifts automatically.
 let currentLeavePeriods = [];
+// Micro-step checklist state (Section 4): steps by task key for the current
+// render, and the viewed date (part of the per-step localStorage key so each
+// day starts fresh — unchecked steps naturally return when the task recurs).
+const stepData = {};
+let currentViewDate = new Date().toISOString().slice(0, 10);
+
+function stepKey(taskKey, i) { return `ceo-step:${currentViewDate}:${taskKey}:${i}`; }
+function getStepState(taskKey, i) {
+  try { return localStorage.getItem(stepKey(taskKey, i)) || 'open'; } catch { return 'open'; }
+}
+function setStepState(taskKey, i, s) {
+  try { s === 'open' ? localStorage.removeItem(stepKey(taskKey, i)) : localStorage.setItem(stepKey(taskKey, i), s); } catch {}
+}
+
+// Fill every [data-step-list] container from stepData + saved state. Open
+// steps render as actionable ☐ rows (mark done ☑ or Skip); done/skipped
+// steps collapse into a summary with a Reset link.
+function renderAllStepLists(root) {
+  root.querySelectorAll('[data-step-list]').forEach((box) => renderStepList(box));
+}
+function renderStepList(box) {
+  const taskKey = box.getAttribute('data-step-list');
+  const steps = stepData[taskKey] || [];
+  let doneN = 0, skipN = 0;
+  const openRows = steps.map((text, i) => {
+    const st = getStepState(taskKey, i);
+    if (st === 'done') { doneN++; return ''; }
+    if (st === 'skip') { skipN++; return ''; }
+    return `
+      <div class="ceo-flex ceo-items-center ceo-gap-2" data-step-i="${i}" style="padding: 2px 0; font-size: var(--ceo-font-size-sm);">
+        <button class="ceo-btn ceo-btn-secondary" data-step-done title="Mark done" style="padding: 0 8px;">☐</button>
+        <span style="flex: 1; min-width: 10em;">${escapeHtml(text)}</span>
+        <button class="ceo-btn ceo-btn-secondary" data-step-skip title="Skip this step" style="padding: 0 8px; font-size: 0.72rem;">Skip</button>
+      </div>`;
+  }).join('');
+  const summary = (doneN + skipN) > 0
+    ? `<div class="ceo-text-muted" style="font-size: 0.72rem; margin-top: 2px;">✓ ${doneN} done${skipN ? ` · ⤫ ${skipN} skipped` : ''} · <a href="#" data-step-reset style="color: inherit; text-decoration: underline;">reset</a></div>`
+    : '';
+  box.innerHTML = (openRows || (summary ? '' : '')) + summary;
+  box.querySelectorAll('[data-step-done]').forEach((b) =>
+    b.addEventListener('click', () => { setStepState(taskKey, Number(b.closest('[data-step-i]').getAttribute('data-step-i')), 'done'); renderStepList(box); }));
+  box.querySelectorAll('[data-step-skip]').forEach((b) =>
+    b.addEventListener('click', () => { setStepState(taskKey, Number(b.closest('[data-step-i]').getAttribute('data-step-i')), 'skip'); renderStepList(box); }));
+  const reset = box.querySelector('[data-step-reset]');
+  if (reset) reset.addEventListener('click', (e) => { e.preventDefault(); steps.forEach((_, i) => setStepState(taskKey, i, 'open')); renderStepList(box); });
+  wireGlossary(box); // re-annotate: this box was just rebuilt
+}
 
 function wireLeaveButton(picker) {
   const btn = document.getElementById('home-leave-btn');
@@ -184,6 +232,7 @@ async function loadDay(date) {
     m = await getJson('/api/ceo/mission?date=' + encodeURIComponent(date));
     document.getElementById('home-mentor-line').textContent = m.mentorMessage || '';
     currentLeavePeriods = m.leavePeriods || [];
+    currentViewDate = date;
     const banner = document.getElementById('home-leave-banner');
     banner.innerHTML = m.leave?.onLeave
       ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-4);">On leave ${escapeHtml(m.leave.start)} → ${escapeHtml(m.leave.end)}${m.leave.reason ? ' (' + escapeHtml(m.leave.reason) + ')' : ''} — no tasks scheduled; the plan has shifted forward.</div>`
@@ -215,6 +264,9 @@ async function loadDay(date) {
     document.getElementById('home-trading-checkin').innerHTML =
       `<div class="ceo-alert ceo-alert-critical">Trading check-in load nahin hui: ${escapeHtml(err.message)}.</div>`;
   }
+
+  // Annotate every abbreviation now that all three sections have rendered.
+  wireGlossary(document.querySelector('.ceo-content'));
 }
 
 // ============================================================
@@ -239,6 +291,7 @@ function renderIbGrowth(m) {
         <div class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: 2px;">Planned roadmap for this date — tasks become actionable (Done/Partial/Skip) on the day itself.</div>
       </div>
       <ul style="margin: 0; padding-left: 1.2em;">${d.activities.map((a) => `<li style="padding: 2px 0;">${escapeHtml(a)}</li>`).join('')}</ul>
+      ${plannedCampaignsHtml(d.campaigns)}
       <div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: var(--ceo-space-2);">
         Platform: ${escapeHtml(d.platform)} · ${escapeHtml(d.country)} · ${escapeHtml(d.language)}<br />
         Budget: ${escapeHtml(d.budget)} · Expected: ${escapeHtml(d.expectedResult)}${d.estimatedLoad ? '<br />Workload: ' + escapeHtml(d.estimatedLoad) : ''}
@@ -293,6 +346,37 @@ function renderIbGrowth(m) {
     : '';
   el.innerHTML = highImpactBlock + secondaryLabel + rows.map((row) => (row.kind === 'cadence' ? taskRowHtml(row.t) : row.html)).join('');
   wireTaskButtons(el.querySelectorAll('[data-task-id]'));
+  renderAllStepLists(el);
+}
+
+// Full per-campaign execution detail for a planned (non-today) date — the
+// same spec the Complete Plan shows, so any picked date is self-sufficient.
+function plannedCampaignsHtml(campaigns) {
+  if (!campaigns || !campaigns.length) return '';
+  const field = (label, value) => value
+    ? `<div><span class="ceo-text-muted">${escapeHtml(label)}:</span> ${escapeHtml(value)}</div>` : '';
+  return `
+    <details style="margin-top: var(--ceo-space-2);">
+      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📡 Campaign details (${campaigns.length}) — country, audience, budget, CTA, KPI</summary>
+      <div class="ceo-card" style="margin-top: var(--ceo-space-2); font-size: 0.75rem;">
+        ${campaigns.map((c) => `
+          <div style="border-top: 1px solid var(--ceo-border); padding: var(--ceo-space-2) 0;">
+            <div class="ceo-flex ceo-items-center ceo-gap-2" style="flex-wrap: wrap;">
+              <strong>${escapeHtml(c.activity)}</strong>
+              <span class="ceo-badge ${String(c.mode).toUpperCase().includes('PAID') ? 'ceo-badge-warning' : 'ceo-badge-neutral'}">${escapeHtml(c.mode)}</span>
+              <span class="ceo-text-muted">${escapeHtml(c.platform)}</span>
+            </div>
+            ${field('Country', c.country)}
+            ${field('Target audience', c.audience)}
+            ${field('Language', c.language)}
+            ${field('Budget', c.budget)}
+            ${field('Campaign duration', c.duration)}
+            ${field('CTA', c.cta)}
+            ${field('KPI', c.kpi)}
+            ${field('Expected result', c.expected)}
+          </div>`).join('')}
+      </div>
+    </details>`;
 }
 
 function actionEntry(label, impact, hrefSuffix) {
@@ -323,8 +407,13 @@ function taskRowHtml(t) {
        <button class="ceo-btn ceo-btn-secondary" data-act="partial">Partial</button>
        <button class="ceo-btn ceo-btn-secondary" data-act="skipped">Skip</button>`
     : `<span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${t.note ? escapeHtml(t.note) : ''}</span>`;
+  // Micro-step checklist (Section 4): each step is ☐ / ☑ / Skip, persisted
+  // per day + task + step. Done/skipped steps drop out of the actionable list
+  // (do-not-show-again for the day); unchecked steps return next day when the
+  // task recurs. Rendered into a container filled by renderStepList().
+  stepData[t.key] = t.steps || [];
   const steps = (t.steps || []).length
-    ? `<ol style="margin: var(--ceo-space-1) 0 0; padding-left: 1.3em; font-size: var(--ceo-font-size-sm);">${t.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol>`
+    ? `<div data-step-list="${escapeAttr(t.key)}" style="margin-top: var(--ceo-space-1);"></div>`
     : '';
   const metaLine = [
     t.bestTime ? `Best time: ${escapeHtml(t.bestTime)}` : '',
@@ -365,7 +454,9 @@ function kitHtml(kit) {
       <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📋 Full SOP — objective, scripts, CTA, checklists, risks</summary>
       <div class="ceo-card" style="margin-top: var(--ceo-space-2); font-size: var(--ceo-font-size-sm);">
         ${block('Objective', kit.objective)}
-        ${targeting ? block('Where / who', targeting) : ''}
+        ${targeting ? block('Where / who (platform · country · language)', targeting) : ''}
+        ${block('Target audience', kit.audience)}
+        ${block('Expected KPI', kit.kpi)}
         ${block('Recommended questions', kit.questions)}
         ${block('Recommended message', kit.message)}
         ${block('Recommended script', kit.script)}
@@ -496,6 +587,7 @@ function renderPhysical(institutes, m, isRealToday) {
   parts.push(`<a class="ceo-btn ceo-btn-secondary" style="margin-top: var(--ceo-space-3);" href="/ai-ceo-os/src/presentation/growth/index.html">Open Physical Growth Engine</a>`);
   el.innerHTML = parts.join('');
   if (physicalTask) wireTaskButtons(el.querySelectorAll('[data-task-id]'));
+  renderAllStepLists(el);
 }
 
 // ============================================================

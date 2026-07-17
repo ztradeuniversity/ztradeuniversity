@@ -12,6 +12,7 @@
 
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
+import { wireGlossary } from '../shared/glossary.js';
 
 const PAGE_SIZE = 15;
 const STAGES = [
@@ -91,6 +92,7 @@ async function loadMore(fresh) {
     if (state.done[tab]) {
       document.getElementById('plan-progress').textContent += ' — complete roadmap visible';
     }
+    wireGlossary(document.getElementById('plan-body'));
   } catch (err) {
     document.getElementById('plan-body').innerHTML =
       `<div class="ceo-alert ceo-alert-critical">Plan load fail: ${escapeHtml(err.message)}</div>`;
@@ -99,11 +101,109 @@ async function loadMore(fresh) {
   }
 }
 
+// --- Executive Overview (Section 1) -------------------------------------
+function executiveOverviewHtml(res) {
+  const o = res.executiveOverview;
+  if (!o) return '';
+  const live = res.overviewLive;
+  const b = o.budget;
+  const stat = (label, value, hint) => `
+    <div class="ceo-card" style="flex: 1; min-width: 150px;">
+      <div class="ceo-text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;">${escapeHtml(label)}</div>
+      <div style="font-weight: 700; margin-top: 2px;">${escapeHtml(value)}</div>
+      ${hint ? `<div class="ceo-text-muted" style="font-size: 0.72rem;">${escapeHtml(hint)}</div>` : ''}
+    </div>`;
+  const list = (title, rows) => `
+    <div style="flex: 1; min-width: 240px;">
+      <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">${escapeHtml(title)}</div>
+      <ul style="margin: 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${rows.join('')}</ul>
+    </div>`;
+  return `
+    <h3 style="margin-top: 0;">Executive Overview</h3>
+    <div class="ceo-flex ceo-gap-3" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-3);">
+      ${stat('Duration', o.durationLabel)}
+      ${stat('Current progress', live ? `${live.progressPct}%` : '—', live ? `${live.activeClients} active IB clients` : '')}
+      ${stat('Current phase', live ? `Day ${live.currentDay} / ${live.totalDays}` : '—', live ? live.currentPhase : '')}
+      ${stat('Monthly target', live ? live.monthlyTarget : '—')}
+      ${stat('Expected reach', o.expected.reach)}
+      ${stat('Expected leads', o.expected.leads)}
+      ${stat('Expected active IB', o.expected.activeClients)}
+    </div>
+    <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-3);">
+      ${list('Budget', [
+        `<li>Total: ${escapeHtml(b.totalEstimated)}</li>`,
+        `<li>Monthly: ${escapeHtml(b.monthlyEnvelope)}</li>`,
+        `<li>Organic: ${escapeHtml(b.organicMonthly)}</li>`,
+        `<li>Paid: ${escapeHtml(b.paidGate)} ${escapeHtml(b.paidMonthlyWhenActive)}</li>`,
+      ])}
+      ${list('Country-wise budget', o.countryBudget.map((c) => `<li><strong>${escapeHtml(c.country)}:</strong> ${escapeHtml(c.spend)} <span class="ceo-text-muted">(${escapeHtml(c.note)})</span></li>`))}
+      ${list('Platform-wise budget', o.platformBudget.map((p) => `<li><strong>${escapeHtml(p.platform)}:</strong> ${escapeHtml(p.spend)} <span class="ceo-text-muted">(${escapeHtml(p.note)})</span></li>`))}
+    </div>
+    <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Paid campaigns (the only paid channel is Facebook)</div>
+    <div style="overflow-x: auto; margin-bottom: var(--ceo-space-2);">
+      <table class="ceo-table" style="min-width: 900px;">
+        <thead><tr><th>Platform</th><th>Country</th><th>Audience</th><th>Language</th><th>Budget</th><th>Duration</th><th>Expected Result</th></tr></thead>
+        <tbody>
+          ${o.paidCampaigns.map((p) => `<tr>
+            <td>${escapeHtml(p.platform)}</td><td>${escapeHtml(p.country)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.audience)}</td><td>${escapeHtml(p.language)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.budget)}</td><td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.duration)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.expected)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p class="ceo-text-muted" style="font-size: 0.75rem; margin-bottom: var(--ceo-space-4);">${escapeHtml(o.assumptionNote)}</p>`;
+}
+
+// --- Social Media Strategy (Section 5) ----------------------------------
+function socialStrategyHtml(res) {
+  const s = res.socialStrategy;
+  if (!s || !s.length) return '';
+  return `
+    <h3>Social Media Strategy</h3>
+    <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
+      <table class="ceo-table" style="min-width: 1200px;">
+        <thead><tr><th>Platform</th><th>Country</th><th>Language</th><th>Audience</th><th>Organic Strategy</th><th>Paid Strategy</th><th>Budget</th><th>Duration</th><th>Expected KPI</th><th>Expected Result</th></tr></thead>
+        <tbody>
+          ${s.map((p) => `<tr>
+            <td><strong>${escapeHtml(p.platform)}</strong></td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.country)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.language)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.audience)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.organic)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.paid)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.budget)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.duration)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.kpi)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(p.result)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// --- Proven funnel workflow (Section 6) ---------------------------------
+function provenWorkflowHtml(res) {
+  const w = res.provenWorkflow;
+  if (!w) return '';
+  return `
+    <h3>${escapeHtml(w.title)}</h3>
+    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">${escapeHtml(w.note)}</p>
+    <div style="margin-bottom: var(--ceo-space-4);">
+      ${w.steps.map((s, i) => `
+        <div class="ceo-flex ceo-gap-3" style="align-items: flex-start; padding: var(--ceo-space-2) 0; border-bottom: 1px solid var(--ceo-border);">
+          <span class="ceo-badge ceo-badge-neutral" style="min-width: 1.6em; text-align: center;">${i + 1}</span>
+          <div><strong>${escapeHtml(s.stage)}</strong><div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);">${escapeHtml(s.detail)}</div></div>
+          ${i < w.steps.length - 1 ? '<span class="ceo-text-muted" style="margin-left: auto;">↓</span>' : ''}
+        </div>`).join('')}
+    </div>`;
+}
+
 // --- IB Growth Master Plan table ----------------------------------------
 function appendGrowth(body, res, fresh) {
   if (fresh && res.countryStrategy) {
     const f = res.feasibility;
     body.insertAdjacentHTML('beforeend', `
+      ${executiveOverviewHtml(res)}
       ${res.autoLearn ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-3);">🧠 ${escapeHtml(res.autoLearn)}</div>` : ''}
       ${f ? `
         <h3 style="margin-top: 0;">Feasibility Model — the path to ${Number(f.target).toLocaleString()}</h3>
@@ -125,11 +225,12 @@ function appendGrowth(body, res, fresh) {
           </table>
         </div>
         <p class="ceo-text-muted" style="font-size: 0.75rem; margin-bottom: var(--ceo-space-4);">${escapeHtml(f.assumptionNote)}</p>` : ''}
-      <h3 style="margin-top: 0;">Country Strategy — the multi-market master table</h3>
+      <h3 style="margin-top: 0;">Country Strategy — the multi-market master table (validated)</h3>
+      ${res.countryValidationNote ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">${escapeHtml(res.countryValidationNote)}</p>` : ''}
       <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
-        <table class="ceo-table" style="min-width: 1200px;">
+        <table class="ceo-table" style="min-width: 1260px;">
           <thead><tr>
-            <th>Country</th><th>Priority / Gate</th><th>Preferred Broker</th><th>Language</th><th>Platform</th>
+            <th>Country</th><th>Status</th><th>Priority / Gate</th><th>Preferred Broker</th><th>Language</th><th>Platform</th>
             <th>Content Type</th><th>Audience</th><th>Posting Frequency</th><th>Organic Strategy</th><th>Paid Strategy</th>
             <th>Expected Conversion</th><th>Budget / Expected CAC</th><th>Expected IB Growth</th>
           </tr></thead>
@@ -137,6 +238,7 @@ function appendGrowth(body, res, fresh) {
             ${res.countryStrategy.map((c) => `
               <tr>
                 <td><strong>${escapeHtml(c.country)}</strong></td>
+                <td><span class="ceo-badge ${c.status === 'active' ? 'ceo-badge-success' : c.status === 'gated' ? 'ceo-badge-warning' : 'ceo-badge-neutral'}">${escapeHtml(c.status || '')}</span></td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.priority)}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.broker)}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.language)}</td>
@@ -154,6 +256,8 @@ function appendGrowth(body, res, fresh) {
         </table>
       </div>
       <p class="ceo-text-muted" style="font-size: 0.75rem;">${escapeHtml(res.assumptionNote || '')}</p>
+      ${socialStrategyHtml(res)}
+      ${provenWorkflowHtml(res)}
       <h3>Day-by-Day Roadmap</h3>`);
   }
   let tbody = body.querySelector('#plan-growth-tbody');
@@ -179,12 +283,47 @@ function appendGrowth(body, res, fresh) {
       <td>${escapeHtml(d.platform)}</td>
       <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(d.country)}</td>
       <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(d.language)}</td>
-      <td><ul style="margin: 0; padding-left: 1.1em; font-size: var(--ceo-font-size-sm);">${d.activities.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}</ul></td>
+      <td>
+        <ul style="margin: 0; padding-left: 1.1em; font-size: var(--ceo-font-size-sm);">${d.activities.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
+        ${campaignDetailHtml(d.campaigns)}
+      </td>
       <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(d.budget)}</td>
       <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(d.expectedResult)}</td>
       <td style="white-space: nowrap;">${statusBadge(d.status)}</td>
       <td class="ceo-text-muted" style="font-size: 0.75rem; min-width: 160px;">${escapeHtml(d.note)}<div style="margin-top: 2px;">${escapeHtml(d.stage)}</div></td>
     </tr>`).join(''));
+}
+
+// Per-campaign execution detail inside the day row — country, researched
+// audience interests, language, platform, organic/paid, budget, duration,
+// CTA, KPI and expected result for every channel the day schedules. Collapsed
+// so the table stays scannable; the founder never leaves the day to plan it.
+function campaignDetailHtml(campaigns) {
+  if (!campaigns || !campaigns.length) return '';
+  const field = (label, value) => value
+    ? `<div style="margin-top: 2px;"><span class="ceo-text-muted">${escapeHtml(label)}:</span> ${escapeHtml(value)}</div>` : '';
+  return `
+    <details style="margin-top: var(--ceo-space-2);">
+      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: 0.75rem;">📡 Campaign details (${campaigns.length}) — country, audience, budget, CTA, KPI</summary>
+      <div style="margin-top: var(--ceo-space-1);">
+        ${campaigns.map((c) => `
+          <div style="border-top: 1px solid var(--ceo-border); padding: var(--ceo-space-2) 0; font-size: 0.75rem;">
+            <div class="ceo-flex ceo-items-center ceo-gap-2" style="flex-wrap: wrap;">
+              <strong>${escapeHtml(c.activity)}</strong>
+              <span class="ceo-badge ${String(c.mode).toUpperCase().includes('PAID') ? 'ceo-badge-warning' : 'ceo-badge-neutral'}">${escapeHtml(c.mode)}</span>
+              <span class="ceo-text-muted">${escapeHtml(c.platform)}</span>
+            </div>
+            ${field('Country', c.country)}
+            ${field('Target audience', c.audience)}
+            ${field('Language', c.language)}
+            ${field('Budget', c.budget)}
+            ${field('Campaign duration', c.duration)}
+            ${field('CTA', c.cta)}
+            ${field('KPI', c.kpi)}
+            ${field('Expected result', c.expected)}
+          </div>`).join('')}
+      </div>
+    </details>`;
 }
 
 function statusBadge(status) {
@@ -469,6 +608,7 @@ async function loadReview(month) {
     document.getElementById('review-month').addEventListener('change', (e) => {
       if (e.target.value) loadReview(e.target.value);
     });
+    wireGlossary(body);
   } catch (err) {
     body.innerHTML = `<div class="ceo-alert ceo-alert-critical">Review load fail: ${escapeHtml(err.message)}</div>`;
   }

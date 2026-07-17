@@ -209,10 +209,28 @@ const KIT_BASE = {
   },
 };
 
-// Merge the SOP layer onto each base kit — one export, unchanged consumer
+// Target Audience + Expected KPI per activity (Section 3) — the two SOP
+// fields not already in the base/SOP layers. Kept as a compact map so the
+// merge stays one line rather than editing every entry.
+const SOP_EXTRA = {
+  'daily.community_touch': { audience: 'Community members + warm leads (beginners, small accounts)', kpi: 'Reply-rate ↑, response <24h, 1–2 IB-ready members flagged' },
+  'daily.technical_analysis': { audience: 'Gold + crypto traders', kpi: '1 authority post/day; saves & forwards' },
+  'daily.retention_touches': { audience: 'Activated + at-risk clients (segment-matched)', kpi: 'Due-list cleared; Day-7 activity of welcomed clients ↑' },
+  'daily.ib_followups': { audience: 'Trust-ready members (course done + active + broker question)', kpi: '1 stage advance; zero trust cost' },
+  'daily.physical_outreach': { audience: 'Institutes/academies in the current cycle area', kpi: '1–2 institutes contacted, each logged with a follow-up date' },
+  'weekly.film_video': { audience: 'Cold + warm (search-intent titles)', kpi: 'Watch-time >40%; course CTR' },
+  'weekly.publish_chain': { audience: 'Search intent + social browsers', kpi: 'Article live ≤48h; 3–5 clips queued' },
+  'weekly.live_class': { audience: 'Community + course-completers', kpi: 'Attendance + replay views' },
+  'weekly.review': { audience: 'Founder (accountability)', kpi: 'Review complete; next-week Focus locked' },
+  'weekly.kpi_entry': { audience: 'Founder', kpi: 'No gaps in kpi_history' },
+  'weekly.email_digest': { audience: 'Email list', kpi: 'Opens; class attendance from email' },
+  'weekly.learning_slot': { audience: 'Founder', kpi: '1 applied insight per week' },
+};
+
+// Merge the SOP layers onto each base kit — one export, unchanged consumer
 // contract (mission.js reads EXECUTION_KITS[key]).
 export const EXECUTION_KITS = Object.fromEntries(
-  Object.entries(KIT_BASE).map(([key, kit]) => [key, { ...kit, ...(SOP[key] || {}) }])
+  Object.entries(KIT_BASE).map(([key, kit]) => [key, { ...kit, ...(SOP[key] || {}), ...(SOP_EXTRA[key] || {}) }])
 );
 
 // Gated/rejected channels (paid promotion, TikTok) — the kit states the gate

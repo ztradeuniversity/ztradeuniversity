@@ -3,27 +3,40 @@
 // SIGNAL HISTORY API — public reads + admin management.
 //
 //   GET  ?action=list                      → published signals + computed stats
-//        ?action=list&all=1   (admin)      → includes unpublished drafts
+//                                            (numeric TP/SL stripped — see below)
+//        ?action=list&all=1   (admin)      → raw rows, incl. unpublished drafts
 //   POST {action:create|update|delete}     (admin — header x-admin-key: AI_ADMIN_KEY)
 //
+// PUBLIC CONTRACT: a public `list` never carries stop_loss / take_profit /
+// entry_price. Exits are published as "TP: ZTU Bot / SL: ZTU Bot", and entry is
+// published as a ZONE (entry_zone_start/end). The numbers are removed here,
+// server-side, so they are absent from the JSON itself rather than merely
+// hidden by the page. Per-signal results are published as signed `result_pips`,
+// and stats add winningPips / losingPips / netPips (the Overall Outcome).
+//
 // Table: signal_history   (signal-store.js · AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY)
-// Graceful: returns {configured:false, signals:[]} until AI Supabase creds exist,
-// so the public page shows an honest empty state instead of an error.
+// Graceful on READ: returns {configured:false, signals:[]} until AI Supabase
+// creds exist, so the public page shows an honest empty state instead of an
+// error. WRITES do the opposite and fail loudly (503) — a write that silently
+// no-ops is how a signal ends up "saved" but never visible.
 //
 // Additive only — does NOT touch Journal/AI/Library/Mentor/OTP/RLS/Auth.
 // ════════════════════════════════════════════════════════════════════════════
 
 import {
-  isConfigured, listSignals, createSignal, updateSignal, deleteSignal, computeStats,
+  isConfigured, listSignals, createSignal, updateSignal, deleteSignal, computeStats, toPublicSignal,
 } from '../utils/signal-store.js';
 import { requireAdminModule } from '../utils/admin-session.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-admin-key',
+  'Access-Control-Allow-Headers': 'Content-Type, x-admin-key, Authorization',
 };
-const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8' };
+// no-store: a signal published from the admin must appear on the public page on
+// the very next load. This response is per-request and tiny; edge-caching it is
+// what makes a fresh signal look like it "did not save".
+const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
 function isAdmin(request, env) {
@@ -48,15 +61,30 @@ export async function onRequest(context) {
     // Drafts are admin-only even on GET.
     const wantAll = u.searchParams.get('all') === '1' && await isAdmin(request, env);
     const signals = await listSignals(env, { all: wantAll });
-    // Stats are computed over PUBLISHED signals only (what the public sees).
+    // Stats are computed over PUBLISHED signals only (what the public sees),
+    // and BEFORE the public projection — avgRR needs the raw TP/SL that the
+    // public rows deliberately do not carry.
     const publicSet = wantAll ? signals.filter((s) => s.is_published) : signals;
-    return json({ configured: true, signals, stats: computeStats(publicSet) });
+    const stats = computeStats(publicSet);
+    // Admins get the raw rows (the editor needs TP/SL to load them back);
+    // everyone else gets rows with numeric TP/SL stripped out entirely.
+    const out = wantAll ? signals : signals.map(toPublicSignal);
+    return json({ configured: true, signals: out, stats });
   }
 
   // ── POST — admin writes ─────────────────────────────────────────────────────
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
   if (!(await isAdmin(request, env))) return json({ error: 'admin only — missing/invalid x-admin-key' }, 403);
-  if (!cfg) return json({ configured: false, saved: false, note: 'Signal store not connected yet.' });
+  // A write against an unconfigured store MUST fail loudly. This previously
+  // returned 200 {configured:false, saved:false} with no `error`, so the admin
+  // UI reported "Signal created" while nothing was ever written — the signal
+  // then never appeared on the public page.
+  if (!cfg) {
+    return json({
+      configured: false, saved: false,
+      error: 'Signal store not connected — AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY are not configured. Nothing was saved.',
+    }, 503);
+  }
 
   let body;
   try { body = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400); }
