@@ -116,6 +116,37 @@ export async function onRequestPost({ request, env }) {
       });
     }
 
+    // Edit an existing leave's dates/reason. Identified by its index in the
+    // leave.periods array (the UI passes back the index it rendered). The
+    // shifting logic is untouched — it re-derives from leave.periods on every
+    // read, so changing the dates automatically re-shifts the plan.
+    if (body.action === 'update_leave') {
+      const index = Number.isInteger(body.index) ? body.index : -1;
+      const start = String(body.start_date || '');
+      const end = String(body.end_date || '');
+      if (!DATE_RE.test(start) || !DATE_RE.test(end) || start > end) {
+        return json({ error: 'invalid_leave_dates' }, 400);
+      }
+      const settings = await db.select('settings', `select=key,value&scope=eq.global&key=eq.leave.periods`);
+      const periods = asArray(settings[0]?.value);
+      if (index < 0 || index >= periods.length) return json({ error: 'leave_not_found' }, 404);
+      periods[index] = { start, end, reason: String(body.reason ?? periods[index].reason ?? '').slice(0, 200) };
+      await upsertSetting(db, 'leave.periods', periods);
+      return json({ ok: true, coaching: `Leave update ho gayi — ab ${start} se ${end}. Plan naye dates ke mutabiq shift ho gaya.` });
+    }
+
+    // Delete/cancel an existing leave. Removes it from leave.periods so the
+    // plan stops shifting around those dates and resumes normal scheduling.
+    if (body.action === 'delete_leave') {
+      const index = Number.isInteger(body.index) ? body.index : -1;
+      const settings = await db.select('settings', `select=key,value&scope=eq.global&key=eq.leave.periods`);
+      const periods = asArray(settings[0]?.value);
+      if (index < 0 || index >= periods.length) return json({ error: 'leave_not_found' }, 404);
+      periods.splice(index, 1);
+      await upsertSetting(db, 'leave.periods', periods);
+      return json({ ok: true, coaching: 'Leave cancel ho gayi — un dates par plan dobara normal chalega.' });
+    }
+
     // Reset Plan: today becomes Day 1. The roadmap is generated from
     // plan.start_date (plan-logic.js) and the area cycle from
     // physical.start_date, so resetting both anchors regenerates the entire

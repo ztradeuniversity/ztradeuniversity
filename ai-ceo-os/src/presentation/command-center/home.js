@@ -36,27 +36,94 @@ export async function initHome() {
   await loadDay(picker.value);
 }
 
-// --- Submit Leave (Section 2) -------------------------------------------
-// Inline form; the backend answers needsConfirmation when work is still open
-// before the leave starts ("Was this activity completed?") and the retry
-// carries the founder's Yes/No.
+// --- Leave Management (Section 2) ---------------------------------------
+// Submit new leave (the backend answers needsConfirmation when work is still
+// open before the leave starts), plus edit dates/reason and cancel any
+// existing leave. The plan's leave-shifting is untouched — it re-derives from
+// leave.periods on every read, so any edit/cancel re-shifts automatically.
+let currentLeavePeriods = [];
+
 function wireLeaveButton(picker) {
   const btn = document.getElementById('home-leave-btn');
   const holder = document.getElementById('home-leave-form');
   btn.addEventListener('click', () => {
     if (holder.style.display !== 'none') { holder.style.display = 'none'; return; }
     holder.style.display = '';
-    holder.innerHTML = `
-      <div class="ceo-card">
-        <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
-          <div class="ceo-field" style="margin: 0;"><label class="ceo-label">Start date</label><input class="ceo-input" type="date" id="leave-start" /></div>
-          <div class="ceo-field" style="margin: 0;"><label class="ceo-label">End date</label><input class="ceo-input" type="date" id="leave-end" /></div>
-          <div class="ceo-field" style="margin: 0; flex: 1; min-width: 12em;"><label class="ceo-label">Reason (optional)</label><input class="ceo-input" id="leave-reason" maxlength="200" placeholder="e.g. family, travel, weekend" /></div>
-          <button class="ceo-btn ceo-btn-primary" id="leave-submit" style="align-self: end;">Submit</button>
-        </div>
-        <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-2) 0 0;">Leave days get no tasks and never go overdue — the whole plan shifts forward automatically.</p>
-      </div>`;
-    holder.querySelector('#leave-submit').addEventListener('click', () => submitLeave(holder, picker));
+    renderLeaveManager(holder, picker);
+  });
+}
+
+function renderLeaveManager(holder, picker) {
+  const existing = currentLeavePeriods.length
+    ? currentLeavePeriods.map((p) => `
+        <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap; padding: var(--ceo-space-2) 0; border-bottom: 1px solid var(--ceo-border);" data-leave-index="${p.index}">
+          <input class="ceo-input" type="date" data-edit-start value="${escapeAttr(p.start)}" style="max-width: 11em;" />
+          <span class="ceo-text-muted">→</span>
+          <input class="ceo-input" type="date" data-edit-end value="${escapeAttr(p.end)}" style="max-width: 11em;" />
+          <input class="ceo-input" data-edit-reason maxlength="200" value="${escapeAttr(p.reason || '')}" placeholder="Reason" style="flex: 1; min-width: 8em;" />
+          <button class="ceo-btn ceo-btn-secondary" data-leave-save>Save</button>
+          <button class="ceo-btn ceo-btn-destructive" data-leave-delete>Cancel leave</button>
+        </div>`).join('')
+    : '<p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: 0;">No leave submitted yet.</p>';
+
+  holder.innerHTML = `
+    <div class="ceo-card">
+      <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">Your leave</div>
+      <div style="margin: var(--ceo-space-2) 0 var(--ceo-space-4);">${existing}</div>
+      <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">Add leave</div>
+      <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap; margin-top: var(--ceo-space-2);">
+        <div class="ceo-field" style="margin: 0;"><label class="ceo-label">Start date</label><input class="ceo-input" type="date" id="leave-start" /></div>
+        <div class="ceo-field" style="margin: 0;"><label class="ceo-label">End date</label><input class="ceo-input" type="date" id="leave-end" /></div>
+        <div class="ceo-field" style="margin: 0; flex: 1; min-width: 12em;"><label class="ceo-label">Reason (optional)</label><input class="ceo-input" id="leave-reason" maxlength="200" placeholder="e.g. family, travel, weekend" /></div>
+        <button class="ceo-btn ceo-btn-primary" id="leave-submit" style="align-self: end;">Submit</button>
+      </div>
+      <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-2) 0 0;">Leave days get no tasks and never go overdue — the whole plan shifts forward automatically.</p>
+    </div>`;
+  holder.querySelector('#leave-submit').addEventListener('click', () => submitLeave(holder, picker));
+  wireExistingLeaveActions(holder, picker);
+}
+
+function wireExistingLeaveActions(holder, picker) {
+  holder.querySelectorAll('[data-leave-save]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('[data-leave-index]');
+      const index = Number(row.getAttribute('data-leave-index'));
+      const start = row.querySelector('[data-edit-start]').value;
+      const end = row.querySelector('[data-edit-end]').value;
+      const reason = row.querySelector('[data-edit-reason]').value;
+      if (!start || !end || start > end) { showToast('Start aur end date sahi chunein.', 'critical'); return; }
+      btn.disabled = true;
+      try {
+        const res = await postJson('/api/ceo/activities', { action: 'update_leave', index, start_date: start, end_date: end, reason });
+        showToast(res.coaching || 'Leave updated.', 'success');
+        await loadDay(picker.value);
+        renderLeaveManager(holder, picker);
+      } catch (err) {
+        btn.disabled = false;
+        showToast('Update fail: ' + err.message, 'critical');
+      }
+    });
+  });
+  holder.querySelectorAll('[data-leave-delete]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('[data-leave-index]');
+      const index = Number(row.getAttribute('data-leave-index'));
+      const ok = await confirmDialog({
+        title: 'Cancel this leave?',
+        message: 'The plan will stop shifting around these dates and resume normal scheduling.',
+        confirmLabel: 'Cancel leave',
+        destructive: true,
+      });
+      if (!ok) return;
+      try {
+        const res = await postJson('/api/ceo/activities', { action: 'delete_leave', index });
+        showToast(res.coaching || 'Leave cancelled.', 'success');
+        await loadDay(picker.value);
+        renderLeaveManager(holder, picker);
+      } catch (err) {
+        showToast('Cancel fail: ' + err.message, 'critical');
+      }
+    });
   });
 }
 
@@ -116,6 +183,7 @@ async function loadDay(date) {
   try {
     m = await getJson('/api/ceo/mission?date=' + encodeURIComponent(date));
     document.getElementById('home-mentor-line').textContent = m.mentorMessage || '';
+    currentLeavePeriods = m.leavePeriods || [];
     const banner = document.getElementById('home-leave-banner');
     banner.innerHTML = m.leave?.onLeave
       ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-4);">On leave ${escapeHtml(m.leave.start)} → ${escapeHtml(m.leave.end)}${m.leave.reason ? ' (' + escapeHtml(m.leave.reason) + ')' : ''} — no tasks scheduled; the plan has shifted forward.</div>`

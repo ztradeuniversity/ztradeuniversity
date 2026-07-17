@@ -378,6 +378,9 @@ export async function onRequestGet({ request, env }) {
       leave: onLeave
         ? { onLeave: true, start: leavePeriod.start, end: leavePeriod.end, reason: leavePeriod.reason || '' }
         : { onLeave: false },
+      // Full list (with array index) so the Leave Management UI can edit/cancel
+      // each one — the index is what update_leave/delete_leave key off.
+      leavePeriods: leavePeriods.map((p, i) => ({ index: i, start: p.start, end: p.end, reason: p.reason || '' })),
       estimatedMinutes: totalMinutes,
       mentorMessage,
       focus,
