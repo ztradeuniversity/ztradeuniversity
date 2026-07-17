@@ -21,58 +21,52 @@ const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'frid
 // a 50,000-active-client funnel — the practical horizon is 5 phased years.
 export const PLAN_TOTAL_DAYS = 1825;
 
-// Growth phases projected onto the 5-year horizon. Year 1 keeps the seeded
-// growth-stage discipline; the founder's directive moves EN markets up to
-// day 91 (was: the 300-client research gate) — recorded as a FOUNDER
-// DECISION over the prior gate, with the risk stated, not silently blended.
+// Phase gates from the blueprint (§2) — METRIC-triggered, not date-triggered.
+// The day ranges are planning windows only; a gate advances on hitting its
+// exit metric (or holds/fixes if missed by >50% for two quarters — never
+// skip a gate by spending more). Numbers are the blueprint's honest ones,
+// which REPLACE the OS's prior over-optimistic targets (it had 1,000 actives
+// by month 12; the real benchmark is 100 by month 9).
 const PHASES = [
   {
-    untilDay: 90,
-    stage: 'Phase 1 (Day 1–90) — Foundation: prove the funnel (0→50 activated)',
-    countries: 'Pakistan + GCC dual-launch (one Urdu content engine serves both from day 1)',
-    language: 'Urdu / Roman-Urdu (+EN titles for GCC)',
-    budget: 'PKR 0 — organic only (paid stays gated until 300 activated clients)',
-    target: 'Reach 50 activated clients; ship the weekly video + live class every week without a miss',
+    untilDay: 270, // ~Month 9
+    stage: 'Phase 1 — Proof (Months 1–9): Pakistan ONLY, prove the funnel',
+    countries: 'Pakistan only (native language + trust, zero localization cost). Gulf-expat tagging begins Month 3 on the SAME content.',
+    language: 'Urdu (with English trading terms)',
+    budget: '$100–150/mo, organic-first. Paid stays $0 until the exit gate.',
+    target: 'EXIT GATE: 100 actives + $1,000/mo commission run-rate. Ship short-form daily + weekly long-form/live without a miss.',
   },
   {
-    untilDay: 365,
-    stage: 'Phase 2 (Day 91–365) — Multi-market ignition (50→1,000): EN mirrors begin',
-    countries: 'PK + GCC + Nigeria/Kenya EN mirrors from day 91 (FOUNDER DECISION — earlier than the researched 300-client gate; mirror only proven PK winners to contain the risk)',
+    untilDay: 540, // ~Month 18
+    stage: 'Phase 2 — Pakistan engine (Months 9–18): systemize + first hire',
+    countries: 'Pakistan deepened + Gulf-expat VIP tracking. English content track begins repurposing top-30 videos late-phase.',
+    language: 'Urdu (English prep)',
+    budget: 'Paid ON from reinvested commission, ≤50% of trailing month; SEO 30 pages; referral + rebate programs.',
+    target: 'EXIT GATE: 500 actives + $5,000/mo + funnel metrics at benchmark. First hire (video editor ~$150–250) at ~$1.5K/mo.',
+  },
+  {
+    untilDay: 900, // ~Month 30
+    stage: 'Phase 3 — English expansion + sub-IB launch (Months 18–30)',
+    countries: 'Nigeria (first), then South Africa (FSCA trust) + Kenya (M-Pesa) — only after PK hits its gate. Sub-IB program launches with first partners from your own community.',
     language: 'Urdu + English',
-    budget: 'Organic; capped-CAC paid probes open at 300 activated clients',
-    target: 'Cross 300 activated (open paid), then push toward 1,000; 1 EN mirror/week live',
+    budget: 'Paid scales per-market on commission; community manager + Nigeria-based creator + partner manager hired.',
+    target: 'EXIT GATE: 2,500 actives + $25,000/mo + 25 producing sub-IBs.',
   },
   {
-    untilDay: 730,
-    stage: 'Phase 3 (Year 2) — Scale the engines (1,000→5,000): first hire',
-    countries: 'PK + GCC + NG/KE full cadence; South Africa EN added (~day 540) if NG/KE CAC holds',
-    language: 'Urdu + English',
-    budget: 'Paid scales while CAC ≤ target; editing/clips delegated (never voice or trust-touches)',
-    target: 'Reach 5,000 active; first hire onboarded; NG/KE CAC held ≤ target',
+    untilDay: 1440, // ~Month 48
+    stage: 'Phase 4 — Localized expansion (Months 30–48): native hires',
+    countries: 'Indonesia + Vietnam (native in-market content leads hired, funnels cloned+localized); Arabic/Egypt scoping. One language = one dedicated hire.',
+    language: 'Urdu + English + Bahasa/Vietnamese (behind hires)',
+    budget: 'Multi-market paid engine, per-market P&L reviewed monthly; sub-IB network 100–150 producing partners.',
+    target: 'EXIT GATE: 10,000 actives.',
   },
   {
-    untilDay: 1095,
-    stage: 'Phase 4 (Year 3) — Systemized growth (5,000→15,000): team executes',
-    countries: 'All active markets + BD (Bengali) / EG (Arabic) IF their content trials passed',
-    language: 'Urdu + English (+Bengali/Arabic behind their gates)',
-    budget: 'Multi-market paid engine, per-market CAC lines reviewed monthly',
-    target: 'Reach 15,000 active; per-market P&L lines green',
-  },
-  {
-    untilDay: 1460,
-    stage: 'Phase 5 (Year 4) — Compounding (15,000→30,000): retention economics lead',
-    countries: 'Portfolio of proven markets — quarterly kill/scale per market',
-    language: 'Per-market as proven',
-    budget: 'Reinvest commission into the winning-market ads; kill losers on data',
-    target: 'Reach 30,000 active; 60-day retention > 50% across markets',
-  },
-  {
-    untilDay: PLAN_TOTAL_DAYS,
-    stage: 'Phase 6 (Year 5) — The 50k push (30,000→50,000)',
-    countries: 'Scaled portfolio; new markets only with dedicated per-market owners',
-    language: 'Per-market',
-    budget: 'Per-market P&L discipline — transparency spine and No-Advice line never change',
-    target: 'Reach 50,000 active IB clients — the goal',
+    untilDay: PLAN_TOTAL_DAYS, // ~Month 60
+    stage: 'Phase 5 — Partner-network scale (Months 42–60): the 50K engine',
+    countries: 'White-label ecosystem for vetted community leaders across Africa/SEA/MENA/LATAM (master-IB override); 400+ partners produce the majority of volume.',
+    language: 'Per-market via partners',
+    budget: 'Governance layer: compliance officer, data analyst, country managers. Per-market P&L discipline.',
+    target: '25,000–40,000 actives expected; 50,000 = BEST case (expected reaches it ~Year 6–7). Every intermediate state is itself a strong business.',
   },
 ];
 
@@ -106,7 +100,7 @@ const CHANNEL_PLAYBOOK = {
   telegram_community: {
     activity: 'Telegram community touch', platform: 'Telegram', country: 'Pakistan + GCC',
     audience: 'Interests: XAUUSD/gold trading, forex beginners, Exness/broker verification, halal investing, scam awareness, prop-firm challenges · PK+GCC, 22–45, mobile-first, Roman-Urdu readers',
-    language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: 'PKR 0',
+    language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: '$0',
     duration: 'Daily, continuous (20m/day)',
     cta: 'Free course link — never a deposit ask; 1 in 3 posts carries NO ask',
     kpi: 'Reply-rate; every question answered <24h; 1–2 IB-ready members flagged',
@@ -115,7 +109,7 @@ const CHANNEL_PLAYBOOK = {
   technical_analysis: {
     activity: 'Technical analysis post', platform: 'Telegram (repost: Facebook)', country: 'Pakistan + GCC',
     audience: 'Interests: gold/XAUUSD levels, BTC structure, support/resistance, price action · active traders 25–45',
-    language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: 'PKR 0',
+    language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: '$0',
     duration: 'Daily, continuous (20m/day)',
     cta: '"Levels nikalna seekhein — free course lesson 4" (education, never a signal)',
     kpi: '1 authority post/day; saves & forwards; replies answered',
@@ -124,7 +118,7 @@ const CHANNEL_PLAYBOOK = {
   retention_touches: {
     activity: 'Retention due-list touches', platform: 'WhatsApp', country: 'Pakistan + GCC',
     audience: 'Segment-matched: Day-1 activations, milestone hitters, 14d-silent at-risk clients, high-equity VIPs',
-    language: 'Urdu (voice notes)', mode: 'Organic', budget: 'PKR 0',
+    language: 'Urdu (voice notes)', mode: 'Organic', budget: '$0',
     duration: 'Daily, continuous (15m/day)',
     cta: 'No CTA — retention touches build the relationship; the ladder converts on its own',
     kpi: 'Due-list cleared; Day-7 activity of welcomed clients ↑; churn saves',
@@ -133,7 +127,7 @@ const CHANNEL_PLAYBOOK = {
   ib_followups: {
     activity: 'IB follow-ups', platform: 'WhatsApp (personal)', country: 'Pakistan + GCC',
     audience: 'Trust-triggered only: course completed + community-active + a real broker question, OR ~30 days engaged',
-    language: 'Urdu', mode: 'Organic', budget: 'PKR 0',
+    language: 'Urdu', mode: 'Organic', budget: '$0',
     duration: 'Daily, continuous (15m/day)',
     cta: '"Jab tayyar hon, batayein" — verification + supervision framing, never pressure',
     kpi: '1 conversation advanced a stage; zero trust cost',
@@ -142,7 +136,7 @@ const CHANNEL_PLAYBOOK = {
   physical_outreach: {
     activity: 'Physical IB Expansion outreach', platform: 'In-person / phone', country: 'Pakistan (current cycle area)',
     audience: 'Computer academies, freelancing institutes, AI/skill centres, universities, technical colleges — decision-makers (principal/owner)',
-    language: 'Urdu', mode: 'Organic (travel cost only)', budget: 'PKR 0 (local travel)',
+    language: 'Urdu', mode: 'Organic (travel cost only)', budget: '$0 (local travel)',
     duration: 'Daily within the area\'s 15-day cycle (30m/day)',
     cta: 'Free demo class for their students — zero cost to the institute',
     kpi: '1–2 institutes contacted; every contact logged with a follow-up date',
@@ -151,20 +145,20 @@ const CHANNEL_PLAYBOOK = {
   facebook_groups: {
     activity: 'Facebook group clip reposts', platform: 'Facebook (groups)', country: 'Pakistan',
     audience: 'Interests: PK trading/investing groups, gold rate watchers, freelancing & side-income communities, forex beginners',
-    language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: 'PKR 0',
+    language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: '$0',
     duration: '2–3× per week (10m each)',
     cta: 'Usually none (trust post); occasionally free course',
     kpi: 'Referral traffic only — never vanity engagement',
     expected: 'Discovery skim into the funnel; zero native production',
   },
   youtube_video: {
-    activity: 'Weekly long-form video', platform: 'YouTube', country: 'Pakistan + GCC (EN mirror NG/KE from day 91)',
-    audience: 'Search intent: "gold trading kya hai", "$100 se trading", "scam broker pehchan", "Exness account", "Islamic account" · beginners + small accounts + gold traders',
-    language: 'Urdu (Roman-Urdu title; EN title for GCC reach)', mode: 'Organic', budget: 'PKR 0 (tooling only)',
-    duration: 'Weekly, every production day (3h)',
-    cta: '"Poora seekhna hai to free course — link description mein" (never deposit)',
-    kpi: 'Watch-time >40%; course CTR',
-    expected: '1 long-form filmed — the compounding asset everything else distributes',
+    activity: 'Weekly long-form video (PRIORITY 2)', platform: 'YouTube', country: 'Pakistan + Gulf expats (EN repurpose in Phase 3)',
+    audience: 'Search intent: "forex kya hai", "MT5 kaise use karen", "$100 se trading", "Exness deposit Pakistan", "scam broker pehchan" · the first 20 videos ARE the free course',
+    language: 'Urdu (Roman-Urdu title targeting Urdu search queries)', mode: 'Organic', budget: '$0 (~$30 one-time mic)',
+    duration: '1–2/wk, 8–15 min',
+    cta: '"Poora seekhna hai to free course — link description mein" (never deposit); Telegram + IB link with disclosure',
+    kpi: 'Watch-time ≥40%; 10K subs by M9',
+    expected: 'Authority + evergreen search; playlist = course = lead magnet (zero extra production)',
   },
   publish_chain: {
     activity: 'Publish chain (article + clips)', platform: 'Website/GEO + Telegram/Facebook/Instagram', country: 'All (search is borderless)',
@@ -178,30 +172,39 @@ const CHANNEL_PLAYBOOK = {
   live_class: {
     activity: 'Weekly live class', platform: 'Live (YouTube/Telegram)', country: 'Pakistan + GCC (Gulf-evening friendly)',
     audience: 'Community members + course-completers (the conversion-ready pool)',
-    language: 'Urdu', mode: 'Organic', budget: 'PKR 0',
+    language: 'Urdu', mode: 'Organic', budget: '$0',
     duration: 'Weekly fixed slot (1.5h)',
     cta: '"Course complete karne wale mujhse personal baat kar sakte hain"',
     kpi: 'Attendance + replay views',
     expected: 'The weekly ritual + conversion moment',
   },
-  tiktok_ig_repost: {
-    activity: 'TikTok + Instagram auto-repost', platform: 'TikTok / Instagram', country: 'All',
-    audience: 'Short-form browsers (passive reach — never a targeting effort)',
-    language: 'Urdu / EN captions', mode: 'Organic (auto-repost only)', budget: 'PKR 0 — paid NEVER (locked verdict)',
-    duration: 'Weekly on publish day (one-click, ~0m)',
-    cta: 'Profile link only',
-    kpi: 'Free reach only — no time investment to justify',
-    expected: 'Repost shelf: free upside, zero cost',
+  // PRIORITY 1 acquisition channel (blueprint §6.1) — short-form video is the
+  // ONLY channel where $0 buys mass reach. This REPLACES the prior "TikTok
+  // never / IG auto-repost only" verdict, which was the single biggest
+  // strategic error: TikTok/Shorts/Reels are the growth engine, not a shelf.
+  shortform_video: {
+    activity: 'Short-form video — batch-record & post to your market\'s best platforms', platform: 'Per-country mix (see Short-form Platform Mix): PK = Facebook Reels + YouTube Shorts primary (TikTok unreliable in PK); Africa/SEA = TikTok-led', country: 'Pakistan + Gulf expats (Urdu)',
+    audience: 'Never-traded + beginners (70%+ of views): "is trading real/halal/risky", 3-mistakes videos, gold chart breakdowns, signal-seller myth-busting, MT5/JazzCash how-tos',
+    language: 'Urdu with English trading terms (natural code-switching)',
+    mode: 'Organic (PRIORITY 1) — $30–50/mo boosts the single best Reel only',
+    budget: '$0 (phone + free CapCut); optional $30–50/mo Reel boost',
+    duration: 'Batch-record 2 days/wk; 1 short/day/platform (same asset, native re-uploads)',
+    cta: 'Telegram link in bio/comments — every video',
+    kpi: '30 shorts/mo · viewer→profile CTR ≥1.5% · ≥15 Telegram joins/10K views · 100K+ views/mo by M6',
+    expected: 'Mass top-of-funnel reach at $0 — the primary lead engine',
   },
   facebook_ads: {
-    activity: 'Facebook Ads (GATED — opens at 300 activated clients)', platform: 'Facebook Ads', country: 'Pakistan (then Nigeria/Kenya)',
-    audience: 'Interests: investing, gold/commodities, forex, Exness, freelancing/side-income, financial literacy · PK 22–45; + retargeting: course-starters who stalled, video viewers 50%+',
-    language: 'Urdu (EN for NG/KE)', mode: 'PAID',
-    budget: 'PKR 0 until the gate; then capped ~PKR 50,000/mo probe, funded from commission only',
-    duration: 'Rolling 2-week test cycles once opened',
+    activity: 'Facebook/Meta Ads (DEFERRED — opens only at $1,000/mo commission run-rate, ~Phase 1 exit / Month 9)', platform: 'Facebook/Meta Ads', country: 'Pakistan first (then Nigeria in Phase 3)',
+    region: 'PK: Lahore, Karachi, Islamabad/Rawalpindi, Faisalabad + nationwide broad; NG (Phase 3): Lagos, Abuja',
+    objective: 'Lead generation (instant forms) → Telegram bot; NOT traffic or engagement',
+    audience: 'Broad 18–35, let the creative target; + retargeting: course-starters who stalled & video viewers 50%+',
+    interests: 'Forex/gold trading, Exness, MT4/MT5, investing, financial literacy, freelancing/side-income, XAUUSD; exclude existing leads',
+    language: 'Urdu (EN for NG later)', mode: 'PAID (accelerant, never the backbone)',
+    budget: '$0 until the gate. WHY DELAYED (evidence): Meta needs ~50 conversions/wk to optimize (~$2,000/wk); at $150/mo, ads = donating to Meta. Once open: spend ≤50% of trailing-month commission. NOTE: $30–50/mo Reel BOOSTS of proven organic clips are allowed from day 1 (that is not a campaign).',
+    duration: 'Rolling 2-week test cycles; kill any ad-set with CPL >$5 after $50 spend',
     cta: 'Free course lead form — never a deposit ask',
-    kpi: 'CAC < PKR 1,500 per activated client; retargeting = cheapest line',
-    expected: 'Paid acquisition engine — only after organic proves the funnel',
+    kpi: 'Target CPL $1.50–3.00; paid spend ≤50% of trailing commission',
+    expected: 'Paid accelerant — only after organic + commission prove the funnel',
   },
 };
 
@@ -242,6 +245,10 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
 
   // The daily non-negotiables (cadence templates, seed-02 §1 + seed-07) —
   // the online engine AND the physical engine run together every day.
+  // PRIORITY 1 (blueprint §6.1): 1 short-form video/day/platform — the $0
+  // mass-reach lead engine. Batch-recorded 2 days/wk, posted daily.
+  activities.push('Short-form video: post 1 short to YT Shorts + TikTok + FB/IG Reels — CTA → Telegram (15m; batch-record 2 days/wk)');
+  campaignKeys.push('shortform_video');
   activities.push('Telegram community touch: 1–2 posts, all questions <24h (20m)');
   campaignKeys.push('telegram_community');
   activities.push('Technical analysis post — levels/structure, education never signals (20m)');
@@ -252,20 +259,17 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
   campaignKeys.push('physical_outreach');
   activities.push('Personal trading: 5-question check-in + journal (15m)');
 
-  // Facebook is a discovery skim — 2-3 clip reposts/wk (platform playbook);
-  // TikTok/IG are auto-repost shelves (zero native minutes, locked verdict).
+  // Facebook groups — genuine participation (answer questions, never spam
+  // links), profile funnels to Telegram. 15m/day cap (blueprint §6.5).
   if (['tuesday', 'thursday', 'saturday'].includes(weekdayName)) {
-    activities.push('Facebook groups: 2–3 clip reposts into PK groups (10m)');
+    activities.push('Facebook groups: answer questions genuinely in PK forex groups, profile → Telegram (15m cap)');
     campaignKeys.push('facebook_groups');
   }
-  if (weekdayName === publishDay) {
-    activities.push('Auto-repost clips to TikTok + Instagram (one-click only — zero native effort by locked verdict)');
-    campaignKeys.push('tiktok_ig_repost');
-  }
-  // Paid is gate-conditional (300 activated clients), never calendar-forced —
-  // from Phase 2 the ads campaign appears with its gate stated so the founder
-  // sees the full spec before it opens, and never spends before it does.
-  if (dayNumber > 90) campaignKeys.push('facebook_ads');
+  // Paid is gate-conditional ($1,000/mo commission run-rate ≈ Phase 1 exit,
+  // ~Month 9 / day 270 — blueprint §6.6), never calendar-forced. It surfaces
+  // as a planned spec from ~Month 6 so the founder sees the full gate before
+  // it opens, and never spends before commission funds it.
+  if (dayNumber > 150) campaignKeys.push('facebook_ads');
 
   // Monthly anchors on a 28-day planning rhythm; quarterly gate every 91 days.
   if (dayNumber % 28 === 21) {
@@ -277,11 +281,11 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
   if (dayNumber % 91 === 0) {
     activities.push('QUARTERLY GATE REVIEW: expansion gates (EN? probes? localization?) decided on data, not mood');
   }
-  if (dayNumber === 84) {
-    activities.push('EN ENGINE PREP: Nigeria/Kenya mirrors begin day 91 (founder decision) — pick the 5 proven PK winners to mirror first; if fewer than 5 winners exist yet, that is the risk signal to slow down');
+  if (dayNumber === 255) {
+    activities.push('PHASE 1 EXIT CHECK (~Month 9): are you at 100 actives + $1,000/mo commission? If yes, open paid ads (≤50% of trailing commission) + hire a video editor. If <50% of gate for 2 quarters, STOP scaling and fix the funnel (do not spend more).');
   }
-  if (dayNumber === 540) {
-    activities.push('SOUTH AFRICA GATE: add SA EN market only if NG/KE CAC is at or under target — check the Monthly AI Review first');
+  if (dayNumber === 525) {
+    activities.push('PHASE 2 EXIT / ENGLISH-EXPANSION GATE (~Month 18): only if 500 actives + $5K/mo — begin English by repurposing your top-30 videos, Nigeria first. Do NOT expand before the PK engine hits its gate.');
   }
 
   return {
@@ -419,28 +423,25 @@ export function planDayForDate(startDateStr, targetDateStr, opts = {}) {
 
 // --- Feasibility model (the audit that sized this roadmap) ---------------
 //
-// Backward funnel from the founder-defined 50,000-active target. Each stage
-// states its basis: FOUNDER GOAL (given), PLANNING ASSUMPTION (conservative
-// mid-range figure, replaced by real funnel data as the Monthly AI Review
-// accumulates it), or VERIFIED RANGE (industry-typical band for niche
-// education content). Verdict: 365 days cannot carry ~67M cumulative reach
-// on one founder's organic output — the practical horizon is 5 phased years
-// with EN markets, paid probes behind their CAC gate, and delegation of
-// non-trust work from Year 2.
+// Backward funnel from the founder-defined 50,000-active target, using the
+// blueprint's VERIFIED education-first / emerging-market benchmarks (§2).
+// Each stage states its basis: FOUNDER GOAL (given) or VERIFIED RANGE
+// (industry-typical band). Verdict: 50K is the BEST case from a $150/mo solo
+// start (expected ~Year 6–7); ~80% of it must come from a sub-IB partner
+// network in Years 3–5. Gates are metric-triggered, never date-triggered.
 export const FEASIBILITY = {
   target: 50000,
   horizonDays: PLAN_TOTAL_DAYS,
-  verdict: '365 days is NOT enough. The funnel below needs ~67M cumulative reach; a single-founder organic engine peaks near ~1M reach/month even when mature. Practical horizon: 5 years (1,825 days), phased — Year 1 proves the machine, Years 2–3 scale it with EN markets + gated paid + a first hire, Years 4–5 compound it.',
+  verdict: 'HONEST MATH (blueprint §2): 50,000 actives is the BEST case from a $150/mo solo start — reached in Year 5 only if the content flywheel + sub-IB network compound early. The EXPECTED case reaches it in ~Year 6–7 (20K–35K by Y5). No solo founder gets there directly: ~80% of the 50K must come from a sub-IB partner network in Years 3–5. Gates are metric-triggered, never date-triggered — every intermediate state (2K, 5K, 20K actives) is itself a strong business.',
   stages: [
-    { stage: 'Total Audience Reached', required: '~67,000,000 (cumulative)', basis: 'Derived — from the chain below', note: 'Across all markets and 5 years; ≈1.1M/month average, weighted toward later years' },
-    { stage: 'Engaged Users', required: '~4,000,000', basis: 'VERIFIED RANGE', note: '6% reach→engaged (niche education content typically 3–8%)' },
-    { stage: 'Qualified Leads', required: '~323,000', basis: 'PLANNING ASSUMPTION', note: '8% engaged→qualified (course start / community join)' },
-    { stage: 'Broker Account Opens', required: '~113,000', basis: 'PLANNING ASSUMPTION', note: '35% qualified→open — education-first funnels convert warm, not wide' },
-    { stage: 'IB Registrations', required: '~96,000', basis: 'PLANNING ASSUMPTION', note: '85% of opens complete registration under the IB link' },
-    { stage: 'Active Traders', required: '~77,000', basis: 'PLANNING ASSUMPTION', note: '80% of registrations place trades' },
-    { stage: 'Active IB Clients', required: '50,000', basis: 'FOUNDER GOAL', note: '65% of traders stay active — retention economics carry the last mile' },
+    { stage: 'Short-form views', required: '~250M–500M cumulative', basis: 'VERIFIED RANGE', note: '~1 active per 5,000–10,000 views — the $0 top of funnel' },
+    { stage: 'Community leads (TG/WA/email)', required: '~4,000,000+', basis: 'VERIFIED RANGE', note: '1–3% of engaged viewers → lead; ~1 active per 80–120 leads' },
+    { stage: 'Exness registrations (under IB link)', required: '~500,000–900,000', basis: 'VERIFIED RANGE', note: '8–12% lead→registration' },
+    { stage: 'First deposits (FTD)', required: '~150,000+', basis: 'VERIFIED RANGE', note: '20–30% registration→FTD (WhatsApp deposit-assist pushes the top of this range)' },
+    { stage: 'Active at month 3', required: '~65,000–75,000', basis: 'VERIFIED RANGE', note: '40–50% FTD→90-day active — the churn danger zone is weeks 0–12' },
+    { stage: 'Active IB Clients (net of churn)', required: '50,000', basis: 'FOUNDER GOAL', note: 'At 6%/mo churn you replace ~3,000/mo just to stand still — retention is where the 50K is won or lost' },
   ],
-  assumptionNote: 'Every percentage above is a planning assumption or verified band, not a promise — the Monthly AI Review recalibrates this model against your real funnel every month.',
+  assumptionNote: 'Benchmarks are the blueprint\'s verified education-first / emerging-market funnel ranges ($10/active/mo, 6% churn). Not a promise — the Monthly AI Review recalibrates against your real funnel monthly. The two model sensitivities are ARPU/active and churn.',
 };
 
 // --- Country strategy (Section 3: the multi-country master table) --------
@@ -456,58 +457,69 @@ export const ASSUMPTION_NOTE = 'Conversion/CAC figures are conservative planning
 export const COUNTRY_STRATEGY = [
   {
     country: 'Pakistan', priority: 'P1 — active', broker: 'Exness',
-    language: 'Urdu / Roman-Urdu', platform: 'YouTube + Telegram + WhatsApp + FB groups',
+    language: 'Urdu / Roman-Urdu', platform: 'Short-form (P1): Facebook Reels + YouTube Shorts (TikTok when available) · YT long-form · Telegram · WhatsApp · FB groups',
     contentType: 'Gold-led education, scam-anatomy, halal series, honest small-account math',
     audience: 'Beginners, small accounts, gold traders, jewellers, business owners',
-    postingFrequency: '1 long-form + 1 live class + 3–5 clips/wk; TG 1–2 posts daily',
-    promotion: 'Organic-first; FB Ads capped-CAC probes only after the 300-client gate',
-    organicStrategy: 'The trust machine: YT engine → free course → TG community → WA circle; FB groups as discovery skim',
-    paidStrategy: 'FB Ads only, only after 300 activated clients, proven organic creatives as ads, hard CAC cap',
-    expectedConversion: '~1–2% viewer→course, ~10–15% course→IB (planning assumption)',
-    expectedCac: 'PKR 0 organic; probe target <PKR 1,500/activated client when paid opens',
-    expectedGrowth: 'Primary engine — majority of the first 1,000 activated clients',
+    postingFrequency: '1 short/day (Shorts+TikTok+Reels) + 1–2 long-form/wk + daily TG note; live Q&A Sat',
+    promotion: 'Organic-first; Meta Ads deferred until $1,000/mo commission run-rate (≈M9)',
+    organicStrategy: 'Short-form video (P1) → Telegram + YouTube free course → WhatsApp deposit-assist → IB-gated VIP → survival-path retention',
+    paidStrategy: 'Meta Ads only after $1,000/mo commission; ≤50% of trailing commission; CPL $1.50–3.00; kill CPL >$5',
+    expectedConversion: '1–3% viewer→lead · 8–12% lead→registration · 20–30% reg→FTD · 40–50% FTD→90d-active (verified benchmarks)',
+    expectedCac: '$0 organic; ~1 active per 80–120 leads or ~5–10K short-form views',
+    expectedGrowth: 'Primary engine, Months 1–9 ONLY — proving ground to 100 actives ($1K/mo). ARPU low ($5–10) accepted here',
   },
   {
-    country: 'GCC (UAE/KSA/Qatar/Oman/Kuwait/Bahrain expats)', priority: 'P1 — dual-launch with Pakistan: international from day 1', broker: 'Exness Islamic — lead with it',
-    language: 'Urdu + English', platform: 'YouTube + WhatsApp (Gulf evenings 8–11pm GST)',
-    contentType: 'Halal-clarity (scholarly views, never verdicts), remittance-vs-investing, Eid/Ramadan gold timing',
-    audience: 'Expat professionals 28–45, time-poor, highest LTV segment',
-    postingFrequency: 'Same PK uploads timed for Gulf evenings (+1h/wk extra)',
-    promotion: 'Organic only — trust-first segment; paid never leads here',
-    organicStrategy: 'PK content Gulf-timed + WA inner circles + halal-clarity series + Ramadan/Eid rhythm',
-    paidStrategy: 'None by design — paid never leads a trust-first, highest-LTV segment',
-    expectedConversion: 'Higher per-lead value, lower volume (planning assumption)',
-    expectedCac: '≈PKR 0 (marginal — rides Pakistan content)',
-    expectedGrowth: 'Highest-LTV layer on the PK engine',
+    country: 'Gulf expats (UAE/KSA/Qatar/Oman/Kuwait/Bahrain)', priority: 'MULTIPLIER — from Month 3, NOT a separate launch', broker: 'Exness (swap-free/Islamic accounts)',
+    language: 'Urdu (the SAME content)', platform: 'Same uploads, tagged + community-segmented for Gulf viewers',
+    contentType: 'No separate production — identify & VIP-track Gulf-based Pakistani viewers of existing Urdu content',
+    audience: '9M+ overseas Pakistanis; deposits 5–10× domestic — disproportionately land in the high-value segment',
+    postingFrequency: 'Zero extra — expat-focused tags + Gulf-evening timing on existing content',
+    promotion: 'Organic only — a near-free LTV upgrade on content you already make',
+    organicStrategy: 'Community segmentation to surface Gulf viewers → VIP track → founder relationship (highest LTV)',
+    paidStrategy: 'None — never a separate ad spend; it rides the Pakistan engine',
+    expectedConversion: 'Higher per-lead value, lower volume',
+    expectedCac: '≈$0 (marginal — rides Pakistan content)',
+    expectedGrowth: 'The ARPU multiplier that absorbs low PK deposit sizes (blueprint expat multiplier)',
   },
   {
-    country: 'Nigeria + Kenya', priority: 'P2 — EN mirrors from Day 91 (FOUNDER DECISION; researched gate was 300 clients — mirror only proven winners to contain the risk)', broker: 'Exness FIRST — the 1st-priority broker in every market (one partner dashboard, proven PK-based IB support). Vantage is a fallback trial ONLY if Exness underperforms here',
-    language: 'English', platform: 'YouTube EN + WhatsApp-heavy (KE), faster pace than ur market',
-    contentType: 'EN mirrors of PROVEN winners only — small-account truth, prop-firm reality',
-    audience: 'Young mobile-first traders; small accounts',
-    postingFrequency: 'Start 1 EN mirror/wk at day 91; full cadence when 5+ winners are mirrored',
-    promotion: 'Capped-CAC probes still wait for the 300-client gate',
-    organicStrategy: 'EN mirrors of proven winners + WhatsApp-heavy community (KE) + prop-firm/small-account lanes',
-    paidStrategy: 'Capped-CAC probes from the 300-client gate; NG first (larger market), KE follows on data',
-    expectedConversion: 'Faster funnel, lower LTV than GCC (planning assumption)',
-    expectedCac: 'Probe target set at gate review; watch regulatory tightening both markets',
-    expectedGrowth: 'The second engine — scales the path from 1,000 toward 10,000+',
+    country: 'Nigeria + South Africa + Kenya', priority: 'P2 — ENGLISH EXPANSION, Phase 3 (Months 18–30) — ONLY after the PK engine hits its gate (500 actives/$5K/mo)', broker: 'Exness FIRST (FSCA-licensed in SA, CMA-licensed in KE = strongest local trust). Vantage/FP Markets/HFM as backup only',
+    language: 'English (reuses ~70% of the library)', platform: 'YouTube EN + short-form; WhatsApp-heavy (KE, M-Pesa rails)',
+    contentType: 'EN repurpose of PROVEN winners — small-account truth, prop-firm reality, gold affinity',
+    audience: 'Largest African retail forex market (NG); mature higher-LTV base (SA); high-quality small market (KE)',
+    postingFrequency: 'Repurpose top-30 videos EN first; dedicated channels once a market is producing',
+    promotion: 'Paid from reinvested commission, PK-proven creatives; NG first (largest, lowest CPMs)',
+    organicStrategy: 'Repurpose proven library + local payment/regulatory trust messaging (FSCA in SA, M-Pesa in KE)',
+    paidStrategy: 'Commission-funded, same ≤50%-of-trailing rule; highest volume-per-dollar expansion available',
+    expectedConversion: 'Faster funnel, lower LTV than Gulf (English benchmarks)',
+    expectedCac: '$0 organic; commission-funded paid, CPL set from PK actuals',
+    expectedGrowth: 'The second engine — scales toward 2,500 actives ($25K/mo) + first sub-IBs. NOT before Phase 3',
   },
   {
-    country: 'South Africa', priority: 'P3 — enters ~Day 540, ONLY if NG/KE CAC holds (planning assumption, verify broker terms first)', broker: 'Exness FIRST (1st-priority broker — verify SA partner acceptance at the gate); Vantage only as fallback if Exness cannot serve SA',
-    language: 'English', platform: 'YouTube EN (rides the NG/KE library), FB groups',
-    contentType: 'Same EN library + SA-specific broker/regulatory clarity (FSCA-aware framing)',
-    audience: 'Retail forex traders — one of Africa\'s largest regulated retail markets',
-    postingFrequency: 'No new production — EN library + 1 SA-specific piece/month',
-    promotion: 'Paid probes from entry (market is paid-mature), same CAC discipline',
-    organicStrategy: 'EN library reuse + FSCA-aware broker-clarity content + FB groups',
-    paidStrategy: 'Probes from entry (paid-mature market); budget from NG/KE actuals',
-    expectedConversion: 'Between NG/KE and GCC (planning assumption)',
-    expectedCac: 'Set from NG/KE actuals at the gate',
-    expectedGrowth: 'Third engine — Year 2–3 scale layer',
+    country: 'Sub-IB / partner network', priority: 'THE 50K ENGINE — Phase 3 onward (Months 18+)', broker: 'Exness sub-partner structure (verify current override terms before Phase 3)',
+    language: 'Per partner\'s market', platform: 'Partner\'s own channels — you provide the toolkit',
+    contentType: 'White-label: your course + tools + funnel playbook + landing page + training',
+    audience: 'Your best students/helpers first (loyal, credible), then micro-influencers (1K–50K followers) in target markets',
+    postingFrequency: 'Partner Telegram group + monthly performance calls + co-marketing assets',
+    promotion: 'Commission override on partner volume — NOT your ad budget',
+    organicStrategy: 'Recruit from your community, graduated split (trial on first 10 referrals → full toolkit at 10+ actives)',
+    paidStrategy: 'None — partners fund their own; you take a master-IB override',
+    expectedConversion: 'P3: 25 producing sub-IBs · P4: 150 · P5: 400+ (60–100 actives each)',
+    expectedCac: '≈$0 to you — partners produce the majority of Year 3–5 volume',
+    expectedGrowth: 'Direct acquisition ceilings at ~5–10K actives; sub-IBs produce the remaining 80% toward 50K',
   },
   {
-    country: 'India', priority: 'DEFERRED — RBI hostility to forex IB models (verified research); re-check yearly', broker: 'None practical from Pakistan today',
+    country: 'Indonesia + Vietnam', priority: 'P4 — Phase 4 (Months 30–48), GATED on a native-language in-market hire', broker: 'Exness (verify per-market acceptance at the hire gate)',
+    language: 'Bahasa Indonesia / Vietnamese — one language = one dedicated native hire, never translation',
+    platform: 'Localized funnel cloned per market (payments, platform mix, compliance review)',
+    contentType: 'Largest SEA opportunities; funnel cloned + localized only after a native content lead is hired',
+    audience: 'Huge SEA retail demand — cannot be served solo from Pakistan',
+    postingFrequency: 'Set by the in-market hire', promotion: 'Commission-funded, per-market',
+    organicStrategy: 'Clone the proven PK/EN funnel with a native lead; never machine-translate',
+    paidStrategy: 'Per-market from commission', expectedConversion: 'Set by localized funnel',
+    expectedCac: 'Set at market entry', expectedGrowth: 'Phase 4 scale layer toward 10,000 actives',
+  },
+  {
+    country: 'India', priority: 'EXCLUDED — never (this plan). RBI Alert List / FEMA penal risk to CLIENTS makes an IB business here unethical + unsustainable', broker: 'None — do not refer Indian clients to Exness',
     language: '—', platform: '—', contentType: '—',
     audience: 'Largest Urdu/Hindi-understanding audience — the content already serves diaspora viewers organically',
     postingFrequency: '—', promotion: 'Zero minutes; organic diaspora views are free upside, never a target',
@@ -531,75 +543,105 @@ export const COUNTRY_STRATEGY = [
     expectedGrowth: 'Zero minutes before broker verification — locked rule',
   },
   {
-    country: 'Rejected/Deferred', priority: 'Malaysia REJECT (Exness structural) · Indonesia DEFER 2027-07 · India DEFER (RBI) · EU/UK/US/AU REJECT (regulatory)',
-    broker: '—', language: '—', platform: '—', contentType: '—', audience: '—',
-    postingFrequency: '—', promotion: 'Zero minutes by locked verdict — re-read the opportunity-cost analysis if tempted',
+    country: 'Excluded markets', priority: 'EXNESS RESTRICTED — exclude from ALL targeting: USA, UK, EU, Canada, Australia, Iran, North Korea. Plus India (RBI/FEMA client risk)',
+    broker: 'Exness cannot serve these — no funnel, no ad targeting, ever',
+    language: '—', platform: '—', contentType: 'UK/US Urdu VIEWERS still grow the channel, but must NEVER be onboarded to Exness',
+    audience: '—', postingFrequency: '—',
+    promotion: 'Zero minutes; exclude in every ad-targeting geo filter (verified restriction)',
     expectedConversion: '—', expectedCac: '—', expectedGrowth: '—',
+  },
+  {
+    country: 'Later optionality (Phase 5)', priority: 'After 10,000 actives: Egypt (Arabic hire), Bangladesh, Philippines, Morocco, Turkey; LATAM only via white-label partners, never first-party',
+    broker: 'Per-market at the gate', language: 'Native hires only', platform: 'Partner/localized',
+    contentType: 'Optionality, not a Year 1–4 target', audience: '—', postingFrequency: '—',
+    promotion: 'None before 10,000 actives', expectedConversion: '—', expectedCac: '—',
+    expectedGrowth: 'Optionality layer once the network engine is proven',
   },
 ];
 
 // --- Executive Overview (Section 1) — the complete business picture ------
 //
-// Budgets are conservative PLANNING ASSUMPTIONS in PKR, gated so paid is
-// only ever funded from earned commission (never savings). Reach/leads/
-// clients reuse the FEASIBILITY model. Live fields (progress, current phase,
-// monthly target) are computed by the endpoint via currentPhaseContext().
+// Budgets are the blueprint's real $100–150/mo constraint (USD), gated so
+// paid is only ever funded from earned commission (never savings). Commission
+// is WORKING CAPITAL, not income, until Phase 2 exit. Live fields (progress,
+// current phase, monthly target) are computed via currentPhaseContext().
 export const EXECUTIVE_OVERVIEW = {
-  durationLabel: '5 years · 1,825 days · 6 phases',
+  durationLabel: '5-year plan · 50K = BEST case in Y5, expected ~Y6–7 (metric-gated, not date-gated)',
   budget: {
-    organicMonthly: 'PKR ~15,000/mo — tooling only (hosting, design/editing apps, email). The engine is founder TIME, not cash.',
-    paidGate: 'Paid = PKR 0 until 300 activated clients.',
-    paidMonthlyWhenActive: 'PKR ~50,000/mo at first probe; scaled only while CAC ≤ target',
-    totalEstimated: '~PKR 0.9M organic tooling over 5 years + paid scaled from commission after the gate (paid is self-funding, never from savings)',
-    monthlyEnvelope: 'Year 1: ~PKR 15k/mo · Post-gate: ~PKR 15k organic + capped paid from commission',
+    organicMonthly: '$100–150/mo total: $20 AI assistant · $10 domain+Cloudflare+link page · $0 email/bot (free tiers) · $40 best-Reel boost · $30–80 buffer (mic, thumbnails, tools). The engine is founder TIME, not cash.',
+    paidGate: 'Paid = $0 until commission run-rate ≥ $1,000/mo (~Phase 1 exit, Month 9). Reason: Meta needs ~50 conversions/wk (~$2,000/wk) to optimize — at $150/mo, ads = donating to Meta.',
+    paidMonthlyWhenActive: 'Once open: paid spend ≤ 50% of trailing-month commission; kill any ad-set with CPL >$5 after $50 spend.',
+    totalEstimated: 'Year 1 is ~$150/mo from savings; from the first commission dollar the reinvestment rule takes over — paid is self-funding, never from savings.',
+    monthlyEnvelope: 'Reinvestment rule: 60% marketing · 20% product/tools · 10% reserve (3-mo runway) · 10% founder (rises to 30% only after reserve funded + phase gate met).',
   },
   countryBudget: [
-    { country: 'Pakistan', spend: 'Bulk of organic time + first paid probes', note: 'Primary engine' },
-    { country: 'GCC', spend: '≈PKR 0 marginal (rides PK content)', note: 'Highest LTV, organic only' },
-    { country: 'Nigeria + Kenya', spend: 'EN-mirror time from day 91; paid probes post-gate', note: 'Second engine' },
-    { country: 'South Africa', spend: 'Paid probes ~day 540 IF NG/KE CAC holds', note: 'Paid-mature market' },
+    { country: 'Pakistan (Months 1–9, ONLY)', spend: 'Bulk of organic time; first Reel boosts; first paid at the $1K/mo gate', note: 'Native language + trust, $0.5–1.2 CPMs, JazzCash/Easypaisa rails — the proving ground' },
+    { country: 'Gulf expats (from Month 3)', spend: '≈$0 marginal — SAME Urdu content, tagged for expat viewers', note: 'Deposit sizes 5–10× Pakistan — a near-free LTV multiplier, NOT a separate market' },
+    { country: 'Nigeria / South Africa / Kenya (Phase 3, M18–30)', spend: 'English content reuses ~70% of library; paid from reinvested commission', note: 'English expansion only after PK engine hits gate' },
+    { country: 'Indonesia / Vietnam / Egypt (Phase 4+)', spend: 'Gated on native-language hires — one language = one dedicated hire', note: 'Never translation agencies' },
+    { country: 'Sub-IB partner network (Phase 3+)', spend: 'Commission override, not ad budget', note: 'The real path from ~10K → 50K actives' },
   ],
   platformBudget: [
-    { platform: 'YouTube', spend: 'PKR 0 (organic core)', note: 'Time, not money' },
-    { platform: 'Telegram / WhatsApp', spend: 'PKR 0', note: 'Organic community + conversion' },
-    { platform: 'Facebook', spend: 'PKR 0 organic; the ONLY paid channel (post-gate)', note: 'Ads reuse proven organic creatives' },
-    { platform: 'Website / GEO', spend: 'inside tooling (hosting)', note: 'Compounding SEO asset' },
-    { platform: 'TikTok / Instagram', spend: 'PKR 0 — auto-repost only, never paid', note: 'Locked verdict' },
+    { platform: 'Short-form video (YT Shorts/TikTok/Reels)', spend: '$0 + optional $30–50/mo best-Reel boost', note: 'PRIORITY 1 — the $0 mass-reach lead engine' },
+    { platform: 'YouTube long-form', spend: '$0 (~$30 one-time mic)', note: 'Authority + evergreen search; the playlist IS the free course' },
+    { platform: 'Telegram / WhatsApp', spend: '$0', note: 'Community hub + the conversion/deposit-assist floor' },
+    { platform: 'Facebook (page + groups, then Ads)', spend: '$0 organic; paid only post-$1K/mo gate', note: 'Ads reuse proven organic creatives' },
+    { platform: 'Website / GEO / SEO', spend: '$10/mo (domain + Cloudflare free)', note: 'Phase 2+ compounding SEO asset' },
   ],
   expected: {
-    reach: '~67,000,000 cumulative reach (5y)',
-    leads: '~323,000 qualified leads',
-    activeClients: '50,000 active IB clients (the target)',
+    reach: '~5,000–10,000 short-form views ≈ 1 active (blueprint funnel math)',
+    leads: '~1 active per 80–120 community leads',
+    activeClients: '50,000 active funded traders (BEST case Y5; expected ~Y6–7)',
   },
   paidCampaigns: [
-    { platform: 'Facebook Ads', country: 'Pakistan', audience: 'PK 22–45, investing/gold interest', language: 'Urdu', budget: 'Capped ~PKR 50k/mo probe (post-300-clients gate)', duration: 'Rolling 2-week test cycles', expected: 'CAC baseline < PKR 1,500 / activated client' },
-    { platform: 'Facebook Ads (retargeting)', country: 'Pakistan', audience: 'Course-starters who stalled', language: 'Urdu', budget: 'Smallest line first', duration: 'Always-on once opened', expected: 'Cheapest conversions in the account' },
-    { platform: 'Facebook Ads', country: 'Nigeria + Kenya', audience: 'Young mobile-first small accounts', language: 'English', budget: 'Capped probe (same gate)', duration: '2-week test cycles', expected: 'CAC set from PK actuals' },
+    { platform: 'Facebook/Meta Ads (DEFERRED)', country: 'Pakistan first', audience: 'Broad 18–35, let creative target; UGC screen-recording creatives', language: 'Urdu', budget: '$0 until $1,000/mo commission gate; then ≤50% of trailing commission', duration: 'Lead-gen forms → Telegram bot; kill CPL >$5 after $50', expected: 'Target CPL $1.50–3.00 — accelerant, not backbone' },
+    { platform: 'Facebook/Meta Ads (retargeting)', country: 'Pakistan', audience: 'Course-starters who stalled + 50%+ video viewers', language: 'Urdu', budget: 'Smallest line first', duration: 'Always-on once opened', expected: 'Cheapest conversions in the account' },
+    { platform: 'Facebook/Meta Ads', country: 'Nigeria (Phase 3)', audience: 'Young mobile-first small accounts', language: 'English', budget: 'From reinvested commission', duration: '2-week test cycles', expected: 'CPL set from PK actuals' },
   ],
-  assumptionNote: 'Budgets are conservative PKR planning assumptions, gated so paid is only funded from earned commission — the Monthly AI Review replaces them with your real spend/CAC as data accumulates.',
+  assumptionNote: 'Budget follows the blueprint\'s real $100–150/mo solo-founder constraint. Commission is working capital, not income, until Phase 2 exit — the Monthly AI Review replaces these with your real spend/CAC as data accumulates.',
 };
 
 // --- Social Media Strategy (Section 5) — only practically useful channels -
 export const SOCIAL_STRATEGY = [
-  { platform: 'YouTube', country: 'PK + GCC (EN mirror NG/KE day 91+)', language: 'Urdu (EN mirrors)', audience: 'Beginners, gold traders, small accounts', organic: '1 long-form + 1 live + 3–5 clips/wk; titles = the audience\'s real question', paid: 'None — organic compounding core', budget: 'PKR 0', duration: 'Continuous', kpi: 'Watch-time >40%, course CTR', result: 'The trust engine everything else distributes' },
-  { platform: 'Telegram', country: 'PK + GCC', language: 'Urdu / Roman-Urdu', audience: 'Community members, warm leads', organic: '1–2 posts/day, all Qs <24h, 1/3 no-ask, weekly review thread', paid: 'None', budget: 'PKR 0', duration: 'Continuous', kpi: 'Reply-rate, join→course', result: 'The conversion square' },
-  { platform: 'WhatsApp', country: 'PK + GCC', language: 'Urdu', audience: 'Course-completers, activated clients', organic: 'Day-1 voice notes, milestone touches, IB follow-ups; groups capped 50', paid: 'None', budget: 'PKR 0', duration: 'Continuous', kpi: 'Activation, response rate', result: 'The inner circle + IB conversion' },
-  { platform: 'Facebook', country: 'PK (NG/KE post-gate)', language: 'Urdu (EN)', audience: 'Group members (organic); cold interest (paid)', organic: '2–3 clip reposts/wk into PK groups + polls (demand signal)', paid: 'ONLY paid channel — proven-creative lead ads + retargeting, post-300-clients gate, hard CAC cap', budget: 'PKR 0 organic; ~50k/mo capped paid post-gate', duration: 'Organic continuous; paid in 2-week cycles', kpi: 'Referral traffic (organic); CAC (paid)', result: 'Discovery skim + the paid acquisition engine' },
-  { platform: 'Website / GEO', country: 'All (GEO = free upside)', language: 'Urdu + EN meta', audience: 'Search intent', organic: '1–2 articles/wk from transcripts; monthly GEO refresh + FAQ schema', paid: 'None', budget: 'in tooling', duration: 'Continuous', kpi: 'AI-search referrals, course starts', result: 'Compounding SEO asset' },
-  { platform: 'TikTok / Instagram', country: 'All', language: 'Urdu / EN', audience: 'Short-form browsers', organic: 'Auto-repost clips ONLY — one-click, zero native effort', paid: 'NEVER (category banned by locked verdict)', budget: 'PKR 0', duration: 'Passive', kpi: 'Free reach only', result: 'Repost shelf — free upside, never a time sink' },
+  { platform: 'Short-form video — YT Shorts + TikTok + FB/IG Reels (PRIORITY 1)', country: 'PK + Gulf expats', language: 'Urdu + EN trading terms', audience: 'Never-traded + beginners (70% of views): myth-busting, 3-mistakes, gold breakdowns, MT5/JazzCash how-tos', organic: 'PRIMARY channel — batch-record 2 days/wk; 1 short/day/platform (same asset, native re-uploads); CTA → Telegram', paid: '$30–50/mo boosts the single best Reel only', budget: '$0 + optional $30–50/mo boost', duration: 'Daily', kpi: '30 shorts/mo · CTR ≥1.5% · ≥15 TG joins/10K views · 100K views/mo by M6', result: 'The $0 mass-reach lead engine — where growth actually comes from' },
+  { platform: 'YouTube long-form (PRIORITY 2)', country: 'PK + Gulf expats', language: 'Urdu', audience: 'Search intent + beginners', organic: '1–2 videos/wk, 8–15 min; first 20 videos ARE the free course (playlist = course = lead magnet); Urdu search-query titles', paid: 'None', budget: '$0 (one-time ~$30 mic)', duration: 'Continuous', kpi: 'Watch-time ≥40%; 10K subs by M9', result: 'Authority + evergreen search that converts' },
+  { platform: 'Telegram (PRIORITY 3)', country: 'PK + Gulf expats', language: 'Urdu / Roman-Urdu', audience: 'Community members, warm leads', organic: '1 public channel (daily gold note, 2–3 posts/day, NO signals) + 1 VIP group (IB-gated); Sat voice-chat Q&A', paid: 'None', budget: '$0 (free bot)', duration: 'Continuous', kpi: '30-day retention ≥60%; member→verified-Exness ≥5% by M6; DAU/MAU ≥25%', result: 'The community hub + conversion midpoint' },
+  { platform: 'WhatsApp (PRIORITY 4)', country: 'PK + Gulf expats', language: 'Urdu', audience: 'Registrants, funded, active clients', organic: 'WhatsApp Business: labels = pipeline stages; every registrant gets a personal deposit-assist onboarding; segmented broadcasts ≤3–4/wk', paid: 'None', budget: '$0', duration: 'Continuous', kpi: 'Registration→FTD ≥25% (assisted vs ~15%); response <2h daytime', result: 'The solo founder\'s sales floor — where registrations become funded' },
+  { platform: 'Facebook page + groups (PRIORITY 5)', country: 'PK (NG in Phase 3)', language: 'Urdu (EN later)', audience: 'Group members; cold interest (paid, deferred)', organic: 'Genuine participation in PK forex groups (answer, never spam); profile → Telegram; 15m/day cap', paid: 'Meta Ads DEFERRED to $1,000/mo commission gate; then ≤50% of trailing commission, CPL $1.50–3.00', budget: '$0 organic; commission-funded paid post-gate', duration: 'Organic continuous; paid in 2-week cycles', kpi: 'Telegram joins attributed FB (organic); CPL (paid)', result: 'Discovery + the eventual paid accelerant' },
+  { platform: 'Website / GEO + SEO', country: 'All (free upside)', language: 'Urdu + EN meta', audience: 'High-intent search ("Exness deposit JazzCash", "MT5 Exness Pakistan")', organic: 'Phase 2: 20–30 long-tail high-intent pages with embedded videos; Phase 3: programmatic live-gold-price pages', paid: '$10/mo (domain + Cloudflare free tier)', duration: 'Phase 2+', kpi: 'Phase 2 exit 5K visits/mo; Phase 3 30K/mo', result: 'Compounding free-at-margin traffic' },
+];
+
+// --- Short-form platform mix BY COUNTRY -----------------------------------
+// Short-form video is the Priority-1 acquisition engine, but the best
+// PLATFORM is not the same everywhere — no single platform is the permanent
+// priority. Practical research per market (penetration + reliability):
+//   • Pakistan: TikTok is repeatedly BANNED/unstable → do NOT depend on it;
+//     Facebook Reels + YouTube Shorts are the reliable primary.
+//   • Africa (NG/KE): TikTok + Facebook are dominant.
+//   • South Africa: more YouTube/Instagram-mature.
+//   • SEA (Indonesia/Vietnam): TikTok-dominant markets.
+// Same asset, re-uploaded natively to each market's best platforms first.
+export const SHORTFORM_MIX = [
+  { market: 'Pakistan', primary: 'Facebook Reels + YouTube Shorts', secondary: 'TikTok (only when available — PK bans it repeatedly), Instagram Reels', why: 'TikTok is unreliable in PK (recurring bans); Facebook has massive PK reach; Shorts rides your YouTube channel.' },
+  { market: 'Gulf expats (UAE/KSA/Qatar…)', primary: 'YouTube Shorts + Instagram Reels', secondary: 'TikTok (strong in Gulf), Facebook Reels', why: 'Gulf audiences skew YouTube/Instagram; same Urdu asset, Gulf-evening timing.' },
+  { market: 'Nigeria', primary: 'TikTok + Facebook Reels', secondary: 'YouTube Shorts', why: 'TikTok and Facebook are the largest short-form surfaces in Nigeria; very low CPMs.' },
+  { market: 'Kenya', primary: 'TikTok + Facebook Reels', secondary: 'YouTube Shorts (WhatsApp-heavy market for conversion)', why: 'TikTok/Facebook for reach; conversion leans WhatsApp (M-Pesa rails).' },
+  { market: 'South Africa', primary: 'YouTube Shorts + TikTok', secondary: 'Instagram Reels', why: 'More YouTube/Instagram-mature, higher-LTV base.' },
+  { market: 'Indonesia', primary: 'TikTok (dominant) + Instagram Reels', secondary: 'YouTube Shorts', why: 'One of TikTok’s largest global markets — TikTok-led (Phase 4, native hire).' },
+  { market: 'Vietnam', primary: 'TikTok + YouTube Shorts', secondary: 'Facebook Reels', why: 'TikTok-first market (Phase 4, native hire).' },
 ];
 
 // --- Proven funnel workflow (Section 6) — the founder's own model, refined -
 export const PROVEN_WORKFLOW = {
-  title: 'The proven IB funnel — top-of-funnel to retention',
-  note: 'This is the founder\'s working model, refined with the seeded research (education-first, trust before ask, free-course CTA). Every daily task feeds one of these stages.',
+  title: 'The proven IB funnel — short-form reach to sub-IB scale (blueprint §8)',
+  note: 'Education-first, everything free, monetized ONLY through Exness IB commission. Trust before ask, free-course CTA, IB-gated VIP. Every daily task feeds one of these stages.',
   steps: [
-    { stage: 'Facebook / YouTube (discover)', detail: 'Organic clips + proven-creative FB lead ads (post-gate) pull cold audience to a free-course value promise — never a deposit ask.' },
-    { stage: 'WhatsApp / Telegram (community)', detail: 'New contacts join the community; every question answered <24h; Day-1 voice note. Trust is built here, not sold.' },
-    { stage: 'Free Class (teach)', detail: 'Weekly live class + free course: 30m teach + honest track-record review. The conversion moment that never pressures.' },
-    { stage: 'Community Engagement (qualify)', detail: 'Engagement questions surface IB-ready members (course done + active + real broker question). This is the qualification signal.' },
-    { stage: 'IB Conversion (verification framing)', detail: 'Personal WhatsApp: "jahan hum khud trade karte hain" — verification + supervision, never urgency. One stage advance per warm conversation.' },
-    { stage: 'Retention (the 50k engine)', detail: 'Milestone ladder, at-risk recovery, recognition public / losses private. Retention economics carry the last mile to 50,000.' },
+    { stage: 'Short-form video (discover) — PRIORITY 1', detail: 'YT Shorts + TikTok + FB/IG Reels pull cold audience at $0. Every video CTA → Telegram link in bio/comments. Never a cold-traffic-to-broker link — always education first.' },
+    { stage: 'Telegram + YouTube course (engage)', detail: 'New contacts join the public Telegram; the YouTube playlist IS the free course. Every question answered <24h. Email captured at course signup (portable asset if a platform dies).' },
+    { stage: 'IB-gate VIP unlock (convert)', detail: 'Free tier builds trust → VIP requires opening an Exness account via your IB link + min deposit ($10–50 cent account is fine) → user submits Exness account ID → you verify it in the partner dashboard → unlock VIP Telegram, journal, WhatsApp concierge. This gate IS the conversion device.' },
+    { stage: 'WhatsApp deposit-assist (fund)', detail: 'Every registrant gets a personal WhatsApp onboarding: account choice, JazzCash/Easypaisa deposit walkthrough, first-trade risk rules. Assisted registration→FTD ≥25% vs ~15% unassisted.' },
+    { stage: 'Survival path (retain weeks 0–12)', detail: 'Risk-module gate before first live trade, cent-account start, 0.5%-risk rule, first-trade-together, survival-streak gamification (discipline, not profit). Most churn happens in the first 90 days — this is where the 50K is won or lost.' },
+    { stage: 'Referral + Sub-IB (scale — the real 50K engine)', detail: 'Direct acquisition ceilings at ~5–10K actives. The remaining 80% comes from equipping OTHER community leaders (Phase 3+): recruit your best students, then micro-influencers in target markets — give them your white-label toolkit + training + a commission split, take a master-IB override on their volume.' },
   ],
 };
 

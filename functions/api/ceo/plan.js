@@ -14,7 +14,7 @@
 // leave/reset, institutes.js for institute records).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { generateGrowthDays, buildPhysicalRows, planDayForDate, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY, EXECUTIVE_OVERVIEW, SOCIAL_STRATEGY, PROVEN_WORKFLOW, currentPhaseContext } from '../../utils/ceo/plan-logic.js';
+import { generateGrowthDays, buildPhysicalRows, planDayForDate, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY, EXECUTIVE_OVERVIEW, SOCIAL_STRATEGY, SHORTFORM_MIX, PROVEN_WORKFLOW, currentPhaseContext } from '../../utils/ceo/plan-logic.js';
 import { CONTENT_LIBRARY, CONTENT_CATEGORIES } from '../../utils/ceo/content-kits.js';
 
 // Country validation (Section 2): derive a status badge from the locked
@@ -185,6 +185,7 @@ export async function onRequestGet({ request, env }) {
       executiveOverview: EXECUTIVE_OVERVIEW,
       overviewLive,
       socialStrategy: SOCIAL_STRATEGY,
+      shortformMix: SHORTFORM_MIX,
       provenWorkflow: PROVEN_WORKFLOW,
       autoLearn: learn.summary,
     });

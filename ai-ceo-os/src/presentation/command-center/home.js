@@ -367,8 +367,11 @@ function plannedCampaignsHtml(campaigns) {
               <span class="ceo-text-muted">${escapeHtml(c.platform)}</span>
             </div>
             ${field('Country', c.country)}
+            ${field('Area / region', c.region)}
             ${field('Target audience', c.audience)}
+            ${field('Audience interests', c.interests)}
             ${field('Language', c.language)}
+            ${field('Objective', c.objective)}
             ${field('Budget', c.budget)}
             ${field('Campaign duration', c.duration)}
             ${field('CTA', c.cta)}

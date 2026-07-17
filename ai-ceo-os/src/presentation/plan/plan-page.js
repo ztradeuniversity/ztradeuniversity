@@ -155,11 +155,33 @@ function executiveOverviewHtml(res) {
     <p class="ceo-text-muted" style="font-size: 0.75rem; margin-bottom: var(--ceo-space-4);">${escapeHtml(o.assumptionNote)}</p>`;
 }
 
-// --- Social Media Strategy (Section 5) ----------------------------------
+// --- Short-form platform mix by country ---------------------------------
+function shortformMixHtml(res) {
+  const m = res.shortformMix;
+  if (!m || !m.length) return '';
+  return `
+    <h3>Short-form Platform Mix — by country (Priority-1 acquisition)</h3>
+    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">No single platform is the permanent priority — post the same asset natively to each market's best short-form surfaces first.</p>
+    <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
+      <table class="ceo-table" style="min-width: 800px;">
+        <thead><tr><th>Market</th><th>Primary platform(s)</th><th>Secondary</th><th>Why</th></tr></thead>
+        <tbody>
+          ${m.map((r) => `<tr>
+            <td><strong>${escapeHtml(r.market)}</strong></td>
+            <td>${escapeHtml(r.primary)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(r.secondary)}</td>
+            <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(r.why)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// --- Social Media Strategy (Section 5) — led by the per-country short-form mix
 function socialStrategyHtml(res) {
   const s = res.socialStrategy;
-  if (!s || !s.length) return '';
+  if (!s || !s.length) return shortformMixHtml(res);
   return `
+    ${shortformMixHtml(res)}
     <h3>Social Media Strategy</h3>
     <div style="overflow-x: auto; margin-bottom: var(--ceo-space-4);">
       <table class="ceo-table" style="min-width: 1200px;">
@@ -314,8 +336,11 @@ function campaignDetailHtml(campaigns) {
               <span class="ceo-text-muted">${escapeHtml(c.platform)}</span>
             </div>
             ${field('Country', c.country)}
+            ${field('Area / region', c.region)}
             ${field('Target audience', c.audience)}
+            ${field('Audience interests', c.interests)}
             ${field('Language', c.language)}
+            ${field('Objective', c.objective)}
             ${field('Budget', c.budget)}
             ${field('Campaign duration', c.duration)}
             ${field('CTA', c.cta)}

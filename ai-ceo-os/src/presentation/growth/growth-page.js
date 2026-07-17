@@ -9,11 +9,24 @@
 
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
+import { confirmDialog } from '../shared/components/confirm-dialog.js';
 
 const ALL_STAGES = ['lead', 'qualified', 'onboarding', 'activated', 'engaged', 'at_risk', 'retained'];
 const ACQUISITION_STAGES = ['lead', 'qualified', 'onboarding'];
 const RETENTION_STAGES = ['activated', 'engaged', 'at_risk', 'retained'];
 const CONTENT_FLOW = ['idea', 'production', 'published', 'evergreen', 'retired'];
+// Board columns exclude 'retired' — deleting a content idea moves it to
+// 'retired' (the schema's terminal status), which keeps the row (no hard
+// delete) but drops it off the working board.
+const KANBAN_COLUMNS = ['idea', 'production', 'published', 'evergreen'];
+const PRIORITY_LABEL = { high: 'High', normal: 'Normal', low: 'Low' };
+// Institute pipeline stages — MUST live at module scope. It was previously a
+// `const` inside initGrowthPage() declared BELOW the `await load()` call, so
+// renderPhysicalEngine() (run during that await) hit it in its temporal dead
+// zone → "Cannot access 'INSTITUTE_STAGES' before initialization", which the
+// try/catch surfaced in the Funnel box. Module scope initializes it before
+// initGrowthPage runs, so every render can read it safely.
+const INSTITUTE_STAGES = ['cold_contact', 'proposal_sent', 'meeting', 'negotiation', 'accepted', 'rejected', 'classes_running', 'batch_complete', 'follow_up_later'];
 // Mirrors mission.js's computeAcquisition impact rule exactly (production
 // is near-complete investment = high; idea is not yet started = medium) —
 // same signal, not a second invented scoring system.
@@ -182,7 +195,7 @@ export async function initGrowthPage() {
 
   function renderContentKanban(byStatus) {
     const el = document.getElementById('gr-kanban');
-    el.innerHTML = CONTENT_FLOW.map((status) => {
+    el.innerHTML = KANBAN_COLUMNS.map((status) => {
       const items = byStatus?.[status] || [];
       return `
         <div class="ceo-kanban-column">
@@ -191,21 +204,40 @@ export async function initGrowthPage() {
             const { meta, free } = parseContentMeta(c.notes);
             const detail = [meta.hook && `Hook: ${meta.hook}`, meta.kw && `Keyword: ${meta.kw}`, meta.cta && `CTA: ${meta.cta}`, free].filter(Boolean).join(' · ');
             const next = nextContentStatus(status);
+            // Manual priority (meta.prio) overrides the auto stage-impact badge.
+            const prio = meta.prio || '';
             return `
-            <div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-2);">
-              <div style="font-size: var(--ceo-font-size-sm);" title="${esc(detail)}">${esc(c.title)}${detail ? ' <span class="ceo-text-muted">ⓘ</span>' : ''}</div>
-              <div class="ceo-flex ceo-gap-2" style="margin-top: var(--ceo-space-2); flex-wrap: wrap;">
-                ${CONTENT_IMPACT[status] ? `<span class="ceo-badge ${IMPACT_BADGE[CONTENT_IMPACT[status]]}" style="font-size: 0.7em;">${CONTENT_IMPACT[status]}</span>` : ''}
+            <div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-2);" data-content-card="${c.id}">
+              <div data-content-title="${c.id}" style="font-size: var(--ceo-font-size-sm);" title="${esc(detail)}">${esc(c.title)}${detail ? ' <span class="ceo-text-muted">ⓘ</span>' : ''}</div>
+              <div data-content-edit="${c.id}" style="display: none; margin-top: var(--ceo-space-2);">
+                <input class="ceo-input" data-edit-title="${c.id}" value="${esc(c.title)}" style="width: 100%; font-size: var(--ceo-font-size-sm);" />
+                <div class="ceo-flex ceo-gap-2" style="margin-top: 4px;">
+                  <button class="ceo-btn ceo-btn-primary" data-edit-save="${c.id}" style="font-size: 0.75em; padding: 2px 8px;">Save</button>
+                  <button class="ceo-btn ceo-btn-secondary" data-edit-cancel="${c.id}" style="font-size: 0.75em; padding: 2px 8px;">Cancel</button>
+                </div>
+              </div>
+              <div class="ceo-flex ceo-gap-2" style="margin-top: var(--ceo-space-2); flex-wrap: wrap; align-items: center;">
+                ${prio ? `<span class="ceo-badge ${IMPACT_BADGE[prio === 'high' ? 'high' : prio === 'low' ? 'low' : 'medium']}" style="font-size: 0.7em;" title="Manual priority">★ ${PRIORITY_LABEL[prio] || prio}</span>`
+                       : (CONTENT_IMPACT[status] ? `<span class="ceo-badge ${IMPACT_BADGE[CONTENT_IMPACT[status]]}" style="font-size: 0.7em;">${CONTENT_IMPACT[status]}</span>` : '')}
                 <span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(c.pillar || '')}</span>
                 ${meta.lang ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.lang)}</span>` : ''}
                 ${meta.country ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.country)}</span>` : ''}
                 ${meta.platform ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.platform)}</span>` : ''}
                 ${next ? `<button class="ceo-btn ceo-btn-secondary" style="font-size: 0.75em; padding: 2px 8px;" data-move="${c.id}" data-to="${next}" ${next === 'published' ? 'title="Repurposing chain: GEO article ≤48h + 3–5 clips + distribution — one effort, six surfaces"' : ''}>→ ${next}</button>` : ''}
+                <select class="ceo-input" data-content-prio="${c.id}" style="font-size: 0.72em; padding: 1px 4px; max-width: 6.5em;" title="Manual priority">
+                  <option value="" ${!prio ? 'selected' : ''}>Priority…</option>
+                  <option value="high" ${prio === 'high' ? 'selected' : ''}>High</option>
+                  <option value="normal" ${prio === 'normal' ? 'selected' : ''}>Normal</option>
+                  <option value="low" ${prio === 'low' ? 'selected' : ''}>Low</option>
+                </select>
+                <button class="ceo-btn ceo-btn-secondary" style="font-size: 0.75em; padding: 2px 6px;" data-content-editbtn="${c.id}" title="Edit title">✎</button>
+                <button class="ceo-btn ceo-btn-secondary" style="font-size: 0.75em; padding: 2px 6px;" data-content-del="${c.id}" data-content-label="${esc(c.title)}" title="Delete (moves to Retired, record kept)">🗑</button>
               </div>
             </div>`;
           }).join('')}
         </div>`;
     }).join('');
+    wireContentCrud(el, byStatus);
     el.querySelectorAll('[data-move]').forEach((b) =>
       b.addEventListener('click', async () => {
         b.disabled = true;
@@ -221,9 +253,83 @@ export async function initGrowthPage() {
     );
   }
 
+  // Content CRUD (Task 4) — edit title, delete (→ retired, record kept), and
+  // manual priority. Priority rides in the existing notes meta tag (key
+  // `prio`) via buildContentMeta, so no schema change is needed.
+  function wireContentCrud(el, byStatus) {
+    const byId = {};
+    for (const list of Object.values(byStatus || {})) for (const c of list) byId[c.id] = c;
+
+    el.querySelectorAll('[data-content-prio]').forEach((sel) =>
+      sel.addEventListener('change', async () => {
+        const id = sel.getAttribute('data-content-prio');
+        const c = byId[id];
+        if (!c) return;
+        const { meta, free } = parseContentMeta(c.notes);
+        const nextMeta = { ...meta };
+        if (sel.value) nextMeta.prio = sel.value; else delete nextMeta.prio;
+        const notes = [buildContentMeta(nextMeta), free].filter(Boolean).join(' ');
+        try {
+          await postJson('/api/ceo/growth', { action: 'edit', id, notes });
+          showToast(sel.value ? `Priority: ${sel.value}` : 'Priority cleared.', 'success');
+          await load();
+        } catch (err) { showToast('Priority fail: ' + err.message, 'critical'); }
+      })
+    );
+
+    el.querySelectorAll('[data-content-editbtn]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const id = b.getAttribute('data-content-editbtn');
+        const titleEl = el.querySelector(`[data-content-title="${id}"]`);
+        const editEl = el.querySelector(`[data-content-edit="${id}"]`);
+        if (titleEl && editEl) { titleEl.style.display = 'none'; editEl.style.display = ''; }
+      })
+    );
+    el.querySelectorAll('[data-edit-cancel]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const id = b.getAttribute('data-edit-cancel');
+        const titleEl = el.querySelector(`[data-content-title="${id}"]`);
+        const editEl = el.querySelector(`[data-content-edit="${id}"]`);
+        if (titleEl && editEl) { editEl.style.display = 'none'; titleEl.style.display = ''; }
+      })
+    );
+    el.querySelectorAll('[data-edit-save]').forEach((b) =>
+      b.addEventListener('click', async () => {
+        const id = b.getAttribute('data-edit-save');
+        const val = el.querySelector(`[data-edit-title="${id}"]`)?.value.trim();
+        if (!val) { showToast('Title khali nahin ho sakta.', 'critical'); return; }
+        b.disabled = true;
+        try {
+          await postJson('/api/ceo/growth', { action: 'edit', id, title: val });
+          showToast('Title updated.', 'success');
+          await load();
+        } catch (err) { showToast('Edit fail: ' + err.message, 'critical'); b.disabled = false; }
+      })
+    );
+
+    el.querySelectorAll('[data-content-del]').forEach((b) =>
+      b.addEventListener('click', async () => {
+        const ok = await confirmDialog({
+          title: 'Delete this content idea?',
+          message: `"${b.getAttribute('data-content-label')}" will move to Retired and leave the board. The record is kept (never hard-deleted) so nothing is lost.`,
+          confirmLabel: 'Delete',
+          destructive: true,
+        });
+        if (!ok) return;
+        try {
+          await postJson('/api/ceo/growth', { action: 'move', id: b.getAttribute('data-content-del'), status: 'retired' });
+          showToast('Moved to Retired.', 'success');
+          await load();
+        } catch (err) { showToast('Delete fail: ' + err.message, 'critical'); }
+      })
+    );
+  }
+
   function nextContentStatus(status) {
     const i = CONTENT_FLOW.indexOf(status);
-    return i >= 0 && i < CONTENT_FLOW.length - 1 ? CONTENT_FLOW[i + 1] : null;
+    const next = i >= 0 && i < CONTENT_FLOW.length - 1 ? CONTENT_FLOW[i + 1] : null;
+    // 'retired' is reachable only via Delete, never as a forward move step.
+    return next === 'retired' ? null : next;
   }
 
   function renderAddIdeaForm() {
@@ -323,8 +429,8 @@ export async function initGrowthPage() {
   }
 
   // --- Physical Growth Engine (institutes + 15-day area cycle) ----------
-
-  const INSTITUTE_STAGES = ['cold_contact', 'proposal_sent', 'meeting', 'negotiation', 'accepted', 'rejected', 'classes_running', 'batch_complete', 'follow_up_later'];
+  // INSTITUTE_STAGES is defined at module scope (see top of file) — do not
+  // re-declare it here or the temporal-dead-zone crash returns.
 
   function renderPhysicalEngine(data) {
     const el = document.getElementById('gr-physical');
@@ -400,11 +506,15 @@ export async function initGrowthPage() {
     const tableHtml = rows.length === 0
       ? '<div class="ceo-empty-state" style="margin-top: var(--ceo-space-3);"><p>Koi institute nahin — current area research se shuru karein (Playbooks → Physical mein search method hai).</p></div>'
       : `<div style="overflow-x:auto; margin-top: var(--ceo-space-3);"><table class="ceo-table">
-          <thead><tr><th>Institute</th><th>Area</th><th>Stage</th><th>Next step</th><th>Follow-up</th><th>Batch end</th><th>Students</th></tr></thead>
+          <thead><tr><th>Institute</th><th>Area</th><th>Contact</th><th>Stage</th><th>Next step</th><th>Follow-up</th><th>Batch end</th><th>Students</th><th></th></tr></thead>
           <tbody>${rows.map((i) => `
-            <tr>
-              <td title="${esc(i.notes || '')}">${esc(i.name)}${i.institute_type ? ` <span class="ceo-text-muted" style="font-size: 0.75rem;">(${esc(i.institute_type)})</span>` : ''}</td>
-              <td class="ceo-text-secondary">${esc(i.area)}</td>
+            <tr data-inst-row="${i.id}">
+              <td>
+                <input class="ceo-input" data-inst-name="${i.id}" value="${esc(i.name)}" style="min-width: 10em;" title="Rename — saves on change" />
+                <input class="ceo-input" data-inst-type="${i.id}" value="${esc(i.institute_type || '')}" placeholder="Type" style="min-width: 8em; margin-top: 4px; font-size: 0.75rem;" />
+              </td>
+              <td><input class="ceo-input" data-inst-area="${i.id}" value="${esc(i.area || '')}" style="min-width: 8em;" /></td>
+              <td><input class="ceo-input" data-inst-contact="${i.id}" value="${esc(i.contact_phone || '')}" placeholder="Phone" style="min-width: 8em;" /></td>
               <td><select class="ceo-input" data-inst-stage="${i.id}" style="min-width: 10em;">
                 ${INSTITUTE_STAGES.map((s) => `<option value="${s}" ${s === i.stage ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
               </select></td>
@@ -412,6 +522,7 @@ export async function initGrowthPage() {
               <td><input class="ceo-input" type="date" data-inst-followup="${i.id}" value="${esc(i.next_follow_up || '')}" style="min-width: 9em;" /></td>
               <td><input class="ceo-input" type="date" data-inst-batchend="${i.id}" value="${esc(i.batch_end_date || '')}" style="min-width: 9em;" /></td>
               <td><input class="ceo-input" type="number" min="0" data-inst-students="${i.id}" value="${i.students_registered ?? ''}" style="max-width: 6em;" /></td>
+              <td><button class="ceo-btn ceo-btn-secondary" data-inst-archive="${i.id}" data-inst-label="${esc(i.name)}" title="Archive (soft-delete) this institute">🗑</button></td>
             </tr>`).join('')}
           </tbody></table></div>`;
 
@@ -515,6 +626,20 @@ export async function initGrowthPage() {
       postJson('/api/ceo/institutes', { action: 'update', id, ...fields })
         .then(() => showToast(msg, 'success'))
         .catch((err) => showToast('Update fail: ' + err.message, 'critical'));
+    // Editable identity/contact fields (full CRUD) — save on change, no
+    // full reload needed for these (the value is already in the input).
+    el.querySelectorAll('[data-inst-name]').forEach((inp) =>
+      inp.addEventListener('change', () => { if (inp.value.trim()) patch(inp.getAttribute('data-inst-name'), { name: inp.value }, 'Renamed.'); })
+    );
+    el.querySelectorAll('[data-inst-type]').forEach((inp) =>
+      inp.addEventListener('change', () => patch(inp.getAttribute('data-inst-type'), { institute_type: inp.value }, 'Type saved.'))
+    );
+    el.querySelectorAll('[data-inst-area]').forEach((inp) =>
+      inp.addEventListener('change', () => patch(inp.getAttribute('data-inst-area'), { area: inp.value }, 'Area updated.'))
+    );
+    el.querySelectorAll('[data-inst-contact]').forEach((inp) =>
+      inp.addEventListener('change', () => patch(inp.getAttribute('data-inst-contact'), { contact_phone: inp.value }, 'Contact saved.'))
+    );
     el.querySelectorAll('[data-inst-stage]').forEach((sel) =>
       sel.addEventListener('change', () => patch(sel.getAttribute('data-inst-stage'), { stage: sel.value }, `Stage: ${sel.value.replace(/_/g, ' ')}`))
     );
@@ -526,6 +651,24 @@ export async function initGrowthPage() {
     );
     el.querySelectorAll('[data-inst-students]').forEach((inp) =>
       inp.addEventListener('change', () => patch(inp.getAttribute('data-inst-students'), { students_registered: inp.value }, 'Student count saved.'))
+    );
+    el.querySelectorAll('[data-inst-archive]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        const ok = await confirmDialog({
+          title: 'Archive this institute?',
+          message: `"${btn.getAttribute('data-inst-label')}" will be removed from the working pipeline. The record is kept (never hard-deleted) so a past contact stays on file, but it no longer appears here or in follow-ups.`,
+          confirmLabel: 'Archive',
+          destructive: true,
+        });
+        if (!ok) return;
+        try {
+          await postJson('/api/ceo/institutes', { action: 'archive', id: btn.getAttribute('data-inst-archive') });
+          showToast('Institute archived.', 'success');
+          await load();
+        } catch (err) {
+          showToast('Archive fail: ' + err.message, 'critical');
+        }
+      })
     );
   }
 

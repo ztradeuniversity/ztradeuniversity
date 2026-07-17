@@ -19,6 +19,9 @@ const STAGES = [
 ];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE = /^[0-9a-f-]{36}$/i;
+// Soft-delete marker (see the 'archive' action) — archived institutes keep
+// their row but drop out of the working pipeline.
+const ARCHIVE_TAG = '#ARCHIVED#';
 
 // settings.value is jsonb; rows written before the double-encoding fix below
 // may hold a JSON-encoded STRING instead of a real array — normalize both so
@@ -49,11 +52,14 @@ export async function onRequestGet({ request, env }) {
   const db = rest(env, auth.token);
   const uid = auth.user.id;
   try {
-    const [cycle, institutes, salesRows] = await Promise.all([
+    const [cycle, allInstitutes, salesRows] = await Promise.all([
       readCycle(db),
       db.select('institutes', `select=id,name,institute_type,city,area,contact_name,contact_phone,stage,next_follow_up,batch_end_date,students_registered,notes,updated_at&owner_user_id=eq.${uid}&order=updated_at.desc&limit=300`),
       db.select('knowledge_base', `select=title,content&owner_user_id=eq.${uid}&category=eq.sales-template`),
     ]);
+    // Archived (soft-deleted) institutes stay in the DB but never appear in
+    // the working pipeline, counts, or follow-up list.
+    const institutes = allInstitutes.filter((i) => !String(i.notes || '').startsWith(ARCHIVE_TAG));
     const today = new Date().toISOString().slice(0, 10);
     const followUpsDue = institutes.filter((i) => i.next_follow_up && i.next_follow_up <= today && i.stage !== 'rejected');
 
@@ -145,6 +151,19 @@ export async function onRequestPost({ request, env }) {
     if (body.action === 'update') {
       if (!UUID_RE.test(String(body.id || ''))) return json({ error: 'invalid_id' }, 400);
       const patch = { updated_at: new Date().toISOString() };
+      // Editable identity + contact fields (full CRUD). Rename/area/type/
+      // contact were previously insert-only; now patchable so the founder can
+      // fix a typo or update a phone number without re-adding the institute.
+      if (body.name !== undefined) {
+        const nm = String(body.name || '').trim().slice(0, 160);
+        if (!nm) return json({ error: 'name_required' }, 400);
+        patch.name = nm;
+      }
+      if (body.institute_type !== undefined) patch.institute_type = String(body.institute_type || '').slice(0, 60) || null;
+      if (body.area !== undefined) patch.area = String(body.area || '').slice(0, 80);
+      if (body.city !== undefined) patch.city = String(body.city || '').slice(0, 60);
+      if (body.contact_name !== undefined) patch.contact_name = String(body.contact_name || '').slice(0, 120) || null;
+      if (body.contact_phone !== undefined) patch.contact_phone = String(body.contact_phone || '').slice(0, 40) || null;
       if (body.stage !== undefined) {
         if (!STAGES.includes(body.stage)) return json({ error: 'invalid_stage' }, 400);
         patch.stage = body.stage;
@@ -163,6 +182,22 @@ export async function onRequestPost({ request, env }) {
       const rows = await db.update('institutes', `id=eq.${body.id}&owner_user_id=eq.${uid}`, patch);
       if (rows.length === 0) return json({ error: 'not_found' }, 404);
       return json({ ok: true, institute: rows[0] });
+    }
+
+    // Delete an institute — implemented as a SOFT delete (archive) because
+    // migration 032 has no DELETE policy by the project's no-hard-deletes
+    // rule. The record is kept (so "never repeat an area unless scheduled"
+    // stays queryable) but tagged with ARCHIVE_TAG in notes, which the GET
+    // filters out of the working pipeline. Zero SQL, no schema change.
+    if (body.action === 'archive') {
+      if (!UUID_RE.test(String(body.id || ''))) return json({ error: 'invalid_id' }, 400);
+      const existing = await db.select('institutes', `select=notes&id=eq.${body.id}&owner_user_id=eq.${uid}`);
+      if (existing.length === 0) return json({ error: 'not_found' }, 404);
+      const prior = String(existing[0].notes || '');
+      const notes = prior.startsWith(ARCHIVE_TAG) ? prior : `${ARCHIVE_TAG} ${prior}`.slice(0, 1000);
+      const rows = await db.update('institutes', `id=eq.${body.id}&owner_user_id=eq.${uid}`, { notes, updated_at: new Date().toISOString() });
+      if (rows.length === 0) return json({ error: 'not_found' }, 404);
+      return json({ ok: true, archived: true });
     }
 
     // Default action: add institute.

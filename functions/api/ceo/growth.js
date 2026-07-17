@@ -50,6 +50,27 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, item: rows[0] || null });
     }
 
+    // Edit a content idea (title / pillar / type / audience / notes). notes
+    // carries the meta tag the frontend builds (language, country, platform,
+    // hook, CTA, and manual priority via `prio`), so priority and all other
+    // fields round-trip through this one field without a schema change.
+    if (body.action === 'edit') {
+      if (!/^[0-9a-f-]{36}$/i.test(String(body.id || ''))) return json({ error: 'invalid_id' }, 400);
+      const patch = { updated_at: new Date().toISOString() };
+      if (body.title !== undefined) {
+        const t = String(body.title || '').trim().slice(0, 200);
+        if (!t) return json({ error: 'title_required' }, 400);
+        patch.title = t;
+      }
+      if (body.pillar !== undefined) patch.pillar = String(body.pillar || '').slice(0, 40);
+      if (body.content_type !== undefined) patch.content_type = String(body.content_type || '').slice(0, 40);
+      if (body.target_audience !== undefined) patch.target_audience = String(body.target_audience || '').slice(0, 60) || null;
+      if (body.notes !== undefined) patch.notes = String(body.notes || '').slice(0, 500) || null;
+      const rows = await db.update('content_library', `id=eq.${body.id}&owner_user_id=eq.${uid}`, patch);
+      if (!rows || rows.length === 0) return json({ error: 'not_found' }, 404);
+      return json({ ok: true, item: rows[0] });
+    }
+
     // Default: new idea.
     const title = String(body.title || '').trim().slice(0, 200);
     if (!title) return json({ error: 'title_required' }, 400);
