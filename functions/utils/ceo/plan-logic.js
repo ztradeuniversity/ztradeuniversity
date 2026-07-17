@@ -109,6 +109,7 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
   activities.push('Technical analysis post — levels/structure, education never signals (20m)');
   activities.push('Retention due-list touches (15m) + IB follow-ups (15m)');
   activities.push('Physical IB Expansion: today\'s area outreach — visit/call/proposal (30m, see Physical tab)');
+  activities.push('Personal trading: 5-question check-in + journal (15m)');
 
   // Facebook is a discovery skim — 2-3 clip reposts/wk (platform playbook);
   // TikTok/IG are auto-repost shelves (zero native minutes, locked verdict).
@@ -136,7 +137,26 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
     activities.push('SOUTH AFRICA GATE: add SA EN market only if NG/KE CAC is at or under target — check the Monthly AI Review first');
   }
 
-  return { platform, activities, expected };
+  return { platform, activities, expected, estimatedLoad: estimateLoad(activities) };
+}
+
+// Practical-day guard: sum the durations embedded in the activity lines
+// ("(20m)", "(3h)", "(1.5h)") so every plan day carries its honest workload
+// — the founder sees at a glance that the day fits, and an overloaded day
+// is visible instead of silently impossible.
+function estimateLoad(activities) {
+  let minutes = 0;
+  const re = /\((\d+(?:\.\d+)?)\s*(h|m)\b/g;
+  for (const a of activities) {
+    let m;
+    while ((m = re.exec(a)) !== null) {
+      minutes += m[2] === 'h' ? Math.round(parseFloat(m[1]) * 60) : parseInt(m[1], 10);
+    }
+    re.lastIndex = 0;
+  }
+  if (minutes === 0) return null;
+  const h = Math.floor(minutes / 60), mm = minutes % 60;
+  return `≈${h ? h + 'h ' : ''}${mm}m planned${minutes > 330 ? ' — heavy day: move one Optional item if needed' : ' — fits a founder day'}`;
 }
 
 // Rotating honest guidance notes — every line is a seeded playbook rule.
@@ -180,6 +200,7 @@ function buildDayRow(dayNumber, dateStr, weekdayName, o, opts) {
     totalDays: PLAN_TOTAL_DAYS,
     date: dateStr,
     weekday: weekdayName,
+    estimatedLoad: content.estimatedLoad,
     stage: phase.stage,
     country: phase.countries,
     language: phase.language,
@@ -288,6 +309,8 @@ export const COUNTRY_STRATEGY = [
     audience: 'Beginners, small accounts, gold traders, jewellers, business owners',
     postingFrequency: '1 long-form + 1 live class + 3–5 clips/wk; TG 1–2 posts daily',
     promotion: 'Organic-first; FB Ads capped-CAC probes only after the 300-client gate',
+    organicStrategy: 'The trust machine: YT engine → free course → TG community → WA circle; FB groups as discovery skim',
+    paidStrategy: 'FB Ads only, only after 300 activated clients, proven organic creatives as ads, hard CAC cap',
     expectedConversion: '~1–2% viewer→course, ~10–15% course→IB (planning assumption)',
     expectedCac: 'PKR 0 organic; probe target <PKR 1,500/activated client when paid opens',
     expectedGrowth: 'Primary engine — majority of the first 1,000 activated clients',
@@ -299,6 +322,8 @@ export const COUNTRY_STRATEGY = [
     audience: 'Expat professionals 28–45, time-poor, highest LTV segment',
     postingFrequency: 'Same PK uploads timed for Gulf evenings (+1h/wk extra)',
     promotion: 'Organic only — trust-first segment; paid never leads here',
+    organicStrategy: 'PK content Gulf-timed + WA inner circles + halal-clarity series + Ramadan/Eid rhythm',
+    paidStrategy: 'None by design — paid never leads a trust-first, highest-LTV segment',
     expectedConversion: 'Higher per-lead value, lower volume (planning assumption)',
     expectedCac: '≈PKR 0 (marginal — rides Pakistan content)',
     expectedGrowth: 'Highest-LTV layer on the PK engine',
@@ -310,6 +335,8 @@ export const COUNTRY_STRATEGY = [
     audience: 'Young mobile-first traders; small accounts',
     postingFrequency: 'Start 1 EN mirror/wk at day 91; full cadence when 5+ winners are mirrored',
     promotion: 'Capped-CAC probes still wait for the 300-client gate',
+    organicStrategy: 'EN mirrors of proven winners + WhatsApp-heavy community (KE) + prop-firm/small-account lanes',
+    paidStrategy: 'Capped-CAC probes from the 300-client gate; NG first (larger market), KE follows on data',
     expectedConversion: 'Faster funnel, lower LTV than GCC (planning assumption)',
     expectedCac: 'Probe target set at gate review; watch regulatory tightening both markets',
     expectedGrowth: 'The second engine — scales the path from 1,000 toward 10,000+',
@@ -321,6 +348,8 @@ export const COUNTRY_STRATEGY = [
     audience: 'Retail forex traders — one of Africa\'s largest regulated retail markets',
     postingFrequency: 'No new production — EN library + 1 SA-specific piece/month',
     promotion: 'Paid probes from entry (market is paid-mature), same CAC discipline',
+    organicStrategy: 'EN library reuse + FSCA-aware broker-clarity content + FB groups',
+    paidStrategy: 'Probes from entry (paid-mature market); budget from NG/KE actuals',
     expectedConversion: 'Between NG/KE and GCC (planning assumption)',
     expectedCac: 'Set from NG/KE actuals at the gate',
     expectedGrowth: 'Third engine — Year 2–3 scale layer',

@@ -152,6 +152,39 @@ export function computeDimensions({ clients, content }) {
   };
 }
 
+// Monthly lessons (what the data taught) + recommended improvements (what
+// changes next month) — rule-based from the same real inputs, so re-running
+// the month gives the same review. The improvements are the human-readable
+// face of the self-learning loop (the plan's FOCUS/REDUCE annotations apply
+// them automatically).
+export function buildLessonsAndImprovements({ funnel, pareto, trajectory }) {
+  const lessons = [];
+  const improvements = [];
+  if (pareto.top.length > 0) {
+    const shareSum = pareto.top.reduce((s, t) => s + t.share, 0);
+    lessons.push(`${pareto.top.length} activit${pareto.top.length === 1 ? 'y' : 'ies'} (${pareto.top.map((t) => t.label).join(', ')}) produced ${shareSum}% of this month's completed impact — the 80/20 is real in your own data.`);
+    improvements.push(`Protect the top 20% first: schedule ${pareto.top[0].label} in the morning block before anything reactive.`);
+  } else {
+    lessons.push('Not enough completed activity this month to detect a Pareto pattern — consistency itself is the first lesson.');
+    improvements.push('Next month\'s only rule: the daily core block every day — the learning engine needs data to optimize.');
+  }
+  if (pareto.low.length > 0) {
+    lessons.push(`${pareto.low.map((l) => l.label).join(', ')}: skipped more than done — either the slot is wrong or the template is too heavy.`);
+    improvements.push(`Halve the time slot of ${pareto.low[0].label} or rewrite its template; the plan already de-prioritizes it automatically.`);
+  }
+  if (funnel.biggestLeak && funnel.biggestLeak.dropOffRate !== null) {
+    lessons.push(`The funnel leaks hardest at "${funnel.biggestLeak.stage}" (${funnel.biggestLeak.dropOffRate}% drop-off).`);
+    improvements.push(`Point one weekly Focus at the "${funnel.biggestLeak.stage}" stage next month and re-measure.`);
+  }
+  if (trajectory.trendPct < 0) {
+    lessons.push(`Activations fell ${Math.abs(trajectory.trendPct)}% vs last month — momentum is the metric to defend.`);
+    improvements.push('Move IB follow-ups into the highest-impact block until the trend turns positive.');
+  } else if (trajectory.activationsThisMonth > 0) {
+    lessons.push(`Activation momentum is ${trajectory.trendPct >= 0 ? 'holding' : 'slipping'} (${trajectory.trendPct >= 0 ? '+' : ''}${trajectory.trendPct}%).`);
+  }
+  return { lessons: lessons.slice(0, 4), improvements: improvements.slice(0, 4) };
+}
+
 // The executive summary: one practical, measurable focus for next month.
 export function buildExecutiveSummary({ funnel, pareto, trajectory }) {
   const parts = [];

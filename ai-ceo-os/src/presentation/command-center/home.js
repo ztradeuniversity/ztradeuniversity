@@ -173,12 +173,19 @@ function renderIbGrowth(m) {
       <ul style="margin: 0; padding-left: 1.2em;">${d.activities.map((a) => `<li style="padding: 2px 0;">${escapeHtml(a)}</li>`).join('')}</ul>
       <div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: var(--ceo-space-2);">
         Platform: ${escapeHtml(d.platform)} · ${escapeHtml(d.country)} · ${escapeHtml(d.language)}<br />
-        Budget: ${escapeHtml(d.budget)} · Expected: ${escapeHtml(d.expectedResult)}
+        Budget: ${escapeHtml(d.budget)} · Expected: ${escapeHtml(d.expectedResult)}${d.estimatedLoad ? '<br />Workload: ' + escapeHtml(d.estimatedLoad) : ''}
       </div>`;
     return;
   }
 
-  const rows = cadenceItems.map((t) => ({
+  // Outcome first: the tier+history-ranked top items (m.top) ARE today's
+  // highest-impact 20% — rendered as their own opening block so the founder
+  // starts with results, not a task list. Everything else is secondary.
+  const topIds = new Set((m.top || []).map((t) => t.id));
+  const highImpact = cadenceItems.filter((t) => topIds.has(t.id));
+  const secondary = cadenceItems.filter((t) => !topIds.has(t.id));
+
+  const rows = secondary.map((t) => ({
     impactRank: IMPACT_RANK[t.impact] ?? 1,
     kind: 'cadence',
     t,
@@ -201,12 +208,22 @@ function renderIbGrowth(m) {
     rows.push(actionEntry(`Needs attention: ${att.name} — ${att.reason}`, 'high', '#retention'));
   }
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && highImpact.length === 0) {
     el.innerHTML = '<div class="ceo-empty-state"><p>Aaj ke liye koi IB Growth action nahin — seeds ya prospects check karein.</p></div>';
     return;
   }
   rows.sort((x, y) => x.impactRank - y.impactRank);
-  el.innerHTML = rows.map((row) => (row.kind === 'cadence' ? taskRowHtml(row.t) : row.html)).join('');
+  const highImpactBlock = highImpact.length
+    ? `<div style="border: 1px solid var(--ceo-border); border-radius: var(--ceo-radius-sm); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-4);">
+        <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">🎯 Today's Highest Impact Activities (the 20%)</div>
+        <div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin: 2px 0 var(--ceo-space-2);">These few produce most of today's business result — do them first; everything below is secondary.</div>
+        ${highImpact.map((t) => taskRowHtml(t)).join('')}
+      </div>`
+    : '';
+  const secondaryLabel = rows.length
+    ? '<div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: var(--ceo-space-1);">Secondary — after the 20% is done</div>'
+    : '';
+  el.innerHTML = highImpactBlock + secondaryLabel + rows.map((row) => (row.kind === 'cadence' ? taskRowHtml(row.t) : row.html)).join('');
   wireTaskButtons(el.querySelectorAll('[data-task-id]'));
 }
 
@@ -274,10 +291,13 @@ function kitHtml(kit) {
       : `<div>${escapeHtml(content)}</div>`;
     return `<div style="margin-top: var(--ceo-space-2);"><strong style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">${title}</strong>${body}</div>`;
   };
+  const targeting = [kit.platform, kit.country, kit.language].filter((x) => x && x !== '—').join(' · ');
   return `
     <details style="margin-top: var(--ceo-space-2);">
-      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📋 Ready-to-use guide — questions, scripts, CTA, mistakes</summary>
+      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📋 Full SOP — objective, scripts, CTA, checklists, risks</summary>
       <div class="ceo-card" style="margin-top: var(--ceo-space-2); font-size: var(--ceo-font-size-sm);">
+        ${block('Objective', kit.objective)}
+        ${targeting ? block('Where / who', targeting) : ''}
         ${block('Recommended questions', kit.questions)}
         ${block('Recommended message', kit.message)}
         ${block('Recommended script', kit.script)}
@@ -285,8 +305,12 @@ function kitHtml(kit) {
         ${block('Recommended CTA', kit.cta)}
         ${block('Recommended follow-up', kit.followUp)}
         ${block('Mistakes to avoid', kit.mistakes)}
+        ${block('Risks — and how to avoid each', kit.risks)}
+        ${block('Quality checklist', kit.quality)}
+        ${block('Completion checklist', kit.completion)}
         ${block('Recommended timing', kit.timing)}
         ${block('Expected result', kit.expected)}
+        ${block('Next action', kit.nextAction)}
       </div>
     </details>`;
 }

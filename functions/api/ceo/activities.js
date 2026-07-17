@@ -17,11 +17,14 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 // established for physical.start_date (settings has no unique key to upsert
 // against through PostgREST).
 async function upsertSetting(db, key, value) {
+  // Raw value — the REST helper serializes once; JSON.stringify here would
+  // double-encode into a jsonb string (readers tolerate it, but the Growth
+  // page's queue.map crash came from exactly this pattern in institutes.js).
   const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.${key}`);
   if (existing.length > 0) {
-    await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(value), updated_at: new Date().toISOString() });
+    await db.update('settings', `id=eq.${existing[0].id}`, { value, updated_at: new Date().toISOString() });
   } else {
-    await db.insert('settings', [{ scope: 'global', key, value: JSON.stringify(value) }]);
+    await db.insert('settings', [{ scope: 'global', key, value }]);
   }
 }
 

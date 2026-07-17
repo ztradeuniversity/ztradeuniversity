@@ -12,7 +12,7 @@
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { computePerformance } from '../../utils/ceo/performance-logic.js';
-import { computePareto, computeFunnel, computeTrajectory, computeDimensions, buildExecutiveSummary } from '../../utils/ceo/funnel-intelligence.js';
+import { computePareto, computeFunnel, computeTrajectory, computeDimensions, buildExecutiveSummary, buildLessonsAndImprovements } from '../../utils/ceo/funnel-intelligence.js';
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -79,8 +79,11 @@ export async function onRequestGet({ request, env }) {
     });
     const dimensions = computeDimensions({ clients, content });
     const executiveSummary = buildExecutiveSummary({ funnel, pareto, trajectory });
+    const { lessons, improvements } = buildLessonsAndImprovements({ funnel, pareto, trajectory });
 
     return json({
+      lessons,
+      improvements,
       month,
       generatedAt: new Date().toISOString(),
       trajectory,

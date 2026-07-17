@@ -10,7 +10,107 @@
 // never signals). Static by design — this is curated copy, not generated
 // text, so it can be audited line-by-line like any other seed content.
 
-export const EXECUTION_KITS = {
+// SOP layer (Hand-Holding Mode): every kit is merged with its SOP block
+// below — objective, targeting, quality/completion checklists, risks (with
+// how to avoid each), and the next action. Merged at export time so
+// mission.js keeps reading EXECUTION_KITS[key] unchanged.
+const SOP = {
+  'daily.community_touch': {
+    objective: 'Keep the community alive and surface 1–2 IB-ready members',
+    platform: 'Telegram (+ WhatsApp circle)', country: 'Pakistan + GCC', language: 'Urdu / Roman-Urdu',
+    quality: ['Har sawal ka jawab hua (<24h)', 'Post mein 1 concrete example/chart tha', 'Tone: ustaad, salesman nahin'],
+    completion: ['1–2 posts published', 'Replies cleared', 'Interested members noted for follow-up'],
+    nextAction: 'Flagged members → IB follow-up list (kal ke daily.ib_followups mein)',
+    risks: ['Spam risk: 1/3 posts NO-ask rule todna — CTA har post mein daalne se group mute hota hai', 'Low engagement: sirf broadcast — sawal poochein, jawab par reply karein', 'Compliance: signal-jaisi language — sirf education framing'],
+  },
+  'daily.technical_analysis': {
+    objective: 'Daily authority proof — "yeh banda market samajhta hai"',
+    platform: 'Telegram (repost: FB)', country: 'Pakistan + GCC', language: 'Urdu / Roman-Urdu',
+    quality: ['Levels chart par khud dikhte hain', 'Explicit "signal nahin" line shamil', '2 lines se lamba nahin'],
+    completion: ['Post live with chart', 'Replies answered'],
+    nextAction: 'Confused reply = kal ke explainer post ka topic',
+    risks: ['Compliance risk: prediction language ("target pakka") — hamesha probability framing', 'Wrong timing: session ke baad post — 6–8pm PKT window rakhein'],
+  },
+  'daily.retention_touches': {
+    objective: 'Zero silent clients — retention IS the 50k engine',
+    platform: 'WhatsApp', country: 'Pakistan + GCC', language: 'Urdu (voice notes)',
+    quality: ['Har touch personal tha (template adapt hua, recite nahin)', 'Day-1 voice notes same-day'],
+    completion: ['Due-list empty', 'Har touch CRM mein logged'],
+    nextAction: 'At-risk jawab na de → 3 din baad ek aur value-touch, phir founder review',
+    risks: ['Audience mismatch: high-equity client ko beginner template — segment check pehle', 'Culture risk: public loss mention — losses PRIVATE hamesha'],
+  },
+  'daily.ib_followups': {
+    objective: 'Move 1 trust-ready conversation one stage forward',
+    platform: 'WhatsApp personal', country: 'Pakistan + GCC', language: 'Urdu',
+    quality: ['Trigger verified pehle (course done + active + broker question)', 'Koi pressure line nahin'],
+    completion: ['Conversation logged with stage transition (ya honest "not ready")'],
+    nextAction: 'Stage badla → Day-1 onboarding voice note schedule karein',
+    risks: ['Trust detonation: urgency tactics — "koi jaldi nahin" hamesha available rakhein', 'Weak CTA: broker pehli line mein — pehle verification framing'],
+  },
+  'daily.physical_outreach': {
+    objective: 'Convert today\'s area into logged institute relationships',
+    platform: 'In-person / phone', country: 'Pakistan (current cycle area)', language: 'Urdu',
+    quality: ['Contact person ka naam+number mila', 'Free-class offer diya, deposit ka zikr nahin'],
+    completion: ['Har visit CRM mein with next follow-up date'],
+    nextAction: 'Warm institute → proposal same week; Plan page par visit log karein',
+    risks: ['Execution delay: follow-up date ke bina visit — date lazmi', 'Wrong audience: sirf reception se baat — decision-maker tak pahunchein'],
+  },
+  'weekly.film_video': {
+    objective: 'The compounding asset — one video feeds six surfaces',
+    platform: 'YouTube', country: 'Pakistan + GCC', language: 'Urdu (Roman-Urdu title)',
+    quality: ['Ek topic, ek take', 'Title = audience ka asal sawal', 'Thumbnail = question text'],
+    completion: ['Uploaded + scheduled', 'Topic backlog se laya gaya (demand signal ke sath)'],
+    nextAction: 'Kal publish chain: transcript → article + clips',
+    risks: ['Budget waste (time): polish-perfectionism — ONE take rule', 'Audience mismatch: 3 topics 1 video — ek sawal ek video'],
+  },
+  'weekly.publish_chain': {
+    objective: 'Multiply yesterday\'s video into 6 surfaces',
+    platform: 'Website (GEO) + TG/FB/IG/TikTok reposts', country: 'Pakistan + GCC', language: 'Urdu + EN title/meta',
+    quality: ['Article founder-polished (raw AI draft kabhi nahin)', 'FAQ schema check'],
+    completion: ['Article live ≤48h', '3–5 clips queued', 'TikTok/IG auto-repost fired'],
+    nextAction: 'Digest mention likhein (review day)',
+    risks: ['SEO waste: article skip karke sirf clips — compounding half article hai'],
+  },
+  'weekly.live_class': {
+    objective: 'The weekly ritual + conversion moment',
+    platform: 'Live (YouTube/TG)', country: 'Pakistan + GCC (Gulf evening timing)', language: 'Urdu',
+    quality: ['Track-record review honest tha (losses same format)', 'Q&A mein har sawal ka jawab'],
+    completion: ['Class hui + replay TG par pinned', 'Attendance noted'],
+    nextAction: '2+ attendance + course done wale → IB follow-up trigger list',
+    risks: ['Trust risk: sirf wins dikhana — format symmetry hi credibility hai', 'Poor timing: slot badalna — fixed slot ritual hai'],
+  },
+  'weekly.review': {
+    objective: 'The accountability spine — plan learns from the week',
+    platform: 'Founder OS', country: '—', language: '—',
+    quality: ['Numbers strip dekha, andaza nahin', 'Focus 3 options mein se chuna'],
+    completion: ['Review marked complete', 'Next week Focus locked'],
+    nextAction: 'Focus item ko agle hafte ke Top-3 mein pehla rakhein',
+    risks: ['Execution delay: bure hafte par skip — wohi hafta sab se zaroori hai'],
+  },
+  'weekly.kpi_entry': {
+    objective: 'No KPI gaps — the Monthly AI Review runs on these numbers',
+    platform: 'Founder OS', country: '—', language: '—',
+    quality: ['Values checked, estimated nahin'], completion: ['Is hafte ki har manual KPI darj'],
+    nextAction: 'Threshold red ho → usi waqt review note likhein',
+    risks: ['Data risk: estimate — jhooti trend future planning kharab karti hai'],
+  },
+  'weekly.email_digest': {
+    objective: 'Retention rails: one founder paragraph, sequences do the rest',
+    platform: 'Email', country: 'Pakistan + GCC', language: 'Urdu-English mix',
+    quality: ['Ek insight, ek paragraph', 'Replay link shamil'], completion: ['Digest queued'],
+    nextAction: 'Open-rate agle review mein check',
+    risks: ['Spam risk: sales letter banana — ek insight rule'],
+  },
+  'weekly.learning_slot': {
+    objective: 'One applied insight per week — founder ki growth bhi system hai',
+    platform: 'Reading queue (M5)', country: '—', language: '—',
+    quality: ['Note actionable hai (kya BADLEGA is se)'], completion: ['1 note saved'],
+    nextAction: 'Applicable note → agle review mein test karein',
+    risks: ['Time waste: 30m se zyada — freely skippable, guilt nahin'],
+  },
+};
+
+const KIT_BASE = {
   'daily.community_touch': {
     questions: [
       '"Aaj gold ne London open par kya kiya — kisi ne notice kiya? Kyun hua yeh move?"',
@@ -108,6 +208,12 @@ export const EXECUTION_KITS = {
     expected: '1 applied insight per week.',
   },
 };
+
+// Merge the SOP layer onto each base kit — one export, unchanged consumer
+// contract (mission.js reads EXECUTION_KITS[key]).
+export const EXECUTION_KITS = Object.fromEntries(
+  Object.entries(KIT_BASE).map(([key, kit]) => [key, { ...kit, ...(SOP[key] || {}) }])
+);
 
 // Gated/rejected channels (paid promotion, TikTok) — the kit states the gate
 // honestly instead of pretending the channel is active. Surfaced on roadmap

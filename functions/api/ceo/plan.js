@@ -15,6 +15,7 @@
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { generateGrowthDays, buildPhysicalRows, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY } from '../../utils/ceo/plan-logic.js';
+import { CONTENT_LIBRARY, CONTENT_CATEGORIES } from '../../utils/ceo/content-kits.js';
 import { currentAreaAssignment } from '../../utils/ceo/physical-logic.js';
 import { instituteNextStep } from '../../utils/ceo/coach-logic.js';
 
@@ -41,11 +42,26 @@ export async function onRequestGet({ request, env }) {
   const db = rest(env, auth.token);
   const uid = auth.user.id;
   const url = new URL(request.url);
-  const section = url.searchParams.get('section') === 'physical' ? 'physical' : 'growth';
+  const sectionParam = url.searchParams.get('section');
+  const section = sectionParam === 'physical' ? 'physical' : sectionParam === 'content' ? 'content' : 'growth';
   const offset = Math.max(0, parseInt(url.searchParams.get('offset'), 10) || 0);
   const count = Math.min(30, Math.max(1, parseInt(url.searchParams.get('count'), 10) || 15));
 
   try {
+    // Content Engine — the static copy-ready library (content-kits.js),
+    // paged like everything else, filterable by category. No DB involved.
+    if (section === 'content') {
+      const category = url.searchParams.get('category') || '';
+      const items = category ? CONTENT_LIBRARY.filter((i) => i.category === category) : CONTENT_LIBRARY;
+      return json({
+        section, offset, count,
+        items: items.slice(offset, offset + count),
+        hasMore: offset + count < items.length,
+        total: items.length,
+        categories: CONTENT_CATEGORIES,
+      });
+    }
+
     const settings = await db.select('settings', 'select=key,value&scope=eq.global');
     const setting = (k, fallback) => {
       const row = settings.find((s) => s.key === k);

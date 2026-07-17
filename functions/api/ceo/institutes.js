@@ -20,10 +20,22 @@ const STAGES = [
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
+// settings.value is jsonb; rows written before the double-encoding fix below
+// may hold a JSON-encoded STRING instead of a real array — normalize both so
+// every consumer (this endpoint, growth-page.js, plan.js) always gets an
+// array and never crashes on queue.map.
+function asQueueArray(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+  }
+  return [];
+}
+
 async function readCycle(db) {
   const settings = await db.select('settings', `select=key,value&scope=eq.global&key=in.(physical.city,physical.cycle_days,physical.area_queue,physical.start_date)`);
   const get = (k) => settings.find((s) => s.key === k)?.value;
-  const queue = get('physical.area_queue') || [];
+  const queue = asQueueArray(get('physical.area_queue') || []);
   const cycleDays = Number(get('physical.cycle_days') || 15);
   const startDate = get('physical.start_date') ? String(get('physical.start_date')).replace(/"/g, '') : null;
   const city = String(get('physical.city') || '"Lahore"').replace(/"/g, '');
@@ -75,11 +87,14 @@ export async function onRequestPost({ request, env }) {
       // Anchor the rotation to today (or a provided date). Upsert into the
       // one designed config home; date math does the rest forever.
       const start = DATE_RE.test(String(body.start_date || '')) ? body.start_date : new Date().toISOString().slice(0, 10);
+      // Raw value, not JSON.stringify — the REST helper already serializes
+      // the body once; stringifying here double-encodes and stores a jsonb
+      // STRING (the bug that broke queue.map on the Growth page).
       const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.physical.start_date`);
       if (existing.length > 0) {
-        await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(start), updated_at: new Date().toISOString() });
+        await db.update('settings', `id=eq.${existing[0].id}`, { value: start, updated_at: new Date().toISOString() });
       } else {
-        await db.insert('settings', [{ scope: 'global', key: 'physical.start_date', value: JSON.stringify(start) }]);
+        await db.insert('settings', [{ scope: 'global', key: 'physical.start_date', value: start }]);
       }
       const cycle = await readCycle(db);
       return json({ ok: true, cycle });
@@ -98,7 +113,7 @@ export async function onRequestPost({ request, env }) {
       if (!sameSet) return json({ error: 'order_must_be_a_permutation_of_the_current_queue' }, 400);
       const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.physical.area_queue`);
       if (existing.length === 0) return json({ error: 'queue_not_seeded' }, 404);
-      await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(newOrder), updated_at: new Date().toISOString() });
+      await db.update('settings', `id=eq.${existing[0].id}`, { value: newOrder, updated_at: new Date().toISOString() });
       const cycle = await readCycle(db);
       return json({ ok: true, cycle });
     }
@@ -119,9 +134,9 @@ export async function onRequestPost({ request, env }) {
       if (cleaned.length === 0) return json({ error: 'areas_cannot_be_empty' }, 400);
       const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.physical.area_queue`);
       if (existing.length > 0) {
-        await db.update('settings', `id=eq.${existing[0].id}`, { value: JSON.stringify(cleaned), updated_at: new Date().toISOString() });
+        await db.update('settings', `id=eq.${existing[0].id}`, { value: cleaned, updated_at: new Date().toISOString() });
       } else {
-        await db.insert('settings', [{ scope: 'global', key: 'physical.area_queue', value: JSON.stringify(cleaned) }]);
+        await db.insert('settings', [{ scope: 'global', key: 'physical.area_queue', value: cleaned }]);
       }
       const cycle = await readCycle(db);
       return json({ ok: true, cycle });

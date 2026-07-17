@@ -18,15 +18,20 @@ const STAGES = [
   'cold_contact', 'proposal_sent', 'meeting', 'negotiation',
   'accepted', 'rejected', 'classes_running', 'batch_complete', 'follow_up_later',
 ];
-const state = { tab: 'growth', offset: { growth: 0, physical: 0 }, done: { growth: false, physical: false }, queue: [], firstUpcoming: 0 };
+const state = {
+  tab: 'growth',
+  offset: { growth: 0, physical: 0, content: 0 },
+  done: { growth: false, physical: false, content: false },
+  queue: [], firstUpcoming: 0, contentCategory: '', lastProvince: null,
+};
 
 export function initPlanPage() {
   const params = new URLSearchParams(window.location.search);
   const t = params.get('tab');
-  state.tab = t === 'physical' ? 'physical' : t === 'review' ? 'review' : 'growth';
-  document.getElementById('plan-tab-growth').addEventListener('click', () => switchTab('growth'));
-  document.getElementById('plan-tab-physical').addEventListener('click', () => switchTab('physical'));
-  document.getElementById('plan-tab-review').addEventListener('click', () => switchTab('review'));
+  state.tab = ['physical', 'review', 'content'].includes(t) ? t : 'growth';
+  for (const key of ['growth', 'physical', 'content', 'review']) {
+    document.getElementById(`plan-tab-${key}`).addEventListener('click', () => switchTab(key));
+  }
   document.getElementById('plan-load-more').addEventListener('click', () => loadMore());
   switchTab(state.tab);
 }
@@ -34,14 +39,16 @@ export function initPlanPage() {
 const SUBTITLES = {
   growth: 'The 5-year (1,825-day) roadmap toward 50,000 active IB clients — sized by the feasibility model below, generated from the locked research (countries, brokers, platforms, languages, budget gates), shifted automatically around approved leave, re-weighted monthly by your own completion history. Loaded 15 days at a time.',
   physical: 'Pakistan-wide offline expansion: province → division → city → area → institutes. Type a position number to resequence upcoming areas; record every visit, proposal, and follow-up per institute.',
-  review: 'The Monthly AI Review + Growth Intelligence Report — funnel, Pareto 80/20, trajectory toward 50,000 active IB clients, and next month\'s focus. Generated on demand from your real data.',
+  review: 'The Monthly AI Review + Growth Intelligence Report — funnel, Pareto 80/20, trajectory toward 50,000 active IB clients, lessons, and next month\'s focus. Generated on demand from your real data.',
+  content: 'The Content Engine — copy-ready packs for every channel (videos, ads, messages, scripts, objection handling, closes), each with targeting, hook, structure, CTA, and expected result. Execute, never invent.',
 };
 
 function switchTab(tab) {
   state.tab = tab;
-  state.offset = { growth: 0, physical: 0 };
-  state.done = { growth: false, physical: false };
-  for (const key of ['growth', 'physical', 'review']) {
+  state.offset = { growth: 0, physical: 0, content: 0 };
+  state.done = { growth: false, physical: false, content: false };
+  state.lastProvince = null;
+  for (const key of ['growth', 'physical', 'content', 'review']) {
     document.getElementById(`plan-tab-${key}`).className = 'ceo-btn ' + (tab === key ? 'ceo-btn-primary' : 'ceo-btn-secondary');
   }
   document.getElementById('plan-subtitle').textContent = SUBTITLES[tab];
@@ -60,7 +67,8 @@ async function loadMore(fresh) {
   const btn = document.getElementById('plan-load-more');
   btn.disabled = true;
   try {
-    const res = await getJson(`/api/ceo/plan?section=${tab}&offset=${state.offset[tab]}&count=${PAGE_SIZE}`);
+    const catParam = tab === 'content' && state.contentCategory ? `&category=${encodeURIComponent(state.contentCategory)}` : '';
+    const res = await getJson(`/api/ceo/plan?section=${tab}&offset=${state.offset[tab]}&count=${PAGE_SIZE}${catParam}`);
     const body = document.getElementById('plan-body');
     if (fresh) body.innerHTML = '';
     if (tab === 'growth') {
@@ -68,6 +76,11 @@ async function loadMore(fresh) {
       state.offset.growth += (res.days || []).length;
       state.done.growth = !res.hasMore;
       document.getElementById('plan-progress').textContent = `Showing ${state.offset.growth} of ${res.totalDays} plan days`;
+    } else if (tab === 'content') {
+      appendContent(body, res, fresh);
+      state.offset.content += (res.items || []).length;
+      state.done.content = !res.hasMore;
+      document.getElementById('plan-progress').textContent = `Showing ${state.offset.content} of ${res.total} content packs`;
     } else {
       appendPhysical(body, res, fresh);
       state.offset.physical += (res.rows || []).length;
@@ -117,7 +130,7 @@ function appendGrowth(body, res, fresh) {
         <table class="ceo-table" style="min-width: 1200px;">
           <thead><tr>
             <th>Country</th><th>Priority / Gate</th><th>Preferred Broker</th><th>Language</th><th>Platform</th>
-            <th>Content Type</th><th>Audience</th><th>Posting Frequency</th><th>Promotion</th>
+            <th>Content Type</th><th>Audience</th><th>Posting Frequency</th><th>Organic Strategy</th><th>Paid Strategy</th>
             <th>Expected Conversion</th><th>Budget / Expected CAC</th><th>Expected IB Growth</th>
           </tr></thead>
           <tbody>
@@ -131,7 +144,8 @@ function appendGrowth(body, res, fresh) {
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.contentType)}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.audience)}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.postingFrequency)}</td>
-                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.promotion)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.organicStrategy || c.promotion)}</td>
+                <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.paidStrategy || '—')}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.expectedConversion)}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.expectedCac)}</td>
                 <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(c.expectedGrowth)}</td>
@@ -161,7 +175,7 @@ function appendGrowth(body, res, fresh) {
   tbody.insertAdjacentHTML('beforeend', (res.days || []).map((d) => `
     <tr>
       <td><strong>${d.day}</strong></td>
-      <td style="white-space: nowrap;">${escapeHtml(d.date)}<div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: capitalize;">${escapeHtml(d.weekday)}</div></td>
+      <td style="white-space: nowrap;">${escapeHtml(d.date)}<div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: capitalize;">${escapeHtml(d.weekday)}</div>${d.estimatedLoad ? `<div class="ceo-text-muted" style="font-size: 0.7rem; white-space: normal; max-width: 9em;">${escapeHtml(d.estimatedLoad)}</div>` : ''}</td>
       <td>${escapeHtml(d.platform)}</td>
       <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(d.country)}</td>
       <td style="font-size: var(--ceo-font-size-sm);">${escapeHtml(d.language)}</td>
@@ -182,6 +196,46 @@ function statusBadge(status) {
   return `<span class="ceo-badge ${cls}">${escapeHtml(s)}</span>`;
 }
 
+// --- Content Engine library ----------------------------------------------
+function appendContent(body, res, fresh) {
+  if (fresh) {
+    body.insertAdjacentHTML('beforeend', `
+      <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-3);">
+        <label class="ceo-label" style="margin: 0;">Category</label>
+        <select class="ceo-input" id="content-category" style="max-width: 18em;">
+          <option value="">All categories (${res.total})</option>
+          ${(res.categories || []).map((c) => `<option value="${escapeAttr(c)}" ${state.contentCategory === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div id="plan-content-rows"></div>`);
+    body.querySelector('#content-category').addEventListener('change', (e) => {
+      state.contentCategory = e.target.value;
+      state.offset.content = 0;
+      state.done.content = false;
+      document.getElementById('plan-body').innerHTML = '<div class="ceo-skeleton" style="height: 12em;"></div>';
+      loadMore(true);
+    });
+  }
+  const holder = body.querySelector('#plan-content-rows');
+  holder.insertAdjacentHTML('beforeend', (res.items || []).map((i) => `
+    <div class="ceo-card" style="margin-bottom: var(--ceo-space-3);">
+      <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+        <span class="ceo-badge ceo-badge-neutral">${escapeHtml(i.category)}</span>
+        <strong style="flex: 1; min-width: 14em;">${escapeHtml(i.title)}</strong>
+        <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">${escapeHtml(i.platform)}</span>
+      </div>
+      <div class="ceo-text-muted" style="font-size: 0.75rem; margin: var(--ceo-space-1) 0;">
+        ${escapeHtml(i.country)} · ${escapeHtml(i.audience)} · ${escapeHtml(i.language)}
+      </div>
+      <div style="font-size: var(--ceo-font-size-sm);">
+        <div><strong>Hook:</strong> ${escapeHtml(i.hook)}</div>
+        <div><strong>Structure:</strong> ${escapeHtml(i.structure)}</div>
+        <div><strong>CTA:</strong> ${escapeHtml(i.cta)}</div>
+        <div class="ceo-text-secondary"><strong>Expected:</strong> ${escapeHtml(i.expected)} · <strong>Budget:</strong> ${escapeHtml(i.budget)}</div>
+      </div>
+    </div>`).join(''));
+}
+
 // --- Physical IB Expansion roadmap --------------------------------------
 function appendPhysical(body, res, fresh) {
   if (Array.isArray(res.queue)) state.queue = res.queue;
@@ -196,6 +250,7 @@ function appendPhysical(body, res, fresh) {
   }
   const holder = body.querySelector('#plan-physical-rows');
   holder.insertAdjacentHTML('beforeend', (res.rows || []).map((r) => `
+    ${r.province !== state.lastProvince ? `<h3 style="margin: var(--ceo-space-4) 0 var(--ceo-space-2);">${escapeHtml((state.lastProvince = r.province))}</h3>` : ''}
     <div class="ceo-card" style="margin-bottom: var(--ceo-space-4);" data-area-index="${r.index}">
       <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
         <span class="ceo-badge ${r.state === 'current' ? 'ceo-badge-warning' : r.state === 'done' ? 'ceo-badge-success' : 'ceo-badge-neutral'}">${escapeHtml(r.state)}</span>
@@ -387,6 +442,19 @@ async function loadReview(month) {
           <h3 style="margin-top: 0;">Reduce / fix</h3>
           ${r.pareto.low.length === 0 ? '<p class="ceo-text-muted">No consistently-skipped activities — nothing to cut.</p>'
             : `<ul style="margin: 0; padding-left: 1.2em;">${r.pareto.low.map((x) => `<li>${escapeHtml(x.label)} — skipped ${x.skipped}×, done ${x.completed}×</li>`).join('')}</ul>`}
+        </div>
+      </div>
+
+      <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-4);">
+        <div class="ceo-card" style="flex: 1; min-width: 280px;">
+          <h3 style="margin-top: 0;">Monthly lessons</h3>
+          ${(r.lessons || []).length === 0 ? '<p class="ceo-text-muted">No lessons yet.</p>'
+            : `<ul style="margin: 0; padding-left: 1.2em;">${r.lessons.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`}
+        </div>
+        <div class="ceo-card" style="flex: 1; min-width: 280px;">
+          <h3 style="margin-top: 0;">Recommended improvements <span class="ceo-text-muted" style="font-size: 0.72rem;">(auto-applied to the plan via FOCUS/REDUCE)</span></h3>
+          ${(r.improvements || []).length === 0 ? '<p class="ceo-text-muted">No changes recommended.</p>'
+            : `<ul style="margin: 0; padding-left: 1.2em;">${r.improvements.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`}
         </div>
       </div>
 
