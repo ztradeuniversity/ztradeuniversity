@@ -249,6 +249,33 @@
     .chat-send:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 24px rgba(247,147,26,0.5); }
     .chat-send svg { width: 21px; height: 21px; transform: translateX(1px); }
 
+    /* the outer .chat-form already shows focus via :focus-within — the inner
+       input must not draw its own outline (that created the double-box look) */
+    .chat-form input:focus,
+    .chat-form input:focus-visible { outline: none; box-shadow: none; border: 0; }
+
+    /* voice input (mic) + read aloud (speaker) */
+    .chat-tool {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      border: 0; background: transparent; cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, color .2s, transform .2s;
+    }
+    .chat-tool svg { width: 19px; height: 19px; }
+    .chat-tool:hover { background: var(--orange-soft); color: var(--orange); }
+    .chat-tool.is-active { background: var(--orange-soft); color: var(--orange); }
+    .chat-tool.is-listening { animation: ztuPulse 1.3s ease-in-out infinite; }
+    @keyframes ztuPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(247,147,26,0.45); }
+      50%      { box-shadow: 0 0 0 7px rgba(247,147,26,0); }
+    }
+    @media (prefers-reduced-motion: reduce) { .chat-tool.is-listening { animation: none; } }
+    .chat-hint {
+      max-width: 720px; margin: 9px auto 0; text-align: center;
+      font-size: 13px; font-weight: 600; color: var(--muted); min-height: 18px;
+    }
+    .chat-hint.is-error { color: #dc2626; }
+
     /* ── QUICK ACTIONS ─────────────────────────────────────────── */
     .quick-actions {
       margin: 22px auto 0; max-width: 720px;
@@ -362,6 +389,9 @@
       .chat-form { padding: 7px 7px 7px 20px; }
       .chat-form input { font-size: 15px; }
       .chat-send { width: 48px; height: 48px; }
+      .chat-tool { width: 36px; height: 36px; }
+      .chat-tool svg { width: 17px; height: 17px; }
+      .chat-form { gap: 4px; }
       .quick-actions { flex-direction: column; }
       .qa { flex: none; width: 100%; max-width: none; }
     }
@@ -373,6 +403,83 @@
     @media (max-width: 380px) {
       .brand-text span { letter-spacing: 2.5px; }
       .fcard-feats { gap: 16px; }
+    }
+
+    /* ── IB MODAL ──────────────────────────────────────────────── */
+    .ib-modal {
+      position: fixed; inset: 0; z-index: 900;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      background: rgba(8,12,22,0.58); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+      opacity: 0; pointer-events: none; transition: opacity .25s ease;
+    }
+    .ib-modal.open { opacity: 1; pointer-events: auto; }
+    .ib-card {
+      position: relative; width: min(560px, 100%); max-height: 90vh; overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+      padding: 34px 30px 28px; text-align: center;
+      transform: translateY(18px) scale(.97); transition: transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .ib-modal.open .ib-card { transform: translateY(0) scale(1); }
+    .ib-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+    }
+    .ib-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .ib-close:hover { color: var(--orange); border-color: var(--orange); }
+    .ib-icon {
+      width: 62px; height: 62px; border-radius: 50%; margin: 0 auto 15px;
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      display: flex; align-items: center; justify-content: center; color: var(--orange);
+    }
+    .ib-icon svg { width: 29px; height: 29px; }
+    .ib-card h2 {
+      font-family: 'Poppins','Inter',sans-serif;
+      font-size: 25px; font-weight: 800; color: var(--heading); letter-spacing: -.5px;
+    }
+    .ib-sub { font-size: 15px; color: var(--muted); margin-top: 7px; }
+    .ib-benefits {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin: 22px 0 24px; text-align: left;
+    }
+    .ib-benefit {
+      display: flex; align-items: center; gap: 9px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 11px 13px;
+      font-size: 13.5px; font-weight: 600; color: var(--heading);
+    }
+    .ib-benefit svg { width: 16px; height: 16px; color: var(--orange); flex-shrink: 0; }
+    .ib-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .ib-primary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 13px 26px; border-radius: 100px; border: 1.5px solid var(--orange);
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; font-size: 15px; font-weight: 700;
+      box-shadow: 0 8px 20px rgba(247,147,26,0.3);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .ib-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(247,147,26,0.42); }
+    .ib-primary svg { width: 15px; height: 15px; }
+    .ib-secondary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 13px 26px; border-radius: 100px;
+      border: 1.5px solid var(--border); color: var(--heading);
+      font-size: 15px; font-weight: 700;
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .ib-secondary:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-2px); }
+    @media (max-width: 560px) {
+      .ib-card { padding: 30px 20px 24px; }
+      .ib-benefits { grid-template-columns: 1fr; }
+      .ib-actions { flex-direction: column; }
+      .ib-primary, .ib-secondary { justify-content: center; }
     }
 
     /* accessibility focus */
@@ -415,10 +522,10 @@
           <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
-        <a href="library.html" class="btn-signin" aria-label="Sign in">
+        <button type="button" id="signInBtn" class="btn-signin" onclick="openIbModal()" aria-haspopup="dialog" aria-label="Sign in">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span class="si-label">Sign In</span>
-        </a>
+        </button>
       </div>
     </div>
   </header>
@@ -507,10 +614,19 @@
         <form class="chat-form" id="chatForm" onsubmit="return goChat(event)" role="search">
           <input id="homeChatInput" type="text" autocomplete="off"
                  placeholder="Ask me anything about trading..." aria-label="Ask the ZTU AI trading assistant" />
+          <button class="chat-tool" type="button" id="micBtn" hidden
+                  onclick="toggleMic()" aria-pressed="false" aria-label="Voice input" title="Voice input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+          </button>
+          <button class="chat-tool" type="button" id="speakBtn" hidden
+                  onclick="toggleSpeak()" aria-pressed="false" aria-label="Read aloud" title="Read aloud">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 9 8 9 13 5 13 19 8 15 4 15" fill="currentColor" stroke="none"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+          </button>
           <button class="chat-send" type="submit" aria-label="Send message">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg>
           </button>
         </form>
+        <p class="chat-hint" id="chatHint" role="status" aria-live="polite"></p>
 
         <!-- QUICK ACTIONS -->
         <div class="quick-actions">
@@ -625,6 +741,37 @@
     }
   </style>
 
+  <!-- ════════════════ IB PARTNER MODAL (Sign In) ════════════════ -->
+  <div class="ib-modal" id="ibModal" role="dialog" aria-modal="true" aria-labelledby="ibTitle" aria-describedby="ibSub" hidden>
+    <div class="ib-card" role="document">
+      <button class="ib-close" type="button" onclick="closeIbModal()" aria-label="Close">&times;</button>
+      <div class="ib-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <h2 id="ibTitle">Become an IB Partner</h2>
+      <p class="ib-sub" id="ibSub">Unlock the complete Z Trade University ecosystem.</p>
+
+      <div class="ib-benefits">
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Trading Library Access</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Trading Journal</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>AI Trading Assistant</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>MT5 Bot Access</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Premium Trading Tools</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Educational Courses</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Future Premium Features</div>
+        <div class="ib-benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Priority Support</div>
+      </div>
+
+      <div class="ib-actions">
+        <a class="ib-primary" href="create-account-with-us.html">
+          Create IB Account
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a class="ib-secondary" href="create-account-with-us.html">How to Join</a>
+      </div>
+    </div>
+  </div>
+
   <!-- ════════════════ FOOTER ════════════════ -->
   <footer class="site-foot">
     <div class="foot-div"></div>
@@ -665,6 +812,152 @@
       window.location.href = url;
       return false;
     }
+
+    /* ── Voice input (Web Speech API) — homepage only, no libraries ── */
+    (function () {
+      var input   = document.getElementById('homeChatInput');
+      var micBtn  = document.getElementById('micBtn');
+      var hint    = document.getElementById('chatHint');
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR || !input || !micBtn) return;   /* unsupported → button stays hidden */
+
+      var rec = new SR();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = document.documentElement.lang || 'en-US';
+
+      var listening = false;
+      var baseText  = '';
+
+      function say(msg, isError) {
+        if (!hint) return;
+        hint.textContent = msg || '';
+        hint.classList.toggle('is-error', !!isError);
+      }
+      function setListening(on) {
+        listening = on;
+        micBtn.classList.toggle('is-active', on);
+        micBtn.classList.toggle('is-listening', on);
+        micBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        micBtn.setAttribute('aria-label', on ? 'Stop voice input' : 'Voice input');
+      }
+
+      rec.onstart  = function () { setListening(true); say('Listening… speak now.'); };
+      rec.onend    = function () { setListening(false); };
+      rec.onresult = function (e) {
+        var text = '';
+        for (var i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
+        input.value = (baseText ? baseText + ' ' : '') + text.trim();
+        if (e.results[e.results.length - 1].isFinal) { say(''); input.focus(); }
+      };
+      rec.onerror = function (e) {
+        setListening(false);
+        var err = e && e.error;
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          say('Microphone blocked. Allow mic access in your browser settings.', true);
+        } else if (err === 'no-speech') {
+          say('No speech detected. Tap the mic and try again.', true);
+        } else if (err === 'audio-capture') {
+          say('No microphone found.', true);
+        } else if (err !== 'aborted') {
+          say('Voice input is unavailable right now.', true);
+        } else { say(''); }
+      };
+
+      window.toggleMic = function () {
+        if (listening) { rec.stop(); say(''); return; }
+        baseText = input.value.trim();
+        try { rec.start(); }
+        catch (err) { /* already started */ }
+      };
+
+      micBtn.hidden = false;
+    })();
+
+    /* ── Read aloud (SpeechSynthesis) — speaks the real AI answer produced by
+          ai-trade-assistant.html, which hands it over via sessionStorage ── */
+    (function () {
+      var input    = document.getElementById('homeChatInput');
+      var speakBtn = document.getElementById('speakBtn');
+      var hint     = document.getElementById('chatHint');
+      if (!('speechSynthesis' in window) || !input || !speakBtn) return;
+
+      function reset() {
+        speakBtn.classList.remove('is-active');
+        speakBtn.setAttribute('aria-pressed', 'false');
+        speakBtn.setAttribute('aria-label', 'Read aloud');
+      }
+
+      window.toggleSpeak = function () {
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+          window.speechSynthesis.cancel(); reset();
+          if (hint) { hint.textContent = ''; hint.classList.remove('is-error'); }
+          return;
+        }
+        /* the real AI answer, handed over by ai-trade-assistant.html */
+        var text = '', lang = '';
+        try {
+          text = (sessionStorage.getItem('ztuLastAnswer') || '').trim();
+          lang = (sessionStorage.getItem('ztuLastAnswerLang') || '').trim();
+        } catch (err) {}
+        if (!text) {
+          if (hint) {
+            hint.textContent = 'No AI answer to read yet — ask a question first, then come back and tap the speaker.';
+            hint.classList.add('is-error');
+          }
+          return;
+        }
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = lang || document.documentElement.lang || 'en-US';
+        u.onend = reset;
+        u.onerror = reset;
+        speakBtn.classList.add('is-active');
+        speakBtn.setAttribute('aria-pressed', 'true');
+        speakBtn.setAttribute('aria-label', 'Stop reading');
+        window.speechSynthesis.speak(u);
+      };
+
+      window.addEventListener('beforeunload', function () { window.speechSynthesis.cancel(); });
+      speakBtn.hidden = false;
+    })();
+
+    /* ── IB Partner modal (Sign In) ── */
+    (function () {
+      var modal = document.getElementById('ibModal');
+      if (!modal) return;
+      var lastFocus = null;
+
+      window.openIbModal = function () {
+        lastFocus = document.activeElement;
+        modal.hidden = false;
+        requestAnimationFrame(function () { modal.classList.add('open'); });
+        document.body.style.overflow = 'hidden';
+        var first = modal.querySelector('.ib-primary');
+        if (first) first.focus();
+      };
+
+      window.closeIbModal = function () {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+        setTimeout(function () { modal.hidden = true; }, 250);
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      };
+
+      /* click outside closes */
+      modal.addEventListener('click', function (e) { if (e.target === modal) closeIbModal(); });
+
+      /* ESC closes · Tab stays inside the dialog */
+      document.addEventListener('keydown', function (e) {
+        if (modal.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeIbModal(); return; }
+        if (e.key !== 'Tab') return;
+        var items = modal.querySelectorAll('button, a[href]');
+        if (!items.length) return;
+        var first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
+    })();
 
     /* ── Signal History teaser stats (best-effort; section renders fine without it) ── */
     (function () {

@@ -1594,6 +1594,12 @@ async function sendMessage() {
       saveInteraction(text, aiText);
       // Phase 8D: speak the reply aloud when TTS is enabled (language-aware)
       speakReply(aiText);
+      // Homepage read-aloud bridge: hand the finished reply to index.html's
+      // speaker button. Additive only — does not affect this page's behaviour.
+      try {
+        sessionStorage.setItem('ztuLastAnswer', ttsStrip(aiText));
+        sessionStorage.setItem('ztuLastAnswerLang', ttsBcp47(getSessionLang() || 'en'));
+      } catch (e) {}
     }
     // SOURCE BADGE: show which retrieval layer produced the answer (small, unobtrusive).
     if (sourceMeta && aiBub) renderSourceBadge(aiBub, sourceMeta);
