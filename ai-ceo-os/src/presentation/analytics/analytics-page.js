@@ -39,27 +39,34 @@ async function loadAnalytics(date) {
   const entry = date === a.today ? a.todayEntry : (a.recentDaily || []).find((r) => r.entry_date === date) || null;
   renderDailyForm(entry, date);
   renderTrends(a.trends);
+  renderProgress(a);
+  renderPerformanceSummary(a);
 }
 
 // --- AI Recommendations (Accept / Reject / Remind Later) -----------------
 const CAT_BADGE = { do_more: 'ceo-badge-success', stop: 'ceo-badge-critical', test: 'ceo-badge-warning', recurring: 'ceo-badge-success', remove: 'ceo-badge-neutral' };
 const CAT_LABEL = { do_more: 'Do more', stop: 'Stop', test: 'Test next', recurring: 'Make recurring', remove: 'Reduce / remove' };
+const PRIORITY_BADGE = { high: 'ceo-badge-critical', medium: 'ceo-badge-warning', low: 'ceo-badge-neutral' };
+const PRIORITY_LABEL = { high: 'High priority', medium: 'Medium priority', low: 'Low priority' };
+const NOT_ENOUGH_DATA_HTML = '<div class="ceo-empty-state"><p>Not enough execution data yet.<br>Continue executing your new plan.<br>Growth Analytics will automatically become more accurate as additional activities are completed.</p></div>';
 
 function renderRecommendations(recs, accepted) {
   const el = document.getElementById('an-recommendations');
   if ((!recs || recs.length === 0) && (!accepted || accepted.length === 0)) {
-    el.innerHTML = '<div class="ceo-empty-state"><p>No analytics available yet. Start executing your new plan to generate insights.</p></div>';
+    el.innerHTML = NOT_ENOUGH_DATA_HTML;
     return;
   }
   const card = (r, isAccepted) => `
     <div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); margin-bottom: var(--ceo-space-2);" data-rec="${escapeAttr(r.rec_key)}">
       <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
         <span class="ceo-badge ${CAT_BADGE[r.category] || 'ceo-badge-neutral'}">${CAT_LABEL[r.category] || r.category}</span>
+        ${r.priority ? `<span class="ceo-badge ${PRIORITY_BADGE[r.priority] || 'ceo-badge-neutral'}">${PRIORITY_LABEL[r.priority] || r.priority}</span>` : ''}
         <strong style="flex: 1; min-width: 12em;">${escapeHtml(r.title)}</strong>
         ${isAccepted ? '<span class="ceo-badge ceo-badge-success">Accepted</span>' : ''}
       </div>
       <div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-1);">${escapeHtml(r.detail)}</div>
       <div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 2px;">Why: ${escapeHtml(r.reason)}</div>
+      ${r.impact ? `<div class="ceo-text-muted" style="font-size: 0.75rem;">Expected impact: ${escapeHtml(r.impact)}</div>` : ''}
       ${isAccepted ? '' : `
         <div class="ceo-flex ceo-gap-2" style="margin-top: var(--ceo-space-2); flex-wrap: wrap;">
           <button class="ceo-btn ceo-btn-primary" data-decide="accepted" style="font-size: 0.8em; padding: 2px 10px;">Accept</button>
@@ -144,13 +151,70 @@ function renderDailyForm(entry, date) {
   });
 }
 
-// Two async writers share #an-analytics — give each a stable sub-container
-// once (removing the skeleton) so neither clobbers the other on reload.
+// Multiple writers share #an-analytics — give each a stable sub-container
+// once (removing the skeleton) so none clobbers another on reload.
 function ensureAnalyticsBlocks() {
   const holder = document.getElementById('an-analytics');
-  if (!document.getElementById('an-trends-block')) {
-    holder.innerHTML = '<div id="an-trends-block"></div><div id="an-reused-block"></div>';
+  if (!document.getElementById('an-progress-block')) {
+    holder.innerHTML =
+      '<div id="an-progress-block"></div><div id="an-performance-block"></div><div id="an-trends-block"></div><div id="an-reused-block"></div>';
   }
+}
+
+// --- Overall Progress (Founder Decision Dashboard) ------------------------
+const HEALTH_BADGE = { on_track: 'ceo-badge-success', slightly_behind: 'ceo-badge-warning', behind: 'ceo-badge-warning', critical: 'ceo-badge-critical' };
+
+function renderProgress(data) {
+  ensureAnalyticsBlocks();
+  const block = document.getElementById('an-progress-block');
+  if (data.notEnoughData) {
+    block.innerHTML = NOT_ENOUGH_DATA_HTML;
+    return;
+  }
+  const p = data.progress;
+  block.innerHTML = `
+    <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Overall Progress</div>
+    <div class="ceo-flex ceo-gap-4" style="flex-wrap: wrap; margin-bottom: var(--ceo-space-3);">
+      <div style="min-width: 140px;"><div class="ceo-text-muted" style="font-size: 0.7rem;">Plan Completion</div><div style="font-weight: 700;">${p.completionPct}%</div></div>
+      <div style="min-width: 140px;"><div class="ceo-text-muted" style="font-size: 0.7rem;">Remaining Work</div><div style="font-weight: 700;">${p.remainingPct}%</div></div>
+      <div style="min-width: 140px;"><div class="ceo-text-muted" style="font-size: 0.7rem;">Execution Score</div><div style="font-weight: 700;">${p.executionScore}/100</div></div>
+      <div style="min-width: 140px;"><div class="ceo-text-muted" style="font-size: 0.7rem;">Consistency Score</div><div style="font-weight: 700;">${p.consistencyScore ?? '—'}${p.consistencyScore !== null ? '%' : ''}</div></div>
+      <div style="min-width: 140px;"><div class="ceo-text-muted" style="font-size: 0.7rem;">Plan Health</div><div><span class="ceo-badge ${HEALTH_BADGE[p.healthStatus] || 'ceo-badge-neutral'}">${escapeHtml(p.health)}</span></div></div>
+    </div>
+    <div class="ceo-alert" style="border: 1px solid var(--ceo-border); border-radius: var(--ceo-radius-sm); padding: var(--ceo-space-3);">
+      <strong>Goal — 50,000 Active Clients:</strong> ${p.goal.progressPct}% there (${p.goal.activeClients} active) · 50k probability: ${p.goal.probability50k}%${p.goal.monthsTo50kAtCurrentRate ? ` · ~${p.goal.monthsTo50kAtCurrentRate} months at current rate` : ''}
+    </div>`;
+}
+
+// --- Performance Summary + Target Analysis (reused lessons/improvements) --
+function renderPerformanceSummary(data) {
+  ensureAnalyticsBlocks();
+  const block = document.getElementById('an-performance-block');
+  if (data.notEnoughData) { block.innerHTML = ''; return; }
+  const s = data.performanceSummary || {};
+  const group = (icon, title, items) => {
+    if (!items || items.length === 0) return '';
+    return `
+      <div style="margin-bottom: var(--ceo-space-3);">
+        <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">${icon} ${title}</div>
+        <ul style="margin: 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${items.map((it) => `<li><strong>${escapeHtml(it.label)}</strong> — ${escapeHtml(it.reason)}</li>`).join('')}</ul>
+      </div>`;
+  };
+  const targetLines = [...(data.lessons || []), ...(data.improvements || [])];
+  const target = targetLines.length
+    ? `<div style="margin-bottom: var(--ceo-space-3);">
+        <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Target Analysis — the 50k goal</div>
+        <ul style="margin: 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${targetLines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>
+      </div>`
+    : '';
+  const html =
+    group('✅', 'Best Performing Activities', s.bestPerforming) +
+    group('⚠', 'Activities Needing Improvement', s.needsImprovement) +
+    group('⏳', 'High Priority Pending Activities', s.highPriorityPending) +
+    group('❌', 'Frequently Skipped Activities', s.frequentlySkipped) +
+    group('🔥', 'Highest Impact Activities', s.highestImpact) +
+    target;
+  block.innerHTML = html || '<p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: 0;">Performance summary appears once enough activities have been decided.</p>';
 }
 
 // --- Daily trends (from the new capture) ---------------------------------

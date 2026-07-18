@@ -95,7 +95,11 @@ export function detectPatterns(rows, todayStr) {
 // passed in, never recomputed here. Nothing auto-applies; the founder decides.
 export function buildRecommendations({ trends, patterns, pareto, biggestLeak }) {
   const recs = [];
-  const add = (key, category, title, detail, reason) => recs.push({ rec_key: key, category, title, detail, reason });
+  // Same trigger rules as before — only the output grew two fields (impact,
+  // priority) so the founder sees Reason / Expected Impact / Priority /
+  // Recommended Action for every card, per category, not per data point.
+  const add = (key, category, title, detail, reason, impact, priority) =>
+    recs.push({ rec_key: key, category, title, detail, reason, impact, priority });
 
   // Observation patterns → "make it recurring" (only when it's a real pattern).
   for (const p of patterns) {
@@ -103,12 +107,16 @@ export function buildRecommendations({ trends, patterns, pareto, biggestLeak }) 
       add(`pattern:${p.key}`, 'recurring',
         `Make "${p.label}" a standard recurring activity`,
         'Add it to your Daily/Weekly plan as a repeating task. Review after 2 weeks.',
-        `You noted this ${p.count}× in the last 14 days (${p.dates.slice(0, 3).join(', ')}${p.dates.length > 3 ? '…' : ''}) — it is now a pattern, not a one-off.`);
+        `You noted this ${p.count}× in the last 14 days (${p.dates.slice(0, 3).join(', ')}${p.dates.length > 3 ? '…' : ''}) — it is now a pattern, not a one-off.`,
+        'Turns a proven habit into a standing part of the plan instead of relying on memory.',
+        'medium');
     } else {
       add(`watch:${p.key}`, 'test',
         `Keep testing "${p.label}"`,
         'Do it a couple more times and log the result before committing it to the plan.',
-        `Seen ${p.count}× recently — promising, but not yet enough evidence to standardize (needs 3+).`);
+        `Seen ${p.count}× recently — promising, but not yet enough evidence to standardize (needs 3+).`,
+        'Confirms whether this is real before it takes a permanent slot in the plan.',
+        'low');
     }
   }
 
@@ -119,13 +127,17 @@ export function buildRecommendations({ trends, patterns, pareto, biggestLeak }) 
         add(`trend_up:${m.key}`, 'do_more',
           `Do more of what is lifting ${m.label}`,
           `Identify this week's driver of ${m.label} and repeat it deliberately next week.`,
-          `${m.label} is up ${m.deltaPct}% (last 7d ${m.last7} vs prior 7d ${m.prev7}).`);
+          `${m.label} is up ${m.deltaPct}% (last 7d ${m.last7} vs prior 7d ${m.prev7}).`,
+          `Sustaining the driver could keep ${m.label} climbing at a similar rate next week.`,
+          'high');
       }
       if (m.kind === 'up' && m.deltaPct <= -40 && m.prev7 > 0) {
         add(`trend_down:${m.key}`, 'test',
           `Diagnose the drop in ${m.label}`,
           `Check what changed vs last week; run one corrective test before scaling anything else.`,
-          `${m.label} fell ${Math.abs(m.deltaPct)}% (last 7d ${m.last7} vs prior 7d ${m.prev7}).`);
+          `${m.label} fell ${Math.abs(m.deltaPct)}% (last 7d ${m.last7} vs prior 7d ${m.prev7}).`,
+          'Catching this now stops the decline before it compounds into next week.',
+          'high');
       }
     }
     const p = trends.paid;
@@ -135,7 +147,9 @@ export function buildRecommendations({ trends, patterns, pareto, biggestLeak }) 
         'Kill the current ad-set and re-test one proven organic clip; keep spend ≤50% of trailing commission.',
         p.registrations7 === 0
           ? `$${p.fbSpend7} spent on FB in 7 days produced 0 registrations.`
-          : `Cost per registration is $${p.costPerRegistration} — above the ~$3 target.`);
+          : `Cost per registration is $${p.costPerRegistration} — above the ~$3 target.`,
+        `Frees $${p.fbSpend7}/week currently producing little to no return.`,
+        'high');
     }
   }
 
@@ -144,19 +158,25 @@ export function buildRecommendations({ trends, patterns, pareto, biggestLeak }) 
     add(`pareto_top:${t.key}`, 'do_more',
       `Protect your top-20% activity: ${t.label}`,
       'Schedule it first, before anything reactive — it is your highest-impact work.',
-      `It produced ${t.share}% of this month's completed impact (${t.completed}× done).`);
+      `It produced ${t.share}% of this month's completed impact (${t.completed}× done).`,
+      `Protects ${t.share}% of this cycle's completed impact from being crowded out.`,
+      'high');
   }
   for (const l of (pareto?.low || []).slice(0, 2)) {
     add(`pareto_low:${l.key}`, 'remove',
       `Reduce or fix: ${l.label}`,
       'Halve its slot in the plan or rewrite its template — it keeps getting skipped.',
-      `Skipped ${l.skipped}× vs done ${l.completed}× this month.`);
+      `Skipped ${l.skipped}× vs done ${l.completed}× this month.`,
+      'Recovers time currently lost to an activity that is skipped more often than done.',
+      'medium');
   }
   if (biggestLeak && biggestLeak.dropOffRate >= 50) {
     add(`leak:${slug(biggestLeak.stage)}`, 'test',
       `Fix the biggest funnel leak: ${biggestLeak.stage}`,
       'Point one weekly Focus at this stage next month and re-measure.',
-      `${biggestLeak.dropOffRate}% of people drop off at "${biggestLeak.stage}".`);
+      `${biggestLeak.dropOffRate}% of people drop off at "${biggestLeak.stage}".`,
+      'Targets the single stage losing the largest share of prospects toward the 50k goal.',
+      'high');
   }
 
   return recs;
@@ -181,4 +201,82 @@ export function applyDecisions(recs, signalRows, todayStr) {
     }
   }
   return { active, accepted };
+}
+
+// --- Performance summary: five lenses over the SAME activities feed passed
+// in by the caller — no duplicate business logic. bestPerforming /
+// needsImprovement / frequentlySkipped are simple rate/frequency tallies over
+// daily_activities; highestImpact is a pass-through of the reused Pareto top
+// list (funnel-intelligence.js stays the single source of truth for
+// "impact" — this never recomputes it).
+export function buildPerformanceSummary({ activities, pareto, today }) {
+  const byType = {};
+  for (const a of (activities || [])) {
+    if (a.activity_type === 'daily.shutdown_note') continue;
+    const t = (byType[a.activity_type] ||= { key: a.activity_type, completed: 0, skipped: 0, pending: 0, oldestPendingCritical: null });
+    if (a.status === 'completed') t.completed += 1;
+    else if (a.status === 'skipped') t.skipped += 1;
+    else {
+      t.pending += 1;
+      const isCritical = String(a.description || '').trim().startsWith('CRITICAL');
+      if (isCritical && (!t.oldestPendingCritical || a.activity_date < t.oldestPendingCritical)) t.oldestPendingCritical = a.activity_date;
+    }
+  }
+  const rows = Object.values(byType);
+
+  const bestPerforming = rows
+    .filter((r) => r.completed >= 2 && r.completed + r.skipped >= 3)
+    .map((r) => ({ key: r.key, label: label(r.key), rate: Math.round((100 * r.completed) / (r.completed + r.skipped)), completed: r.completed, skipped: r.skipped }))
+    .filter((r) => r.rate >= 70)
+    .sort((a, b) => b.rate - a.rate || b.completed - a.completed)
+    .slice(0, 3)
+    .map((r) => ({ ...r, reason: `${r.rate}% completion rate over ${r.completed + r.skipped} attempts.` }));
+
+  const needsImprovement = rows
+    .filter((r) => r.completed + r.skipped >= 3)
+    .map((r) => ({ key: r.key, label: label(r.key), rate: Math.round((100 * r.completed) / (r.completed + r.skipped)), completed: r.completed, skipped: r.skipped }))
+    .filter((r) => r.rate < 50)
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 3)
+    .map((r) => ({ ...r, reason: `Only ${r.rate}% completed (${r.completed} done vs ${r.skipped} skipped).` }));
+
+  const frequentlySkipped = rows
+    .filter((r) => r.skipped >= 3)
+    .sort((a, b) => b.skipped - a.skipped)
+    .slice(0, 3)
+    .map((r) => ({ key: r.key, label: label(r.key), skipped: r.skipped, completed: r.completed, reason: `Skipped ${r.skipped}× recently.` }));
+
+  const highPriorityPending = rows
+    .filter((r) => r.oldestPendingCritical)
+    .map((r) => ({
+      key: r.key, label: label(r.key), since: r.oldestPendingCritical,
+      daysWaiting: today ? Math.max(0, Math.round((Date.parse(today) - Date.parse(r.oldestPendingCritical)) / DAY_MS)) : null,
+    }))
+    .sort((a, b) => Date.parse(a.since) - Date.parse(b.since))
+    .slice(0, 5)
+    .map((r) => ({ ...r, reason: `CRITICAL priority, pending since ${r.since}${r.daysWaiting !== null ? ` (${r.daysWaiting}d)` : ''}.` }));
+
+  const highestImpact = (pareto?.top || []).map((t) => ({
+    key: t.key, label: t.label, completed: t.completed, share: t.share,
+    reason: `${t.share}% of completed impact this cycle (${t.completed}× done).`,
+  }));
+
+  return { bestPerforming, needsImprovement, frequentlySkipped, highPriorityPending, highestImpact };
+}
+
+function label(key) {
+  return String(key || '').replace(/^(daily|weekly|monthly|quarterly)\./, '').replace(/_/g, ' ');
+}
+
+// --- Plan health: a simple, honest read of the reset-scoped execution score
+// and overdue backlog. Same "no invented certainty" contract as trajectory's
+// probability band (funnel-intelligence.js) — four plain bands, not a false
+// decimal of precision.
+export function planHealth({ targetScore, overdueCount }) {
+  const score = Number.isFinite(targetScore) ? targetScore : 0;
+  const overdue = Number.isFinite(overdueCount) ? overdueCount : 0;
+  if (overdue >= 5 || score < 25) return { status: 'critical', label: 'Critical' };
+  if (overdue >= 2 || score < 45) return { status: 'behind', label: 'Behind' };
+  if (overdue >= 1 || score < 65) return { status: 'slightly_behind', label: 'Slightly Behind' };
+  return { status: 'on_track', label: 'On Track' };
 }
