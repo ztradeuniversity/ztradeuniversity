@@ -202,7 +202,7 @@ async function loadReusedAnalytics() {
       ${dim('Platforms (by source)', (r.dimensions.platforms || []).map((p) => `${p.name} — ${p.active} active`))}
       ${dim('Content types', (r.dimensions.contentTypes || []).map((c) => `${c.name} — ${c.published} published`))}
     </div>
-    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Focus next month:</strong> ${escapeHtml(r.executiveSummary)}</p>`);
+    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Focus next month:</strong> ${escapeHtml(r.executiveSummary)}</p>`;
 }
 
 function escapeHtml(str) {
