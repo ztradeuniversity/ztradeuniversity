@@ -25,6 +25,7 @@ const PRIMARY_NAV = [
 // working page — kept reachable, not deleted, per "no dead code").
 const MORE_NAV = [
   { key: 'intelligence', label: 'Playbooks', href: '/ai-ceo-os/src/presentation/intelligence/index.html' },
+  { key: 'analytics', label: 'Growth Analytics', href: '/ai-ceo-os/src/presentation/analytics/index.html' },
   { key: 'automation', label: 'Automation', href: '/ai-ceo-os/src/presentation/automation/index.html' },
   { key: 'review', label: 'Reviews', href: '/ai-ceo-os/src/presentation/review/index.html' },
   { key: 'settings', label: 'Settings', href: '/ai-ceo-os/src/presentation/settings/index.html' },
