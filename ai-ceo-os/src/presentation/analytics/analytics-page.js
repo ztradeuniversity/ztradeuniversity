@@ -12,6 +12,13 @@ import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
 
 let metricDefs = [];
+// Set by loadAnalytics (from /api/ceo/analytics' own reset-aware gate) before
+// loadReusedAnalytics ever renders, since initAnalyticsPage awaits the first
+// call before firing the second — see loadReusedAnalytics below, which reuses
+// this flag so the Monthly Review numbers it reads from /api/ceo/intelligence
+// (deliberately NOT reset-scoped — it's a different, calendar-month page)
+// never leak into the Growth Analytics cycle's "not enough data" state.
+let notEnoughData = true;
 
 export async function initAnalyticsPage() {
   const picker = document.getElementById('an-date');
@@ -32,6 +39,7 @@ async function loadAnalytics(date) {
     return;
   }
   metricDefs = a.metricDefs || [];
+  notEnoughData = !!a.notEnoughData;
   renderRecommendations(a.recommendations, a.accepted);
   renderPatterns(a.patterns);
   // Load the picked date's REAL entry (from the 30-day window the GET returns,
@@ -242,6 +250,14 @@ function renderTrends(trends) {
 async function loadReusedAnalytics() {
   ensureAnalyticsBlocks();
   const holder = document.getElementById('an-reused-block');
+  // /api/ceo/intelligence is the Monthly AI Review's own endpoint — deliberately
+  // calendar-month scoped, not growth.reset_date-aware, because it also backs
+  // that separate page. Gating its render here (not its computation) keeps the
+  // Growth Analytics cycle honest without touching the Monthly Review itself.
+  if (notEnoughData) {
+    holder.innerHTML = NOT_ENOUGH_DATA_HTML;
+    return;
+  }
   let r;
   try {
     r = await getJson('/api/ceo/intelligence');
