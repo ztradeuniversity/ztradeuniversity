@@ -5,6 +5,7 @@
 // this endpoint only tracks status (the locked Integration Blueprint boundary).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
+import { CONTENT_IDEA_BANK } from '../../utils/ceo/content-ideas.js';
 
 const STATUSES = ['idea', 'production', 'published', 'evergreen', 'retired'];
 
@@ -39,6 +40,31 @@ export async function onRequestPost({ request, env }) {
     return json({ error: 'invalid_json' }, 400);
   }
   try {
+    // Load the 300+ curated idea bank into the pipeline (Task 1). Inserts
+    // ONLY titles not already present (case-insensitive) so it coexists with
+    // founder ideas and never duplicates — safe to run more than once.
+    if (body.action === 'seed_ideas') {
+      const existing = await db.select('content_library', `select=title&owner_user_id=eq.${uid}&limit=2000`);
+      const have = new Set(existing.map((c) => String(c.title || '').trim().toLowerCase()));
+      const toAdd = CONTENT_IDEA_BANK.filter((i) => !have.has(i.title.toLowerCase()));
+      if (toAdd.length === 0) return json({ ok: true, added: 0, total: existing.length, message: 'Idea bank already loaded — no duplicates added.' });
+      // Insert in chunks to keep each request small.
+      let added = 0;
+      for (let i = 0; i < toAdd.length; i += 100) {
+        const chunk = toAdd.slice(i, i + 100).map((idea) => ({
+          owner_user_id: uid,
+          title: idea.title.slice(0, 200),
+          pillar: idea.pillar,
+          content_type: 'video+article',
+          status: 'idea',
+          notes: '#BANK#',
+        }));
+        const rows = await db.insert('content_library', chunk);
+        added += rows.length;
+      }
+      return json({ ok: true, added });
+    }
+
     if (body.action === 'move') {
       if (!/^[0-9a-f-]{36}$/i.test(String(body.id || ''))) return json({ error: 'invalid_id' }, 400);
       if (!STATUSES.includes(body.status)) return json({ error: 'invalid_status' }, 400);

@@ -13,6 +13,7 @@
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
 import { wireGlossary } from '../shared/glossary.js';
+import { confirmDialog } from '../shared/components/confirm-dialog.js';
 
 const PAGE_SIZE = 15;
 const STAGES = [
@@ -420,6 +421,8 @@ function appendPhysical(body, res, fresh) {
         <span class="ceo-badge ${r.state === 'current' ? 'ceo-badge-warning' : r.state === 'done' ? 'ceo-badge-success' : 'ceo-badge-neutral'}">${escapeHtml(r.state)}</span>
         <strong style="flex: 1; min-width: 12em;">#${r.index + 1} — ${escapeHtml(r.entry)}</strong>
         ${r.state === 'upcoming' ? `
+          <button class="ceo-btn ceo-btn-secondary" data-area-up title="Move up one position">↑</button>
+          <button class="ceo-btn ceo-btn-secondary" data-area-down title="Move down one position">↓</button>
           <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">Move to #</span>
           <input class="ceo-input" type="number" data-pos-input min="1" max="${state.queue.length}" placeholder="${r.index + 1}" style="max-width: 5em;" title="Exact position in the execution sequence" />
           <button class="ceo-btn ceo-btn-secondary" data-move-to>Go</button>` : ''}
@@ -444,36 +447,71 @@ function appendPhysical(body, res, fresh) {
 // reorder_queue action (a strict same-set permutation, so nothing can be
 // lost). Positions before the first upcoming slot are history (done/current
 // areas) and are refused, never rewritten.
+// Manual ordering — all three methods write the SAME physical.area_queue
+// setting via the EXISTING reorder_queue action (the single source of truth):
+// Up/Down (swap one slot), Move-to (exact position). A slot before the first
+// upcoming index is history and is never moved into.
 function wireAreaReorder(holder) {
+  const minPos = () => (state.firstUpcoming ?? 0);
+  const submitOrder = async (newOrder, msg, btn) => {
+    if (btn) btn.disabled = true;
+    try {
+      await postJson('/api/ceo/institutes', { action: 'reorder_queue', order: newOrder });
+      showToast(msg, 'success');
+      switchTab('physical'); // reload with the new order + fresh windows
+    } catch (err) {
+      if (btn) btn.disabled = false;
+      showToast('Reorder fail: ' + err.message, 'critical');
+    }
+  };
+
   holder.querySelectorAll('[data-move-to]:not([data-wired])').forEach((btn) => {
     btn.setAttribute('data-wired', '1');
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const row = btn.closest('[data-area-index]');
       const idx = parseInt(row.getAttribute('data-area-index'), 10);
       const raw = parseInt(row.querySelector('[data-pos-input]').value, 10);
       if (!Number.isFinite(raw)) { showToast('Position number likhein pehle.', 'info'); return; }
-      const target = raw - 1; // 1-based UI -> 0-based index
-      const minPos = (state.firstUpcoming ?? 0);
-      if (target < minPos) {
-        showToast(`Position ${raw} guzar chuki hai — pehli available position #${minPos + 1} hai.`, 'info');
-        return;
-      }
-      if (target >= state.queue.length) {
-        showToast(`Aakhri position #${state.queue.length} hai.`, 'info');
-        return;
-      }
+      const target = raw - 1;
+      if (target < minPos()) { showToast(`Position ${raw} guzar chuki hai — pehli available position #${minPos() + 1} hai.`, 'info'); return; }
+      if (target >= state.queue.length) { showToast(`Aakhri position #${state.queue.length} hai.`, 'info'); return; }
       if (target === idx) return;
       const newOrder = state.queue.slice();
       const [entry] = newOrder.splice(idx, 1);
       newOrder.splice(target, 0, entry);
-      btn.disabled = true;
+      submitOrder(newOrder, `"${entry}" moved to position ${raw} — windows recalculated.`, btn);
+    });
+  });
+
+  const swap = (btn, dir) => {
+    const row = btn.closest('[data-area-index]');
+    const idx = parseInt(row.getAttribute('data-area-index'), 10);
+    const target = idx + dir;
+    if (target < minPos() || target >= state.queue.length) return;
+    const newOrder = state.queue.slice();
+    [newOrder[idx], newOrder[target]] = [newOrder[target], newOrder[idx]];
+    submitOrder(newOrder, `"${newOrder[target]}" moved ${dir < 0 ? 'up' : 'down'}.`, btn);
+  };
+  holder.querySelectorAll('[data-area-up]:not([data-wired])').forEach((b) => { b.setAttribute('data-wired', '1'); b.addEventListener('click', () => swap(b, -1)); });
+  holder.querySelectorAll('[data-area-down]:not([data-wired])').forEach((b) => { b.setAttribute('data-wired', '1'); b.addEventListener('click', () => swap(b, 1)); });
+
+  // Permanent institute delete (Task 3) — confirm, then hard-delete.
+  holder.querySelectorAll('[data-inst-delete]:not([data-wired])').forEach((btn) => {
+    btn.setAttribute('data-wired', '1');
+    btn.addEventListener('click', async () => {
+      const ok = await confirmDialog({
+        title: 'Delete this institute permanently?',
+        message: `"${btn.getAttribute('data-inst-label')}" will be permanently removed. This cannot be undone.`,
+        confirmLabel: 'Delete permanently',
+        destructive: true,
+      });
+      if (!ok) return;
       try {
-        await postJson('/api/ceo/institutes', { action: 'reorder_queue', order: newOrder });
-        showToast(`"${entry}" moved to position ${raw} — windows recalculated.`, 'success');
-        switchTab('physical'); // reload with the new order + fresh windows
+        await postJson('/api/ceo/institutes', { action: 'delete', id: btn.getAttribute('data-inst-delete') });
+        showToast('Institute deleted.', 'success');
+        switchTab('physical');
       } catch (err) {
-        btn.disabled = false;
-        showToast('Reorder fail: ' + err.message, 'critical');
+        showToast('Delete fail: ' + err.message, 'critical');
       }
     });
   });
@@ -490,8 +528,9 @@ function instituteHtml(i) {
         ${i.students_registered ? `<span class="ceo-badge ceo-badge-success">${i.students_registered} students</span>` : ''}
         <span style="flex: 1;"></span>
         <button class="ceo-btn ceo-btn-secondary" data-log-visit>Log visit</button>
+        <button class="ceo-btn ceo-btn-destructive" data-inst-delete="${i.id}" data-inst-label="${escapeAttr(i.name)}" title="Delete this institute permanently">Delete</button>
       </div>
-      ${i.nextStep ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 2px;">Next step: ${escapeHtml(i.nextStep)}</div>` : ''}
+      ${i.nextStep?.label ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 2px;">Next step: ${escapeHtml(i.nextStep.label)}</div>` : ''}
       ${i.notes ? `<div class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-1); white-space: pre-wrap;">History: ${escapeHtml(i.notes)}</div>` : ''}
       <div data-visit-form style="display: none; margin-top: var(--ceo-space-2);"></div>
     </div>`;

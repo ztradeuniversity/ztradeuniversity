@@ -34,6 +34,9 @@ export function rest(env, userToken) {
     insert: (table, rows) => run('POST', `${table}`, rows, { Prefer: 'return=representation' }),
     update: (table, query, patch) =>
       run('PATCH', `${table}?${query}`, patch, { Prefer: 'return=representation' }),
+    // Hard delete (RLS-gated by a DELETE policy on the table). Additive —
+    // existing callers are unaffected. Returns null (204) on success.
+    del: (table, query) => run('DELETE', `${table}?${query}`),
   };
 }
 

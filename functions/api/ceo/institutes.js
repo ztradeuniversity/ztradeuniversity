@@ -12,6 +12,7 @@
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { currentAreaAssignment, regionSummary } from '../../utils/ceo/physical-logic.js';
 import { instituteNextStep, pipelineSummary } from '../../utils/ceo/coach-logic.js';
+import { PAKISTAN_ROADMAP } from '../../utils/ceo/plan-logic.js';
 
 const STAGES = [
   'cold_contact', 'proposal_sent', 'meeting', 'negotiation',
@@ -57,9 +58,14 @@ export async function onRequestGet({ request, env }) {
       db.select('institutes', `select=id,name,institute_type,city,area,contact_name,contact_phone,stage,next_follow_up,batch_end_date,students_registered,notes,updated_at&owner_user_id=eq.${uid}&order=updated_at.desc&limit=300`),
       db.select('knowledge_base', `select=title,content&owner_user_id=eq.${uid}&category=eq.sales-template`),
     ]);
-    // Archived (soft-deleted) institutes stay in the DB but never appear in
-    // the working pipeline, counts, or follow-up list.
-    const institutes = allInstitutes.filter((i) => !String(i.notes || '').startsWith(ARCHIVE_TAG));
+    // Archive workflow was removed (founder requested Edit + permanent Delete
+    // only). Any institute still carrying a legacy #ARCHIVED# marker in notes
+    // is shown normally with the marker stripped for display, so the founder
+    // can edit or permanently delete it.
+    const institutes = allInstitutes.map((i) => ({
+      ...i,
+      notes: String(i.notes || '').replace(new RegExp('^' + ARCHIVE_TAG + '\\s*'), '') || null,
+    }));
     const today = new Date().toISOString().slice(0, 10);
     const followUpsDue = institutes.filter((i) => i.next_follow_up && i.next_follow_up <= today && i.stage !== 'rejected');
 
@@ -148,6 +154,25 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, cycle });
     }
 
+    // Load the comprehensive Pakistan-wide roadmap (Task 5) — MERGES the
+    // curated area/city list into the existing queue: keeps every founder
+    // entry and its order, appends only the roadmap entries not already
+    // present. Nothing is lost or reordered; new high-value areas are added.
+    if (body.action === 'load_pakistan_roadmap') {
+      const current = await readCycle(db);
+      const have = new Set(current.queue.map((s) => String(s).trim().toLowerCase()));
+      const additions = PAKISTAN_ROADMAP.filter((a) => !have.has(a.trim().toLowerCase()));
+      const merged = [...current.queue, ...additions].map((s) => String(s).slice(0, 80));
+      const existing = await db.select('settings', `select=id&scope=eq.global&key=eq.physical.area_queue`);
+      if (existing.length > 0) {
+        await db.update('settings', `id=eq.${existing[0].id}`, { value: merged, updated_at: new Date().toISOString() });
+      } else {
+        await db.insert('settings', [{ scope: 'global', key: 'physical.area_queue', value: merged }]);
+      }
+      const cycle = await readCycle(db);
+      return json({ ok: true, added: additions.length, total: merged.length, cycle });
+    }
+
     if (body.action === 'update') {
       if (!UUID_RE.test(String(body.id || ''))) return json({ error: 'invalid_id' }, 400);
       const patch = { updated_at: new Date().toISOString() };
@@ -184,20 +209,15 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, institute: rows[0] });
     }
 
-    // Delete an institute — implemented as a SOFT delete (archive) because
-    // migration 032 has no DELETE policy by the project's no-hard-deletes
-    // rule. The record is kept (so "never repeat an area unless scheduled"
-    // stays queryable) but tagged with ARCHIVE_TAG in notes, which the GET
-    // filters out of the working pipeline. Zero SQL, no schema change.
-    if (body.action === 'archive') {
+    // Permanent delete (founder requested Edit + Delete only; Archive removed).
+    // Real DELETE, gated by the institutes_owner_delete RLS policy (migration
+    // 034). owner_user_id scope means a founder can only delete their own row.
+    if (body.action === 'delete') {
       if (!UUID_RE.test(String(body.id || ''))) return json({ error: 'invalid_id' }, 400);
-      const existing = await db.select('institutes', `select=notes&id=eq.${body.id}&owner_user_id=eq.${uid}`);
+      const existing = await db.select('institutes', `select=id&id=eq.${body.id}&owner_user_id=eq.${uid}`);
       if (existing.length === 0) return json({ error: 'not_found' }, 404);
-      const prior = String(existing[0].notes || '');
-      const notes = prior.startsWith(ARCHIVE_TAG) ? prior : `${ARCHIVE_TAG} ${prior}`.slice(0, 1000);
-      const rows = await db.update('institutes', `id=eq.${body.id}&owner_user_id=eq.${uid}`, { notes, updated_at: new Date().toISOString() });
-      if (rows.length === 0) return json({ error: 'not_found' }, 404);
-      return json({ ok: true, archived: true });
+      await db.del('institutes', `id=eq.${body.id}&owner_user_id=eq.${uid}`);
+      return json({ ok: true, deleted: true });
     }
 
     // Default action: add institute.

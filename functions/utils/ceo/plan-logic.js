@@ -663,23 +663,83 @@ const CITY_GEOGRAPHY = {
   Sargodha: { province: 'Punjab', division: 'Sargodha Division' },
   Sahiwal: { province: 'Punjab', division: 'Sahiwal Division' },
   Gujranwala: { province: 'Punjab', division: 'Gujranwala Division' },
+  Sialkot: { province: 'Punjab', division: 'Gujranwala Division' },
+  Bahawalpur: { province: 'Punjab', division: 'Bahawalpur Division' },
   Peshawar: { province: 'Khyber Pakhtunkhwa', division: 'Peshawar Division' },
+  Abbottabad: { province: 'Khyber Pakhtunkhwa', division: 'Hazara Division' },
+  Mardan: { province: 'Khyber Pakhtunkhwa', division: 'Mardan Division' },
   Karachi: { province: 'Sindh', division: 'Karachi Division' },
   Hyderabad: { province: 'Sindh', division: 'Hyderabad Division' },
   Quetta: { province: 'Balochistan', division: 'Quetta Division' },
 };
 
+// Areas in non-Lahore cities → their city (Lahore areas are handled by
+// regionForQueueEntry). Keys are the QUALIFIED names used in PAKISTAN_ROADMAP
+// so identical area names across cities (Satellite Town, DHA…) never collide.
+const AREA_CITY = {
+  // Rawalpindi
+  'Satellite Town (Rawalpindi)': 'Rawalpindi', 'Saddar (Rawalpindi)': 'Rawalpindi',
+  'Bahria Town (Rawalpindi)': 'Rawalpindi', 'Chaklala Scheme 3': 'Rawalpindi', 'Committee Chowk': 'Rawalpindi',
+  // Islamabad
+  'F-7 Markaz': 'Islamabad', 'F-8 Markaz': 'Islamabad', 'F-10 Markaz': 'Islamabad',
+  'G-9 (Islamabad)': 'Islamabad', 'G-11 (Islamabad)': 'Islamabad', 'Blue Area': 'Islamabad', 'I-8 (Islamabad)': 'Islamabad',
+  // Faisalabad
+  'D Ground': 'Faisalabad', 'Peoples Colony (Faisalabad)': 'Faisalabad', 'Madina Town': 'Faisalabad', 'Susan Road': 'Faisalabad',
+  // Multan
+  'Cantt (Multan)': 'Multan', 'Gulgasht Colony': 'Multan', 'Bosan Road': 'Multan', 'Shah Rukn-e-Alam': 'Multan',
+  // Gujranwala / Sialkot
+  'Model Town (Gujranwala)': 'Gujranwala', 'Satellite Town (Gujranwala)': 'Gujranwala',
+  'Cantt (Sialkot)': 'Sialkot', 'Kashmir Road (Sialkot)': 'Sialkot',
+  // Karachi
+  'Gulshan-e-Iqbal': 'Karachi', 'North Nazimabad': 'Karachi', 'DHA (Karachi)': 'Karachi',
+  'Gulistan-e-Johar': 'Karachi', 'Saddar (Karachi)': 'Karachi', 'Clifton (Karachi)': 'Karachi', 'Nazimabad': 'Karachi',
+  // Hyderabad / Peshawar
+  'Latifabad': 'Hyderabad', 'Qasimabad': 'Hyderabad',
+  'University Town (Peshawar)': 'Peshawar', 'Hayatabad': 'Peshawar', 'Saddar (Peshawar)': 'Peshawar',
+};
+
 export function geographyForQueueEntry(entry) {
-  const city = regionForQueueEntry(entry);
+  const mappedCity = AREA_CITY[entry];
+  const city = mappedCity || regionForQueueEntry(entry);
   const geo = CITY_GEOGRAPHY[city] || { province: 'Punjab (confirm)', division: city };
+  const isArea = Boolean(mappedCity) || city !== entry;
   return {
     country: 'Pakistan',
     province: geo.province,
     division: geo.division,
     city,
-    area: city === entry ? '(city-wide — areas researched when the cycle reaches it)' : entry,
+    area: isArea ? entry : '(city-wide — areas researched when the cycle reaches it)',
   };
 }
+
+// Comprehensive Pakistan-wide execution roadmap, prioritized by probability
+// of generating Exness IB clients (affluent/education-dense areas + large
+// student populations first). Loaded on demand (institutes.js
+// 'load_pakistan_roadmap'), MERGED into the founder's queue so nothing they
+// added is lost. Lahore areas first (already the active cycle), then the
+// highest-potential cities and their key areas, then remaining cities.
+export const PAKISTAN_ROADMAP = [
+  // Lahore (Punjab) — biggest market, education-dense
+  'Johar Town', 'Gulberg', 'Model Town', 'DHA', 'Township', 'Iqbal Town', 'Wapda Town',
+  'Bahria Town (Lahore)', 'Faisal Town', 'Garden Town', 'Allama Iqbal Town', 'Cantt (Lahore)',
+  // Karachi (Sindh) — largest city
+  'Gulshan-e-Iqbal', 'North Nazimabad', 'DHA (Karachi)', 'Gulistan-e-Johar', 'Saddar (Karachi)', 'Clifton (Karachi)', 'Nazimabad',
+  // Rawalpindi + Islamabad (twin cities, affluent + universities)
+  'Satellite Town (Rawalpindi)', 'Bahria Town (Rawalpindi)', 'Saddar (Rawalpindi)', 'Chaklala Scheme 3',
+  'F-7 Markaz', 'F-8 Markaz', 'F-10 Markaz', 'G-9 (Islamabad)', 'Blue Area', 'I-8 (Islamabad)',
+  // Faisalabad (industrial, large)
+  'D Ground', 'Peoples Colony (Faisalabad)', 'Madina Town', 'Susan Road',
+  // Multan (south Punjab hub)
+  'Cantt (Multan)', 'Gulgasht Colony', 'Bosan Road', 'Shah Rukn-e-Alam',
+  // Gujranwala + Sialkot (industrial belt)
+  'Model Town (Gujranwala)', 'Satellite Town (Gujranwala)', 'Cantt (Sialkot)', 'Kashmir Road (Sialkot)',
+  // Peshawar (KP hub) + Hazara/Mardan
+  'University Town (Peshawar)', 'Hayatabad', 'Saddar (Peshawar)', 'Abbottabad', 'Mardan',
+  // Remaining division hubs (city-level, drill into areas on arrival)
+  'Sargodha', 'Bahawalpur', 'Sahiwal',
+  // Sindh secondary + Balochistan
+  'Latifabad', 'Qasimabad', 'Quetta',
+];
 
 // The queue window [offset, offset+count) as roadmap rows, each with its
 // projected 15-day window (start_date + index*cycleDays — same arithmetic

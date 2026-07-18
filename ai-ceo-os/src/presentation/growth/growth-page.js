@@ -204,6 +204,7 @@ export async function initGrowthPage() {
             const { meta, free } = parseContentMeta(c.notes);
             const detail = [meta.hook && `Hook: ${meta.hook}`, meta.kw && `Keyword: ${meta.kw}`, meta.cta && `CTA: ${meta.cta}`, free].filter(Boolean).join(' · ');
             const next = nextContentStatus(status);
+            const prev = prevContentStatus(status);
             // Manual priority (meta.prio) overrides the auto stage-impact badge.
             const prio = meta.prio || '';
             return `
@@ -223,6 +224,7 @@ export async function initGrowthPage() {
                 ${meta.lang ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.lang)}</span>` : ''}
                 ${meta.country ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.country)}</span>` : ''}
                 ${meta.platform ? `<span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(meta.platform)}</span>` : ''}
+                ${prev ? `<button class="ceo-btn ceo-btn-secondary" style="font-size: 0.75em; padding: 2px 8px;" data-undo="${c.id}" data-to="${prev}" title="Undo — move back to ${prev} (no data lost)">↩ ${prev}</button>` : ''}
                 ${next ? `<button class="ceo-btn ceo-btn-secondary" style="font-size: 0.75em; padding: 2px 8px;" data-move="${c.id}" data-to="${next}" ${next === 'published' ? 'title="Repurposing chain: GEO article ≤48h + 3–5 clips + distribution — one effort, six surfaces"' : ''}>→ ${next}</button>` : ''}
                 <select class="ceo-input" data-content-prio="${c.id}" style="font-size: 0.72em; padding: 1px 4px; max-width: 6.5em;" title="Manual priority">
                   <option value="" ${!prio ? 'selected' : ''}>Priority…</option>
@@ -247,6 +249,21 @@ export async function initGrowthPage() {
           await load();
         } catch (err) {
           showToast('Move fail: ' + err.message, 'critical');
+          b.disabled = false;
+        }
+      })
+    );
+    // Undo (Task 2) — move a card back one stage. Same move action, previous
+    // status; no data is lost (only content_library.status changes).
+    el.querySelectorAll('[data-undo]').forEach((b) =>
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try {
+          await postJson('/api/ceo/growth', { action: 'move', id: b.getAttribute('data-undo'), status: b.getAttribute('data-to') });
+          showToast(`Undone — moved back to ${b.getAttribute('data-to')}.`, 'success');
+          await load();
+        } catch (err) {
+          showToast('Undo fail: ' + err.message, 'critical');
           b.disabled = false;
         }
       })
@@ -332,6 +349,14 @@ export async function initGrowthPage() {
     return next === 'retired' ? null : next;
   }
 
+  // Previous stage for Undo (Task 2): evergreen→published→production→idea.
+  // Idea has no previous; 'retired' isn't a board column so it's never an arg.
+  function prevContentStatus(status) {
+    const order = ['idea', 'production', 'published', 'evergreen'];
+    const i = order.indexOf(status);
+    return i > 0 ? order[i - 1] : null;
+  }
+
   function renderAddIdeaForm() {
     // Datalists suggest the locked seed tokens but values stay free text —
     // if founder-approved research adds a market/language/platform later,
@@ -364,9 +389,10 @@ export async function initGrowthPage() {
         <input class="ceo-input" id="gr-cta" placeholder="CTA (free course, never deposit)" maxlength="80" style="max-width: 16em;" />
         <input class="ceo-input" id="gr-note" placeholder="Founder note (optional)" maxlength="200" style="flex: 1; min-width: 10em;" />
         <button class="ceo-btn ceo-btn-primary" id="gr-add-idea-btn">Add topic</button>
+        <button class="ceo-btn ceo-btn-secondary" id="gr-seed-ideas-btn" title="Add a curated 300+ idea bank into the Idea column. Only new titles are added — your own ideas are never touched or duplicated.">Load idea bank (300+)</button>
       </div>
       <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-2);"
-         title="Quality rule: a topic needs a real demand signal (search/chatbot logs) — no speculative topics. Schedule comes from day-types (production/publish), not per-card dates; per-item analytics is Future — track via published URL + weekly KPI entry.">Demand signal ke bina topic na dalen — ⓘ</p>`;
+         title="Quality rule: a topic needs a real demand signal (search/chatbot logs) — no speculative topics. Schedule comes from day-types (production/publish), not per-card dates; per-item analytics is Future — track via published URL + weekly KPI entry.">Demand signal ke bina topic na dalen — ⓘ · "Load idea bank" adds 300+ curated ideas without touching your own.</p>`;
   }
 
   function wireAddIdea() {
@@ -392,6 +418,21 @@ export async function initGrowthPage() {
         await load();
       } catch (err) {
         showToast('Add fail: ' + err.message, 'critical');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Load idea bank (Task 1) — bulk-adds 300+ curated ideas, dedup on server.
+    document.getElementById('gr-seed-ideas-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('gr-seed-ideas-btn');
+      btn.disabled = true;
+      try {
+        const res = await postJson('/api/ceo/growth', { action: 'seed_ideas' });
+        showToast(res.added > 0 ? `${res.added} new ideas added to the pipeline.` : (res.message || 'Idea bank already loaded.'), 'success');
+        await load();
+      } catch (err) {
+        showToast('Idea bank fail: ' + err.message, 'critical');
       } finally {
         btn.disabled = false;
       }
@@ -522,7 +563,7 @@ export async function initGrowthPage() {
               <td><input class="ceo-input" type="date" data-inst-followup="${i.id}" value="${esc(i.next_follow_up || '')}" style="min-width: 9em;" /></td>
               <td><input class="ceo-input" type="date" data-inst-batchend="${i.id}" value="${esc(i.batch_end_date || '')}" style="min-width: 9em;" /></td>
               <td><input class="ceo-input" type="number" min="0" data-inst-students="${i.id}" value="${i.students_registered ?? ''}" style="max-width: 6em;" /></td>
-              <td><button class="ceo-btn ceo-btn-secondary" data-inst-archive="${i.id}" data-inst-label="${esc(i.name)}" title="Archive (soft-delete) this institute">🗑</button></td>
+              <td><button class="ceo-btn ceo-btn-destructive" data-inst-delete="${i.id}" data-inst-label="${esc(i.name)}" title="Delete this institute permanently">Delete</button></td>
             </tr>`).join('')}
           </tbody></table></div>`;
 
@@ -533,6 +574,7 @@ export async function initGrowthPage() {
         <input class="ceo-input" id="gr-inst-area" placeholder="Area" value="${esc(a.current || '')}" style="max-width: 10em;" />
         <input class="ceo-input" id="gr-inst-phone" placeholder="Contact (optional)" style="max-width: 10em;" />
         <button class="ceo-btn ceo-btn-primary" id="gr-inst-add">Add institute</button>
+        <button class="ceo-btn ceo-btn-secondary" id="gr-load-roadmap" title="Merge the full Pakistan-wide area/city roadmap (prioritized by IB potential) into your execution order. Your existing areas and their order are kept — only new areas are appended.">Load full Pakistan roadmap</button>
       </div>`;
 
     // Editable execution order (Refinement Patch 4) — the founder's own
@@ -622,6 +664,17 @@ export async function initGrowthPage() {
         e.target.disabled = false;
       }
     });
+    el.querySelector('#gr-load-roadmap')?.addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      try {
+        const res = await postJson('/api/ceo/institutes', { action: 'load_pakistan_roadmap' });
+        showToast(res.added > 0 ? `${res.added} areas/cities added — ${res.total} total in the roadmap.` : 'Roadmap already loaded — no new areas.', 'success');
+        await load();
+      } catch (err) {
+        showToast('Roadmap load fail: ' + err.message, 'critical');
+        e.target.disabled = false;
+      }
+    });
     const patch = (id, fields, msg) =>
       postJson('/api/ceo/institutes', { action: 'update', id, ...fields })
         .then(() => showToast(msg, 'success'))
@@ -652,21 +705,21 @@ export async function initGrowthPage() {
     el.querySelectorAll('[data-inst-students]').forEach((inp) =>
       inp.addEventListener('change', () => patch(inp.getAttribute('data-inst-students'), { students_registered: inp.value }, 'Student count saved.'))
     );
-    el.querySelectorAll('[data-inst-archive]').forEach((btn) =>
+    el.querySelectorAll('[data-inst-delete]').forEach((btn) =>
       btn.addEventListener('click', async () => {
         const ok = await confirmDialog({
-          title: 'Archive this institute?',
-          message: `"${btn.getAttribute('data-inst-label')}" will be removed from the working pipeline. The record is kept (never hard-deleted) so a past contact stays on file, but it no longer appears here or in follow-ups.`,
-          confirmLabel: 'Archive',
+          title: 'Delete this institute permanently?',
+          message: `"${btn.getAttribute('data-inst-label')}" will be permanently removed. This cannot be undone.`,
+          confirmLabel: 'Delete permanently',
           destructive: true,
         });
         if (!ok) return;
         try {
-          await postJson('/api/ceo/institutes', { action: 'archive', id: btn.getAttribute('data-inst-archive') });
-          showToast('Institute archived.', 'success');
+          await postJson('/api/ceo/institutes', { action: 'delete', id: btn.getAttribute('data-inst-delete') });
+          showToast('Institute deleted.', 'success');
           await load();
         } catch (err) {
-          showToast('Archive fail: ' + err.message, 'critical');
+          showToast('Delete fail: ' + err.message, 'critical');
         }
       })
     );
