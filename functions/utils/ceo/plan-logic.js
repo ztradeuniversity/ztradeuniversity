@@ -677,6 +677,10 @@ const CITY_GEOGRAPHY = {
 // regionForQueueEntry). Keys are the QUALIFIED names used in PAKISTAN_ROADMAP
 // so identical area names across cities (Satellite Town, DHA…) never collide.
 const AREA_CITY = {
+  // Lahore (qualified-name entries in PAKISTAN_ROADMAP not covered by
+  // physical-logic.js's LAHORE_AREAS bare-name set)
+  'Bahria Town (Lahore)': 'Lahore', 'Faisal Town': 'Lahore', 'Garden Town': 'Lahore',
+  'Allama Iqbal Town': 'Lahore', 'Cantt (Lahore)': 'Lahore',
   // Rawalpindi
   'Satellite Town (Rawalpindi)': 'Rawalpindi', 'Saddar (Rawalpindi)': 'Rawalpindi',
   'Bahria Town (Rawalpindi)': 'Rawalpindi', 'Chaklala Scheme 3': 'Rawalpindi', 'Committee Chowk': 'Rawalpindi',
