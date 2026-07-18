@@ -151,11 +151,17 @@ export async function onRequestPost({ request, env }) {
     // plan.start_date (plan-logic.js) and the area cycle from
     // physical.start_date, so resetting both anchors regenerates the entire
     // future with zero row writes; old open items are closed out honestly as
-    // skipped (never deleted — no-hard-deletes rule).
+    // skipped (never deleted — no-hard-deletes rule). growth.reset_date is
+    // the same anchor pattern for Growth Analytics (functions/api/ceo/
+    // analytics.js): it doesn't delete growth_daily/growth_signal history,
+    // it just moves the floor those reads start from, so trends,
+    // observation patterns, and the recommendation queue start from zero on
+    // the new plan while old rows stay on record (no-hard-deletes rule).
     if (body.action === 'reset_plan') {
       const today = new Date().toISOString().slice(0, 10);
       await upsertSetting(db, 'plan.start_date', today);
       await upsertSetting(db, 'physical.start_date', today);
+      await upsertSetting(db, 'growth.reset_date', today);
       await db.update(
         'daily_activities',
         `owner_user_id=eq.${uid}&status=eq.pending&activity_date=lt.${today}`,

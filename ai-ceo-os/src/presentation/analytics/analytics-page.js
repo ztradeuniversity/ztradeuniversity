@@ -48,7 +48,7 @@ const CAT_LABEL = { do_more: 'Do more', stop: 'Stop', test: 'Test next', recurri
 function renderRecommendations(recs, accepted) {
   const el = document.getElementById('an-recommendations');
   if ((!recs || recs.length === 0) && (!accepted || accepted.length === 0)) {
-    el.innerHTML = '<div class="ceo-empty-state"><p>No recommendations yet — log a few days of numbers and observations, and the engine will surface what to do more of, stop, and test.</p></div>';
+    el.innerHTML = '<div class="ceo-empty-state"><p>No analytics available yet. Start executing your new plan to generate insights.</p></div>';
     return;
   }
   const card = (r, isAccepted) => `

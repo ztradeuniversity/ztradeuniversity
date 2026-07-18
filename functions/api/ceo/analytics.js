@@ -28,11 +28,27 @@ export async function onRequestGet({ request, env }) {
   const monthStart = today.slice(0, 8) + '01';
   const since30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   try {
+    // Honor the founder's most recent Plan Reset (activities.js action
+    // 'reset_plan' upserts growth.reset_date). Nothing is deleted — the
+    // floor these reads start from just moves forward, so trends,
+    // observation patterns, and the recommendation queue read only rows
+    // from the new plan while old growth_daily/growth_signal rows stay on
+    // record (no-hard-deletes rule).
+    const resetRow = await db.select('settings', `select=value&scope=eq.global&key=eq.growth.reset_date`);
+    const resetDate = resetRow[0]?.value || null;
+    const dailyFloor = resetDate && resetDate > since30 ? resetDate : since30;
+    // Pareto/funnel (do-more, remove, leak recs) are sourced from this
+    // month's daily_activities — same reset floor applies so a leak or a
+    // top activity from before the reset never leaks into the new cycle's
+    // recommendations. The separate /api/ceo/intelligence Monthly Review
+    // read-only block is untouched — it stays calendar-month scoped by design.
+    const activityFloor = resetDate && resetDate > monthStart ? resetDate : monthStart;
+
     const [dailyRows, signalRows, todayRow, monthActivities, clients] = await Promise.all([
-      db.select('growth_daily', `select=entry_date,metrics,wins,problems,observation&owner_user_id=eq.${uid}&entry_date=gte.${since30}&order=entry_date.desc`),
-      db.select('growth_signal', `select=rec_key,status,remind_on&owner_user_id=eq.${uid}`),
+      db.select('growth_daily', `select=entry_date,metrics,wins,problems,observation&owner_user_id=eq.${uid}&entry_date=gte.${dailyFloor}&order=entry_date.desc`),
+      db.select('growth_signal', `select=rec_key,status,remind_on&owner_user_id=eq.${uid}${resetDate ? `&updated_at=gte.${resetDate}` : ''}`),
       db.select('growth_daily', `select=*&owner_user_id=eq.${uid}&entry_date=eq.${today}`),
-      db.select('daily_activities', `select=activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${monthStart}&limit=1000`),
+      db.select('daily_activities', `select=activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${activityFloor}&limit=1000`),
       db.select('ib_clients', `select=stage&owner_user_id=eq.${uid}&limit=2000`),
     ]);
 
