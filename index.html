@@ -365,7 +365,7 @@
     /* ── RESPONSIVE ────────────────────────────────────────────── */
     @media (max-width: 940px) {
       .cards-grid { grid-template-columns: repeat(2, 1fr); max-width: 640px; }
-      .cards-grid .fcard:last-child { grid-column: 1 / -1; max-width: 380px; margin: 0 auto; width: 100%; }
+      .cards-grid .card-slot:last-child { grid-column: 1 / -1; max-width: 380px; margin: 0 auto; width: 100%; }
       .fcard-feats { gap: 12px; }
       .feat span { font-size: 11.5px; }
     }
@@ -397,7 +397,7 @@
     }
     @media (max-width: 600px) {
       .cards-grid { grid-template-columns: 1fr; max-width: 400px; }
-      .cards-grid .fcard:last-child { grid-column: auto; max-width: none; }
+      .cards-grid .card-slot:last-child { grid-column: auto; max-width: none; }
       .container { padding: 0 18px; }
     }
     @media (max-width: 380px) {
@@ -482,6 +482,65 @@
       .ib-primary, .ib-secondary { justify-content: center; }
     }
 
+    /* ── CARD BADGES (Free / Premium) — float above each feature card ── */
+    .card-slot { position: relative; display: flex; }
+    .card-slot > .fcard { width: 100%; }
+    .card-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      z-index: 4; display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 100px; white-space: nowrap;
+      font-family: 'Poppins','Inter',sans-serif;
+      font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+    }
+    .card-badge svg { width: 12px; height: 12px; }
+    .card-badge.is-free {
+      color: #fff; background: linear-gradient(135deg, #16a34a 0%, #12854e 100%);
+      border: 1px solid rgba(22,163,74,0.55); box-shadow: 0 6px 16px rgba(22,163,74,0.32);
+    }
+    .card-badge.is-premium {
+      color: var(--orange); background: linear-gradient(135deg, #1e2a44 0%, #0F172A 100%);
+      border: 1px solid rgba(247,147,26,0.45); box-shadow: 0 6px 16px rgba(15,23,42,0.30);
+    }
+
+    /* ── JOURNAL PROMO (premium feature card, UI only) ── */
+    .journal-promo {
+      max-width: 720px; margin: 22px auto 0; position: relative; overflow: hidden;
+      display: flex; align-items: center; gap: 22px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 26px 28px;
+      transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s, border-color .26s;
+    }
+    .journal-promo::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+    }
+    .journal-promo:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.4); }
+    .journal-ic {
+      width: 64px; height: 64px; border-radius: 18px; flex-shrink: 0;
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      display: flex; align-items: center; justify-content: center; color: var(--orange);
+    }
+    .journal-ic svg { width: 32px; height: 32px; }
+    .journal-body { text-align: left; }
+    .jp-badge {
+      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 11px;
+      padding: 5px 12px; border-radius: 100px;
+      font-family: 'Poppins','Inter',sans-serif; font-size: 10.5px; font-weight: 800;
+      letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--orange); background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.3);
+    }
+    .jp-badge svg { width: 12px; height: 12px; }
+    .journal-body h3 {
+      font-family: 'Poppins','Inter',sans-serif; font-size: 20px; font-weight: 700;
+      color: var(--heading); letter-spacing: -.3px; margin-bottom: 7px;
+    }
+    .journal-body p { font-size: 14.5px; color: var(--muted); max-width: 460px; }
+    @media (max-width: 600px) {
+      .journal-promo { flex-direction: column; text-align: center; gap: 16px; padding: 24px 20px; }
+      .journal-body { text-align: center; }
+      .journal-body p { margin: 0 auto; }
+    }
+
     /* accessibility focus */
     a:focus-visible, button:focus-visible, input:focus-visible {
       outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px;
@@ -512,7 +571,7 @@
         <span></span><span></span><span></span>
       </button>
 
-      <a href="index.html" class="brand" aria-label="Z Trade University home">
+      <a href="index.html" class="brand notranslate" translate="no" aria-label="Z Trade University home">
         <img src="assets/ztu-logo.png" alt="Z Trade University" />
         <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
       </a>
@@ -534,7 +593,7 @@
   <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-panel">
       <div class="mm-head">
-        <a href="index.html" class="brand">
+        <a href="index.html" class="brand notranslate" translate="no">
           <img src="assets/ztu-logo.png" alt="Z Trade University" style="height:34px" />
           <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
         </a>
@@ -631,8 +690,8 @@
         <!-- QUICK ACTIONS -->
         <div class="quick-actions">
           <a class="qa" href="articles.html">
-            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
-            <span class="qa-label">Read Articles</span>
+            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span>
+            <span class="qa-label">Free Classes</span>
             <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
           <a class="qa" href="signal-history.html">
@@ -646,6 +705,18 @@
             <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
         </div>
+
+        <!-- TRADING JOURNAL PROMOTION (UI only) -->
+        <div class="journal-promo">
+          <div class="journal-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H18"/><path d="M9 7h5M9 11h5"/></svg>
+          </div>
+          <div class="journal-body">
+            <span class="jp-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16.5 13.5 18.5 21 12 16.5 5.5 21 7.5 13.5 2 9 9 9 12 2" fill="currentColor" stroke="none"/></svg>Premium</span>
+            <h3>Improve Your Trading with Our Journal</h3>
+            <p>Submit your trade history and receive mentor-guided feedback to identify weaknesses and continuously improve your trading performance.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -656,55 +727,64 @@
       <div class="cards-grid">
 
         <!-- 1 · TRADING TOOLS -->
-        <article class="fcard">
-          <div class="fcard-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>
-          </div>
-          <h3>Trading Tools</h3>
-          <a class="fcard-btn" href="trading-tools.html">
-            Explore (Free)
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <div class="fcard-feats">
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Trade Audit</span></div>
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span>Self Assessment</span></div>
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span>General</span></div>
-          </div>
-        </article>
+        <div class="card-slot">
+          <span class="card-badge is-free"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free</span>
+          <article class="fcard">
+            <div class="fcard-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>
+            </div>
+            <h3>Trading Tools</h3>
+            <a class="fcard-btn" href="trading-tools.html">
+              Explore (Free)
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <div class="fcard-feats">
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Trade Audit</span></div>
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span>Self Assessment</span></div>
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 14l2 2 4-4"/></svg></span><span>Trade Assessment</span></div>
+            </div>
+          </article>
+        </div>
 
         <!-- 2 · MT5 BOT -->
-        <article class="fcard">
-          <div class="fcard-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg>
-          </div>
-          <h3>MT5 Bot</h3>
-          <a class="fcard-btn" href="license-request.html">
-            Submit Your Request
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <div class="fcard-feats">
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" stroke="none"/></svg></span><span>Automated</span></div>
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg></span><span>Risk Free</span></div>
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>24/7</span></div>
-          </div>
-        </article>
+        <div class="card-slot">
+          <span class="card-badge is-premium notranslate" translate="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Premium</span>
+          <article class="fcard">
+            <div class="fcard-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg>
+            </div>
+            <h3>MT5 Bot</h3>
+            <a class="fcard-btn" href="license-request.html">
+              Submit Your Request
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <div class="fcard-feats">
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" stroke="none"/></svg></span><span>Automated</span></div>
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg></span><span>Risk Free</span></div>
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>24/7</span></div>
+            </div>
+          </article>
+        </div>
 
         <!-- 3 · LIBRARY -->
-        <article class="fcard">
-          <div class="fcard-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg>
-          </div>
-          <h3>Library</h3>
-          <a class="fcard-btn" href="library.html">
-            Get Library Access
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <div class="fcard-feats">
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span><span>Videos</span></div>
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span><span>Audios</span></div>
-            <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Books</span></div>
-          </div>
-        </article>
+        <div class="card-slot">
+          <span class="card-badge is-premium notranslate" translate="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Premium</span>
+          <article class="fcard">
+            <div class="fcard-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg>
+            </div>
+            <h3>Library</h3>
+            <a class="fcard-btn" href="library.html">
+              Get Library Access
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <div class="fcard-feats">
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span><span>Videos</span></div>
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span><span>Audios</span></div>
+              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Books</span></div>
+            </div>
+          </article>
+        </div>
 
       </div>
     </div>
@@ -802,6 +882,7 @@
     document.getElementById('mobileMenu').addEventListener('click', function (e) {
       if (e.target === this) toggleMenu();
     });
+
 
     /* ── Chat box → existing AI assistant (prefills + auto-sends) ── */
     function goChat(e) {
@@ -1071,5 +1152,8 @@
       ) { e.preventDefault(); }
     });
   </script>
+
+  <!-- ── SITE-WIDE LANGUAGE SYSTEM (shared, injects the premium selector) ── -->
+  <script src="/assets/ztu-lang.js" defer></script>
 </body>
 </html>
