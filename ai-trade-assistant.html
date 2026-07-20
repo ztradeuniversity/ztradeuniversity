@@ -186,6 +186,17 @@
   .ax-banner.verified .ax-bn-btn{ background:var(--green); box-shadow:0 6px 14px rgba(22,163,74,.30); }
   .ax-bn-btn:hover{ transform:translateY(-1px); filter:brightness(1.04); }
   .ax-bn-btn svg{ width:14px; height:14px; }
+  /* Verification Banner task — compact single-line variant (verified state only).
+     Scoped to .compact so the free-user banner keeps its full call-to-action. */
+  .ax-banner.compact{ gap:8px; padding:7px 12px; margin:12px 0 4px; border-radius:100px; width:fit-content; max-width:100%; }
+  .ax-banner.compact .ax-bn-ic{ width:22px; height:22px; border-radius:50%; }
+  .ax-banner.compact .ax-bn-txt{ flex:0 1 auto; display:flex; align-items:baseline; gap:7px; min-width:0; }
+  .ax-banner.compact .ax-bn-txt b{ display:inline; font-size:13px; font-weight:700; }
+  .ax-banner.compact .ax-bn-txt span{
+    display:inline; font-size:12px; margin-top:0; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .ax-banner.compact .ax-bn-txt span::before{ content:'·'; margin-right:7px; opacity:.55; }
 
   /* ════════ CHAT MESSAGES ════════ */
   .chat-msgs{
@@ -481,6 +492,71 @@
     .gallery-grid{ grid-template-columns:1fr; }
     .msg-body{ max-width:90%; }
   }
+
+  /* ════════ MOBILE POLISH (Mobile Responsive Polish task) ════════
+     Additive block, appended after the existing responsive rules so nothing
+     above is altered. Every rule here fixes a defect measured on a real
+     375px viewport — no restyling for its own sake. */
+
+  /* LANGUAGE SELECTOR VISIBILITY: this <select> is authoritative for the reply
+     language (see getUiLang) but rendered as borderless 11.5px grey text 16px
+     tall — invisible as a control and far below the 44px touch-target minimum.
+     Given a real pill affordance and a tappable height. */
+  .voice-lang{
+    border:1px solid var(--border); background:var(--surface);
+    border-radius:100px; padding:6px 10px; min-height:34px;
+    font-size:12px; color:var(--text); font-weight:600;
+  }
+  .voice-lang:hover{ border-color:var(--orange); }
+  .voice-lang-wrap{ gap:6px; }
+
+  /* SPEAK TOGGLE: measured 14px tall — unusable by touch. */
+  .tts-toggle{ min-height:34px; padding:6px 10px; border-radius:100px; }
+  .tts-toggle:hover{ background:var(--orange-soft); }
+
+  /* CHAT INPUT + FOOTER SPACING: on notched phones the composer sat under the
+     home indicator. Respect the safe area, and let the meta row wrap cleanly
+     instead of squeezing the language selector against the disclaimer. */
+  @media (max-width:900px){
+    .input-bar{ padding-bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }
+    .in-meta{ gap:8px; row-gap:8px; padding:0 2px; }
+    .in-disc{ gap:8px; row-gap:6px; }
+    .in-disc-text{ flex-basis:100%; }
+  }
+
+  /* ACTION / QUICK-ACTION BUTTON SPACING: chips measured 34px and the
+     membership CTA 31px — both under the 36px comfortable-tap floor. */
+  @media (max-width:900px){
+    .chip{ min-height:36px; }
+    .chips-bar{ gap:8px; padding-bottom:6px; }
+    .ax-bn-btn{ min-height:40px; }
+    .msg-act{ width:34px; height:34px; }
+    .hist-del{ width:30px; height:30px; }
+  }
+
+  /* HEADER SPACING: 18px side padding on a 375px viewport left the brand and
+     the sign-in control crowded once the burger appeared. */
+  @media (max-width:560px){
+    header{ padding:0 12px; gap:8px; }
+    .ax-banner.compact{ margin:10px 0 4px; }
+  }
+
+  /* RESPONSE SPACING: long unbroken strings (URLs, symbols) in an answer were
+     the only remaining source of horizontal overflow inside a bubble. */
+  .msg-body{ overflow-wrap:anywhere; }
+  .msg-body pre, .msg-body table{ max-width:100%; overflow-x:auto; }
+
+  /* iOS SAFARI ZOOM-ON-FOCUS: any input/select/textarea under 16px makes iOS
+     zoom the whole page when it gains focus and leaves it zoomed — the chat
+     input was 15px and the language <select> 11.5px, so tapping either broke
+     the layout on every iPhone. 16px is the documented threshold. Placed last
+     so it wins over the .voice-lang / .chat-in base sizes above. */
+  @media (max-width:900px){
+    .chat-in{ font-size:16px; }
+    .voice-lang{ font-size:16px; padding:6px 12px; }
+    .tts-toggle{ font-size:13px; }
+  }
+
   a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{ outline:2px solid var(--orange); outline-offset:2px; }
   </style>
   <!-- SEO: Open Graph + Twitter + WebPage schema (auto-injected by KPOS/CMO) -->
@@ -954,19 +1030,17 @@
         </button>
       </div>
 
-      <!-- VERIFIED USER STATE -->
-      <div class="ax-banner verified" id="axBannerVerified" hidden>
+      <!-- VERIFIED USER STATE — Verification Banner task: compact single line.
+           The verified state is persistent chrome a member sees on every visit,
+           so it no longer needs the large icon tile, the two-line explanation or
+           the redundant "Access Active" button (the header already shows the
+           ZTU PREMIUM MEMBER pill). Same ids/classes so verify.js's show/hide
+           logic is untouched. -->
+      <div class="ax-banner verified compact" id="axBannerVerified" hidden>
         <span class="ax-bn-ic" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
         </span>
-        <span class="ax-bn-txt">
-          <b>✓ Successfully Verified</b>
-          <span>✓ Unlimited AI Access Active — enjoy unlimited AI assistance.</span>
-        </span>
-        <button class="ax-bn-btn" type="button" disabled style="cursor:default">
-          Access Active
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
-        </button>
+        <span class="ax-bn-txt"><b>Verified</b><span>Premium Active</span></span>
       </div>
 
     </div>

@@ -187,16 +187,16 @@ export async function diagnoseChatbotAnswer(env, { question, sourceLayer, source
 // into that source's existing routing block — toggling it off makes the real
 // production pipeline skip that source, exactly like its existing "not found"
 // fallthrough already does. This is the ONLY chatbot execution path — there is
-// no separate diagnostic engine. 'live' is gate-backed at 4 of its 5 producing
-// call sites; one narrow branch (an explicit short-status market-dump reply) is
-// intentionally left ungated because it's a branch of a mutually-exclusive
-// intent/depth reasoning chain, not an independent source call (see the inline
-// comment in ai-chat.js) — so a "Live disabled" test may occasionally still show
-// a live-sourced answer from that one branch. 'safe' is the terminal fallback
+// no separate diagnostic engine. Every source (including 'live') is now
+// gate-backed at EVERY producing call site — the last ungated short-status live
+// branch was closed, so a "Live disabled" test can no longer surface any
+// live-derived text. 'safe' is the terminal fallback
 // and has no "disable" concept (it's what happens when everything else is off).
-const GATE_NOTES = {
-  live: 'Gate-backed at 4 of 5 producing call sites in ai-chat.js; one short-status branch is a reasoning-chain branch, not an independent source call, and is intentionally left always-on.',
-};
+// Every source is now fully gate-backed at EVERY producing call site in
+// ai-chat.js — the previously-documented ungated short-status live branch was
+// closed by the Production Contract 2 change, so this note would now be false
+// information in the admin panel and has been removed.
+const GATE_NOTES = {};
 export function getTestableSources() {
   return SOURCE_STAGES
     .filter(s => s.layer !== 'safe')

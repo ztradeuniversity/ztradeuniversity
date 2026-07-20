@@ -1061,10 +1061,30 @@
         toast('At least one source must stay enabled — every visitor would silently get Safe Reply with nothing checked.', 'bad');
         return;
       }
+      // ERROR HANDLING task — the label next to each toggle now updates
+      // immediately from the click, so a successful save is reflected at once
+      // instead of waiting on a re-fetch. On failure the real server reason is
+      // shown (site-settings.js now reports it) and ONLY THEN is the panel
+      // re-read, so the checkbox snaps back to the truth. On success the panel
+      // is re-read too, but it already matches, so nothing appears to "revert".
+      const syncLabels = (cfgLike) => {
+        card.querySelectorAll('[data-routing-key]').forEach(x => {
+          const on = cfgLike[x.dataset.routingKey] !== false;
+          x.checked = on;
+          const span = x.parentElement && x.parentElement.querySelector('span');
+          if (span) span.textContent = on ? 'Enabled for all visitors' : 'Disabled for all visitors';
+        });
+      };
+      syncLabels(newCfg);
       toast('Updating production routing for all visitors…');
       const r = await apiPost(KB, 'routing-config', { config: newCfg }).catch(() => null);
-      toast(r && r.saved ? 'Production routing updated — live now' : (r && r.error) || 'Failed to save — check Error Center', r && r.saved ? 'ok' : 'bad');
-      loadRoutingConfig();
+      if (r && r.saved) {
+        syncLabels(r.config || newCfg);
+        toast('Production routing updated — live now', 'ok');
+      } else {
+        toast((r && r.error) || 'Could not reach the server — the routing config was not changed.', 'bad');
+        loadRoutingConfig();   // only on real failure: restore the persisted truth
+      }
     }));
   }
 

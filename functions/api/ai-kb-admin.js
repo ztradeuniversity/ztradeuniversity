@@ -42,7 +42,7 @@ import { requireAdminModule } from '../utils/admin-session.js';
 import { diagnoseChatbotAnswer, getTestableSources } from '../utils/chatbot-diagnostics.js';
 import { runHealthProbes } from '../utils/health-probes.js';
 import { buildErrorCenter } from '../utils/error-center.js';
-import { getSetting, setSetting } from '../utils/site-settings.js';
+import { getSetting, setSetting, lastSettingsError } from '../utils/site-settings.js';
 import { listArticles } from '../utils/article-store.js';
 import { learnEnabled, PROMOTE_AT } from '../utils/llm-learn.js';
 
@@ -523,8 +523,12 @@ export async function onRequest(context) {
       if (!Object.values(clean).some(Boolean)) {
         return json({ error: 'At least one source must stay enabled. Disabling every source would silently drop every real visitor to Safe Reply.' }, 400);
       }
+      // ERROR HANDLING task — report the REAL reason on failure (and echo the
+      // config that was actually persisted on success) so the admin panel never
+      // shows a bare "Failed to save — check Error Center" with nothing logged.
       const saved = await setSetting(env, 'chatbot_routing', clean);
-      return json({ saved: !!saved, config: clean });
+      if (!saved) return json({ saved: false, config: clean, error: lastSettingsError() || 'Could not persist the routing config.' }, 500);
+      return json({ saved: true, config: clean });
     }
     if (a === 'reject')       return json(await rejectToDraft(env, body.id, body.reviewer || 'admin', body.notes));
     if (a === 'retire')       return json(await retire(env, body.id));

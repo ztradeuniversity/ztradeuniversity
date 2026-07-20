@@ -42,7 +42,7 @@ export const L = {
   en: {
     ack: '',
     greet: "**Hello! I'm the ZTU AI Trading Assistant.** 👋\n\nI can help you with Gold & Bitcoin market context, trade assessment, risk & psychology, broker questions, and trading education — in your language.\n\nTry asking:\n- *What's the Gold market context right now?*\n- *Review my trade: entry, stop loss, take profit*\n- *Compare Exness vs IC Markets account types*\n- *Why do I keep losing?*",
-    disclaimer: '_⚠️ Educational information only — always trade using your own judgment and risk management._',
+    disclaimer: '_⚠ Educational only._',
     signalIntro: "I focus on **market education and context**, not live buy/sell signals.",
     signalBody: "For today's precise setups, entries, and signals, our team shares them here:",
     fallbackIntro: "I don't have that specific answer in our internal intelligence yet. Here are **trusted official sources** to check:",
@@ -51,7 +51,7 @@ export const L = {
   ur: {
     ack: '',
     greet: "**السلام علیکم! میں ZTU AI ٹریڈنگ اسسٹنٹ ہوں۔** 👋\n\nمیں آپ کی گولڈ اور بٹ کوائن مارکیٹ، ٹریڈ کے جائزے، رسک، نفسیات، بروکر سوالات اور ٹریڈنگ سیکھنے میں مدد کر سکتا ہوں — آپ کی زبان میں۔",
-    disclaimer: '_⚠️ صرف تعلیمی مقصد کے لیے — یہ مالی مشورہ نہیں ہے۔_',
+    disclaimer: '_⚠ صرف تعلیمی۔_',
     signalIntro: "میں **مارکیٹ کی تعلیم اور سیاق و سباق** پر توجہ دیتا ہوں، براہِ راست خرید/فروخت سگنل نہیں دیتا۔",
     signalBody: "آج کے درست سیٹ اپ اور سگنلز کے لیے ہماری ٹیم یہاں شیئر کرتی ہے:",
     fallbackIntro: "یہ مخصوص جواب فی الحال ہمارے اندرونی ڈیٹا میں نہیں ہے۔ یہ **معتبر سرکاری ذرائع** دیکھیں:",
@@ -60,7 +60,7 @@ export const L = {
   'ur-roman': {
     ack: '',
     greet: "**Assalam o Alaikum! Main ZTU AI Trading Assistant hoon.** 👋\n\nMain aap ki Gold aur Bitcoin market context, trade assessment, risk, psychology, broker sawalat aur trading seekhne mein madad kar sakta hoon — aap ki zaban mein.\n\nPoochhne ki koshish karein:\n- *Abhi Gold market ka context kya hai?*\n- *Mera trade review karein: entry, stop loss, take profit*\n- *Main baar baar kyun lose karta hoon?*",
-    disclaimer: '_⚠️ Sirf taleemi maqsad ke liye — yeh financial advice nahi hai._',
+    disclaimer: '_⚠ Sirf taleemi._',
     signalIntro: "Main **market ki taleem aur context** par focus karta hoon, direct buy/sell signal nahi deta.",
     signalBody: "Aaj ke exact setups aur signals ke liye hamari team yahan share karti hai:",
     fallbackIntro: "Yeh specific jawab filhal hamare internal data mein nahi hai. Yeh **trusted official sources** dekhein:",
@@ -69,7 +69,7 @@ export const L = {
   ar: {
     ack: '',
     greet: "**مرحباً! أنا مساعد ZTU AI للتداول.** 👋\n\nيمكنني مساعدتك في سياق سوق الذهب والبيتكوين، وتقييم الصفقات، وإدارة المخاطر والسيكولوجيا، وأسئلة الوسطاء، وتعليم التداول — بلغتك.",
-    disclaimer: '_⚠️ سياق تعليمي للسوق فقط — وليس نصيحة مالية._',
+    disclaimer: '_⚠ تعليمي فقط._',
     signalIntro: "أركز على **تعليم السوق وسياقه**، وليس إشارات بيع/شراء مباشرة.",
     signalBody: "للحصول على إعدادات ونقاط الدخول والإشارات الدقيقة لليوم، يشاركها فريقنا هنا:",
     fallbackIntro: "ليس لديّ هذه الإجابة المحددة في بياناتنا الداخلية بعد. إليك **مصادر رسمية موثوقة**:",
@@ -78,7 +78,7 @@ export const L = {
   id: {
     ack: '',
     greet: "**Halo! Saya ZTU AI Trading Assistant.** 👋\n\nSaya bisa membantu Anda dengan konteks pasar Emas & Bitcoin, penilaian trade, risiko & psikologi, pertanyaan broker, dan edukasi trading — dalam bahasa Anda.",
-    disclaimer: '_⚠️ Hanya konteks edukasi pasar — bukan nasihat finansial._',
+    disclaimer: '_⚠ Hanya edukasi._',
     signalIntro: "Saya fokus pada **edukasi dan konteks pasar**, bukan sinyal beli/jual langsung.",
     signalBody: "Untuk setup, entry, dan sinyal presisi hari ini, tim kami membagikannya di sini:",
     fallbackIntro: "Saya belum memiliki jawaban spesifik itu di data internal kami. Berikut **sumber resmi tepercaya**:",
@@ -87,7 +87,7 @@ export const L = {
   ms: {
     ack: '',
     greet: "**Salam! Saya ZTU AI Trading Assistant.** 👋\n\nSaya boleh membantu anda dengan konteks pasaran Emas & Bitcoin, penilaian dagangan, risiko & psikologi, soalan broker, dan pendidikan dagangan — dalam bahasa anda.",
-    disclaimer: '_⚠️ Konteks pendidikan pasaran sahaja — bukan nasihat kewangan._',
+    disclaimer: '_⚠ Pendidikan sahaja._',
     signalIntro: "Saya fokus pada **pendidikan dan konteks pasaran**, bukan isyarat beli/jual secara langsung.",
     signalBody: "Untuk setup, kemasukan, dan isyarat tepat hari ini, pasukan kami berkongsi di sini:",
     fallbackIntro: "Saya belum mempunyai jawapan khusus itu dalam data dalaman kami. Berikut **sumber rasmi yang dipercayai**:",
@@ -96,7 +96,7 @@ export const L = {
   vi: {
     ack: '',
     greet: "**Xin chào! Tôi là Trợ lý Giao dịch ZTU AI.** 👋\n\nTôi có thể giúp bạn về bối cảnh thị trường Vàng & Bitcoin, đánh giá giao dịch, rủi ro & tâm lý, câu hỏi về sàn môi giới, và giáo dục giao dịch — bằng ngôn ngữ của bạn.",
-    disclaimer: '_⚠️ Chỉ là bối cảnh giáo dục thị trường — không phải lời khuyên tài chính._',
+    disclaimer: '_⚠ Chỉ giáo dục._',
     signalIntro: "Tôi tập trung vào **giáo dục và bối cảnh thị trường**, không phải tín hiệu mua/bán trực tiếp.",
     signalBody: "Để có các thiết lập, điểm vào lệnh và tín hiệu chính xác hôm nay, đội ngũ của chúng tôi chia sẻ tại đây:",
     fallbackIntro: "Tôi chưa có câu trả lời cụ thể đó trong dữ liệu nội bộ. Đây là **các nguồn chính thức đáng tin cậy**:",
@@ -105,7 +105,7 @@ export const L = {
   bn: {
     ack: '',
     greet: "**হ্যালো! আমি ZTU AI ট্রেডিং অ্যাসিস্ট্যান্ট।** 👋\n\nআমি আপনাকে স্বর্ণ ও বিটকয়েন বাজারের প্রেক্ষাপট, ট্রেড মূল্যায়ন, ঝুঁকি ও মনোবিজ্ঞান, ব্রোকার সংক্রান্ত প্রশ্ন এবং ট্রেডিং শিক্ষায় সাহায্য করতে পারি — আপনার ভাষায়।",
-    disclaimer: '_⚠️ শুধুমাত্র শিক্ষামূলক বাজার প্রেক্ষাপট — আর্থিক পরামর্শ নয়।_',
+    disclaimer: '_⚠ শুধু শিক্ষামূলক।_',
     signalIntro: "আমি **বাজার শিক্ষা ও প্রেক্ষাপটে** মনোযোগ দিই, সরাসরি কেনা/বেচার সিগন্যাল নয়।",
     signalBody: "আজকের নির্ভুল সেটআপ ও সিগন্যালের জন্য আমাদের টিম এখানে শেয়ার করে:",
     fallbackIntro: "এই নির্দিষ্ট উত্তরটি এখনও আমাদের অভ্যন্তরীণ ডেটায় নেই। এখানে **বিশ্বস্ত অফিসিয়াল উৎস** দেখুন:",
@@ -114,7 +114,7 @@ export const L = {
   th: {
     ack: '',
     greet: "**สวัสดี! ฉันคือผู้ช่วยเทรด ZTU AI** 👋\n\nฉันช่วยคุณได้เรื่องบริบทตลาดทองคำและบิตคอยน์ การประเมินการเทรด ความเสี่ยงและจิตวิทยา คำถามเกี่ยวกับโบรกเกอร์ และการเรียนรู้การเทรด — ในภาษาของคุณ",
-    disclaimer: '_⚠️ เป็นบริบทเพื่อการศึกษาตลาดเท่านั้น — ไม่ใช่คำแนะนำทางการเงิน_',
+    disclaimer: '_⚠ เพื่อการศึกษาเท่านั้น_',
     signalIntro: "ฉันเน้น **การให้ความรู้และบริบทของตลาด** ไม่ใช่สัญญาณซื้อ/ขายโดยตรง",
     signalBody: "สำหรับเซ็ตอัพ จุดเข้า และสัญญาณที่แม่นยำของวันนี้ ทีมงานของเราแชร์ที่นี่:",
     fallbackIntro: "ฉันยังไม่มีคำตอบเฉพาะนั้นในข้อมูลภายในของเรา นี่คือ **แหล่งข้อมูลทางการที่เชื่อถือได้**:",

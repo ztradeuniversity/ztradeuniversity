@@ -28,10 +28,14 @@ import { vary } from './humanize.js';
 // 'offtopic' keeps its own dedicated redirect (knowledge-engine.buildOffTopic).
 export const CONVERSATIONAL_INTENTS = new Set(['greeting', 'smalltalk']);
 
+// Greeting Behaviour task: name what the assistant covers so a first-time
+// visitor knows what to ask, while staying short and human (Response Quality
+// task — no lecture, no trading education in a greeting).
+const TOPICS = 'You can ask me about **Gold**, **BTC**, **Forex**, trading psychology, risk management or market analysis.';
 const GREET = [
-  'Hello 👋 Welcome. How can I help you today?',
-  "Hi — it's good to see you. What would you like to work on today?",
-  'Hey! What shall we look at today — market context, a trade, or something you want to learn?',
+  `Hello 👋 How can I help you today?\n\n${TOPICS}`,
+  `Hi — good to see you. What would you like to work on?\n\n${TOPICS}`,
+  `Hey! What shall we look at today?\n\n${TOPICS}`,
 ];
 
 const THANKS = [
@@ -61,7 +65,12 @@ export function buildConversationalReply({ text, intent, lang = 'en', verified =
 
   // Signed-in recognition (Task 4): greet a verified member as a member, once,
   // on the conversation's opening turn — never on thanks/bye mid-conversation.
-  const wb = (verified && firstTurn) ? "Welcome back — you're signed in. " : '';
+  // Response Quality task: "Welcome back — you're signed in." stacked in front of
+  // an already-complete greeting produced three robotic sentences in a row
+  // ("Good morning! I hope you're having a great day. Welcome back — you're
+  // signed in. How can I help you with trading today?"). Shortened to a natural
+  // two-word acknowledgement; the header pill already states membership.
+  const wb = (verified && firstTurn) ? 'Welcome back. ' : '';
 
   // Salam → customary reply first (preserves the existing cultural behavior).
   if (/\b(salam|assalam|asalam|aslam|salaam|assalamu)\b/.test(s)) {
@@ -70,10 +79,14 @@ export function buildConversationalReply({ text, intent, lang = 'en', verified =
   if (/\b(thank|thanks|thankyou|thank u|thx|shukr|jazak|appreciate)\b/.test(s)) return vary(THANKS, s);
   if (/\b(bye|goodbye|good night|see you|see ya|take care|hafiz)\b/.test(s))    return vary(BYE, s);
   if (/\b(how are you|how r u|how are u|how'?s it going|hows it going|kaise|kya haal)\b/.test(s)) return vary(HOWRU, s);
-  if (/^good morning\b/.test(s))   return `Good morning! I hope you're having a great day. ${wb}How can I help you with trading today?`;
+  if (/^good morning\b/.test(s))   return `Good morning! ${wb}How can I help you with trading today?`;
   if (/^good afternoon\b/.test(s)) return `Good afternoon! ${wb}How can I help you with trading today?`;
   if (/^good evening\b/.test(s))   return `Good evening! ${wb}How can I help you with trading today?`;
   if (/\b(who are you|what can you do|how do you work|features|what are you)\b/.test(s)) return wb + CAPABILITIES;
 
-  return wb + vary(GREET, s);
+  // Greeting Behaviour task: a signed-in member's opening turn gets the exact
+  // "Hello 👋 Welcome back." shape rather than a welcome-back sentence bolted
+  // onto the front of a separate greeting.
+  if (wb) return `Hello 👋 Welcome back. How can I help you today?\n\n${TOPICS}`;
+  return vary(GREET, s);
 }

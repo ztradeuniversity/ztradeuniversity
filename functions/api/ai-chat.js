@@ -821,6 +821,33 @@ export async function onRequest(context) {
     guestSetCookie = await buildGuestCookie(env, used + 1);
   }
 
+  // ── GREETING TERMINAL — RUNS BEFORE ALL ROUTING (Greeting Behaviour task) ───
+  // ROOT CAUSE THIS FIXES: the conversational-reply layer further below is
+  // guarded by `!followup && CONVERSATIONAL_INTENTS.has(p10Intent)`. When the
+  // previous turn was about a trading concept, the continuation resolver
+  // classified a bare "hi" as a FOLLOW-UP of that topic, so the guard was false,
+  // greeting handling never ran, and the carried topic was answered from the
+  // Database instead — the reported production bug ("hi" → a mean-reversion
+  // lecture with a Database badge).
+  //
+  // The fix classifies the RAW last user message here, before any retrieval,
+  // routing or continuation logic can reinterpret it. A short, purely social
+  // message is answered socially and nothing else is consulted. Deliberately
+  // narrow: it only fires when classifyIntent (the existing classifier, not a
+  // new one) says greeting/smalltalk AND the message is short, so "thanks, how
+  // do I trade gold?" still reaches the knowledge pipeline exactly as before.
+  let _earlyGreeting = null;
+  try {
+    const _rawIntent = (classifyIntent(lastUserMsg) || {}).intent;
+    if (CONVERSATIONAL_INTENTS.has(_rawIntent) && String(lastUserMsg).trim().split(/\s+/).length <= 6) {
+      _earlyGreeting = buildConversationalReply({
+        text: lastUserMsg, intent: _rawIntent, lang,
+        verified: tier === 'unlimited',
+        firstTurn: messages.filter(m => m.role === 'user').length <= 1,
+      });
+    }
+  } catch { /* additive — the existing conversational layer below still answers */ }
+
   // ── KNOWLEDGE RETRIEVAL (in-process, Priority 1) ──────────────────────────
   let knowledgeEntries = [];
   if (cls.knowledgeTopic) {
@@ -880,8 +907,12 @@ export async function onRequest(context) {
   let p10Prefix      = '';
   let p10Depth       = 'STANDARD';
   let allowKnowledge = true;
-  let directAnswer    = null;
-  let directSource    = null;        // SOURCE BADGE: which layer set directAnswer ('live'/'calc'/'safe')
+  // GREETING TERMINAL: seeded here so every routing block below — all of which
+  // already guard on `!directAnswer` — is skipped for a purely social message.
+  // This is what makes greeting handling execute BEFORE routing rather than
+  // after it.
+  let directAnswer    = _earlyGreeting;
+  let directSource    = _earlyGreeting ? 'safe' : null;   // SOURCE BADGE: which layer set directAnswer ('live'/'calc'/'safe')
   // ADMIN DEBUG TRACE (reporting only — never read by any routing decision).
   // Populated at the existing OpenAI branch below so the Content Intelligence
   // Center can show "OpenAI called / cache hit / why OpenAI was skipped"
@@ -1029,7 +1060,9 @@ export async function onRequest(context) {
         // instrument phrasing ("what is EURUSD doing") that classifies as
         // 'fallback' — the Knowledge Graph must never answer a current-price
         // question with an educational concept masquerading as live data.
-        if (lang === 'en' && kConf.level !== 'LOW' && ctx.graph && !isLiveMarketQuery(aText)) {
+        // `!directAnswer` — the greeting terminal above already answered a purely
+        // social message; the Knowledge Graph must not be consulted for "hi".
+        if (lang === 'en' && !directAnswer && kConf.level !== 'LOW' && ctx.graph && !isLiveMarketQuery(aText)) {
           const m = await retrieveBest(env, aText, { lang, category: analysis.category });   // graph-backed when enabled, else KB_SEED; category narrows candidates at scale
           // Phase 11C.0B: only use a KB hit that passes relevance (no topic drift).
           if (m && m.confidence === 'HIGH' && enforceRelevance({ category: m.item.category, concepts: m.item.concepts, relevanceTags: m.item.relevanceTags }, rel)) {
@@ -1391,7 +1424,7 @@ export async function onRequest(context) {
       lead: p10Lead,
       body: compress(kbAnswer, p10Depth) + p10GuideAppend,
       engagement: p10Followups,
-      disclaimer: '_⚠️ Educational information only — always trade using your own judgment and risk management._',
+      disclaimer: '_⚠ Educational only._',
     }, { lang, intent: p10Intent, form: p10Form });
   } else {
     try {
@@ -1489,7 +1522,7 @@ export async function onRequest(context) {
           lead: p10Lead,
           body: `From the ZTU article **${_art.title}**:\n\n${_artBody}${_src}` + p10GuideAppend,
           engagement: p10Followups,
-          disclaimer: '_⚠️ Educational information only — always trade using your own judgment and risk management._',
+          disclaimer: '_⚠ Educational only._',
         }, { lang, intent: p10Intent, form: p10Form });
         answerSource    = 'database';
         answerArticleId = (_art.id != null) ? _art.id : answerArticleId;
@@ -1595,16 +1628,23 @@ export async function onRequest(context) {
       // PRODUCTION CONTRACT 1: the learned-draft cache is Database-backed, so it
       // is skipped entirely in OpenAI-only mode — the reply must come from a
       // real OpenAI generation, never from stored knowledge.
-      const cached = _openaiOnly ? null : await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
+      // SOURCE-ISOLATION BUGFIX (Manual Source Selection task): recallLearned
+      // reads stored ai_articles drafts and, on a hit, sets answerSource to
+      // 'database'. It was the ONE Database read with no ctx.database gate, so
+      // with Database disabled it could still answer AND show a "Database"
+      // badge — both reported symptoms ("Database can still answer after
+      // Database has been disabled", "source badges sometimes show the wrong
+      // source"). Now gated like every other Database call site.
+      const cached = (_openaiOnly || !ctx.database) ? null : await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
       if (cached && cached.content) {
         _openaiCacheHit = true;
-        answer = cached.content + '\n\n_⚠️ Educational information only — always trade using your own judgment and risk management._';
+        answer = cached.content + '\n\n_⚠ Educational only._';
         answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
         _openaiCacheHit = false;
         const gen = await generateEducationalAnswer(env, genText, lang, p10Form);
         if (gen) {
-          answer = gen + '\n\n_⚠️ Educational information only — always trade using your own judgment and risk management._';
+          answer = gen + '\n\n_⚠ Educational only._';
           answerSource = 'openai';                   // selected provider answered directly
           // STORE BEFORE RETURNING (await, not waitUntil) so the draft is committed by the
           // time the reply is sent — guarantees the very next identical question (even an
@@ -1641,7 +1681,10 @@ export async function onRequest(context) {
   // consulted. `_openaiUnavailable` also locks every post-answer layer below so
   // nothing appends to, trims, or rewrites this message. Unreachable in any
   // other selection combination.
-  if (_openaiOnly && answerSource !== 'openai') {
+  // `!_earlyGreeting` — the greeting terminal runs BEFORE routing, so a social
+  // message is already answered and is not subject to the source contract.
+  // Returning "OpenAI is unavailable" to someone who typed "hi" would be wrong.
+  if (_openaiOnly && !_earlyGreeting && answerSource !== 'openai') {
     _openaiUnavailable = true;
     answerSource = 'openai';   // OpenAI is the only routed source for this call
     answerConfidence = null;
@@ -1710,7 +1753,10 @@ export async function onRequest(context) {
   // graph (basic→advanced). English-only (Language-Lock safe); graceful when the
   // graph is inactive (suggestQuestions returns []). Never added to a confident answer.
   // CONTRACT 1: `!_openaiOnly` — suggestQuestions reads the Knowledge Graph.
-  if (!_openaiOnly && lang === 'en' && !chartAnalysis && !kbAnswer && !directAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
+  // SOURCE-ISOLATION BUGFIX: also gated on ctx.graph — this appends
+  // graph-derived questions to the reply, so with Knowledge Graph disabled it
+  // was another ungated graph read reaching the user's answer.
+  if (!_openaiOnly && ctx.graph && lang === 'en' && !chartAnalysis && !kbAnswer && !directAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
     try {
       const qs = await suggestQuestions(env, { lang, limit: 3, level: p10Level });
       if (qs.length) {
@@ -1856,10 +1902,17 @@ export async function onRequest(context) {
     // the footer stays on every substantive (informational) answer.
     // CONTRACT 1: `!_openaiOnly` — the contact footer is appended text that did
     // not come from OpenAI.
-    if (!_openaiOnly && typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)
+    // SHORT DISCLAIMER task — the long promo sentence is replaced by a compact
+    // "Telegram | WhatsApp" line that sits immediately under the short
+    // disclaimer. Same existing constants, same dedup guard, same exclusions.
+    // `!_earlyGreeting` — the footer is skipped for conversational intents, but
+    // p10Intent can be reclassified upstream (that reclassification is exactly
+    // what caused the greeting bug), so the greeting terminal's own decision is
+    // the reliable signal that this turn is social. A "hi" must never carry a
+    // contact-links footer.
+    if (!_openaiOnly && !_earlyGreeting && typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)
         && !CONVERSATIONAL_INTENTS.has(p10Intent)) {
-      answer = answer.trimEnd() +
-        `\n\n_For research-based learning, training, and trading guidance, reach us on [Telegram](${TELEGRAM}) or [WhatsApp](${WHATSAPP})._`;
+      answer = answer.trimEnd() + `\n\n[Telegram](${TELEGRAM}) | [WhatsApp](${WHATSAPP})`;
     }
   } catch { /* additive — never blocks the reply */ }
 

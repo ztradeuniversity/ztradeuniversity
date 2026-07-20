@@ -26,7 +26,11 @@ export function hasComposer() { return !!_composer; }
 // adjacent, so the prior "educational only" phrase match alone would miss it,
 // risking a duplicate. Backward compatible: every previously-matched pattern
 // still matches; only "own judgment and risk management" is newly added.
-const DISCLAIMER_RE = /(not financial advice|educational only|financial advice|own judgment and risk management|تعليمي|مالية|taleemi)/i;
+// SHORT DISCLAIMER task — the 9 localized disclaimers in response-engine.js were
+// shortened to 2–3 words. Every new short form is added here so the "exactly ONE
+// disclaimer, never stack" guarantee still holds; all previous patterns are kept
+// so older/cached bodies still dedupe correctly.
+const DISCLAIMER_RE = /(not financial advice|educational only|financial advice|own judgment and risk management|تعليمي|تعلیمی|مالية|taleemi|hanya edukasi|pendidikan sahaja|chỉ giáo dục|শুধু শিক্ষামূলক|เพื่อการศึกษาเท่านั้น)/i;
 const ENDS_INVITE   = /(\?|:)\s*$/;   // body already asks a question or opens a list
 
 function dedupe(s) {

@@ -12,8 +12,23 @@ function isConfigured(env) {
   return !!(env?.AI_SUPABASE_URL && env?.AI_SUPABASE_SERVICE_KEY);
 }
 
+// ERROR HANDLING task — root cause of the admin panel's "Failed to save — check
+// Error Center" with nothing in the Error Center: every failure mode here
+// (unconfigured project, missing site_settings table, RLS rejection, timeout)
+// collapsed into a bare `null`, so the caller could only report a generic
+// failure and had no reason to log. `_lastError` records the real reason for
+// the most recent call so setSetting can return it. Read-path behaviour is
+// unchanged — getSetting still degrades silently to its fallback, because a
+// routing lookup must never break a live chat reply.
+let _lastError = null;
+export function lastSettingsError() { return _lastError; }
+
 async function sb(env, method, qs, body, prefer) {
-  if (!isConfigured(env)) return null;
+  _lastError = null;
+  if (!isConfigured(env)) {
+    _lastError = 'AI Supabase is not configured (AI_SUPABASE_URL / AI_SUPABASE_SERVICE_KEY missing).';
+    return null;
+  }
   try {
     const headers = {
       apikey: env.AI_SUPABASE_SERVICE_KEY,
@@ -25,10 +40,21 @@ async function sb(env, method, qs, body, prefer) {
       method, headers, body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(4000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      _lastError = res.status === 404
+        ? 'The site_settings table does not exist in the AI Supabase project — run the site_settings migration.'
+        : `Supabase returned HTTP ${res.status}${detail ? ' — ' + detail.slice(0, 200) : ''}`;
+      return null;
+    }
     if (prefer === 'return=minimal') return true;
     return res.json().catch(() => null);
-  } catch { return null; }
+  } catch (e) {
+    _lastError = (e && e.name === 'TimeoutError')
+      ? 'Supabase request timed out after 4s.'
+      : `Supabase request failed: ${(e && e.message) || 'unknown error'}`;
+    return null;
+  }
 }
 
 // Returns `fallback` (never throws, never blocks the caller) when unconfigured,
