@@ -24,8 +24,21 @@
     const r = await fetch(url, { headers: authHeaders() });
     return r.json().catch(() => ({}));
   }
+  // ROOT-CAUSE FIX (Chatbot Checker "question required" / Production Routing
+  // "config object required"): the two admin APIs this page talks to use
+  // DIFFERENT POST body shapes and this one helper served both.
+  //   /api/ai-articles reads  const { action, data } = body   → envelope shape
+  //   /api/ai-kb-admin reads  body.question / body.config / body.object / …
+  //                                                          → FLAT shape
+  // Sending only the envelope meant every ai-kb-admin POST arrived with its
+  // payload buried under `data`, so the server saw no question and no config
+  // and rejected the call — which also made Production Routing checkboxes
+  // appear to "revert" (the save 400'd, then loadRoutingConfig() re-rendered
+  // from the unchanged persisted config). Sending BOTH shapes satisfies both
+  // endpoints with no server change and no behaviour change for either.
   async function apiPost(base, action, data) {
-    const r = await fetch(base, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ action, data }) });
+    const payload = Object.assign({}, data || {}, { action, data: data || {} });
+    const r = await fetch(base, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
     return r.json().catch(() => ({}));
   }
   function toast(msg, kind) {
@@ -962,7 +975,11 @@
     };
     document.getElementById('pgModeProd').addEventListener('change', toggleCustom);
     document.getElementById('pgModeCustom').addEventListener('change', toggleCustom);
-    document.getElementById('pgSourceChecks').addEventListener('change', e => { if (e.target.matches('[data-source-check]')) validateSourceSelection(); });
+    // Persist the admin's choice the moment it changes, so a later re-render
+    // (Refresh, routing reload) restores it instead of resetting to all-on.
+    document.getElementById('pgSourceChecks').addEventListener('change', e => {
+      if (e.target.matches('[data-source-check]')) { captureSourceSelection(); validateSourceSelection(); }
+    });
     loadChatbotSources();
   }
 
@@ -971,19 +988,41 @@
   // never hardcoded. Every checkbox drives the REAL production /api/ai-chat
   // pipeline via sourceFlags (see runChatbotCheck) — there is no separate
   // diagnostic engine.
+  // ROOT-CAUSE FIX (selections reverting): this function re-rendered the
+  // checkbox row with a hardcoded `checked` on every call, and it is called
+  // from BOTH boot()→loadRoutingConfig() and wireAdvanced() (and again from
+  // the header Refresh button) — so any custom selection the admin made was
+  // silently wiped back to "all sources on". The chosen state is now captured
+  // before the re-render and restored after it, and concurrent callers share
+  // one in-flight request instead of racing two renders.
   let chatbotSourceKeys = [];
-  async function loadChatbotSources() {
-    const data = await apiGet(KB + '?action=chatbot-sources');
-    const box = document.getElementById('pgSourceChecks');
-    const sources = data.sources || [];
-    chatbotSourceKeys = sources.map(s => s.key);
-    if (box) {
-      box.innerHTML = sources.map(s => `
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px" title="${esc(s.note || '')}">
-          <input type="checkbox" data-source-check="${esc(s.key)}" checked /> ${esc(s.label)}
-        </label>`).join('');
-    }
-    if (!routingSourceMeta.length) routingSourceMeta = sources;
+  let chatbotSourceSelection = null;   // admin's chosen state — survives re-renders
+  let _sourcesInFlight = null;
+  function captureSourceSelection() {
+    const boxes = document.querySelectorAll('[data-source-check]');
+    if (!boxes.length) return;
+    const sel = {};
+    boxes.forEach(cb => { sel[cb.dataset.sourceCheck] = cb.checked; });
+    chatbotSourceSelection = sel;
+  }
+  function loadChatbotSources() {
+    if (_sourcesInFlight) return _sourcesInFlight;
+    _sourcesInFlight = (async () => {
+      const data = await apiGet(KB + '?action=chatbot-sources');
+      const box = document.getElementById('pgSourceChecks');
+      const sources = data.sources || [];
+      chatbotSourceKeys = sources.map(s => s.key);
+      if (box) {
+        captureSourceSelection();
+        const sel = chatbotSourceSelection || {};
+        box.innerHTML = sources.map(s => `
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px" title="${esc(s.note || '')}">
+            <input type="checkbox" data-source-check="${esc(s.key)}" ${sel[s.key] === false ? '' : 'checked'} /> ${esc(s.label)}
+          </label>`).join('');
+      }
+      if (!routingSourceMeta.length) routingSourceMeta = sources;
+    })().finally(() => { _sourcesInFlight = null; });
+    return _sourcesInFlight;
   }
 
   // PRODUCTION ROUTING (spec Phase 7) — separate, persisted, affects real
@@ -1058,6 +1097,54 @@
     return anyChecked;
   }
 
+  // ── REAL-VISITOR SESSION SIMULATION (parity requirement) ────────────────────
+  // The preview previously sent ONLY { messages:[one turn], debug, sourceFlags }.
+  // The public chatbot (ai-trade-assistant.html, ~L1500) sends userId,
+  // identityToken, tz, country, traderContext, sessionLang, uiLang AND the last
+  // 20 turns of the conversation. Those fields drive identity awareness,
+  // conversation memory, greeting behaviour, clarification and the response
+  // optimizer in ai-chat.js — so without them the preview genuinely produced a
+  // different answer than a real visitor would get for the same question.
+  //
+  // These helpers read the SAME localStorage keys the public page reads/writes
+  // (same origin), so the preview carries the identical visitor identity and
+  // memory — not an admin-only shadow identity. If those keys are empty, the
+  // preview sends exactly what a brand-new visitor sends, which is still true
+  // parity. Nothing here is admin-specific; the only admin-only additions to
+  // the request remain `debug` (reporting) and `sourceFlags` (routing override).
+  const PUB = { uid: 'ztu_ai_uid', identity: 'ztu_ai_identity', country: 'ztu_ai_country', lang: 'ztu_ai_lang', trader: 'ztu_ai_trader', mirror: 'ztu_ai_mirror' };
+  function ls(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } }
+  function lsJson(k) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } }
+  function previewUserId() {
+    // Mirrors getOrCreateUserId() in ai-trade-assistant.html exactly, including
+    // the id format, so the server-side memory profile is the same row.
+    let id = ls(PUB.uid);
+    if (!id) { id = 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); try { localStorage.setItem(PUB.uid, id); } catch {} }
+    return id;
+  }
+  function previewTraderContext() {
+    // Mirrors getTraderContext() in ai-trade-assistant.html (same shape, same
+    // null-when-no-history rule, same tmTopWeakness ordering).
+    const t = lsJson(PUB.trader), mirror = lsJson(PUB.mirror);
+    if (!t.conversations) return null;
+    const order = ['revenge', 'fomo', 'overtrading', 'hesitation', 'fear'];
+    let topWeakness = null, bestV = 1;
+    for (const k of order) if ((mirror[k] || 0) > bestV) { bestV = mirror[k]; topWeakness = k; }
+    return {
+      level: t.level || 'beginner', type: t.type || null, conversations: t.conversations || 0, topWeakness,
+      patterns: { fomo: mirror.fomo || 0, fear: mirror.fear || 0, revenge: mirror.revenge || 0, hesitation: mirror.hesitation || 0, overtrading: mirror.overtrading || 0 },
+      patience: t.patience ?? 5, discipline: t.discipline ?? 5, confidence: t.confidence ?? 6, improved: t.improved || [],
+    };
+  }
+  // Multi-turn transcript for THIS preview panel — same last-20 window and same
+  // role mapping the public page applies, so follow-up / clarification /
+  // continuation flow behave identically instead of every question arriving as
+  // a cold first message.
+  let previewTranscript = [];
+  function previewMessages(q) {
+    return previewTranscript.concat([{ role: 'user', content: q }]).slice(-20);
+  }
+
   async function runChatbotCheck() {
     const q = document.getElementById('pgQ').value.trim(); if (!q) return;
     if (!validateSourceSelection()) return;
@@ -1076,7 +1163,21 @@
       // an authenticated admin-diagnostic call) drives the SAME production
       // routing decisions via the execution-context layer — this is the real
       // pipeline in every mode, never a second implementation.
-      const body = { messages: [{ role: 'user', content: q }], debug: true };
+      // PARITY: identical field-for-field to the public page's request body
+      // (ai-trade-assistant.html ~L1503) apart from `debug` (admin-only
+      // reporting) and `sourceFlags` (admin-only routing override).
+      const body = {
+        messages:      previewMessages(q),
+        userId:        previewUserId(),
+        identityToken: ls(PUB.identity),
+        tz:            (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })(),
+        country:       ls(PUB.country),
+        traderContext: previewTraderContext(),
+        chartAnalysis: null,
+        sessionLang:   ls(PUB.lang),
+        uiLang:        'en',
+        debug:         true,
+      };
       if (sourceFlags) body.sourceFlags = sourceFlags;
       const r = await fetch('/api/ai-chat', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
       const contentType = r.headers.get('content-type') || '';
@@ -1098,10 +1199,71 @@
       }
     } catch (e) { out.innerHTML = '<div class="empty">Unreachable — deploy to Cloudflare to test live.</div>'; return; }
     const clientLatencyMs = Math.round(performance.now() - t0);
+    // Keep the preview's own conversation memory, exactly like the public page
+    // stores the turn into its session before the next send.
+    previewTranscript = previewTranscript.concat([
+      { role: 'user', content: q },
+      { role: 'assistant', content: answer || '' },
+    ]).slice(-20);
     out.innerHTML = '<div class="empty">Diagnosing the answer…</div>';
     const diag = await apiPost(KB, 'chatbot-check', { question: q, sourceLayer: src?.layer, sourceFlags }).catch(() => null);
     if (diag && diag.error) { out.innerHTML = `<div class="verify-box fail"><b>${esc(diag.error)}</b></div>`; return; }
     renderChatbotCheck(q, answer, src, diag, clientLatencyMs, mode);
+  }
+
+  // ── ADMINISTRATOR DEBUG PANEL ───────────────────────────────────────────────
+  // Renders the debug trace ai-chat.js attaches to the source event when
+  // `debug:true` is sent. This panel is admin-only by construction: the public
+  // chatbot never sets debug:true (see aiDebugOn() in ai-trade-assistant.html),
+  // so a real visitor's response carries no debug object at all. Reporting
+  // only — nothing here changes the answer.
+  function renderAdminDebugPanel(src, clientLatencyMs) {
+    const d = src && src.debug;
+    if (!d) return '';
+    const yn = v => v ? '<span style="color:var(--ok,#4ade80)">yes</span>' : '<span style="color:var(--dim)">no</span>';
+    const keys = ['database', 'graph', 'calc', 'live', 'openai'];
+    const label = { database: 'Database', graph: 'Knowledge Graph', calc: 'Calculator', live: 'Live API', openai: 'OpenAI' };
+    const sel = d.routing?.selected || {};
+    const used = d.used || {};
+    const row = (k, v) => `<tr><td style="padding:3px 12px 3px 0;color:var(--muted);white-space:nowrap">${k}</td><td style="padding:3px 0">${v}</td></tr>`;
+    const selectedTxt = keys.filter(k => sel[k] !== false).map(k => label[k]).join(', ') || 'none';
+    const usedTxt = keys.filter(k => used[k]).map(k => label[k]).join(', ') || (used.safe ? 'Safe Reply only' : '—');
+    const oc = d.openaiCall || {};
+    return `
+      <details style="margin:10px 0 4px;border:1px solid var(--border2);border-radius:9px;padding:8px 10px">
+        <summary style="cursor:pointer;font-size:12px;font-weight:600">🛠 Administrator Debug Panel <span style="font-weight:400;color:var(--dim)">— admin only, never shown to visitors</span></summary>
+        <table style="margin-top:8px;font-size:11.5px;border-collapse:collapse">
+          ${row('Conversation intent', esc(d.intent || 'n/a') + ' · lang=' + esc(d.lang || 'n/a'))}
+          ${row('Routing decision', esc(d.routing?.origin || 'n/a')
+            + (d.routing?.openaiOnly ? ' · <b>OpenAI-only contract active</b> — no other source, no post-processing' : '')
+            + (d.routing?.liveSuppressed ? ' · Live API fully suppressed' : ''))}
+          ${d.routing?.openaiUnavailable ? row('OpenAI result', '<span style="color:var(--bad)">unavailable — explicit OpenAI-unavailable message returned (Safe Reply NOT executed)</span>') : ''}
+          ${row('Selected sources', esc(selectedTxt))}
+          ${row('Actual sources used', esc(usedTxt) + ' · winner=' + esc(used.winner || 'n/a'))}
+          ${row('OpenAI called', yn(oc.called) + (oc.skipReason ? ` <span style="color:var(--dim)">— ${esc(oc.skipReason)}</span>` : ''))}
+          ${row('Live API used', yn(used.live))}
+          ${row('Knowledge Graph used', yn(used.graph))}
+          ${row('Database used', yn(used.database))}
+          ${row('Calculator used', yn(used.calc))}
+          ${row('Cache', esc(d.cache || 'n/a'))}
+          ${row('Response time', (d.responseTimeMs != null ? d.responseTimeMs : clientLatencyMs) + 'ms server · ' + clientLatencyMs + 'ms round-trip')}
+          ${row('Session state', 'tier=' + esc(d.session?.tier || 'n/a') + ' · turns=' + esc(String(d.session?.turns ?? 'n/a')) + ' · identity=' + (d.session?.hasIdentity ? 'yes' : 'no') + ' · userId=' + esc(d.session?.userId || 'none'))}
+          ${row('Conversation memory used', yn(d.memory?.profileLoaded || d.memory?.traderContext) + ' <span style="color:var(--dim)">— profile=' + (d.memory?.profileLoaded ? 'loaded' : 'none') + ', traderContext=' + (d.memory?.traderContext ? 'sent' : 'none') + ', conversations=' + esc(String(d.memory?.conversations ?? 0)) + '</span>')}
+          ${row('Source availability', keys.map(k => label[k] + '=' + (d.available?.[k] ? 'configured' : 'unconfigured')).join(' · '))}
+        </table>
+        ${(() => {
+          // ROUTING HONESTY CHECK — flags any source that produced output while
+          // deselected. Today this can only ever fire for Live API, from the one
+          // short-status branch ai-chat.js documents as intentionally ungated
+          // (it is a branch of a mutually-exclusive reasoning chain, not an
+          // independent source call — see the inline comment at ~L989). Surfaced
+          // rather than silently hidden so the panel never overstates isolation.
+          const leaked = keys.filter(k => used[k] && sel[k] === false).map(k => label[k]);
+          return leaked.length
+            ? `<div style="margin-top:8px;font-size:11.5px;color:var(--bad)">⚠ Produced output while deselected: ${esc(leaked.join(', '))} — see the source note on that checkbox for the one documented ungated branch.</div>`
+            : '';
+        })()}
+      </details>`;
   }
 
   function renderChatbotCheck(question, answer, src, diag, clientLatencyMs, mode) {
@@ -1138,6 +1300,7 @@
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px"><b>Sources skipped:</b> ${skipped}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px"><b>Retrieval summary:</b> ${esc(diag.retrievalSummary)}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Knowledge coverage: intent=${esc(diag.knowledgeCoverage?.intent)} · category=${esc(diag.knowledgeCoverage?.category || 'none')} · context kept=${diag.knowledgeCoverage?.contextKept ? 'yes' : 'no'}</div>
+        ${renderAdminDebugPanel(src, clientLatencyMs)}
         ${weaknessRows || '<div class="empty">No issues detected.</div>'}
         ${diag.claudePrompt ? `<div style="margin-top:10px">
             <button class="btn sm" id="claudePromptBtn">📋 Generate AI Fix Prompt</button>

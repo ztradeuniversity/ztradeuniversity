@@ -789,6 +789,15 @@ export async function onRequest(context) {
   // resolved, adds zero extra latency to this request.
   const persistedRouting = routingRes.status === 'fulfilled' ? routingRes.value : null;
   const ctx = buildExecutionContext(persistedRouting, body, isAdminDiagnostic);
+  // ── PRODUCTION CONTRACT 1: "OPENAI ONLY" IS ABSOLUTE ────────────────────────
+  // When OpenAI is the ONLY selected source, the reply must come from OpenAI and
+  // nothing else — no Safe Reply, no Database (including the learned-draft
+  // cache), no Knowledge Graph, no Calculator, no Live API, and no post-answer
+  // layer may modify the generated text. If OpenAI produces nothing, an explicit
+  // "OpenAI unavailable" message is returned instead of falling through.
+  // Every other selection combination is completely unaffected by this flag.
+  const _openaiOnly = ctx.openai && !ctx.database && !ctx.graph && !ctx.live && !ctx.calc;
+  let _openaiUnavailable = false;   // set below when OpenAI-only produced no answer
 
   // ── ACTIVATION: register the GROUNDED generative composer when a model is bound
   // (Cloudflare Workers AI env.AI, or an OpenAI-compatible LLM_ENDPOINT) AND the
@@ -873,6 +882,13 @@ export async function onRequest(context) {
   let allowKnowledge = true;
   let directAnswer    = null;
   let directSource    = null;        // SOURCE BADGE: which layer set directAnswer ('live'/'calc'/'safe')
+  // ADMIN DEBUG TRACE (reporting only — never read by any routing decision).
+  // Populated at the existing OpenAI branch below so the Content Intelligence
+  // Center can show "OpenAI called / cache hit / why OpenAI was skipped"
+  // truthfully instead of inferring it from the winning-source badge.
+  let _openaiCalled   = false;
+  let _openaiCacheHit = null;        // true = served from a learned draft, false = fresh LLM call
+  let _openaiSkipReason = null;      // why the OpenAI branch did not run at all
   let answerSource    = 'safe';      // SOURCE BADGE: final retrieval layer that produced the reply
   let answerConfidence = null;       // ANALYTICS: retrieval confidence for ai_response_logs
   let answerGraphNodeId = null;      // ANALYTICS: graph concept id when the graph layer answered
@@ -965,7 +981,10 @@ export async function onRequest(context) {
         directAnswer = unknownResponse(lang); directSource = 'safe';
       } else if (analysis.multi && analysis.statusInstrument) {
         // MULTI: lead with the live status line, answer the advice side, no dump.
-        p10Prefix = statusPrefix(analysis, marketData, lang);
+        // PRODUCTION CONTRACT 2: no live-generated output when Live is deselected.
+        // The branch itself is a reasoning path (multi-part question), so it is
+        // kept; only its LIVE status prefix is suppressed.
+        p10Prefix = ctx.live ? statusPrefix(analysis, marketData, lang) : '';
         const eduText = analysis.eduPart || aText;
         const eduCls  = classifyIntent(eduText);
         const eduA    = analyzeQuestion(eduText);
@@ -977,17 +996,15 @@ export async function onRequest(context) {
         allowKnowledge = false;
         p10Mode        = NO_CONDENSE.has(ei) ? mode : 'short';
         p10Followups   = singleFollowup(cognition, lang);
-      } else if (plan.marketDump && (depth === 'MICRO' || depth === 'SHORT')) {
+      } else if (ctx.live && plan.marketDump && (depth === 'MICRO' || depth === 'SHORT')) {
         // Explicit short status → one concise line + ONE natural follow-up.
-        // NOT gated by ctx.live (unlike the other 4 live-source blocks below):
-        // this is one branch of a mutually-exclusive intent/depth reasoning
-        // if/else-if chain (see kConf.level==='UNKNOWN' / analysis.multi / this /
-        // !plan.marketDump above and below) — disabling it would make control
-        // fall into the SIBLING branch (`!plan.marketDump`, a completely
-        // different CTA/follow-up reasoning path), not simply "skip live, try
-        // the next source." That's a different behavior change than source
-        // testing intends, and isn't verifiable without live execution, so it's
-        // deliberately left out of the execution-context gating.
+        // PRODUCTION CONTRACT 2 — now gated by ctx.live like the other 4 live
+        // call sites. This was the last ungated live branch. With Live
+        // deselected the condition is false AND the sibling `!plan.marketDump`
+        // is also false (plan.marketDump is true here), so control falls
+        // through the whole chain with directAnswer left null — Live is skipped
+        // entirely and no live-derived text can reach the reply. It does NOT
+        // divert into the sibling branch.
         directAnswer = shortStatusAnswer({ ...analysis, suggestedFollowups: [] }, marketData, lang, singleFollowup(cognition, lang)); directSource = 'live';
       } else if (!plan.marketDump) {
         // CTA intelligence: intents whose body already invites the user (or are
@@ -1061,7 +1078,9 @@ export async function onRequest(context) {
         p10Lead = emotionalLead({ emotionalTone: 'frustrated' }, lang, aText);
       }
       // Contradiction guard for market answers when independent signals disagree.
-      if (p10MarketDump && !directAnswer) {
+      // PRODUCTION CONTRACT 2: this note is derived from live figures, so it is
+      // gated on ctx.live too.
+      if (ctx.live && p10MarketDump && !directAnswer) {
         const cc = detectContradiction({ changePct: marketData?.gold?.changePct, regimeLabel: marketData?.marketRegime?.label, patternBias: patternData?.bias });
         if (cc.conflict) p10Contradiction = balancedNote(lang);
       }
@@ -1387,7 +1406,9 @@ export async function onRequest(context) {
         platform:    cls.platform,
         broker:      cls.broker,
         newsFocus:   cls.newsFocus,
-        marketData,
+        // PRODUCTION CONTRACT 2: the rule engine can weave live figures into its
+        // reply, so it receives no market data at all when Live is deselected.
+        marketData:  ctx.live ? marketData : null,
         patternData,
         memoryData,
         memoryContext,
@@ -1556,20 +1577,31 @@ export async function onRequest(context) {
                  // a generic LLM generation has no knowledge of that page and
                  // would silently drop the link, undermining its whole point.
   ]);
-  if (ctx.openai && lang === 'en' && !chartAnalysis && !_unsupported
+  // PRODUCTION CONTRACT 1: in OpenAI-only mode the excluded-intent list and the
+  // English-only Language Lock are bypassed — with every other source
+  // deselected there is no source left to produce those deliberate replies, so
+  // honouring the exclusions would silently hand the turn back to Safe Reply.
+  // Both guards stay fully in force for every other selection combination.
+  if (ctx.openai && !chartAnalysis && !_unsupported
       && !kbAnswer && !directAnswer && !_dbArticleAnswered
-      && !OPENAI_EXCLUDED_INTENTS.has(p10Intent)) {
+      && (_openaiOnly || (lang === 'en' && !OPENAI_EXCLUDED_INTENTS.has(p10Intent)))) {
     try {
       // STABILIZATION FIX: use the handler-scoped genText. `aText` is const-scoped to
       // the (!followup && !chartAnalysis) block above (closes ~L1091) and is OUT of
       // scope here — referencing it threw ReferenceError that the try/catch silently
       // swallowed, so this block never executed. genText is the correct in-scope
       // equivalent (recovery/slang/multilang-normalized user text). No logic change.
-      const cached = await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
+      _openaiCalled = true;   // debug trace only — the branch actually executed
+      // PRODUCTION CONTRACT 1: the learned-draft cache is Database-backed, so it
+      // is skipped entirely in OpenAI-only mode — the reply must come from a
+      // real OpenAI generation, never from stored knowledge.
+      const cached = _openaiOnly ? null : await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
       if (cached && cached.content) {
+        _openaiCacheHit = true;
         answer = cached.content + '\n\n_⚠️ Educational information only — always trade using your own judgment and risk management._';
         answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
+        _openaiCacheHit = false;
         const gen = await generateEducationalAnswer(env, genText, lang, p10Form);
         if (gen) {
           answer = gen + '\n\n_⚠️ Educational information only — always trade using your own judgment and risk management._';
@@ -1583,6 +1615,42 @@ export async function onRequest(context) {
         }
       }
     } catch { /* additive — keep the existing safe reply on any failure */ }
+  } else if (debugMode) {
+    // DEBUG TRACE ONLY (no routing effect): record the FIRST condition that kept
+    // the OpenAI branch from running, so "I selected OpenAI only but got a
+    // canned reply" is explainable in the admin panel instead of looking like
+    // Safe Reply silently overriding OpenAI. Order matches the guard above.
+    _openaiSkipReason =
+      !ctx.openai        ? 'OpenAI is disabled for this call (routing/source selection)' :
+      chartAnalysis      ? 'A chart-vision analysis was attached; that path owns the reply' :
+      _unsupported       ? 'Question was classified as unsupported scope' :
+      kbAnswer           ? 'Knowledge Graph already answered (higher priority)' :
+      directAnswer       ? `${directSource === 'calc' ? 'Calculator' : 'Live API'} already answered (higher priority)` :
+      _dbArticleAnswered ? 'Database article already answered (higher priority)' :
+      lang !== 'en'      ? `Language Lock — OpenAI generation is English-only (detected lang="${lang}")` :
+      OPENAI_EXCLUDED_INTENTS.has(p10Intent) ? `Intent "${p10Intent}" is in OPENAI_EXCLUDED_INTENTS — it has a deliberate non-LLM reply an LLM must not overwrite` :
+      null;
+  }
+
+  // ── PRODUCTION CONTRACT 1 — OPENAI-ONLY TERMINAL ────────────────────────────
+  // In OpenAI-only mode the selected source list is the complete runtime
+  // contract. If OpenAI did not produce the answer — unbound model, API error,
+  // empty generation, or the branch skipped because a higher-priority source
+  // was somehow reached — the reply is an explicit OpenAI-unavailable message.
+  // Safe Reply, Database, Knowledge Graph, Calculator and Live API are never
+  // consulted. `_openaiUnavailable` also locks every post-answer layer below so
+  // nothing appends to, trims, or rewrites this message. Unreachable in any
+  // other selection combination.
+  if (_openaiOnly && answerSource !== 'openai') {
+    _openaiUnavailable = true;
+    answerSource = 'openai';   // OpenAI is the only routed source for this call
+    answerConfidence = null;
+    answerArticleId = null;
+    answerGraphNodeId = null;
+    answer = 'OpenAI is unavailable for this request, so no answer could be generated.\n\n'
+      + 'This call is running in **OpenAI-only** mode, which means no other source '
+      + '(Database, Knowledge Graph, Calculator, Live API, or Safe Reply) is permitted to answer. '
+      + 'Re-enable another source in the Content Intelligence Center, or check the OpenAI/LLM binding.';
   }
 
   // ── MODULES 1 & 4: persist device profile + scores (background, server-side) ─
@@ -1628,7 +1696,8 @@ export async function onRequest(context) {
   // the overwrite fires, adds no new risk. Greeting/smalltalk already have their
   // own good replies from the rule engine and are excluded by not being in the
   // fallback/offtopic set. Localized langs only (buildSafeReply's own coverage).
-  if (answerSource === 'safe' && ['fallback', 'offtopic'].includes(p10Intent)
+  // CONTRACT 1: `!_openaiOnly` — Safe Reply must never execute in OpenAI-only mode.
+  if (!_openaiOnly && answerSource === 'safe' && ['fallback', 'offtopic'].includes(p10Intent)
       && ['en', 'ur', 'ur-roman', 'ar'].includes(lang)
       && !clarifyAnswer && !chartAnalysis && !_unsupported && !directAnswer) {
     try {
@@ -1640,7 +1709,8 @@ export async function onRequest(context) {
   // fallback), guide the user with real, answerable questions pulled live from the
   // graph (basic→advanced). English-only (Language-Lock safe); graceful when the
   // graph is inactive (suggestQuestions returns []). Never added to a confident answer.
-  if (lang === 'en' && !chartAnalysis && !kbAnswer && !directAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
+  // CONTRACT 1: `!_openaiOnly` — suggestQuestions reads the Knowledge Graph.
+  if (!_openaiOnly && lang === 'en' && !chartAnalysis && !kbAnswer && !directAnswer && (clarifyAnswer || p10Intent === 'fallback')) {
     try {
       const qs = await suggestQuestions(env, { lang, limit: 3, level: p10Level });
       if (qs.length) {
@@ -1700,7 +1770,8 @@ export async function onRequest(context) {
 
   // ── PHASE 11C.0B: NO-DRIFT entity filter — a Gold answer must not carry a BTC
   // price line (and vice-versa). Whitelisted instrument codes only → Language-Lock safe.
-  if (rel && rel.primaryEntity && p10MarketDump) answer = applyEntityFilter(answer, rel);
+  // CONTRACT 1: `!_openaiOnly` — nothing may rewrite the OpenAI-only answer.
+  if (!_openaiOnly && rel && rel.primaryEntity && p10MarketDump) answer = applyEntityFilter(answer, rel);
 
   // ── PHASE 19: SMART SUGGESTION CHIPS — graph-derived, clickable next questions so
   // the student rarely needs to type. Easier+fewer when confidence was low (STEP 5);
@@ -1750,8 +1821,10 @@ export async function onRequest(context) {
   // asked for detail) while preserving the disclaimer + links, and tightens the
   // follow-up chips to ≤3 contextual ≤4-word labels (no generics). Pure string
   // transforms — no retrieval/routing/API/data/intent changes. Fully guarded.
+  // CONTRACT 1: `!_openaiOnly` — the optimizer trims/reshapes text, which would
+  // modify an OpenAI-only response. Chips are unaffected (they are not the answer).
   try {
-    answer = optimizeAnswer(answer, { detail: wantsDetail(genText) });
+    if (!_openaiOnly) answer = optimizeAnswer(answer, { detail: wantsDetail(genText) });
   } catch { /* additive — never blocks the reply */ }
   try {
     suggestionChips = optimizeChips(suggestionChips, { related: p10Related, nextStepTopic: p10NextStepTopic, lang });
@@ -1761,8 +1834,10 @@ export async function onRequest(context) {
   // answers (graph/database/openai) a human envelope: greeting (first turn) + question
   // acknowledgement, around the answer. Follow-up chips + source badge already stream.
   // Live/safe/clarify text is left byte-identical (priority preserved). Fully guarded.
+  // CONTRACT 1: `!_openaiOnly` — the conversational envelope would wrap the
+  // OpenAI-only response in non-OpenAI text.
   try {
-    answer = wrapConversational(answer, {
+    if (!_openaiOnly) answer = wrapConversational(answer, {
       messages, answerSource, lang,
       topic: p10ConceptTitle || p10KbCat || '',
       isFirstMessage: messages.filter(m => m.role === 'user').length <= 1,
@@ -1779,7 +1854,9 @@ export async function onRequest(context) {
     // Conversational turns (greeting/thanks/bye/how-are-you) are excluded: a
     // promo footer stapled to "Hello 👋" reads as a bot, not an assistant —
     // the footer stays on every substantive (informational) answer.
-    if (typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)
+    // CONTRACT 1: `!_openaiOnly` — the contact footer is appended text that did
+    // not come from OpenAI.
+    if (!_openaiOnly && typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)
         && !CONVERSATIONAL_INTENTS.has(p10Intent)) {
       answer = answer.trimEnd() +
         `\n\n_For research-based learning, training, and trading guidance, reach us on [Telegram](${TELEGRAM}) or [WhatsApp](${WHATSAPP})._`;
@@ -1804,6 +1881,56 @@ export async function onRequest(context) {
       },
       intent: p10Intent,
       lang,
+      // ── ADMINISTRATOR DEBUG PANEL (Content Intelligence Center) ────────────
+      // Reporting only: every field below is READ from values the pipeline had
+      // already computed — nothing here influences routing, and the whole block
+      // only exists when debugMode is on (admin `debug:true` or env.AI_DEBUG).
+      // Public visitors never receive it because they never set debug:true.
+      admin: isAdminDiagnostic,
+      routing: {
+        // "Selected sources" = the flags this ONE call ran with; source tells
+        // the admin where they came from so a surprising result is traceable.
+        selected: { ...ctx },
+        origin: (isAdminDiagnostic && body && body.sourceFlags) ? 'diagnostic-override'
+              : (persistedRouting ? 'production-routing-config' : 'defaults-all-on'),
+        // PRODUCTION CONTRACTS — reported so the panel states the exact behaviour.
+        openaiOnly:        _openaiOnly,
+        openaiUnavailable: _openaiUnavailable,
+        liveSuppressed:    !ctx.live,
+      },
+      used: {
+        // ACTUAL sources used. answerSource is the single winning layer; the
+        // per-source booleans below report which layers actually produced
+        // something during this call.
+        winner:    answerSource,
+        database:  answerSource === 'database' || _dbArticleAnswered === true,
+        graph:     !!kbAnswer || answerSource === 'graph',
+        calc:      directSource === 'calc' || answerSource === 'calc',
+        live:      directSource === 'live' || answerSource === 'live',
+        openai:    answerSource === 'openai',
+        safe:      answerSource === 'safe',
+      },
+      openaiCall: { called: _openaiCalled, cacheHit: _openaiCacheHit, skipReason: _openaiSkipReason },
+      cache: _openaiCacheHit === null ? 'n/a' : (_openaiCacheHit ? 'hit' : 'miss'),
+      responseTimeMs: Date.now() - _logT0,
+      session: {
+        tier,
+        userId:        userId || null,
+        hasIdentity:   !!identityToken,
+        country:       bodyCountry || null,
+        tz:            bodyTz || null,
+        turns:         messages.length,
+        confidence:    answerConfidence,
+        articleId:     answerArticleId,
+        graphNodeId:   answerGraphNodeId,
+      },
+      memory: {
+        // "Conversation memory used" — the same two inputs the mentor layers read.
+        profileLoaded:  !!(memoryData && memoryData.profile),
+        traderContext:  !!mergedTraderContext,
+        conversations:  mergedTraderContext?.conversations ?? null,
+        level:          mergedTraderContext?.level || null,
+      },
     } : null;
     sourceMeta = sourceBadge(answerSource, _dbg);
   } catch { sourceMeta = null; }
