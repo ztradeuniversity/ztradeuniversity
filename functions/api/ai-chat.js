@@ -540,6 +540,24 @@ function buildExecutionContext(persistedRouting, body, isAdminDiagnostic) {
   return ctx;
 }
 
+// ── LIVE-DATA QUERY DETECTION (Live Market Freshness task) ───────────────────
+// A single, reusable, PURE signal for "this question needs a CURRENT price/
+// movement answer" — built entirely from the SAME detector functions the live
+// blocks already use elsewhere in this file (no new classification logic, no
+// new keyword list, no I/O). MARKET_DUMP_INTENTS (gold/btc/macro/brief/mood/
+// events/session) alone misses generic instrument phrasing that classifies as
+// 'fallback' — e.g. "what is EURUSD doing", "gold high and low today" — which
+// could otherwise fall through to a stale database article or knowledge-graph
+// concept and present old figures as current. Callers additionally OR this with
+// `MARKET_DUMP_INTENTS.has(p10Intent)` (that set isn't in module scope here).
+function isLiveMarketQuery(text) {
+  try {
+    return !!marketDecisionInstrument(text) || !!livePriceInstrument(text)
+      || !!detectInstrumentQuery(text) || !!(detectMarketWhy(text) && detectMarketWhy(text).topic)
+      || !!detectBroadDecision(text);
+  } catch { return false; }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const waitUntil = (p) => { try { context.waitUntil?.(p); } catch {} };   // background persistence
@@ -988,7 +1006,13 @@ export async function onRequest(context) {
         // ── PHASE 11A.4: SEMANTIC RETRIEVAL — answer from the KB by meaning when a
         // high-confidence match exists. English-only for now (localized KB lands in
         // 11B); depth-aware; curated (short/deep), never a raw article dump.
-        if (lang === 'en' && kConf.level !== 'LOW' && ctx.graph) {
+        // FRESHNESS GUARD (Live Market Freshness task): this branch already never
+        // runs for the named live intents (they take the sibling `plan.marketDump`
+        // branch above). isLiveMarketQuery additionally excludes generic
+        // instrument phrasing ("what is EURUSD doing") that classifies as
+        // 'fallback' — the Knowledge Graph must never answer a current-price
+        // question with an educational concept masquerading as live data.
+        if (lang === 'en' && kConf.level !== 'LOW' && ctx.graph && !isLiveMarketQuery(aText)) {
           const m = await retrieveBest(env, aText, { lang, category: analysis.category });   // graph-backed when enabled, else KB_SEED; category narrows candidates at scale
           // Phase 11C.0B: only use a KB hit that passes relevance (no topic drift).
           if (m && m.confidence === 'HIGH' && enforceRelevance({ category: m.item.category, concepts: m.item.concepts, relevanceTags: m.item.relevanceTags }, rel)) {
@@ -1348,7 +1372,7 @@ export async function onRequest(context) {
       lead: p10Lead,
       body: compress(kbAnswer, p10Depth) + p10GuideAppend,
       engagement: p10Followups,
-      disclaimer: '_⚠️ Educational only — not financial advice._',
+      disclaimer: '_⚠️ Educational information only — always trade using your own judgment and risk management._',
     }, { lang, intent: p10Intent, form: p10Form });
   } else {
     try {
@@ -1399,19 +1423,22 @@ export async function onRequest(context) {
   // search + composer (no new pipeline, retrieval unchanged). English-only (Language
   // Lock). Relevance-gated by rankArticles (score>0 → off-topic returns nothing →
   // safe reply stays). Runs BEFORE the OpenAI fallback so DB precedes OpenAI.
-  // FRESHNESS GUARD (Final Phase, Part 5): excludes MARKET_DUMP_INTENTS (today's
-  // gold/btc/macro/brief/events/mood/session — genuinely time-sensitive). If we
-  // reach here with directAnswer still null for one of these, it means Live API
-  // was disabled/unavailable — a coincidentally-matching STATIC article must never
-  // stand in for live price/news data (that would misrepresent stale content as
-  // current, a real trust/accuracy risk). Their own specialist handlers already
-  // give an honest "live data isn't available right now" reply in that case
-  // (see buildEvents/buildBrief), so this only removes a wrong substitute, never
-  // a working answer.
+  // FRESHNESS GUARD (Final Phase, Part 5; widened by the Live Market Freshness
+  // task): excludes MARKET_DUMP_INTENTS (today's gold/btc/macro/brief/events/
+  // mood/session — genuinely time-sensitive) AND isLiveMarketQuery (generic
+  // instrument phrasing like "what is EURUSD doing" that classifies as
+  // 'fallback' but still needs a live answer, not a stale article). If we reach
+  // here with directAnswer still null for a live-data question, it means Live
+  // API was disabled/unavailable — a coincidentally-matching STATIC article must
+  // never stand in for live price/news data (that would misrepresent stale
+  // content as current, a real trust/accuracy risk). Their own specialist
+  // handlers already give an honest "live data isn't available right now" reply
+  // in that case (see buildEvents/buildBrief), so this only removes a wrong
+  // substitute, never a working answer.
   let _dbArticleAnswered = false;
   if (aiSbConfigured(env) && lang === 'en' && !chartAnalysis && !_unsupported
       && !directAnswer && !clarifyAnswer && !kbAnswer && ctx.database
-      && !MARKET_DUMP_INTENTS.has(p10Intent)) {
+      && !MARKET_DUMP_INTENTS.has(p10Intent) && !isLiveMarketQuery(genText)) {
     try {
       const _arts = await searchArticles(env, { q: genText, limit: 1 });
       const _art  = _arts && _arts[0];
@@ -1441,7 +1468,7 @@ export async function onRequest(context) {
           lead: p10Lead,
           body: `From the ZTU article **${_art.title}**:\n\n${_artBody}${_src}` + p10GuideAppend,
           engagement: p10Followups,
-          disclaimer: '_⚠️ Educational only — not financial advice._',
+          disclaimer: '_⚠️ Educational information only — always trade using your own judgment and risk management._',
         }, { lang, intent: p10Intent, form: p10Form });
         answerSource    = 'database';
         answerArticleId = (_art.id != null) ? _art.id : answerArticleId;
@@ -1464,13 +1491,14 @@ export async function onRequest(context) {
   // other single-source test (e.g. "OpenAI Only" could still show a database
   // answer). ctx.database defaults true, so real visitors and an unmodified
   // Production Routing config see zero behavior change.
-  // FRESHNESS GUARD (Final Phase, Part 5): same MARKET_DUMP_INTENTS exclusion as
-  // the database-article layer above — a market-freshness question reaching here
+  // FRESHNESS GUARD (Final Phase, Part 5; widened by the Live Market Freshness
+  // task): same MARKET_DUMP_INTENTS + isLiveMarketQuery exclusion as the
+  // database-article layer above — a market-freshness question reaching here
   // (directAnswer still null) means Live API was disabled/unavailable, so a
   // stale article prepend/append must not be woven into what should be an
   // honest "live data unavailable" reply.
   if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge
-      && !_dbArticleAnswered && ctx.database && !MARKET_DUMP_INTENTS.has(p10Intent)) {
+      && !_dbArticleAnswered && ctx.database && !MARKET_DUMP_INTENTS.has(p10Intent) && !isLiveMarketQuery(genText)) {
     try {
       const kl = await buildKnowledgeLayer(env, {
         intent:  p10Intent,
@@ -1539,12 +1567,12 @@ export async function onRequest(context) {
       // equivalent (recovery/slang/multilang-normalized user text). No logic change.
       const cached = await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
       if (cached && cached.content) {
-        answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
+        answer = cached.content + '\n\n_⚠️ Educational information only — always trade using your own judgment and risk management._';
         answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
         const gen = await generateEducationalAnswer(env, genText, lang, p10Form);
         if (gen) {
-          answer = gen + '\n\n_⚠️ Educational only — not financial advice._';
+          answer = gen + '\n\n_⚠️ Educational information only — always trade using your own judgment and risk management._';
           answerSource = 'openai';                   // selected provider answered directly
           // STORE BEFORE RETURNING (await, not waitUntil) so the draft is committed by the
           // time the reply is sent — guarantees the very next identical question (even an

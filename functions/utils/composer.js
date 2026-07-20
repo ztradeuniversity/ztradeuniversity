@@ -20,7 +20,13 @@ let _composer = null;
 export function setComposer(fn) { _composer = (typeof fn === 'function') ? fn : null; }
 export function hasComposer() { return !!_composer; }
 
-const DISCLAIMER_RE = /(not financial advice|educational only|financial advice|تعليمي|مالية|taleemi)/i;
+// Widened (Short Disclaimer task) to also recognize the new standardized EN
+// phrase "Educational information only — always trade using your own judgment
+// and risk management." — its own words "educational" + "only" are no longer
+// adjacent, so the prior "educational only" phrase match alone would miss it,
+// risking a duplicate. Backward compatible: every previously-matched pattern
+// still matches; only "own judgment and risk management" is newly added.
+const DISCLAIMER_RE = /(not financial advice|educational only|financial advice|own judgment and risk management|تعليمي|مالية|taleemi)/i;
 const ENDS_INVITE   = /(\?|:)\s*$/;   // body already asks a question or opens a list
 
 function dedupe(s) {

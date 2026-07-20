@@ -42,7 +42,7 @@ export const L = {
   en: {
     ack: '',
     greet: "**Hello! I'm the ZTU AI Trading Assistant.** 👋\n\nI can help you with Gold & Bitcoin market context, trade assessment, risk & psychology, broker questions, and trading education — in your language.\n\nTry asking:\n- *What's the Gold market context right now?*\n- *Review my trade: entry, stop loss, take profit*\n- *Compare Exness vs IC Markets account types*\n- *Why do I keep losing?*",
-    disclaimer: '_⚠️ Educational market context only — not financial advice._',
+    disclaimer: '_⚠️ Educational information only — always trade using your own judgment and risk management._',
     signalIntro: "I focus on **market education and context**, not live buy/sell signals.",
     signalBody: "For today's precise setups, entries, and signals, our team shares them here:",
     fallbackIntro: "I don't have that specific answer in our internal intelligence yet. Here are **trusted official sources** to check:",

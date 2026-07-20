@@ -308,6 +308,8 @@
   .chips-bar::-webkit-scrollbar{ height:0; }
   .chips-bar.hidden{ display:none; }
   .chips-bar .chip{ flex-shrink:0; }
+  /* three-quick-action variant: centered + balanced, no horizontal scroll */
+  .chips-bar-3{ justify-content:center; flex-wrap:wrap; overflow-x:visible; }
 
   /* ════════ INPUT BAR ════════ */
   .input-bar{ flex-shrink:0; padding:8px 0 14px; background:var(--bg); }
@@ -1015,17 +1017,11 @@
       </div>
     </div>
 
-    <!-- Conversation chips -->
-    <div class="chips-bar hidden" id="chipsBar">
-      <button class="chip" onclick="quickAsk('Today&#39;s market')">📋 Daily Brief</button>
-      <button class="chip" onclick="quickAsk('What is the current Gold market context?')">🏅 Gold</button>
-      <button class="chip" onclick="quickAsk('What is the BTC sentiment right now?')">₿ BTC</button>
-      <button class="chip" onclick="quickAsk('Assess a trade — I will share entry, SL, TP now.')">🔍 Assess trade</button>
-      <button class="chip" onclick="quickAsk('My trade is in drawdown. Help me think through the market context.')">🆘 Stuck trade</button>
-      <button class="chip" onclick="quickAsk('What high-impact news events could affect Gold or BTC this week?')">📅 News risk</button>
-      <button class="chip" onclick="quickAsk('Why am I losing? Break down causes across psychology, execution, risk, patience, and news timing.')">🔍 Why losing?</button>
-      <button class="chip" onclick="quickAsk('What do you know about me? Summarise my trader profile, level, style, and the patterns you notice.')">🪞 My profile</button>
-      <button class="chip" onclick="quickAsk('Summarise Trading in the Zone by Mark Douglas — key lessons for a Gold trader.')">📖 Mark Douglas</button>
+    <!-- Conversation chips — three centered quick actions -->
+    <div class="chips-bar chips-bar-3 hidden" id="chipsBar">
+      <button class="chip" onclick="sendDailyBrief()">📋 Daily Brief</button>
+      <button class="chip" onclick="axPlaceholder('Assess Trade')">🔍 Assess Trade</button>
+      <button class="chip" onclick="axPlaceholder('Stock Trade')">📈 Stuck Trade</button>
     </div>
 
     <!-- Input bar -->
@@ -1621,6 +1617,39 @@ async function sendMessage() {
 /* ─── QUICK ASK ──────────────────────────────────────────────── */
 function quickAsk(txt) {
   chatIn.value = txt; resize(); updateCount(); sendBtn.disabled = false; sendMessage();
+}
+
+/* ─── DAILY BRIEF (cached once/day server-side; identical for every visitor) ──
+   Renders as a normal assistant message so it inherits the existing Copy/Like/
+   Dislike/Speaker actions and markdown rendering. Does NOT go through /api/ai-chat
+   — it fetches the pre-generated, day-cached brief from /api/daily-brief, so
+   routing / conversation-intelligence / OpenAI logic are untouched. */
+async function sendDailyBrief() {
+  if (streaming) return;
+  renderMsg('user', '📋 Daily Brief'); pushMsg('user', 'Daily Brief');
+  const think = renderThinking();
+  try {
+    const r = await fetch('/api/daily-brief', { headers: { 'Accept': 'application/json' } });
+    const d = await r.json().catch(() => null);
+    think.remove();
+    const brief = (d && d.markdown) ? d.markdown
+      : "I couldn't load today's brief right now — please try again in a moment, or ask me about Gold or BTC market context directly.";
+    renderMsg('ai', brief); pushMsg('ai', brief);
+  } catch (e) {
+    think.remove();
+    const msg = "I couldn't load today's brief right now — please try again shortly.";
+    renderMsg('ai', msg); pushMsg('ai', msg);
+  }
+}
+
+/* ─── PLACEHOLDER QUICK ACTIONS (Assess Trade / Stock Trade) ──────────────────
+   Future functionality lands later — for now a clean, honest "coming soon"
+   message (no API call, nothing misleading). */
+function axPlaceholder(name) {
+  if (streaming) return;
+  const msg = `**${name}** is coming soon. You'll be able to use it right here shortly. ` +
+    `In the meantime, I can help with Gold or BTC market context, a trade review, risk management, or trading psychology — what would you like to look at?`;
+  renderMsg('ai', msg); pushMsg('ai', msg);
 }
 
 /* ─── PHASE 19: SMART SUGGESTION CHIPS ───────────────────────────
@@ -3328,7 +3357,9 @@ async function aiUnlockFromCard(result) {
     copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
     ok:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     up:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88L14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a2.34 2.34 0 0 1 3 2.88z"/></svg>',
-    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2"/><path d="M9 18.12L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a2.34 2.34 0 0 1-3-2.88z"/></svg>'
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2"/><path d="M9 18.12L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a2.34 2.34 0 0 1-3-2.88z"/></svg>',
+    speak:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+    stop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>'
   };
   function addActions(msg) {
     if (!msg || msg.dataset.axActions) return;
@@ -3366,6 +3397,39 @@ async function aiUnlockFromCard(result) {
     });
 
     row.appendChild(copy); row.appendChild(up); row.appendChild(down);
+
+    // ── PER-MESSAGE SPEAKER (Task 5) — reads ONLY this message aloud. Reuses the
+    // EXISTING speech engine primitives (ttsStrip / ttsBcp47 / ttsPickVoice /
+    // speechSynthesis) — no second TTS implementation, and it does NOT touch the
+    // global "Speak: on/off" toggle (that stays exactly as-is; this button works
+    // on demand regardless of it). Click to play, click again (or click another
+    // message's speaker) to stop. Hidden entirely when the browser has no TTS.
+    if (typeof TTS_SUPPORTED !== 'undefined' && TTS_SUPPORTED && typeof ttsStrip === 'function') {
+      var speak = document.createElement('button');
+      speak.type = 'button'; speak.className = 'msg-act speak'; speak.title = 'Read this message aloud';
+      speak.setAttribute('aria-label', 'Read aloud'); speak.innerHTML = ICON.speak;
+      var resetSpeak = function () { speak.classList.remove('on'); speak.innerHTML = ICON.speak; speak.title = 'Read this message aloud'; };
+      speak.addEventListener('click', function () {
+        try {
+          var wasPlayingThis = speak.classList.contains('on');
+          // Stop whatever is currently playing (this message, another message, or
+          // the global-toggle read of the latest reply).
+          if (window.speechSynthesis) speechSynthesis.cancel();
+          document.querySelectorAll('.msg-act.speak.on').forEach(function (b) { b.classList.remove('on'); b.innerHTML = ICON.speak; b.title = 'Read this message aloud'; });
+          if (wasPlayingThis) return;   // second click on the same message → stop only
+          var clean = ttsStrip(bub.innerText || bub.textContent || '');
+          if (!clean) return;
+          var u = new SpeechSynthesisUtterance(clean);
+          u.lang = (typeof ttsBcp47 === 'function') ? ttsBcp47((typeof getSessionLang === 'function' ? getSessionLang() : '') || 'en') : 'en-US';
+          var v = (typeof ttsPickVoice === 'function') ? ttsPickVoice(u.lang) : null; if (v) u.voice = v;
+          u.rate = 1; u.pitch = 1;
+          u.onend = resetSpeak; u.onerror = resetSpeak;
+          speak.classList.add('on'); speak.innerHTML = ICON.stop; speak.title = 'Stop';
+          speechSynthesis.speak(u);
+        } catch (e) { resetSpeak(); }
+      });
+      row.appendChild(speak);
+    }
 
     var time = body.querySelector('.msg-time');
     if (time && time.nextSibling) body.insertBefore(row, time.nextSibling);
