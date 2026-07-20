@@ -11,7 +11,12 @@ const INSTR = [
   [/\b(btc|bitcoin|bit ?coin)\b/i, 'BTC'],
 ];
 const PRONOUN = /\b(it|that|this|these|those|them)\b/i;
-const VAGUE   = /\b(improve|get better|do better|fix this|what should i do|how do i get better|help me improve|be better|become better)\b/i;
+// Final Conversation Phase (Task 3): opinion/continuation phrasings carry the
+// thread's active instrument too — "I trade Gold." … "What do you think?" must
+// resolve to Gold instead of falling to a generic reply. Data-only extension:
+// still fires ONLY when the message names no instrument itself, and only when a
+// thread/favorite instrument actually exists.
+const VAGUE   = /\b(improve|get better|do better|fix this|what should i do|how do i get better|help me improve|be better|become better|what do you think|your (opinion|view|thoughts)|any (advice|thoughts)|good idea)\b/i;
 
 function instrumentIn(t) {
   for (const [re, v] of INSTR) if (re.test(t || '')) return v;

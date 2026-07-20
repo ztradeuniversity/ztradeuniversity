@@ -258,6 +258,11 @@ intent classification already encodes "does this need freshness?".
 
 For a single turn, the answer is built as at most **one** of these, in intent-aware order:
 
+0. **Conversation Intelligence** (`conversation-intelligence.js`) — final authority for
+   purely social turns (greeting / thanks / farewell / "how are you" / "who are you").
+   Produces a short, warm reply with signed-in recognition ("Welcome back") and one
+   follow-up question; these intents are hard-guarded out of the live-market blocks and
+   the contact footer, so a greeting can never be answered with market data.
 1. `clarifyAnswer` — a clarification question (safe tier).
 2. `directAnswer` — live-market / calculator / honest-unavailable (live/calc tier).
 3. `kbAnswer` — Knowledge Graph 5-part coach (graph tier):

@@ -76,9 +76,12 @@ export function buildJournal(ctx) {
 }
 
 // ── PHASE 8E: DOMAIN GUARDRAIL (off-topic → polite redirect) ─────────────────
+// Final Conversation Phase (Task 6): a friendly redirect, never an awkward
+// refusal — name what the assistant IS for and invite a concrete next step.
 export function buildOffTopic(ctx) {
-  return `I'm your **trading assistant**, so I stick to markets — **Gold**, **₿ BTC**, market context, trade reviews, risk, and trading psychology. ` +
-    `That one's outside my lane, but I'm all yours for anything trading-related.\n\nWhat would you like to look at — Gold/BTC context, a trade assessment, or chart analysis?`;
+  return `I'm mainly designed to help with **trading, investing and the financial markets**, so that one's outside what I can do well. ` +
+    `If you'd like, ask me about **Gold**, **Forex**, **Crypto**, **risk management**, **trading psychology**, or **market analysis** — anything trading-related.\n\n` +
+    `What would you like to look at — Gold/BTC market context, a trade assessment, or a concept you want explained?`;
 }
 
 // ── PHASE 8C: ABOUT-ME / MEMORY RECALL ───────────────────────────────────────

@@ -102,8 +102,11 @@ export function classifyIntent(text) {
   const s = (text || '').toLowerCase().trim();
   const broker = findBroker(s);
 
-  // Greeting (only short greetings)
-  if (/^(hi|hey|hello|salam|assalam|asalam|halo|hallo|xin chao|sawasdee|namaskar|kemusta|hai)\b/.test(s) && s.length < 24) {
+  // Greeting (only short greetings). Common typo/shorthand variants included
+  // (hellow/helo/heyy/hii/gm) — without them "helo" fell to 'fallback' and could
+  // be routed to a knowledge source instead of a warm greeting (longest variants
+  // listed first so the alternation matches them before their prefixes).
+  if (/^(hellow|hello|helo|heyy|hey|hii|hi|gm|salam|assalam|asalam|halo|hallo|xin chao|sawasdee|namaskar|kemusta|hai)\b/.test(s) && s.length < 24) {
     return { intent: 'greeting', broker: null };
   }
 

@@ -69,6 +69,7 @@ import { detectLearningSpeed, adaptiveStance, smartRecommendation } from '../uti
 import { fallbackPathChips } from '../utils/journey-flow.js';
 import { requireAdminModule } from '../utils/admin-session.js';
 import { getSetting } from '../utils/site-settings.js';
+import { buildConversationalReply, CONVERSATIONAL_INTENTS } from '../utils/conversation-intelligence.js';
 
 const SSE_HEADERS = {
   'Content-Type':                 'text/event-stream; charset=utf-8',
@@ -1223,8 +1224,15 @@ export async function onRequest(context) {
   // falling") is NEVER ambiguous. Answer it from the market layer with a date/time
   // header + related chips, and OVERRIDE any misfired clarification so a price ask
   // can never be answered with a clarification menu or an unrelated concept.
+  // CONVERSATION INTELLIGENCE GUARD (Final Conversation Phase): a greeting or
+  // small-talk turn must NEVER reach the live-market layer. This block runs on
+  // every non-followup turn and can OVERWRITE clarifyAnswer, so without the
+  // guard a social message whose text was instrument-tagged upstream (the
+  // conversation-state layer carries the thread's active/favorite instrument
+  // into vague text) could be answered with a full Gold technical view — the
+  // exact "hi → market data" production bug.
   let _awChips = [];
-  if (!chartAnalysis && !followup && !_unsupported && ctx.live) {
+  if (!chartAnalysis && !followup && !_unsupported && ctx.live && !CONVERSATIONAL_INTENTS.has(p10Intent)) {
     try {
       const _aw = marketAwareness({ text: genText, marketData, calendarData, lang });
       if (_aw && _aw.answer) { directAnswer = _aw.answer; directSource = 'live'; clarifyAnswer = null; _awChips = _aw.chips || []; }
@@ -1246,7 +1254,9 @@ export async function onRequest(context) {
   // probability not certainty, never a signal) from the already-fetched marketData;
   // for a live-price ask on an instrument we have NO feed for (EUR/USD, indices,
   // oil), say so honestly instead of inventing a number (STEP 9). Additive.
-  if (!chartAnalysis && !followup && !_unsupported && ctx.live) {
+  // (Same conversational guard as the awareness block above — this block can also
+  // overwrite clarifyAnswer/directAnswer, so social turns must never enter it.)
+  if (!chartAnalysis && !followup && !_unsupported && ctx.live && !CONVERSATIONAL_INTENTS.has(p10Intent)) {
     try {
       const _decInst = marketDecisionInstrument(genText);
       const _pxAsk   = livePriceInstrument(genText);
@@ -1291,6 +1301,29 @@ export async function onRequest(context) {
       const _iq = detectInstrumentQuery(genText);
       if (_iq) { directAnswer = buildInstrumentAnalysis({ symbol: _iq.symbol, marketData, calendarData, lang, kind: _iq.kind }); directSource = 'live'; }
     } catch { /* additive — never blocks the reply */ }
+  }
+
+  // ── CONVERSATION INTELLIGENCE — FINAL AUTHORITY for social turns (Final
+  // Conversation Phase, Tasks 1/2/4/8). Reason-before-routing: a greeting,
+  // thanks, farewell, "how are you", or "who are you / what can you do" is a
+  // SOCIAL gesture, not an information request — it must be answered warmly and
+  // briefly, never with market data, prices, articles, or an LLM generation.
+  // Placed AFTER every live/calc block and written as an unconditional overwrite
+  // for these two intents, so no upstream block can ever again turn "hi" into a
+  // Gold technical view (the production bug). Recognizes a signed-in member
+  // ("Welcome back — you're signed in.") on the opening turn (Task 4) and always
+  // ends with one natural follow-up question (Task 8). English-only: for
+  // ur/ur-roman/ar the builder returns null and the existing localized greeting
+  // templates (engine-i18n, Language Lock) answer exactly as before.
+  if (!followup && !chartAnalysis && !_unsupported && CONVERSATIONAL_INTENTS.has(p10Intent)) {
+    try {
+      const _conv = buildConversationalReply({
+        text: genText, intent: p10Intent, lang,
+        verified: tier === 'unlimited',
+        firstTurn: messages.filter(m => m.role === 'user').length <= 1,
+      });
+      if (_conv) { directAnswer = _conv; directSource = 'safe'; clarifyAnswer = null; }
+    } catch { /* additive — the rule-engine greeting below still answers */ }
   }
 
   // ── PHASE 20: unsupported language → polite, honest reply (highest priority,
@@ -1715,7 +1748,11 @@ export async function onRequest(context) {
   // link (e.g. market/signal replies) so the contact never appears twice. Runs after
   // optimize so it isn't trimmed; before the SSE stream so it streams normally.
   try {
-    if (typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)) {
+    // Conversational turns (greeting/thanks/bye/how-are-you) are excluded: a
+    // promo footer stapled to "Hello 👋" reads as a bot, not an assistant —
+    // the footer stays on every substantive (informational) answer.
+    if (typeof answer === 'string' && answer.trim() && !/t\.me\/|wa\.me\//i.test(answer)
+        && !CONVERSATIONAL_INTENTS.has(p10Intent)) {
       answer = answer.trimEnd() +
         `\n\n_For research-based learning, training, and trading guidance, reach us on [Telegram](${TELEGRAM}) or [WhatsApp](${WHATSAPP})._`;
     }
