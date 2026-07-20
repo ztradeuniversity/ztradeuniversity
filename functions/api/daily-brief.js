@@ -86,7 +86,7 @@ function buildFactualBrief(market, calendar, news) {
   return L.join('\n');
 }
 
-const DISCLAIMER = '_⚠ Educational only._';
+const DISCLAIMER = '_⚠ Educational purposes only._';
 
 async function generate(env, origin) {
   const [market, calendar, news] = await Promise.all([

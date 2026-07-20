@@ -1076,13 +1076,29 @@
         });
       };
       syncLabels(newCfg);
+      // ROUTING SAVE STATUS task — the confirmation names the source the admin
+      // just changed ("✓ OpenAI enabled" / "✓ Database disabled") so the message
+      // is verifiable against the click, instead of a generic sentence that
+      // looks identical whether the right row was written or not.
+      const changedKey   = e.target.dataset.routingKey;
+      const changedLabel = (routingSourceMeta.find(s => s.key === changedKey) || {}).label || humanize(changedKey);
       toast('Updating production routing for all visitors…');
       const r = await apiPost(KB, 'routing-config', { config: newCfg }).catch(() => null);
-      if (r && r.saved) {
-        syncLabels(r.config || newCfg);
-        toast('Production routing updated — live now', 'ok');
+      // TRUTHFUL STATUS: success is claimed ONLY when the server confirms
+      // saved:true AND the config it echoes back actually contains the change we
+      // asked for. A 200 that silently persisted something else is reported as a
+      // failure, not a success.
+      const echoed  = r && r.config ? r.config : null;
+      const applied = !!(r && r.saved) && (!echoed || echoed[changedKey] === newCfg[changedKey]);
+      if (applied) {
+        syncLabels(echoed || newCfg);
+        toast(`✓ ${changedLabel} ${newCfg[changedKey] ? 'enabled' : 'disabled'} — live now`, 'ok');
+      } else if (r && r.saved) {
+        // Saved, but not what we asked for — never report this as success.
+        syncLabels(echoed);
+        toast(`Saved, but the server applied a different config for ${changedLabel} — panel refreshed to the stored truth.`, 'bad');
       } else {
-        toast((r && r.error) || 'Could not reach the server — the routing config was not changed.', 'bad');
+        toast((r && r.error) || 'Network error — the server could not be reached; routing was not changed.', 'bad');
         loadRoutingConfig();   // only on real failure: restore the persisted truth
       }
     }));

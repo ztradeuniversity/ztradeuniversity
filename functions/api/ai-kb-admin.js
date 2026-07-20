@@ -527,7 +527,11 @@ export async function onRequest(context) {
       // config that was actually persisted on success) so the admin panel never
       // shows a bare "Failed to save — check Error Center" with nothing logged.
       const saved = await setSetting(env, 'chatbot_routing', clean);
-      if (!saved) return json({ saved: false, config: clean, error: lastSettingsError() || 'Could not persist the routing config.' }, 500);
+      // lastSettingsError() now names the real reason for every failure mode
+      // (table missing / RLS / permission / network / unconfigured). The
+      // fallback below should be unreachable, so it says so rather than
+      // pretending to be a diagnosis.
+      if (!saved) return json({ saved: false, config: clean, error: lastSettingsError() || 'Save failed with no reported reason — please check the Supabase project logs for site_settings.' }, 500);
       return json({ saved: true, config: clean });
     }
     if (a === 'reject')       return json(await rejectToDraft(env, body.id, body.reviewer || 'admin', body.notes));

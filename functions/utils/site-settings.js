@@ -41,18 +41,35 @@ async function sb(env, method, qs, body, prefer) {
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) {
+      // Report the REAL reason PostgREST gave, mapped to plain language for the
+      // admin panel. The raw detail is appended so nothing is hidden.
       const detail = await res.text().catch(() => '');
-      _lastError = res.status === 404
-        ? 'The site_settings table does not exist in the AI Supabase project — run the site_settings migration.'
+      const d = detail.toLowerCase();
+      _lastError =
+        res.status === 404 || d.includes('does not exist') || d.includes('pgrst205')
+          ? 'site_settings table missing — run the site_settings migration in the AI Supabase project.'
+        : res.status === 401 || res.status === 403 || d.includes('row-level security') || d.includes('rls')
+          ? (d.includes('row-level security') || d.includes('rls')
+              ? 'RLS policy blocked the request — the service key is not permitted to write site_settings.'
+              : 'Permission denied — check AI_SUPABASE_SERVICE_KEY.')
         : `Supabase returned HTTP ${res.status}${detail ? ' — ' + detail.slice(0, 200) : ''}`;
       return null;
     }
-    if (prefer === 'return=minimal') return true;
+    // ROOT CAUSE OF THE FALSE "Could not persist the routing config." —
+    // setSetting calls this with prefer = 'resolution=merge-duplicates,return=minimal',
+    // so the old strict `prefer === 'return=minimal'` comparison was FALSE and
+    // execution fell through to res.json(). Supabase honours return=minimal by
+    // replying 201 with an EMPTY body, so res.json() threw, `.catch(() => null)`
+    // returned null, and the caller reported a failure — even though the row had
+    // been written successfully. `_lastError` stayed null (res.ok was true),
+    // which is why the message was the generic fallback with no real reason.
+    // A substring test matches every Prefer combination that suppresses the body.
+    if (prefer && prefer.includes('return=minimal')) return true;
     return res.json().catch(() => null);
   } catch (e) {
-    _lastError = (e && e.name === 'TimeoutError')
-      ? 'Supabase request timed out after 4s.'
-      : `Supabase request failed: ${(e && e.message) || 'unknown error'}`;
+    _lastError = (e && (e.name === 'TimeoutError' || e.name === 'AbortError'))
+      ? 'Network error — the Supabase request timed out after 4s.'
+      : `Network error — ${(e && e.message) || 'the Supabase request failed'}.`;
     return null;
   }
 }

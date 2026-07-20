@@ -247,6 +247,24 @@
   }
   .msg-a .msg-bub{ background:var(--ai-bub); border:1px solid var(--ai-bub-bd); color:var(--text); border-top-left-radius:5px; box-shadow:var(--shadow-sm); }
   .msg-u .msg-bub{ background:var(--user-bub); border:1px solid var(--user-bub-bd); color:var(--heading); border-top-right-radius:5px; }
+  /* COMPACT DISCLAIMER — one small light-grey line replacing the two full-size
+     paragraphs (italic disclaimer + Telegram/WhatsApp links). Both halves share
+     the same size, weight and colour so it reads as a single footnote rather
+     than two competing blocks. 11px matches the composer's own .in-disc, the
+     smallest size already used for supporting text on this page. */
+  .msg-disc{
+    margin-top:9px; font-size:11px; line-height:1.5; font-style:normal;
+    color:var(--muted); opacity:.85; overflow-wrap:anywhere;
+  }
+  /* Specificity note: `.msg-bub a{ color:var(--orange) }` (defined below) has the
+     same weight as `.msg-disc a` and wins on source order, which left the two
+     links orange while the disclaimer text was grey — two different treatments
+     on what must read as one line. `.msg-bub .msg-disc a` outranks it. */
+  .msg-bub .msg-disc a{
+    font-size:inherit; color:inherit; font-weight:600;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .msg-bub .msg-disc a:hover{ color:var(--orange); }
   .msg-time{ font-size:11px; color:var(--muted); margin-top:5px; padding:0 4px; opacity:.85; }
   .msg-u .msg-time{ display:inline-flex; align-items:center; gap:4px; }
   .msg-u .msg-time::after{ content:'✓✓'; color:var(--orange); font-size:10px; letter-spacing:-1px; }
@@ -1470,12 +1488,42 @@ function md(text) {
   h = h.replace(/^[*\-] (.+)$/gm,'<li>$1</li>');
   h = h.replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>');
   const blocks = h.split(/\n\n+/);
-  h = blocks.map(b => {
+
+  /* COMPACT DISCLAIMER (Compact Disclaimer task) — the reply ends with two
+     separate full-size paragraphs: an italic "⚠ Educational only." and a
+     "Telegram | WhatsApp" link line. Merged here into ONE small light-grey
+     line so the disclaimer stops competing with the answer itself.
+
+     Done in the renderer rather than server-side on purpose: the disclaimer is
+     emitted in 9 languages from response-engine.js and the contact line is
+     appended separately in ai-chat.js, so merging at the point of DISPLAY keeps
+     every language and every answer path working with no routing change. The
+     match is on the ⚠ marker and the existing t.me/wa.me links, so it is
+     language-independent, and it is a pure function of the text — safe to
+     re-run on every streamed token. Either part alone still renders. */
+  const isDisc    = t => /^<em>\s*⚠/.test(t);
+  const isContact = t => /t\.me\//.test(t) && /wa\.me\//.test(t) && /^(<a |\s)/.test(t);
+  const discIdx    = blocks.findIndex(b => isDisc(b.trim()));
+  const contactIdx = blocks.findIndex(b => isContact(b.trim()));
+  let compact = '';
+  if (discIdx > -1 || contactIdx > -1) {
+    const parts = [];
+    if (discIdx > -1) {
+      // Drop the <em> wrapper (italic) and the trailing full stop so the two
+      // halves read as one line at one weight.
+      parts.push(blocks[discIdx].trim().replace(/^<em>\s*/, '').replace(/<\/em>\s*$/, '').replace(/\.\s*$/, ''));
+    }
+    if (contactIdx > -1) parts.push(blocks[contactIdx].trim());
+    compact = '<div class="msg-disc">' + parts.join(' · ') + '</div>';
+  }
+
+  h = blocks.map((b, i) => {
+    if (i === discIdx || i === contactIdx) return '';   // re-emitted as one compact line below
     const t = b.trim(); if (!t) return '';
     if (/^<(h[23]|ul|ol|hr|blockquote)/.test(t)) return t;
     return '<p>' + t.replace(/\n/g,'<br>') + '</p>';
-  }).join('\n');
-  return h;
+  }).filter(Boolean).join('\n');
+  return h + compact;
 }
 
 /* ─── RENDER MESSAGE ─────────────────────────────────────────── */

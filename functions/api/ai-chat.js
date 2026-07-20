@@ -1424,7 +1424,7 @@ export async function onRequest(context) {
       lead: p10Lead,
       body: compress(kbAnswer, p10Depth) + p10GuideAppend,
       engagement: p10Followups,
-      disclaimer: '_⚠ Educational only._',
+      disclaimer: '_⚠ Educational purposes only._',
     }, { lang, intent: p10Intent, form: p10Form });
   } else {
     try {
@@ -1522,7 +1522,7 @@ export async function onRequest(context) {
           lead: p10Lead,
           body: `From the ZTU article **${_art.title}**:\n\n${_artBody}${_src}` + p10GuideAppend,
           engagement: p10Followups,
-          disclaimer: '_⚠ Educational only._',
+          disclaimer: '_⚠ Educational purposes only._',
         }, { lang, intent: p10Intent, form: p10Form });
         answerSource    = 'database';
         answerArticleId = (_art.id != null) ? _art.id : answerArticleId;
@@ -1638,13 +1638,13 @@ export async function onRequest(context) {
       const cached = (_openaiOnly || !ctx.database) ? null : await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
       if (cached && cached.content) {
         _openaiCacheHit = true;
-        answer = cached.content + '\n\n_⚠ Educational only._';
+        answer = cached.content + '\n\n_⚠ Educational purposes only._';
         answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
         _openaiCacheHit = false;
         const gen = await generateEducationalAnswer(env, genText, lang, p10Form);
         if (gen) {
-          answer = gen + '\n\n_⚠ Educational only._';
+          answer = gen + '\n\n_⚠ Educational purposes only._';
           answerSource = 'openai';                   // selected provider answered directly
           // STORE BEFORE RETURNING (await, not waitUntil) so the draft is committed by the
           // time the reply is sent — guarantees the very next identical question (even an
