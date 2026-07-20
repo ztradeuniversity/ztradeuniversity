@@ -60,6 +60,7 @@ export function route(ctx) {
     case 'selfassess':  return edu.buildSelfAssess(ctx) + disc;
     case 'aboutme':     return edu.buildAboutMe(ctx)    + disc;
     case 'career':      return edu.buildCareer(ctx)     + disc;
+    case 'journal':     return edu.buildJournal(ctx)    + disc;
     case 'islamic':     return edu.buildIslamic(ctx)    + disc;
     case 'profileinfo': return edu.buildProfileAck(ctx) + disc;
     case 'offtopic':    return edu.buildOffTopic(ctx)   + disc;

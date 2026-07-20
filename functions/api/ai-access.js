@@ -140,7 +140,30 @@ export async function onRequest(context) {
       const fresh = await mintToken(env, p.acct, p.ss);
       return json({ valid: true, tier: 'unlimited', token: fresh, joinUrl: joinUrl(env) });
     }
-    return json({ valid: false, tier: 'visitor', removed: true, message: revalidationRemovedMsg(lang), joinUrl: joinUrl(env) });
+    // ── PERSISTENT LOGIN FIX — distinguish a DEFINITIVE revocation from a
+    // TRANSIENT re-check failure. Library's verify-session returns exactly
+    // `{ ok:true, valid:false }` only when it actually reached the eligibility
+    // source (broker/EA DB) and the account is genuinely revoked/inactive — that
+    // (and ONLY that) still logs the user out immediately, so a removed account
+    // loses access with zero security relaxation. Every OTHER negative shape means
+    // the eligibility source could NOT be reached: our proxy failed
+    // ({ ok:false, reason:'proxy_error'|'proxy_parse' }) or library-auth itself
+    // 5xx'd on a DB/network blip (an { error } object with no `ok:true`). Before
+    // this fix, all of those were treated as "removed" — so any momentary infra
+    // hiccup during the daily eligibility re-check wiped the AI token AND the
+    // shared Library session, forcing the user to re-enter Account Number + OTP
+    // far too often (the reported problem). We now FAIL-OPEN on a transient blip:
+    // the token is still HMAC-valid and within its 15-day hard expiry, so keep the
+    // session and simply DEFER the eligibility re-check to the next page load (no
+    // fresh token is minted, so elig_exp stays lapsed and it retries automatically
+    // — as soon as the source is reachable, a genuine revocation is caught then).
+    // Security is preserved: OTP, broker verification, HMAC signing, and the
+    // 15-day hard cap are all unchanged; only "couldn't reach EA right now" no
+    // longer masquerades as "account removed."
+    if (vs && vs.ok === true && vs.valid === false) {
+      return json({ valid: false, tier: 'visitor', removed: true, message: revalidationRemovedMsg(lang), joinUrl: joinUrl(env) });
+    }
+    return json({ valid: true, tier: p.tier || 'unlimited', joinUrl: joinUrl(env) });
   }
 
   // ── BRIDGE — LIBRARY → AI single-session sync (NO new OTP, NO new pipeline) ──

@@ -37,10 +37,10 @@ import { logMissingKnowledge, graphActive } from '../utils/kb-store.js';
 import { composeAnswer, setComposer } from '../utils/composer.js';
 import { llmConfigured, makeLLMComposer, generateEducationalAnswer } from '../utils/composer-llm.js';
 import { optimizeAnswer, optimizeChips, wantsDetail } from '../utils/response-optimizer.js';
-import { learnEnabled, recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
+import { recallLearned, learnFromAnswer } from '../utils/llm-learn.js';
 import { sourceBadge, SOURCE_STAGES, logSourceValue } from '../utils/answer-source.js';
 import { wrapConversational } from '../utils/conversational-wrapper.js';
-import { buildSafeReply, buildSmallTalkReply } from '../utils/safe-reply.js';
+import { buildSafeReply } from '../utils/safe-reply.js';
 import { TELEGRAM, WHATSAPP } from '../utils/response-engine.js';
 import { detectCalcRequest, runCalculator } from '../utils/trade-calculators.js';
 import { marketDecisionInstrument, livePriceInstrument, priceUnavailable, buildMarketContext } from '../utils/market-context.js';
@@ -543,13 +543,13 @@ export async function onRequest(context) {
   const { request, env } = context;
   const waitUntil = (p) => { try { context.waitUntil?.(p); } catch {} };   // background persistence
 
-  // ── ACTIVATION: register the GROUNDED generative composer when a model is bound
-  // (Cloudflare Workers AI env.AI, or an OpenAI-compatible LLM_ENDPOINT). The graph
-  // stays the source of truth — the LLM only rewrites the already-grounded draft
-  // into human prose (English-only; non-English keeps the localized template). If
-  // unbound or the call fails, composer.js falls back to the rule assembler — so
-  // this is fully dormant + non-breaking until configured.
-  if (llmConfigured(env)) { try { setComposer(makeLLMComposer(env)); } catch {} }
+  // NOTE (Phase 1 routing fix): the generative composer used to be registered here,
+  // unconditionally whenever a model was bound — meaning it could rewrite every
+  // reply through the LLM even when the admin's "OpenAI" routing toggle was OFF.
+  // It is now registered further below, gated on ctx.openai, once the persisted
+  // routing config has been read — see "ACTIVATION: register the GROUNDED
+  // generative composer" near the ctx build. This is the single OpenAI-provider
+  // switch the Content Intelligence Center controls; it must not be bypassable.
 
   // ── ACTIVATION: boost lexical paraphrase matching when true embeddings aren't
   // enabled — wraps the existing scorer to also try a canonical-expanded query and
@@ -770,6 +770,18 @@ export async function onRequest(context) {
   // resolved, adds zero extra latency to this request.
   const persistedRouting = routingRes.status === 'fulfilled' ? routingRes.value : null;
   const ctx = buildExecutionContext(persistedRouting, body, isAdminDiagnostic);
+
+  // ── ACTIVATION: register the GROUNDED generative composer when a model is bound
+  // (Cloudflare Workers AI env.AI, or an OpenAI-compatible LLM_ENDPOINT) AND the
+  // admin's "OpenAI" routing switch (ctx.openai) is on. The graph stays the source
+  // of truth — the LLM only rewrites the already-grounded draft into human prose
+  // (English-only; non-English keeps the localized template). Gated on ctx.openai
+  // so the Content Intelligence Center's routing toggle is the single, honest
+  // source of truth for whether any LLM touches a reply — disabling "OpenAI" now
+  // really means no LLM involvement, not just "no fresh generation." If unbound,
+  // disabled, or the call fails, composer.js falls back to the rule assembler.
+  if (ctx.openai && llmConfigured(env)) { try { setComposer(makeLLMComposer(env)); } catch {} }
+
   let guestSetCookie = null;
   if (tier !== 'unlimited' && !isAdminDiagnostic) {
     const used = await readGuestCount(env, request);
@@ -832,7 +844,7 @@ export async function onRequest(context) {
   // At most ONE natural follow-up (never a capability menu). Skipped for
   // follow-up transforms and chart turns so those flows are preserved.
   const MARKET_DUMP_INTENTS = new Set(['gold', 'btc', 'macro', 'brief', 'mood', 'events', 'session']);
-  const NO_CONDENSE = new Set(['aboutme', 'profileinfo', 'career', 'assess', 'lotsize', 'selfassess', 'signal', 'setcountry', 'offtopic', 'greeting', 'broker', 'funding', 'islamic', 'smalltalk']);
+  const NO_CONDENSE = new Set(['aboutme', 'profileinfo', 'career', 'assess', 'lotsize', 'selfassess', 'signal', 'setcountry', 'offtopic', 'greeting', 'broker', 'funding', 'islamic', 'smalltalk', 'journal']);
   let p10Intent      = cls.intent;
   let p10Mode        = mode;
   let p10MarketDump  = true;
@@ -1354,9 +1366,19 @@ export async function onRequest(context) {
   // search + composer (no new pipeline, retrieval unchanged). English-only (Language
   // Lock). Relevance-gated by rankArticles (score>0 → off-topic returns nothing →
   // safe reply stays). Runs BEFORE the OpenAI fallback so DB precedes OpenAI.
+  // FRESHNESS GUARD (Final Phase, Part 5): excludes MARKET_DUMP_INTENTS (today's
+  // gold/btc/macro/brief/events/mood/session — genuinely time-sensitive). If we
+  // reach here with directAnswer still null for one of these, it means Live API
+  // was disabled/unavailable — a coincidentally-matching STATIC article must never
+  // stand in for live price/news data (that would misrepresent stale content as
+  // current, a real trust/accuracy risk). Their own specialist handlers already
+  // give an honest "live data isn't available right now" reply in that case
+  // (see buildEvents/buildBrief), so this only removes a wrong substitute, never
+  // a working answer.
   let _dbArticleAnswered = false;
   if (aiSbConfigured(env) && lang === 'en' && !chartAnalysis && !_unsupported
-      && !directAnswer && !clarifyAnswer && !kbAnswer && ctx.database) {
+      && !directAnswer && !clarifyAnswer && !kbAnswer && ctx.database
+      && !MARKET_DUMP_INTENTS.has(p10Intent)) {
     try {
       const _arts = await searchArticles(env, { q: genText, limit: 1 });
       const _art  = _arts && _arts[0];
@@ -1409,7 +1431,13 @@ export async function onRequest(context) {
   // other single-source test (e.g. "OpenAI Only" could still show a database
   // answer). ctx.database defaults true, so real visitors and an unmodified
   // Production Routing config see zero behavior change.
-  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge && !_dbArticleAnswered && ctx.database) {
+  // FRESHNESS GUARD (Final Phase, Part 5): same MARKET_DUMP_INTENTS exclusion as
+  // the database-article layer above — a market-freshness question reaching here
+  // (directAnswer still null) means Live API was disabled/unavailable, so a
+  // stale article prepend/append must not be woven into what should be an
+  // honest "live data unavailable" reply.
+  if (aiSbConfigured(env) && !chartAnalysis && !directAnswer && !clarifyAnswer && !kbAnswer && allowKnowledge
+      && !_dbArticleAnswered && ctx.database && !MARKET_DUMP_INTENTS.has(p10Intent)) {
     try {
       const kl = await buildKnowledgeLayer(env, {
         intent:  p10Intent,
@@ -1430,37 +1458,66 @@ export async function onRequest(context) {
     } catch { /* knowledge layer is additive; never blocks the reply */ }
   }
 
-  // ── LEVEL 3 (Part 7) — INTERNAL KNOWLEDGE MISSING → reviewable-draft learning ──
-  // Gated by AI_LEARN_ENABLED (default OFF → zero behavior change until verified).
-  // PRIORITY PRESERVED: runs ONLY after DB (kbAnswer) and live APIs (directAnswer) have
-  // already had their turn, and ONLY on a true 'fallback' (so dynamic-data intents like
-  // gold/btc/news/macro, which set directAnswer, are never replaced). English-only
-  // (Language Lock). A previously-learned DRAFT is reused (cache) before any new LLM
-  // call; new generations are stored as DRAFT only (never authoritative) and served with
-  // an honest low-confidence disclaimer. Anti-hallucination preserved by the strict
-  // generator (off-domain/signal/price guards); on any miss the existing safe reply stays.
-  if (learnEnabled(env) && lang === 'en' && !chartAnalysis && !_unsupported
+  // ── LEVEL 3 — SELECTED-PROVIDER ANSWERING (Phase 1 routing fix) ─────────────
+  // ROOT CAUSE FIXED: this block previously required THREE independent, mostly
+  // invisible conditions before OpenAI could ever answer — (1) env.AI_LEARN_ENABLED
+  // === 'true' (a Cloudflare env var with no admin-panel control at all), (2) intent
+  // classified as the rarest possible bucket 'fallback' (the LAST-RESORT default of
+  // a ~28-category classifier — a real question like "risk management" or "gold"
+  // never reached this branch even with every other source disabled), and (3) the
+  // admin's ctx.openai toggle. An admin selecting "OpenAI only" in the Content
+  // Intelligence Center therefore could not make OpenAI answer ordinary trading
+  // questions — the routing panel and the runtime silently disagreed.
+  // FIX: ctx.openai (the ONE admin-visible switch) is now the sole routing gate.
+  // PRIORITY PRESERVED: still runs ONLY after every higher-priority source that was
+  // actually enabled has had its turn and found nothing (kbAnswer/directAnswer/
+  // _dbArticleAnswered all null) — so with every source enabled (the default), the
+  // existing Database→Graph→Live→OpenAI priority is unchanged; with only OpenAI
+  // enabled, it now genuinely answers everything the disabled sources would have.
+  // EXCLUDED on purpose (each already has its own correct, deliberate reply that an
+  // LLM must never overwrite or guess at): greeting/smalltalk (warm canned reply),
+  // offtopic (professional scope decline), signal (compliance-mandated Telegram/
+  // WhatsApp routing — never a freelanced signal), setcountry/profileinfo/aboutme
+  // (reads/writes the user's own stored data — an LLM has no access to it and would
+  // hallucinate), selfassess/assess (a structured tool flow, not a Q&A prompt),
+  // lotsize (a deterministic financial calculation — an LLM guess would be a real
+  // accuracy regression versus the calculator). English-only (Language Lock). A
+  // previously-learned DRAFT is reused (cache) before any new LLM call — reuses
+  // Content Center's existing learn/draft feature exactly as built (recallLearned/
+  // learnFromAnswer already self-gate on AI_LEARN_ENABLED internally, so that
+  // feature's own on/off switch is untouched; it just no longer also blocks the
+  // ANSWER itself). Anti-hallucination preserved by the strict generator (off-domain/
+  // signal/price guards in composer-llm.js); on any miss the existing safe reply stays.
+  const OPENAI_EXCLUDED_INTENTS = new Set([
+    'offtopic', 'greeting', 'smalltalk', 'signal', 'setcountry',
+    'profileinfo', 'aboutme', 'selfassess', 'assess', 'lotsize',
+    'journal',   // has a dedicated reply linking to the real /journal.html page —
+                 // a generic LLM generation has no knowledge of that page and
+                 // would silently drop the link, undermining its whole point.
+  ]);
+  if (ctx.openai && lang === 'en' && !chartAnalysis && !_unsupported
       && !kbAnswer && !directAnswer && !_dbArticleAnswered
-      && (p10Intent === 'fallback' || cls.intent === 'fallback') && ctx.openai) {
+      && !OPENAI_EXCLUDED_INTENTS.has(p10Intent)) {
     try {
       // STABILIZATION FIX: use the handler-scoped genText. `aText` is const-scoped to
       // the (!followup && !chartAnalysis) block above (closes ~L1091) and is OUT of
       // scope here — referencing it threw ReferenceError that the try/catch silently
       // swallowed, so this block never executed. genText is the correct in-scope
       // equivalent (recovery/slang/multilang-normalized user text). No logic change.
-      const cached = await recallLearned(env, genText);
+      const cached = await recallLearned(env, genText);   // no-op unless Content Center's learn feature is on
       if (cached && cached.content) {
         answer = cached.content + '\n\n_⚠️ Educational only — not financial advice._';
         answerSource = 'database';                   // served from stored knowledge (exact or similar) — no LLM call
       } else {
         const gen = await generateEducationalAnswer(env, genText, lang, p10Form);
         if (gen) {
-          answer = gen + '\n\n_ℹ️ Best general explanation — not yet verified against the ZTU library. Educational only, not financial advice._';
-          answerSource = 'openai';                   // LLM fallback engine (fresh generation)
+          answer = gen + '\n\n_⚠️ Educational only — not financial advice._';
+          answerSource = 'openai';                   // selected provider answered directly
           // STORE BEFORE RETURNING (await, not waitUntil) so the draft is committed by the
           // time the reply is sent — guarantees the very next identical question (even an
           // immediate repeat) is served from storage and does NOT call the LLM again.
-          // learnFromAnswer is best-effort/never-throws, so awaiting it can't break the reply.
+          // learnFromAnswer is best-effort/never-throws (and no-ops unless the Content
+          // Center learn feature is on), so awaiting it can't break the reply.
           await learnFromAnswer(env, { question: genText, answer: gen, lang, confidence: 'MEDIUM' });
         }
       }
@@ -1490,18 +1547,31 @@ export async function onRequest(context) {
     ]));
   }
 
-  // ── SAFE REPLY UPGRADE — when the reply came from the SAFE tier (no DB/Graph/Live/
-  // OpenAI answer was produced, and not an intentional direct message), replace the
-  // rambling engine fallback: small-talk gets a brief human reply; everything else
-  // (off-topic, fallback, or an unanswered/misclassified question — e.g. "football" was
-  // labelled 'knowledge') gets a concise "what I can / can't help with". The graph
-  // suggestion chips below still append "try these". Greeting keeps its own warm reply;
-  // clarify / chart / unsupported-language / direct-message turns are untouched. Localized langs only.
-  if (answerSource === 'safe' && ['en', 'ur', 'ur-roman', 'ar'].includes(lang)
-      && !clarifyAnswer && !chartAnalysis && !_unsupported && !directAnswer
-      && p10Intent !== 'greeting') {
+  // ── SAFE REPLY UPGRADE (Phase 1 fix) ─────────────────────────────────────────
+  // ROOT CAUSE FIXED: `answerSource` is only ever moved off its initial 'safe'
+  // default by the graph/database/live/calculator/openai branches above — the
+  // baseline rule engine (generateResponse → specialist-router, a few hundred
+  // lines up) NEVER sets it, even though that engine has real, specific, dedicated
+  // handlers for gold/btc/psychology/riskmgmt/strategy/technical/session/career/
+  // and ~20 other intents. The OLD condition (`answerSource === 'safe'` alone)
+  // therefore fired for MOST real trading questions — not just genuinely unknown
+  // ones — silently discarding a correct, specific answer and replacing it with
+  // the generic "I'm focused on trading…" decline. The actual signal for "the
+  // assistant genuinely doesn't know" is the INTENT itself: 'fallback' (the
+  // classifier's last-resort default when nothing matched) or 'offtopic' (out of
+  // scope, per Task 5). Every other intent's rule-engine/OpenAI answer is real and
+  // must survive untouched — this is required for both Task 4 (trading questions
+  // must never fall back to a generic reply) and Task 5 (only genuinely out-of-
+  // scope questions get the scope-decline reply). Kept as an AND with the original
+  // `answerSource === 'safe'` check (not a replacement) — strictly narrows when
+  // the overwrite fires, adds no new risk. Greeting/smalltalk already have their
+  // own good replies from the rule engine and are excluded by not being in the
+  // fallback/offtopic set. Localized langs only (buildSafeReply's own coverage).
+  if (answerSource === 'safe' && ['fallback', 'offtopic'].includes(p10Intent)
+      && ['en', 'ur', 'ur-roman', 'ar'].includes(lang)
+      && !clarifyAnswer && !chartAnalysis && !_unsupported && !directAnswer) {
     try {
-      answer = (p10Intent === 'smalltalk') ? buildSmallTalkReply(lang) : buildSafeReply(lang);
+      answer = buildSafeReply(lang);
     } catch { /* keep existing reply on any failure */ }
   }
 
@@ -1664,7 +1734,7 @@ export async function onRequest(context) {
         graph:    graphActive(env),
         calc:     true,   // pure deterministic math — always available, no external config
         live:     !!(marketData && marketData.status === 'ok'),
-        openai:   llmConfigured(env) || learnEnabled(env),
+        openai:   llmConfigured(env),   // the true prerequisite now that routing no longer also requires AI_LEARN_ENABLED
         safe:     true,
       },
       intent: p10Intent,

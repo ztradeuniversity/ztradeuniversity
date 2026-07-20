@@ -61,6 +61,20 @@ export function buildProfileAck(ctx) {
   return `${ack}\n\n${followup || `What would you like to dig into — **market context**, a **trade review**, or **psychology**?`}`;
 }
 
+// Trading Journal (Final Phase, Part 3) — a real, honest answer that points to
+// the site's actual Journal feature (journal.html) rather than a disconnected
+// generic essay. No live journal API exists yet (submission/feedback is UI-only
+// at this stage), so this is deliberately educational + a link, never a claim
+// of a feature that isn't wired up.
+export function buildJournal(ctx) {
+  return `## Trading Journal\n` +
+    `A journal is the single fastest way to actually improve — it turns "I feel like I keep losing" into a data trail you can fix. ` +
+    `Log every trade: instrument, entry/exit, reason for the trade, and how you felt taking it. Review it weekly, not daily — patterns need a few trades to show up.\n\n` +
+    `**What to track:** setup/strategy used · risk taken · outcome · one honest note on discipline (did you follow your own plan?).\n\n` +
+    `You can start yours on our [Trading Journal page](/journal.html) — submit your trade history there for mentor-guided feedback. ` +
+    `Want help with **what to track**, or would you rather look at **risk management** or **trading psychology** first?`;
+}
+
 // ── PHASE 8E: DOMAIN GUARDRAIL (off-topic → polite redirect) ─────────────────
 export function buildOffTopic(ctx) {
   return `I'm your **trading assistant**, so I stick to markets — **Gold**, **₿ BTC**, market context, trade reviews, risk, and trading psychology. ` +

@@ -18,8 +18,21 @@
 // Fail-safe: any error returns the ORIGINAL input — it can never break a reply.
 // ════════════════════════════════════════════════════════════════════════════
 
-const MAX_WORDS = 120;
-const MAX_PARAS = 3;
+// Budget tuned to a PROFESSIONAL educational answer, not a one-liner. The graph's
+// signature reply is a structured 5-part coach — direct answer + "⚠️ Common
+// mistake" + "🎯 Professional insight" + "🛡️ Risk warning" + "📊 Market context"
+// + a next-step invite (~6 short paragraphs / ~180-220 words). The old 120-word /
+// 3-paragraph cap truncated that mid-structure with a "…", which (a) read as a
+// broken, rule-based bot cutting itself off and (b) could drop the risk-warning
+// line — a quality AND safety regression. 220 words / 7 paragraphs lets that
+// structured answer complete while still catching a genuine runaway. Nothing can
+// ramble to fill it: OpenAI generation is prompted "under 120 words", DB-article
+// bodies are pre-sliced to ~1200 chars, and live/status replies are naturally
+// short — so this raises the ceiling for the answers that were being clipped
+// without lengthening the ones that were already concise. `wantsDetail` still
+// removes the cap entirely when the user explicitly asks for depth.
+const MAX_WORDS = 220;
+const MAX_PARAS = 7;
 
 // The user explicitly wants a longer / detailed answer → skip the length cap.
 const DETAIL_RE = /\b(detail|details|explain (it )?(more|fully|in ?depth)|in ?depth|step[ -]?by[ -]?step|fully|elaborate|long answer|everything|complete guide|deep dive)\b|تفصیل|tafseel|poora batao|sab kuch|detail mein/i;

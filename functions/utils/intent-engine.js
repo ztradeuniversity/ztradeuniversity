@@ -264,6 +264,13 @@ export function classifyIntent(text) {
     return { intent: 'career', confidence: 'high', broker };
   }
 
+  // Trading Journal (Final Phase, Part 3) — checked before 'strategy' so "trading
+  // journal" never partially matches on the shared word "trading".
+  if (has(s, ['trading journal', 'my journal', 'journal entries', 'keep a journal',
+      'journaling', 'journal my trades', 'trade journal', 'log my trades'])) {
+    return { intent: 'journal', broker };
+  }
+
   // Strategy (Phase Next)
   if (has(s, ['strategy', 'which strategy', 'best strategy', 'what strategy', 'trading strategy',
       'scalping strategy', 'swing strategy', 'trend following', 'which style', 'trading style', 'system that works'])) {
