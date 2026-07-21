@@ -577,9 +577,10 @@
 
 .ceo-success-goal {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--ceo-space-3);
   margin-top: var(--ceo-space-4);
+  align-items: stretch; /* both cards share a height, so the chips line up */
 }
 
 .ceo-success-tile {
@@ -593,7 +594,13 @@
   border-radius: var(--ceo-radius-md);
   padding: var(--ceo-space-3);
   transition: border-color var(--ceo-transition-fast), background var(--ceo-transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
+
+/* Pins the phase-chip summary to the bottom so both cards align. */
+.ceo-success-tile .ceo-success-mini { margin-top: auto; }
 
 .ceo-success-tile:hover { border-color: var(--ceo-accent); }
 .ceo-success-tile:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 2px; }
@@ -710,38 +717,7 @@
 .ceo-dot-now { background: var(--ceo-text-primary); }
 .ceo-dot-todo { background: var(--ceo-secondary); }
 
-.ceo-success-tip {
-  position: relative;
-  margin-top: var(--ceo-space-2);
-  border: 1px solid var(--ceo-accent);
-  border-radius: var(--ceo-radius-md);
-  background: var(--ceo-surface);
-  padding: var(--ceo-space-3);
-  box-shadow: var(--ceo-shadow-modal);
-}
-
-/* Caret points back at the scrubbed position, clamped inside the card. */
-.ceo-success-tip::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: clamp(12px, var(--tip-left), calc(100% - 12px));
-  width: 10px;
-  height: 10px;
-  transform: translateX(-50%) rotate(45deg);
-  background: var(--ceo-surface);
-  border-left: 1px solid var(--ceo-accent);
-  border-top: 1px solid var(--ceo-accent);
-}
-
-.ceo-success-tip-head {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ceo-text-muted);
-  margin-bottom: var(--ceo-space-2);
-}
-
+/* Stat pair used inside the phase panel. */
 .ceo-success-tip-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -800,23 +776,6 @@
 .ceo-success-phasepick .ceo-success-chip:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 2px; }
 .ceo-success-chip.ceo-chip-on { background: var(--ceo-accent); color: var(--ceo-text-on-accent); border-color: var(--ceo-accent); }
 
-.ceo-success-tip-close {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  background: none;
-  border: none;
-  color: var(--ceo-text-muted);
-  font-size: 1.1rem;
-  line-height: 1;
-  padding: 2px 6px;
-  cursor: pointer;
-  border-radius: var(--ceo-radius-sm);
-}
-
-.ceo-success-tip-close:hover { color: var(--ceo-text-primary); background: var(--ceo-secondary); }
-.ceo-success-tip-close:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 1px; }
-
 /* Read more / Read less disclosure for roadmap activity notes. Native
    <details>, so it works without JS and stays keyboard-accessible. */
 .ceo-readmore > summary {
@@ -832,6 +791,11 @@
 .ceo-readmore[open] > summary::after { content: 'Read less'; }
 .ceo-readmore > summary:hover { text-decoration: underline; }
 .ceo-readmore > summary:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 2px; }
+
+/* Tablet: four stat columns get cramped well before the phone breakpoint. */
+@media (max-width: 900px) {
+  .ceo-success-stats { grid-template-columns: repeat(2, 1fr); }
+}
 
 @media (max-width: 540px) {
   .ceo-success { padding: var(--ceo-space-3); }

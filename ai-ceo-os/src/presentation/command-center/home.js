@@ -384,11 +384,6 @@ function livePctFor(rm, daily) {
   const h = horizonOf(rm);
   return h.days > 0 ? Math.max(0, Math.min(100, Math.round((100 * rm.currentDay) / h.days))) : 0;
 }
-function dateForDay(rm, day) {
-  const t = new Date();
-  t.setDate(t.getDate() + (day - rm.currentDay));
-  return t.toISOString().slice(0, 10);
-}
 
 function renderSuccessBar(el, s) {
   lastSuccess = s;
@@ -416,7 +411,6 @@ function renderSuccessBar(el, s) {
   const isToday = successHorizon === 'today';
   const selDay = rm ? dayForBarPct(rm, pct) : 0;
   const pt = rm ? pointForDay(rm, selDay) : null;
-  const phase = rm && pt ? rm.phases[pt.ph] : null;
   const split = rm && pt ? phaseSplit(rm, pt.d) : null;
   const scrubbing = successScrub !== null;
   const headLabel = isToday ? "Today's plan executed" : `Roadmap · ${escapeHtml(horizonOf(rm).label)}`;
@@ -448,7 +442,6 @@ function renderSuccessBar(el, s) {
         <span><i class="ceo-dot ceo-dot-todo"></i>○ Remaining</span>
         <span class="ceo-text-muted">${isToday ? 'Drag or tap the bar to explore the roadmap' : 'Drag or tap anywhere on the bar'}</span>
       </div>` : ''}
-      <div id="home-success-tip"></div>
       <div class="ceo-success-sub">${d.completed || 0} done · ${d.partial || 0} partial · ${d.skipped || 0} skipped · ${d.pending || 0} pending${d.total ? ` of ${d.total}` : ''}</div>
 
       <div class="ceo-success-stats">
@@ -480,11 +473,6 @@ function renderSuccessBar(el, s) {
             <div class="ceo-success-sub">${split.remaining.length ? 'These phases are why those members are still remaining.' : 'No phase remains after this point.'}</div>
           </div>` : ''}
         </button>
-        ${phase ? `<button type="button" class="ceo-success-tile" data-panel="phase" aria-expanded="${successPanelOpen === 'phase'}">
-          <div class="ceo-success-stat-label">Current phase ▾</div>
-          <div class="ceo-success-tile-value" style="font-size: var(--ceo-font-size-base); line-height:1.25;">${escapeHtml(phase.name || phase.stage)}</div>
-          <div class="ceo-success-sub">${escapeHtml(String(phase.objective || '').slice(0, 70))}</div>
-        </button>` : ''}
       </div>
 
       ${rm ? `<div class="ceo-success-phasepick">
@@ -531,7 +519,6 @@ function renderSuccessBar(el, s) {
     })
   );
   renderSuccessPanel(s);
-  if (scrubbing && phase) renderTip(s, pct, pt, phase);
 }
 
 // Hover (desktop) / tap + drag (touch) / arrow keys (a11y) all scrub the bar.
@@ -564,29 +551,6 @@ function wireTrack(el, s) {
   });
 }
 
-// The floating panel shown while scrubbing — phase, milestone and members all
-// read from the server's roadmap payload.
-function renderTip(s, pct, pt, phase) {
-  const holder = document.getElementById('home-success-tip');
-  if (!holder || !pt || !phase) return;
-  const rm = s.roadmap;
-  holder.innerHTML = `
-    <div class="ceo-success-tip" style="--tip-left: ${pct}%;">
-      <button type="button" class="ceo-success-tip-close" id="home-tip-close" aria-label="Close roadmap details">×</button>
-      <div class="ceo-success-tip-head">${pct}% · plan day ${num(pt.d)} of ${num(rm.horizonDays)} · ~${escapeHtml(dateForDay(rm, pt.d))}</div>
-      <div class="ceo-success-tip-grid">
-        <div><div class="ceo-success-stat-label">Expected active IB</div><div class="ceo-success-stat-value">${num(pt.e)}</div></div>
-        <div><div class="ceo-success-stat-label">Remaining to 50,000</div><div class="ceo-success-stat-value">${num(pt.r)}</div></div>
-      </div>
-      <div class="ceo-success-why"><strong>Phase:</strong> ${escapeHtml(phase.stage)}</div>
-      <div class="ceo-success-sub"><strong>Next milestone:</strong> ${escapeHtml(phase.milestone)}</div>
-      ${rm.modelOnly ? `<div class="ceo-success-sub">${escapeHtml(rm.modelNote)}</div>` : ''}
-    </div>`;
-  holder.querySelector('#home-tip-close')?.addEventListener('click', () => {
-    successScrub = null;
-    renderSuccessBar(document.getElementById('home-success-bar'), s);
-  });
-}
 
 // Implementation notes for one activity, read from the roadmap's activityNotes
 // (EXECUTION_KITS) — collapsed behind a native Read more/Read less disclosure.
