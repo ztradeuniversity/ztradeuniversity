@@ -652,8 +652,110 @@
   margin-top: 2px;
 }
 
+/* Roadmap mode: horizon selector, interactive track, floating panel. */
+
+.ceo-success-select {
+  width: auto;
+  min-width: 9.5em;
+  padding: 2px 8px;
+  font-size: var(--ceo-font-size-sm);
+}
+
+.ceo-success-track-live {
+  cursor: pointer;
+  touch-action: none; /* let a drag scrub instead of scrolling the page */
+  height: 16px;
+}
+
+.ceo-success-track-live:focus-visible {
+  outline: 2px solid var(--ceo-accent);
+  outline-offset: 3px;
+}
+
+/* "You are here" marker and the scrub cursor sit on top of the fill. */
+.ceo-success-now,
+.ceo-success-cursor {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--ceo-radius-full);
+  pointer-events: none;
+}
+
+.ceo-success-now { background: var(--ceo-text-primary); box-shadow: 0 0 0 2px var(--ceo-surface-raised); }
+.ceo-success-cursor { background: var(--ceo-accent); height: 26px; width: 2px; }
+
+.ceo-success-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ceo-space-3);
+  align-items: center;
+  margin-top: var(--ceo-space-2);
+  font-size: 0.7rem;
+  color: var(--ceo-text-secondary);
+}
+
+.ceo-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ceo-radius-full);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.ceo-dot-done { background: var(--ceo-accent); }
+.ceo-dot-now { background: var(--ceo-text-primary); }
+.ceo-dot-todo { background: var(--ceo-secondary); }
+
+.ceo-success-tip {
+  position: relative;
+  margin-top: var(--ceo-space-2);
+  border: 1px solid var(--ceo-accent);
+  border-radius: var(--ceo-radius-md);
+  background: var(--ceo-surface);
+  padding: var(--ceo-space-3);
+  box-shadow: var(--ceo-shadow-modal);
+}
+
+/* Caret points back at the scrubbed position, clamped inside the card. */
+.ceo-success-tip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: clamp(12px, var(--tip-left), calc(100% - 12px));
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--ceo-surface);
+  border-left: 1px solid var(--ceo-accent);
+  border-top: 1px solid var(--ceo-accent);
+}
+
+.ceo-success-tip-head {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ceo-text-muted);
+  margin-bottom: var(--ceo-space-2);
+}
+
+.ceo-success-tip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--ceo-space-3);
+  margin-bottom: var(--ceo-space-2);
+}
+
 @media (max-width: 540px) {
   .ceo-success { padding: var(--ceo-space-3); }
   .ceo-success-stats { grid-template-columns: repeat(2, 1fr); }
   .ceo-success-goal { grid-template-columns: 1fr; }
+  .ceo-success-head { row-gap: var(--ceo-space-2); }
+  /* Keep a real minimum so the selector wraps to its own line instead of
+     being squeezed to an unusable sliver by the flex spacer. */
+  .ceo-success-select { flex: 1 1 8em; min-width: 8em; }
+  .ceo-success-track-live { height: 20px; } /* bigger tap target on phones */
 }

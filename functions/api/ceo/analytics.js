@@ -16,7 +16,7 @@ import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { computePareto, computeFunnel, computeTrajectory, buildLessonsAndImprovements } from '../../utils/ceo/funnel-intelligence.js';
 import { computePerformance } from '../../utils/ceo/performance-logic.js';
 import { computeTrends, detectPatterns, buildRecommendations, applyDecisions, buildPerformanceSummary, planHealth, DAILY_METRICS } from '../../utils/ceo/growth-analytics.js';
-import { computeDailyProgress, computeExpectedMembers, compareExpectedActual, buildSourceBreakdown, buildRemainingWork } from '../../utils/ceo/founder-success.js';
+import { computeDailyProgress, computeExpectedMembers, compareExpectedActual, buildSourceBreakdown, buildRemainingWork, buildRoadmap } from '../../utils/ceo/founder-success.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const REC_KEY_RE = /^[a-z0-9_.:]{1,80}$/i;
@@ -180,6 +180,10 @@ export async function onRequestGet({ request, env }) {
         goal: { ...goal, pace, probability50k: trajectory.probability50k },
         sources: buildSourceBreakdown({ clients, activityTypes, expectedMembers: goal.expectedMembers }),
         remainingWork: buildRemainingWork({ remainingMembers: goal.remainingMembers, activityTypes }),
+        // Interactive roadmap: phases + exit gates from the planning engine,
+        // one precomputed point per percent so scrubbing never recomputes the
+        // member curve in the browser.
+        roadmap: buildRoadmap({ planStartDate, today, actualMembers: trajectory.activeClients, activityTypes, hasRealData: hasEnoughData }),
         // Reused, never regenerated: the same honest recommendation queue the
         // Growth Analytics page shows, so "AI improvement" advice has exactly
         // one source of truth.

@@ -16,7 +16,7 @@
 // A source with no CRM rows behind it returns expected=null so the UI can say
 // "not tracked yet" instead of printing a fabricated forecast.
 
-import { FEASIBILITY, SOCIAL_STRATEGY, COUNTRY_STRATEGY } from './plan-logic.js';
+import { FEASIBILITY, SOCIAL_STRATEGY, COUNTRY_STRATEGY, PLAN_TOTAL_DAYS, currentPhaseContext } from './plan-logic.js';
 import { parseExecTag } from './db.js';
 
 const DAY_MS = 86400000;
@@ -207,4 +207,108 @@ export function buildRemainingWork({ remainingMembers, activityTypes }) {
 
 function label(key) {
   return String(key || '').replace(/^(daily|weekly|monthly|quarterly)\./, '').replace(/_/g, ' ');
+}
+
+// --- 6) Interactive roadmap ---------------------------------------------
+// The Founder Success Bar's roadmap mode. Every value here is READ from the
+// planning engine — the 5 metric-gated phases and their exit gates come from
+// plan-logic.js currentPhaseContext(), the horizon from PLAN_TOTAL_DAYS, the
+// target from FEASIBILITY. No phase, milestone, or member number is authored
+// in this file.
+
+export const HORIZONS = [
+  { key: 'today', label: 'Today', days: 1 },
+  { key: 'month', label: 'This Month', days: 30 },
+  { key: 'm6', label: '6 Months', days: 182 },
+  { key: 'y1', label: '1 Year', days: 365 },
+  { key: 'y2', label: '2 Years', days: 730 },
+  { key: 'y3', label: '3 Years', days: 1095 },
+  { key: 'y4', label: '4 Years', days: 1460 },
+  { key: 'y5', label: '5 Years', days: 1825 },
+  { key: 'complete', label: 'Complete Plan', days: PLAN_TOTAL_DAYS },
+];
+
+// Which work each phase switches ON, quoted from that phase's own gate text
+// in plan-logic.js PHASES (Phase 1 organic PK-only; Phase 2 turns paid on and
+// starts SEO/referral + English prep; Phase 3 opens English + new countries;
+// Phase 4 adds native-hire languages; Phase 5 is the partner network).
+// Categories reuse REMAINING_CATEGORIES above — one category vocabulary.
+const PHASE_BOUNDARIES = [270, 540, 900, 1440, PLAN_TOTAL_DAYS];
+const PHASE_CATEGORY_KEYS = [
+  ['daily', 'content', 'community', 'physical', 'institutes', 'national', 'followup', 'training'],
+  ['marketing', 'sales', 'automation'],
+  ['international', 'language'],
+  ['language', 'international'],
+  ['automation', 'international'],
+];
+
+// "Daily Planner" is the recurring cadence itself — the only category whose
+// members are the daily.* activity types rather than a strategic workstream.
+const DAILY_PLANNER_CATEGORY = {
+  key: 'daily',
+  label: 'Daily Planner',
+  activities: ['daily.core_block', 'daily.community_touch', 'daily.technical_analysis', 'daily.ib_followups', 'daily.retention_touches', 'daily.physical_outreach', 'daily.shutdown'],
+  why: 'The daily cadence is the engine every other category runs on — consistency is what compounds into actives.',
+};
+
+const CATEGORY_BY_KEY = Object.fromEntries(
+  [DAILY_PLANNER_CATEGORY, ...REMAINING_CATEGORIES].map((c) => [c.key, c])
+);
+
+export function buildRoadmap({ planStartDate, today, actualMembers, activityTypes, hasRealData }) {
+  const target = FEASIBILITY.target;
+  const horizonDays = PLAN_TOTAL_DAYS;
+  const present = new Set(activityTypes || []);
+  const start = planStartDate ? Date.parse(planStartDate) : NaN;
+  const now = Date.parse(today);
+  const currentDay = Number.isFinite(start) && Number.isFinite(now)
+    ? Math.max(0, Math.min(horizonDays, Math.floor((now - start) / DAY_MS)))
+    : 0;
+
+  // Phases straight from the planning engine — stage text and exit gate are
+  // whatever currentPhaseContext() reports for a day inside each window.
+  let from = 1;
+  const phases = PHASE_BOUNDARIES.map((untilDay, i) => {
+    const ctx = currentPhaseContext(untilDay, actualMembers);
+    const fromDay = from;
+    from = untilDay + 1;
+    const cats = PHASE_CATEGORY_KEYS[i]
+      .map((k) => CATEGORY_BY_KEY[k])
+      .filter(Boolean)
+      .map((c) => ({
+        key: c.key,
+        label: c.label,
+        why: c.why,
+        activities: (c.activities || []).filter((k) => present.has(k)).map(label),
+      }));
+    return {
+      index: i,
+      fromDay,
+      untilDay,
+      pctFrom: Math.round((10000 * (fromDay - 1)) / horizonDays) / 100,
+      pctTo: Math.round((10000 * untilDay) / horizonDays) / 100,
+      stage: ctx.currentPhase,
+      milestone: ctx.monthlyTarget,
+      categories: cats,
+    };
+  });
+
+  return {
+    target,
+    horizonDays,
+    currentDay,
+    currentPct: Math.round((10000 * currentDay) / horizonDays) / 100,
+    actualMembers,
+    horizons: HORIZONS.map((h) => ({
+      key: h.key,
+      label: h.label,
+      days: Math.min(h.days, horizonDays),
+      pct: Math.round((10000 * Math.min(h.days, horizonDays)) / horizonDays) / 100,
+    })),
+    phases,
+    // Honesty flag the UI must surface whenever the curve is doing the talking
+    // instead of the founder's own execution history.
+    modelOnly: !hasRealData,
+    modelNote: 'Projected using the current planning model.',
+  };
 }

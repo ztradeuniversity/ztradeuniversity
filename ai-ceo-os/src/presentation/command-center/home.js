@@ -282,6 +282,16 @@ async function loadDay(date) {
 //    Nothing is computed here — this renders.
 // ============================================================
 let successPanelOpen = null; // 'expected' | 'remaining' | null — survives refresh
+let successHorizon = 'today'; // selected planning horizon
+let successScrub = null;      // scrubbed % on the roadmap, or null = live position
+let lastSuccess = null;       // last payload, so scrubbing re-renders without refetching
+let successDragging = false;  // survives the re-render a scrub triggers (see wireTrack)
+// Ending a drag anywhere releases it — the track element under the finger is
+// replaced on every scrub, so this can't live on the track itself.
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerup', () => { successDragging = false; });
+  window.addEventListener('pointercancel', () => { successDragging = false; });
+}
 
 async function refreshSuccessBar() {
   const el = document.getElementById('home-success-bar');
@@ -304,11 +314,46 @@ const HEALTH_BADGE = {
 const PACE_BADGE = { ahead: 'ceo-badge-success', on_track: 'ceo-badge-success', behind: 'ceo-badge-critical', unknown: 'ceo-badge-neutral' };
 const num = (n) => Number(n || 0).toLocaleString('en-US');
 
+// Horizon maths — all of it reads the server's precomputed roadmap points, so
+// the expected-member curve is never re-implemented in the browser.
+function horizonOf(rm) {
+  return (rm?.horizons || []).find((h) => h.key === successHorizon) || { key: 'today', label: 'Today', days: 1 };
+}
+// A bar percentage on the SELECTED horizon -> the plan day it represents.
+function dayForBarPct(rm, barPct) {
+  const h = horizonOf(rm);
+  return Math.round((h.days * Math.max(0, Math.min(100, barPct))) / 100);
+}
+// Plan day -> that day's roadmap point. The two constants (50,000 target and
+// the 1,825-day horizon) are whatever the server read from the planning
+// engine's FEASIBILITY block — never hardcoded here — and the phase comes
+// from the server's exact phase boundaries, so a gate day lands in the right
+// phase instead of being rounded across it.
+function pointForDay(rm, day) {
+  const e = Math.round((rm.target * day) / rm.horizonDays);
+  const idx = rm.phases.findIndex((p) => day <= p.untilDay);
+  return { d: day, e, r: Math.max(0, rm.target - e), ph: idx === -1 ? rm.phases.length - 1 : idx };
+}
+// How far through the SELECTED horizon the founder actually is right now.
+function livePctFor(rm, daily) {
+  if (successHorizon === 'today') return Math.max(0, Math.min(100, daily?.progressPct || 0));
+  const h = horizonOf(rm);
+  return h.days > 0 ? Math.max(0, Math.min(100, Math.round((100 * rm.currentDay) / h.days))) : 0;
+}
+function dateForDay(rm, day) {
+  const t = new Date();
+  t.setDate(t.getDate() + (day - rm.currentDay));
+  return t.toISOString().slice(0, 10);
+}
+
 function renderSuccessBar(el, s) {
+  lastSuccess = s;
   const d = s.daily || {};
   const g = s.goal || {};
+  const rm = s.roadmap;
   const pace = g.pace || { status: 'unknown', label: 'Not enough data', gap: null };
-  const pct = Math.max(0, Math.min(100, d.progressPct || 0));
+  const livePct = rm ? livePctFor(rm, d) : Math.max(0, Math.min(100, d.progressPct || 0));
+  const pct = successScrub === null ? livePct : successScrub;
   // Insufficient new execution history: show honest zeros / "Not enough data"
   // rather than a score computed off a handful of rows.
   const execScore = s.notEnoughData ? 0 : (s.executionScore ?? 0);
@@ -322,17 +367,43 @@ function renderSuccessBar(el, s) {
       <div class="ceo-success-stat-value">${value}</div>
     </div>`;
 
+  // Roadmap view: the point under the cursor (or the live position). Every
+  // number below is read from the server's precomputed points array.
+  const isToday = successHorizon === 'today';
+  const selDay = rm ? dayForBarPct(rm, pct) : 0;
+  const pt = rm ? pointForDay(rm, selDay) : null;
+  const phase = rm && pt ? rm.phases[pt.ph] : null;
+  const scrubbing = successScrub !== null;
+  const headLabel = isToday ? "Today's plan executed" : `Roadmap · ${escapeHtml(horizonOf(rm).label)}`;
+
+  const options = (rm?.horizons || []).map((h) =>
+    `<option value="${escapeAttr(h.key)}"${h.key === successHorizon ? ' selected' : ''}>${escapeHtml(h.label)}</option>`).join('');
+
   el.innerHTML = `
     <section class="ceo-success" aria-label="Founder Success Bar">
       <div class="ceo-success-head">
         <span class="ceo-success-pct">${pct}%</span>
-        <span class="ceo-success-label">Today's plan executed</span>
+        <span class="ceo-success-label">${headLabel}</span>
         <span style="flex: 1;"></span>
+        ${rm ? `<label class="ceo-success-label" for="home-horizon" style="margin-right:4px;">Horizon</label>
+        <select class="ceo-input ceo-success-select" id="home-horizon" aria-label="Planning horizon">${options}</select>` : ''}
         <span class="ceo-badge ${HEALTH_BADGE[s.healthStatus] || 'ceo-badge-neutral'}">${escapeHtml(s.health || 'On Track')}</span>
       </div>
-      <div class="ceo-success-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Daily plan completion">
-        <div class="ceo-success-fill" data-health="${escapeAttr(s.healthStatus || 'on_track')}" style="width: ${pct}%;"></div>
+
+      <div class="ceo-success-track ${rm ? 'ceo-success-track-live' : ''}" id="home-success-track"
+           role="slider" tabindex="0" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
+           aria-label="${isToday ? 'Daily plan completion' : 'Roadmap position'}">
+        <div class="ceo-success-fill" data-health="${escapeAttr(s.healthStatus || 'on_track')}" style="width: ${livePct}%;"></div>
+        ${rm && !isToday ? `<div class="ceo-success-now" style="left: ${livePct}%;" title="You are here"></div>` : ''}
+        ${scrubbing ? `<div class="ceo-success-cursor" style="left: ${pct}%;"></div>` : ''}
       </div>
+      ${rm ? `<div class="ceo-success-legend">
+        <span><i class="ceo-dot ceo-dot-done"></i>✓ Completed</span>
+        <span><i class="ceo-dot ceo-dot-now"></i>● You are here${isToday ? '' : ` (day ${num(rm.currentDay)})`}</span>
+        <span><i class="ceo-dot ceo-dot-todo"></i>○ Remaining</span>
+        <span class="ceo-text-muted">${isToday ? 'Drag or tap the bar to explore the roadmap' : 'Drag or tap anywhere on the bar'}</span>
+      </div>` : ''}
+      <div id="home-success-tip"></div>
       <div class="ceo-success-sub">${d.completed || 0} done · ${d.partial || 0} partial · ${d.skipped || 0} skipped · ${d.pending || 0} pending${d.total ? ` of ${d.total}` : ''}</div>
 
       <div class="ceo-success-stats">
@@ -345,18 +416,30 @@ function renderSuccessBar(el, s) {
       <div class="ceo-success-goal">
         <button type="button" class="ceo-success-tile" data-panel="expected" aria-expanded="${successPanelOpen === 'expected'}">
           <div class="ceo-success-stat-label">Expected members ▾</div>
-          <div class="ceo-success-tile-value">${g.expectedMembers === null || g.expectedMembers === undefined ? '—' : num(g.expectedMembers)}</div>
-          <div class="ceo-success-sub">Actual ${num(g.actualMembers)} · <span class="ceo-badge ${PACE_BADGE[pace.status] || 'ceo-badge-neutral'}">${escapeHtml(pace.label)}</span>${pace.gap !== null && pace.gap !== undefined ? ` · gap ${pace.gap > 0 ? '+' : ''}${num(pace.gap)}` : ''}</div>
+          <div class="ceo-success-tile-value">${pt ? num(pt.e) : (g.expectedMembers === null || g.expectedMembers === undefined ? '—' : num(g.expectedMembers))}</div>
+          <div class="ceo-success-sub">${scrubbing || !isToday
+            ? `at ${pct}% of ${escapeHtml(horizonOf(rm).label)} · actual now ${num(g.actualMembers)}`
+            : `Actual ${num(g.actualMembers)} · <span class="ceo-badge ${PACE_BADGE[pace.status] || 'ceo-badge-neutral'}">${escapeHtml(pace.label)}</span>${pace.gap !== null && pace.gap !== undefined ? ` · gap ${pace.gap > 0 ? '+' : ''}${num(pace.gap)}` : ''}`}</div>
         </button>
         <button type="button" class="ceo-success-tile" data-panel="remaining" aria-expanded="${successPanelOpen === 'remaining'}">
           <div class="ceo-success-stat-label">Remaining members ▾</div>
-          <div class="ceo-success-tile-value">${num(g.remainingMembers)}</div>
-          <div class="ceo-success-sub">of ${num(g.target)} active IB clients · plan day ${num(g.daysElapsed)} / ${num(g.horizonDays)}</div>
+          <div class="ceo-success-tile-value">${pt ? num(pt.r) : num(g.remainingMembers)}</div>
+          <div class="ceo-success-sub">of ${num(g.target)} active IB clients · plan day ${num(pt ? pt.d : g.daysElapsed)} / ${num(g.horizonDays)}</div>
         </button>
       </div>
 
+      ${rm?.modelOnly ? `<p class="ceo-success-sub" style="margin-top:var(--ceo-space-2);">${escapeHtml(rm.modelNote)} Real execution data will replace the model as activities are completed.</p>` : ''}
       <div id="home-success-panel"></div>
     </section>`;
+
+  const sel = el.querySelector('#home-horizon');
+  if (sel) sel.addEventListener('change', () => {
+    successHorizon = sel.value;
+    successScrub = null; // a new horizon starts at the live position
+    renderSuccessBar(el, s);
+  });
+
+  if (rm) wireTrack(el, s);
 
   el.querySelectorAll('[data-panel]').forEach((btn) =>
     btn.addEventListener('click', () => {
@@ -368,6 +451,54 @@ function renderSuccessBar(el, s) {
     })
   );
   renderSuccessPanel(s);
+  if (scrubbing && phase) renderTip(s, pct, pt, phase);
+}
+
+// Hover (desktop) / tap + drag (touch) / arrow keys (a11y) all scrub the bar.
+function wireTrack(el, s) {
+  const track = el.querySelector('#home-success-track');
+  if (!track) return;
+  const pctFromEvent = (e) => {
+    const r = track.getBoundingClientRect();
+    return Math.max(0, Math.min(100, Math.round((100 * (e.clientX - r.left)) / r.width)));
+  };
+  const apply = (p) => {
+    if (p === successScrub) return;
+    successScrub = p;
+    renderSuccessBar(document.getElementById('home-success-bar'), s);
+  };
+  // Scrubbing re-renders the bar, which replaces this element — so the drag
+  // flag lives at module scope, otherwise a touch-drag would stop after the
+  // first move when the fresh listeners started with dragging = false.
+  track.addEventListener('pointerdown', (e) => { successDragging = true; apply(pctFromEvent(e)); });
+  track.addEventListener('pointermove', (e) => { if (successDragging || e.pointerType === 'mouse') apply(pctFromEvent(e)); });
+  // Leaving with a mouse returns the bar to the founder's real position.
+  track.addEventListener('pointerleave', (e) => { if (!successDragging && e.pointerType === 'mouse') apply(null); });
+  track.addEventListener('keydown', (e) => {
+    const cur = successScrub === null ? livePctFor(s.roadmap, s.daily) : successScrub;
+    if (e.key === 'ArrowRight') { e.preventDefault(); apply(Math.min(100, cur + 1)); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); apply(Math.max(0, cur - 1)); }
+    if (e.key === 'Escape') { apply(null); }
+  });
+}
+
+// The floating panel shown while scrubbing — phase, milestone and members all
+// read from the server's roadmap payload.
+function renderTip(s, pct, pt, phase) {
+  const holder = document.getElementById('home-success-tip');
+  if (!holder || !pt || !phase) return;
+  const rm = s.roadmap;
+  holder.innerHTML = `
+    <div class="ceo-success-tip" style="--tip-left: ${pct}%;">
+      <div class="ceo-success-tip-head">${pct}% · plan day ${num(pt.d)} of ${num(rm.horizonDays)} · ~${escapeHtml(dateForDay(rm, pt.d))}</div>
+      <div class="ceo-success-tip-grid">
+        <div><div class="ceo-success-stat-label">Expected active IB</div><div class="ceo-success-stat-value">${num(pt.e)}</div></div>
+        <div><div class="ceo-success-stat-label">Remaining to 50,000</div><div class="ceo-success-stat-value">${num(pt.r)}</div></div>
+      </div>
+      <div class="ceo-success-why"><strong>Phase:</strong> ${escapeHtml(phase.stage)}</div>
+      <div class="ceo-success-sub"><strong>Next milestone:</strong> ${escapeHtml(phase.milestone)}</div>
+      ${rm.modelOnly ? `<div class="ceo-success-sub">${escapeHtml(rm.modelNote)}</div>` : ''}
+    </div>`;
 }
 
 function renderSuccessPanel(s) {
@@ -392,7 +523,8 @@ function renderSuccessPanel(s) {
       </div>`).join('');
     holder.innerHTML = `
       <div class="ceo-success-panel">
-        <div class="ceo-success-label" style="margin-bottom: var(--ceo-space-2);">Expected member contribution by source</div>
+        ${roadmapCategoriesHtml(s, 'done')}
+        <div class="ceo-success-label" style="margin: var(--ceo-space-3) 0 var(--ceo-space-2);">Expected member contribution by source</div>
         <div class="ceo-success-grid">${rows}</div>
         <p class="ceo-success-sub" style="margin-top: var(--ceo-space-3);">${escapeHtml(s.goal?.paceNote || '')} A source shows a number only once your own CRM mix can measure its share — never a fabricated forecast.</p>
         ${paceExplainerHtml(s)}
@@ -410,9 +542,60 @@ function renderSuccessPanel(s) {
     </div>`).join('');
   holder.innerHTML = `
     <div class="ceo-success-panel">
-      <div class="ceo-success-label" style="margin-bottom: var(--ceo-space-2);">What the remaining ${num(s.remainingWork?.remainingMembers)} still needs</div>
+      ${roadmapCategoriesHtml(s, 'todo')}
+      <div class="ceo-success-label" style="margin: var(--ceo-space-3) 0 var(--ceo-space-2);">What the remaining ${num(s.remainingWork?.remainingMembers)} still needs</div>
       <div class="ceo-success-grid">${cats}</div>
       <p class="ceo-success-sub" style="margin-top: var(--ceo-space-3);">${escapeHtml(s.remainingWork?.note || '')}</p>
+    </div>`;
+}
+
+// Roadmap work split at the SELECTED percentage: 'done' = the categories the
+// plan schedules on or before that point; 'todo' = everything after it. Both
+// lists come from the server's roadmap phases — no activity is authored here,
+// and a category with no matching rows in the founder's plan says so.
+function roadmapCategoriesHtml(s, mode) {
+  const rm = s.roadmap;
+  if (!rm) return '';
+  const pct = successScrub === null ? livePctFor(rm, s.daily) : successScrub;
+  const day = dayForBarPct(rm, pct);
+  const phases = rm.phases.filter((ph) => (mode === 'done' ? ph.fromDay <= day : ph.untilDay > day));
+
+  const seen = new Set();
+  const items = [];
+  for (const ph of phases) {
+    for (const c of ph.categories) {
+      if (seen.has(c.key)) continue;
+      seen.add(c.key);
+      items.push({ ...c, stage: ph.stage, active: mode === 'done' && ph.untilDay > day });
+    }
+  }
+  const title = mode === 'done'
+    ? `✓ Should be complete by ${pct}% of ${escapeHtml(horizonOf(rm).label)} (plan day ${num(day)})`
+    : `○ Still remaining after ${pct}% of ${escapeHtml(horizonOf(rm).label)}`;
+  const why = mode === 'done'
+    ? 'These are the workstreams the plan schedules up to this point — they are what produces the expected member count above.'
+    : 'Completing these is what closes the remaining gap to 50,000 active IB clients.';
+
+  if (items.length === 0) {
+    return `<div class="ceo-success-label">${title}</div>
+      <p class="ceo-success-sub">${mode === 'done' ? 'Nothing scheduled yet at this point in the plan.' : 'Everything in the plan is already scheduled by this point.'}</p>`;
+  }
+  return `
+    <div class="ceo-success-label">${title}</div>
+    <p class="ceo-success-sub" style="margin-bottom: var(--ceo-space-2);">${why}</p>
+    <div class="ceo-success-grid">
+      ${items.map((c) => `
+        <div class="ceo-success-item">
+          <div class="ceo-success-item-head">
+            <span class="ceo-success-item-name">${escapeHtml(c.label)}</span>
+            ${c.active ? '<span class="ceo-badge ceo-badge-warning">in progress</span>' : ''}
+          </div>
+          <div class="ceo-success-why">${escapeHtml(c.why)}</div>
+          ${c.activities?.length
+            ? `<div class="ceo-success-sub">Plan activities: ${c.activities.map((a) => escapeHtml(a)).join(' · ')}</div>`
+            : '<div class="ceo-success-sub">No activity of this type in your plan yet.</div>'}
+          <div class="ceo-success-sub">${escapeHtml(String(c.stage).split(':')[0])}</div>
+        </div>`).join('')}
     </div>`;
 }
 
