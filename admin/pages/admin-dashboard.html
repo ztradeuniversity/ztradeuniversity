@@ -1780,7 +1780,7 @@
                 <span class="dev-toolkit-scope">Supabase + dashboard cache</span>
               </div>
               <p class="dev-toolkit-desc">
-                Deletes every row from <code>license_requests</code>, the <code>resend_requests</code> queue, and <code>engine_triggers</code>. Removes RetryPool entries from <code>localStorage</code> (<code>ZTU_ADMIN_RETRY_POOL_V1</code>). Pending, Waiting, Matched, Compile and Delivered tabs will all show empty after the operation. Does NOT touch broker_accounts, CRM data, IB Stars, IB Changed, or delivered_history archives on the engine host.
+                Deletes every row from <code>license_requests</code>, the <code>resend_requests</code> queue, and <code>engine_triggers</code>. Removes the entire RetryPool key from <code>localStorage</code> (<code>ZTU_ADMIN_RETRY_POOL_V1</code>) — active entries <em>and</em> the archived "Not Found After 48 Hours" history, unlike the Clear Cache → Retry Pool option which preserves the archive. Pending, Waiting, Matched, Compile and Delivered tabs will all show empty after the operation. Does NOT touch broker_accounts, CRM data, IB Stars, IB Changed, or delivered_history archives on the engine host.
               </p>
               <button class="dev-toolkit-btn dev-toolkit-btn--warn" data-dev-action="clear-requests" type="button">
                 Clear Test License Requests
@@ -1793,7 +1793,7 @@
                 <span class="dev-toolkit-scope">Supabase outboxes</span>
               </div>
               <p class="dev-toolkit-desc">
-                Deletes every row from <code>email_outbox</code> and <code>wa_outbox</code>. Resets all "Sent / Pending / Failed" counters. Does NOT delete actual emails already delivered by Gmail SMTP — those live in the recipients' inboxes. Use this before launch to clear out test send history.
+                Deletes every row from <code>email_outbox</code> and <code>wa_outbox</code>, clears the local queue caches (<code>ZTU_EMAIL_QUEUE_V1</code>, <code>ZTU_WA_QUEUE_V1</code>) and drops the in-memory outbox + status snapshots that back the pills, so all "Sent / Pending / Failed" counters really do return to zero. Does NOT delete actual emails already delivered by Gmail SMTP — those live in the recipients' inboxes. Use this before launch to clear out test send history.
               </p>
               <button class="dev-toolkit-btn dev-toolkit-btn--warn" data-dev-action="clear-emails" type="button">
                 Clear Test Emails
@@ -1806,7 +1806,7 @@
                 <span class="dev-toolkit-scope">Supabase + CrmStore + IbStars</span>
               </div>
               <p class="dev-toolkit-desc">
-                Deletes every row from <code>broker_accounts</code> (Supabase) and clears the CrmStore (<code>ZTU_CRM_DATA_V1</code>) plus IbStars activity cache (<code>ZTU_IB_STARS_ACTIVITY_V1</code>) localStorage stores. After this, Active Clients / Inactive Clients / High Value / IB Stars Active / IB Stars Inactive will all be empty. The first broker file you upload after the reset becomes the new production registry.
+                Deletes every row from <code>broker_accounts</code> (Supabase) and clears the CrmStore (<code>ZTU_CRM_DATA_V1</code>) plus IbStars activity cache (<code>ZTU_IB_STARS_ACTIVITY_V1</code>) localStorage stores. It also drops the parsed broker-file cache (<code>ZTU_CACHE_INTAKE_PARSED_V1</code>) and the in-memory intake state, so a half-finished upload from the old registry cannot be processed against the new one. After this, Active Clients / Inactive Clients / High Value / IB Stars Active / IB Stars Inactive will all be empty. The first broker file you upload after the reset becomes the new production registry.
               </p>
               <button class="dev-toolkit-btn dev-toolkit-btn--warn" data-dev-action="clear-broker" type="button">
                 Clear Test Broker Registry
@@ -1820,7 +1820,12 @@
               </div>
               <p class="dev-toolkit-desc">
                 <strong>Cleans EVERYTHING marked above</strong> in one operation:
-                <code>license_requests</code>, <code>resend_requests</code>, <code>engine_triggers</code>, <code>email_outbox</code>, <code>wa_outbox</code>, <code>broker_accounts</code>, <code>client_overrides</code>, <code>blocked_clients</code>, <code>ib_changed_accounts</code>, and every <code>ZTU_*</code> localStorage key. After this, the dashboard behaves exactly as it would on a fresh production install. Tables, schema, RLS policies, automation code, the Library Access OTP gate, and the PowerShell engine all remain intact.
+                <code>license_requests</code>, <code>resend_requests</code>, <code>engine_triggers</code>, <code>email_outbox</code>, <code>wa_outbox</code>, <code>broker_accounts</code>, <code>client_overrides</code>, <code>blocked_clients</code>, <code>ib_changed_accounts</code>, every <code>ZTU_*</code> / <code>adc_*</code> localStorage key (swept by prefix), every <code>ZTU_*</code> sessionStorage key except your live admin session, and every in-memory cache the dashboard holds (IB Changed set, Blocked set, client overrides, Waiting-for-Match status snapshot, Matched / Compile Queue / Delivered queue cache, Email + WhatsApp outbox caches, intake state, RetryPool, CrmStore, IbStars, dashboard counters). <strong>Never touched:</strong> <code>special_access</code> — manually granted Premium / Library / Unlimited AI access survives every reset and is only removed from the Special Access page itself. After this, the dashboard behaves exactly as it would on a fresh production install. Tables, schema, RLS policies, automation code, the Library Access OTP gate, and the PowerShell engine all remain intact.
+              </p>
+              <p class="dev-toolkit-desc">
+                <strong>Second half of the reset — run it on the engine PC.</strong> A browser page cannot delete files on <code>DESKTOP-H7MOLKJ</code>, so this button leaves the local pipeline untouched. A leftover <code>COMPILED_EX5</code> is not cosmetic: <code>compile_queue_engine.ps1</code> skips compiling when the EX5 already exists, so a returning account would be shipped its previously compiled binary. Finish with:<br>
+                <code>powershell -ExecutionPolicy Bypass -File "D:\ZTU_AUTOMATION\TOOLS\reset_dev_environment.ps1" -Mode full</code><br>
+                That clears <code>COMPILE_WORK</code>, <code>COMPILED_EX5</code> (with <code>hashes\</code> + <code>manifests\</code>), <code>READY_TO_SEND</code>, <code>DELIVERED</code>, <code>REJECTED</code>, <code>logs</code> and the mailing-list CSVs — and preserves <code>SOURCE_MQ5</code>, templates, content, every <code>.ps1</code> / <code>.json</code> and <code>smtp_cred.xml</code>.
               </p>
               <button class="dev-toolkit-btn dev-toolkit-btn--danger" data-dev-action="full-reset" type="button">
                 Full Development Reset
@@ -1828,6 +1833,134 @@
             </div>
 
           </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               Documentation only — no script, no handler, no new behaviour.
+               Native <details> so it collapses without any JavaScript.
+               Written for an operator with zero PowerShell experience.
+          ════════════════════════════════════════════════════════════ -->
+          <details class="dev-guide">
+            <summary>Complete Local Automation Reset (Step-by-Step)</summary>
+            <div class="dev-guide-body">
+
+              <p class="dev-guide-intro">
+                Do this on the <strong>automation computer</strong> (the PC that compiles and emails the EA) <strong>after</strong> you press <em>Full Development Reset</em> above. It takes about one minute. You do not need to know PowerShell — every click is written out below.
+              </p>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 1</div>
+                <h4>Open File Explorer</h4>
+                <p>Click the yellow folder icon on the taskbar at the bottom of the screen. (Or hold the <code>Windows</code> key and press <code>E</code>.)</p>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 2</div>
+                <h4>Go to the TOOLS folder</h4>
+                <p>Click once in the white address bar at the top of the File Explorer window, type the line below, then press <code>Enter</code>:</p>
+                <code class="dev-guide-cmd">D:\ZTU_AUTOMATION\TOOLS</code>
+                <p style="margin-top:8px;">You should now see a file named <code>reset_dev_environment.ps1</code>. If you do not see this folder or file, stop here — you are on the wrong computer.</p>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 3</div>
+                <h4>Open Windows PowerShell</h4>
+                <p>Use either method. Method A is faster; Method B always works.</p>
+
+                <div class="dev-guide-method">
+                  <p class="dev-guide-method-title">Method A — open it straight from the folder</p>
+                  <ul>
+                    <li>Hold down the <code>Shift</code> key on the keyboard.</li>
+                    <li>While still holding <code>Shift</code>, right-click on any empty white space inside the TOOLS folder.</li>
+                    <li>In the menu that appears, click <strong>“Open PowerShell window here”</strong> (on newer Windows it may say <strong>“Open in Terminal”</strong> — either is fine).</li>
+                    <li>Let go of <code>Shift</code>. A dark blue or black window opens. That is PowerShell.</li>
+                  </ul>
+                </div>
+
+                <div class="dev-guide-method">
+                  <p class="dev-guide-method-title">Method B — open it from the Start menu</p>
+                  <ul>
+                    <li>Click <strong>Start</strong> (the Windows icon, bottom-left).</li>
+                    <li>Type the word <strong>PowerShell</strong>.</li>
+                    <li>Click <strong>Windows PowerShell</strong> in the results. A dark window opens.</li>
+                    <li>Type the line below exactly, then press <code>Enter</code>. This moves PowerShell into the right folder:</li>
+                  </ul>
+                  <code class="dev-guide-cmd">cd D:\ZTU_AUTOMATION\TOOLS</code>
+                </div>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 4</div>
+                <h4>Run the reset command</h4>
+                <p>Copy the line below, click once inside the PowerShell window, right-click to paste it, then press <code>Enter</code>:</p>
+                <code class="dev-guide-cmd">.\reset_dev_environment.ps1 -Mode full</code>
+                <p style="margin-top:10px;"><strong>If you see a red message saying scripts are disabled on this system</strong>, that is a Windows security setting, not a broken file. Paste this line instead and press <code>Enter</code>:</p>
+                <code class="dev-guide-cmd">powershell -ExecutionPolicy Bypass -File "D:\ZTU_AUTOMATION\TOOLS\reset_dev_environment.ps1" -Mode full</code>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 5</div>
+                <h4>Type RESET to confirm</h4>
+                <p>The script will not delete anything until you confirm. It shows a red warning line, then asks you to type <code>RESET</code>. Type the word <strong>RESET</strong> in capital letters and press <code>Enter</code>.</p>
+                <p style="margin-top:6px;">The cursor may sit next to a bare <code>:</code> with no question next to it — that is the correct place to type. Anything other than <code>RESET</code> cancels safely and deletes nothing.</p>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 6</div>
+                <h4>Wait for it to finish</h4>
+                <p>Lines of text will scroll past. This usually takes a few seconds, and can take longer if there are many files. Do not close the window and do not press any keys while it runs.</p>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 7</div>
+                <h4>Check it finished, then close the window</h4>
+                <p>When it is done you will see a boxed banner reading <code>RESET COMPLETE (FULL)</code>, a list of what was cleared, and a final line reading <code>Reset finished in …s.</code></p>
+                <p style="margin-top:6px;">Once you see that, click the <code>×</code> in the top-right corner of the PowerShell window to close it.</p>
+              </div>
+
+              <div class="dev-guide-step">
+                <div class="dev-guide-step-num">Step 8</div>
+                <h4>Return to the Executive Dashboard</h4>
+                <p>Switch back to this browser window and refresh the page (press <code>Ctrl</code> + <code>F5</code>). The system is now in a true zero-state: the dashboard, the database and the automation computer all agree that nothing has been processed yet.</p>
+              </div>
+
+              <div class="dev-guide-cols">
+                <div class="dev-guide-list dev-guide-list--clears">
+                  <h4>What does this reset?</h4>
+                  <ul>
+                    <li>COMPILED_EX5</li>
+                    <li>DELIVERED</li>
+                    <li>READY_TO_SEND</li>
+                    <li>COMPILE_WORK</li>
+                    <li>Hash cache</li>
+                    <li>Manifest cache</li>
+                    <li>Logs</li>
+                    <li>Temporary generated files</li>
+                  </ul>
+                </div>
+                <div class="dev-guide-list dev-guide-list--keeps">
+                  <h4>What is NOT deleted?</h4>
+                  <ul>
+                    <li>SOURCE_MQ5</li>
+                    <li>Templates</li>
+                    <li>PowerShell scripts</li>
+                    <li>Automation source code</li>
+                    <li>Configuration</li>
+                    <li>JSON files</li>
+                    <li>Broker alias map</li>
+                    <li>SMTP configuration</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="dev-guide-important">
+                <h4>Important</h4>
+                <p>The Executive Dashboard cannot perform this local computer reset automatically because it runs inside your web browser.</p>
+                <p>This step must be completed manually on the automation computer after every Full Development Reset.</p>
+                <p>Running it is safe even if you are unsure whether you already did: it clears the same items again, and everything it removes is rebuilt automatically the next time a client is processed.</p>
+              </div>
+
+            </div>
+          </details>
 
           <!-- Reset confirmation modal — gated by typed RESET PRODUCTION DATA -->
           <div class="clear-cache-overlay" id="devResetOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="devResetTitle">

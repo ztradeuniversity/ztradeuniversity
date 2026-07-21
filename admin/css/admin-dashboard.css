@@ -553,6 +553,172 @@ html, body {
   border-color: rgba(239,68,68,0.7);
   color: #fff;
 }
+/* ─────────────────────────────────────────────────────────────
+   Development Toolkit — step-by-step local reset guide.
+   Documentation only: a native <details> panel, no JS, reusing
+   the Dev Toolkit surface/border/typography tokens so it reads
+   as part of the same section rather than a new component.
+   ───────────────────────────────────────────────────────────── */
+.dev-guide {
+  margin-top: 18px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.dev-guide > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-strong);
+  user-select: none;
+}
+.dev-guide > summary::-webkit-details-marker { display: none; }
+.dev-guide > summary::before {
+  content: '▸';
+  font-size: 12px;
+  color: var(--color-muted);
+  transition: transform 0.15s;
+}
+.dev-guide[open] > summary::before { transform: rotate(90deg); }
+.dev-guide > summary:hover { background: rgba(255,255,255,0.03); }
+.dev-guide-body {
+  padding: 4px 20px 22px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.dev-guide-intro {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--color-muted-bright);
+  margin: 14px 0 4px;
+}
+.dev-guide-step {
+  margin-top: 18px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(99,102,241,0.35);
+}
+.dev-guide-step-num {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--color-accent);
+}
+.dev-guide-step h4 {
+  margin: 3px 0 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+.dev-guide-step p,
+.dev-guide-step li {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--color-muted-bright);
+  margin: 0;
+}
+.dev-guide-step ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.dev-guide-method {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm, 6px);
+}
+.dev-guide-method-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #c7d2fe;
+  margin: 0 0 4px;
+}
+/* Specificity note: the generic `.dev-guide-body code` rule below is (0,1,1),
+   so a bare `.dev-guide-cmd` (0,1,0) would lose to it and the copy-paste
+   command blocks would render as small inline chips. Qualified deliberately. */
+.dev-guide-body code.dev-guide-cmd {
+  display: block;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  background: #12141d;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--radius-sm, 6px);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #86efac;
+  white-space: pre-wrap;
+  word-break: break-all;
+  user-select: all;
+}
+.dev-guide-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.dev-guide-list {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.02);
+}
+.dev-guide-list h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+}
+.dev-guide-list ul { margin: 0; padding: 0; list-style: none; }
+.dev-guide-list li {
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--color-muted-bright);
+}
+.dev-guide-list li::before {
+  content: '✓';
+  font-weight: 800;
+  margin-right: 8px;
+}
+.dev-guide-list--clears  { border-color: rgba(239,68,68,0.28); background: rgba(239,68,68,0.05); }
+.dev-guide-list--clears  li::before { color: #fca5a5; }
+.dev-guide-list--keeps   { border-color: rgba(34,197,94,0.28); background: rgba(34,197,94,0.05); }
+.dev-guide-list--keeps   li::before { color: #4ade80; }
+.dev-guide-important {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(245,158,11,0.10);
+  border: 1px solid rgba(245,158,11,0.38);
+}
+.dev-guide-important h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+.dev-guide-important p {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #fde9c8;
+}
+.dev-guide-important p:last-child { margin-bottom: 0; }
+.dev-guide-body code {
+  font-family: 'Courier New', monospace;
+  font-size: 11.5px;
+  padding: 1px 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  color: #c7d2fe;
+}
+
 .dev-toolkit-targets {
   margin: 8px 0 0;
   padding-left: 18px;

@@ -25,6 +25,19 @@
   Cache-Control: public, max-age=3600, must-revalidate
   X-Content-Type-Options: nosniff
 
+# Executive Admin Portal — private admin area. No rule previously matched
+# /admin/*, so Cloudflare's default gave admin-dashboard.js and
+# admin-auth-client.js "public, max-age=14400" — up to FOUR HOURS of browser
+# cache. After a deploy the browser kept running the pre-deploy admin script
+# against the new /api/admin-auth contract, which is how a correct password
+# stopped opening the dashboard "after deployment". Admin pages are private
+# and never public-cacheable anyway, so this is no-store + noindex.
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: private, no-store, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+
 # AI CEO Operating System — private admin area, shares this Cloudflare Pages
 # project with the public site (see ai-ceo-os/docs/decisions/
 # DEC-002-cloudflare-shared-project.md). Never indexed, never cached publicly.

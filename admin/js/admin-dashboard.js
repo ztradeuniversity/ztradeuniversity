@@ -1732,17 +1732,57 @@ const AdminDashboard = (() => {
   const RetryPool = {
     _data: null,   // in-memory cache; null = not yet loaded
 
-    /* ── Load from localStorage (cached after first call) ─── */
+    /* ── Load from localStorage (cached after first call) ───
+       Phase 17F — SELF-HEALING READ. The pool is a flat map keyed by
+       request id: { <id>: entry }. A previous Clear Cache group wrote the
+       wrong shape ({ version, entries:[…] }); Object.values() over that
+       yielded the number 1 and a raw array as "entries", which rendered in
+       Waiting for Match as orphan rows with a blank account, "Expired"
+       countdown and "Checked undefined×". Those rows could never be
+       evicted (no id to remove by) and survived every reset.
+       _read() now drops anything that isn't a well-formed entry, and
+       rewrites the cleaned map, so already-corrupted browsers heal on the
+       next load without a manual localStorage wipe. */
     _read() {
       if (this._data !== null) return this._data;
+      let parsed = {};
       try {
         const raw = localStorage.getItem(RETRY_POOL_KEY);
-        this._data = raw ? JSON.parse(raw) : {};
+        parsed = raw ? JSON.parse(raw) : {};
       } catch (e) {
         console.warn('[RetryPool] read error:', e);
-        this._data = {};
+        parsed = {};
       }
+      this._data = this._normalize(parsed);
       return this._data;
+    },
+
+    /* ── Drop malformed values; recover entries from a legacy
+         { version, entries:[…] } payload instead of discarding them. ── */
+    _normalize(raw) {
+      const clean = {};
+      let dropped = 0;
+      const isEntry = e => !!(e && typeof e === 'object' && !Array.isArray(e) && e.id !== undefined && e.id !== null);
+      const take = e => { if (isEntry(e)) clean[e.id] = e; else dropped++; };
+
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        if (raw !== null && raw !== undefined) dropped++;
+      } else if (Array.isArray(raw.entries)) {
+        // Legacy/incorrect array shape — salvage the real entries.
+        raw.entries.forEach(take);
+        dropped += Object.keys(raw).filter(k => k !== 'entries').length;
+      } else {
+        Object.keys(raw).forEach(k => {
+          const e = raw[k];
+          if (isEntry(e)) clean[e.id] = e; else dropped++;
+        });
+      }
+
+      if (dropped > 0) {
+        console.warn('[RetryPool] dropped ' + dropped + ' malformed pool value(s) — storage rewritten clean.');
+        try { localStorage.setItem(RETRY_POOL_KEY, JSON.stringify(clean)); } catch (e) {}
+      }
+      return clean;
     },
 
     /* ── Persist to localStorage ─────────────────────────── */
@@ -7782,6 +7822,69 @@ const AdminDashboard = (() => {
     return removed;
   }
 
+  /* Phase 17F — PREFIX SWEEP.
+     The Full Reset card promises "every ZTU_* localStorage key", but the
+     action only listed six hard-coded keys, so anything added later
+     (ZTU_CACHE_INTAKE_PARSED_V1, ZTU_CACHE_CAMPAIGN_V1, ZTU_CAMPAIGN_DRAFT_V1,
+     the per-report ZTU_Report_* blobs) survived the reset and kept feeding
+     stale rows/counters back into the dashboard. This sweeps by prefix so the
+     promise is literally true, now and for keys added in future.
+     `keep` protects the live admin session so the operator is not logged out
+     in the middle of the reset. */
+  function _devSweepStorageByPrefix(store, prefixes, keep) {
+    let removed = 0;
+    const protectedKeys = keep || [];
+    try {
+      const doomed = [];
+      for (let i = 0; i < store.length; i++) {
+        const k = store.key(i);
+        if (!k || protectedKeys.indexOf(k) !== -1) continue;
+        if (prefixes.some(p => k.indexOf(p) === 0)) doomed.push(k);
+      }
+      doomed.forEach(k => { try { store.removeItem(k); removed++; } catch (_) {} });
+    } catch (_) {}
+    return removed;
+  }
+
+  /* Phase 17F — IN-MEMORY CACHE INVALIDATION.
+     Deleting Supabase rows and localStorage keys is not enough: the dashboard
+     keeps module-level caches that outlive both (_ibChangedSet /
+     _ibChangedRowsCache, _blockedSet / _blockedRows, _clientOverridesMap,
+     _waitingStatusSnapshot, IntakeState, State counters). Without this, a
+     reset left IB Changed / Blocked Clients / overridden contact details /
+     email-status pills rendering from memory — the "data still left behind"
+     symptom. Every helper is guarded so a missing one can never abort a reset. */
+  function _devResetMemoryCaches() {
+    let n = 0;
+    const step = fn => { try { fn(); n++; } catch (_) {} };
+    step(() => { if (typeof _invalidateIbChangedCache === 'function') _invalidateIbChangedCache(); });
+    step(() => { if (typeof _invalidateBlockedCache   === 'function') _invalidateBlockedCache(); });
+    step(() => { _clientOverridesMap = {}; });
+    step(() => { _waitingStatusSnapshot = { email: {}, wa: {}, fetchedAt: 0 }; });
+    // Final-audit additions. _iqData backs Matched / Compile Queue / Delivered
+    // and _currentEmailOutbox / _currentWaOutbox back the Email + WhatsApp
+    // status panels. All three held their pre-reset rows: refreshIntakeQueue()
+    // and the outbox polls re-fetch asynchronously, so the old rows stayed on
+    // screen until that resolved — and stayed FOREVER if the re-fetch failed.
+    step(() => { _iqData = null; });
+    step(() => { _currentEmailOutbox = []; });
+    step(() => { _currentWaOutbox    = []; });
+    step(() => { if (typeof RetryPool !== 'undefined' && RetryPool) RetryPool._data = null; });
+    step(() => { if (typeof CrmStore  !== 'undefined' && CrmStore)  CrmStore._data  = null; });
+    step(() => { if (typeof IbStars   !== 'undefined' && IbStars)   IbStars._data   = null; });
+    step(() => {
+      if (typeof IntakeState !== 'undefined' && IntakeState) {
+        IntakeState.file = null;
+        IntakeState.parsedRows = [];
+        IntakeState.columns = [];
+        IntakeState.accountCol = null;
+        IntakeState.brokerAccounts = null;
+        IntakeState.matchResult = null;
+      }
+    });
+    return n;
+  }
+
   /* Action definitions — each carries:
        label       : human-readable title shown in the confirm modal
        summary     : one-line description shown above the targets list
@@ -7797,13 +7900,14 @@ const AdminDashboard = (() => {
         '<code>license_requests</code> — every row deleted',
         '<code>resend_requests</code> — every row deleted',
         '<code>engine_triggers</code> — every row deleted',
-        '<code>ZTU_ADMIN_RETRY_POOL_V1</code> (localStorage) — cleared',
+        '<code>ZTU_ADMIN_RETRY_POOL_V1</code> (localStorage) — cleared in full: active entries AND the archived "Not Found After 48 Hours" history',
       ],
       tables: ['license_requests', 'resend_requests', 'engine_triggers'],
       localKeys: ['ZTU_ADMIN_RETRY_POOL_V1'],
       memReset: () => {
-        try { if (typeof RetryPool !== 'undefined' && RetryPool) RetryPool._data = null; } catch (_) {}
+        _devResetMemoryCaches();
         try { if (Array.isArray(State.requests)) State.requests.length = 0; } catch (_) {}
+        try { State.lastSync = null; State.runCount = 0; } catch (_) {}
       },
     },
     'clear-emails': {
@@ -7812,11 +7916,17 @@ const AdminDashboard = (() => {
       targets: [
         '<code>email_outbox</code> — every row deleted',
         '<code>wa_outbox</code> — every row deleted',
+        '<code>ZTU_EMAIL_QUEUE_V1</code> + <code>ZTU_WA_QUEUE_V1</code> (localStorage) — cleared',
+        'In-memory outbox rows and the Waiting-for-Match status snapshot — dropped',
         'Per-tab Sent / Pending / Failed badges — reset to 0',
       ],
       tables: ['email_outbox', 'wa_outbox'],
       localKeys: ['ZTU_EMAIL_QUEUE_V1', 'ZTU_WA_QUEUE_V1'],
-      memReset: () => {},
+      // Phase 17F — the Sent/Pending/Failed pills in Waiting for Match and the
+      // delivery panels read _waitingStatusSnapshot, which was never dropped
+      // here: the badges kept showing counts for outbox rows that no longer
+      // existed until the snapshot's 5 s TTL happened to lapse.
+      memReset: () => { _devResetMemoryCaches(); },
     },
     'clear-broker': {
       label: 'Clear Test Broker Registry',
@@ -7825,14 +7935,12 @@ const AdminDashboard = (() => {
         '<code>broker_accounts</code> — every row deleted',
         '<code>ZTU_CRM_DATA_V1</code> (localStorage) — cleared',
         '<code>ZTU_IB_STARS_ACTIVITY_V1</code> (localStorage) — cleared',
+        '<code>ZTU_CACHE_INTAKE_PARSED_V1</code> (localStorage) + in-memory intake state — cleared, so a half-finished upload cannot be processed against the new registry',
         'Active Clients / Inactive Clients / High Value / IB Stars Active / IB Stars Inactive — empty until next broker upload',
       ],
       tables: ['broker_accounts'],
-      localKeys: ['ZTU_CRM_DATA_V1', 'ZTU_IB_STARS_ACTIVITY_V1'],
-      memReset: () => {
-        try { if (typeof CrmStore !== 'undefined' && CrmStore) CrmStore._data = null; } catch (_) {}
-        try { if (typeof IbStars  !== 'undefined' && IbStars)  IbStars._data  = null; } catch (_) {}
-      },
+      localKeys: ['ZTU_CRM_DATA_V1', 'ZTU_IB_STARS_ACTIVITY_V1', 'ZTU_CACHE_INTAKE_PARSED_V1'],
+      memReset: () => { _devResetMemoryCaches(); },
     },
     'full-reset': {
       label: 'Full Development Reset',
@@ -7847,27 +7955,47 @@ const AdminDashboard = (() => {
         '<code>client_overrides</code>',
         '<code>blocked_clients</code>',
         '<code>ib_changed_accounts</code>',
-        'Every <code>ZTU_*</code> localStorage key (CRM cache, RetryPool, IB Stars cache, Email/WA queues, Admin session)',
+        '<strong><code>special_access</code> is deliberately NOT touched</strong> — manually granted Premium / Library / Unlimited AI access is never revoked by a reset. Use the Special Access page\'s own delete workflow for that.',
+        'Every <code>ZTU_*</code> and <code>adc_*</code> localStorage key — swept by prefix, not by a fixed list (CRM cache, RetryPool, IB Stars cache, Email/WA queues, intake parse cache, campaign drafts, saved reports)',
+        'Every <code>ZTU_*</code> sessionStorage key except your live admin session, so the reset does not log you out mid-run',
+        'Every in-memory cache (IB Changed set, Blocked set, client overrides, email/WA status snapshot, Matched/Compile/Delivered queue cache, Email + WhatsApp outbox cache, intake state, dashboard counters)',
+        '<strong>NOT done by this button — the local compile/delivery artifacts on the engine PC.</strong> A browser page cannot touch <code>D:\\ZTU_AUTOMATION</code>. Stale <code>COMPILED_EX5</code> is not cosmetic: <code>compile_queue_engine.ps1</code> skips compiling when the EX5 already exists, so a returning account would be delivered its OLD binary. Finish the reset on the engine PC with <code>TOOLS\\reset_dev_environment.ps1 -Mode full</code> — the reminder below repeats the command.',
       ],
+      // Shown after the reset completes. The browser half and the engine half
+      // must both run for a genuine zero-state.
+      localNotice: 'Browser + Supabase side is now clean. To finish the zero-state, run this ON THE ENGINE PC (DESKTOP-H7MOLKJ):\n\n' +
+                   '    powershell -ExecutionPolicy Bypass -File "D:\\ZTU_AUTOMATION\\TOOLS\\reset_dev_environment.ps1" -Mode full\n\n' +
+                   'It wipes COMPILE_WORK, COMPILED_EX5 (including hashes\\ and manifests\\), READY_TO_SEND, DELIVERED, REJECTED, logs and the mailing-list CSVs, while preserving SOURCE_MQ5, templates, content, every .ps1/.json and smtp_cred.xml.',
       tables: [
         'license_requests', 'resend_requests', 'engine_triggers',
         'email_outbox', 'wa_outbox',
         'broker_accounts',
         'client_overrides', 'blocked_clients', 'ib_changed_accounts',
+        // special_access is INTENTIONALLY absent. Those rows are manually
+        // issued Premium / Library / Unlimited-AI grants, managed by hand from
+        // the Special Access page, which has its own delete workflow. A
+        // development reset must never revoke access a human deliberately
+        // granted to a real guest.
       ],
+      // Explicit keys are kept for the console log / toast counters; the
+      // prefix sweep below is what actually guarantees completeness.
       localKeys: [
         'ZTU_CRM_DATA_V1',
         'ZTU_ADMIN_RETRY_POOL_V1',
         'ZTU_IB_STARS_ACTIVITY_V1',
         'ZTU_EMAIL_QUEUE_V1',
         'ZTU_WA_QUEUE_V1',
+        'ZTU_CACHE_INTAKE_PARSED_V1',
+        'ZTU_CACHE_CAMPAIGN_V1',
+        'ZTU_CAMPAIGN_DRAFT_V1',
         'adc_state_v3',
       ],
+      sweepPrefixes: ['ZTU_', 'adc_'],
+      sweepSession:  true,
       memReset: () => {
-        try { if (typeof RetryPool !== 'undefined' && RetryPool) RetryPool._data = null; } catch (_) {}
-        try { if (typeof IbStars   !== 'undefined' && IbStars)   IbStars._data   = null; } catch (_) {}
-        try { if (typeof CrmStore  !== 'undefined' && CrmStore)  CrmStore._data  = null; } catch (_) {}
+        _devResetMemoryCaches();
         try { if (Array.isArray(State.requests)) State.requests.length = 0; } catch (_) {}
+        try { State.lastSync = null; State.runCount = 0; } catch (_) {}
       },
     },
   };
@@ -7931,26 +8059,51 @@ const AdminDashboard = (() => {
       }
     }
 
-    // Local cache clear
-    const lsRemoved = _devClearLocalStorageKeys(act.localKeys || []);
+    // Local cache clear — explicit keys first, then the prefix sweep (full
+    // reset only) so no ZTU_*/adc_* key can outlive the reset.
+    let lsRemoved = _devClearLocalStorageKeys(act.localKeys || []);
+    let ssRemoved = 0;
+    if (act.sweepPrefixes) {
+      lsRemoved += _devSweepStorageByPrefix(window.localStorage, act.sweepPrefixes, []);
+    }
+    if (act.sweepSession) {
+      // Keep the live admin session key — being logged out mid-reset is what
+      // previously left the last few steps unrun.
+      ssRemoved = _devSweepStorageByPrefix(window.sessionStorage, ['ZTU_'], [ADMIN_CONFIG.storageKey]);
+    }
+    const memReset = _devResetMemoryCaches();
     try { (act.memReset || (()=>{}))(); } catch (_) {}
 
     console.log('[DevToolkit] tablesCleared=' + tablesCleared +
                 '  tablesFailed=' + tablesFailed.length +
-                '  localStorageKeysRemoved=' + lsRemoved);
+                '  localStorageKeysRemoved=' + lsRemoved +
+                '  sessionStorageKeysRemoved=' + ssRemoved +
+                '  memoryCachesReset=' + memReset);
     console.groupEnd();
 
     _closeDevResetModal();
 
     if (tablesFailed.length === 0) {
-      showToast('✓ ' + act.label + ' complete — ' + tablesCleared + ' table(s) cleared, ' + lsRemoved + ' local cache key(s) removed.', 'success', 6000);
+      showToast('✓ ' + act.label + ' complete — ' + tablesCleared + ' table(s) cleared, ' +
+                lsRemoved + ' localStorage key(s), ' + ssRemoved + ' sessionStorage key(s), ' +
+                memReset + ' memory cache(s) reset.', 'success', 6000);
     } else {
       showToast('⚠ ' + act.label + ' partial — cleared ' + tablesCleared + ', failed: [' + tablesFailed.join(', ') + ']. See console.', 'warn', 8000);
     }
 
     // Refresh every visible section so the empty state appears immediately.
+    // Phase 17F — the override map is rebuilt BEFORE the re-render (it was
+    // never refreshed here, so edited contact details kept overwriting rows
+    // after client_overrides had been emptied), and the top-of-dashboard
+    // counters / status summary are re-rendered too, so no badge keeps a
+    // pre-reset number.
     try {
       await loadData();
+      if (typeof _refreshClientOverrides      === 'function') await _refreshClientOverrides();
+      if (typeof renderStats                  === 'function') renderStats();
+      if (typeof renderTable                  === 'function') renderTable(els.tableFilter ? els.tableFilter.value : 'all');
+      if (typeof renderStatusSummary          === 'function') renderStatusSummary();
+      if (typeof renderStatusTimestamp        === 'function') renderStatusTimestamp();
       if (typeof renderPendingRequests        === 'function') renderPendingRequests();
       if (typeof renderWaitingForMatch        === 'function') renderWaitingForMatch();
       if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
@@ -7967,9 +8120,24 @@ const AdminDashboard = (() => {
         const q = document.getElementById('crmSearchInput');
         renderCrmSearch(q ? q.value : '');
       }
+      // Re-read (never cleared) — proves on screen that manually granted
+      // Special Access rows survived the reset intact.
+      if (typeof _renderSpecialAccess         === 'function') _renderSpecialAccess();
+      // Email / WhatsApp delivery panels were missing from this list, so the
+      // Sent / Pending / Failed panels kept their pre-reset rows on screen
+      // until the operator navigated away and back.
+      if (typeof renderEmailDeliveryPanel     === 'function') renderEmailDeliveryPanel();
+      if (typeof renderWaDeliveryPanel        === 'function') renderWaDeliveryPanel();
       if (typeof refreshIntakeQueue           === 'function') refreshIntakeQueue();
     } catch (e) {
       console.warn('[DevToolkit] post-reset refresh failed:', e);
+    }
+
+    // The engine-side half of the reset. Logged (so it is copy-pasteable and
+    // survives the toast) and surfaced as a long-lived toast.
+    if (act.localNotice) {
+      console.warn('[DevToolkit] LOCAL AUTOMATION RESET STILL REQUIRED:\n' + act.localNotice);
+      showToast('⚠ Engine PC step still required — run TOOLS\\reset_dev_environment.ps1 -Mode full on DESKTOP-H7MOLKJ, or the next compile will reuse an old EX5. Full command logged to the console.', 'warn', 15000);
     }
 
     exe.textContent = origLabel;
@@ -10116,14 +10284,16 @@ const AdminDashboard = (() => {
     // Phase 16 follow-up — additional groups
     'retry-pool-active': { keys: [], reset: () => {
       // Clear ACTIVE retry pool entries only (NEVER archived ones).
+      // Phase 17F fix — this wrote { version, entries:[…] }, which is NOT the
+      // shape RetryPool._read() expects (a flat { <id>: entry } map). The
+      // result was two permanent orphan rows in Waiting for Match. Now writes
+      // the same map shape the 'waiting-match' group already used.
       if (typeof RetryPool !== 'undefined' && RetryPool) {
         const archived = RetryPool.getArchived();
-        try {
-          window.localStorage.setItem('ZTU_ADMIN_RETRY_POOL_V1', JSON.stringify({
-            version: 1, entries: archived,
-          }));
-        } catch (e) {}
-        RetryPool._data = null;
+        const map = {};
+        archived.forEach(e => { if (e && e.id !== undefined && e.id !== null) map[e.id] = e; });
+        try { window.localStorage.setItem('ZTU_ADMIN_RETRY_POOL_V1', JSON.stringify(map)); } catch (e) {}
+        RetryPool._data = null;   // force re-hydrate from localStorage on next read
       }
     }},
     'search-cache':     { keys: [], reset: () => {
@@ -10401,20 +10571,36 @@ const AdminDashboard = (() => {
     _idleTimer: null,
     _token: null,
 
+    // Phase 17F — in-memory mirror of the session. sessionStorage.setItem
+    // throws in a few real situations (Safari private mode, storage quota,
+    // site-data blocked for the origin). When it did, _refresh() threw,
+    // enforce()'s poll never saw a valid session, and a CORRECT password
+    // simply never opened the dashboard. The token now also lives in memory
+    // for the life of the tab, so storage failure degrades to "re-login on
+    // reload" instead of "can never get in".
+    _memSession: null,
+
     _isValid() {
+      let s = null;
       try {
         const raw = sessionStorage.getItem(ADMIN_CONFIG.storageKey);
-        if (!raw) return false;
-        const s = JSON.parse(raw);
-        if (!(s && s.expiresAt && Date.now() < s.expiresAt && s.token)) return false;
-        this._token = s.token;
-        return true;
-      } catch (e) { return false; }
+        if (raw) s = JSON.parse(raw);
+      } catch (e) { s = null; }
+      if (!s) s = this._memSession;
+      if (!(s && s.expiresAt && Date.now() < s.expiresAt && s.token)) return false;
+      this._token = s.token;
+      return true;
     },
 
     _refresh() {
       const expiresAt = Date.now() + ADMIN_CONFIG.sessionMinutes * 60_000;
-      sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify({ expiresAt, token: this._token }));
+      const session = { expiresAt, token: this._token };
+      this._memSession = session;
+      try {
+        sessionStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(session));
+      } catch (e) {
+        console.warn('[AdminAuth] sessionStorage unavailable — session kept in memory for this tab only:', e && e.message);
+      }
     },
 
     _scheduleIdleCheck() {
@@ -10452,28 +10638,54 @@ const AdminDashboard = (() => {
       if (sh) sh.style.display = '';
     },
 
+    /* Phase 17F — returns { ok } or { ok:false, reason, detail }.
+       It previously returned a bare `false` for EVERY failure, so the gate
+       reported "Incorrect password. Access denied." when the real cause was
+       that /api/admin-auth could not be reached at all — the exact symptom
+       seen after a deployment (stale cached script, function not yet live,
+       offline, or the page opened straight off disk as file:///…, where
+       fetch('/api/admin-auth') can never resolve). A correct password looked
+       wrong, so the password was blamed instead of the transport. */
     async tryLogin(pwd) {
+      if (location.protocol === 'file:') {
+        console.error('[AdminAuth] page opened via file:// — /api/admin-auth cannot be reached from disk.');
+        return { ok: false, reason: 'file_protocol' };
+      }
+      let res;
       try {
-        const res = await fetch('/api/admin-auth', {
+        res = await fetch('/api/admin-auth', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'login', module: ADMIN_CONFIG.module, password: pwd }),
         });
-        const data = await res.json().catch(() => ({}));
-        if (data && data.ok && data.token) {
-          this._token = data.token;
-          this._refresh();
-          this.hideGate();
-          this._scheduleIdleCheck();
-          this._mountChrome();
-          console.log('[AdminAuth] login OK — session valid for ' + ADMIN_CONFIG.sessionMinutes + ' min idle');
-          return true;
-        }
-      } catch (e) { console.error('[AdminAuth] login request failed', e); }
-      return false;
+      } catch (e) {
+        console.error('[AdminAuth] login request failed (network):', e);
+        return { ok: false, reason: 'network', detail: e && e.message };
+      }
+
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+      if (!data) {
+        // Non-JSON body: an HTML 404/500 page, i.e. the Function is not
+        // deployed or is erroring — never a password problem.
+        console.error('[AdminAuth] auth endpoint returned a non-JSON response, HTTP ' + res.status);
+        return { ok: false, reason: 'endpoint', detail: 'HTTP ' + res.status };
+      }
+
+      if (data.ok && data.token) {
+        this._token = data.token;
+        this._refresh();
+        this.hideGate();
+        this._scheduleIdleCheck();
+        this._mountChrome();
+        console.log('[AdminAuth] login OK — session valid for ' + ADMIN_CONFIG.sessionMinutes + ' min idle');
+        return { ok: true };
+      }
+      return { ok: false, reason: data.reason || 'invalid' };
     },
 
     logout(sessionExpired) {
-      sessionStorage.removeItem(ADMIN_CONFIG.storageKey);
+      this._memSession = null;
+      try { sessionStorage.removeItem(ADMIN_CONFIG.storageKey); } catch (e) {}
       this._token = null;
       if (this._idleTimer) { clearInterval(this._idleTimer); this._idleTimer = null; }
       this.showGate(sessionExpired ? 'Session expired — please re-enter password.' : null);
@@ -10489,6 +10701,25 @@ const AdminDashboard = (() => {
       }
     },
 
+    /* Phase 17F — one honest message per failure mode. Only 'invalid'
+       actually means the password was wrong. */
+    gateErrorText(r) {
+      switch (r && r.reason) {
+        case 'file_protocol':
+          return 'This page was opened directly from disk (file://), so the login service cannot be reached. Open the dashboard from the deployed site (https://ztradeuniversity.com/admin/pages/admin-dashboard.html) or run it through a local Pages dev server.';
+        case 'network':
+          return 'Cannot reach the authentication service — check your connection, then try again. Your password was not rejected.';
+        case 'endpoint':
+          return 'The authentication service returned an unexpected response (' + (r.detail || 'unknown') + '). This is a deployment problem, not a wrong password — hard-refresh the page (Ctrl+Shift+R) and try again.';
+        case 'locked':
+          return 'Too many failed attempts — locked for 60 seconds. Wait, then try again.';
+        case 'unknown_module':
+          return 'This page requested an unknown admin module. Hard-refresh (Ctrl+Shift+R) to load the current dashboard script.';
+        default:
+          return 'Incorrect password. Access denied.';
+      }
+    },
+
     bindGate() {
       const form = document.getElementById('adminGateForm');
       const btnLogout = document.getElementById('btnAdminLogout');
@@ -10499,13 +10730,21 @@ const AdminDashboard = (() => {
           const ip = document.getElementById('adminGateInput');
           const btn = document.getElementById('adminGateSubmit');
           const pwd = ip ? ip.value : '';
+          if (!pwd) {
+            const er0 = document.getElementById('adminGateError');
+            if (er0) { er0.textContent = 'Enter the admin password.'; er0.hidden = false; }
+            return;
+          }
           if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
-          const ok = await this.tryLogin(pwd);
+          const r = await this.tryLogin(pwd);
           if (btn) { btn.disabled = false; btn.textContent = 'Unlock'; }
-          if (!ok) {
+          if (!r.ok) {
             const er = document.getElementById('adminGateError');
-            if (er) { er.textContent = 'Incorrect password. Access denied.'; er.hidden = false; }
-            if (ip) { ip.value = ''; ip.focus(); }
+            if (er) { er.textContent = AdminAuth.gateErrorText(r); er.hidden = false; }
+            // Only wipe the field when the password itself was rejected —
+            // retyping it after a network blip is pointless friction.
+            if (ip && (r.reason === 'invalid' || r.reason === 'locked')) { ip.value = ''; }
+            if (ip) ip.focus();
           }
         });
       }
