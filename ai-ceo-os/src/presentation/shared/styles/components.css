@@ -749,6 +749,22 @@
   margin-bottom: var(--ceo-space-2);
 }
 
+/* Read more / Read less disclosure for roadmap activity notes. Native
+   <details>, so it works without JS and stays keyboard-accessible. */
+.ceo-readmore > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--ceo-accent);
+  font-size: 0.72rem;
+  padding: 2px 0 0 1.1em;
+}
+
+.ceo-readmore > summary::-webkit-details-marker { display: none; }
+.ceo-readmore > summary::after { content: 'Read more'; }
+.ceo-readmore[open] > summary::after { content: 'Read less'; }
+.ceo-readmore > summary:hover { text-decoration: underline; }
+.ceo-readmore > summary:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 2px; }
+
 @media (max-width: 540px) {
   .ceo-success { padding: var(--ceo-space-3); }
   .ceo-success-stats { grid-template-columns: repeat(2, 1fr); }

@@ -27,7 +27,10 @@ export const PLAN_TOTAL_DAYS = 1825;
 // skip a gate by spending more). Numbers are the blueprint's honest ones,
 // which REPLACE the OS's prior over-optimistic targets (it had 1,000 actives
 // by month 12; the real benchmark is 100 by month 9).
-const PHASES = [
+// Exported so the Founder Success Bar's roadmap can present these exact rows
+// (name, markets, language, budget, exit gate) instead of restating them —
+// read-only reuse; phaseForDay/currentPhaseContext behaviour is unchanged.
+export const PHASES = [
   {
     untilDay: 270, // ~Month 9
     stage: 'Phase 1 — Proof (Months 1–9): Pakistan ONLY, prove the funnel',

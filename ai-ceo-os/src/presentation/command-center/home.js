@@ -34,7 +34,29 @@ export async function initHome() {
   picker.addEventListener('change', () => loadDay(picker.value || realToday));
   wireLeaveButton(picker);
   wireResetButton(picker);
+  wireRoadmapToggle();
   await loadDay(picker.value);
+}
+
+// Show/Hide Roadmap. sessionStorage, so the choice survives navigation within
+// the session but never becomes a permanent preference.
+function wireRoadmapToggle() {
+  const btn = document.getElementById('home-roadmap-toggle');
+  const bar = document.getElementById('home-success-bar');
+  if (!btn || !bar) return;
+  const apply = (shown) => {
+    bar.style.display = shown ? '' : 'none';
+    btn.textContent = shown ? '▲ Hide Roadmap' : '▼ Show Roadmap';
+    btn.setAttribute('aria-expanded', String(shown));
+  };
+  let shown = true;
+  try { shown = sessionStorage.getItem('ceo-roadmap-hidden') !== '1'; } catch {}
+  apply(shown);
+  btn.addEventListener('click', () => {
+    shown = !shown;
+    try { sessionStorage.setItem('ceo-roadmap-hidden', shown ? '0' : '1'); } catch {}
+    apply(shown);
+  });
 }
 
 // --- Leave Management (Section 2) ---------------------------------------
@@ -426,6 +448,11 @@ function renderSuccessBar(el, s) {
           <div class="ceo-success-tile-value">${pt ? num(pt.r) : num(g.remainingMembers)}</div>
           <div class="ceo-success-sub">of ${num(g.target)} active IB clients · plan day ${num(pt ? pt.d : g.daysElapsed)} / ${num(g.horizonDays)}</div>
         </button>
+        ${phase ? `<button type="button" class="ceo-success-tile" data-panel="phase" aria-expanded="${successPanelOpen === 'phase'}">
+          <div class="ceo-success-stat-label">Current phase ▾</div>
+          <div class="ceo-success-tile-value" style="font-size: var(--ceo-font-size-base); line-height:1.25;">${escapeHtml(phase.name || phase.stage)}</div>
+          <div class="ceo-success-sub">${escapeHtml(String(phase.objective || '').slice(0, 70))}</div>
+        </button>` : ''}
       </div>
 
       ${rm?.modelOnly ? `<p class="ceo-success-sub" style="margin-top:var(--ceo-space-2);">${escapeHtml(rm.modelNote)} Real execution data will replace the model as activities are completed.</p>` : ''}
@@ -501,10 +528,86 @@ function renderTip(s, pct, pt, phase) {
     </div>`;
 }
 
+// Implementation notes for one activity, read from the roadmap's activityNotes
+// (EXECUTION_KITS) — collapsed behind a native Read more/Read less disclosure.
+function notesHtml(rm, act) {
+  const n = rm?.activityNotes?.[act.key];
+  if (!n) return '';
+  const row = (k, v) => {
+    if (!v) return '';
+    const body = Array.isArray(v)
+      ? `<ul style="margin:2px 0 0;padding-left:1.1em;">${v.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>`
+      : `<div>${escapeHtml(v)}</div>`;
+    return `<div style="margin-top:var(--ceo-space-2);"><strong style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.05em;">${escapeHtml(k)}</strong>${body}</div>`;
+  };
+  return `
+    <details class="ceo-readmore">
+      <summary></summary>
+      <div class="ceo-success-why" style="margin-top:var(--ceo-space-1);">
+        ${row('Objective', n.objective)}${row('Platform', n.platform)}${row('Audience', n.audience)}
+        ${row('KPI', n.kpi)}${row('Timing', n.timing)}${row('Expected result', n.expected)}
+        ${row('CTA', n.cta)}${row('Script', n.script)}${row('Message', n.message)}
+        ${row('Questions', n.questions)}${row('Follow-up', n.followUp)}
+        ${row('Mistakes to avoid', n.mistakes)}${row('Risks', n.risks)}
+        ${row('Quality checklist', n.quality)}${row('Completion checklist', n.completion)}${row('Next action', n.nextAction)}
+      </div>
+    </details>`;
+}
+
+// One category block with its expandable activities.
+function categoryHtml(rm, c, badge) {
+  return `
+    <div class="ceo-success-item">
+      <div class="ceo-success-item-head">
+        <span class="ceo-success-item-name">${escapeHtml(c.label)}</span>
+        ${badge || ''}
+      </div>
+      <div class="ceo-success-why">${escapeHtml(c.why)}</div>
+      ${c.activities?.length
+        ? c.activities.map((a) => `
+            <div style="margin-top:var(--ceo-space-2);">
+              <div class="ceo-success-sub" style="text-transform:capitalize;">• ${escapeHtml(a.label ?? a)}</div>
+              ${typeof a === 'object' ? notesHtml(rm, a) : ''}
+            </div>`).join('')
+        : '<div class="ceo-success-sub">No activity of this type in your plan yet.</div>'}
+    </div>`;
+}
+
 function renderSuccessPanel(s) {
   const holder = document.getElementById('home-success-panel');
   if (!holder) return;
   if (!successPanelOpen) { holder.innerHTML = ''; return; }
+
+  // --- Phase detail: the planning engine's own PHASES row, in full --------
+  if (successPanelOpen === 'phase') {
+    const rm = s.roadmap;
+    const pct = successScrub === null ? livePctFor(rm, s.daily) : successScrub;
+    const ph = rm?.phases[pointForDay(rm, dayForBarPct(rm, pct)).ph];
+    if (!ph) { holder.innerHTML = ''; return; }
+    const field = (k, v) => v
+      ? `<div style="margin-top:var(--ceo-space-2);"><div class="ceo-success-stat-label">${escapeHtml(k)}</div><div class="ceo-success-why">${escapeHtml(v)}</div></div>`
+      : `<div style="margin-top:var(--ceo-space-2);"><div class="ceo-success-stat-label">${escapeHtml(k)}</div><div class="ceo-success-sub">Not separately tracked in the plan.</div></div>`;
+    holder.innerHTML = `
+      <div class="ceo-success-panel">
+        <div class="ceo-success-label">${escapeHtml(ph.name)} · plan days ${num(ph.fromDay)}–${num(ph.untilDay)}</div>
+        <div class="ceo-success-why" style="margin-top:2px;"><strong>Objective:</strong> ${escapeHtml(ph.objective)}</div>
+        ${field('Why this phase exists (markets)', ph.why)}
+        ${field('Success / exit criteria', ph.exitCriteria)}
+        ${field('Language', ph.language)}
+        ${field('Expected revenue at gate', ph.expectedRevenue)}
+        ${field('Expected team', ph.expectedTeam)}
+        ${field('Expected systems & budget', ph.expectedSystems)}
+        <div class="ceo-success-tip-grid" style="margin-top:var(--ceo-space-3);">
+          <div><div class="ceo-success-stat-label">Expected active IB by phase end</div><div class="ceo-success-stat-value">${num(ph.expectedMembersAtEnd)}</div></div>
+          <div><div class="ceo-success-stat-label">Members added in this phase</div><div class="ceo-success-stat-value">+${num(ph.membersAddedInPhase)}</div></div>
+          ${ph.expectedActivesStated ? `<div><div class="ceo-success-stat-label">Gate states</div><div class="ceo-success-stat-value">${escapeHtml(ph.expectedActivesStated)} actives</div></div>` : ''}
+        </div>
+        <div class="ceo-success-label" style="margin:var(--ceo-space-3) 0 var(--ceo-space-2);">Activities responsible for reaching ${pct}%</div>
+        <div class="ceo-success-grid">${ph.categories.map((c) => categoryHtml(rm, c)).join('')}</div>
+        <p class="ceo-success-sub" style="margin-top:var(--ceo-space-3);">${escapeHtml(rm.planVerdict || '')}</p>
+      </div>`;
+    return;
+  }
 
   if (successPanelOpen === 'expected') {
     const rows = (s.sources || []).map((src) => `
@@ -542,6 +645,7 @@ function renderSuccessPanel(s) {
     </div>`).join('');
   holder.innerHTML = `
     <div class="ceo-success-panel">
+      ${remainingPhasesHtml(s)}
       ${roadmapCategoriesHtml(s, 'todo')}
       <div class="ceo-success-label" style="margin: var(--ceo-space-3) 0 var(--ceo-space-2);">What the remaining ${num(s.remainingWork?.remainingMembers)} still needs</div>
       <div class="ceo-success-grid">${cats}</div>
@@ -584,19 +688,36 @@ function roadmapCategoriesHtml(s, mode) {
     <div class="ceo-success-label">${title}</div>
     <p class="ceo-success-sub" style="margin-bottom: var(--ceo-space-2);">${why}</p>
     <div class="ceo-success-grid">
-      ${items.map((c) => `
-        <div class="ceo-success-item">
-          <div class="ceo-success-item-head">
-            <span class="ceo-success-item-name">${escapeHtml(c.label)}</span>
-            ${c.active ? '<span class="ceo-badge ceo-badge-warning">in progress</span>' : ''}
-          </div>
-          <div class="ceo-success-why">${escapeHtml(c.why)}</div>
-          ${c.activities?.length
-            ? `<div class="ceo-success-sub">Plan activities: ${c.activities.map((a) => escapeHtml(a)).join(' · ')}</div>`
-            : '<div class="ceo-success-sub">No activity of this type in your plan yet.</div>'}
-          <div class="ceo-success-sub">${escapeHtml(String(c.stage).split(':')[0])}</div>
-        </div>`).join('')}
+      ${items.map((c) => categoryHtml(rm, c, c.active ? '<span class="ceo-badge ceo-badge-warning">in progress</span>' : '')).join('')}
     </div>`;
+}
+
+// Every phase still ahead of the selected point, in full: objectives,
+// activities, milestone/exit gate, outcome and the members that phase adds.
+function remainingPhasesHtml(s) {
+  const rm = s.roadmap;
+  if (!rm) return '';
+  const pct = successScrub === null ? livePctFor(rm, s.daily) : successScrub;
+  const day = dayForBarPct(rm, pct);
+  const ahead = rm.phases.filter((p) => p.untilDay > day);
+  if (ahead.length === 0) return '<p class="ceo-success-sub">The whole plan is behind this point — nothing remains on the roadmap.</p>';
+  return `
+    <div class="ceo-success-label" style="margin-bottom: var(--ceo-space-2);">Remaining phases (${ahead.length})</div>
+    ${ahead.map((ph) => `
+      <div class="ceo-success-item" style="margin-bottom: var(--ceo-space-3);">
+        <div class="ceo-success-item-head">
+          <span class="ceo-success-item-name">${escapeHtml(ph.name)}</span>
+          ${ph.fromDay <= day ? '<span class="ceo-badge ceo-badge-warning">in progress</span>' : ''}
+          <span class="ceo-success-item-num">+${num(ph.membersAddedInPhase)}</span>
+        </div>
+        <div class="ceo-success-why"><strong>Objective:</strong> ${escapeHtml(ph.objective)}</div>
+        <div class="ceo-success-sub"><strong>Exit gate:</strong> ${escapeHtml(ph.exitCriteria)}</div>
+        <div class="ceo-success-sub"><strong>Expected outcome:</strong> ${escapeHtml(ph.why)}</div>
+        <div class="ceo-success-sub">Expected active IB by phase end: <strong>${num(ph.expectedMembersAtEnd)}</strong> · plan days ${num(ph.fromDay)}–${num(ph.untilDay)}</div>
+        <div class="ceo-success-grid" style="margin-top: var(--ceo-space-2);">
+          ${ph.categories.map((c) => categoryHtml(rm, c)).join('')}
+        </div>
+      </div>`).join('')}`;
 }
 
 // Only shown when actually behind the plan's pace — and only ever repeating

@@ -16,7 +16,8 @@
 // A source with no CRM rows behind it returns expected=null so the UI can say
 // "not tracked yet" instead of printing a fabricated forecast.
 
-import { FEASIBILITY, SOCIAL_STRATEGY, COUNTRY_STRATEGY, PLAN_TOTAL_DAYS, currentPhaseContext } from './plan-logic.js';
+import { FEASIBILITY, SOCIAL_STRATEGY, COUNTRY_STRATEGY, PLAN_TOTAL_DAYS, currentPhaseContext, PHASES } from './plan-logic.js';
+import { EXECUTION_KITS } from './execution-kits.js';
 import { parseExecTag } from './db.js';
 
 const DAY_MS = 86400000;
@@ -233,7 +234,8 @@ export const HORIZONS = [
 // starts SEO/referral + English prep; Phase 3 opens English + new countries;
 // Phase 4 adds native-hire languages; Phase 5 is the partner network).
 // Categories reuse REMAINING_CATEGORIES above — one category vocabulary.
-const PHASE_BOUNDARIES = [270, 540, 900, 1440, PLAN_TOTAL_DAYS];
+// Derived from PHASES itself — never a second copy of the gate days.
+const PHASE_BOUNDARIES = PHASES.map((p) => p.untilDay);
 const PHASE_CATEGORY_KEYS = [
   ['daily', 'content', 'community', 'physical', 'institutes', 'national', 'followup', 'training'],
   ['marketing', 'sales', 'automation'],
@@ -265,10 +267,12 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
     ? Math.max(0, Math.min(horizonDays, Math.floor((now - start) / DAY_MS)))
     : 0;
 
-  // Phases straight from the planning engine — stage text and exit gate are
-  // whatever currentPhaseContext() reports for a day inside each window.
+  // Phases straight from the planning engine's own PHASES rows — name,
+  // markets, language, budget and exit gate are quoted, never restated.
+  const expectedAt = (day) => Math.round((target * day) / horizonDays);
   let from = 1;
   const phases = PHASE_BOUNDARIES.map((untilDay, i) => {
+    const p = PHASES[i];
     const ctx = currentPhaseContext(untilDay, actualMembers);
     const fromDay = from;
     from = untilDay + 1;
@@ -279,8 +283,19 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
         key: c.key,
         label: c.label,
         why: c.why,
-        activities: (c.activities || []).filter((k) => present.has(k)).map(label),
+        // Activity keys only — the notes live once in activityNotes below so
+        // the payload never repeats a kit per phase.
+        activities: (c.activities || []).filter((k) => present.has(k)).map((k) => ({ key: k, label: label(k) })),
       }));
+
+    // Figures the plan states in its own gate/budget text. Absent ones stay
+    // null so the UI can say "not separately tracked" instead of guessing.
+    const gate = String(p.target || '');
+    const revenue = (gate.match(/\$[\d,]+(?:[–-]\$?[\d,]+)?\s*\/mo/) || [])[0] || null;
+    const statedActives = (gate.match(/([\d,]+(?:[–-][\d,]+)?)\s+actives/i) || [])[1] || null;
+    const team = /hire|hired|manager|officer|analyst|creator/i.test(String(p.budget || '')) ? p.budget : null;
+    const [namePart, ...restOfStage] = String(p.stage).split(':');
+
     return {
       index: i,
       fromDay,
@@ -289,9 +304,35 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
       pctTo: Math.round((10000 * untilDay) / horizonDays) / 100,
       stage: ctx.currentPhase,
       milestone: ctx.monthlyTarget,
+      // --- Executive detail (all quoted from PHASES) -------------------
+      name: namePart.trim(),
+      objective: restOfStage.join(':').trim() || namePart.trim(),
+      why: p.countries,          // the markets rationale IS the "why here"
+      language: p.language,
+      budget: p.budget,
+      exitCriteria: p.target,    // the gate is the success criterion
+      expectedRevenue: revenue,
+      expectedActivesStated: statedActives,
+      expectedTeam: team,
+      expectedSystems: p.budget,
+      expectedMembersAtEnd: expectedAt(untilDay),
+      membersAddedInPhase: expectedAt(untilDay) - expectedAt(fromDay - 1),
       categories: cats,
     };
   });
+
+  // Implementation notes, once per activity type the founder's plan actually
+  // contains — read straight from EXECUTION_KITS (the same SOP the Daily
+  // Planner's "Full SOP" disclosure already shows).
+  const NOTE_FIELDS = ['objective', 'platform', 'audience', 'kpi', 'timing', 'expected', 'cta', 'script', 'message', 'questions', 'followUp', 'mistakes', 'risks', 'quality', 'completion', 'nextAction'];
+  const activityNotes = {};
+  for (const key of present) {
+    const kit = EXECUTION_KITS[key];
+    if (!kit) continue;
+    const out = {};
+    for (const f of NOTE_FIELDS) if (kit[f]) out[f] = kit[f];
+    if (Object.keys(out).length) activityNotes[key] = out;
+  }
 
   return {
     target,
@@ -306,6 +347,9 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
       pct: Math.round((10000 * Math.min(h.days, horizonDays)) / horizonDays) / 100,
     })),
     phases,
+    activityNotes,
+    // Why the plan is phased at all — the planning engine's own verdict.
+    planVerdict: FEASIBILITY.verdict,
     // Honesty flag the UI must surface whenever the curve is doing the talking
     // instead of the founder's own execution history.
     modelOnly: !hasRealData,
