@@ -308,12 +308,34 @@ let successHorizon = 'today'; // selected planning horizon
 let successScrub = null;      // scrubbed % on the roadmap, or null = live position
 let lastSuccess = null;       // last payload, so scrubbing re-renders without refetching
 let successDragging = false;  // survives the re-render a scrub triggers (see wireTrack)
+let successPhasePick = null;  // manually chosen phase index, or null = follow the bar
 // Ending a drag anywhere releases it — the track element under the finger is
 // replaced on every scrub, so this can't live on the track itself.
 if (typeof window !== 'undefined') {
   window.addEventListener('pointerup', () => { successDragging = false; });
   window.addEventListener('pointercancel', () => { successDragging = false; });
+  // The info panel stays open while the founder reads it; a click anywhere
+  // outside the roadmap dismisses it. Registered once, at module scope, so
+  // re-rendering the bar never stacks duplicate listeners.
+  document.addEventListener('click', (e) => {
+    if (successScrub === null) return;
+    if (e.target.closest && e.target.closest('.ceo-success')) return;
+    successScrub = null;
+    if (lastSuccess) renderSuccessBar(document.getElementById('home-success-bar'), lastSuccess);
+  });
 }
+
+// Completed / current / remaining phases at a given plan day. One helper so
+// the two tile summaries and the panels can never disagree.
+function phaseSplit(rm, day) {
+  // Index-based so the three lists always partition the phases exactly once.
+  // (A day-range test double-counts on a gate day, where untilDay === day is
+  // both "finished" and "still current".)
+  const idx = rm.phases.findIndex((p) => day >= p.fromDay && day <= p.untilDay);
+  if (idx === -1) return { done: [], current: null, remaining: rm.phases.slice() }; // day 0 — fresh or just reset
+  return { done: rm.phases.slice(0, idx), current: rm.phases[idx], remaining: rm.phases.slice(idx + 1) };
+}
+const shortPhase = (p) => (String(p.name).match(/^Phase\s*\d+/) || [p.name])[0];
 
 async function refreshSuccessBar() {
   const el = document.getElementById('home-success-bar');
@@ -395,6 +417,7 @@ function renderSuccessBar(el, s) {
   const selDay = rm ? dayForBarPct(rm, pct) : 0;
   const pt = rm ? pointForDay(rm, selDay) : null;
   const phase = rm && pt ? rm.phases[pt.ph] : null;
+  const split = rm && pt ? phaseSplit(rm, pt.d) : null;
   const scrubbing = successScrub !== null;
   const headLabel = isToday ? "Today's plan executed" : `Roadmap · ${escapeHtml(horizonOf(rm).label)}`;
 
@@ -442,11 +465,20 @@ function renderSuccessBar(el, s) {
           <div class="ceo-success-sub">${scrubbing || !isToday
             ? `at ${pct}% of ${escapeHtml(horizonOf(rm).label)} · actual now ${num(g.actualMembers)}`
             : `Actual ${num(g.actualMembers)} · <span class="ceo-badge ${PACE_BADGE[pace.status] || 'ceo-badge-neutral'}">${escapeHtml(pace.label)}</span>${pace.gap !== null && pace.gap !== undefined ? ` · gap ${pace.gap > 0 ? '+' : ''}${num(pace.gap)}` : ''}`}</div>
+          ${split ? `<div class="ceo-success-mini">
+            ${split.done.length ? `<div><span class="ceo-success-mini-label">Completed phases</span>${split.done.map((p) => `<span class="ceo-success-chip ceo-chip-done">✓ ${escapeHtml(shortPhase(p))}</span>`).join('')}</div>` : ''}
+            ${split.current ? `<div><span class="ceo-success-mini-label">Current</span><span class="ceo-success-chip ceo-chip-now">● ${escapeHtml(shortPhase(split.current))}</span></div>` : ''}
+            <div class="ceo-success-sub">${split.done.length || split.current ? 'These phases are why the expected members are projected at this point.' : 'No phase completed yet at this point.'}</div>
+          </div>` : ''}
         </button>
         <button type="button" class="ceo-success-tile" data-panel="remaining" aria-expanded="${successPanelOpen === 'remaining'}">
           <div class="ceo-success-stat-label">Remaining members ▾</div>
           <div class="ceo-success-tile-value">${pt ? num(pt.r) : num(g.remainingMembers)}</div>
           <div class="ceo-success-sub">of ${num(g.target)} active IB clients · plan day ${num(pt ? pt.d : g.daysElapsed)} / ${num(g.horizonDays)}</div>
+          ${split ? `<div class="ceo-success-mini">
+            ${split.remaining.length ? `<div><span class="ceo-success-mini-label">Remaining phases</span>${split.remaining.map((p) => `<span class="ceo-success-chip ceo-chip-todo">○ ${escapeHtml(shortPhase(p))}</span>`).join('')}</div>` : ''}
+            <div class="ceo-success-sub">${split.remaining.length ? 'These phases are why those members are still remaining.' : 'No phase remains after this point.'}</div>
+          </div>` : ''}
         </button>
         ${phase ? `<button type="button" class="ceo-success-tile" data-panel="phase" aria-expanded="${successPanelOpen === 'phase'}">
           <div class="ceo-success-stat-label">Current phase ▾</div>
@@ -454,6 +486,16 @@ function renderSuccessBar(el, s) {
           <div class="ceo-success-sub">${escapeHtml(String(phase.objective || '').slice(0, 70))}</div>
         </button>` : ''}
       </div>
+
+      ${rm ? `<div class="ceo-success-phasepick">
+        <span class="ceo-success-mini-label">Open any phase</span>
+        ${rm.phases.map((p) => {
+          const state = split && split.done.includes(p) ? 'done' : (split && split.current === p ? 'now' : 'todo');
+          const mark = state === 'done' ? '✓' : state === 'now' ? '●' : '○';
+          const on = successPhasePick === p.index;
+          return `<button type="button" class="ceo-success-chip ceo-chip-${state}${on ? ' ceo-chip-on' : ''}" data-phase="${p.index}" aria-pressed="${on}">${mark} ${escapeHtml(shortPhase(p))}</button>`;
+        }).join('')}
+      </div>` : ''}
 
       ${rm?.modelOnly ? `<p class="ceo-success-sub" style="margin-top:var(--ceo-space-2);">${escapeHtml(rm.modelNote)} Real execution data will replace the model as activities are completed.</p>` : ''}
       <div id="home-success-panel"></div>
@@ -467,6 +509,17 @@ function renderSuccessBar(el, s) {
   });
 
   if (rm) wireTrack(el, s);
+
+  // Manual phase selector — opens that phase's full detail in the existing
+  // phase panel (same renderer, no duplicated markup).
+  el.querySelectorAll('[data-phase]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.getAttribute('data-phase'));
+      successPhasePick = successPhasePick === idx ? null : idx;
+      successPanelOpen = successPhasePick === null ? null : 'phase';
+      renderSuccessBar(el, s);
+    })
+  );
 
   el.querySelectorAll('[data-panel]').forEach((btn) =>
     btn.addEventListener('click', () => {
@@ -492,6 +545,7 @@ function wireTrack(el, s) {
   const apply = (p) => {
     if (p === successScrub) return;
     successScrub = p;
+    successPhasePick = null; // moving the bar hands control back to the bar
     renderSuccessBar(document.getElementById('home-success-bar'), s);
   };
   // Scrubbing re-renders the bar, which replaces this element — so the drag
@@ -499,8 +553,9 @@ function wireTrack(el, s) {
   // first move when the fresh listeners started with dragging = false.
   track.addEventListener('pointerdown', (e) => { successDragging = true; apply(pctFromEvent(e)); });
   track.addEventListener('pointermove', (e) => { if (successDragging || e.pointerType === 'mouse') apply(pctFromEvent(e)); });
-  // Leaving with a mouse returns the bar to the founder's real position.
-  track.addEventListener('pointerleave', (e) => { if (!successDragging && e.pointerType === 'mouse') apply(null); });
+  // Deliberately no pointerleave reset: the info panel must stay open while
+  // the founder reads it. It clears on a new percentage, its own close
+  // button, or a click outside the roadmap (see the document listener above).
   track.addEventListener('keydown', (e) => {
     const cur = successScrub === null ? livePctFor(s.roadmap, s.daily) : successScrub;
     if (e.key === 'ArrowRight') { e.preventDefault(); apply(Math.min(100, cur + 1)); }
@@ -517,6 +572,7 @@ function renderTip(s, pct, pt, phase) {
   const rm = s.roadmap;
   holder.innerHTML = `
     <div class="ceo-success-tip" style="--tip-left: ${pct}%;">
+      <button type="button" class="ceo-success-tip-close" id="home-tip-close" aria-label="Close roadmap details">×</button>
       <div class="ceo-success-tip-head">${pct}% · plan day ${num(pt.d)} of ${num(rm.horizonDays)} · ~${escapeHtml(dateForDay(rm, pt.d))}</div>
       <div class="ceo-success-tip-grid">
         <div><div class="ceo-success-stat-label">Expected active IB</div><div class="ceo-success-stat-value">${num(pt.e)}</div></div>
@@ -526,6 +582,10 @@ function renderTip(s, pct, pt, phase) {
       <div class="ceo-success-sub"><strong>Next milestone:</strong> ${escapeHtml(phase.milestone)}</div>
       ${rm.modelOnly ? `<div class="ceo-success-sub">${escapeHtml(rm.modelNote)}</div>` : ''}
     </div>`;
+  holder.querySelector('#home-tip-close')?.addEventListener('click', () => {
+    successScrub = null;
+    renderSuccessBar(document.getElementById('home-success-bar'), s);
+  });
 }
 
 // Implementation notes for one activity, read from the roadmap's activityNotes
@@ -582,7 +642,10 @@ function renderSuccessPanel(s) {
   if (successPanelOpen === 'phase') {
     const rm = s.roadmap;
     const pct = successScrub === null ? livePctFor(rm, s.daily) : successScrub;
-    const ph = rm?.phases[pointForDay(rm, dayForBarPct(rm, pct)).ph];
+    // A manually picked phase wins; otherwise the panel follows the bar.
+    const ph = successPhasePick !== null
+      ? rm?.phases[successPhasePick]
+      : rm?.phases[pointForDay(rm, dayForBarPct(rm, pct)).ph];
     if (!ph) { holder.innerHTML = ''; return; }
     const field = (k, v) => v
       ? `<div style="margin-top:var(--ceo-space-2);"><div class="ceo-success-stat-label">${escapeHtml(k)}</div><div class="ceo-success-why">${escapeHtml(v)}</div></div>`
@@ -602,7 +665,7 @@ function renderSuccessPanel(s) {
           <div><div class="ceo-success-stat-label">Members added in this phase</div><div class="ceo-success-stat-value">+${num(ph.membersAddedInPhase)}</div></div>
           ${ph.expectedActivesStated ? `<div><div class="ceo-success-stat-label">Gate states</div><div class="ceo-success-stat-value">${escapeHtml(ph.expectedActivesStated)} actives</div></div>` : ''}
         </div>
-        <div class="ceo-success-label" style="margin:var(--ceo-space-3) 0 var(--ceo-space-2);">Activities responsible for reaching ${pct}%</div>
+        <div class="ceo-success-label" style="margin:var(--ceo-space-3) 0 var(--ceo-space-2);">${successPhasePick !== null ? 'Activities &amp; SOP in this phase' : `Activities responsible for reaching ${pct}%`}</div>
         <div class="ceo-success-grid">${ph.categories.map((c) => categoryHtml(rm, c)).join('')}</div>
         <p class="ceo-success-sub" style="margin-top:var(--ceo-space-3);">${escapeHtml(rm.planVerdict || '')}</p>
       </div>`;

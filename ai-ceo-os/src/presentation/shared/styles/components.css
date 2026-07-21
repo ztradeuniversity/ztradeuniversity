@@ -749,6 +749,74 @@
   margin-bottom: var(--ceo-space-2);
 }
 
+/* Permanent phase summaries inside the Expected / Remaining tiles, and the
+   manual phase selector below them. */
+
+.ceo-success-mini {
+  margin-top: var(--ceo-space-2);
+  padding-top: var(--ceo-space-2);
+  border-top: 1px solid var(--ceo-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ceo-success-mini-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ceo-text-muted);
+  margin-right: 6px;
+}
+
+.ceo-success-chip {
+  display: inline-block;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  padding: 0 8px;
+  margin: 2px 4px 2px 0;
+  border-radius: var(--ceo-radius-full);
+  border: 1px solid var(--ceo-border);
+  background: var(--ceo-surface);
+  color: var(--ceo-text-secondary);
+  white-space: nowrap;
+}
+
+.ceo-chip-done { border-color: var(--ceo-status-success); color: var(--ceo-status-success); }
+.ceo-chip-now { border-color: var(--ceo-accent); color: var(--ceo-accent); }
+.ceo-chip-todo { color: var(--ceo-text-muted); }
+
+.ceo-success-phasepick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin-top: var(--ceo-space-3);
+}
+
+.ceo-success-phasepick .ceo-success-chip { cursor: pointer; transition: background var(--ceo-transition-fast); }
+.ceo-success-phasepick .ceo-success-chip:hover { background: var(--ceo-surface-raised); }
+.ceo-success-phasepick .ceo-success-chip:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 2px; }
+.ceo-success-chip.ceo-chip-on { background: var(--ceo-accent); color: var(--ceo-text-on-accent); border-color: var(--ceo-accent); }
+
+.ceo-success-tip-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--ceo-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: var(--ceo-radius-sm);
+}
+
+.ceo-success-tip-close:hover { color: var(--ceo-text-primary); background: var(--ceo-secondary); }
+.ceo-success-tip-close:focus-visible { outline: 2px solid var(--ceo-accent); outline-offset: 1px; }
+
 /* Read more / Read less disclosure for roadmap activity notes. Native
    <details>, so it works without JS and stays keyboard-accessible. */
 .ceo-readmore > summary {
