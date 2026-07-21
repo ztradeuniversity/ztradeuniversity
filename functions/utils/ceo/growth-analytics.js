@@ -272,11 +272,15 @@ function label(key) {
 // and overdue backlog. Same "no invented certainty" contract as trajectory's
 // probability band (funnel-intelligence.js) — four plain bands, not a false
 // decimal of precision.
-export function planHealth({ targetScore, overdueCount }) {
+// paceStatus (optional) is compareExpectedActual's verdict from
+// founder-success.js — passing it lets "Ahead" mean ahead of the plan's own
+// goal pace, not just a high score. Omitting it keeps the original behaviour.
+export function planHealth({ targetScore, overdueCount, paceStatus }) {
   const score = Number.isFinite(targetScore) ? targetScore : 0;
   const overdue = Number.isFinite(overdueCount) ? overdueCount : 0;
   if (overdue >= 5 || score < 25) return { status: 'critical', label: 'Critical' };
   if (overdue >= 2 || score < 45) return { status: 'behind', label: 'Behind' };
   if (overdue >= 1 || score < 65) return { status: 'slightly_behind', label: 'Slightly Behind' };
+  if (overdue === 0 && (score >= 85 || paceStatus === 'ahead')) return { status: 'ahead', label: 'Currently Ahead' };
   return { status: 'on_track', label: 'On Track' };
 }

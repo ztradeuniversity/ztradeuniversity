@@ -170,7 +170,7 @@ function ensureAnalyticsBlocks() {
 }
 
 // --- Overall Progress (Founder Decision Dashboard) ------------------------
-const HEALTH_BADGE = { on_track: 'ceo-badge-success', slightly_behind: 'ceo-badge-warning', behind: 'ceo-badge-warning', critical: 'ceo-badge-critical' };
+const HEALTH_BADGE = { ahead: 'ceo-badge-success', on_track: 'ceo-badge-success', slightly_behind: 'ceo-badge-warning', behind: 'ceo-badge-warning', critical: 'ceo-badge-critical' };
 
 function renderProgress(data) {
   ensureAnalyticsBlocks();

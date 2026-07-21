@@ -265,8 +265,174 @@ async function loadDay(date) {
       `<div class="ceo-alert ceo-alert-critical">Trading check-in load nahin hui: ${escapeHtml(err.message)}.</div>`;
   }
 
+  // Founder Success Bar — its own isolated fetch, like Physical/Trading: if
+  // the analytics endpoint fails the planner below must still work.
+  refreshSuccessBar();
+
   // Annotate every abbreviation now that all three sections have rendered.
   wireGlossary(document.querySelector('.ceo-content'));
+}
+
+// ============================================================
+// 0) FOUNDER SUCCESS BAR — the primary execution indicator.
+//    Every number is READ from GET /api/ceo/analytics (the single source of
+//    truth already used by the Growth Analytics page): today's weighted plan
+//    progress, the reused execution/consistency scores, plan health, and the
+//    goal pace against the plan's own declared 50,000 / 5-year horizon.
+//    Nothing is computed here — this renders.
+// ============================================================
+let successPanelOpen = null; // 'expected' | 'remaining' | null — survives refresh
+
+async function refreshSuccessBar() {
+  const el = document.getElementById('home-success-bar');
+  if (!el) return;
+  try {
+    const a = await getJson('/api/ceo/analytics');
+    if (a.successBar) renderSuccessBar(el, a.successBar);
+  } catch {
+    el.innerHTML = ''; // never block the planner
+  }
+}
+
+const HEALTH_BADGE = {
+  ahead: 'ceo-badge-success',
+  on_track: 'ceo-badge-success',
+  slightly_behind: 'ceo-badge-warning',
+  behind: 'ceo-badge-warning',
+  critical: 'ceo-badge-critical',
+};
+const PACE_BADGE = { ahead: 'ceo-badge-success', on_track: 'ceo-badge-success', behind: 'ceo-badge-critical', unknown: 'ceo-badge-neutral' };
+const num = (n) => Number(n || 0).toLocaleString('en-US');
+
+function renderSuccessBar(el, s) {
+  const d = s.daily || {};
+  const g = s.goal || {};
+  const pace = g.pace || { status: 'unknown', label: 'Not enough data', gap: null };
+  const pct = Math.max(0, Math.min(100, d.progressPct || 0));
+  // Insufficient new execution history: show honest zeros / "Not enough data"
+  // rather than a score computed off a handful of rows.
+  const execScore = s.notEnoughData ? 0 : (s.executionScore ?? 0);
+  const consistency = s.notEnoughData || s.consistencyScore === null || s.consistencyScore === undefined
+    ? null : s.consistencyScore;
+  const probability = s.notEnoughData ? null : g.probability50k;
+
+  const stat = (label, value) => `
+    <div>
+      <div class="ceo-success-stat-label">${escapeHtml(label)}</div>
+      <div class="ceo-success-stat-value">${value}</div>
+    </div>`;
+
+  el.innerHTML = `
+    <section class="ceo-success" aria-label="Founder Success Bar">
+      <div class="ceo-success-head">
+        <span class="ceo-success-pct">${pct}%</span>
+        <span class="ceo-success-label">Today's plan executed</span>
+        <span style="flex: 1;"></span>
+        <span class="ceo-badge ${HEALTH_BADGE[s.healthStatus] || 'ceo-badge-neutral'}">${escapeHtml(s.health || 'On Track')}</span>
+      </div>
+      <div class="ceo-success-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Daily plan completion">
+        <div class="ceo-success-fill" data-health="${escapeAttr(s.healthStatus || 'on_track')}" style="width: ${pct}%;"></div>
+      </div>
+      <div class="ceo-success-sub">${d.completed || 0} done · ${d.partial || 0} partial · ${d.skipped || 0} skipped · ${d.pending || 0} pending${d.total ? ` of ${d.total}` : ''}</div>
+
+      <div class="ceo-success-stats">
+        ${stat('Remaining today', `${d.remainingPct ?? 0}%`)}
+        ${stat('Execution score', `${execScore}<span class="ceo-text-muted" style="font-size:0.7rem;">/100</span>`)}
+        ${stat('Consistency', consistency === null ? '<span class="ceo-text-muted">—</span>' : `${consistency}%`)}
+        ${stat('50k probability', probability === null ? '<span class="ceo-text-muted" style="font-size:0.8rem;">Not enough data</span>' : `${probability}%`)}
+      </div>
+
+      <div class="ceo-success-goal">
+        <button type="button" class="ceo-success-tile" data-panel="expected" aria-expanded="${successPanelOpen === 'expected'}">
+          <div class="ceo-success-stat-label">Expected members ▾</div>
+          <div class="ceo-success-tile-value">${g.expectedMembers === null || g.expectedMembers === undefined ? '—' : num(g.expectedMembers)}</div>
+          <div class="ceo-success-sub">Actual ${num(g.actualMembers)} · <span class="ceo-badge ${PACE_BADGE[pace.status] || 'ceo-badge-neutral'}">${escapeHtml(pace.label)}</span>${pace.gap !== null && pace.gap !== undefined ? ` · gap ${pace.gap > 0 ? '+' : ''}${num(pace.gap)}` : ''}</div>
+        </button>
+        <button type="button" class="ceo-success-tile" data-panel="remaining" aria-expanded="${successPanelOpen === 'remaining'}">
+          <div class="ceo-success-stat-label">Remaining members ▾</div>
+          <div class="ceo-success-tile-value">${num(g.remainingMembers)}</div>
+          <div class="ceo-success-sub">of ${num(g.target)} active IB clients · plan day ${num(g.daysElapsed)} / ${num(g.horizonDays)}</div>
+        </button>
+      </div>
+
+      <div id="home-success-panel"></div>
+    </section>`;
+
+  el.querySelectorAll('[data-panel]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      const which = btn.getAttribute('data-panel');
+      successPanelOpen = successPanelOpen === which ? null : which;
+      renderSuccessPanel(s);
+      el.querySelectorAll('[data-panel]').forEach((b) =>
+        b.setAttribute('aria-expanded', String(b.getAttribute('data-panel') === successPanelOpen)));
+    })
+  );
+  renderSuccessPanel(s);
+}
+
+function renderSuccessPanel(s) {
+  const holder = document.getElementById('home-success-panel');
+  if (!holder) return;
+  if (!successPanelOpen) { holder.innerHTML = ''; return; }
+
+  if (successPanelOpen === 'expected') {
+    const rows = (s.sources || []).map((src) => `
+      <div class="ceo-success-item">
+        <div class="ceo-success-item-head">
+          <span class="ceo-success-item-name">${escapeHtml(src.label)}</span>
+          <span class="ceo-success-item-num">${src.expectedMembers === null
+            ? '<span class="ceo-text-muted" style="font-weight:400;font-size:0.72rem;">not tracked yet</span>'
+            : num(src.expectedMembers)}</span>
+        </div>
+        <div class="ceo-success-sub">Actual now: ${num(src.actualMembers)}${src.sharePct !== null ? ` · ${src.sharePct}% of your measured mix` : ''}</div>
+        <div class="ceo-success-why">${escapeHtml(src.reason)}</div>
+        ${src.supportingActivities?.length
+          ? `<div class="ceo-success-sub">Supporting plan activities: ${src.supportingActivities.map((a) => escapeHtml(a)).join(' · ')}</div>`
+          : ''}
+      </div>`).join('');
+    holder.innerHTML = `
+      <div class="ceo-success-panel">
+        <div class="ceo-success-label" style="margin-bottom: var(--ceo-space-2);">Expected member contribution by source</div>
+        <div class="ceo-success-grid">${rows}</div>
+        <p class="ceo-success-sub" style="margin-top: var(--ceo-space-3);">${escapeHtml(s.goal?.paceNote || '')} A source shows a number only once your own CRM mix can measure its share — never a fabricated forecast.</p>
+        ${paceExplainerHtml(s)}
+      </div>`;
+    return;
+  }
+
+  const cats = (s.remainingWork?.categories || []).map((c) => `
+    <div class="ceo-success-item">
+      <div class="ceo-success-item-head"><span class="ceo-success-item-name">${escapeHtml(c.label)}</span></div>
+      <div class="ceo-success-why">${escapeHtml(c.why)}</div>
+      ${c.activities?.length
+        ? `<div class="ceo-success-sub">Plan activities: ${c.activities.map((a) => escapeHtml(a)).join(' · ')}</div>`
+        : '<div class="ceo-success-sub">No activity of this type in your plan yet.</div>'}
+    </div>`).join('');
+  holder.innerHTML = `
+    <div class="ceo-success-panel">
+      <div class="ceo-success-label" style="margin-bottom: var(--ceo-space-2);">What the remaining ${num(s.remainingWork?.remainingMembers)} still needs</div>
+      <div class="ceo-success-grid">${cats}</div>
+      <p class="ceo-success-sub" style="margin-top: var(--ceo-space-3);">${escapeHtml(s.remainingWork?.note || '')}</p>
+    </div>`;
+}
+
+// Only shown when actually behind the plan's pace — and only ever repeating
+// the real recommendation queue (Growth Analytics + Founder Observations +
+// execution history + CRM). Nothing new is invented at this layer.
+function paceExplainerHtml(s) {
+  const pace = s.goal?.pace;
+  if (!pace || pace.status !== 'behind') return '';
+  const recs = s.recommendations || [];
+  if (recs.length === 0) {
+    return `<p class="ceo-success-sub">Behind the model pace by ${num(Math.abs(pace.gap))} — not enough execution data yet to say why. Keep executing; the engine explains the gap once it has real rows.</p>`;
+  }
+  return `
+    <div style="margin-top: var(--ceo-space-3);">
+      <div class="ceo-success-label" style="margin-bottom: 2px;">Largest contributing reasons</div>
+      <ul style="margin: 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">
+        ${recs.map((r) => `<li><strong>${escapeHtml(r.title)}</strong> — ${escapeHtml(r.reason)}</li>`).join('')}
+      </ul>
+    </div>`;
 }
 
 // ============================================================
@@ -538,6 +704,9 @@ async function act(row, id, status, extra) {
       row.querySelectorAll('[data-act]').forEach((b) => (b.disabled = true));
     }
     showToast(res.coaching || 'Ho gaya.', status === 'completed' ? 'success' : 'info');
+    // Plan linking: the Founder Success Bar reflects the new execution state
+    // immediately, from the same endpoint — no local re-computation.
+    refreshSuccessBar();
   } catch (err) {
     showToast('Update fail hua: ' + err.message, 'critical');
   }

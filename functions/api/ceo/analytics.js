@@ -16,6 +16,7 @@ import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { computePareto, computeFunnel, computeTrajectory, buildLessonsAndImprovements } from '../../utils/ceo/funnel-intelligence.js';
 import { computePerformance } from '../../utils/ceo/performance-logic.js';
 import { computeTrends, detectPatterns, buildRecommendations, applyDecisions, buildPerformanceSummary, planHealth, DAILY_METRICS } from '../../utils/ceo/growth-analytics.js';
+import { computeDailyProgress, computeExpectedMembers, compareExpectedActual, buildSourceBreakdown, buildRemainingWork } from '../../utils/ceo/founder-success.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const REC_KEY_RE = /^[a-z0-9_.:]{1,80}$/i;
@@ -35,8 +36,13 @@ export async function onRequestGet({ request, env }) {
     // observation patterns, and the recommendation queue read only rows
     // from the new plan while old growth_daily/growth_signal rows stay on
     // record (no-hard-deletes rule).
-    const resetRow = await db.select('settings', `select=value&scope=eq.global&key=eq.growth.reset_date`);
-    const resetDate = resetRow[0]?.value || null;
+    // plan.start_date rides along in the same lookup — the Founder Success Bar
+    // measures goal pace against the plan's own start anchor (reset_plan moves
+    // both, so a reset restarts the bar at zero automatically).
+    const settingRows = await db.select('settings', `select=key,value&scope=eq.global&key=in.(growth.reset_date,plan.start_date)`);
+    const settingByKey = Object.fromEntries((settingRows || []).map((r) => [r.key, r.value]));
+    const resetDate = settingByKey['growth.reset_date'] || null;
+    const planStartDate = settingByKey['plan.start_date'] || null;
     const dailyFloor = resetDate && resetDate > since30 ? resetDate : since30;
     // Pareto/funnel (do-more, remove, leak recs) are sourced from this
     // month's daily_activities — same reset floor applies so a leak or a
@@ -50,7 +56,7 @@ export async function onRequestGet({ request, env }) {
       db.select('growth_signal', `select=rec_key,status,remind_on&owner_user_id=eq.${uid}${resetDate ? `&updated_at=gte.${resetDate}` : ''}`),
       db.select('growth_daily', `select=*&owner_user_id=eq.${uid}&entry_date=eq.${today}`),
       db.select('daily_activities', `select=activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${activityFloor}&limit=1000`),
-      db.select('ib_clients', `select=stage&owner_user_id=eq.${uid}&limit=2000`),
+      db.select('ib_clients', `select=stage,referral_source&owner_user_id=eq.${uid}&limit=2000`),
       // Founder Decision Dashboard: reused computePerformance/computeTrajectory
       // need a rolling activity window — same reset floor as growth_daily so a
       // prior plan's execution never influences the new cycle's scores.
@@ -78,7 +84,17 @@ export async function onRequestGet({ request, env }) {
       consistency30: perf.consistency.last30,
     });
     const overdueCount = overdueRows.length;
-    const health = planHealth({ targetScore: trajectory.targetScore, overdueCount });
+
+    // --- Founder Success Bar (Daily Planner) ---------------------------
+    // Composed entirely from values already computed above plus the plan's
+    // own declared target/horizon — no second analytics engine, no new query
+    // beyond referral_source riding along on the existing ib_clients read.
+    const daily = computeDailyProgress({ activities: perfActivities, today });
+    const goal = computeExpectedMembers({ planStartDate, today, actualMembers: trajectory.activeClients });
+    const pace = compareExpectedActual({ expectedMembers: goal.expectedMembers, actualMembers: trajectory.activeClients });
+    const activityTypes = [...new Set(perfActivities.map((a) => a.activity_type))];
+
+    const health = planHealth({ targetScore: trajectory.targetScore, overdueCount, paceStatus: pace.status });
 
     const decided = perfActivities.filter((a) => a.activity_type !== 'daily.shutdown_note');
     const completedCount = decided.filter((a) => a.status === 'completed').length;
@@ -150,6 +166,25 @@ export async function onRequestGet({ request, env }) {
       lessons,
       improvements,
       biggestLeak: effectiveLeak,
+      // The Daily Planner's Founder Success Bar. `daily` is live from day one
+      // (today's rows are always post-reset); the goal/score fields carry
+      // notEnoughData so the bar shows "Not enough data" instead of a number
+      // until the new cycle has real execution behind it.
+      successBar: {
+        notEnoughData: !hasEnoughData,
+        daily,
+        executionScore: trajectory.targetScore,
+        consistencyScore: perf.consistency.last30,
+        health: health.label,
+        healthStatus: health.status,
+        goal: { ...goal, pace, probability50k: trajectory.probability50k },
+        sources: buildSourceBreakdown({ clients, activityTypes, expectedMembers: goal.expectedMembers }),
+        remainingWork: buildRemainingWork({ remainingMembers: goal.remainingMembers, activityTypes }),
+        // Reused, never regenerated: the same honest recommendation queue the
+        // Growth Analytics page shows, so "AI improvement" advice has exactly
+        // one source of truth.
+        recommendations: active.slice(0, 3),
+      },
     });
   } catch (err) {
     return json({ error: 'analytics_failed', detail: String(err.message || err).slice(0, 300) }, 500);
