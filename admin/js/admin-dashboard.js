@@ -6249,6 +6249,28 @@ const AdminDashboard = (() => {
       if (a) codeByAcct[a] = (r.partner_code == null) ? '' : String(r.partner_code).trim();
     }
 
+    /* Phase 17G — MISSING GUARD RESTORED.
+       This function's own docstring specifies "GUARD: require ≥
+       ACCOUNT_PRESENT_THRESHOLD rows ... to avoid false flags from a
+       tiny/partial file", and the file-scan variant implements it — but this
+       Supabase-scan variant never did, and it is the one that runs on EVERY
+       open of the IB Changed page.
+       Its primary rule flags any serviced account that is ABSENT from
+       broker_accounts. Immediately after a Full Development Reset,
+       broker_accounts is empty by design, so every serviced account is
+       "absent" — meaning the first clients through the pipeline would all be
+       auto-flagged as IB Changed, and have their access revoked, at any point
+       before the first broker file is uploaded. Absence is only evidence of a
+       changed IB when there is a real broker file to be absent FROM. */
+    const ACCOUNT_PRESENT_THRESHOLD = 50;
+    const knownAccounts = Object.keys(codeByAcct).length;
+    if (knownAccounts < ACCOUNT_PRESENT_THRESHOLD) {
+      console.warn(`[IbChanged Supabase scan] broker_accounts holds only ${knownAccounts} account(s) ` +
+                   `(< ${ACCOUNT_PRESENT_THRESHOLD}) — skipping auto-detect so a fresh or partial ` +
+                   `registry cannot mass-flag serviced clients as IB Changed.`);
+      return { inserted: 0, scanned: 0, missing: 0, blank: 0, wrong: 0, skippedReason: 'registry_too_small' };
+    }
+
     await _ensureIbChangedSet();
     const SERVICED = new Set(['matched','approved','compile_ready','compiled','emailed','delivered']);
     let inserted = 0, scanned = 0, missing = 0, blank = 0, wrong = 0;
@@ -7792,6 +7814,18 @@ const AdminDashboard = (() => {
      wipes.  `.not('id','is',null)` matches every row safely on every table
      we touch (each has an `id` PK — BIGSERIAL or UUID).  Returns
      { ok: bool, error?: object }. */
+  /* Phase 17G — DELETE + VERIFY.
+     Root cause of "the reset says complete but rows are still there":
+     PostgREST applies Row Level Security to DELETE by FILTERING, not by
+     erroring. If the anon role has SELECT/INSERT policies but no DELETE
+     policy on a table, the request returns 204 No Content with `error ===
+     null` and removes NOTHING. The old code read that as success, so the
+     toast reported "9 table(s) cleared" while ib_changed_accounts,
+     client_overrides and wa_outbox were untouched — which is exactly the
+     state found in production (6 of 9 tables empty, those 3 still holding
+     5 / 5 / 6 rows).
+     Every delete is now followed by an exact head-count of the same table.
+     A table that still has rows is reported as BLOCKED, never as cleared. */
   async function _devDelete(table) {
     if (!supabaseClient || !DataLayer.isLive) {
       return { ok: false, error: { message: 'Supabase is not live.' } };
@@ -7802,7 +7836,22 @@ const AdminDashboard = (() => {
         console.warn('[DevToolkit] delete failed for ' + table + ':', error.message);
         return { ok: false, error };
       }
-      return { ok: true };
+
+      // Verification pass — the delete claiming success proves nothing.
+      const { count, error: countErr } = await supabaseClient
+        .from(table).select('id', { count: 'exact', head: true });
+      if (countErr) {
+        console.warn('[DevToolkit] ' + table + ' deleted but could not be verified:', countErr.message);
+        return { ok: true, verified: false, remaining: null };
+      }
+      const remaining = count || 0;
+      if (remaining > 0) {
+        console.error('[DevToolkit] ' + table + ' SILENT DELETE FAILURE — ' + remaining +
+                      ' row(s) still present after a "successful" delete. The anon role almost ' +
+                      'certainly has no DELETE policy on this table (RLS filtered the delete).');
+        return { ok: false, blocked: true, remaining, error: { message: 'RLS blocked DELETE — ' + remaining + ' row(s) remain' } };
+      }
+      return { ok: true, verified: true, remaining: 0 };
     } catch (e) {
       console.warn('[DevToolkit] delete exception for ' + table + ':', e);
       return { ok: false, error: e };
@@ -7885,6 +7934,201 @@ const AdminDashboard = (() => {
     return n;
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     Phase 18 — THREE-PHASE RESET SUPPORT
+     ───────────────────────────────────────────────────────────
+     PHASE 1  Clear Browser Cache  — browser state ONLY, never a
+                                     single Supabase write.
+     PHASE 2  Full Development Reset — Supabase rows ONLY, never
+                                     touches localStorage/sessionStorage.
+     PHASE 3  Local Automation Reset — manual, on the engine PC.
+     Each helper below belongs to exactly one phase so the
+     responsibilities can never drift back together.
+  ══════════════════════════════════════════════════════════ */
+
+  /* PHASE 1 — rebuild runtime state after a browser-cache wipe, WITHOUT a
+     page reload. The stores are localStorage-backed, so "rebuild" means
+     forcing each one to re-hydrate (yielding a clean, valid empty structure
+     rather than a dangling stale object) and then re-reading the live rows
+     from Supabase. Reads only — no writes, no deletes. */
+  async function _devRehydrateRuntime() {
+    const steps = { stores: 0, dataReloaded: false, overridesReloaded: false };
+    try { if (typeof RetryPool !== 'undefined' && RetryPool) { RetryPool._data = null; RetryPool._read(); steps.stores++; } } catch (_) {}
+    try { if (typeof CrmStore  !== 'undefined' && CrmStore)  { CrmStore._data  = null; CrmStore.getAll();  steps.stores++; } } catch (_) {}
+    try { if (typeof IbStars   !== 'undefined' && IbStars)   { IbStars._data   = null; IbStars.load();     steps.stores++; } } catch (_) {}
+    try { await loadData(); steps.dataReloaded = true; } catch (e) { console.warn('[Phase1] loadData failed:', e); }
+    try { if (typeof _refreshClientOverrides === 'function') { await _refreshClientOverrides(); steps.overridesReloaded = true; } } catch (_) {}
+    return steps;
+  }
+
+  /* PHASE 2 — classify a delete that did not empty its table, and emit the
+     exact SQL that fixes it. The operator must never be left guessing why a
+     reset did not work. */
+  function _devDiagnoseDelete(table, res) {
+    const msg = String((res && res.error && res.error.message) || '').toLowerCase();
+    let cause, detail, sql = null;
+
+    if (res && res.blocked) {
+      cause  = 'RLS — no DELETE policy for the anon role';
+      detail = 'PostgREST applies Row Level Security to DELETE by FILTERING rows, not by returning an error. ' +
+               'The request succeeded (HTTP 204) and removed ' + (res.remaining === null ? 'nothing' : '0 of ' + res.remaining) +
+               ' row(s), because no policy permits anon to delete from this table.';
+      sql    = 'CREATE POLICY "admin delete ' + table + '" ON public.' + table + '\n' +
+               '  FOR DELETE TO anon USING (true);';
+    } else if (msg.includes('permission denied')) {
+      cause  = 'SQL permission — DELETE not granted to the anon role';
+      detail = 'PostgreSQL rejected the statement outright (GRANT level, before RLS).';
+      sql    = 'GRANT DELETE ON public.' + table + ' TO anon;\n' +
+               'CREATE POLICY "admin delete ' + table + '" ON public.' + table + '\n' +
+               '  FOR DELETE TO anon USING (true);';
+    } else if (msg.includes('does not exist') || msg.includes('not find the table') || msg.includes('schema cache')) {
+      cause  = 'Wrong datasource — the table is not in this Supabase project';
+      detail = 'The dashboard is pointed at a project that has no "' + table + '" table. ' +
+               'Check SUPABASE_URL at the top of admin-dashboard.js against the project you expect.';
+    } else if (msg.includes('violates foreign key') || msg.includes('foreign key constraint')) {
+      cause  = 'Foreign key — child rows in another table reference these rows';
+      detail = 'Delete the referencing table first, or add ON DELETE CASCADE to the constraint.';
+    } else if (msg.includes('column') && msg.includes('id')) {
+      cause  = 'Schema mismatch — no usable "id" column to filter on';
+      detail = 'The delete filter is .not(\'id\',\'is\',null); this table has no id column.';
+    } else if (msg.includes('supabase is not live')) {
+      cause  = 'Supabase not connected';
+      detail = 'The dashboard is running in mock mode — no database call was attempted.';
+    } else {
+      cause  = 'Unclassified database error';
+      detail = (res && res.error && res.error.message) || 'No error message was returned.';
+    }
+    return { table, cause, detail, sql };
+  }
+
+  /* PHASE 2 — post-reset proof. Re-counts every table the dashboard owns and
+     re-reads every browser-backed surface, so the result panel states what IS,
+     not what the delete claimed. DB-backed and browser-backed rows are labelled
+     separately because Phase 2 cannot (by design) clear browser state. */
+  async function _devVerifyZeroState(expectedEmptyTables) {
+    const db = [];
+    for (const t of expectedEmptyTables) {
+      let count = null, err = null;
+      try {
+        const r = await supabaseClient.from(t).select('id', { count: 'exact', head: true });
+        if (r.error) err = r.error.message; else count = r.count || 0;
+      } catch (e) { err = String(e); }
+      db.push({ name: t, scope: 'supabase', count, error: err, ok: err ? false : count === 0 });
+    }
+
+    const num = v => (typeof v === 'number' ? v : 0);
+    const browser = [
+      { name: 'Waiting for Match (active retry pool)', scope: 'browser', count: (() => { try { return RetryPool.getActive().length; } catch (_) { return null; } })() },
+      { name: 'Not Found archive (retry pool)',        scope: 'browser', count: (() => { try { return RetryPool.getArchived().length; } catch (_) { return null; } })() },
+      { name: 'CRM cache (CrmStore)',                  scope: 'browser', count: (() => { try { return CrmStore.getAll().length; } catch (_) { return null; } })() },
+      { name: 'IB Stars activity cache',               scope: 'browser', count: (() => { try { return Object.keys(IbStars.load().accounts || {}).length; } catch (_) { return null; } })() },
+      { name: 'Dashboard request counter (State)',     scope: 'browser', count: (() => { try { return State.requests.length; } catch (_) { return null; } })() },
+      { name: 'Matched / Compile / Delivered cache',   scope: 'browser', count: (() => { try { return _iqData ? num(_iqData.matched && _iqData.matched.length) + num(_iqData.compiled && _iqData.compiled.length) + num(_iqData.emailed && _iqData.emailed.length) : 0; } catch (_) { return null; } })() },
+      { name: 'Email outbox cache',                    scope: 'browser', count: (() => { try { return _currentEmailOutbox.length; } catch (_) { return null; } })() },
+      { name: 'WhatsApp outbox cache',                 scope: 'browser', count: (() => { try { return _currentWaOutbox.length; } catch (_) { return null; } })() },
+      { name: 'ZTU_* / adc_* localStorage keys',       scope: 'browser', count: (() => { try { let n = 0; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && (k.indexOf('ZTU_') === 0 || k.indexOf('adc_') === 0)) n++; } return n; } catch (_) { return null; } })() },
+    ].map(r => Object.assign(r, { ok: r.count === 0, error: null }));
+
+    const badges = ['ibChangedNavCount', 'blockedClientsNavCount'].map(id => {
+      const el = document.getElementById(id);
+      return { name: 'Nav badge #' + id, scope: 'ui', count: el ? (el.hidden ? 0 : parseInt(el.textContent, 10) || 0) : 0, error: null, ok: !el || el.hidden };
+    });
+
+    const rows = db.concat(browser, badges);
+    return { rows, dbClean: db.every(r => r.ok), browserClean: browser.every(r => r.ok), allClean: rows.every(r => r.ok) };
+  }
+
+  /* Renders the verification result + any generated SQL into the Dev Toolkit
+     panel. Nothing is ever reported as clean unless its measured count is 0. */
+  function _devRenderVerification(title, verdict, diagnostics) {
+    const host = document.getElementById('devResetReport');
+    if (!host) return;
+    const rowHtml = verdict.rows.map(r => {
+      const state = r.error ? 'err' : (r.ok ? 'ok' : 'bad');
+      const val   = r.error ? 'ERROR' : (r.count === null ? 'n/a' : r.count);
+      return '<div class="dev-report-row dev-report-row--' + state + '">' +
+               '<span class="dev-report-mark">' + (state === 'ok' ? '✓' : '✗') + '</span>' +
+               '<span class="dev-report-name">' + esc(r.name) + '</span>' +
+               '<span class="dev-report-scope">' + r.scope + '</span>' +
+               '<span class="dev-report-count">' + esc(String(val)) + '</span>' +
+             '</div>';
+    }).join('');
+
+    let diagHtml = '';
+    if (diagnostics && diagnostics.length) {
+      const sql = diagnostics.filter(d => d.sql).map(d => d.sql).join('\n\n');
+      diagHtml =
+        '<div class="dev-report-blockers">' +
+          '<h4>Blocked — these tables were NOT cleared</h4>' +
+          diagnostics.map(d =>
+            '<div class="dev-report-blocker">' +
+              '<div class="dev-report-blocker-tbl"><code>' + esc(d.table) + '</code> — ' + esc(d.cause) + '</div>' +
+              '<div class="dev-report-blocker-detail">' + esc(d.detail) + '</div>' +
+            '</div>').join('') +
+          (sql ? '<p class="dev-report-sqlhint">Run this in the Supabase SQL editor, then press Full Development Reset again:</p>' +
+                 '<pre class="dev-report-sql" id="devReportSql">' + esc(sql) + '</pre>' +
+                 '<button class="dev-toolkit-btn dev-toolkit-btn--warn" type="button" id="devReportCopySql" style="margin-top:10px;">Copy SQL</button>'
+               : '') +
+        '</div>';
+    }
+
+    host.innerHTML =
+      '<div class="dev-report ' + (verdict.allClean ? 'dev-report--ok' : 'dev-report--bad') + '">' +
+        '<h4 class="dev-report-title">' + esc(title) + ' — ' +
+          (verdict.allClean ? 'verified zero-state' : 'NOT a zero-state') + '</h4>' +
+        '<p class="dev-report-sub">Every line below is a measurement taken after the operation finished, not a prediction.</p>' +
+        diagHtml +
+        '<div class="dev-report-grid">' + rowHtml + '</div>' +
+      '</div>';
+    host.hidden = false;
+
+    const copyBtn = document.getElementById('devReportCopySql');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      const txt = document.getElementById('devReportSql').textContent;
+      navigator.clipboard.writeText(txt).then(
+        () => showToast('SQL copied to clipboard.', 'success', 2500),
+        () => showToast('Could not copy — select the SQL manually.', 'warn', 3000));
+    });
+    host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  /* Shared by BOTH phases — re-render every page, counter, badge, queue,
+     table and status panel from whatever the current data now is. Kept as one
+     function so Phase 1 and Phase 2 can never drift into refreshing different
+     subsets of the dashboard. Every call is typeof-guarded: one missing
+     renderer can never abort the rest of the refresh. */
+  function _devRefreshAllSurfaces() {
+    const call = (name, fn, arg) => { try { if (typeof fn === 'function') fn(arg); } catch (e) { console.warn('[DevToolkit] refresh failed: ' + name, e); } };
+    call('renderStats',              typeof renderStats              !== 'undefined' && renderStats);
+    call('renderTable',              typeof renderTable              !== 'undefined' && renderTable, els && els.tableFilter ? els.tableFilter.value : 'all');
+    call('renderStatusSummary',      typeof renderStatusSummary      !== 'undefined' && renderStatusSummary);
+    call('renderStatusTimestamp',    typeof renderStatusTimestamp    !== 'undefined' && renderStatusTimestamp);
+    call('renderPendingRequests',    typeof renderPendingRequests    !== 'undefined' && renderPendingRequests);
+    call('renderWaitingForMatch',    typeof renderWaitingForMatch    !== 'undefined' && renderWaitingForMatch);
+    call('renderMatchedAccounts',    typeof renderMatchedAccountsSection !== 'undefined' && renderMatchedAccountsSection);
+    call('renderCompileQueue',       typeof renderCompileQueueSection    !== 'undefined' && renderCompileQueueSection);
+    call('renderDelivered',          typeof renderDeliveredSection       !== 'undefined' && renderDeliveredSection);
+    call('renderCrmActive',          typeof renderCrmActive          !== 'undefined' && renderCrmActive);
+    call('renderCrmInactive',        typeof renderCrmInactive        !== 'undefined' && renderCrmInactive);
+    call('renderCrmHighValue',       typeof renderCrmHighValue       !== 'undefined' && renderCrmHighValue);
+    call('_renderIbStarsActive',     typeof _renderIbStarsActive     !== 'undefined' && _renderIbStarsActive);
+    call('_renderIbStarsInactive',   typeof _renderIbStarsInactive   !== 'undefined' && _renderIbStarsInactive);
+    call('_renderBlockedList',       typeof _renderBlockedList       !== 'undefined' && _renderBlockedList);
+    call('_renderIbChangedList',     typeof _renderIbChangedList     !== 'undefined' && _renderIbChangedList);
+    // Never cleared by any phase — re-read so the operator can SEE that
+    // manually granted Special Access survived.
+    call('_renderSpecialAccess',     typeof _renderSpecialAccess     !== 'undefined' && _renderSpecialAccess);
+    call('renderEmailDeliveryPanel', typeof renderEmailDeliveryPanel !== 'undefined' && renderEmailDeliveryPanel);
+    call('renderWaDeliveryPanel',    typeof renderWaDeliveryPanel    !== 'undefined' && renderWaDeliveryPanel);
+    call('refreshIntakeQueue',       typeof refreshIntakeQueue       !== 'undefined' && refreshIntakeQueue);
+    try {
+      if (typeof renderCrmSearch === 'function') {
+        const q = document.getElementById('crmSearchInput');
+        renderCrmSearch(q ? q.value : '');
+      }
+    } catch (e) { console.warn('[DevToolkit] refresh failed: renderCrmSearch', e); }
+  }
+
   /* Action definitions — each carries:
        label       : human-readable title shown in the confirm modal
        summary     : one-line description shown above the targets list
@@ -7895,56 +8139,64 @@ const AdminDashboard = (() => {
   const _devActions = {
     'clear-requests': {
       label: 'Clear Test License Requests',
-      summary: 'Deletes every license request row, the resend queue, and engine triggers. Empties RetryPool from localStorage. Pending / Waiting / Matched / Compile / Delivered tabs will all show empty.',
+      phase: 2,
+      summary: 'PHASE 2 — Supabase only. Deletes every license request row, the resend queue, and engine triggers. Browser storage is deliberately untouched: use Phase 1 (Clear Browser Cache) for that.',
       targets: [
-        '<code>license_requests</code> — every row deleted',
-        '<code>resend_requests</code> — every row deleted',
-        '<code>engine_triggers</code> — every row deleted',
-        '<code>ZTU_ADMIN_RETRY_POOL_V1</code> (localStorage) — cleared in full: active entries AND the archived "Not Found After 48 Hours" history',
+        '<code>license_requests</code> — every row deleted, then re-counted to prove it',
+        '<code>resend_requests</code> — every row deleted, then re-counted to prove it',
+        '<code>engine_triggers</code> — every row deleted, then re-counted to prove it',
+        'Browser storage — <strong>not touched</strong> (Phase 1 owns that). The Waiting for Match retry pool lives in localStorage and will still hold its entries until Phase 1 runs.',
       ],
       tables: ['license_requests', 'resend_requests', 'engine_triggers'],
-      localKeys: ['ZTU_ADMIN_RETRY_POOL_V1'],
-      memReset: () => {
-        _devResetMemoryCaches();
-        try { if (Array.isArray(State.requests)) State.requests.length = 0; } catch (_) {}
-        try { State.lastSync = null; State.runCount = 0; } catch (_) {}
-      },
     },
     'clear-emails': {
       label: 'Clear Test Emails',
-      summary: 'Deletes every row from email_outbox and wa_outbox. Resets sent/pending/failed counters.',
+      phase: 2,
+      summary: 'PHASE 2 — Supabase only. Deletes every row from email_outbox and wa_outbox. Browser storage is deliberately untouched.',
       targets: [
-        '<code>email_outbox</code> — every row deleted',
-        '<code>wa_outbox</code> — every row deleted',
-        '<code>ZTU_EMAIL_QUEUE_V1</code> + <code>ZTU_WA_QUEUE_V1</code> (localStorage) — cleared',
-        'In-memory outbox rows and the Waiting-for-Match status snapshot — dropped',
-        'Per-tab Sent / Pending / Failed badges — reset to 0',
+        '<code>email_outbox</code> — every row deleted, then re-counted to prove it',
+        '<code>wa_outbox</code> — every row deleted, then re-counted to prove it',
+        'Browser storage — <strong>not touched</strong> (Phase 1 owns that).',
       ],
       tables: ['email_outbox', 'wa_outbox'],
-      localKeys: ['ZTU_EMAIL_QUEUE_V1', 'ZTU_WA_QUEUE_V1'],
-      // Phase 17F — the Sent/Pending/Failed pills in Waiting for Match and the
-      // delivery panels read _waitingStatusSnapshot, which was never dropped
-      // here: the badges kept showing counts for outbox rows that no longer
-      // existed until the snapshot's 5 s TTL happened to lapse.
-      memReset: () => { _devResetMemoryCaches(); },
     },
     'clear-broker': {
       label: 'Clear Test Broker Registry',
-      summary: 'Deletes broker_accounts and clears the CRM + IB Stars activity caches. Next broker file you upload becomes the new production registry.',
+      phase: 2,
+      summary: 'PHASE 2 — Supabase only. Deletes broker_accounts. The next broker file you upload becomes the new production registry. Browser storage is deliberately untouched.',
       targets: [
-        '<code>broker_accounts</code> — every row deleted',
-        '<code>ZTU_CRM_DATA_V1</code> (localStorage) — cleared',
-        '<code>ZTU_IB_STARS_ACTIVITY_V1</code> (localStorage) — cleared',
-        '<code>ZTU_CACHE_INTAKE_PARSED_V1</code> (localStorage) + in-memory intake state — cleared, so a half-finished upload cannot be processed against the new registry',
-        'Active Clients / Inactive Clients / High Value / IB Stars Active / IB Stars Inactive — empty until next broker upload',
+        '<code>broker_accounts</code> — every row deleted, then re-counted to prove it',
+        'Browser storage — <strong>not touched</strong> (Phase 1 owns that). The CRM and IB Stars caches live in localStorage and will still show clients until Phase 1 runs.',
       ],
       tables: ['broker_accounts'],
-      localKeys: ['ZTU_CRM_DATA_V1', 'ZTU_IB_STARS_ACTIVITY_V1', 'ZTU_CACHE_INTAKE_PARSED_V1'],
-      memReset: () => { _devResetMemoryCaches(); },
+    },
+    /* ── PHASE 1 ─────────────────────────────────────────────────────────
+       Browser state ONLY. `tables` is empty by design and there is no code
+       path here that can reach Supabase for anything but a READ during the
+       rebuild. This is what guarantees Phase 1 can never delete a row. */
+    'clear-browser': {
+      label: 'Clear Browser Cache',
+      phase: 1,
+      browserOnly: true,
+      summary: 'PHASE 1 — browser only. Wipes every trace of dashboard state held by THIS browser, then rebuilds runtime memory and reloads the newest data from Supabase. Not one database row is deleted.',
+      targets: [
+        'Every <code>ZTU_*</code> and <code>adc_*</code> localStorage key — swept by prefix (CRM cache, retry pool, IB Stars cache, Email/WA queues, intake parse cache, campaign drafts, saved reports)',
+        'Every <code>ZTU_*</code> sessionStorage key except your live admin session, so you are not logged out mid-run',
+        'All runtime memory — IB Changed set, Blocked set, client overrides, Waiting-for-Match status snapshot, Matched/Compile/Delivered queue cache, Email + WhatsApp outbox caches, intake state',
+        'Retry objects, dashboard counters and navigation badges',
+        '<strong>Supabase is never written to.</strong> Rows are only READ, to repopulate the screen.',
+        'Then, automatically: runtime memory rebuilt, latest Supabase data reloaded, every page re-rendered — <strong>no manual browser refresh needed</strong>.',
+      ],
+      tables: [],
+      sweepPrefixes: ['ZTU_', 'adc_'],
+      sweepSession:  true,
     },
     'full-reset': {
       label: 'Full Development Reset',
-      summary: 'Deletes ALL test/dev row data in every table that the dashboard writes to, AND clears every ZTU_* localStorage key. Tables, schema, RLS, automation logic, engine, and Library Access remain intact. After completion the dashboard behaves as a fresh production install.',
+      phase: 2,
+      dbOnly: true,
+      verify: true,
+      summary: 'PHASE 2 — Supabase only. Deletes ALL test/dev row data in every table the dashboard writes to, verifies each table is genuinely empty, then rebuilds runtime memory, reloads the newest data and re-renders every page. Browser storage is NOT cleared here — that is Phase 1. Tables, schema, RLS, automation logic, the engine and Library Access all remain intact.',
       targets: [
         '<code>license_requests</code>',
         '<code>resend_requests</code>',
@@ -7956,9 +8208,9 @@ const AdminDashboard = (() => {
         '<code>blocked_clients</code>',
         '<code>ib_changed_accounts</code>',
         '<strong><code>special_access</code> is deliberately NOT touched</strong> — manually granted Premium / Library / Unlimited AI access is never revoked by a reset. Use the Special Access page\'s own delete workflow for that.',
-        'Every <code>ZTU_*</code> and <code>adc_*</code> localStorage key — swept by prefix, not by a fixed list (CRM cache, RetryPool, IB Stars cache, Email/WA queues, intake parse cache, campaign drafts, saved reports)',
-        'Every <code>ZTU_*</code> sessionStorage key except your live admin session, so the reset does not log you out mid-run',
-        'Every in-memory cache (IB Changed set, Blocked set, client overrides, email/WA status snapshot, Matched/Compile/Delivered queue cache, Email + WhatsApp outbox cache, intake state, dashboard counters)',
+        'Each table above is <strong>re-counted after deletion</strong>. A table that still holds rows is reported as BLOCKED with its exact cause and the SQL that fixes it — never as success.',
+        'Then, automatically: runtime memory rebuilt, latest Supabase data reloaded, every page, counter, badge, queue and status panel re-rendered, followed by a measured zero-state verification report.',
+        '<strong>Browser storage is NOT cleared here.</strong> localStorage and sessionStorage belong to Phase 1 (Clear Browser Cache). Run Phase 1 as well for a complete browser + database zero-state.',
         '<strong>NOT done by this button — the local compile/delivery artifacts on the engine PC.</strong> A browser page cannot touch <code>D:\\ZTU_AUTOMATION</code>. Stale <code>COMPILED_EX5</code> is not cosmetic: <code>compile_queue_engine.ps1</code> skips compiling when the EX5 already exists, so a returning account would be delivered its OLD binary. Finish the reset on the engine PC with <code>TOOLS\\reset_dev_environment.ps1 -Mode full</code> — the reminder below repeats the command.',
       ],
       // Shown after the reset completes. The browser half and the engine half
@@ -7977,21 +8229,11 @@ const AdminDashboard = (() => {
         // development reset must never revoke access a human deliberately
         // granted to a real guest.
       ],
-      // Explicit keys are kept for the console log / toast counters; the
-      // prefix sweep below is what actually guarantees completeness.
-      localKeys: [
-        'ZTU_CRM_DATA_V1',
-        'ZTU_ADMIN_RETRY_POOL_V1',
-        'ZTU_IB_STARS_ACTIVITY_V1',
-        'ZTU_EMAIL_QUEUE_V1',
-        'ZTU_WA_QUEUE_V1',
-        'ZTU_CACHE_INTAKE_PARSED_V1',
-        'ZTU_CACHE_CAMPAIGN_V1',
-        'ZTU_CAMPAIGN_DRAFT_V1',
-        'adc_state_v3',
-      ],
-      sweepPrefixes: ['ZTU_', 'adc_'],
-      sweepSession:  true,
+      // NO localKeys / sweepPrefixes / sweepSession here — Phase 2 is
+      // database-only, permanently. Browser storage belongs to Phase 1.
+      // Runtime memory IS still invalidated: that is not "browser cache", it
+      // is the in-page mirror of the rows just deleted, and leaving it stale
+      // would make the screen contradict the database.
       memReset: () => {
         _devResetMemoryCaches();
         try { if (Array.isArray(State.requests)) State.requests.length = 0; } catch (_) {}
@@ -8043,24 +8285,32 @@ const AdminDashboard = (() => {
     console.group('[DevToolkit] executing ' + act.label);
     let tablesCleared = 0;
     let tablesFailed  = [];
+    let tablesBlocked = [];   // deleted "successfully" but rows remain → RLS
+    const diagnoseList = [];  // per-table cause + generated SQL
     for (const table of (act.tables || [])) {
       try {
         const res = await _devDelete(table);
         if (res.ok) {
           tablesCleared++;
-          console.log('[DevToolkit] cleared ' + table);
+          console.log('[DevToolkit] cleared + verified empty: ' + table);
+        } else if (res.blocked) {
+          tablesBlocked.push(table);
+          diagnoseList.push(_devDiagnoseDelete(table, res));
+          console.error('[DevToolkit] BLOCKED: ' + table + ' — ' + res.remaining + ' row(s) remain');
         } else {
           tablesFailed.push(table);
+          diagnoseList.push(_devDiagnoseDelete(table, res));
           console.warn('[DevToolkit] failed to clear ' + table + ':', res.error);
         }
       } catch (e) {
         tablesFailed.push(table);
+        diagnoseList.push(_devDiagnoseDelete(table, { error: { message: String(e) } }));
         console.warn('[DevToolkit] exception clearing ' + table + ':', e);
       }
     }
 
-    // Local cache clear — explicit keys first, then the prefix sweep (full
-    // reset only) so no ZTU_*/adc_* key can outlive the reset.
+    // ── PHASE 1 ONLY — browser storage. A Phase 2 action reaches none of
+    //    this because it declares no localKeys / sweepPrefixes / sweepSession.
     let lsRemoved = _devClearLocalStorageKeys(act.localKeys || []);
     let ssRemoved = 0;
     if (act.sweepPrefixes) {
@@ -8074,7 +8324,9 @@ const AdminDashboard = (() => {
     const memReset = _devResetMemoryCaches();
     try { (act.memReset || (()=>{}))(); } catch (_) {}
 
-    console.log('[DevToolkit] tablesCleared=' + tablesCleared +
+    console.log('[DevToolkit] phase=' + (act.phase || '?') +
+                '  tablesCleared=' + tablesCleared +
+                '  tablesBlocked=' + tablesBlocked.length +
                 '  tablesFailed=' + tablesFailed.length +
                 '  localStorageKeysRemoved=' + lsRemoved +
                 '  sessionStorageKeysRemoved=' + ssRemoved +
@@ -8083,54 +8335,46 @@ const AdminDashboard = (() => {
 
     _closeDevResetModal();
 
-    if (tablesFailed.length === 0) {
-      showToast('✓ ' + act.label + ' complete — ' + tablesCleared + ' table(s) cleared, ' +
-                lsRemoved + ' localStorage key(s), ' + ssRemoved + ' sessionStorage key(s), ' +
-                memReset + ' memory cache(s) reset.', 'success', 6000);
-    } else {
-      showToast('⚠ ' + act.label + ' partial — cleared ' + tablesCleared + ', failed: [' + tablesFailed.join(', ') + ']. See console.', 'warn', 8000);
-    }
-
-    // Refresh every visible section so the empty state appears immediately.
-    // Phase 17F — the override map is rebuilt BEFORE the re-render (it was
-    // never refreshed here, so edited contact details kept overwriting rows
-    // after client_overrides had been emptied), and the top-of-dashboard
-    // counters / status summary are re-rendered too, so no badge keeps a
-    // pre-reset number.
+    // ── Rebuild + refresh — automatic, so no manual browser refresh is ever
+    //    needed after either phase. Phase 1 rehydrates the stores it just
+    //    emptied; Phase 2 only needs the data reload.
     try {
-      await loadData();
-      if (typeof _refreshClientOverrides      === 'function') await _refreshClientOverrides();
-      if (typeof renderStats                  === 'function') renderStats();
-      if (typeof renderTable                  === 'function') renderTable(els.tableFilter ? els.tableFilter.value : 'all');
-      if (typeof renderStatusSummary          === 'function') renderStatusSummary();
-      if (typeof renderStatusTimestamp        === 'function') renderStatusTimestamp();
-      if (typeof renderPendingRequests        === 'function') renderPendingRequests();
-      if (typeof renderWaitingForMatch        === 'function') renderWaitingForMatch();
-      if (typeof renderMatchedAccountsSection === 'function') renderMatchedAccountsSection();
-      if (typeof renderCompileQueueSection    === 'function') renderCompileQueueSection();
-      if (typeof renderDeliveredSection       === 'function') renderDeliveredSection();
-      if (typeof renderCrmActive              === 'function') renderCrmActive();
-      if (typeof renderCrmInactive            === 'function') renderCrmInactive();
-      if (typeof renderCrmHighValue           === 'function') renderCrmHighValue();
-      if (typeof _renderIbStarsActive         === 'function') _renderIbStarsActive();
-      if (typeof _renderIbStarsInactive       === 'function') _renderIbStarsInactive();
-      if (typeof _renderBlockedList           === 'function') _renderBlockedList();
-      if (typeof _renderIbChangedList         === 'function') _renderIbChangedList();
-      if (typeof renderCrmSearch              === 'function') {
-        const q = document.getElementById('crmSearchInput');
-        renderCrmSearch(q ? q.value : '');
+      if (act.browserOnly) await _devRehydrateRuntime();
+      else {
+        await loadData();
+        if (typeof _refreshClientOverrides === 'function') await _refreshClientOverrides();
       }
-      // Re-read (never cleared) — proves on screen that manually granted
-      // Special Access rows survived the reset intact.
-      if (typeof _renderSpecialAccess         === 'function') _renderSpecialAccess();
-      // Email / WhatsApp delivery panels were missing from this list, so the
-      // Sent / Pending / Failed panels kept their pre-reset rows on screen
-      // until the operator navigated away and back.
-      if (typeof renderEmailDeliveryPanel     === 'function') renderEmailDeliveryPanel();
-      if (typeof renderWaDeliveryPanel        === 'function') renderWaDeliveryPanel();
-      if (typeof refreshIntakeQueue           === 'function') refreshIntakeQueue();
+      _devRefreshAllSurfaces();
     } catch (e) {
       console.warn('[DevToolkit] post-reset refresh failed:', e);
+    }
+
+    // ── Result reporting — measured, never assumed. ─────────────────────
+    const diagnostics = diagnoseList.map(d => d);
+    if (tablesBlocked.length > 0 || tablesFailed.length > 0) {
+      const sql = diagnostics.filter(d => d.sql).map(d => d.sql).join('\n\n');
+      if (sql) console.error('[DevToolkit] Run this in the Supabase SQL editor, then reset again:\n\n' + sql + '\n');
+      showToast('✗ ' + act.label + ' INCOMPLETE — ' + (tablesBlocked.concat(tablesFailed).join(', ')) +
+                ' still hold rows. The cause and the exact SQL fix are shown in the report below the toolkit cards.', 'error', 20000);
+    } else if (act.browserOnly) {
+      showToast('✓ ' + act.label + ' complete — ' + lsRemoved + ' localStorage key(s), ' + ssRemoved +
+                ' sessionStorage key(s), ' + memReset + ' runtime cache(s) cleared. Runtime memory rebuilt and the ' +
+                'newest Supabase data reloaded — no page refresh needed. No database row was touched.', 'success', 8000);
+    } else {
+      showToast('✓ ' + act.label + ' complete — ' + tablesCleared +
+                ' table(s) deleted and re-counted empty. Dashboard reloaded and re-rendered.', 'success', 6000);
+    }
+
+    // ── Verification pass — the proof, rendered on screen. ──────────────
+    if (act.verify || act.browserOnly || diagnostics.length) {
+      try {
+        const verdict = await _devVerifyZeroState(act.verify || diagnostics.length ? (act.tables || []) : []);
+        _devRenderVerification(act.label, verdict, diagnostics);
+        if (!verdict.allClean && diagnostics.length === 0) {
+          const dirty = verdict.rows.filter(r => !r.ok).map(r => r.name + '=' + r.count);
+          console.warn('[DevToolkit] not a full zero-state yet: ' + dirty.join(', '));
+        }
+      } catch (e) { console.warn('[DevToolkit] verification failed:', e); }
     }
 
     // The engine-side half of the reset. Logged (so it is copy-pasteable and
