@@ -60,13 +60,118 @@ export function computeDailyProgress({ activities, today }) {
   };
 }
 
+// --- 1b) The real acquisition curve (NOT a straight line) ----------------
+// A straight line (target × day ÷ horizon) is wrong: it implies ~27 active
+// IB clients on Day 1, which no funnel can produce. Active clients accrue at
+// the BACK of the plan, gated by the phase exit criteria the planning engine
+// already declares (Phase 1: 100 actives by ~M9 · Phase 2: 500 · Phase 3:
+// 2,500 · Phase 4: 10,000 · Phase 5: the 50,000 goal). These are the single
+// source of truth; here we only read them and interpolate BETWEEN the gates.
+
+function parseActivesGate(phaseTargetText) {
+  const m = String(phaseTargetText).match(/([\d,]+)\s*actives/i);
+  return m ? Number(m[1].replace(/,/g, '')) : null;
+}
+
+// [{day, actives}] anchors, straight from PHASES' own exit gates. The final
+// anchor is the tracked 50,000 goal (Phase 5's gate text is a range).
+export const EXPECTED_MILESTONES = (() => {
+  const anchors = [{ day: 0, actives: 0 }];
+  PHASES.forEach((p, i) => {
+    const isLast = i === PHASES.length - 1;
+    const a = isLast ? FEASIBILITY.target : parseActivesGate(p.target);
+    if (a != null) anchors.push({ day: p.untilDay, actives: a });
+  });
+  return anchors;
+})();
+
+// Expected ACTIVE IB CLIENTS at a plan day — piecewise-linear between the
+// gate anchors above. Back-loaded exactly as the real funnel compounds:
+// day 1 ≈ 0, most of the 50,000 arrives in Years 4–5 via the sub-IB network.
+export function expectedActivesAt(day) {
+  const ms = EXPECTED_MILESTONES;
+  if (day <= 0) return 0;
+  for (let i = 1; i < ms.length; i++) {
+    const a = ms[i - 1], b = ms[i];
+    if (day <= b.day) {
+      const t = (day - a.day) / (b.day - a.day);
+      return Math.round(a.actives + (b.actives - a.actives) * t);
+    }
+  }
+  return ms[ms.length - 1].actives;
+}
+
+// --- 1c) The upstream funnel, from FEASIBILITY's own totals --------------
+// Every multiplier is one of the plan's stated required volumes ÷ the 50,000
+// target, using the UPPER bound of each range so the funnel is conservative,
+// never optimistic. Nothing here is invented — it is FEASIBILITY.stages read
+// back out per-active.
+function parseRequiredUpper(s) {
+  const str = String(s).toLowerCase().replace(/,/g, '');
+  const re = /(\d+(?:\.\d+)?)\s*([mk]?)/g;
+  let max = 0, m;
+  while ((m = re.exec(str))) {
+    const mult = m[2] === 'm' ? 1e6 : m[2] === 'k' ? 1e3 : 1;
+    max = Math.max(max, Number(m[1]) * mult);
+  }
+  return max || null;
+}
+function stageRequired(needle) {
+  const s = FEASIBILITY.stages.find((x) => x.stage.toLowerCase().includes(needle));
+  return s ? parseRequiredUpper(s.required) : null;
+}
+// Engaged→lead rate: the MIDPOINT of the range stated in the leads stage note
+// ("1–3% of engaged viewers → lead" → 2%). Derived from the plan's own stated
+// rate, not invented; null (engaged omitted) if the note has no percentage.
+function engagedRate() {
+  const s = FEASIBILITY.stages.find((x) => x.stage.toLowerCase().includes('lead'));
+  if (!s) return null;
+  const note = String(s.note);
+  // A range like "1–3%" writes the % once, so read both bounds first.
+  const range = note.match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)\s*%/);
+  if (range) return ((Number(range[1]) + Number(range[2])) / 2) / 100;
+  const single = note.match(/(\d+(?:\.\d+)?)\s*%/);
+  return single ? Number(single[1]) / 100 : null;
+}
+
+export const FUNNEL_PER_ACTIVE = (() => {
+  const t = FEASIBILITY.target;
+  const views = stageRequired('view');
+  const leads = stageRequired('lead');
+  const regs = stageRequired('registration');
+  const ftd = stageRequired('deposit');
+  const rate = engagedRate();
+  const per = (v) => (v == null ? null : v / t);
+  return {
+    reach: per(views),
+    // engaged = leads ÷ (engaged→lead rate); still a subset of reach.
+    engaged: leads != null && rate ? per(leads / rate) : null,
+    leads: per(leads),
+    registrations: per(regs),
+    funded: per(ftd),
+    active: 1,
+  };
+})();
+
+// The whole funnel required to SUPPORT a given active-client count.
+export function funnelForActives(activeCount) {
+  const f = FUNNEL_PER_ACTIVE;
+  const mul = (r) => (r == null ? null : Math.round(activeCount * r));
+  return {
+    reach: mul(f.reach),
+    engaged: mul(f.engaged),
+    leads: mul(f.leads),
+    registrations: mul(f.registrations),
+    funded: mul(f.funded),
+    active: activeCount,
+  };
+}
+
 // --- 2) Expected members at this point in the plan -----------------------
-// The plan itself declares BOTH numbers this needs: FEASIBILITY.target
-// (50,000) and FEASIBILITY.horizonDays (PLAN_TOTAL_DAYS). Straight-line pace
-// across that declared horizon — a labeled model pace, disclosed exactly like
-// trajectory's probability band, never presented as a promise. After a Plan
-// Reset plan.start_date becomes today, so daysElapsed = 0 and the whole bar
-// honestly restarts at zero.
+// Reads the milestone curve above (the plan's own phase gates) — never a
+// straight line. FEASIBILITY.target / horizonDays still bound it. After a
+// Plan Reset plan.start_date becomes today, so daysElapsed = 0 and the whole
+// bar honestly restarts at zero.
 export function computeExpectedMembers({ planStartDate, today, actualMembers }) {
   const target = FEASIBILITY.target;
   const horizonDays = FEASIBILITY.horizonDays;
@@ -79,7 +184,8 @@ export function computeExpectedMembers({ planStartDate, today, actualMembers }) 
     return { known: false, target, horizonDays, daysElapsed: null, planProgressPct: 0, expectedMembers: null, actualMembers, remainingMembers: Math.max(0, target - actualMembers) };
   }
   const planProgressPct = Math.round((10000 * daysElapsed) / horizonDays) / 100;
-  const expectedMembers = Math.round((target * daysElapsed) / horizonDays);
+  // Realistic, funnel-gated projection from the plan's phase milestones.
+  const expectedMembers = expectedActivesAt(daysElapsed);
   return {
     known: true,
     target,
@@ -87,9 +193,10 @@ export function computeExpectedMembers({ planStartDate, today, actualMembers }) 
     daysElapsed,
     planProgressPct,
     expectedMembers,
+    expectedFunnel: funnelForActives(expectedMembers),
     actualMembers,
     remainingMembers: Math.max(0, target - actualMembers),
-    paceNote: 'Straight-line pace across the plan\'s own declared 5-year horizon (plan-logic FEASIBILITY) — a model pace for comparison, not a forecast.',
+    paceNote: 'Projected along the plan\'s own phase-gate milestones (100 → 500 → 2,500 → 10,000 → 50,000 active clients), not a straight line — active clients accrue at the back of the plan as the funnel and sub-IB network compound. A model pace for comparison, not a forecast.',
   };
 }
 
@@ -269,7 +376,8 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
 
   // Phases straight from the planning engine's own PHASES rows — name,
   // markets, language, budget and exit gate are quoted, never restated.
-  const expectedAt = (day) => Math.round((target * day) / horizonDays);
+  // expectedAt is the milestone curve (phase gates), NOT a straight line.
+  const expectedAt = (day) => expectedActivesAt(day);
   let from = 1;
   const phases = PHASE_BOUNDARIES.map((untilDay, i) => {
     const p = PHASES[i];
@@ -317,6 +425,9 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
       expectedSystems: p.budget,
       expectedMembersAtEnd: expectedAt(untilDay),
       membersAddedInPhase: expectedAt(untilDay) - expectedAt(fromDay - 1),
+      // The upstream funnel that must be true for this phase's actives to
+      // exist — reach → engaged → leads → registrations → funded → active.
+      funnel: funnelForActives(expectedAt(untilDay)),
       categories: cats,
     };
   });
@@ -348,6 +459,14 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
     })),
     phases,
     activityNotes,
+    // The milestone anchors the client interpolates for scrubbing — the ONE
+    // source of the expected-actives curve, shared by server and client.
+    milestones: EXPECTED_MILESTONES,
+    // The per-active upstream funnel (from FEASIBILITY) + the funnel needed
+    // for the whole 50,000 goal, so the roadmap shows the real journey.
+    funnelPerActive: FUNNEL_PER_ACTIVE,
+    goalFunnel: funnelForActives(target),
+    funnelNote: 'Reach → engaged → leads → registrations → funded → active. Volumes are FEASIBILITY\'s own required totals (conservative upper bound), so active clients are only projected once the upstream funnel could realistically support them.',
     // Why the plan is phased at all — the planning engine's own verdict.
     planVerdict: FEASIBILITY.verdict,
     // Honesty flag the UI must surface whenever the curve is doing the talking

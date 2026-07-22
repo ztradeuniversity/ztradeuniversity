@@ -368,13 +368,27 @@ function dayForBarPct(rm, barPct) {
   const h = horizonOf(rm);
   return Math.round((h.days * Math.max(0, Math.min(100, barPct))) / 100);
 }
-// Plan day -> that day's roadmap point. The two constants (50,000 target and
-// the 1,825-day horizon) are whatever the server read from the planning
-// engine's FEASIBILITY block — never hardcoded here — and the phase comes
-// from the server's exact phase boundaries, so a gate day lands in the right
-// phase instead of being rounded across it.
+// Expected ACTIVE IB CLIENTS at a plan day — the SAME phase-gate milestone
+// curve the server computes (rm.milestones), interpolated identically here so
+// scrubbing is a pure lookup. Never a straight line: day 1 ≈ 0 active clients,
+// with the 50,000 accruing at the back of the plan as the funnel compounds.
+function expectedActivesAt(rm, day) {
+  const ms = rm.milestones;
+  if (!ms || !ms.length || day <= 0) return 0;
+  for (let i = 1; i < ms.length; i++) {
+    const a = ms[i - 1], b = ms[i];
+    if (day <= b.day) {
+      const t = (day - a.day) / (b.day - a.day);
+      return Math.round(a.actives + (b.actives - a.actives) * t);
+    }
+  }
+  return ms[ms.length - 1].actives;
+}
+// Plan day -> that day's roadmap point. The phase comes from the server's
+// exact boundaries, so a gate day lands in the right phase rather than being
+// rounded across it.
 function pointForDay(rm, day) {
-  const e = Math.round((rm.target * day) / rm.horizonDays);
+  const e = expectedActivesAt(rm, day);
   const idx = rm.phases.findIndex((p) => day <= p.untilDay);
   return { d: day, e, r: Math.max(0, rm.target - e), ph: idx === -1 ? rm.phases.length - 1 : idx };
 }
@@ -597,6 +611,19 @@ function categoryHtml(rm, c, badge) {
     </div>`;
 }
 
+// The upstream funnel (reach → engaged → leads → registrations → funded →
+// active) that must be true for a given active-client count — the plain-
+// language reason a small day-1 number, not thousands, is realistic.
+function funnelLineHtml(f, label) {
+  if (!f) return '';
+  const cell = (l, v) => v == null ? '' : `<div><div class="ceo-success-stat-label">${l}</div><div class="ceo-success-stat-value" style="font-size:var(--ceo-font-size-base);">${num(v)}</div></div>`;
+  return `
+    <div class="ceo-success-mini-label" style="margin-top:var(--ceo-space-3);">${escapeHtml(label)}</div>
+    <div class="ceo-success-stats" style="margin-top:2px;">
+      ${cell('Reach', f.reach)}${cell('Engaged', f.engaged)}${cell('Leads', f.leads)}${cell('Registrations', f.registrations)}${cell('Funded', f.funded)}${cell('Active IB', f.active)}
+    </div>`;
+}
+
 function renderSuccessPanel(s) {
   const holder = document.getElementById('home-success-panel');
   if (!holder) return;
@@ -629,6 +656,8 @@ function renderSuccessPanel(s) {
           <div><div class="ceo-success-stat-label">Members added in this phase</div><div class="ceo-success-stat-value">+${num(ph.membersAddedInPhase)}</div></div>
           ${ph.expectedActivesStated ? `<div><div class="ceo-success-stat-label">Gate states</div><div class="ceo-success-stat-value">${escapeHtml(ph.expectedActivesStated)} actives</div></div>` : ''}
         </div>
+        ${funnelLineHtml(ph.funnel, `Funnel this phase must build to support ${num(ph.expectedMembersAtEnd)} active clients`)}
+        <p class="ceo-success-sub" style="margin-top:2px;">${escapeHtml(rm.funnelNote || '')}</p>
         <div class="ceo-success-label" style="margin:var(--ceo-space-3) 0 var(--ceo-space-2);">${successPhasePick !== null ? 'Activities &amp; SOP in this phase' : `Activities responsible for reaching ${pct}%`}</div>
         <div class="ceo-success-grid">${ph.categories.map((c) => categoryHtml(rm, c)).join('')}</div>
         <p class="ceo-success-sub" style="margin-top:var(--ceo-space-3);">${escapeHtml(rm.planVerdict || '')}</p>
@@ -653,6 +682,8 @@ function renderSuccessPanel(s) {
       </div>`).join('');
     holder.innerHTML = `
       <div class="ceo-success-panel">
+        ${funnelLineHtml(s.goal?.expectedFunnel, `Upstream funnel behind ${num(s.goal?.expectedMembers ?? 0)} expected active clients`)}
+        <p class="ceo-success-sub" style="margin-top:2px;">${escapeHtml(s.roadmap?.funnelNote || '')}</p>
         ${roadmapCategoriesHtml(s, 'done')}
         <div class="ceo-success-label" style="margin: var(--ceo-space-3) 0 var(--ceo-space-2);">Expected member contribution by source</div>
         <div class="ceo-success-grid">${rows}</div>
