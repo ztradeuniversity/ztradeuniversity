@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MT5 Bot – Z Trade University</title>
+  <meta name="description" content="Automatic SL/TP management, zone-based trade management, layered entries and professional trade management — free for Z Trade University IB members." />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <link rel="canonical" href="https://ztradeuniversity.com/mt5-bot.html" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#FAFAFA" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@500;600;700;800&family=Manrope:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MT5 Bot – Z Trade University" />
+  <meta property="og:description" content="Automatic SL/TP, zone-based management, layer management and professional trade management." />
+  <meta property="og:url" content="https://ztradeuniversity.com/mt5-bot.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       Z TRADE UNIVERSITY — MT5 BOT LANDING PAGE
+       Public introduction/marketing page only. The bot itself, license
+       approval workflow and OTP verification are untouched — this page
+       links out to the existing license-request.html / index.html#how-to-join.
+       Shares the site's orange/navy design language (same tokens used on
+       trading-tools.html / trading-journal-intro.html).
+       ════════════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F7931A; --orange-soft: rgba(247,147,26,0.12); --orange-deep: #e07e0a;
+      --navy: #0F172A; --white: #FFFFFF;
+      --bg: #FAFAFA; --surface: #FFFFFF; --text: #0F172A; --heading: #0F172A;
+      --muted: #64708A; --border: #EAEAEA;
+      --green: #16a34a; --green-soft: rgba(22,163,74,0.10);
+      --shadow-sm: 0 1px 2px rgba(15,23,42,0.04);
+      --shadow: 0 8px 28px rgba(15,23,42,0.07);
+      --shadow-lg: 0 20px 50px rgba(15,23,42,0.10);
+      --radius-lg: 22px;
+    }
+    [data-theme="dark"] {
+      --bg: #0B1120; --surface: #131C30; --text: #E8EDF6; --heading: #F4F7FC;
+      --muted: #93A0B8; --border: rgba(255,255,255,0.09);
+      --green-soft: rgba(22,163,74,0.14);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow: 0 8px 28px rgba(0,0,0,0.45);
+      --shadow-lg: 0 20px 50px rgba(0,0,0,0.55);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter','Poppins',system-ui,sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased; line-height: 1.6; overflow-x: hidden;
+      transition: background .3s, color .3s;
+    }
+    a { text-decoration: none; color: inherit; }
+    .container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── HEADER (shared pattern) ── */
+    header.site-head {
+      position: sticky; top: 0; z-index: 200;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .head-inner { height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand img { height: 42px; width: auto; display: block; }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.08; }
+    .brand-text b { font-family: 'Poppins','Inter',sans-serif; font-size: 17px; font-weight: 800; letter-spacing: .5px; color: var(--heading); }
+    .brand-text span { font-size: 10px; font-weight: 700; letter-spacing: 4px; color: var(--orange); text-transform: uppercase; }
+    .head-right { display: flex; align-items: center; gap: 12px; }
+    .back-home {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 44px; padding: 0 20px; border-radius: 100px;
+      border: 1.5px solid var(--border); color: var(--text); font-size: 14.5px; font-weight: 700;
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .back-home:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-1px); }
+    .back-home svg { width: 16px; height: 16px; }
+    .theme-toggle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); flex-shrink: 0;
+      box-shadow: var(--shadow-sm); transition: transform .2s, color .2s, border-color .2s;
+    }
+    .theme-toggle:hover { color: var(--orange); border-color: var(--orange); transform: translateY(-1px); }
+    .theme-toggle .icon-moon { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+    /* ── SECTION SHELL ── */
+    .mb-section { padding: 72px 0; }
+    .mb-section.alt { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .mb-head { text-align: center; max-width: 620px; margin: 0 auto 44px; }
+    .mb-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--orange); background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      padding: 6px 16px; border-radius: 100px; margin-bottom: 16px;
+    }
+    .mb-head h2 {
+      font-family: 'Poppins','Inter',sans-serif; font-weight: 800;
+      font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.8px; color: var(--heading); line-height: 1.15;
+    }
+    .mb-head p { margin-top: 12px; font-size: 15.5px; color: var(--muted); line-height: 1.65; }
+
+    /* ── HERO ── */
+    .mb-hero { padding: 60px 0 20px; }
+    .mb-hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+    .mb-hero h1 {
+      font-family: 'Poppins','Inter',sans-serif; font-weight: 800;
+      font-size: clamp(38px, 6vw, 58px); letter-spacing: -1.6px; color: var(--heading); line-height: 1.03;
+      margin-bottom: 18px;
+    }
+    .mb-hero h1 .accent { color: var(--orange); }
+    .mb-hero p.sub { font-size: 17px; color: var(--muted); line-height: 1.7; max-width: 500px; margin-bottom: 30px; }
+    .mb-hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+    .mb-btn-primary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 15px 28px; border-radius: 100px; border: 1.5px solid var(--orange);
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 10px 26px rgba(247,147,26,0.32); transition: transform .2s, box-shadow .2s;
+    }
+    .mb-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(247,147,26,0.44); }
+    .mb-btn-primary svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .mb-btn-ghost {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 15px 26px; border-radius: 100px; border: 1.5px solid var(--border);
+      color: var(--text); font-size: 15px; font-weight: 700;
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .mb-btn-ghost:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-2px); }
+
+    .mb-illust-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+    .mb-illust-blob {
+      position: absolute; width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(247,147,26,0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .mb-illust { position: relative; width: 100%; max-width: 430px; height: auto; }
+
+    /* ── BENEFITS GRID (9 features) ── */
+    .mb-benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .mb-benefit-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+      padding: 24px 22px; text-align: left;
+      box-shadow: var(--shadow-sm); transition: transform .22s, box-shadow .22s, border-color .22s;
+    }
+    .mb-benefit-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.35); }
+    .mb-benefit-ic {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      display: flex; align-items: center; justify-content: center; color: var(--orange); margin-bottom: 14px;
+    }
+    .mb-benefit-ic svg { width: 22px; height: 22px; }
+    .mb-benefit-card h4 { font-size: 14.5px; font-weight: 700; color: var(--heading); margin-bottom: 6px; }
+    .mb-benefit-card p { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+    /* ── HOW IT WORKS ── */
+    .mb-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+    .mb-steps::before {
+      content: ''; position: absolute; top: 27px; left: 12.5%; right: 12.5%; height: 2px;
+      background: repeating-linear-gradient(90deg, rgba(247,147,26,0.35) 0 10px, transparent 10px 18px);
+      z-index: 0;
+    }
+    .mb-step { position: relative; z-index: 1; text-align: center; padding: 0 14px; }
+    .mb-step-num {
+      width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 18px;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 19px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(247,147,26,0.34); border: 4px solid var(--bg);
+    }
+    .mb-step h4 { font-size: 15px; font-weight: 700; color: var(--heading); margin-bottom: 8px; }
+    .mb-step p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+    /* ── EXAMPLE WORKFLOW ── */
+    .mb-flow { display: flex; flex-direction: column; gap: 14px; max-width: 680px; margin: 0 auto; }
+    .mb-flow-item {
+      display: flex; align-items: flex-start; gap: 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px 20px; box-shadow: var(--shadow-sm);
+    }
+    .mb-flow-num {
+      width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+      background: var(--orange-soft); color: var(--orange); border: 1px solid rgba(247,147,26,0.24);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;
+      font-family: 'Poppins',sans-serif;
+    }
+    .mb-flow-body h5 { font-size: 14px; font-weight: 700; color: var(--heading); margin-bottom: 3px; }
+    .mb-flow-body p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+    .mb-flow-arrow { display: flex; justify-content: center; color: var(--border); }
+    .mb-flow-arrow svg { width: 16px; height: 16px; }
+
+    /* ── DASHBOARD MOCKUP ILLUSTRATION ── */
+    .mb-mockup-wrap { max-width: 720px; margin: 44px auto 0; }
+    .mb-mockup { width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+
+    /* ── GET ACCESS ── */
+    .mb-access-flow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; max-width: 720px; margin: 0 auto 36px; }
+    .mb-flow-mini { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 110px; text-align: center; }
+    .mb-flow-mini-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 13px;
+      box-shadow: 0 5px 14px rgba(247,147,26,0.3);
+    }
+    .mb-flow-mini span { font-size: 12px; font-weight: 700; color: var(--heading); line-height: 1.3; }
+    .mb-flow-mini-arrow { color: var(--border); font-weight: 700; flex-shrink: 0; }
+    @media (max-width: 560px) { .mb-access-flow { flex-direction: column; } .mb-flow-mini-arrow { transform: rotate(90deg); } }
+
+    .mb-access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+    .mb-access-card {
+      border-radius: var(--radius-lg); padding: 34px 30px; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      border: 1.5px solid var(--border); background: var(--surface); box-shadow: var(--shadow);
+    }
+    .mb-access-card.primary { border-color: rgba(247,147,26,0.35); background: linear-gradient(180deg, var(--orange-soft) 0%, var(--surface) 60%); }
+    .mb-access-ic {
+      width: 56px; height: 56px; border-radius: 16px; margin-bottom: 18px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--orange-soft); color: var(--orange); border: 1px solid rgba(247,147,26,0.24);
+    }
+    .mb-access-card.secondary .mb-access-ic { background: var(--surface); color: var(--muted); border-color: var(--border); }
+    .mb-access-ic svg { width: 26px; height: 26px; }
+    .mb-access-card h3 { font-family: 'Poppins','Inter',sans-serif; font-size: 19px; font-weight: 800; color: var(--heading); margin-bottom: 8px; }
+    .mb-access-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; max-width: 320px; }
+    .mb-access-card .mb-btn-primary, .mb-access-card .mb-btn-ghost { margin-top: auto; }
+
+    /* ── FOOTER ── */
+    .site-foot { padding: 60px 0 30px; }
+    .foot-div { width: min(92%, 1140px); height: 2px; margin: 0 auto 22px; background: linear-gradient(90deg, transparent, var(--orange), transparent); border-radius: 2px; }
+    .foot-text { text-align: center; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .mb-hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .mb-hero p.sub { margin-left: auto; margin-right: auto; }
+      .mb-hero-ctas { justify-content: center; }
+      .mb-illust-wrap { order: -1; }
+      .mb-illust { max-width: 300px; }
+      .mb-benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .mb-steps { grid-template-columns: repeat(2, 1fr); gap: 32px 0; }
+      .mb-steps::before { display: none; }
+      .mb-access-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .back-home { padding: 0 14px; font-size: 0; gap: 0; }
+      .back-home svg { width: 18px; height: 18px; }
+      .brand-text b { font-size: 16px; }
+    }
+    @media (max-width: 560px) {
+      .container { padding: 0 18px; }
+      .mb-section { padding: 52px 0; }
+      .mb-benefits-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .mb-benefit-card { padding: 18px 14px; }
+      .mb-steps { grid-template-columns: 1fr; }
+      .mb-hero-ctas { flex-direction: column; align-items: stretch; }
+      .mb-hero-ctas .mb-btn-primary, .mb-hero-ctas .mb-btn-ghost { justify-content: center; }
+      .mb-flow-item { padding: 14px 16px; gap: 12px; }
+    }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
+  </style>
+
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "MT5 Bot", "description": "Automatic SL/TP management, zone-based trade management, layer management and professional trade management.", "url": "https://ztradeuniversity.com/mt5-bot.html", "isPartOf": {"@type": "WebSite", "name": "Z Trade University", "url": "https://ztradeuniversity.com/"}}</script>
+</head>
+<body>
+
+  <!-- ════════════════ HEADER ════════════════ -->
+  <header class="site-head">
+    <div class="container head-inner">
+      <a href="index.html" class="brand" aria-label="Z Trade University home">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" />
+        <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
+      </a>
+      <div class="head-right">
+        <a href="index.html" class="back-home" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Home</span>
+        </a>
+        <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle light/dark theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════ HERO ════════════════ -->
+  <section class="mb-hero">
+    <div class="container mb-hero-grid">
+      <div>
+        <span class="mb-eyebrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>
+          Free for ZTU IB Members
+        </span>
+        <h1>MT5 <span class="accent">Bot</span></h1>
+        <p class="sub">High-accuracy automatic trade management for MetaTrader 5 — automatic stop loss and take profit, zone-based entries, layered positions and one-click control, so every trade is managed with professional discipline.</p>
+        <div class="mb-hero-ctas">
+          <a class="mb-btn-primary" href="#get-access">
+            Get License Access
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a class="mb-btn-ghost" href="#how-it-works">See How It Works</a>
+        </div>
+      </div>
+
+      <div class="mb-illust-wrap">
+        <div class="mb-illust-blob" aria-hidden="true"></div>
+        <svg class="mb-illust" viewBox="0 0 420 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of the MT5 Bot managing stop loss, take profit and zones on a chart">
+          <!-- terminal panel -->
+          <rect x="40" y="50" width="340" height="230" rx="18" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+          <line x1="66" y1="82" x2="150" y2="82" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="340" cy="82" r="8" fill="var(--green-soft)" stroke="var(--green)" stroke-width="2"/>
+          <!-- price chart -->
+          <polyline points="66,220 100,205 130,215 160,180 190,190 220,150 250,165 280,120 310,135 340,100"
+            stroke="var(--orange)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- zone box -->
+          <rect x="150" y="170" width="120" height="40" fill="rgba(247,147,26,0.10)" stroke="rgba(247,147,26,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <!-- TP line -->
+          <line x1="66" y1="110" x2="360" y2="110" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="66" y="104" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="var(--green)">TP</text>
+          <!-- SL line -->
+          <line x1="66" y1="240" x2="360" y2="240" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="66" y="254" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#dc2626">SL</text>
+          <!-- entry dot -->
+          <circle cx="220" cy="150" r="5" fill="var(--orange)"/>
+          <!-- stats bar -->
+          <rect x="66" y="256" width="60" height="6" rx="3" fill="var(--border)"/>
+          <rect x="136" y="256" width="90" height="6" rx="3" fill="var(--border)"/>
+          <rect x="236" y="256" width="40" height="6" rx="3" fill="var(--border)"/>
+          <!-- bot badge -->
+          <circle cx="345" cy="300" r="34" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+          <rect x="330" y="286" width="30" height="24" rx="6" stroke="var(--orange)" stroke-width="2.2" fill="none"/>
+          <circle cx="339" cy="296" r="2.4" fill="var(--orange)"/>
+          <circle cx="351" cy="296" r="2.4" fill="var(--orange)"/>
+          <line x1="345" y1="280" x2="345" y2="286" stroke="var(--orange)" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- approved check -->
+          <circle cx="70" cy="330" r="22" fill="var(--green-soft)" stroke="var(--green)" stroke-width="2"/>
+          <path d="M62 330l6 6 12-12" stroke="var(--green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ BENEFITS (9 features) ════════════════ -->
+  <section class="mb-section">
+    <div class="container">
+      <div class="mb-head">
+        <span class="mb-eyebrow">What It Does</span>
+        <h2>Professional Trade Management, Automated</h2>
+        <p>Every feature is designed to remove emotion and manual error from trade execution.</p>
+      </div>
+      <div class="mb-benefits-grid">
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div>
+          <h4>High Accuracy</h4>
+          <p>Precise execution logic keeps entries, exits and adjustments consistent every time.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h4>Automatic SL Management</h4>
+          <p>Stop loss is placed, adjusted and protected automatically as the trade develops.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h4>Automatic TP Management</h4>
+          <p>Take profit targets are managed for you — no need to babysit the chart.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 14h16" stroke-dasharray="3 3"/></svg></div>
+          <h4>Manual Zone Support</h4>
+          <p>Define your own supply/demand zones — the bot respects your analysis.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg></div>
+          <h4>Zone-Based Trade Management</h4>
+          <p>Trades are managed relative to your defined zones, not fixed pip values.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg></div>
+          <h4>Layer Management</h4>
+          <p>Scale in with layered entries and let the bot manage each layer independently.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></div>
+          <h4>Close All Trades</h4>
+          <p>One click flattens every open position instantly when you need control back.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l3-3 3 3 5-6"/><circle cx="18" cy="10" r="1.4" fill="currentColor" stroke="none"/></svg></div>
+          <h4>Performance Statistics</h4>
+          <p>Track win rate, RR and results directly from the bot's built-in reporting.</p>
+        </div>
+        <div class="mb-benefit-card">
+          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <h4>Professional Trade Management</h4>
+          <p>The discipline of a professional desk, running automatically on your terminal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ HOW IT WORKS ════════════════ -->
+  <section class="mb-section alt" id="how-it-works">
+    <div class="container">
+      <div class="mb-head">
+        <span class="mb-eyebrow">Simple Setup</span>
+        <h2>How It Works</h2>
+        <p>From attaching the bot to letting it manage your trades — in four steps.</p>
+      </div>
+      <div class="mb-steps">
+        <div class="mb-step">
+          <div class="mb-step-num">1</div>
+          <h4>Attach to MT5</h4>
+          <p>The bot is installed on your MetaTrader 5 terminal after license activation.</p>
+        </div>
+        <div class="mb-step">
+          <div class="mb-step-num">2</div>
+          <h4>Set Your Zone</h4>
+          <p>Mark your entry zone or open a manual trade — the bot detects it automatically.</p>
+        </div>
+        <div class="mb-step">
+          <div class="mb-step-num">3</div>
+          <h4>Bot Manages the Trade</h4>
+          <p>SL, TP and layered entries are handled automatically from that point on.</p>
+        </div>
+        <div class="mb-step">
+          <div class="mb-step-num">4</div>
+          <h4>Review Performance</h4>
+          <p>Check win rate, RR and history any time in the performance statistics panel.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ EXAMPLE WORKFLOW + MOCKUP ════════════════ -->
+  <section class="mb-section">
+    <div class="container">
+      <div class="mb-head">
+        <span class="mb-eyebrow">See It In Action</span>
+        <h2>Example Workflow</h2>
+        <p>A typical Gold (XAUUSD) trade, from zone to close.</p>
+      </div>
+
+      <div class="mb-flow">
+        <div class="mb-flow-item">
+          <div class="mb-flow-num">1</div>
+          <div class="mb-flow-body"><h5>Mark the Zone</h5><p>Trader marks a demand zone on XAUUSD between 2,380–2,385.</p></div>
+        </div>
+        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+        <div class="mb-flow-item">
+          <div class="mb-flow-num">2</div>
+          <div class="mb-flow-body"><h5>Layered Entries Trigger</h5><p>Price taps the zone — the bot opens layered entries automatically within it.</p></div>
+        </div>
+        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+        <div class="mb-flow-item">
+          <div class="mb-flow-num">3</div>
+          <div class="mb-flow-body"><h5>SL &amp; TP Set Automatically</h5><p>Stop loss goes below structure, take profit at the target — both bot-managed.</p></div>
+        </div>
+        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+        <div class="mb-flow-item">
+          <div class="mb-flow-num">4</div>
+          <div class="mb-flow-body"><h5>Close All or Let It Run</h5><p>Trader can Close All Trades anytime, or let the bot manage the exit fully.</p></div>
+        </div>
+        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+        <div class="mb-flow-item">
+          <div class="mb-flow-num">5</div>
+          <div class="mb-flow-body"><h5>Performance Updates</h5><p>Result, win rate and RR update instantly in the performance statistics panel.</p></div>
+        </div>
+      </div>
+
+      <div class="mb-mockup-wrap">
+        <svg class="mb-mockup" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of the MT5 Bot dashboard showing a zone, SL/TP lines and performance statistics">
+          <rect x="1" y="1" width="718" height="298" rx="20" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+          <rect x="1" y="1" width="718" height="46" rx="20" fill="var(--navy)"/>
+          <rect x="1" y="27" width="718" height="20" fill="var(--navy)"/>
+          <circle cx="28" cy="24" r="6" fill="#ef4444"/><circle cx="48" cy="24" r="6" fill="#f59e0b"/><circle cx="68" cy="24" r="6" fill="#22c55e"/>
+          <text x="360" y="29" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#fff">ZTU MT5 Bot — XAUUSD</text>
+          <!-- chart -->
+          <rect x="24" y="66" width="460" height="200" rx="10" fill="var(--bg)" stroke="var(--border)" stroke-width="1"/>
+          <rect x="150" y="160" width="140" height="46" fill="rgba(247,147,26,0.12)" stroke="rgba(247,147,26,0.45)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="220" y="185" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="var(--orange)">ZONE</text>
+          <polyline points="40,230 90,210 140,220 190,190 230,183 280,150 330,160 380,120 430,130 470,95" stroke="var(--orange)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="40" y1="100" x2="470" y2="100" stroke="var(--green)" stroke-width="1.6" stroke-dasharray="5 4"/>
+          <text x="40" y="94" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="var(--green)">TP 2,398.00</text>
+          <line x1="40" y1="245" x2="470" y2="245" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="5 4"/>
+          <text x="40" y="259" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#dc2626">SL 2,375.00</text>
+          <circle cx="230" cy="183" r="4.5" fill="var(--orange)"/>
+          <!-- stats panel -->
+          <rect x="500" y="66" width="196" height="200" rx="10" fill="var(--bg)" stroke="var(--border)" stroke-width="1"/>
+          <text x="516" y="90" font-family="Inter,sans-serif" font-size="10" font-weight="800" letter-spacing="1" fill="var(--muted)">PERFORMANCE</text>
+          <text x="516" y="118" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Win Rate</text>
+          <text x="676" y="118" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--green)">68%</text>
+          <text x="516" y="144" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Avg RR</text>
+          <text x="676" y="144" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--heading)">1:2.1</text>
+          <text x="516" y="170" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Trades Today</text>
+          <text x="676" y="170" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--heading)">4</text>
+          <text x="516" y="196" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Open Layers</text>
+          <text x="676" y="196" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--orange)">3</text>
+          <rect x="516" y="216" width="160" height="34" rx="8" fill="var(--orange)"/>
+          <text x="596" y="237" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#fff">Close All Trades</text>
+        </svg>
+      </div>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);font-style:italic;margin-top:14px;">Illustrative example only.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ GET ACCESS ════════════════ -->
+  <section class="mb-section alt" id="get-access">
+    <div class="container">
+      <div class="mb-head">
+        <span class="mb-eyebrow">Start Today</span>
+        <h2>Get Access</h2>
+        <p>The MT5 Bot is free for approved Z Trade University IB members.</p>
+      </div>
+
+      <div class="mb-access-flow" role="list" aria-label="Access process">
+        <div class="mb-flow-mini"><div class="mb-flow-mini-num">1</div><span>License Request</span></div>
+        <div class="mb-flow-mini-arrow" aria-hidden="true">→</div>
+        <div class="mb-flow-mini"><div class="mb-flow-mini-num">2</div><span>Approval</span></div>
+        <div class="mb-flow-mini-arrow" aria-hidden="true">→</div>
+        <div class="mb-flow-mini"><div class="mb-flow-mini-num">3</div><span>OTP Verification</span></div>
+        <div class="mb-flow-mini-arrow" aria-hidden="true">→</div>
+        <div class="mb-flow-mini"><div class="mb-flow-mini-num">4</div><span>Bot Access</span></div>
+      </div>
+
+      <div class="mb-access-grid">
+
+        <div class="mb-access-card primary">
+          <div class="mb-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Already Joined Under Our IB?</h3>
+          <p>Submit your License Request to activate the MT5 Bot on your account.</p>
+          <a class="mb-btn-primary" href="license-request.html">
+            Submit License Request
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <div class="mb-access-card secondary">
+          <div class="mb-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg></div>
+          <h3>New Member?</h3>
+          <p>Join under our IB and unlock the MT5 Bot, Trading Journal, Library and Unlimited AI — completely free.</p>
+          <a class="mb-btn-ghost" href="index.html#how-to-join">
+            How to Join Us
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ FOOTER ════════════════ -->
+  <footer class="site-foot">
+    <div class="foot-div"></div>
+    <p class="foot-text">© 2024 Z Trade University. All rights reserved.</p>
+  </footer>
+
+  <script>
+    (function () {
+      try { if (localStorage.getItem('ztu-theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+    })();
+    function toggleTheme() {
+      var el = document.documentElement;
+      var dark = el.getAttribute('data-theme') === 'dark';
+      if (dark) el.removeAttribute('data-theme'); else el.setAttribute('data-theme', 'dark');
+      try { localStorage.setItem('ztu-theme', dark ? 'light' : 'dark'); } catch (e) {}
+    }
+  </script>
+
+  <!-- ── CONTENT PROTECTION (parity with site) ── -->
+  <script>
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) || (e.ctrlKey && e.key === 'U')) { e.preventDefault(); }
+    });
+  </script>
+
+  <!-- site-wide language system (shared) -->
+  <script src="/assets/ztu-lang.js" defer></script>
+</body>
+</html>

@@ -339,6 +339,11 @@
   .chips-bar .chip{ flex-shrink:0; }
   /* three-quick-action variant: centered + balanced, no horizontal scroll */
   .chips-bar-3{ justify-content:center; flex-wrap:wrap; overflow-x:visible; }
+  /* ChatGPT-style redesign: the post-welcome quick-action bar (Daily Brief /
+     Assess Trade / Stuck Trade) is removed from the interface — conversation
+     focus only. The element + its JS toggles (#chipsBar) are left in the DOM
+     untouched so no script errors occur; this just force-hides it. UI only. */
+  #chipsBar{ display:none !important; }
 
   /* ════════ INPUT BAR ════════ */
   .input-bar{ flex-shrink:0; padding:8px 0 14px; background:var(--bg); }
@@ -350,8 +355,8 @@
   .voice-pill.hidden{ display:none; }
   .input-row{
     display:flex; align-items:flex-end; gap:8px;
-    background:var(--surface); border:1px solid var(--border); border-radius:26px;
-    padding:7px 7px 7px 8px; box-shadow:var(--shadow); transition:border-color .2s, box-shadow .2s;
+    background:var(--surface); border:1px solid var(--border); border-radius:28px;
+    padding:9px 9px 9px 12px; box-shadow:var(--shadow); transition:border-color .2s, box-shadow .2s;
   }
   .input-row:focus-within{ border-color:var(--orange); box-shadow:0 8px 24px rgba(247,147,26,.16); }
   .attach-btn, .mic-btn{
@@ -364,12 +369,12 @@
   .input-wrap{ flex:1; display:flex; align-items:flex-end; min-width:0; }
   .chat-in{
     flex:1; border:0; outline:0; background:transparent; resize:none;
-    font-family:inherit; font-size:15px; color:var(--text); line-height:1.5;
-    max-height:136px; padding:9px 4px; min-width:0;
+    font-family:inherit; font-size:16px; color:var(--text); line-height:1.55;
+    max-height:160px; min-height:26px; padding:12px 6px; min-width:0;
   }
   .chat-in::placeholder{ color:var(--muted); }
   .send-btn{
-    width:44px; height:44px; border-radius:50%; flex-shrink:0; border:0; cursor:pointer;
+    width:46px; height:46px; border-radius:50%; flex-shrink:0; border:0; cursor:pointer;
     background:linear-gradient(135deg,var(--orange) 0%, var(--orange-deep) 100%); color:#fff;
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 5px 14px rgba(247,147,26,.4); transition:transform .2s, box-shadow .2s, opacity .2s;
@@ -559,6 +564,70 @@
     .ax-banner.compact{ margin:10px 0 4px; }
   }
 
+  /* ════════ MOBILE HEADER REFLOW (Mobile Header Fix task) ════════
+     Below 560px the single row (burger + logo + premium badge + language
+     selector + theme toggle + sign-in/verified) no longer fits and starts
+     overlapping. Rather than let flex wrap unpredictably, force a clean,
+     deterministic two-row header: row 1 = burger + logo, row 2 = every
+     status/action control, right-aligned. flex-direction:column guarantees
+     this split regardless of content width — never a random wrap. If the
+     rarest combination of items (e.g. Premium badge + verified pill) still
+     can't fit on the narrowest phones, row 2 scrolls horizontally instead
+     of ever overlapping. Desktop and tablet (>560px) are untouched. */
+  @media (max-width:560px){
+    :root{ --head:88px; }
+    .ax-head{
+      flex-direction:column; align-items:stretch; justify-content:center;
+      height:auto; min-height:var(--head); padding:8px 10px; gap:6px;
+    }
+    .ax-brand{ flex-shrink:0; }
+    /* justify-content is intentionally flex-start (NOT flex-end): flex-end
+       packs items against the right edge and overflow spills to the left,
+       which most browsers will not let overflow-x:auto scroll back to —
+       content silently clips. flex-start keeps overflow (if any) on the
+       right, where horizontal scroll reliably works as a fallback. */
+    .ax-head-right{
+      justify-content:flex-start; flex-wrap:nowrap; gap:7px;
+      overflow-x:auto; overflow-y:hidden; padding-bottom:1px;
+      -ms-overflow-style:none; scrollbar-width:none;
+    }
+    .ax-head-right::-webkit-scrollbar{ display:none; }
+    .ax-head-right > *{ flex-shrink:0; }
+    /* language selector (mounted here by ztu-lang.js) matches the other pills */
+    .ax-head-right .ztu-lang__btn{ height:34px; padding:0 10px; }
+    /* Premium badge (shared component, styled here only — file itself
+       untouched) is the widest pill; shrink it in this row so the common
+       case (badge + theme + verified/sign-in) fits without scrolling. */
+    .ax-head-right .ztu-premium-badge{ padding:5px 10px; font-size:9.5px; gap:4px; }
+    .ax-head-right .ztu-premium-badge svg{ width:11px; height:11px; }
+  }
+  @media (max-width:480px){
+    :root{ --head:84px; }
+    .ax-head{ padding:7px 9px; gap:5px; }
+    .ax-brand img{ height:30px; }
+    .ax-brand b{ font-size:13px; }
+    .ax-brand small{ font-size:8px; letter-spacing:1.5px; }
+    .ax-burger{ width:34px; height:34px; }
+    .ax-tt{ width:34px; height:34px; }
+    .ax-signin{ height:34px; padding:0 12px; font-size:12.5px; gap:6px; }
+    .ax-logout{ height:34px; padding:0 10px; font-size:12px; }
+  }
+  @media (max-width:375px){
+    :root{ --head:80px; }
+    .ax-head-right{ gap:6px; }
+    .ax-tt{ width:32px; height:32px; }
+    .ax-signin{ height:32px; padding:0 10px; font-size:12px; }
+    .ax-signin svg{ width:14px; height:14px; }
+    .ax-logout{ height:32px; padding:0 9px; font-size:11.5px; }
+    .ax-head-right .ztu-lang__btn{ height:32px; padding:0 8px; }
+    .ax-head-right .ztu-premium-badge{ padding:4px 8px; font-size:9px; }
+  }
+  @media (max-width:340px){
+    .ax-brand small{ display:none; }
+    .ax-signin span, .ax-signin{ font-size:11.5px; }
+    .ax-signin{ padding:0 9px; }
+  }
+
   /* RESPONSE SPACING: long unbroken strings (URLs, symbols) in an answer were
      the only remaining source of horizontal overflow inside a bubble. */
   .msg-body{ overflow-wrap:anywhere; }
@@ -607,7 +676,7 @@
       <span><b>Z TRADE</b><small>University</small></span>
     </a>
   </div>
-  <div class="ax-head-right">
+  <div class="ax-head-right head-right">
     <!-- ZTU Premium badge (Phase 4B) — auto-shows only for approved members -->
     <span data-ztu-premium-badge style="margin-right:2px;"></span>
     <button class="ax-tt" type="button" onclick="axToggleTheme()" aria-label="Toggle theme">
@@ -1033,32 +1102,31 @@
          FUTURE QUESTION LIMIT SYSTEM — (free → max 5 questions, then show banner). -->
     <div class="ax-membership" id="axMembership">
 
-      <!-- FREE USER STATE -->
+      <!-- FREE USER STATE — badge reads "Not Verified" + the standard two-path
+           CTA (Already joined → Submit License Request / Not joined → How to
+           Join Us), matching the same pattern used on Library / Journal / MT5
+           Bot. Reuses the existing openVerifyModal() OTP flow — no new auth. -->
       <div class="ax-banner free" id="axBannerFree">
         <span class="ax-bn-ic" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </span>
         <span class="ax-bn-txt">
-          <b>Unlock Unlimited AI Access</b>
-          <span>Open an account with our IB and unlock all AI features.</span>
+          <b>Not Verified — Unlock Unlimited AI Access</b>
+          <span>Already joined? <a href="license-request.html" style="color:inherit;font-weight:800;text-decoration:underline;">Submit License Request</a> · Not joined? <a href="index.html#how-to-join" style="color:inherit;font-weight:800;text-decoration:underline;">How to Join Us</a></span>
         </span>
         <button class="ax-bn-btn" type="button" onclick="openVerifyModal()">
-          Join Our IB
+          Verify Access
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
 
-      <!-- VERIFIED USER STATE — Verification Banner task: compact single line.
-           The verified state is persistent chrome a member sees on every visit,
-           so it no longer needs the large icon tile, the two-line explanation or
-           the redundant "Access Active" button (the header already shows the
-           ZTU PREMIUM MEMBER pill). Same ids/classes so verify.js's show/hide
-           logic is untouched. -->
+      <!-- VERIFIED USER STATE — compact single line. Same ids/classes so
+           verify.js's show/hide logic (updateAccessBadge) is untouched. -->
       <div class="ax-banner verified compact" id="axBannerVerified" hidden>
         <span class="ax-bn-ic" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
         </span>
-        <span class="ax-bn-txt"><b>Verified</b><span>Premium Active</span></span>
+        <span class="ax-bn-txt"><b>Verified</b><span>Premium Member</span></span>
       </div>
 
     </div>
@@ -1092,19 +1160,10 @@
           <span class="lang-c">Tiếng Việt</span><span class="lang-c">ภาษาไทย</span><span class="lang-c">বাংলা</span>
         </div>
         <div class="w-chips" role="group" aria-label="Quick start topics">
-          <button class="chip" onclick="quickAsk('Today&#39;s market')">📋 AI Daily Brief™</button>
           <button class="chip" onclick="quickAsk('What is the current Gold market context and what macro factors are influencing it today?')">🏅 Gold market today</button>
           <button class="chip" onclick="quickAsk('What is the current Bitcoin (BTC) sentiment and market structure?')">₿ BTC sentiment</button>
-          <button class="chip" onclick="quickAsk('Explain how the DXY (US Dollar Index) is currently affecting Gold and Bitcoin.')">📊 DXY impact</button>
-          <button class="chip" onclick="quickAsk('What CPI, NFP, or FOMC events are coming up and how might they affect markets?')">📅 Upcoming events</button>
-          <button class="chip" onclick="quickAsk('I want to assess a trade idea. Please guide me — I will share my entry, SL, and TP.')">🔍 Check my trade</button>
-          <button class="chip" onclick="quickAsk('My trade is stuck in drawdown. Help me understand the current market context calmly.')">🆘 Stuck trade help</button>
           <button class="chip" onclick="quickAsk('Help me understand risk management and how to calculate my lot size for Gold trading.')">🛡️ Risk management</button>
-          <button class="chip" onclick="quickAsk('What do the current bond yields and VIX level mean for Gold right now?')">📈 Yields &amp; VIX</button>
-          <button class="chip" onclick="quickAsk('Why am I losing money trading? Break down the possible causes across psychology, execution, risk management, patience, and news timing.')">🔍 Why am I losing?</button>
-          <button class="chip" onclick="quickAsk('Summarise the key lessons from Trading in the Zone by Mark Douglas and how they apply to Gold and BTC trading.')">📖 Mark Douglas</button>
           <button class="chip" onclick="quickAsk('Give me a beginner trading roadmap — what should I learn first and in what order to become consistent?')">🗺️ Beginner Roadmap</button>
-          <button class="chip" onclick="quickAsk('What do you know about me? Summarise my trader profile — my level, style, favourite instrument, and the patterns you notice.')">🪞 My Trader Profile</button>
         </div>
       </div>
     </div>
@@ -1267,6 +1326,10 @@
       Open an Account Under Our IB
     </a>
     <p class="vf-free-note">Unlimited AI access is <strong>free</strong> for active IB members — no subscription, no AI fees. We never ask for your password.</p>
+    <p class="vf-free-note" style="margin-top:10px;line-height:1.7;">
+      Already joined under our IB? <a href="license-request.html" target="_blank" rel="noopener" style="color:var(--gold3);font-weight:700;">Submit License Request</a><br/>
+      New member? <a href="index.html#how-to-join" style="color:var(--gold3);font-weight:700;">How to Join Us</a>
+    </p>
   </div>
 </div>
 

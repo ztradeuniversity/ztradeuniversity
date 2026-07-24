@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Journal – Z Trade University</title>
+  <meta name="description" content="Improve your trading by recording every trade, reviewing your mistakes, and receiving professional feedback from your Mentor and our Advanced AI — free for Z Trade University IB members." />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <link rel="canonical" href="https://ztradeuniversity.com/trading-journal-intro.html" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#FAFAFA" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@500;600;700;800&family=Manrope:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Trading Journal – Z Trade University" />
+  <meta property="og:description" content="Record every trade, learn from your mistakes, and get feedback from your Mentor and our Advanced AI." />
+  <meta property="og:url" content="https://ztradeuniversity.com/trading-journal-intro.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       Z TRADE UNIVERSITY — TRADING JOURNAL LANDING PAGE
+       Public introduction/marketing page only. The real application lives
+       at journal.html and is untouched. Shares the site's orange/navy
+       design language (same tokens as trading-tools.html / index.html).
+       ════════════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F7931A; --orange-soft: rgba(247,147,26,0.12); --orange-deep: #e07e0a;
+      --navy: #0F172A; --white: #FFFFFF;
+      --bg: #FAFAFA; --surface: #FFFFFF; --text: #0F172A; --heading: #0F172A;
+      --muted: #64708A; --border: #EAEAEA;
+      --green: #16a34a; --green-soft: rgba(22,163,74,0.10);
+      --red: #dc2626; --red-soft: rgba(220,38,38,0.07);
+      --shadow-sm: 0 1px 2px rgba(15,23,42,0.04);
+      --shadow: 0 8px 28px rgba(15,23,42,0.07);
+      --shadow-lg: 0 20px 50px rgba(15,23,42,0.10);
+      --radius-lg: 22px; --strip-bg: #FFFFFF;
+    }
+    [data-theme="dark"] {
+      --bg: #0B1120; --surface: #131C30; --text: #E8EDF6; --heading: #F4F7FC;
+      --muted: #93A0B8; --border: rgba(255,255,255,0.09);
+      --green-soft: rgba(22,163,74,0.14); --red-soft: rgba(220,38,38,0.12);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow: 0 8px 28px rgba(0,0,0,0.45);
+      --shadow-lg: 0 20px 50px rgba(0,0,0,0.55);
+      --strip-bg: #0E1626;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter','Poppins',system-ui,sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased; line-height: 1.6; overflow-x: hidden;
+      transition: background .3s, color .3s;
+    }
+    a { text-decoration: none; color: inherit; }
+    .container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── HEADER (identical pattern to trading-tools.html) ── */
+    header.site-head {
+      position: sticky; top: 0; z-index: 200;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .head-inner { height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand img { height: 42px; width: auto; display: block; }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.08; }
+    .brand-text b { font-family: 'Poppins','Inter',sans-serif; font-size: 17px; font-weight: 800; letter-spacing: .5px; color: var(--heading); }
+    .brand-text span { font-size: 10px; font-weight: 700; letter-spacing: 4px; color: var(--orange); text-transform: uppercase; }
+    .head-right { display: flex; align-items: center; gap: 12px; }
+    .back-home {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 44px; padding: 0 20px; border-radius: 100px;
+      border: 1.5px solid var(--border); color: var(--text); font-size: 14.5px; font-weight: 700;
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .back-home:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-1px); }
+    .back-home svg { width: 16px; height: 16px; }
+    .theme-toggle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); flex-shrink: 0;
+      box-shadow: var(--shadow-sm); transition: transform .2s, color .2s, border-color .2s;
+    }
+    .theme-toggle:hover { color: var(--orange); border-color: var(--orange); transform: translateY(-1px); }
+    .theme-toggle .icon-moon { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+    /* ── SECTION SHELL ── */
+    .tj-section { padding: 72px 0; }
+    .tj-section.alt { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .tj-head { text-align: center; max-width: 620px; margin: 0 auto 44px; }
+    .tj-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--orange); background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      padding: 6px 16px; border-radius: 100px; margin-bottom: 16px;
+    }
+    .tj-head h2 {
+      font-family: 'Poppins','Inter',sans-serif; font-weight: 800;
+      font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.8px; color: var(--heading); line-height: 1.15;
+    }
+    .tj-head p { margin-top: 12px; font-size: 15.5px; color: var(--muted); line-height: 1.65; }
+
+    /* ── HERO ── */
+    .tj-hero { padding: 60px 0 20px; }
+    .tj-hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+    .tj-hero h1 {
+      font-family: 'Poppins','Inter',sans-serif; font-weight: 800;
+      font-size: clamp(38px, 6vw, 60px); letter-spacing: -1.6px; color: var(--heading); line-height: 1.03;
+      margin-bottom: 18px;
+    }
+    .tj-hero h1 .accent { color: var(--orange); }
+    .tj-hero p.sub { font-size: 17px; color: var(--muted); line-height: 1.7; max-width: 500px; margin-bottom: 30px; }
+    .tj-hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+    .tj-btn-primary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 15px 28px; border-radius: 100px; border: 1.5px solid var(--orange);
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 10px 26px rgba(247,147,26,0.32); transition: transform .2s, box-shadow .2s;
+    }
+    .tj-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(247,147,26,0.44); }
+    .tj-btn-primary svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .tj-btn-ghost {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 15px 26px; border-radius: 100px; border: 1.5px solid var(--border);
+      color: var(--text); font-size: 15px; font-weight: 700;
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .tj-btn-ghost:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-2px); }
+
+    /* Hero illustration — inline SVG, no external assets */
+    .tj-illust-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+    .tj-illust-blob {
+      position: absolute; width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(247,147,26,0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .tj-illust { position: relative; width: 100%; max-width: 420px; height: auto; }
+
+    /* ── SECTION 2: BENEFIT CARDS ── */
+    .tj-benefits-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .tj-benefit-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+      padding: 24px 20px; text-align: left;
+      box-shadow: var(--shadow-sm); transition: transform .22s, box-shadow .22s, border-color .22s;
+    }
+    .tj-benefit-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.35); }
+    .tj-benefit-ic {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
+      display: flex; align-items: center; justify-content: center; color: var(--orange); margin-bottom: 14px;
+    }
+    .tj-benefit-ic svg { width: 22px; height: 22px; }
+    .tj-benefit-card h4 { font-size: 14.5px; font-weight: 700; color: var(--heading); line-height: 1.4; }
+
+    /* ── SECTION 3: HOW IT WORKS ── */
+    .tj-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+    .tj-steps::before {
+      content: ''; position: absolute; top: 27px; left: 12.5%; right: 12.5%; height: 2px;
+      background: repeating-linear-gradient(90deg, rgba(247,147,26,0.35) 0 10px, transparent 10px 18px);
+      z-index: 0;
+    }
+    .tj-step { position: relative; z-index: 1; text-align: center; padding: 0 14px; }
+    .tj-step-num {
+      width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 18px;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 19px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(247,147,26,0.34); border: 4px solid var(--bg);
+    }
+    .tj-step h4 { font-size: 15px; font-weight: 700; color: var(--heading); margin-bottom: 8px; }
+    .tj-step p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+    /* ── SECTION 4: EXAMPLE REVIEW ── */
+    .tj-demo-note {
+      text-align: center; max-width: 520px; margin: -14px auto 34px;
+      font-size: 12.5px; color: var(--muted); font-style: italic;
+    }
+    .tj-demo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .tj-demo-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      overflow: hidden; box-shadow: var(--shadow);
+    }
+    .tj-demo-top { padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .tj-demo-dir {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Poppins',sans-serif; font-size: 15px; font-weight: 800; letter-spacing: -.2px;
+    }
+    .tj-demo-dir.buy { color: var(--green); }
+    .tj-demo-dir.sell { color: var(--red); }
+    .tj-demo-dir svg { width: 18px; height: 18px; }
+    .tj-demo-result {
+      font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 100px;
+    }
+    .tj-demo-result.win { background: var(--green-soft); color: var(--green); }
+    .tj-demo-result.loss { background: var(--red-soft); color: var(--red); }
+    .tj-demo-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); }
+    .tj-demo-stat { background: var(--surface); padding: 13px 10px; text-align: center; }
+    .tj-demo-stat span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+    .tj-demo-stat b { font-size: 13.5px; font-weight: 800; color: var(--heading); }
+    .tj-review { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+    .tj-review-ic {
+      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tj-review.mentor .tj-review-ic { background: rgba(59,130,246,0.10); color: #3b82f6; }
+    .tj-review.ai .tj-review-ic { background: var(--orange-soft); color: var(--orange); }
+    .tj-review-ic svg { width: 17px; height: 17px; }
+    .tj-review-body h5 { font-size: 12px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--heading); margin-bottom: 4px; }
+    .tj-review-body p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── SECTION 5: WHY THIS MAKES YOU BETTER ── */
+    .tj-why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .tj-why-copy p { font-size: 16px; color: var(--muted); line-height: 1.75; }
+    .tj-why-list { display: flex; flex-direction: column; gap: 14px; }
+    .tj-why-item { display: flex; align-items: flex-start; gap: 12px; font-size: 14.5px; font-weight: 600; color: var(--heading); }
+    .tj-why-item .tick {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+      background: var(--green-soft); color: var(--green);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tj-why-item .tick svg { width: 13px; height: 13px; }
+
+    /* ── SECTION 6A: BEFORE / AFTER ── */
+    .tj-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .tj-compare-card {
+      border-radius: var(--radius-lg); padding: 30px 26px; position: relative; overflow: hidden;
+      border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow);
+    }
+    .tj-compare-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .tj-compare-card.without::before { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+    .tj-compare-card.with::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+    .tj-compare-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      padding: 6px 14px; border-radius: 100px; margin-bottom: 18px;
+    }
+    .tj-compare-card.without .tj-compare-badge { background: var(--red-soft); color: var(--red); }
+    .tj-compare-card.with .tj-compare-badge { background: var(--green-soft); color: var(--green); }
+    .tj-compare-card h3 { font-family: 'Poppins','Inter',sans-serif; font-size: 21px; font-weight: 800; color: var(--heading); margin-bottom: 20px; letter-spacing: -.3px; }
+    .tj-compare-list { display: flex; flex-direction: column; gap: 13px; }
+    .tj-compare-list li { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; color: var(--text); line-height: 1.5; list-style: none; }
+    .tj-compare-list .ic { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; }
+    .tj-compare-card.without .ic { background: var(--red-soft); color: var(--red); }
+    .tj-compare-card.with .ic { background: var(--green-soft); color: var(--green); }
+    .tj-compare-list .ic svg { width: 11px; height: 11px; }
+
+    /* ── SECTION 6B: GET ACCESS ── */
+    .tj-access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+    .tj-access-card {
+      border-radius: var(--radius-lg); padding: 34px 30px; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      border: 1.5px solid var(--border); background: var(--surface); box-shadow: var(--shadow);
+    }
+    .tj-access-card.primary { border-color: rgba(247,147,26,0.35); background: linear-gradient(180deg, var(--orange-soft) 0%, var(--surface) 60%); }
+    .tj-access-ic {
+      width: 56px; height: 56px; border-radius: 16px; margin-bottom: 18px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--orange-soft); color: var(--orange); border: 1px solid rgba(247,147,26,0.24);
+    }
+    .tj-access-card.secondary .tj-access-ic { background: var(--surface); color: var(--muted); border-color: var(--border); }
+    .tj-access-ic svg { width: 26px; height: 26px; }
+    .tj-access-card h3 { font-family: 'Poppins','Inter',sans-serif; font-size: 19px; font-weight: 800; color: var(--heading); margin-bottom: 8px; }
+    .tj-access-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; max-width: 320px; }
+    .tj-access-card .tj-btn-primary, .tj-access-card .tj-btn-ghost { margin-top: auto; }
+
+    /* ── CUSTOM SESSION TOAST (Section 6B "Premium session detected") ── */
+    .tj-toast-bg {
+      display: none; position: fixed; inset: 0; z-index: 9800;
+      background: rgba(6,9,18,0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .tj-toast-bg.on { display: flex; }
+    .tj-toast-card {
+      background: var(--surface); border: 1.5px solid rgba(247,147,26,0.3); border-radius: 20px;
+      padding: 32px 34px; text-align: center; max-width: 340px; width: 100%;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.28);
+      animation: tjIn .3s cubic-bezier(.16,1,.3,1);
+    }
+    @keyframes tjIn { from { opacity: 0; transform: scale(.92) translateY(14px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .tj-toast-ic {
+      width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 16px;
+      background: var(--green-soft); color: var(--green);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tj-toast-ic svg { width: 26px; height: 26px; }
+    .tj-toast-card h4 { font-family: 'Poppins','Inter',sans-serif; font-size: 17px; font-weight: 800; color: var(--heading); margin-bottom: 6px; }
+    .tj-toast-card p { font-size: 13.5px; color: var(--muted); margin-bottom: 4px; }
+    .tj-toast-loading { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12.5px; font-weight: 700; color: var(--orange); }
+    .tj-spin { width: 14px; height: 14px; border: 2px solid rgba(247,147,26,0.25); border-top-color: var(--orange); border-radius: 50%; animation: tjSpin .6s linear infinite; }
+    @keyframes tjSpin { to { transform: rotate(360deg); } }
+
+    /* ── FOOTER ── */
+    .site-foot { padding: 60px 0 30px; }
+    .foot-div { width: min(92%, 1140px); height: 2px; margin: 0 auto 22px; background: linear-gradient(90deg, transparent, var(--orange), transparent); border-radius: 2px; }
+    .foot-text { text-align: center; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .tj-hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .tj-hero p.sub { margin-left: auto; margin-right: auto; }
+      .tj-hero-ctas { justify-content: center; }
+      .tj-illust-wrap { order: -1; }
+      .tj-illust { max-width: 300px; }
+      .tj-benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .tj-steps { grid-template-columns: repeat(2, 1fr); gap: 32px 0; }
+      .tj-steps::before { display: none; }
+      .tj-demo-grid { grid-template-columns: 1fr; }
+      .tj-why-grid { grid-template-columns: 1fr; }
+      .tj-compare-grid { grid-template-columns: 1fr; }
+      .tj-access-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .back-home { padding: 0 14px; font-size: 0; gap: 0; }
+      .back-home svg { width: 18px; height: 18px; }
+      .brand-text b { font-size: 16px; }
+    }
+    @media (max-width: 560px) {
+      .container { padding: 0 18px; }
+      .tj-section { padding: 52px 0; }
+      .tj-benefits-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .tj-benefit-card { padding: 18px 14px; }
+      .tj-steps { grid-template-columns: 1fr; }
+      .tj-demo-stats { grid-template-columns: repeat(2, 1fr); }
+      .tj-hero-ctas { flex-direction: column; align-items: stretch; }
+      .tj-hero-ctas .tj-btn-primary, .tj-hero-ctas .tj-btn-ghost { justify-content: center; }
+    }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
+  </style>
+
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Trading Journal", "description": "Improve your trading by recording every trade, reviewing your mistakes, and receiving professional feedback from your Mentor and our Advanced AI.", "url": "https://ztradeuniversity.com/trading-journal-intro.html", "isPartOf": {"@type": "WebSite", "name": "Z Trade University", "url": "https://ztradeuniversity.com/"}}</script>
+</head>
+<body>
+
+  <!-- ════════════════ HEADER ════════════════ -->
+  <header class="site-head">
+    <div class="container head-inner">
+      <a href="index.html" class="brand" aria-label="Z Trade University home">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" />
+        <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
+      </a>
+      <div class="head-right">
+        <a href="index.html" class="back-home" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Home</span>
+        </a>
+        <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle light/dark theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════ SECTION 1 — PREMIUM HERO ════════════════ -->
+  <section class="tj-hero">
+    <div class="container tj-hero-grid">
+      <div>
+        <span class="tj-eyebrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H18"/><path d="M9 7h5M9 11h5"/></svg>
+          Free for ZTU IB Members
+        </span>
+        <h1>Trading <span class="accent">Journal</span></h1>
+        <p class="sub">Improve your trading by recording every trade, reviewing your mistakes, and receiving professional feedback from both your Mentor and our Advanced AI.</p>
+        <div class="tj-hero-ctas">
+          <a class="tj-btn-primary" href="#get-access">
+            Get Trading Journal Access
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a class="tj-btn-ghost" href="#how-it-works">See How It Works</a>
+        </div>
+      </div>
+
+      <div class="tj-illust-wrap">
+        <div class="tj-illust-blob" aria-hidden="true"></div>
+        <svg class="tj-illust" viewBox="0 0 420 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a trading journal notebook with a performance chart">
+          <!-- notebook -->
+          <rect x="70" y="40" width="230" height="300" rx="18" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+          <rect x="70" y="40" width="18" height="300" rx="9" fill="var(--orange)"/>
+          <line x1="118" y1="86" x2="240" y2="86" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/>
+          <line x1="118" y1="112" x2="270" y2="112" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/>
+          <!-- mini chart card inside notebook -->
+          <rect x="112" y="140" width="166" height="100" rx="12" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5"/>
+          <polyline points="124,215 150,200 172,208 196,175 218,182 242,150 266,158" stroke="var(--orange)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="266" cy="158" r="5" fill="var(--orange)"/>
+          <line x1="118" y1="262" x2="220" y2="262" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/>
+          <line x1="118" y1="286" x2="250" y2="286" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/>
+          <!-- pen -->
+          <rect x="255" y="270" width="10" height="70" rx="5" transform="rotate(28 255 270)" fill="var(--navy)"/>
+          <!-- mentor badge -->
+          <circle cx="330" cy="120" r="34" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+          <path d="M318 128a12 12 0 0 1 24 0" stroke="#3b82f6" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+          <circle cx="330" cy="112" r="7" stroke="#3b82f6" stroke-width="2.4" fill="none"/>
+          <!-- AI badge -->
+          <circle cx="345" cy="220" r="34" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
+          <rect x="330" y="206" width="30" height="24" rx="6" stroke="var(--orange)" stroke-width="2.2" fill="none"/>
+          <circle cx="339" cy="216" r="2.4" fill="var(--orange)"/>
+          <circle cx="351" cy="216" r="2.4" fill="var(--orange)"/>
+          <line x1="345" y1="200" x2="345" y2="206" stroke="var(--orange)" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- approved check -->
+          <circle cx="98" cy="330" r="24" fill="var(--green-soft)" stroke="var(--green)" stroke-width="2"/>
+          <path d="M89 330l7 7 14-14" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SECTION 2 — WHY PROFESSIONALS USE A JOURNAL ════════════════ -->
+  <section class="tj-section">
+    <div class="container">
+      <div class="tj-head">
+        <span class="tj-eyebrow">The Professional Edge</span>
+        <h2>Why Every Professional Trader Uses a Trading Journal</h2>
+        <p>The gap between beginners and professionals isn't luck — it's a documented, reviewed process.</p>
+      </div>
+      <div class="tj-benefits-grid">
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div>
+          <h4>Improve Discipline</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <h4>Discover Hidden Mistakes</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <h4>Track Emotions</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div>
+          <h4>Improve Consistency</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h4>Build Confidence</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg></div>
+          <h4>Measure Long-Term Performance</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg></div>
+          <h4>Better Risk Management</h4>
+        </div>
+        <div class="tj-benefit-card">
+          <div class="tj-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg></div>
+          <h4>Learn From Every Trade</h4>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SECTION 3 — HOW IT WORKS ════════════════ -->
+  <section class="tj-section alt" id="how-it-works">
+    <div class="container">
+      <div class="tj-head">
+        <span class="tj-eyebrow">Simple Workflow</span>
+        <h2>How It Works</h2>
+        <p>Four steps between a trade you took and a trade you understand.</p>
+      </div>
+      <div class="tj-steps">
+        <div class="tj-step">
+          <div class="tj-step-num">1</div>
+          <h4>Submit Your Trade</h4>
+          <p>Log your entry, stop loss, take profit and notes in seconds.</p>
+        </div>
+        <div class="tj-step">
+          <div class="tj-step-num">2</div>
+          <h4>History Is Stored</h4>
+          <p>Your complete trading history is stored, organized and always accessible.</p>
+        </div>
+        <div class="tj-step">
+          <div class="tj-step-num">3</div>
+          <h4>Mentor Review</h4>
+          <p>Your Mentor reviews your trade and provides professional comments.</p>
+        </div>
+        <div class="tj-step">
+          <div class="tj-step-num">4</div>
+          <h4>AI Analysis</h4>
+          <p>Advanced AI analyzes your behavior, psychology, risk management and execution quality, then gives detailed improvement suggestions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SECTION 4 — EXAMPLE REVIEW ════════════════ -->
+  <section class="tj-section">
+    <div class="container">
+      <div class="tj-head">
+        <span class="tj-eyebrow">See It In Action</span>
+        <h2>Example Review</h2>
+        <p>A look at how a submitted trade becomes real, actionable feedback.</p>
+      </div>
+      <p class="tj-demo-note">Demonstration examples only — your reviews are personalized to your real trades.</p>
+
+      <div class="tj-demo-grid">
+
+        <!-- Demo Trade 1 — Winning example -->
+        <div class="tj-demo-card">
+          <div class="tj-demo-top">
+            <span class="tj-demo-dir buy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              BUY GOLD (XAUUSD)
+            </span>
+            <span class="tj-demo-result win">Take Profit Hit</span>
+          </div>
+          <div class="tj-demo-stats">
+            <div class="tj-demo-stat"><span>Entry</span><b>2,382.50</b></div>
+            <div class="tj-demo-stat"><span>Stop Loss</span><b>2,375.00</b></div>
+            <div class="tj-demo-stat"><span>Take Profit</span><b>2,398.00</b></div>
+            <div class="tj-demo-stat"><span>Result</span><b style="color:var(--green)">+1.8R</b></div>
+          </div>
+          <div class="tj-review mentor">
+            <div class="tj-review-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="tj-review-body">
+              <h5>Mentor Review</h5>
+              <p>Solid setup — you waited for confirmation at the key support zone before entering. Your risk-to-reward was well planned. Next time, consider trailing your stop once price clears the previous swing high to lock in more.</p>
+            </div>
+          </div>
+          <div class="tj-review ai">
+            <div class="tj-review-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/><circle cx="9" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1" fill="currentColor" stroke="none"/></svg></div>
+            <div class="tj-review-body">
+              <h5>AI Review</h5>
+              <p>Entry aligned with bullish market structure and a clear demand zone. Position size matched your 1% risk rule. Your London-session entries show a 68% win rate — consider prioritizing this session.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demo Trade 2 — Losing example, still constructive -->
+        <div class="tj-demo-card">
+          <div class="tj-demo-top">
+            <span class="tj-demo-dir sell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              SELL EURUSD
+            </span>
+            <span class="tj-demo-result loss">Stop Loss Hit</span>
+          </div>
+          <div class="tj-demo-stats">
+            <div class="tj-demo-stat"><span>Entry</span><b>1.0850</b></div>
+            <div class="tj-demo-stat"><span>Stop Loss</span><b>1.0880</b></div>
+            <div class="tj-demo-stat"><span>Take Profit</span><b>1.0790</b></div>
+            <div class="tj-demo-stat"><span>Result</span><b style="color:var(--red)">-1.0R</b></div>
+          </div>
+          <div class="tj-review mentor">
+            <div class="tj-review-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="tj-review-body">
+              <h5>Mentor Review</h5>
+              <p>A good example of a valid setup that simply didn't work out — structure was correct, but you entered right before London open, which increased volatility risk. Not every loss is a mistake. Keep documenting these; the pattern will guide you.</p>
+            </div>
+          </div>
+          <div class="tj-review ai">
+            <div class="tj-review-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/><circle cx="9" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1" fill="currentColor" stroke="none"/></svg></div>
+            <div class="tj-review-body">
+              <h5>AI Review</h5>
+              <p>Trade matched your strategy criteria, but entry timing occurred 40 minutes before a high-impact news release. Suggestion: add a pre-trade news-calendar check to your checklist to avoid unplanned volatility.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SECTION 5 — WHY THIS MAKES YOU BETTER ════════════════ -->
+  <section class="tj-section alt">
+    <div class="container tj-why-grid">
+      <div class="tj-why-copy">
+        <span class="tj-eyebrow">In Simple Words</span>
+        <h2 style="font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.2vw,32px);letter-spacing:-.6px;color:var(--heading);margin-bottom:14px;">Why This Makes You Better</h2>
+        <p>Every professional trader started as a beginner. The difference is that they kept a record — and learned from it. A Trading Journal turns every trade, win or lose, into a lesson that moves you forward.</p>
+      </div>
+      <div class="tj-why-list">
+        <div class="tj-why-item"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Build a complete trading history.</div>
+        <div class="tj-why-item"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Learn from previous mistakes.</div>
+        <div class="tj-why-item"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Track profits and losses.</div>
+        <div class="tj-why-item"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Become more disciplined.</div>
+        <div class="tj-why-item"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Improve decision making.</div>
+        <div class="tj-why-item"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Progress from beginner to professional trader.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SECTION 6A — BEFORE vs AFTER ════════════════ -->
+  <section class="tj-section">
+    <div class="container">
+      <div class="tj-head">
+        <span class="tj-eyebrow">See The Difference</span>
+        <h2>Before vs After Trading Journal</h2>
+        <p>The value should be obvious within a few seconds.</p>
+      </div>
+      <div class="tj-compare-grid">
+
+        <div class="tj-compare-card without">
+          <span class="tj-compare-badge">Without Trading Journal</span>
+          <h3>Trading Blind</h3>
+          <ul class="tj-compare-list">
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Random trading decisions</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Repeating the same mistakes</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>No complete trading history</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Emotional decision making</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Weak risk management</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Slow learning and improvement</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Difficult to identify strengths and weaknesses</li>
+          </ul>
+        </div>
+
+        <div class="tj-compare-card with">
+          <span class="tj-compare-badge">With Trading Journal</span>
+          <h3>Trading With Clarity</h3>
+          <ul class="tj-compare-list">
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Structured trading process</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Learn from every mistake</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Complete trading history</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>AI + Mentor feedback</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Better discipline</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Better risk management</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Performance tracking</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Continuous improvement</li>
+            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Faster transition from beginner to professional trader</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SECTION 6B — GET ACCESS ════════════════ -->
+  <section class="tj-section alt" id="get-access">
+    <div class="container">
+      <div class="tj-head">
+        <span class="tj-eyebrow">Start Today</span>
+        <h2>Get Access</h2>
+        <p>Trading Journal is free for approved Z Trade University IB members.</p>
+      </div>
+      <div class="tj-access-grid">
+
+        <div class="tj-access-card primary">
+          <div class="tj-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Already Joined Under Our IB?</h3>
+          <p>If you're already an approved member, unlock your Trading Journal instantly — no repeat verification needed if you're already signed in.</p>
+          <button class="tj-btn-primary" type="button" id="btnGetAccess" onclick="handleGetAccess()">
+            Get Trading Journal Access
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <div class="tj-access-card secondary">
+          <div class="tj-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg></div>
+          <h3>New Member?</h3>
+          <p>Join under our IB and unlock the Trading Journal, Premium Library and Unlimited AI — completely free.</p>
+          <a class="tj-btn-ghost" href="index.html#how-to-join">
+            How to Get Access
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SESSION TOAST (custom popup — Section 6B) ════════════════ -->
+  <div class="tj-toast-bg" id="tjToastBg" role="status" aria-live="polite">
+    <div class="tj-toast-card">
+      <div class="tj-toast-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h4 id="tjToastTitle">Premium session detected.</h4>
+      <p id="tjToastSub">Welcome back.</p>
+      <div class="tj-toast-loading"><span class="tj-spin"></span> Opening Trading Journal…</div>
+    </div>
+  </div>
+
+  <!-- ════════════════ FOOTER ════════════════ -->
+  <footer class="site-foot">
+    <div class="foot-div"></div>
+    <p class="foot-text">© 2024 Z Trade University. All rights reserved.</p>
+  </footer>
+
+  <script>
+    /* Theme toggle (shared behaviour with homepage, same storage key) */
+    (function () {
+      try { if (localStorage.getItem('ztu-theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+    })();
+    function toggleTheme() {
+      var el = document.documentElement;
+      var dark = el.getAttribute('data-theme') === 'dark';
+      if (dark) el.removeAttribute('data-theme'); else el.setAttribute('data-theme', 'dark');
+      try { localStorage.setItem('ztu-theme', dark ? 'light' : 'dark'); } catch (e) {}
+    }
+
+    /* ── ARCHITECTURE NOTE ───────────────────────────────────────────────
+       This page performs NO authentication of its own. It only:
+       1) reads the EXISTING shared premium session via the read-only
+          window.ZTUPremiumBadge.isPremium() API (assets/ztu-premium-badge.js),
+       2) if absent, opens the EXISTING shared OTP overlay via
+          window.ZTUPremiumCard.open() (assets/ztu-premium-card.js) — the same
+          component journal.html itself uses.
+       Both are already deployed, shared across Library/Journal/AI. No new
+       endpoint, session key, or verification logic is introduced here. If
+       either script fails to load, the button simply falls back to
+       journal.html, which carries its own full gate as the ultimate source
+       of truth — access is never granted client-side by this page. ── */
+    function showSessionToast(title, sub) {
+      document.getElementById('tjToastTitle').textContent = title;
+      document.getElementById('tjToastSub').textContent = sub;
+      document.getElementById('tjToastBg').classList.add('on');
+    }
+
+    function handleGetAccess() {
+      var btn = document.getElementById('btnGetAccess');
+      btn.disabled = true;
+
+      if (window.ZTUPremiumBadge && window.ZTUPremiumBadge.isPremium()) {
+        showSessionToast('Premium session detected.', 'Welcome back.');
+        setTimeout(function () { window.location.href = 'journal.html'; }, 1400);
+        return;
+      }
+
+      if (window.ZTUPremiumCard) {
+        window.ZTUPremiumCard.open({
+          entry: 'journal',
+          dismissible: true,
+          showApprovedModal: false,
+          onApproved: function () {
+            showSessionToast('Access approved.', 'Welcome to Z Trade University.');
+            setTimeout(function () { window.location.href = 'journal.html'; }, 1200);
+          }
+        });
+        btn.disabled = false;
+      } else {
+        // Graceful fallback — journal.html carries its own full gate.
+        window.location.href = 'journal.html';
+      }
+    }
+  </script>
+
+  <!-- ── CONTENT PROTECTION (parity with site) ── -->
+  <script>
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) || (e.ctrlKey && e.key === 'U')) { e.preventDefault(); }
+    });
+  </script>
+
+  <!-- Shared premium session read + shared OTP access overlay (reused, not duplicated) -->
+  <script src="/assets/ztu-premium-badge.js" defer></script>
+  <script src="/assets/ztu-premium-card.js" defer></script>
+
+  <!-- site-wide language system (shared) -->
+  <script src="/assets/ztu-lang.js" defer></script>
+</body>
+</html>
