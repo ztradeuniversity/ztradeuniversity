@@ -257,7 +257,18 @@
     .tj-compare-list .ic svg { width: 11px; height: 11px; }
 
     /* ── SECTION 6B: GET ACCESS ── */
-    .tj-access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+    .tj-access-flow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; max-width: 720px; margin: 0 auto 28px; }
+    .tj-flow-mini { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 110px; text-align: center; }
+    .tj-flow-mini-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 13px;
+      box-shadow: 0 5px 14px rgba(247,147,26,0.3);
+    }
+    .tj-flow-mini span { font-size: 12px; font-weight: 700; color: var(--heading); line-height: 1.3; }
+    .tj-flow-mini-arrow { color: var(--border); font-weight: 700; flex-shrink: 0; }
+    .tj-access-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
     .tj-access-card {
       border-radius: var(--radius-lg); padding: 34px 30px; text-align: center;
       display: flex; flex-direction: column; align-items: center;
@@ -335,6 +346,21 @@
       .tj-demo-stats { grid-template-columns: repeat(2, 1fr); }
       .tj-hero-ctas { flex-direction: column; align-items: stretch; }
       .tj-hero-ctas .tj-btn-primary, .tj-hero-ctas .tj-btn-ghost { justify-content: center; }
+      .tj-detail { display: none; }
+      .tj-section#get-access { padding: 26px 0; }
+      .tj-section#get-access .tj-head { margin-bottom: 14px; }
+      .tj-access-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+      .tj-flow-mini { width: auto; gap: 5px; }
+      .tj-flow-mini-arrow { display: none; }
+      .tj-flow-mini-num { width: 30px; height: 30px; font-size: 12px; }
+      .tj-flow-mini span { font-size: 10px; }
+      .tj-access-grid { gap: 10px; }
+      .tj-access-card { padding: 16px 14px; }
+      .tj-access-ic { width: 40px; height: 40px; margin-bottom: 8px; border-radius: 12px; }
+      .tj-access-ic svg { width: 19px; height: 19px; }
+      .tj-access-card h3 { font-size: 15px; margin-bottom: 4px; }
+      .tj-access-card p { font-size: 12px; margin-bottom: 12px; }
+      .tj-access-card .tj-btn-primary, .tj-access-card .tj-btn-ghost { padding: 11px 16px; font-size: 13px; }
     }
     a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
   </style>
@@ -378,7 +404,7 @@
             Get Trading Journal Access
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
-          <a class="tj-btn-ghost" href="#how-it-works">See How It Works</a>
+          <a class="tj-btn-ghost" href="#benefits">View Benefits</a>
         </div>
       </div>
 
@@ -462,7 +488,7 @@
   </section>
 
   <!-- ════════════════ SECTION 3 — HOW IT WORKS ════════════════ -->
-  <section class="tj-section alt" id="how-it-works">
+  <section class="tj-section alt tj-detail" id="how-it-works">
     <div class="container">
       <div class="tj-head">
         <span class="tj-eyebrow">Simple Workflow</span>
@@ -643,26 +669,46 @@
         <h2>Get Access</h2>
         <p>Trading Journal is free for approved Z Trade University IB members.</p>
       </div>
-      <div class="tj-access-grid">
+      <div class="tj-access-flow" role="list" aria-label="Access process">
+        <div class="tj-flow-mini"><div class="tj-flow-mini-num">1</div><span>License Request</span></div>
+        <div class="tj-flow-mini-arrow" aria-hidden="true">→</div>
+        <div class="tj-flow-mini"><div class="tj-flow-mini-num">2</div><span>Approval</span></div>
+        <div class="tj-flow-mini-arrow" aria-hidden="true">→</div>
+        <div class="tj-flow-mini"><div class="tj-flow-mini-num">3</div><span>OTP Verification</span></div>
+        <div class="tj-flow-mini-arrow" aria-hidden="true">→</div>
+        <div class="tj-flow-mini"><div class="tj-flow-mini-num">4</div><span>Journal Access</span></div>
+      </div>
 
-        <div class="tj-access-card primary">
-          <div class="tj-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <h3>Already Joined Under Our IB?</h3>
-          <p>If you're already an approved member, unlock your Trading Journal instantly — no repeat verification needed if you're already signed in.</p>
-          <button class="tj-btn-primary" type="button" id="btnGetAccess" onclick="handleGetAccess()">
-            Get Trading Journal Access
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
+      <div class="tj-access-grid">
 
         <div class="tj-access-card secondary">
           <div class="tj-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg></div>
-          <h3>New Member?</h3>
+          <h3>New User?</h3>
           <p>Join under our IB and unlock the Trading Journal, Premium Library and Unlimited AI — completely free.</p>
           <a class="tj-btn-ghost" href="index.html#how-to-join">
-            How to Get Access
+            Join IB
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
+        </div>
+
+        <div class="tj-access-card secondary">
+          <div class="tj-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
+          <h3>Existing IB User?</h3>
+          <p>Already joined under our IB? Submit your License Request to get approved for access.</p>
+          <a class="tj-btn-ghost" href="license-request.html">
+            Submit License Request
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <div class="tj-access-card primary">
+          <div class="tj-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Approved User?</h3>
+          <p>Already approved? Verify with OTP to unlock your Trading Journal instantly.</p>
+          <button class="tj-btn-primary" type="button" id="btnGetAccess" onclick="handleGetAccess()">
+            Verify with OTP
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
         </div>
 
       </div>

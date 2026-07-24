@@ -224,8 +224,8 @@
     .hero-stat b { color: var(--lime); font-weight: 800; }
 
     /* ── ACCESS EXPLAINER — who gets in, and how (Task: Library access clarity) ── */
-    .lib-access { background: var(--bg); padding: 52px 0; border-bottom: 1px solid var(--border); }
-    .lib-access-head { text-align: center; max-width: 640px; margin: 0 auto 34px; }
+    .lib-access { background: var(--bg); padding: 40px 0; border-bottom: 1px solid var(--border); }
+    .lib-access-head { text-align: center; max-width: 640px; margin: 0 auto 24px; }
     .lib-access-eyebrow {
       display: inline-flex; align-items: center; gap: 7px;
       font-size: 11px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
@@ -239,24 +239,28 @@
     .lib-access-head h2 b { color: var(--purple2); }
     .lib-access-head p { margin-top: 10px; font-size: 14px; color: var(--muted); }
 
-    .lib-access-ctas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 780px; margin: 0 auto 40px; }
+    .lib-access-ctas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 920px; margin: 0 auto 30px; }
     .lib-access-cta {
       background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-lg);
-      padding: 22px 24px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      padding: 22px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
     }
     .lib-access-cta.joined { border-color: rgba(172,212,0,0.4); background: linear-gradient(180deg, rgba(172,212,0,0.06) 0%, var(--white) 60%); }
     .lib-access-cta.new { border-color: rgba(91,26,200,0.25); background: linear-gradient(180deg, rgba(91,26,200,0.05) 0%, var(--white) 60%); }
+    .lib-access-cta.verify { border-color: rgba(11,17,32,0.25); background: linear-gradient(180deg, rgba(11,17,32,0.05) 0%, var(--white) 60%); }
     .lib-access-cta h4 { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
-    .lib-access-cta a {
+    .lib-access-cta a, .lib-access-cta button {
       display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px;
       border-radius: var(--r-pill); font-size: 13.5px; font-weight: 700;
+      font-family: inherit; cursor: pointer; border: none; background: none;
       transition: transform .18s, box-shadow .18s;
     }
     .lib-access-cta.joined a { background: linear-gradient(135deg,var(--lime),var(--lime2)); color: #1a2400; box-shadow: 0 6px 16px rgba(172,212,0,0.32); }
     .lib-access-cta.new a { border: 1.5px solid var(--purple2); color: var(--purple2); }
-    .lib-access-cta a:hover { transform: translateY(-2px); }
+    .lib-access-cta.verify button { background: linear-gradient(135deg,var(--navy),var(--navy2)); color: var(--lime); box-shadow: 0 6px 16px rgba(11,17,32,0.28); border: 1.5px solid rgba(172,212,0,0.35); }
+    .lib-access-cta a:hover, .lib-access-cta button:hover { transform: translateY(-2px); }
+    @media (max-width: 900px) { .lib-access-ctas { grid-template-columns: 1fr; max-width: 420px; } }
 
-    .lib-access-flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 900px; margin: 0 auto 40px; }
+    .lib-access-flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 900px; margin: 0 auto 28px; }
     .lib-flow-step {
       display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; width: 140px;
     }
@@ -271,8 +275,11 @@
     .lib-flow-arrow { color: var(--border); flex-shrink: 0; }
     .lib-flow-arrow svg { width: 18px; height: 18px; display: block; }
     @media (max-width: 760px) {
-      .lib-access-flow { flex-direction: column; }
-      .lib-flow-arrow svg { transform: rotate(90deg); }
+      .lib-access-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 22px; }
+      .lib-flow-step { width: auto; gap: 4px; }
+      .lib-flow-num { width: 30px; height: 30px; font-size: 12px; }
+      .lib-flow-step span { font-size: 9.5px; line-height: 1.2; }
+      .lib-flow-arrow { display: none; }
     }
 
     .lib-access-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 780px; margin: 0 auto; }
@@ -1102,23 +1109,6 @@
       <p>No subscription, no fees — just an active account under our IB network.</p>
     </div>
 
-    <div class="lib-access-ctas">
-      <div class="lib-access-cta joined">
-        <h4>Already joined?</h4>
-        <a href="license-request.html">
-          Submit License Request
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-      <div class="lib-access-cta new">
-        <h4>Not joined?</h4>
-        <a href="index.html#how-to-join">
-          How to Join Us
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-    </div>
-
     <div class="lib-access-flow" role="list" aria-label="Access process">
       <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">1</div><span>License Request</span></div>
       <div class="lib-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
@@ -1127,6 +1117,30 @@
       <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">3</div><span>OTP Verification</span></div>
       <div class="lib-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
       <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">4</div><span>Library Access</span></div>
+    </div>
+
+    <div class="lib-access-ctas">
+      <div class="lib-access-cta new">
+        <h4>Not Joined Yet?</h4>
+        <a href="index.html#how-to-join">
+          How to Join Us
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="lib-access-cta joined">
+        <h4>Already Joined?</h4>
+        <a href="license-request.html">
+          Submit License Request
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="lib-access-cta verify">
+        <h4>License Request Approved?</h4>
+        <button type="button" onclick="openGate()">
+          Verify with OTP
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="lib-access-split">
