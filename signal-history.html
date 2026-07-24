@@ -59,6 +59,24 @@
     .hero h1 { font-family:'Poppins',sans-serif; font-size:clamp(28px,5vw,42px); font-weight:800; letter-spacing:-1px; color:var(--heading); line-height:1.12; }
     .hero p { max-width:640px; margin:14px auto 0; font-size:16px; color:var(--muted); }
 
+    /* ── PREMIUM UNLOCK CTA (Signal History → How to Join Us) ── */
+    .shp-cta { text-align:center; margin:26px 0 8px; }
+    .shp-cta-btn {
+      display:inline-flex; align-items:center; gap:10px;
+      padding:16px 34px; border-radius:100px; border:1.5px solid var(--orange);
+      background:linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color:#fff; font-family:'Poppins',sans-serif; font-size:16px; font-weight:800;
+      letter-spacing:-.2px; box-shadow:0 10px 26px rgba(247,147,26,.34);
+      transition:transform .2s, box-shadow .2s;
+    }
+    .shp-cta-btn:hover { transform:translateY(-2px) scale(1.015); box-shadow:0 14px 32px rgba(247,147,26,.46); }
+    .shp-cta-btn:focus-visible { outline:2px solid var(--orange); outline-offset:3px; }
+    .shp-cta-btn svg { width:18px; height:18px; flex-shrink:0; }
+    .shp-cta-sub { margin-top:11px; font-size:13.5px; font-weight:700; color:var(--muted); }
+    @media (max-width:560px) {
+      .shp-cta-btn { width:100%; justify-content:center; padding:15px 20px; font-size:14.5px; }
+    }
+
     /* ── STATS ── */
     .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:30px 0 8px; }
     .stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 16px; text-align:center; box-shadow:var(--shadow-sm); }
@@ -193,6 +211,15 @@
       </div>
       <h1>Signal History &amp; Performance</h1>
       <p>Every signal we have published — entry zone, the pips won or lost, and the <strong>real result</strong>. No cherry-picking, no hiding losers. Verify exactly what was called, when, and how it played out.</p>
+
+      <div class="shp-cta">
+        <a class="shp-cta-btn" href="index.html#how-to-join">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+          Unlock All Premium Features for FREE
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <p class="shp-cta-sub">See how to join us in just a few simple steps.</p>
+      </div>
     </div>
   </section>
 
