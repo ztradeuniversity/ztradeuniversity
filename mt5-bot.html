@@ -147,61 +147,20 @@
     .mb-illust { position: relative; width: 100%; max-width: 430px; height: auto; }
 
     /* ── BENEFITS GRID (9 features) ── */
-    .mb-benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .mb-benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .mb-benefit-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
-      padding: 24px 22px; text-align: left;
+      padding: 15px; display: flex; align-items: center; gap: 12px; text-align: left;
       box-shadow: var(--shadow-sm); transition: transform .22s, box-shadow .22s, border-color .22s;
     }
     .mb-benefit-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.35); }
     .mb-benefit-ic {
-      width: 46px; height: 46px; border-radius: 14px;
+      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
       background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
-      display: flex; align-items: center; justify-content: center; color: var(--orange); margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: center; color: var(--orange);
     }
-    .mb-benefit-ic svg { width: 22px; height: 22px; }
-    .mb-benefit-card h4 { font-size: 14.5px; font-weight: 700; color: var(--heading); margin-bottom: 6px; }
-    .mb-benefit-card p { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
-
-    /* ── HOW IT WORKS ── */
-    .mb-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
-    .mb-steps::before {
-      content: ''; position: absolute; top: 27px; left: 12.5%; right: 12.5%; height: 2px;
-      background: repeating-linear-gradient(90deg, rgba(247,147,26,0.35) 0 10px, transparent 10px 18px);
-      z-index: 0;
-    }
-    .mb-step { position: relative; z-index: 1; text-align: center; padding: 0 14px; }
-    .mb-step-num {
-      width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 18px;
-      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
-      color: #fff; font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 19px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 18px rgba(247,147,26,0.34); border: 4px solid var(--bg);
-    }
-    .mb-step h4 { font-size: 15px; font-weight: 700; color: var(--heading); margin-bottom: 8px; }
-    .mb-step p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
-
-    /* ── EXAMPLE WORKFLOW ── */
-    .mb-flow { display: flex; flex-direction: column; gap: 14px; max-width: 680px; margin: 0 auto; }
-    .mb-flow-item {
-      display: flex; align-items: flex-start; gap: 16px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-      padding: 18px 20px; box-shadow: var(--shadow-sm);
-    }
-    .mb-flow-num {
-      width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
-      background: var(--orange-soft); color: var(--orange); border: 1px solid rgba(247,147,26,0.24);
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;
-      font-family: 'Poppins',sans-serif;
-    }
-    .mb-flow-body h5 { font-size: 14px; font-weight: 700; color: var(--heading); margin-bottom: 3px; }
-    .mb-flow-body p { font-size: 13px; color: var(--muted); line-height: 1.55; }
-    .mb-flow-arrow { display: flex; justify-content: center; color: var(--border); }
-    .mb-flow-arrow svg { width: 16px; height: 16px; }
-
-    /* ── DASHBOARD MOCKUP ILLUSTRATION ── */
-    .mb-mockup-wrap { max-width: 720px; margin: 44px auto 0; }
-    .mb-mockup { width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+    .mb-benefit-ic svg { width: 20px; height: 20px; }
+    .mb-benefit-card h4 { font-size: 13.5px; font-weight: 700; color: var(--heading); line-height: 1.35; }
 
     /* ── GET ACCESS ── */
     .mb-access-flow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; max-width: 720px; margin: 0 auto 36px; }
@@ -215,8 +174,6 @@
     }
     .mb-flow-mini span { font-size: 12px; font-weight: 700; color: var(--heading); line-height: 1.3; }
     .mb-flow-mini-arrow { color: var(--border); font-weight: 700; flex-shrink: 0; }
-    @media (max-width: 560px) { .mb-access-flow { flex-direction: column; } .mb-flow-mini-arrow { transform: rotate(90deg); } }
-
     .mb-access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
     .mb-access-card {
       border-radius: var(--radius-lg); padding: 34px 30px; text-align: center;
@@ -261,11 +218,25 @@
       .container { padding: 0 18px; }
       .mb-section { padding: 52px 0; }
       .mb-benefits-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-      .mb-benefit-card { padding: 18px 14px; }
-      .mb-steps { grid-template-columns: 1fr; }
+      .mb-benefit-card { padding: 13px 11px; gap: 9px; }
+      .mb-benefit-ic { width: 36px; height: 36px; border-radius: 10px; }
+      .mb-benefit-card h4 { font-size: 12.5px; }
       .mb-hero-ctas { flex-direction: column; align-items: stretch; }
       .mb-hero-ctas .mb-btn-primary, .mb-hero-ctas .mb-btn-ghost { justify-content: center; }
-      .mb-flow-item { padding: 14px 16px; gap: 12px; }
+      .mb-section#get-access { padding: 26px 0; }
+      .mb-section#get-access .mb-head { margin-bottom: 14px; }
+      .mb-access-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+      .mb-flow-mini { width: auto; gap: 5px; }
+      .mb-flow-mini-arrow { display: none; }
+      .mb-flow-mini-num { width: 30px; height: 30px; font-size: 12px; }
+      .mb-flow-mini span { font-size: 10px; }
+      .mb-access-grid { gap: 10px; }
+      .mb-access-card { padding: 16px 14px; }
+      .mb-access-ic { width: 40px; height: 40px; margin-bottom: 8px; border-radius: 12px; }
+      .mb-access-ic svg { width: 19px; height: 19px; }
+      .mb-access-card h3 { font-size: 15px; margin-bottom: 4px; }
+      .mb-access-card p { font-size: 12px; margin-bottom: 12px; }
+      .mb-access-card .mb-btn-primary, .mb-access-card .mb-btn-ghost { padding: 11px 16px; font-size: 13px; }
     }
     a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
   </style>
@@ -309,7 +280,7 @@
             Get License Access
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
-          <a class="mb-btn-ghost" href="#how-it-works">See How It Works</a>
+          <a class="mb-btn-ghost" href="#benefits">View Benefits</a>
         </div>
       </div>
 
@@ -352,165 +323,39 @@
   </section>
 
   <!-- ════════════════ BENEFITS (9 features) ════════════════ -->
-  <section class="mb-section">
+  <section class="mb-section" id="benefits">
     <div class="container">
       <div class="mb-head">
         <span class="mb-eyebrow">What It Does</span>
-        <h2>Professional Trade Management, Automated</h2>
-        <p>Every feature is designed to remove emotion and manual error from trade execution.</p>
+        <h2>MT5 Bot Benefits</h2>
+        <p>Professional trade management, simplified.</p>
       </div>
       <div class="mb-benefits-grid">
         <div class="mb-benefit-card">
           <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div>
           <h4>High Accuracy</h4>
-          <p>Precise execution logic keeps entries, exits and adjustments consistent every time.</p>
         </div>
         <div class="mb-benefit-card">
           <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <h4>Automatic SL Management</h4>
-          <p>Stop loss is placed, adjusted and protected automatically as the trade develops.</p>
-        </div>
-        <div class="mb-benefit-card">
-          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
-          <h4>Automatic TP Management</h4>
-          <p>Take profit targets are managed for you — no need to babysit the chart.</p>
+          <h4>Smart SL/TP</h4>
         </div>
         <div class="mb-benefit-card">
           <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 14h16" stroke-dasharray="3 3"/></svg></div>
-          <h4>Manual Zone Support</h4>
-          <p>Define your own supply/demand zones — the bot respects your analysis.</p>
-        </div>
-        <div class="mb-benefit-card">
-          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg></div>
-          <h4>Zone-Based Trade Management</h4>
-          <p>Trades are managed relative to your defined zones, not fixed pip values.</p>
+          <h4>Manual Zones</h4>
         </div>
         <div class="mb-benefit-card">
           <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg></div>
           <h4>Layer Management</h4>
-          <p>Scale in with layered entries and let the bot manage each layer independently.</p>
         </div>
         <div class="mb-benefit-card">
           <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></div>
           <h4>Close All Trades</h4>
-          <p>One click flattens every open position instantly when you need control back.</p>
-        </div>
-        <div class="mb-benefit-card">
-          <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l3-3 3 3 5-6"/><circle cx="18" cy="10" r="1.4" fill="currentColor" stroke="none"/></svg></div>
-          <h4>Performance Statistics</h4>
-          <p>Track win rate, RR and results directly from the bot's built-in reporting.</p>
         </div>
         <div class="mb-benefit-card">
           <div class="mb-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
           <h4>Professional Trade Management</h4>
-          <p>The discipline of a professional desk, running automatically on your terminal.</p>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- ════════════════ HOW IT WORKS ════════════════ -->
-  <section class="mb-section alt" id="how-it-works">
-    <div class="container">
-      <div class="mb-head">
-        <span class="mb-eyebrow">Simple Setup</span>
-        <h2>How It Works</h2>
-        <p>From attaching the bot to letting it manage your trades — in four steps.</p>
-      </div>
-      <div class="mb-steps">
-        <div class="mb-step">
-          <div class="mb-step-num">1</div>
-          <h4>Attach to MT5</h4>
-          <p>The bot is installed on your MetaTrader 5 terminal after license activation.</p>
-        </div>
-        <div class="mb-step">
-          <div class="mb-step-num">2</div>
-          <h4>Set Your Zone</h4>
-          <p>Mark your entry zone or open a manual trade — the bot detects it automatically.</p>
-        </div>
-        <div class="mb-step">
-          <div class="mb-step-num">3</div>
-          <h4>Bot Manages the Trade</h4>
-          <p>SL, TP and layered entries are handled automatically from that point on.</p>
-        </div>
-        <div class="mb-step">
-          <div class="mb-step-num">4</div>
-          <h4>Review Performance</h4>
-          <p>Check win rate, RR and history any time in the performance statistics panel.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════════════ EXAMPLE WORKFLOW + MOCKUP ════════════════ -->
-  <section class="mb-section">
-    <div class="container">
-      <div class="mb-head">
-        <span class="mb-eyebrow">See It In Action</span>
-        <h2>Example Workflow</h2>
-        <p>A typical Gold (XAUUSD) trade, from zone to close.</p>
-      </div>
-
-      <div class="mb-flow">
-        <div class="mb-flow-item">
-          <div class="mb-flow-num">1</div>
-          <div class="mb-flow-body"><h5>Mark the Zone</h5><p>Trader marks a demand zone on XAUUSD between 2,380–2,385.</p></div>
-        </div>
-        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-        <div class="mb-flow-item">
-          <div class="mb-flow-num">2</div>
-          <div class="mb-flow-body"><h5>Layered Entries Trigger</h5><p>Price taps the zone — the bot opens layered entries automatically within it.</p></div>
-        </div>
-        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-        <div class="mb-flow-item">
-          <div class="mb-flow-num">3</div>
-          <div class="mb-flow-body"><h5>SL &amp; TP Set Automatically</h5><p>Stop loss goes below structure, take profit at the target — both bot-managed.</p></div>
-        </div>
-        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-        <div class="mb-flow-item">
-          <div class="mb-flow-num">4</div>
-          <div class="mb-flow-body"><h5>Close All or Let It Run</h5><p>Trader can Close All Trades anytime, or let the bot manage the exit fully.</p></div>
-        </div>
-        <div class="mb-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-        <div class="mb-flow-item">
-          <div class="mb-flow-num">5</div>
-          <div class="mb-flow-body"><h5>Performance Updates</h5><p>Result, win rate and RR update instantly in the performance statistics panel.</p></div>
-        </div>
-      </div>
-
-      <div class="mb-mockup-wrap">
-        <svg class="mb-mockup" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of the MT5 Bot dashboard showing a zone, SL/TP lines and performance statistics">
-          <rect x="1" y="1" width="718" height="298" rx="20" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/>
-          <rect x="1" y="1" width="718" height="46" rx="20" fill="var(--navy)"/>
-          <rect x="1" y="27" width="718" height="20" fill="var(--navy)"/>
-          <circle cx="28" cy="24" r="6" fill="#ef4444"/><circle cx="48" cy="24" r="6" fill="#f59e0b"/><circle cx="68" cy="24" r="6" fill="#22c55e"/>
-          <text x="360" y="29" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#fff">ZTU MT5 Bot — XAUUSD</text>
-          <!-- chart -->
-          <rect x="24" y="66" width="460" height="200" rx="10" fill="var(--bg)" stroke="var(--border)" stroke-width="1"/>
-          <rect x="150" y="160" width="140" height="46" fill="rgba(247,147,26,0.12)" stroke="rgba(247,147,26,0.45)" stroke-width="1.5" stroke-dasharray="4 3"/>
-          <text x="220" y="185" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="var(--orange)">ZONE</text>
-          <polyline points="40,230 90,210 140,220 190,190 230,183 280,150 330,160 380,120 430,130 470,95" stroke="var(--orange)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="40" y1="100" x2="470" y2="100" stroke="var(--green)" stroke-width="1.6" stroke-dasharray="5 4"/>
-          <text x="40" y="94" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="var(--green)">TP 2,398.00</text>
-          <line x1="40" y1="245" x2="470" y2="245" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="5 4"/>
-          <text x="40" y="259" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#dc2626">SL 2,375.00</text>
-          <circle cx="230" cy="183" r="4.5" fill="var(--orange)"/>
-          <!-- stats panel -->
-          <rect x="500" y="66" width="196" height="200" rx="10" fill="var(--bg)" stroke="var(--border)" stroke-width="1"/>
-          <text x="516" y="90" font-family="Inter,sans-serif" font-size="10" font-weight="800" letter-spacing="1" fill="var(--muted)">PERFORMANCE</text>
-          <text x="516" y="118" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Win Rate</text>
-          <text x="676" y="118" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--green)">68%</text>
-          <text x="516" y="144" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Avg RR</text>
-          <text x="676" y="144" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--heading)">1:2.1</text>
-          <text x="516" y="170" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Trades Today</text>
-          <text x="676" y="170" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--heading)">4</text>
-          <text x="516" y="196" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">Open Layers</text>
-          <text x="676" y="196" text-anchor="end" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="var(--orange)">3</text>
-          <rect x="516" y="216" width="160" height="34" rx="8" fill="var(--orange)"/>
-          <text x="596" y="237" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#fff">Close All Trades</text>
-        </svg>
-      </div>
-      <p style="text-align:center;font-size:12.5px;color:var(--muted);font-style:italic;margin-top:14px;">Illustrative example only.</p>
     </div>
   </section>
 

@@ -139,10 +139,12 @@
     .head-cta-hint span { font-size: 11px; color: var(--muted); }
     .head-cta-hint a {
       color: var(--heading); font-size: 11.5px; font-weight: 700;
-      transition: color .2s;
+      cursor: pointer; text-decoration: underline;
+      text-decoration-color: rgba(247,147,26,.35); text-underline-offset: 2px;
+      transition: color .2s, text-decoration-color .2s;
     }
     .head-cta-hint a::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 6px 2px 0; border-radius: 50%; background: var(--orange); }
-    .head-cta-hint a:hover { color: var(--orange); }
+    .head-cta-hint a:hover { color: var(--orange); text-decoration-color: var(--orange); }
     @media (max-width: 1040px) {
       .head-cta { gap: 8px; }
       .head-cta-hint { max-width: 150px; }
@@ -654,10 +656,12 @@
     .ibg-step-body a.ibg-inline-link:hover { text-decoration-color: var(--orange); }
     .ibg-guide-link {
       display: inline-flex; align-items: center; gap: 4px; margin-left: 7px;
-      font-size: 11.5px; font-weight: 700; color: var(--muted);
-      background: var(--surface-2); border: 1px solid var(--border);
+      font-size: 11.5px; font-weight: 700; color: var(--orange);
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,.3);
       padding: 3px 10px; border-radius: 100px; white-space: nowrap;
+      transition: background .2s, color .2s;
     }
+    .ibg-guide-link:hover { background: var(--orange); color: #fff; }
     .ibg-guide-link svg { width: 11px; height: 11px; }
     .ibg-step.is-final { background: rgba(22,163,74,0.06); border: 1px solid rgba(22,163,74,.25); border-radius: 14px; padding: 14px 16px; }
     .ibg-step.is-final .ibg-step-num { background: linear-gradient(135deg, #16a34a 0%, #12854e 100%); box-shadow: 0 4px 12px rgba(22,163,74,.32); }
@@ -808,9 +812,9 @@
             <span>Already joined under our IB?</span>
             <a href="license-request.html">Submit your License Request</a>
           </p>
-          <a href="license-request.html" id="signInBtn" class="btn-signin" aria-label="Submit License Request for Premium Access">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span class="si-label">License Request</span>
+          <a href="#how-to-join" id="signInBtn" class="btn-signin" aria-label="How to Join Us">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>
+            <span class="si-label">How to Join Us</span>
           </a>
         </div>
       </div>
@@ -1054,10 +1058,10 @@
                 <div class="ibg-step-body">
                   <h5>Create an account under our IB.</h5>
                   <p>Open your trading account through our official IB link.
-                    <span class="ibg-guide-link" title="Guide page coming soon">
+                    <a class="ibg-guide-link" href="create-account-with-us.html" title="Read the Complete Guide">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                      Guide — coming soon
-                    </span>
+                      Complete Guide
+                    </a>
                   </p>
                 </div>
               </div>
