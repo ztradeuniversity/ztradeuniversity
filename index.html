@@ -132,11 +132,23 @@
       box-shadow: 0 8px 20px rgba(247,147,26,0.32);
     }
     .head-cta { display: flex; align-items: center; gap: 12px; }
-    .head-cta-hint { text-align: right; line-height: 1.35; max-width: 190px; }
-    .head-cta-hint span { display: block; font-size: 11px; color: var(--muted); }
-    .head-cta-hint a { font-size: 12px; font-weight: 700; color: var(--orange); }
-    .head-cta-hint a:hover { text-decoration: underline; }
-    @media (max-width: 1040px) { .head-cta-hint { display: none; } }
+    .head-cta-hint {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+      max-width: 205px; padding-right: 2px; text-align: right; line-height: 1.3;
+    }
+    .head-cta-hint span { font-size: 11px; color: var(--muted); }
+    .head-cta-hint a {
+      color: var(--heading); font-size: 11.5px; font-weight: 700;
+      transition: color .2s;
+    }
+    .head-cta-hint a::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 6px 2px 0; border-radius: 50%; background: var(--orange); }
+    .head-cta-hint a:hover { color: var(--orange); }
+    @media (max-width: 1040px) {
+      .head-cta { gap: 8px; }
+      .head-cta-hint { max-width: 150px; }
+      .head-cta-hint span { font-size: 10px; }
+      .head-cta-hint a { font-size: 10.5px; }
+    }
 
     .hamburger {
       display: none; width: 44px; height: 44px; border-radius: 12px;
@@ -383,6 +395,7 @@
       .hamburger { display: flex; }
       .brand-text b { font-size: 16px; }
       .head-inner { gap: 10px; }
+      .head-cta-hint { display: none; }
       .btn-signin { height: 42px; padding: 0 16px; font-size: 14px; }
       .theme-toggle { width: 42px; height: 42px; }
       .soc { width: 36px; height: 36px; }
@@ -405,6 +418,13 @@
       .cards-grid { grid-template-columns: 1fr; max-width: 400px; }
       .cards-grid .card-slot:last-child { grid-column: auto; max-width: none; }
       .container { padding: 0 18px; }
+    }
+    @media (max-width: 480px) {
+      .head-inner { gap: 6px; }
+      .brand { gap: 0; }
+      .brand-text { display: none; }
+      .head-right, .head-cta { gap: 6px; }
+      .btn-signin { padding: 0 6px; font-size: 12px; }
     }
     @media (max-width: 380px) {
       .brand-text span { letter-spacing: 2.5px; }
@@ -647,15 +667,25 @@
     /* Step 3 — OTP Authentication button (reuses the existing shared
        ZTUPremiumCard OTP overlay; no new auth UI). */
     .ibg-otp-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      margin-top: 10px; padding: 10px 20px; border-radius: 100px; border: none; cursor: pointer;
-      background: linear-gradient(135deg, #16a34a 0%, #12854e 100%);
-      color: #fff; font-family: inherit; font-size: 13.5px; font-weight: 700;
-      box-shadow: 0 6px 16px rgba(22,163,74,.32);
-      transition: transform .2s, box-shadow .2s;
+      display: inline-flex; align-items: center; gap: 11px;
+      margin-top: 12px; padding: 8px 15px 8px 9px; border-radius: 14px;
+      border: 1px solid rgba(247,147,26,.58); cursor: pointer;
+      background: linear-gradient(135deg, #1b2945 0%, #0f172a 100%);
+      color: #fff; font-family: inherit; text-align: left;
+      box-shadow: 0 8px 20px rgba(15,23,42,.22), inset 0 1px 0 rgba(255,255,255,.12);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
     }
-    .ibg-otp-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(22,163,74,.42); }
-    .ibg-otp-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .ibg-otp-btn:hover { transform: translateY(-2px); border-color: var(--orange); box-shadow: 0 12px 24px rgba(15,23,42,.3), 0 0 0 3px rgba(247,147,26,.1); }
+    .ibg-otp-icon {
+      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--orange); background: rgba(247,147,26,.13); border: 1px solid rgba(247,147,26,.24);
+    }
+    .ibg-otp-icon svg { width: 17px; height: 17px; }
+    .ibg-otp-copy { display: flex; flex-direction: column; line-height: 1.2; }
+    .ibg-otp-title { font-size: 13px; font-weight: 800; letter-spacing: .1px; }
+    .ibg-otp-subtitle { margin-top: 3px; color: rgba(255,255,255,.68); font-size: 10.5px; font-weight: 600; }
+    .ibg-otp-arrow { width: 14px; height: 14px; margin-left: 3px; color: var(--orange); flex-shrink: 0; }
 
     /* Step 4 — activated feature list */
     .ibg-final-list { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
@@ -730,6 +760,7 @@
       .ibg-title { font-size: 23px; }
       .ibg-actions { flex-direction: column; align-items: stretch; margin-top: 28px; padding-top: 22px; }
       .ibg-actions .ib-primary, .ibg-actions .ib-secondary { justify-content: center; }
+      .ibg-otp-btn { width: 100%; justify-content: flex-start; }
     }
 
     /* accessibility focus */
@@ -774,8 +805,8 @@
         </button>
         <div class="head-cta">
           <p class="head-cta-hint">
-            <span>Already opened your account under our IB?</span>
-            <a href="license-request.html">Submit your License Request here</a>
+            <span>Already joined under our IB?</span>
+            <a href="license-request.html">Submit your License Request</a>
           </p>
           <a href="license-request.html" id="signInBtn" class="btn-signin" aria-label="Submit License Request for Premium Access">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -1044,17 +1075,18 @@
                 <div class="ibg-step-body">
                   <h5>Get Your OTP Authentication</h5>
                   <p>After your License Request has been approved, click the button below to verify your account. Enter your <b>IB Account Number</b>, receive your <b>OTP by email</b>, and verify it to activate all Premium features.</p>
-                  <button type="button" class="ibg-otp-btn" onclick="if(window.ZTUPremiumCard) ZTUPremiumCard.open({ dismissible: true });">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                    OTP Authentication
+                  <button type="button" class="ibg-otp-btn" onclick="if(window.ZTUPremiumCard) ZTUPremiumCard.open({ dismissible: true });" aria-label="Verify Premium Access with secure OTP authentication">
+                    <span class="ibg-otp-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                    <span class="ibg-otp-copy"><span class="ibg-otp-title">Verify Premium Access</span><span class="ibg-otp-subtitle">Secure OTP authentication</span></span>
+                    <svg class="ibg-otp-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                   </button>
                 </div>
               </div>
               <div class="ibg-step is-final">
                 <div class="ibg-step-num">4</div>
                 <div class="ibg-step-body">
-                  <h5 class="ibg-success-heading">Congratulations!</h5>
-                  <p>Your Premium account has been successfully activated. You now have access to all Premium Features including:</p>
+                  <h5 class="ibg-success-heading">Premium Access Activated</h5>
+                  <p>If you have successfully completed the three steps above, your Premium Access has now been activated.</p>
                   <ul class="ibg-final-list">
                     <li>Premium Library</li>
                     <li>Trading Journal</li>
