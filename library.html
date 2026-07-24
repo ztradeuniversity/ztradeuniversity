@@ -91,6 +91,28 @@
       height: 2px; border-radius: 2px; background: var(--navy);
     }
 
+    /* Contrast fix: assets/lux-global.css has a shared ":not(.lux-themed) header
+       .nav-links a" rule meant for dark dashboard headers (near-white text) that
+       also matches this page's light header, since <body> carries no theme class.
+       Same selector + !important, declared after the stylesheet link, wins the
+       cascade and restores readable nav text — no shared file touched. */
+    html body:not(.lux-themed) header .nav-links a {
+      color: var(--text) !important;
+    }
+    html body:not(.lux-themed) header .nav-links a:hover {
+      color: var(--purple) !important;
+      background: rgba(91,26,200,0.06) !important;
+    }
+    html body:not(.lux-themed) header .nav-links a.active {
+      color: var(--text) !important;
+      font-weight: 700 !important;
+    }
+    html body:not(.lux-themed) header .nav-links a:focus-visible {
+      outline: 2px solid var(--purple) !important;
+      outline-offset: 2px !important;
+      border-radius: 8px !important;
+    }
+
     .nav-right { display: flex; align-items: center; gap: 10px; }
 
     .nav-join {
@@ -231,18 +253,33 @@
     }
     .search-input::placeholder { color: var(--muted); }
 
+    /* Language FILTER (search-bar select, videos/audio/books by language) —
+       wrapped for a leading globe icon so it visually reads as "🌐 <language> ▾",
+       same pattern as the site's other language-selector UIs. Native <select>
+       kept as-is (no JS/behavior change) — styling only. */
+    .lang-select-wrap { position: relative; flex-shrink: 0; }
+    .lang-select-wrap .ls-icon {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: var(--purple); pointer-events: none; flex-shrink: 0;
+    }
     .lang-select {
-      padding: 11px 38px 11px 16px;
-      border: 1.5px solid var(--border); border-radius: var(--r-pill);
+      padding: 11px 40px 11px 42px;
+      border: 1.5px solid rgba(91,26,200,0.22); border-radius: var(--r-pill);
       font-size: 14px; font-family: 'Inter', sans-serif;
-      font-weight: 600; color: var(--text); background: var(--white);
+      font-weight: 700; color: var(--text); background: rgba(91,26,200,0.045);
       cursor: pointer; outline: none;
       -webkit-appearance: none; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6580' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237c3aed' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 13px center;
-      min-width: 200px;
-      transition: border-color .18s, box-shadow .18s;
+      background-position: right 16px center;
+      min-width: 210px; width: 100%;
+      transition: border-color .18s, box-shadow .18s, background .18s, transform .18s;
+    }
+    .lang-select:hover {
+      border-color: var(--purple2);
+      background: rgba(91,26,200,0.08);
+      box-shadow: 0 4px 14px rgba(91,26,200,0.12);
+      transform: translateY(-1px);
     }
     .lang-select:focus {
       border-color: var(--purple2);
@@ -781,6 +818,7 @@
     @media (max-width: 640px) {
       .container { padding: 0 18px; }
       .filter-bar { flex-direction: column; align-items: stretch; }
+      .lang-select-wrap { width: 100%; }
       .lang-select { min-width: 0; width: 100%; }
       .search-wrap { min-width: 0; }
       .video-grid, .audio-grid { grid-template-columns: 1fr; }
@@ -998,18 +1036,21 @@
         />
       </div>
 
-      <select class="lang-select" id="langSelect" aria-label="Filter by language">
-        <option value="">🌐 Select Your Language</option>
-        <option value="english">🇬🇧 English</option>
-        <option value="urdu">🇵🇰 Urdu</option>
-        <option value="arabic">🇸🇦 Arabic</option>
-        <option value="hindi">🇮🇳 Hindi</option>
-        <option value="turkish">🇹🇷 Turkish</option>
-        <option value="swahili">🌍 Swahili</option>
-        <option value="indonesian">🇮🇩 Indonesian</option>
-        <option value="portuguese">🇧🇷 Portuguese</option>
-        <option value="vietnamese">🇻🇳 Vietnamese</option>
-      </select>
+      <div class="lang-select-wrap">
+        <svg class="ls-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <select class="lang-select" id="langSelect" aria-label="Filter by language">
+          <option value="">Select Your Language</option>
+          <option value="english">🇬🇧 English</option>
+          <option value="urdu">🇵🇰 Urdu</option>
+          <option value="arabic">🇸🇦 Arabic</option>
+          <option value="hindi">🇮🇳 Hindi</option>
+          <option value="turkish">🇹🇷 Turkish</option>
+          <option value="swahili">🌍 Swahili</option>
+          <option value="indonesian">🇮🇩 Indonesian</option>
+          <option value="portuguese">🇧🇷 Portuguese</option>
+          <option value="vietnamese">🇻🇳 Vietnamese</option>
+        </select>
+      </div>
 
       <button class="clear-btn" id="clearBtn" onclick="clearFilters()" aria-label="Clear all filters">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

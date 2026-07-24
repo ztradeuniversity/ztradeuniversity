@@ -61,6 +61,32 @@
     .nav-links a.active { font-weight: 700; color: var(--text); }
     .nav-links a.active::after { content: ''; position: absolute; bottom: -2px; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: var(--navy); }
 
+    /* Contrast fix: assets/lux-global.css has a shared ":not(.lux-themed) header
+       .nav-links a" rule meant for dark dashboard headers (near-white text) that
+       also matches this page's light header, since <body> carries no theme class.
+       Same selector + !important, declared after the stylesheet link, wins the
+       cascade and restores readable nav text — no shared file touched. */
+    html body:not(.lux-themed) header .nav-links a,
+    html body:not(.lux-themed) header .lux-nav-links a {
+      color: var(--text) !important;
+    }
+    html body:not(.lux-themed) header .nav-links a:hover,
+    html body:not(.lux-themed) header .lux-nav-links a:hover {
+      color: var(--purple) !important;
+      background: rgba(200,156,63,0.08) !important;
+    }
+    html body:not(.lux-themed) header .nav-links a.active,
+    html body:not(.lux-themed) header .lux-nav-links a.active {
+      color: var(--navy) !important;
+      font-weight: 700 !important;
+    }
+    html body:not(.lux-themed) header .nav-links a:focus-visible,
+    html body:not(.lux-themed) header .lux-nav-links a:focus-visible {
+      outline: 2px solid var(--purple) !important;
+      outline-offset: 2px !important;
+      border-radius: 8px !important;
+    }
+
     .nav-join {
       display: inline-flex; align-items: center; gap: 9px;
       background: var(--navy); color: var(--white);
@@ -103,8 +129,42 @@
     .hero-meta-item { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--muted); }
     .hero-meta-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 3px rgba(200,156,63,0.22); flex-shrink: 0; }
 
+    /* ── ARTICLE SEARCH (Task 1) ── */
+    .articles-search-wrap { position: relative; max-width: 560px; margin: 0 auto 28px; }
+    .articles-search-wrap .as-icon {
+      position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; display: flex;
+    }
+    .articles-search {
+      width: 100%; padding: 15px 20px 15px 46px; border-radius: 100px;
+      border: 1.5px solid var(--border); background: var(--white);
+      font-family: 'Inter', sans-serif; font-size: 14.5px; color: var(--text);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .articles-search::placeholder { color: var(--muted); }
+    .articles-search:focus { outline: none; border-color: var(--purple2); box-shadow: 0 0 0 4px rgba(212,174,94,0.14); }
+    .articles-search-clear {
+      display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+      background: #f6f3eb; color: var(--muted); align-items: center; justify-content: center;
+      transition: background .18s, color .18s;
+    }
+    .articles-search-clear.show { display: flex; }
+    .articles-search-clear:hover { background: #eceef8; color: var(--purple2); }
+
+    /* ── EMPTY STATE ── */
+    .articles-empty { display: none; text-align: center; padding: 70px 20px; color: var(--muted); }
+    .articles-empty.show { display: block; }
+    .articles-empty svg { margin: 0 auto 16px; display: block; opacity: .35; }
+    .articles-empty h3 { font-family: 'Manrope','Inter',sans-serif; font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .articles-empty p { font-size: 14px; }
+
     /* ── CATEGORIES ── */
-    .cats-section { padding: 40px 0 0; background: var(--white); border-bottom: 1px solid var(--border); }
+    /* display/height/align reset: this section is also a <nav> element, so it
+       otherwise inherits the header's bare "nav{display:flex;height:72px;...}"
+       rule and gets its (taller) content vertically centered/clipped. */
+    .cats-section { display: block; height: auto; padding: 40px 0 0; background: var(--white); border-bottom: 1px solid var(--border); }
     .cats-inner {
       display: flex; align-items: center;
       column-gap: 8px; row-gap: 10px;
@@ -484,6 +544,15 @@
 <!-- ── CATEGORY FILTER ── -->
 <nav class="cats-section" aria-label="Article categories">
   <div class="container">
+    <div class="articles-search-wrap">
+      <span class="as-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="search" id="articlesSearch" class="articles-search" placeholder="Search by title, topic, category, or keyword…" aria-label="Search articles" autocomplete="off" />
+      <button type="button" class="articles-search-clear" id="articlesSearchClear" aria-label="Clear search">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <div class="cats-inner" role="tablist">
       <button class="cat-pill active" data-cat="all" role="tab" aria-selected="true">
         <span class="cp-dot" style="background:#d4ae5e"></span> All Articles
@@ -1720,6 +1789,12 @@
 
     </div><!-- /articles-grid -->
 
+    <div class="articles-empty" id="articlesEmpty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>No articles found</h3>
+      <p>Try a different keyword, or browse by category instead.</p>
+    </div>
+
     <div class="load-more-wrap">
       <a href="#" class="btn-load">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1843,26 +1918,110 @@
     if (e.target === this) toggleMenu();
   });
 
-  // Category filtering
-  const pills  = document.querySelectorAll('.cat-pill');
-  const cards  = document.querySelectorAll('.ac');
+  // Category filtering + real-time ranked search (Task 1) — the two combine
+  // (AND): a search query is applied only within the currently active category.
+  const pills   = document.querySelectorAll('.cat-pill');
+  const cards   = document.querySelectorAll('.ac');
   const countEl = document.getElementById('articleCount');
+  const emptyEl = document.getElementById('articlesEmpty');
+  const searchInput = document.getElementById('articlesSearch');
+  const searchClear = document.getElementById('articlesSearchClear');
+
+  let activeCategory = 'all';
+  let searchQuery = '';
+
+  // Build a lightweight search index once — avoids re-reading the DOM on
+  // every keystroke so typing feels instant even while ranking every card.
+  const cardIndex = Array.prototype.map.call(cards, card => ({
+    card,
+    title:   (card.querySelector('.ac-title')  ?.textContent || '').toLowerCase(),
+    excerpt: (card.querySelector('.ac-excerpt')?.textContent || '').toLowerCase(),
+    cat: (
+      (card.dataset.category || '').replace(/-/g, ' ') + ' ' +
+      (card.querySelector('.ac-cat')?.textContent || '') + ' ' +
+      (card.querySelector('.ac-visual-label')?.textContent || '')
+    ).toLowerCase()
+  }));
+
+  // Relevance score for one card against a query: title matches (especially
+  // an exact/leading match) outrank category matches, which outrank excerpt
+  // matches — so "gold" surfaces the Gold Trading guide before an article
+  // that merely mentions gold in passing. Partial words score via .includes().
+  function scoreEntry(entry, q, words) {
+    let score = 0;
+    if (entry.title === q) score += 100;
+    else if (entry.title.startsWith(q)) score += 40;
+    else if (entry.title.includes(q)) score += 25;
+    if (entry.cat.includes(q)) score += 15;
+    if (entry.excerpt.includes(q)) score += 8;
+    words.forEach(w => {
+      if (!w) return;
+      if (entry.title.includes(w))   score += 6;
+      if (entry.cat.includes(w))     score += 3;
+      if (entry.excerpt.includes(w)) score += 1;
+    });
+    return score;
+  }
+
+  function applyFilters() {
+    const q = searchQuery.trim().toLowerCase();
+    const words = q.split(/\s+/).filter(Boolean);
+    let visible = 0;
+
+    if (!q) {
+      cardIndex.forEach(entry => {
+        const show = activeCategory === 'all' || entry.card.dataset.category === activeCategory;
+        entry.card.style.display = show ? '' : 'none';
+        entry.card.style.order = '';
+        if (show) visible++;
+      });
+    } else {
+      const ranked = [];
+      cardIndex.forEach(entry => {
+        const inCat = activeCategory === 'all' || entry.card.dataset.category === activeCategory;
+        if (!inCat) { entry.card.style.display = 'none'; return; }
+        const score = scoreEntry(entry, q, words);
+        if (score > 0) ranked.push({ entry, score });
+        else entry.card.style.display = 'none';
+      });
+      ranked.sort((a, b) => b.score - a.score);
+      ranked.forEach((r, i) => {
+        r.entry.card.style.display = '';
+        r.entry.card.style.order = i;
+      });
+      visible = ranked.length;
+    }
+
+    countEl.textContent = q
+      ? visible + ' result' + (visible !== 1 ? 's' : '') + ' for "' + searchInput.value.trim() + '"'
+      : 'Showing ' + visible + ' article' + (visible !== 1 ? 's' : '');
+    emptyEl.classList.toggle('show', visible === 0);
+    searchClear.classList.toggle('show', q.length > 0);
+  }
 
   pills.forEach(pill => {
     pill.addEventListener('click', () => {
       pills.forEach(p => { p.classList.remove('active'); p.setAttribute('aria-selected','false'); });
       pill.classList.add('active');
       pill.setAttribute('aria-selected','true');
-
-      const cat = pill.dataset.cat;
-      let visible = 0;
-      cards.forEach(card => {
-        const show = cat === 'all' || card.dataset.category === cat;
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-      countEl.textContent = 'Showing ' + visible + ' article' + (visible !== 1 ? 's' : '');
+      activeCategory = pill.dataset.cat;
+      applyFilters();
     });
+  });
+
+  let searchDebounce = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      searchQuery = searchInput.value;
+      applyFilters();
+    }, 120);
+  });
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchQuery = '';
+    applyFilters();
+    searchInput.focus();
   });
 
   // Expandable categories — show first 8, hide remainder behind "See More"

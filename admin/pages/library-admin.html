@@ -161,11 +161,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .page-head h1 { font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 900; color: var(--text); flex: 1; }
 .btn {
-  display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 8px 16px; border-radius: var(--r); border: none; cursor: pointer;
   font-size: 13px; font-weight: 700; font-family: 'Inter', sans-serif;
   transition: .18s; white-space: nowrap;
 }
+.btn:disabled { opacity: .55; cursor: not-allowed; pointer-events: none; }
 .btn-primary {
   background: linear-gradient(135deg, var(--purple), var(--purple2));
   color: #fff; box-shadow: 0 3px 12px rgba(124,58,237,0.28);
@@ -713,11 +714,39 @@ document.addEventListener('DOMContentLoaded', () => {
 /* =============================================================================
    SUPABASE HELPERS
 ============================================================================= */
+/* Turn a failed PostgREST response into a meaningful, classified message so
+   production issues are diagnosable at a glance instead of a bare status code
+   (e.g. the old "UPDATE library_books failed: 400"). Reads the JSON error body
+   Supabase returns { code, message, hint, details } and maps it to a category:
+   schema / permission / validation / auth / not-found. */
+async function sbError(op, table, r) {
+  let body = '';
+  try { body = await r.text(); } catch {}
+  let j = null;
+  try { j = JSON.parse(body); } catch {}
+  const code = j?.code || '';
+  const msg  = j?.message || body || '(no response body)';
+  const hint = j?.hint ? ` Hint: ${j.hint}` : '';
+
+  let kind;
+  if (r.status === 401)                                   kind = 'AUTH — apikey/token rejected';
+  else if (r.status === 403 || code === '42501')          kind = 'PERMISSION — blocked by RLS policy';
+  else if (r.status === 404)                              kind = 'NOT FOUND — table/endpoint missing';
+  else if (code === 'PGRST204' || code === '42703')       kind = 'DB SCHEMA — column does not exist';
+  else if (code === '23505')                              kind = 'VALIDATION — duplicate/unique conflict';
+  else if (code === '23503' || code === '23502' || code === '23514')
+                                                          kind = 'VALIDATION — constraint violated';
+  else if (r.status === 400)                              kind = 'REQUEST — invalid payload/column';
+  else                                                    kind = 'API';
+
+  return new Error(`${op} ${table} → ${r.status} [${kind}]${code ? ' (' + code + ')' : ''}: ${msg}${hint}`);
+}
+
 async function sbGet(table, qs = '') {
   const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}?${qs}`, {
     headers: { 'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}` }
   });
-  if (!r.ok) throw new Error(`GET ${table} failed: ${r.status}`);
+  if (!r.ok) throw await sbError('GET', table, r);
   return r.json();
 }
 
@@ -730,7 +759,7 @@ async function sbInsert(table, data) {
     },
     body: JSON.stringify(data)
   });
-  if (!r.ok) throw new Error(`INSERT ${table} failed: ${r.status} ${await r.text()}`);
+  if (!r.ok) throw await sbError('INSERT', table, r);
   return r.json();
 }
 
@@ -743,7 +772,7 @@ async function sbUpdate(table, id, data) {
     },
     body: JSON.stringify(data)
   });
-  if (!r.ok) throw new Error(`UPDATE ${table} failed: ${r.status}`);
+  if (!r.ok) throw await sbError('UPDATE', table, r);
   return r.json();
 }
 
@@ -752,7 +781,7 @@ async function sbDelete(table, id) {
     method: 'DELETE',
     headers: { 'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}` }
   });
-  if (!r.ok) throw new Error(`DELETE ${table} failed: ${r.status}`);
+  if (!r.ok) throw await sbError('DELETE', table, r);
 }
 
 /* Upload a file to Supabase Storage WITHOUT a client-side service key.
@@ -911,7 +940,7 @@ function buildRow(item) {
   ].join('');
 
   const freeBtn = canFree ? `
-      <button class="btn btn-sm ${item.is_free ? 'btn-ghost' : 'btn-free'}" onclick="toggleFree('${item.id}',${!!item.is_free})" title="${item.is_free ? 'Remove from Free Classes' : 'Publish to Free Classes'}">
+      <button class="btn btn-sm ${item.is_free ? 'btn-ghost' : 'btn-free'}" onclick="toggleFree(this,'${item.id}',${!!item.is_free})" title="${item.is_free ? 'Remove from Free Classes' : 'Publish to Free Classes'}">
         ${item.is_free ? 'Remove Free' : 'Free Class'}
       </button>` : '';
 
@@ -921,7 +950,7 @@ function buildRow(item) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Edit
       </button>
-      <button class="btn btn-sm ${item.is_published ? 'btn-amber' : 'btn-success'}" onclick="togglePublish('${item.id}',${item.is_published})" title="${item.is_published ? 'Unpublish' : 'Publish'}">
+      <button class="btn btn-sm ${item.is_published ? 'btn-amber' : 'btn-success'}" onclick="togglePublish(this,'${item.id}',${item.is_published})" title="${item.is_published ? 'Unpublish' : 'Publish'}">
         ${item.is_published ? 'Unpublish' : 'Publish'}
       </button>${freeBtn}
       <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')" title="Delete">
@@ -1366,7 +1395,6 @@ async function saveItem() {
 
     const table = TAB_CONFIG[currentTab].table;
     if (editingId) {
-      payload.updated_at = new Date().toISOString();
       await sbUpdate(table, editingId, payload);
       toast('Item updated successfully.', 'success');
     } else {
@@ -1387,24 +1415,41 @@ async function saveItem() {
 
 /* =============================================================================
    QUICK ACTIONS
+   Buttons disable themselves + show a spinner the instant they're clicked
+   (blocks double-clicks), and on failure restore their exact prior label/state
+   so the UI never lies about what actually happened server-side.
 ============================================================================= */
-async function togglePublish(id, currentlyPublished) {
+async function togglePublish(btn, id, currentlyPublished) {
   const table = TAB_CONFIG[currentTab].table;
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>';
   try {
-    await sbUpdate(table, id, { is_published: !currentlyPublished, updated_at: new Date().toISOString() });
+    await sbUpdate(table, id, { is_published: !currentlyPublished });
     toast(`Item ${currentlyPublished ? 'unpublished' : 'published'}.`, 'success');
     loadCurrentTab();
-  } catch (e) { toast(`Failed: ${e.message}`, 'error'); }
+  } catch (e) {
+    toast(`Failed: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }
 
 /* Publish / remove an item to the public Free Classes page (books & videos only). */
-async function toggleFree(id, currentlyFree) {
+async function toggleFree(btn, id, currentlyFree) {
   const table = TAB_CONFIG[currentTab].table;
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>';
   try {
-    await sbUpdate(table, id, { is_free: !currentlyFree, updated_at: new Date().toISOString() });
+    await sbUpdate(table, id, { is_free: !currentlyFree });
     toast(currentlyFree ? 'Removed from Free Classes.' : 'Published to Free Classes.', 'success');
     loadCurrentTab();
-  } catch (e) { toast(`Failed: ${e.message}`, 'error'); }
+  } catch (e) {
+    toast(`Failed: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }
 
 async function deleteItem(id) {

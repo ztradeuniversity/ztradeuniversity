@@ -558,14 +558,25 @@
     }
     .ibg-top { display: flex; justify-content: center; margin-bottom: 16px; }
     .ibg-lang-btn {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 7px 16px; border-radius: 100px; border: 1px solid rgba(247,147,26,0.3);
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 7px 8px 7px 16px; border-radius: 100px; border: 1px solid rgba(247,147,26,0.3);
       background: var(--orange-soft); color: var(--orange);
       font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
       transition: transform .2s, box-shadow .2s;
     }
     .ibg-lang-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(247,147,26,0.22); }
-    .ibg-lang-btn svg { width: 14px; height: 14px; }
+    .ibg-lang-btn > svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .ibg-lang-label { white-space: nowrap; }
+    .ibg-lang-current {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--surface); color: var(--heading);
+      border: 1px solid rgba(247,147,26,0.28);
+      padding: 5px 10px 5px 12px; border-radius: 100px;
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+      max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ibg-lang-current .ztu-lang__chev { width: 12px; height: 12px; color: var(--orange); flex-shrink: 0; }
+    @media (max-width: 420px) { .ibg-lang-label { display: none; } }
 
     .ibg-head { text-align: center; max-width: 640px; margin: 0 auto 34px; }
     .ibg-badge {
@@ -955,17 +966,17 @@
           <div class="ztu-lang notranslate" translate="no" id="ibgLangSel">
             <button type="button" class="ibg-lang-btn" id="ibgLangBtn" aria-haspopup="listbox" aria-expanded="false" onclick="ibgToggleLang(event)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              Read in your language
+              <span class="ibg-lang-label">Read in your language</span>
+              <span class="ibg-lang-current">
+                <span id="ibgLangCurrentText">English</span>
+                <svg class="ztu-lang__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
             </button>
             <div class="ztu-lang__menu" id="ibgLangMenu" role="listbox" aria-label="Choose a language"></div>
           </div>
         </div>
 
         <div class="ibg-head">
-          <span class="ibg-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Get Premium Membership FREE
-          </span>
           <h2 class="ibg-title">How to Join Us</h2>
           <div class="ibg-highlight">Unlock every premium feature on Z Trade University for <b>FREE</b>.</div>
         </div>
@@ -1301,15 +1312,19 @@
        manipulates body's own attributes) — so #how-to-join is the only
        section left translatable, and this button just drives the same
        apply() engine into it. ── */
+    function ibgLangs() {
+      return (window.ZTULang && window.ZTULang.langs) || [['en', 'EN', 'English']];
+    }
     function ibgToggleLang(e) {
       if (e) e.stopPropagation();
       var sel = document.getElementById('ibgLangSel');
       var menu = document.getElementById('ibgLangMenu');
       if (!menu.childElementCount) {
-        var langs = (window.ZTULang && window.ZTULang.langs) || [['en', 'EN', 'English']];
+        var langs = ibgLangs();
+        var current = document.getElementById('ibgLangCurrentText').getAttribute('data-code') || 'en';
         var html = '';
         for (var i = 0; i < langs.length; i++) {
-          html += '<button type="button" class="ztu-lang__opt" role="option" data-code="' + langs[i][0] + '">' + langs[i][2] + '</button>';
+          html += '<button type="button" class="ztu-lang__opt' + (langs[i][0] === current ? ' active' : '') + '" role="option" aria-selected="' + (langs[i][0] === current ? 'true' : 'false') + '" data-code="' + langs[i][0] + '">' + langs[i][2] + '</button>';
         }
         menu.innerHTML = html;
         menu.addEventListener('click', function (ev) {
@@ -1324,12 +1339,31 @@
       var sel = document.getElementById('ibgLangSel');
       if (sel && !sel.contains(e.target)) sel.classList.remove('open');
     });
+    /* Reflects the chosen language in the button chip ("English ▼" → "اردو ▼")
+       so the control always shows what's currently selected, per Task 2. */
+    function ibgSetCurrentLang(code) {
+      var langs = ibgLangs();
+      var match = langs.filter(function (l) { return l[0] === code; })[0];
+      var txt = document.getElementById('ibgLangCurrentText');
+      txt.textContent = match ? match[2] : 'English';
+      txt.setAttribute('data-code', code);
+    }
     function ibgApplyLang(lang) {
       var sel = document.getElementById('ibgLangSel');
       sel.classList.remove('open');
+      ibgSetCurrentLang(lang);
       if (!window.ZTULang) return;
       window.ZTULang.apply(lang);
     }
+    /* Restore the chip on load to match any language already saved by the
+       shared header selector (localStorage key 'ztu-lang') — UI sync only,
+       translation logic/engine is untouched. */
+    (function () {
+      try {
+        var saved = JSON.parse(localStorage.getItem('ztu-lang') || 'null');
+        if (saved && saved.lang) ibgSetCurrentLang(saved.lang);
+      } catch (e) {}
+    })();
 
     /* Deep-link smooth scroll to the "How to Join Us" guide (e.g. from the
        Signal History page's CTA). Native #hash navigation on a fresh page
