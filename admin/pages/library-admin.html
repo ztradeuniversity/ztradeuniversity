@@ -249,6 +249,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .status-dot.unpub::before { background: var(--muted); }
 .status-dot.feat { color: #fcd34d; }
 .status-dot.feat::before { background: var(--amber); }
+.status-dot.free { color: #c4b5fd; }
+.status-dot.free::before { background: var(--purple2); box-shadow: 0 0 0 2px rgba(159,110,245,0.25); }
+.btn-free { background: rgba(124,58,237,0.14); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.28); }
+.btn-free:hover { background: rgba(124,58,237,0.24); }
 .actions-cell { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
 .empty-row td { text-align: center; padding: 48px; color: var(--muted2); font-size: 13px; }
 .loading-row td { text-align: center; padding: 40px; }
@@ -899,10 +903,17 @@ function buildRow(item) {
     ? `<div class="cell-cover"><img src="${esc(item.cover_url)}" alt="" loading="lazy" /></div>`
     : `<div class="cell-cover">${TAB_CONFIG[currentTab].icon}</div>`;
 
+  const canFree = (currentTab === 'books' || currentTab === 'videos');
   const statusHtml = [
     item.is_published ? '<span class="status-dot pub">Published</span>' : '<span class="status-dot unpub">Draft</span>',
-    item.is_featured  ? '<span class="status-dot feat" style="margin-left:6px;">Featured</span>' : ''
+    item.is_featured  ? '<span class="status-dot feat" style="margin-left:6px;">Featured</span>' : '',
+    (canFree && item.is_free) ? '<span class="status-dot free" style="margin-left:6px;">Free Class</span>' : ''
   ].join('');
+
+  const freeBtn = canFree ? `
+      <button class="btn btn-sm ${item.is_free ? 'btn-ghost' : 'btn-free'}" onclick="toggleFree('${item.id}',${!!item.is_free})" title="${item.is_free ? 'Remove from Free Classes' : 'Publish to Free Classes'}">
+        ${item.is_free ? 'Remove Free' : 'Free Class'}
+      </button>` : '';
 
   const actions = `
     <div class="actions-cell">
@@ -912,7 +923,7 @@ function buildRow(item) {
       </button>
       <button class="btn btn-sm ${item.is_published ? 'btn-amber' : 'btn-success'}" onclick="togglePublish('${item.id}',${item.is_published})" title="${item.is_published ? 'Unpublish' : 'Publish'}">
         ${item.is_published ? 'Unpublish' : 'Publish'}
-      </button>
+      </button>${freeBtn}
       <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')" title="Delete">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         Delete
@@ -1061,6 +1072,12 @@ function buildBookForm(item = {}) {
   <div class="toggle-row">
     <div><div class="toggle-label">Featured</div><div class="toggle-sub">Show at top of section</div></div>
     <label class="toggle"><input type="checkbox" id="fFeatured" ${item.is_featured?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
+</div>
+<div class="form-row">
+  <div class="toggle-row">
+    <div><div class="toggle-label">Publish to Free Classes</div><div class="toggle-sub">Public on free-classes.html — no login</div></div>
+    <label class="toggle"><input type="checkbox" id="fFree" ${item.is_free?'checked':''}/><span class="toggle-slider"></span></label>
   </div>
 </div>`;
 }
@@ -1221,6 +1238,12 @@ function buildVideoForm(item = {}) {
     <div><div class="toggle-label">Featured</div><div class="toggle-sub">Show at top of section</div></div>
     <label class="toggle"><input type="checkbox" id="fFeatured" ${item.is_featured?'checked':''}/><span class="toggle-slider"></span></label>
   </div>
+</div>
+<div class="form-row">
+  <div class="toggle-row">
+    <div><div class="toggle-label">Publish to Free Classes</div><div class="toggle-sub">Public on free-classes.html — no login</div></div>
+    <label class="toggle"><input type="checkbox" id="fFree" ${item.is_free?'checked':''}/><span class="toggle-slider"></span></label>
+  </div>
 </div>`;
 }
 
@@ -1336,6 +1359,10 @@ async function saveItem() {
       payload.file_url    = mediaUrl;
       payload.thumbnail_url = coverUrl;
     }
+    /* Free Classes public flag — books & videos only (audio stays premium-only) */
+    if (currentTab === 'books' || currentTab === 'videos') {
+      payload.is_free = document.getElementById('fFree')?.checked ?? false;
+    }
 
     const table = TAB_CONFIG[currentTab].table;
     if (editingId) {
@@ -1366,6 +1393,16 @@ async function togglePublish(id, currentlyPublished) {
   try {
     await sbUpdate(table, id, { is_published: !currentlyPublished, updated_at: new Date().toISOString() });
     toast(`Item ${currentlyPublished ? 'unpublished' : 'published'}.`, 'success');
+    loadCurrentTab();
+  } catch (e) { toast(`Failed: ${e.message}`, 'error'); }
+}
+
+/* Publish / remove an item to the public Free Classes page (books & videos only). */
+async function toggleFree(id, currentlyFree) {
+  const table = TAB_CONFIG[currentTab].table;
+  try {
+    await sbUpdate(table, id, { is_free: !currentlyFree, updated_at: new Date().toISOString() });
+    toast(currentlyFree ? 'Removed from Free Classes.' : 'Published to Free Classes.', 'success');
     loadCurrentTab();
   } catch (e) { toast(`Failed: ${e.message}`, 'error'); }
 }

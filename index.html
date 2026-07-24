@@ -622,8 +622,16 @@
       padding: 3px 10px; border-radius: 100px; white-space: nowrap;
     }
     .ibg-guide-link svg { width: 11px; height: 11px; }
-    .ibg-step.is-final { background: var(--orange-soft); border: 1px solid rgba(247,147,26,.25); border-radius: 14px; padding: 14px 16px; }
+    .ibg-step.is-final { background: rgba(22,163,74,0.06); border: 1px solid rgba(22,163,74,.25); border-radius: 14px; padding: 14px 16px; }
     .ibg-step.is-final .ibg-step-num { background: linear-gradient(135deg, #16a34a 0%, #12854e 100%); box-shadow: 0 4px 12px rgba(22,163,74,.32); }
+    .ibg-success-heading { color: #16a34a !important; }
+    .ibg-green { color: #16a34a !important; font-weight: 800; }
+
+    /* Premium polish for the join-guide action buttons only (scoped — the
+       shared .ib-primary/.ib-secondary classes also drive the sign-in modal). */
+    .ibg-actions .ib-primary { box-shadow: 0 10px 24px rgba(247,147,26,.36); }
+    .ibg-actions .ib-primary:hover { box-shadow: 0 14px 30px rgba(247,147,26,.48); }
+    .ibg-actions .ib-secondary { background: var(--surface); font-weight: 800; }
 
     /* Benefits — right column */
     .ibg-benefits { display: flex; flex-direction: column; gap: 10px; }
@@ -713,7 +721,7 @@
 <body>
 
   <!-- ════════════════ HEADER ════════════════ -->
-  <header class="site-head">
+  <header class="site-head notranslate" translate="no">
     <div class="container head-inner">
       <button class="hamburger" type="button" onclick="toggleMenu()" aria-label="Open menu">
         <span></span><span></span><span></span>
@@ -738,7 +746,7 @@
   </header>
 
   <!-- ════════════════ MOBILE MENU ════════════════ -->
-  <div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu notranslate" id="mobileMenu" translate="no">
     <div class="mobile-panel">
       <div class="mm-head">
         <a href="index.html" class="brand notranslate" translate="no">
@@ -761,7 +769,7 @@
   </div>
 
   <!-- ════════════════ SOCIAL STRIP ════════════════ -->
-  <div class="social-strip">
+  <div class="social-strip notranslate" translate="no">
     <div class="container social-strip-inner">
       <a href="https://wa.me/17189730347" class="soc wa" target="_blank" rel="noopener" aria-label="WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.5-.2-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.5-.7-2.5-1.3-3.5-3-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4zM12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
@@ -788,7 +796,7 @@
   </div>
 
   <!-- ════════════════ HERO ════════════════ -->
-  <section class="hero">
+  <section class="hero notranslate" translate="no">
     <!-- chart decorations (left & right) -->
     <svg class="hero-chart left" viewBox="0 0 120 160" aria-hidden="true" fill="none">
       <polyline points="6,150 26,120 46,128 66,86 86,96 112,40" stroke="#F7931A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
@@ -837,7 +845,7 @@
 
         <!-- QUICK ACTIONS -->
         <div class="quick-actions">
-          <a class="qa" href="articles.html">
+          <a class="qa" href="free-classes.html">
             <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span>
             <span class="qa-label">Free Classes</span>
             <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
@@ -847,9 +855,9 @@
             <span class="qa-label">Signal History</span>
             <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
-          <a class="qa" href="create-account-with-us.html">
+          <a class="qa" href="articles.html">
             <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <span class="qa-label">How To Join Us</span>
+            <span class="qa-label">Read Articles</span>
             <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
         </div>
@@ -870,7 +878,7 @@
   </section>
 
   <!-- ════════════════ FEATURE CARDS (order: Trading Tools · MT5 Bot · Library) ════════════════ -->
-  <section class="features">
+  <section class="features notranslate" translate="no">
     <div class="container">
       <div class="cards-grid">
 
@@ -944,16 +952,19 @@
       <div class="ibg-card">
 
         <div class="ibg-top">
-          <button type="button" class="ibg-lang-btn" onclick="ibgOpenLang()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            Read in your language
-          </button>
+          <div class="ztu-lang notranslate" translate="no" id="ibgLangSel">
+            <button type="button" class="ibg-lang-btn" id="ibgLangBtn" aria-haspopup="listbox" aria-expanded="false" onclick="ibgToggleLang(event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Read in your language
+            </button>
+            <div class="ztu-lang__menu" id="ibgLangMenu" role="listbox" aria-label="Choose a language"></div>
+          </div>
         </div>
 
         <div class="ibg-head">
           <span class="ibg-badge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Membership
+            Get Premium Membership FREE
           </span>
           <h2 class="ibg-title">How to Join Us</h2>
           <div class="ibg-highlight">Unlock every premium feature on Z Trade University for <b>FREE</b>.</div>
@@ -985,12 +996,10 @@
                 </div>
               </div>
               <div class="ibg-step is-final">
-                <div class="ibg-step-num">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                </div>
+                <div class="ibg-step-num">3</div>
                 <div class="ibg-step-body">
-                  <h5>Congratulations! 🎉</h5>
-                  <p>Your account is now part of our team and your benefits become available.</p>
+                  <h5 class="ibg-success-heading">Congratulations!</h5>
+                  <p>If you have successfully joined under our IB and submitted your License Request, all premium features will be unlocked for <b class="ibg-green">FREE</b>.</p>
                 </div>
               </div>
             </div>
@@ -1051,19 +1060,12 @@
             </a>
             <p class="ibg-license-note">Already joined under our IB? Submit your License Request.</p>
           </div>
-          <a class="ib-primary" href="create-account-with-us.html">
-            Join Our IB Team
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-        </div>
-
-        <div class="ibg-success">
-          <div class="ibg-success-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          </div>
-          <div class="ibg-success-body">
-            <h5>Congratulations!</h5>
-            <p>If you have successfully joined under our IB and submitted your License Request, <b>all premium features will be unlocked for FREE.</b></p>
+          <div class="ibg-license-cta">
+            <a class="ib-primary" href="create-account-with-us.html">
+              Join Our IB Team
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <p class="ibg-license-note">Step-by-step guide to join our IB.</p>
           </div>
         </div>
 
@@ -1072,7 +1074,7 @@
   </section>
 
   <!-- ════════════════ IB PARTNER MODAL (Sign In) ════════════════ -->
-  <div class="ib-modal" id="ibModal" role="dialog" aria-modal="true" aria-labelledby="ibTitle" aria-describedby="ibSub" hidden>
+  <div class="ib-modal notranslate" id="ibModal" role="dialog" aria-modal="true" aria-labelledby="ibTitle" aria-describedby="ibSub" translate="no" hidden>
     <div class="ib-card" role="document">
       <button class="ib-close" type="button" onclick="closeIbModal()" aria-label="Close">&times;</button>
       <div class="ib-icon" aria-hidden="true">
@@ -1103,7 +1105,7 @@
   </div>
 
   <!-- ════════════════ FOOTER ════════════════ -->
-  <footer class="site-foot">
+  <footer class="site-foot notranslate" translate="no">
     <div class="foot-div"></div>
     <p class="foot-text">© 2024 Z Trade University. All rights reserved.</p>
   </footer>
@@ -1291,14 +1293,42 @@
     })();
 
     /* ── IB Join Guide: "Read in your language" reuses the EXISTING site-wide
-       language system (assets/ztu-lang.js) — opens the same header selector
-       rather than building a second translation mechanism. The card's title
-       and body carry no notranslate marking, so Google Translate (already
-       driving the whole page once a language is picked) translates them
-       automatically along with everything else. ── */
-    function ibgOpenLang() {
-      var btn = document.getElementById('ztuLangBtn');
-      if (btn) { btn.scrollIntoView({ block: 'center', behavior: 'smooth' }); btn.click(); btn.focus(); }
+       translation engine (window.ZTULang, from assets/ztu-lang.js) but scopes
+       the result to just this card. Every other top-level homepage section is
+       marked translate="no"/notranslate in the markup above, which is the
+       boundary Google Translate actually honours reliably (toggling it on
+       <body> at click-time was tried and is NOT reliable — Google's widget
+       manipulates body's own attributes) — so #how-to-join is the only
+       section left translatable, and this button just drives the same
+       apply() engine into it. ── */
+    function ibgToggleLang(e) {
+      if (e) e.stopPropagation();
+      var sel = document.getElementById('ibgLangSel');
+      var menu = document.getElementById('ibgLangMenu');
+      if (!menu.childElementCount) {
+        var langs = (window.ZTULang && window.ZTULang.langs) || [['en', 'EN', 'English']];
+        var html = '';
+        for (var i = 0; i < langs.length; i++) {
+          html += '<button type="button" class="ztu-lang__opt" role="option" data-code="' + langs[i][0] + '">' + langs[i][2] + '</button>';
+        }
+        menu.innerHTML = html;
+        menu.addEventListener('click', function (ev) {
+          var o = ev.target.closest('.ztu-lang__opt');
+          if (o) ibgApplyLang(o.getAttribute('data-code'));
+        });
+      }
+      var open = sel.classList.toggle('open');
+      document.getElementById('ibgLangBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    document.addEventListener('click', function (e) {
+      var sel = document.getElementById('ibgLangSel');
+      if (sel && !sel.contains(e.target)) sel.classList.remove('open');
+    });
+    function ibgApplyLang(lang) {
+      var sel = document.getElementById('ibgLangSel');
+      sel.classList.remove('open');
+      if (!window.ZTULang) return;
+      window.ZTULang.apply(lang);
     }
 
     /* Deep-link smooth scroll to the "How to Join Us" guide (e.g. from the
@@ -1345,7 +1375,7 @@
     .ztu-install-x:hover { background: rgba(0,0,0,0.32); color: #fff; }
     @media (max-width: 480px) { .ztu-install { right: 12px; bottom: 12px; } }
   </style>
-  <div id="ztuInstall" class="ztu-install" hidden>
+  <div id="ztuInstall" class="ztu-install notranslate" translate="no" hidden>
     <button id="ztuInstallBtn" class="ztu-install-btn" type="button">
       <span class="ztu-install-icon" aria-hidden="true">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>

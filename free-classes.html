@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="assets/lux-global.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Classes – Z Trade University</title>
+  <meta name="description" content="Free trading education from Z Trade University — watch videos and read books, no login required. A sample of our Premium Library, free for everyone." />
+  <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+  <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
+  <link rel="canonical" href="https://ztradeuniversity.com/free-classes.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Free Classes – Z Trade University" />
+  <meta property="og:description" content="Free trading education — videos & books, no login required." />
+  <meta property="og:url" content="https://ztradeuniversity.com/free-classes.html" />
+  <meta property="og:image" content="https://ztradeuniversity.com/assets/ztu-logo.png" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       FREE CLASSES — Z TRADE UNIVERSITY
+       Public (no login). Reuses the Library visual system.
+       Content is the SAME Supabase Library, filtered is_free=true.
+    ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:#0b1120; --navy2:#111827; --purple:#5b1ac8; --purple2:#7c3aed; --purple3:#9f6ef5;
+      --lime:#acd400; --lime2:#c6f000; --white:#ffffff; --bg:#f5f6fc; --bg2:#eef0f8;
+      --text:#0d1526; --muted:#5a6580; --border:rgba(0,0,0,0.08);
+      --r:16px; --r-lg:24px; --r-pill:100px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family:'Inter',sans-serif; background:var(--white); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.6; overflow-x:hidden; }
+    .container { max-width:1160px; margin:0 auto; padding:0 28px; }
+
+    /* ── NAVBAR ── */
+    header { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(255,255,255,0.97); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid rgba(0,0,0,0.065); box-shadow:0 1px 0 rgba(0,0,0,0.04); }
+    .nav-bar { display:flex; align-items:center; justify-content:space-between; height:72px; }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-img { height:44px; width:auto; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(11,17,32,0.10)); transition:filter .22s,transform .22s; }
+    .logo:hover .logo-img { filter:drop-shadow(0 4px 14px rgba(91,26,200,0.18)); transform:translateY(-1px); }
+    .nav-links { display:flex; align-items:center; gap:0; list-style:none; }
+    .nav-links a { font-size:13.5px; font-weight:500; color:#3a3f52; text-decoration:none; padding:8px 15px; border-radius:8px; transition:color .18s,background .18s; position:relative; }
+    .nav-links a:hover { color:var(--purple); background:rgba(91,26,200,0.05); }
+    .nav-links a.active { font-weight:700; color:var(--text); }
+    .nav-links a.active::after { content:''; position:absolute; bottom:-2px; left:15px; right:15px; height:2px; border-radius:2px; background:var(--navy); }
+    .nav-right { display:flex; align-items:center; gap:10px; }
+    .nav-join { display:inline-flex; align-items:center; gap:8px; background:var(--navy); color:var(--white); font-size:13.5px; font-weight:700; padding:11px 22px; border-radius:var(--r-pill); text-decoration:none; letter-spacing:-.1px; border:1.5px solid transparent; transition:background .22s,box-shadow .22s,transform .18s; box-shadow:0 2px 12px rgba(11,17,32,0.22); }
+    .nav-join:hover { background:var(--purple); transform:translateY(-1px); box-shadow:0 6px 20px rgba(91,26,200,0.35); }
+    .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; padding:6px; border:none; background:none; }
+    .hamburger span { display:block; width:22px; height:2px; background:var(--text); border-radius:2px; transition:.25s; }
+
+    /* ── MOBILE MENU ── */
+    .mobile-menu { display:none; position:fixed; inset:0; z-index:199; background:rgba(255,255,255,0.98); flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+    .mobile-menu.open { display:flex; }
+    .mobile-menu a { font-size:20px; font-weight:700; color:var(--text); text-decoration:none; padding:13px 40px; border-radius:14px; transition:background .18s,color .18s; }
+    .mobile-menu a:hover { background:rgba(91,26,200,0.08); color:var(--purple); }
+    .mobile-close { position:absolute; top:20px; right:22px; font-size:26px; background:none; border:none; cursor:pointer; color:var(--text); line-height:1; }
+
+    /* ── HERO ── */
+    .lib-hero { padding:138px 0 92px; background:linear-gradient(145deg,#060a14 0%,#0b1120 40%,#130832 70%,#1a0b44 100%); position:relative; overflow:hidden; text-align:center; }
+    .h-blob { position:absolute; border-radius:50%; pointer-events:none; }
+    .hb1 { top:-120px; left:-100px; width:540px; height:540px; background:radial-gradient(circle,rgba(124,58,237,0.22) 0%,transparent 68%); }
+    .hb2 { bottom:-80px; right:-80px; width:440px; height:440px; background:radial-gradient(circle,rgba(172,212,0,0.10) 0%,transparent 68%); }
+    .hb3 { top:25%; right:12%; width:320px; height:320px; background:radial-gradient(circle,rgba(91,26,200,0.14) 0%,transparent 70%); }
+    .hero-dots { position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,0.035) 1px,transparent 1px); background-size:34px 34px; pointer-events:none; }
+    .hero-inner { position:relative; z-index:2; }
+    .hero-eyebrow { display:inline-flex; align-items:center; gap:11px; font-size:11.5px; font-weight:700; color:var(--lime); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:20px; }
+    .hero-eyebrow::before, .hero-eyebrow::after { content:''; width:24px; height:1.5px; background:var(--lime); border-radius:1px; flex-shrink:0; }
+    .hero-title { font-family:'Manrope','Inter',sans-serif; font-size:clamp(40px,5.8vw,68px); font-weight:900; color:#fff; letter-spacing:-2px; line-height:1.06; margin-bottom:14px; }
+    .hero-title .hl { color:var(--lime); }
+    .hero-sub { font-size:18px; color:rgba(255,255,255,0.50); font-weight:400; margin-bottom:38px; letter-spacing:.2px; }
+    .hero-stats { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .hero-stat { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); padding:10px 20px; border-radius:var(--r-pill); font-size:13px; font-weight:600; color:rgba(255,255,255,0.70); backdrop-filter:blur(6px); white-space:nowrap; }
+    .hero-stat b { color:var(--lime); font-weight:800; }
+
+    /* ── FILTER BAR ── */
+    .filter-section { background:var(--white); padding:20px 0 18px; border-bottom:1px solid var(--border); position:sticky; top:72px; z-index:100; box-shadow:0 4px 20px rgba(0,0,0,0.04); }
+    .filter-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .search-wrap { flex:1; min-width:220px; position:relative; }
+    .search-wrap .s-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; flex-shrink:0; }
+    .search-input { width:100%; padding:11px 16px 11px 42px; border:1.5px solid var(--border); border-radius:var(--r-pill); font-size:14px; font-family:'Inter',sans-serif; color:var(--text); background:var(--white); outline:none; transition:border-color .18s,box-shadow .18s; }
+    .search-input:focus { border-color:var(--purple2); box-shadow:0 0 0 3px rgba(124,58,237,0.10); }
+    .search-input::placeholder { color:var(--muted); }
+    .lang-select { padding:11px 38px 11px 16px; border:1.5px solid var(--border); border-radius:var(--r-pill); font-size:14px; font-family:'Inter',sans-serif; font-weight:600; color:var(--text); background:var(--white); cursor:pointer; outline:none; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6580' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; min-width:200px; transition:border-color .18s,box-shadow .18s; }
+    .lang-select:focus { border-color:var(--purple2); box-shadow:0 0 0 3px rgba(124,58,237,0.10); }
+    .clear-btn { display:none; align-items:center; gap:6px; padding:9px 16px; border-radius:var(--r-pill); background:rgba(91,26,200,0.07); border:1px solid rgba(91,26,200,0.15); font-size:12.5px; font-weight:700; color:var(--purple); cursor:pointer; white-space:nowrap; transition:background .18s; }
+    .clear-btn:hover { background:rgba(91,26,200,0.13); }
+    .clear-btn.show { display:inline-flex; }
+
+    /* ── SECTION LAYOUT ── */
+    .lib-section { padding:72px 0 80px; }
+    .lib-section.alt { background:var(--bg); }
+    .section-head { margin-bottom:38px; }
+    .sec-eyebrow { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--purple); margin-bottom:10px; }
+    .section-title { font-family:'Manrope','Inter',sans-serif; font-size:clamp(24px,2.8vw,34px); font-weight:900; color:var(--text); letter-spacing:-1px; margin-bottom:8px; }
+    .section-desc { font-size:15px; color:var(--muted); }
+    .sec-rule { width:40px; height:3px; border-radius:2px; background:linear-gradient(90deg,var(--purple),var(--lime)); margin-top:14px; }
+    .empty-msg { text-align:center; padding:56px 20px; color:var(--muted); font-size:15px; }
+    .empty-msg svg { margin:0 auto 14px; display:block; opacity:.30; }
+
+    /* ── VIDEO GRID ── */
+    .video-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:24px; }
+    .video-card { border-radius:var(--r); overflow:hidden; background:var(--white); border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,0.05); cursor:pointer; display:flex; flex-direction:column; transition:transform .22s ease,box-shadow .22s ease; }
+    .video-card:hover { transform:translateY(-5px); box-shadow:0 18px 44px rgba(0,0,0,0.12); }
+    .v-thumb { position:relative; padding-top:56.25%; overflow:hidden; }
+    .v-thumb-bg { position:absolute; inset:0; background-size:cover; background-position:center; }
+    .v-thumb-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.26); display:flex; align-items:center; justify-content:center; transition:background .22s; }
+    .video-card:hover .v-thumb-overlay { background:rgba(0,0,0,0.14); }
+    .play-circle { width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.94); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(0,0,0,0.28); transition:transform .22s,background .22s; }
+    .video-card:hover .play-circle { transform:scale(1.12); background:#fff; }
+    .play-circle svg { color:var(--purple); transform:translateX(2px); }
+    .v-info { padding:16px 18px 18px; flex:1; display:flex; flex-direction:column; gap:10px; }
+    .v-title { font-size:15px; font-weight:700; color:var(--text); line-height:1.4; }
+    .v-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:auto; }
+
+    /* ── BOOKS GRID ── */
+    .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:22px; }
+    .book-card { border-radius:var(--r); overflow:hidden; background:var(--white); border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,0.05); display:flex; flex-direction:column; transition:transform .22s ease,box-shadow .22s ease; }
+    .book-card:hover { transform:translateY(-5px); box-shadow:0 18px 44px rgba(0,0,0,0.12); }
+    .b-cover { position:relative; padding-top:136%; overflow:hidden; }
+    .b-cover-bg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; padding:16px; }
+    .b-cover-bg img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .b-cover-icon { font-size:38px; opacity:.80; position:relative; z-index:1; }
+    .b-cover-abbr { position:relative; z-index:1; font-family:'Manrope',sans-serif; font-size:12px; font-weight:900; color:rgba(255,255,255,0.55); letter-spacing:.5px; text-align:center; line-height:1.3; max-width:140px; }
+    .b-body { padding:14px 15px 15px; flex:1; display:flex; flex-direction:column; gap:7px; }
+    .b-title { font-size:13.5px; font-weight:700; color:var(--text); line-height:1.4; }
+    .b-author { font-size:11.5px; color:var(--muted); }
+    .b-actions { display:flex; gap:7px; margin-top:auto; padding-top:6px; }
+    .b-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:8px 6px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; border:1.5px solid transparent; transition:.18s; white-space:nowrap; }
+    .b-read { background:rgba(91,26,200,0.07); color:var(--purple); border-color:rgba(91,26,200,0.14); }
+    .b-read:hover { background:rgba(91,26,200,0.14); border-color:rgba(91,26,200,0.28); }
+    .b-dl { background:rgba(172,212,0,0.09); color:#4a6200; border-color:rgba(172,212,0,0.22); }
+    .b-dl:hover { background:rgba(172,212,0,0.18); border-color:rgba(172,212,0,0.38); }
+
+    /* ── PILLS + FEATURED BADGE ── */
+    .pill { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; padding:4px 10px; border-radius:var(--r-pill); }
+    .pill-lang { background:rgba(91,26,200,0.08); color:var(--purple); border:1px solid rgba(91,26,200,0.14); }
+    .pill-cat { background:rgba(0,0,0,0.05); color:var(--muted); border:1px solid rgba(0,0,0,0.08); }
+    .dur-tag { font-size:12px; font-weight:500; color:var(--muted); margin-left:auto; }
+    .feat-badge { position:absolute; top:10px; left:10px; z-index:3; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:var(--r-pill); font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#1a0b00; background:linear-gradient(135deg,var(--lime),var(--lime2)); box-shadow:0 4px 14px rgba(172,212,0,0.4); }
+    .feat-badge svg { width:11px; height:11px; }
+
+    /* ── PDF READER MODAL ── */
+    .pdf-bg { display:none; position:fixed; inset:0; z-index:950; background:rgba(4,7,15,0.96); flex-direction:column; }
+    .pdf-bg.on { display:flex; }
+    .pdf-bar { display:flex; align-items:center; justify-content:space-between; padding:13px 22px; gap:16px; background:rgba(0,0,0,0.50); border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
+    .pdf-bar-title { font-size:14.5px; font-weight:700; color:#fff; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+    .pdf-bar-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .pdf-dl { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:var(--r-pill); background:rgba(172,212,0,0.14); border:1px solid rgba(172,212,0,0.28); color:var(--lime); font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; transition:background .18s; }
+    .pdf-dl:hover { background:rgba(172,212,0,0.24); }
+    .pdf-x { width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.65); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .18s,color .18s; }
+    .pdf-x:hover { background:rgba(255,255,255,0.15); color:#fff; }
+    .pdf-frame { flex:1; width:100%; border:none; }
+
+    /* ── PREMIUM CTA ── */
+    .premium-cta { background:linear-gradient(145deg,#060a14 0%,#0b1120 42%,#130832 74%,#1a0b44 100%); position:relative; overflow:hidden; padding:80px 0 88px; }
+    .pc-inner { position:relative; z-index:2; max-width:760px; margin:0 auto; text-align:center; }
+    .pc-eyebrow { display:inline-flex; align-items:center; gap:9px; font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--lime); margin-bottom:16px; }
+    .pc-title { font-family:'Manrope','Inter',sans-serif; font-size:clamp(26px,4vw,42px); font-weight:900; color:#fff; letter-spacing:-1.2px; line-height:1.12; margin-bottom:14px; }
+    .pc-title .hl { color:var(--lime); }
+    .pc-lead { font-size:16px; color:rgba(255,255,255,0.58); line-height:1.6; margin-bottom:30px; }
+    .pc-feats { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:34px; }
+    .pc-feat { display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:var(--r-pill); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10); font-size:13px; font-weight:600; color:rgba(255,255,255,0.82); }
+    .pc-feat svg { width:14px; height:14px; color:var(--lime); flex-shrink:0; }
+    .pc-cta { display:inline-flex; align-items:center; gap:10px; padding:16px 34px; border-radius:var(--r-pill); background:linear-gradient(135deg,var(--lime) 0%,var(--lime2) 100%); color:#0a1018; font-size:16px; font-weight:800; text-decoration:none; box-shadow:0 10px 30px rgba(172,212,0,0.34); transition:transform .2s,box-shadow .2s; }
+    .pc-cta:hover { transform:translateY(-2px); box-shadow:0 16px 40px rgba(172,212,0,0.48); }
+    .pc-cta svg { width:17px; height:17px; }
+    .pc-note { margin-top:16px; font-size:12.5px; color:rgba(255,255,255,0.40); }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(10px); padding:12px 22px; border-radius:var(--r-pill); font-size:13.5px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.24); z-index:1000; white-space:nowrap; max-width:90vw; opacity:0; pointer-events:none; transition:opacity .3s,transform .3s; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── FOOTER ── */
+    footer { background:#05090f; border-top:1px solid rgba(255,255,255,0.05); padding:26px 0 28px; }
+    .ft-inner { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+    .ft-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .ft-mark { width:34px; height:34px; border-radius:9px; flex-shrink:0; background:linear-gradient(150deg,#180f50 0%,#3d18a8 55%,var(--purple2) 100%); display:flex; align-items:center; justify-content:center; font-family:'Manrope',sans-serif; font-size:17px; font-weight:900; color:var(--lime); box-shadow:0 3px 12px rgba(91,26,200,0.35); }
+    .ft-brand b { font-size:13.5px; font-weight:800; color:rgba(255,255,255,0.82); display:block; letter-spacing:-.2px; }
+    .ft-brand small { font-size:9px; font-weight:700; color:rgba(255,255,255,0.30); letter-spacing:2px; text-transform:uppercase; }
+    .ft-copy { font-size:12px; color:rgba(255,255,255,0.26); }
+    .ft-links { display:flex; align-items:center; gap:6px; }
+    .ft-links a { font-size:12px; color:rgba(255,255,255,0.30); text-decoration:none; transition:color .18s; }
+    .ft-links a:hover { color:var(--lime); }
+    .ft-sep { font-size:11px; color:rgba(255,255,255,0.12); }
+    .ft-soc { display:flex; gap:8px; }
+    .soc-a { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.50); text-decoration:none; transition:.2s; }
+    .soc-a:hover { background:rgba(172,212,0,0.14); border-color:rgba(172,212,0,0.38); color:var(--lime); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width:960px) {
+      .nav-links, .nav-join { display:none; }
+      .hamburger { display:flex; }
+      .books-grid { grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); }
+    }
+    @media (max-width:640px) {
+      .container { padding:0 18px; }
+      .filter-bar { flex-direction:column; align-items:stretch; }
+      .lang-select { min-width:0; width:100%; }
+      .search-wrap { min-width:0; }
+      .video-grid { grid-template-columns:1fr; }
+      .books-grid { grid-template-columns:repeat(2,1fr); gap:14px; }
+      .lib-section { padding:52px 0 60px; }
+      .ft-inner { flex-direction:column; align-items:flex-start; gap:14px; }
+      .ft-copy { order:3; width:100%; text-align:center; }
+    }
+    @media (max-width:420px) {
+      .books-grid { grid-template-columns:repeat(2,1fr); gap:12px; }
+      .hero-title { font-size:36px; }
+      .hero-stat { font-size:12px; padding:8px 14px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<header>
+  <div class="container">
+    <nav class="nav-bar" aria-label="Main navigation">
+      <a href="index.html" class="logo" aria-label="Z Trade University home">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" class="logo-img" />
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="articles.html">Articles</a></li>
+        <li><a href="free-classes.html" class="active" aria-current="page">Free Classes</a></li>
+        <li><a href="library.html">Library</a></li>
+        <li><a href="about.html">About</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="index.html#how-to-join" class="nav-join">
+          Join Free
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <button class="hamburger" onclick="toggleMenu()" aria-label="Open menu" aria-expanded="false" id="hamburgerBtn">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Mobile navigation">
+  <button class="mobile-close" onclick="toggleMenu()" aria-label="Close menu">&#10005;</button>
+  <a href="index.html"          onclick="toggleMenu()">Home</a>
+  <a href="articles.html"       onclick="toggleMenu()">Articles</a>
+  <a href="free-classes.html"   onclick="toggleMenu()">Free Classes</a>
+  <a href="library.html"        onclick="toggleMenu()">Library</a>
+  <a href="about.html"          onclick="toggleMenu()">About</a>
+  <a href="index.html#how-to-join" onclick="toggleMenu()">Join Free</a>
+</div>
+
+<!-- HERO -->
+<section class="lib-hero" aria-labelledby="heroTitle">
+  <div class="h-blob hb1" aria-hidden="true"></div>
+  <div class="h-blob hb2" aria-hidden="true"></div>
+  <div class="h-blob hb3" aria-hidden="true"></div>
+  <div class="hero-dots" aria-hidden="true"></div>
+  <div class="container hero-inner">
+    <div class="hero-eyebrow" aria-hidden="true">Open Access</div>
+    <h1 class="hero-title" id="heroTitle">Free <span class="hl">Classes</span></h1>
+    <p class="hero-sub">Trading videos &amp; books — free for everyone, no login required.</p>
+    <div class="hero-stats" role="list">
+      <div class="hero-stat" role="listitem"><b id="statV">0</b>&nbsp;Free Videos</div>
+      <div class="hero-stat" role="listitem"><b id="statB">0</b>&nbsp;Free Books</div>
+      <div class="hero-stat" role="listitem"><b id="statL">0</b>&nbsp;Languages</div>
+    </div>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="filter-section" id="filterBar">
+  <div class="container">
+    <div class="filter-bar" role="search" aria-label="Filter free content">
+      <div class="search-wrap">
+        <svg class="s-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" class="search-input" id="searchInput" placeholder="Search free videos &amp; books…" autocomplete="off" aria-label="Search free content" />
+      </div>
+      <select class="lang-select" id="langSelect" aria-label="Filter by language">
+        <option value="">🌐 Select Your Language</option>
+        <option value="english">🇬🇧 English</option>
+        <option value="urdu">🇵🇰 Urdu</option>
+        <option value="arabic">🇸🇦 Arabic</option>
+        <option value="hindi">🇮🇳 Hindi</option>
+        <option value="turkish">🇹🇷 Turkish</option>
+        <option value="swahili">🌍 Swahili</option>
+        <option value="indonesian">🇮🇩 Indonesian</option>
+        <option value="portuguese">🇧🇷 Portuguese</option>
+        <option value="vietnamese">🇻🇳 Vietnamese</option>
+      </select>
+      <button class="clear-btn" id="clearBtn" onclick="clearFilters()" aria-label="Clear all filters">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear filters
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- VIDEOS -->
+<section class="lib-section" aria-labelledby="videosTitle">
+  <div class="container">
+    <div class="section-head">
+      <div class="sec-eyebrow">Watch</div>
+      <h2 class="section-title" id="videosTitle">Free Video Lessons</h2>
+      <p class="section-desc">Hand-picked trading lessons — watch instantly, no sign-up.</p>
+      <div class="sec-rule" aria-hidden="true"></div>
+    </div>
+    <div class="video-grid" id="videoGrid"></div>
+    <div class="empty-msg" id="videoEmpty" style="display:none;">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9"/></svg>
+      No free videos published yet — check back soon.
+    </div>
+  </div>
+</section>
+
+<!-- BOOKS -->
+<section class="lib-section alt" aria-labelledby="booksTitle">
+  <div class="container">
+    <div class="section-head">
+      <div class="sec-eyebrow">Read</div>
+      <h2 class="section-title" id="booksTitle">Free Books &amp; Guides</h2>
+      <p class="section-desc">Read online or download — completely free.</p>
+      <div class="sec-rule" aria-hidden="true"></div>
+    </div>
+    <div class="books-grid" id="booksGrid"></div>
+    <div class="empty-msg" id="booksEmpty" style="display:none;">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg>
+      No free books published yet — check back soon.
+    </div>
+  </div>
+</section>
+
+<!-- PREMIUM CTA -->
+<section class="premium-cta" aria-labelledby="pcTitle">
+  <div class="h-blob hb1" aria-hidden="true"></div>
+  <div class="h-blob hb2" aria-hidden="true"></div>
+  <div class="hero-dots" aria-hidden="true"></div>
+  <div class="container pc-inner">
+    <div class="pc-eyebrow">Unlock Everything</div>
+    <h2 class="pc-title" id="pcTitle">These free classes are only a small sample.<br><span class="hl">Join our IB Team for FREE</span> to unlock it all.</h2>
+    <p class="pc-lead">Get the complete Z Trade University experience — every premium resource, free for members.</p>
+    <div class="pc-feats">
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Premium Courses</span>
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Premium Books</span>
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Premium Videos</span>
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Premium Audios</span>
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Trading Journal</span>
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited AI Chatbot</span>
+      <span class="pc-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Future Updates</span>
+    </div>
+    <a class="pc-cta" href="index.html#how-to-join">
+      Join Premium Membership FREE
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="pc-note">No payment required — unlock everything by joining under our IB.</div>
+  </div>
+</section>
+
+<!-- PDF READER MODAL -->
+<div class="pdf-bg" id="pdfBg" role="dialog" aria-modal="true" aria-label="PDF reader">
+  <div class="pdf-bar">
+    <div class="pdf-bar-title" id="pdfBarTitle">—</div>
+    <div class="pdf-bar-actions">
+      <a href="#" class="pdf-dl" id="pdfDlLink" download>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </a>
+      <button class="pdf-x" onclick="closePdf()" aria-label="Close PDF reader">&#10005;</button>
+    </div>
+  </div>
+  <iframe class="pdf-frame" id="pdfFrame" title="PDF Reader" src="" loading="lazy"></iframe>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="ft-inner">
+      <a href="index.html" class="ft-logo" aria-label="Z Trade University home">
+        <div class="ft-mark" aria-hidden="true">Z</div>
+        <div class="ft-brand"><b>Z Trade University</b><small>Trading Education</small></div>
+      </a>
+      <div class="ft-copy">&copy; 2024 Z Trade University. All rights reserved.</div>
+      <div class="ft-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <span class="ft-sep" aria-hidden="true">|</span>
+        <a href="#">Terms of Service</a>
+      </div>
+      <div class="ft-soc" aria-label="Social links">
+        <a href="https://x.com/Ztradeuni" class="soc-a" target="_blank" rel="noopener" aria-label="X / Twitter"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.5 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+        <a href="https://youtube.com/@ztradeuniversity" class="soc-a" target="_blank" rel="noopener" aria-label="YouTube"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.45a2.78 2.78 0 0 0 1.95-1.97A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg></a>
+        <a href="https://www.instagram.com/ztradeuniversity?igsh=MWNvcHV2dGp3cGd5ag==" class="soc-a" target="_blank" rel="noopener" aria-label="Instagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a href="https://t.me/ztradeuniversity" class="soc-a" target="_blank" rel="noopener" aria-label="Telegram"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 3.05a1 1 0 0 0-1.02-.23L2.28 9.67a1 1 0 0 0 .06 1.9l4.65 1.43 1.8 5.7a1 1 0 0 0 1.7.37l2.6-2.8 4.9 3.6a1 1 0 0 0 1.56-.62l3-15a1 1 0 0 0-.6-1.1z"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ──────────────────────────────────────────────────────────
+   CONFIG — same Library Supabase project as library.html.
+   Public anon key + read-only REST. Content is the SINGLE
+   source of truth (library_videos / library_books), filtered
+   to is_free=true — nothing is duplicated.
+────────────────────────────────────────────────────────── */
+const LIBRARY_SUPABASE_URL = 'https://dcgtmiduqxnmfjkimxeh.supabase.co';
+const LIBRARY_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZ3RtaWR1cXhubWZqa2lteGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDU0OTcsImV4cCI6MjA5NTc4MTQ5N30.Sg64TwDYMoOCqkcJmhUTQ2i3IQZyTQIT5FIJVmwbkwg';
+
+const FC = { allVideos: [], allBooks: [] };
+
+/* ── SUPABASE REST (read-only) ── */
+async function sbSelect(table, qs = '') {
+  try {
+    const r = await fetch(`${LIBRARY_SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+      headers: { 'apikey': LIBRARY_SUPABASE_KEY, 'Authorization': `Bearer ${LIBRARY_SUPABASE_KEY}` }
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+/* ── ESCAPE HELPERS ── */
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function escAttr(s) { return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
+function pillLang(l) { return l ? `<span class="pill pill-lang">${escHtml(l)}</span>` : ''; }
+const FEAT_BADGE = `<span class="feat-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 9 22 9 16.5 13.5 18.5 21 12 16.5 5.5 21 7.5 13.5 2 9 9 9 12 2"/></svg>Featured</span>`;
+
+/* ── TOAST ── */
+let toastTimer;
+function toast(msg, bg = '#acd400') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = bg;
+  el.style.color = (bg === '#acd400') ? '#0a1018' : '#fff';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
+}
+
+/* ── VIDEOS ── */
+function renderVideos(items) {
+  const grid = document.getElementById('videoGrid');
+  const emp  = document.getElementById('videoEmpty');
+  if (!items.length) { grid.innerHTML = ''; emp.style.display = 'block'; return; }
+  emp.style.display = 'none';
+  grid.innerHTML = items.map(v => {
+    const color = v.color || ['#5b1ac8','#7c3aed'];
+    const isRealId = v.youtube_id && v.youtube_id.length > 4;
+    const thumbStyle = v.thumbnail_url
+      ? `background-image:url('${escHtml(v.thumbnail_url)}');background-size:cover;background-position:center;`
+      : isRealId
+        ? `background-image:url('https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg');background-size:cover;background-position:center;`
+        : `background:linear-gradient(135deg,${color[0]},${color[1]});`;
+    return `
+<article class="video-card" onclick="handleVideoClick('${escAttr(v.youtube_url||v.file_url||'')}')" tabindex="0" role="button" aria-label="Play ${escHtml(v.title)}" onkeydown="if(event.key==='Enter')handleVideoClick('${escAttr(v.youtube_url||v.file_url||'')}')">
+  <div class="v-thumb">
+    <div class="v-thumb-bg" style="${thumbStyle}"></div>
+    <div class="v-thumb-overlay"><div class="play-circle" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg></div></div>
+    ${v.is_featured ? FEAT_BADGE : ''}
+  </div>
+  <div class="v-info">
+    <div class="v-title">${escHtml(v.title)}</div>
+    <div class="v-meta">
+      ${pillLang(v.lang)}
+      ${v.category ? `<span class="pill pill-cat">${escHtml(v.category)}</span>` : ''}
+      ${v.duration ? `<span class="dur-tag">${escHtml(v.duration)}</span>` : ''}
+    </div>
+  </div>
+</article>`;
+  }).join('');
+}
+function handleVideoClick(url) {
+  if (!url || url.includes('placeholder')) { toast('Video link not attached yet.', '#f59e0b'); return; }
+  window.open(url, '_blank', 'noopener');
+}
+
+/* ── BOOKS ── */
+function renderBooks(items) {
+  const grid = document.getElementById('booksGrid');
+  const emp  = document.getElementById('booksEmpty');
+  if (!items.length) { grid.innerHTML = ''; emp.style.display = 'block'; return; }
+  emp.style.display = 'none';
+  grid.innerHTML = items.map(b => {
+    const color = b.color || ['#1e1b4b','#4c1d95'];
+    const coverInner = b.cover_url
+      ? `<img src="${escAttr(b.cover_url)}" alt="${escAttr(b.title)}" loading="lazy" />`
+      : `<span class="b-cover-icon" aria-hidden="true">${b.icon||'📖'}</span><span class="b-cover-abbr">${escHtml(b.title.slice(0,30))}</span>`;
+    const safeTitle = b.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeUrl   = (b.pdf_url||'').replace(/'/g,"\\'");
+    return `
+<article class="book-card">
+  <div class="b-cover">
+    <div class="b-cover-bg" style="background:linear-gradient(160deg,${color[0]},${color[1]});">${coverInner}</div>
+    ${b.is_featured ? FEAT_BADGE : ''}
+  </div>
+  <div class="b-body">
+    <div class="b-title">${escHtml(b.title)}</div>
+    ${b.author ? `<div class="b-author">${escHtml(b.author)}</div>` : ''}
+    ${pillLang(b.lang)}
+    <div class="b-actions">
+      <button class="b-btn b-read" onclick="openPdf('${safeUrl}','${safeTitle}')" aria-label="Read ${escHtml(b.title)} online">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Read
+      </button>
+      <button class="b-btn b-dl" onclick="downloadPdf('${safeUrl}','${safeTitle}')" aria-label="Download ${escHtml(b.title)}">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+    </div>
+  </div>
+</article>`;
+  }).join('');
+}
+
+/* ── PDF READER (public — no gate) ── */
+function openPdf(url, title) {
+  if (!url) { toast('Book PDF not attached yet.', '#f59e0b'); return; }
+  document.getElementById('pdfBarTitle').textContent = title;
+  document.getElementById('pdfFrame').src = url;
+  const dl = document.getElementById('pdfDlLink');
+  dl.href = url; dl.download = title + '.pdf';
+  document.getElementById('pdfBg').classList.add('on');
+}
+function closePdf() {
+  document.getElementById('pdfBg').classList.remove('on');
+  setTimeout(() => { document.getElementById('pdfFrame').src = ''; }, 300);
+}
+function downloadPdf(url, title) {
+  if (!url) { toast('Book PDF not attached yet.', '#f59e0b'); return; }
+  const a = Object.assign(document.createElement('a'), { href: url, download: title + '.pdf', target: '_blank' });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ── SEARCH & LANGUAGE FILTER ── */
+function applyFilters() {
+  const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+  const lang = document.getElementById('langSelect').value.toLowerCase();
+  document.getElementById('clearBtn').classList.toggle('show', q.length > 0 || lang.length > 0);
+  const match = items => items.filter(item => {
+    const okLang = !lang || (item.lang || '').toLowerCase() === lang;
+    const okQ    = !q    || (item.title || '').toLowerCase().includes(q);
+    return okLang && okQ;
+  });
+  renderVideos(match(FC.allVideos));
+  renderBooks(match(FC.allBooks));
+}
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('langSelect').value  = '';
+  applyFilters();
+}
+
+/* ── MOBILE MENU ── */
+function toggleMenu() {
+  const m = document.getElementById('mobileMenu');
+  const b = document.getElementById('hamburgerBtn');
+  const open = m.classList.toggle('open');
+  b.setAttribute('aria-expanded', open);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePdf(); document.getElementById('mobileMenu').classList.remove('open'); }
+});
+
+/* ── LIVE DATA — Featured first, then newest ── */
+async function loadFreeData() {
+  const order = 'is_free=eq.true&order=is_featured.desc,created_at.desc';
+  const [videos, books] = await Promise.all([
+    sbSelect('library_videos', order),
+    sbSelect('library_books',  order)
+  ]);
+  FC.allVideos = Array.isArray(videos) ? videos : [];
+  FC.allBooks  = Array.isArray(books)  ? books  : [];
+
+  document.getElementById('statV').textContent = FC.allVideos.length;
+  document.getElementById('statB').textContent = FC.allBooks.length;
+  const langs = new Set();
+  FC.allVideos.concat(FC.allBooks).forEach(i => { if (i.lang) langs.add(String(i.lang).toLowerCase()); });
+  document.getElementById('statL').textContent = langs.size;
+}
+
+/* ── INIT ── */
+async function init() {
+  await loadFreeData();
+  renderVideos(FC.allVideos);
+  renderBooks(FC.allBooks);
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+  document.getElementById('langSelect').addEventListener('change', applyFilters);
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<!-- site-wide language system (shared) -->
+<script src="/assets/ztu-lang.js" defer></script>
+</body>
+</html>
