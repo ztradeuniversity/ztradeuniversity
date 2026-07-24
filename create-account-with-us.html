@@ -90,7 +90,7 @@
 
     /* ── GUIDE HERO ── */
     .guide-hero {
-      padding: 120px 0 72px;
+      padding: 112px 0 40px;
       background: linear-gradient(145deg, #0d0902 0%, #1a1008 40%, #2b1e04 80%, #3d2a08 100%);
       position: relative; overflow: hidden;
     }
@@ -113,12 +113,22 @@
     .guide-breadcrumb a:hover { color: #ede8e0 !important; }
     .guide-hero .guide-breadcrumb span,
     .guide-breadcrumb span { font-size: 11px; color: #7a7068 !important; }
-    .guide-cat-badge {
-      display: inline-flex; align-items: center; gap: 7px;
-      background: rgba(200,156,63,0.18); border: 1px solid rgba(200,156,63,0.45);
-      color: #e6c987 !important; font-size: 11.5px; font-weight: 700;
-      padding: 5px 14px; border-radius: 100px; letter-spacing: .9px;
-      text-transform: uppercase; margin-bottom: 20px;
+    .guide-subtitle {
+      font-size: 15px !important; font-weight: 700 !important; letter-spacing: 1.6px !important;
+      text-transform: uppercase !important; color: #d4ae5e !important; margin: 0 !important;
+    }
+    .guide-progress { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+    .guide-progress-track {
+      flex: 0 1 200px; height: 4px; border-radius: 4px;
+      background: rgba(255,255,255,0.14); overflow: hidden;
+    }
+    .guide-progress-fill {
+      height: 100%; width: 3.3%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+    }
+    .guide-progress-label {
+      font-size: 11.5px; font-weight: 700; color: #d4ae5e !important;
+      white-space: nowrap; letter-spacing: .3px;
     }
     /* ── HERO TYPOGRAPHY — Definitive contrast system.
        Uses solid colors (no rgba compositing on dark backgrounds) and
@@ -139,33 +149,6 @@
     }
     .guide-hero .guide-hero-inner h1 em,
     .guide-hero h1 em { color: #d4ae5e !important; font-style: normal !important; }
-
-    /* Description paragraph — solid warm white, not rgba-composited */
-    .guide-hero .guide-hero-inner .guide-para,
-    .guide-hero .guide-para {
-      font-size: 17px !important; color: #ede8e0 !important;
-      line-height: 1.74 !important; max-width: 660px !important; margin-bottom: 20px !important;
-    }
-
-    /* Benefit line — solid warm gold, clearly readable on dark olive */
-    .guide-hero .guide-hero-inner .guide-benefit-line,
-    .guide-hero .guide-benefit-line {
-      font-size: 14px !important; color: #d4a955 !important; font-weight: 500 !important;
-      line-height: 1.60 !important; max-width: 580px !important; margin-bottom: 32px !important;
-      padding: 11px 16px !important; border-left: 2px solid rgba(212,174,94,0.38) !important;
-    }
-
-    /* Metadata row — solid readable light gray, not near-invisible opacity */
-    .guide-meta { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-bottom: 40px; }
-    .guide-hero .guide-meta-cell,
-    .guide-hero .guide-hero-inner .guide-meta-cell {
-      display: flex !important; align-items: center !important; gap: 7px !important;
-      font-size: 13px !important; color: #c4bdb5 !important;
-    }
-    .guide-hero .guide-meta-cell svg,
-    .guide-hero .guide-hero-inner .guide-meta-cell svg {
-      flex-shrink: 0 !important; color: #c89c3f !important;
-    }
 
     /* Primary CTA button */
     .cta-primary {
@@ -212,41 +195,27 @@
     .benefit-card h3 { font-size: 14px !important; font-weight: 800 !important; color: var(--text) !important; letter-spacing: -.2px !important; }
     .benefit-card p { font-size: 13px; color: var(--muted); line-height: 1.55; margin: 0; }
 
-    /* ── PREREQUISITES ── */
-    .prereq-section { padding: 64px 0; background: var(--white); }
-    .prereq-card {
+    /* ── IMPORTANT INSTRUCTIONS (compact checklist) ── */
+    .checklist-section { padding: 28px 0; background: var(--white); }
+    .checklist-card {
       background: linear-gradient(135deg, #fefcf8 0%, #faf5e8 100%);
-      border: 1.5px solid rgba(200,156,63,0.28); border-radius: 24px;
-      padding: 44px 48px; max-width: 860px; margin: 0 auto;
-      box-shadow: 0 4px 24px rgba(45,30,5,0.06);
-      position: relative; overflow: hidden;
+      border: 1.5px solid rgba(200,156,63,0.28); border-radius: 16px;
+      padding: 20px 24px; max-width: 760px; margin: 0 auto;
     }
-    .prereq-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-      background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+    .checklist-title {
+      font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase;
+      color: var(--gold3); margin-bottom: 12px;
     }
-    .prereq-top { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
-    .prereq-badge {
-      width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
-      background: linear-gradient(135deg, #3d2a08, #8c6c1f);
-      display: flex; align-items: center; justify-content: center; color: var(--gold4);
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .checklist li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 13.5px; color: var(--text); line-height: 1.5;
     }
-    .prereq-top h2 { font-family: 'Manrope','Inter',sans-serif !important; font-size: 22px !important; font-weight: 900 !important; color: var(--text) !important; letter-spacing: -.5px !important; }
-    .prereq-top p { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
-    .prereq-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
-    .prereq-list li {
-      display: flex; align-items: flex-start; gap: 14px;
-      font-size: 15px; color: var(--text); line-height: 1.6;
-    }
-    .prereq-list li::before {
-      content: ''; flex-shrink: 0; margin-top: 6px;
-      width: 8px; height: 8px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--gold3), var(--gold));
-    }
-    .prereq-list li strong { color: var(--gold3); font-weight: 700; }
+    .checklist li svg { flex-shrink: 0; margin-top: 2px; color: var(--gold3); }
+    .checklist li strong { color: var(--gold3); font-weight: 800; }
 
     /* ── GUIDE SECTION INTRO ── */
-    .guide-intro { padding: 64px 0 16px; background: var(--white); }
+    .guide-intro { padding: 28px 0 8px; background: var(--white); }
     .guide-intro-inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
     .guide-intro-text { flex: 1; min-width: 260px; }
     .guide-intro-kicker { font-size: 11px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold3); margin-bottom: 10px; }
@@ -269,42 +238,42 @@
     .phase-pill.active { background: var(--navy); color: var(--gold2); }
 
     /* ── PHASE SECTIONS ── */
-    .phase-section { padding: 56px 0 32px; }
+    .phase-section { padding: 28px 0 16px; }
     .phase-section:nth-child(even) { background: var(--cream); }
 
     .phase-header {
-      display: flex; align-items: flex-start; gap: 20px; margin-bottom: 48px;
-      padding-bottom: 32px; border-bottom: 1px solid rgba(200,156,63,0.15);
+      display: flex; align-items: flex-start; gap: 16px; margin-bottom: 22px;
+      padding-bottom: 16px; border-bottom: 1px solid rgba(200,156,63,0.15);
     }
     .phase-num-badge {
-      width: 56px; height: 56px; border-radius: 18px; flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
       background: linear-gradient(135deg, var(--navy), #3d2a08);
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Manrope','Inter',sans-serif; font-size: 22px; font-weight: 900;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 18px; font-weight: 900;
       color: var(--gold2); box-shadow: 0 4px 16px rgba(26,20,16,0.22);
     }
     .phase-header-text h2 {
       font-family: 'Manrope','Inter',sans-serif !important;
-      font-size: clamp(20px, 2.8vw, 32px) !important; font-weight: 900 !important;
+      font-size: clamp(18px, 2.4vw, 26px) !important; font-weight: 900 !important;
       color: var(--text) !important; letter-spacing: -1px !important; line-height: 1.15 !important;
-      margin-bottom: 8px !important;
+      margin-bottom: 6px !important;
     }
     .phase-header-text h2 em { color: var(--gold3) !important; font-style: normal !important; }
-    .phase-header-text p { font-size: 14.5px; color: var(--muted); line-height: 1.6; max-width: 620px; }
+    .phase-header-text p { font-size: 13.5px; color: var(--muted); line-height: 1.55; max-width: 620px; }
     .phase-range-badge {
       display: inline-flex; align-items: center; gap: 5px;
       background: rgba(200,156,63,0.1); border: 1px solid rgba(200,156,63,0.22);
       color: var(--gold3); font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
-      text-transform: uppercase; padding: 4px 12px; border-radius: 100px; margin-top: 10px;
+      text-transform: uppercase; padding: 4px 12px; border-radius: 100px; margin-top: 8px;
     }
 
     /* ── STEPS LAYOUT ── */
-    .steps-list { display: flex; flex-direction: column; gap: 40px; }
+    .steps-list { display: flex; flex-direction: column; gap: 16px; }
 
     .step-card {
-      background: var(--white); border-radius: 24px; overflow: hidden;
+      background: var(--white); border-radius: 16px; overflow: hidden;
       border: 1px solid rgba(200,156,63,0.12);
-      box-shadow: 0 2px 20px rgba(45,30,5,0.05), 0 1px 0 rgba(255,255,255,0.8) inset;
+      box-shadow: 0 2px 14px rgba(45,30,5,0.05), 0 1px 0 rgba(255,255,255,0.8) inset;
       transition: box-shadow .25s, transform .25s;
     }
     .step-card:hover { box-shadow: 0 8px 32px rgba(45,30,5,0.1); transform: translateY(-2px); }
@@ -316,31 +285,31 @@
     .step-card-inner.reverse > * { direction: ltr; }
 
     .step-info {
-      padding: 36px 40px; display: flex; flex-direction: column; justify-content: center; gap: 16px;
+      padding: 18px 22px; display: flex; flex-direction: column; justify-content: center; gap: 8px;
     }
-    .step-num-row { display: flex; align-items: center; gap: 12px; }
+    .step-num-row { display: flex; align-items: center; gap: 10px; }
     .step-num {
-      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
       background: linear-gradient(135deg, var(--gold3), var(--gold));
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Manrope','Inter',sans-serif; font-size: 16px; font-weight: 900;
+      font-family: 'Manrope','Inter',sans-serif; font-size: 13px; font-weight: 900;
       color: var(--white); box-shadow: 0 3px 10px rgba(140,108,31,0.35);
     }
     .step-phase-tag {
-      font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+      font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
       color: var(--gold3); background: rgba(200,156,63,0.08); border: 1px solid rgba(200,156,63,0.18);
-      padding: 3px 10px; border-radius: 100px;
+      padding: 2px 9px; border-radius: 100px;
     }
     .step-info h3 {
-      font-family: 'Manrope','Inter',sans-serif !important; font-size: 19px !important; font-weight: 900 !important;
-      color: var(--text) !important; letter-spacing: -.4px !important; line-height: 1.25 !important; margin: 0 !important;
+      font-family: 'Manrope','Inter',sans-serif !important; font-size: 16px !important; font-weight: 900 !important;
+      color: var(--text) !important; letter-spacing: -.3px !important; line-height: 1.2 !important; margin: 0 !important;
     }
-    .step-info p { font-size: 14.5px !important; color: var(--muted) !important; line-height: 1.65 !important; margin: 0 !important; }
+    .step-info p { font-size: 13px !important; color: var(--muted) !important; line-height: 1.5 !important; margin: 0 !important; }
     .step-tip {
-      display: flex; align-items: flex-start; gap: 9px;
+      display: flex; align-items: flex-start; gap: 8px;
       background: rgba(200,156,63,0.06); border-left: 3px solid var(--gold);
-      border-radius: 0 10px 10px 0; padding: 11px 14px;
-      font-size: 13px; color: var(--gold3); font-weight: 600; line-height: 1.5;
+      border-radius: 0 8px 8px 0; padding: 8px 12px;
+      font-size: 12px; color: var(--gold3); font-weight: 600; line-height: 1.45;
     }
     .step-tip svg { flex-shrink: 0; margin-top: 1px; }
     a.step-tip { transition: background .2s, border-color .2s; }
@@ -350,7 +319,7 @@
     .step-screenshot {
       background: linear-gradient(145deg, #f5f0e8 0%, #ebe2cc 100%);
       display: flex; align-items: center; justify-content: center;
-      padding: 32px 28px; min-height: 340px;
+      padding: 14px 16px; min-height: 180px;
       border-left: 1px solid rgba(200,156,63,0.10);
       position: relative; overflow: hidden;
     }
@@ -378,13 +347,13 @@
 
     /* Wide screenshot variant (for landscape/desktop screenshots) */
     .step-card.wide-shot .step-card-inner { grid-template-columns: 1fr; }
-    .step-card.wide-shot .step-info { padding: 36px 40px 24px; }
-    .step-card.wide-shot .step-screenshot { border-left: none; border-top: 1px solid rgba(200,156,63,0.10); min-height: 240px; padding: 28px 40px; }
-    .step-card.wide-shot .step-screenshot-frame { max-width: 640px; }
+    .step-card.wide-shot .step-info { padding: 18px 22px 12px; }
+    .step-card.wide-shot .step-screenshot { border-left: none; border-top: 1px solid rgba(200,156,63,0.10); min-height: 160px; padding: 14px 22px; }
+    .step-card.wide-shot .step-screenshot-frame { max-width: 480px; }
 
     /* ── PHASE SEPARATOR ── */
     .phase-sep {
-      display: flex; align-items: center; gap: 16px; margin: 56px 0;
+      display: flex; align-items: center; gap: 16px; margin: 28px 0;
     }
     .phase-sep::before, .phase-sep::after {
       content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(200,156,63,0.2), transparent);
@@ -436,11 +405,11 @@
 
     /* ── STEP 01 REFERRAL CTA BLOCK ── */
     .step-referral-cta {
-      padding: 32px 40px 36px;
+      padding: 18px 22px 22px;
       border-top: 1px solid rgba(200,156,63,0.14);
       background: linear-gradient(135deg, rgba(200,156,63,0.07) 0%, rgba(200,156,63,0.02) 100%);
       display: flex; flex-direction: column; align-items: center;
-      gap: 16px; text-align: center;
+      gap: 10px; text-align: center;
     }
     .ref-label {
       font-size: 10.5px; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase;
@@ -476,6 +445,41 @@
       line-height: 1.55; margin: 0;
     }
 
+    /* ── REFERRAL CODE COPY BOX (single reusable component, 2 instances) ── */
+    .ref-code-box {
+      display: flex; flex-direction: column; gap: 7px;
+      background: rgba(200,156,63,0.06); border: 1.5px solid rgba(200,156,63,0.26);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .ref-code-box.in-cta { max-width: 340px; margin: 0 auto; }
+    .ref-code-box-label {
+      font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--gold3) !important;
+    }
+    .ref-code-box-label em {
+      font-style: normal; font-weight: 600; color: var(--muted) !important;
+      text-transform: none; letter-spacing: 0;
+    }
+    .ref-code-box-row { display: flex; align-items: center; gap: 8px; }
+    .ref-code-value {
+      flex: 1; min-width: 0;
+      background: rgba(200,156,63,0.10); border: 1.5px solid rgba(200,156,63,0.28);
+      border-radius: 8px; color: var(--gold3) !important;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 14px; font-weight: 700; padding: 8px 12px; letter-spacing: 1.5px;
+      font-style: normal; text-align: center;
+    }
+    .ref-copy-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: linear-gradient(135deg, var(--gold3), var(--gold));
+      color: #ffffff; border: none; border-radius: 8px;
+      font-size: 12.5px; font-weight: 800; padding: 9px 16px; cursor: pointer;
+      white-space: nowrap; min-width: 76px;
+      transition: transform .18s, box-shadow .18s, filter .18s, background .18s;
+    }
+    .ref-copy-btn:hover { transform: translateY(-1px); filter: brightness(1.07); }
+    .ref-copy-btn.copied { background: linear-gradient(135deg, #2f7d32, #4caf50); }
+
     /* ── FOOTER ── */
     footer { background: #0d0902; border-top: 1px solid rgba(255,255,255,0.05); padding: 26px 0 28px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
@@ -499,27 +503,32 @@
     @media (max-width: 920px) {
       .step-card-inner { grid-template-columns: 1fr; }
       .step-card-inner.reverse { direction: ltr; }
-      .step-screenshot { border-left: none; border-top: 1px solid rgba(200,156,63,0.10); min-height: 260px; }
-      .step-screenshot-frame { max-width: 320px; }
+      .step-screenshot { border-left: none; border-top: 1px solid rgba(200,156,63,0.10); min-height: 150px; }
+      .step-screenshot-frame { max-width: 220px; }
       .benefits-grid { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 680px) {
       .nav-links { display: none; } .nav-join { display: none; } .hamburger { display: flex; }
-      .guide-hero { padding: 100px 0 56px; }
-      .step-info { padding: 28px 24px; }
-      .step-screenshot { padding: 24px 20px; }
-      .phase-header { flex-direction: column; gap: 12px; }
-      .prereq-card { padding: 32px 28px; }
+      .guide-hero { padding: 90px 0 28px; }
+      .step-info { padding: 14px 16px; gap: 6px; }
+      .step-info h3 { font-size: 15px !important; }
+      .step-info p { font-size: 12.5px !important; }
+      .step-screenshot { padding: 10px 14px; min-height: 120px; }
+      .step-screenshot-frame { max-width: 160px; }
+      .steps-list { gap: 12px; }
+      .phase-section { padding: 20px 0 10px; }
+      .phase-header { flex-direction: column; gap: 8px; margin-bottom: 16px; padding-bottom: 12px; }
+      .checklist-card { padding: 16px 18px; }
       .benefits-grid { grid-template-columns: 1fr; }
       .footer-inner { flex-wrap: wrap; gap: 16px; } .footer-copy { order: 3; width: 100%; text-align: center; }
       .guide-hero .guide-hero-inner h1,
       .guide-hero h1 { letter-spacing: -1px !important; }
       .cta-primary { font-size: 15px; padding: 15px 28px; }
-      .step-referral-cta { padding: 24px 20px 28px; }
+      .step-referral-cta { padding: 14px 16px 18px; gap: 8px; }
       .ref-btn { font-size: 14px; padding: 14px 24px; }
     }
     @media (max-width: 420px) {
-      .step-screenshot-frame { max-width: 100%; border-radius: 14px; }
+      .step-screenshot-frame { max-width: 140px; border-radius: 12px; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
       .footer-copy { order: 0; }
       .ref-btn { font-size: 13.5px; padding: 13px 20px; gap: 8px; }
@@ -583,68 +592,13 @@
         <span style="color:rgba(255,255,255,0.55);">Create Account With Us</span>
       </nav>
 
-      <div class="guide-cat-badge">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="2"/></svg>
-        Complete Guide
-      </div>
-
       <h1>How to Create Your Account <em>With Us</em></h1>
+      <p class="guide-subtitle">Complete 30-Step Guide</p>
 
-      <p class="guide-para">
-        A complete, screenshot-verified step-by-step guide to opening your Exness trading account through Z Trade University's official referral link — and unlocking your full suite of premium trading benefits.
-      </p>
-
-      <p class="guide-benefit-line">
-        Opening your account through our official partner link ensures you receive guided onboarding support, access to Z Trade University's educational tools and market intelligence systems, and a structured introduction to professional trading — at no extra cost.
-      </p>
-
-      <div class="guide-meta">
-        <div class="guide-meta-cell">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          30 Steps · ~20 min to complete
-        </div>
-        <div class="guide-meta-cell">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Updated 2025
-        </div>
-        <div class="guide-meta-cell">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Beginner Friendly
-        </div>
+      <div class="guide-progress" role="img" aria-label="Step 1 of 30">
+        <div class="guide-progress-track"><div class="guide-progress-fill"></div></div>
+        <span class="guide-progress-label">Step 1 of 30</span>
       </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════
-     PREREQUISITES — Important Instructions
-══════════════════════════════════════════ -->
-<section class="prereq-section">
-  <div class="container">
-    <div class="prereq-card">
-
-      <div class="prereq-top">
-        <div class="prereq-badge">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <div>
-          <h2>Important Instructions</h2>
-          <p>Prepare these three things before starting the registration process.</p>
-        </div>
-      </div>
-
-      <ul class="prereq-list">
-        <li>
-          <strong>Remove any existing Exness app</strong> from your mobile phone before starting. A clean install using our referral link is required for the partnership to register correctly.
-        </li>
-        <li>
-          <strong>Have your National ID Card ready</strong> — front and back photos must be clear, well-lit, and with all four corners fully visible. Blurry or cropped IDs will fail verification.
-        </li>
-        <li>
-          <strong>Use a new, dedicated Gmail or Yahoo email</strong> that has never been registered with Exness before. A fresh account avoids registration conflicts and keeps your trading separate.
-        </li>
-      </ul>
 
     </div>
   </div>
@@ -661,6 +615,39 @@
         <h2>30 Steps to Your <span>Live Trading Account</span></h2>
         <p>Follow every screenshot in sequence. The entire process from registration to first login takes approximately 20 minutes. Do not skip steps — each one builds on the last.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     IMPORTANT INSTRUCTIONS — compact checklist (directly above Step 1)
+══════════════════════════════════════════ -->
+<section class="checklist-section">
+  <div class="container">
+    <div class="checklist-card">
+      <div class="checklist-title">Important Instructions</div>
+      <ul class="checklist">
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Create your account using Chrome or another web browser.
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Do NOT create your account directly from the mobile app.
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          After creating your account, you may log in using the mobile app.
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          If this Gmail has already been used for any Exness account, use a NEW Gmail address.
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Use your original network SIM. Converted SIMs may miss OTP.
+        </li>
+      </ul>
     </div>
   </div>
 </section>
@@ -697,6 +684,13 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
               You must use our link — not the Exness homepage — for your benefits to activate.
             </div>
+            <div class="ref-code-box">
+              <div class="ref-code-box-label">Referral Code <em>(Required)</em></div>
+              <div class="ref-code-box-row">
+                <code class="ref-code-value">5dogk171n8</code>
+                <button type="button" class="ref-copy-btn" onclick="copyReferralCode(this)" aria-label="Copy referral code">Copy</button>
+              </div>
+            </div>
           </div>
           <div class="step-screenshot">
             <div class="step-screenshot-frame">
@@ -708,15 +702,18 @@
         <!-- ★ REFERRAL CTA — full-width panel inside Step 01 card ★ -->
         <div class="step-referral-cta">
           <div class="ref-label">Official Partner Referral Link</div>
-          <a href="https://one.exnessonelink.com/a/5dogk171n8?source=app&amp;platform=mobile&amp;pid=mobile_share"
+          <a href="https://one.exnessonelink.com/a/5dogk171n8?source=website&amp;platform=web&amp;pid=website_referral"
              class="ref-btn" target="_blank" rel="noopener noreferrer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
             Click Here to Create Your Account
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
-          <div class="ref-code-row">
-            <span>Referral Code:</span>
-            <code class="ref-code">5dogk171n8</code>
+          <div class="ref-code-box in-cta">
+            <div class="ref-code-box-label">Referral Code <em>(Required)</em></div>
+            <div class="ref-code-box-row">
+              <code class="ref-code-value">5dogk171n8</code>
+              <button type="button" class="ref-copy-btn" onclick="copyReferralCode(this)" aria-label="Copy referral code">Copy</button>
+            </div>
           </div>
           <p class="ref-copy">Use this referral code if Exness asks for a partner or invite code during the registration process.</p>
         </div>
@@ -1463,6 +1460,48 @@
 </footer>
 
 <script>function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }</script>
+
+<!-- Single source of truth for the Referral Code shown in both locations -->
+<script>
+  var ZTU_REFERRAL_CODE = '5dogk171n8';
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.ref-code-value').forEach(function (el) {
+      el.textContent = ZTU_REFERRAL_CODE;
+    });
+  });
+
+  function copyReferralCode(btn) {
+    var original = btn.textContent;
+
+    function done(ok) {
+      btn.textContent = ok ? 'Copied ✓' : original;
+      btn.classList.toggle('copied', ok);
+      setTimeout(function () {
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ZTU_REFERRAL_CODE).then(function () { done(true); }).catch(function () { done(false); });
+    } else {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = ZTU_REFERRAL_CODE;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done(true);
+      } catch (e) {
+        done(false);
+      }
+    }
+  }
+</script>
 
   <!-- site-wide language system (shared) -->
   <script src="/assets/ztu-lang.js" defer></script>
