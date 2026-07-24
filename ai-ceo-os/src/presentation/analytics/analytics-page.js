@@ -282,7 +282,43 @@ async function loadReusedAnalytics() {
       ${dim('Platforms (by source)', (r.dimensions.platforms || []).map((p) => `${p.name} — ${p.active} active`))}
       ${dim('Content types', (r.dimensions.contentTypes || []).map((c) => `${c.name} — ${c.published} published`))}
     </div>
-    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Focus next month:</strong> ${escapeHtml(r.executiveSummary)}</p>`;
+    <p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"><strong>Focus next month:</strong> ${escapeHtml(r.executiveSummary)}</p>
+    ${channelBlockHtml(r)}
+    ${campaignScheduleHtml(r)}`;
+}
+
+// --- Adaptive layer: per-channel funnel comparison + Pareto 80/20 effort ---
+function channelBlockHtml(r) {
+  const rows = (r.channelPerformance || []).filter((c) => c.hasData);
+  const par = r.channelPareto;
+  if (rows.length === 0) return '';
+  const line = (c) =>
+    `<li>${escapeHtml(c.label)} — ${c.leads} leads · ${c.active} active${c.registrationRate !== null ? ` · reg ${c.registrationRate}%` : ''}${c.retentionRate !== null ? ` · ret ${c.retentionRate}%` : ''}${c.spend > 0 ? ` · CPA $${c.costPerActive ?? '—'}` : ' · organic'}</li>`;
+  const effort = par?.enoughData
+    ? `<p class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-2);"><strong>Effort next month (Pareto):</strong> ${par.effort.map((e) => `${escapeHtml(e.label)} ${e.effortPct}%`).join(' · ')}<br><span class="ceo-text-muted">${escapeHtml(par.note)}</span></p>`
+    : `<p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin-top: var(--ceo-space-2);">${escapeHtml(par?.note || '')}</p>`;
+  return `
+    <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin: var(--ceo-space-3) 0 2px;">Channel performance (by active clients)</div>
+    <ul style="margin: 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${rows.map(line).join('')}</ul>
+    ${effort}`;
+}
+
+// --- Campaign schedule: when each begins, expected vs actual, status --------
+function campaignScheduleHtml(r) {
+  const sched = r.campaignSchedule || [];
+  if (sched.length === 0) return '';
+  const badge = { active: 'ceo-badge-success', upcoming: 'ceo-badge-neutral', complete: 'ceo-badge-warning', unknown: 'ceo-badge-neutral' };
+  const row = (c) => `
+    <div class="ceo-flex ceo-items-center ceo-gap-2" style="flex-wrap: wrap; padding: 2px 0; font-size: var(--ceo-font-size-sm); border-bottom: 1px solid var(--ceo-border-subtle);">
+      <span class="ceo-badge ${badge[c.status] || 'ceo-badge-neutral'}">${escapeHtml(c.status)}</span>
+      <strong style="min-width: 11em;">${escapeHtml(c.name)}</strong>
+      <span class="ceo-text-muted">${escapeHtml(String(c.startDate || '—'))}${c.endDate ? ' → ' + escapeHtml(String(c.endDate)) : ''}</span>
+      <span style="flex: 1; min-width: 10em;" class="ceo-text-muted">${escapeHtml(c.expected)}</span>
+      ${c.actual ? `<span class="ceo-text-secondary">actual: ${c.actual.active} active</span>` : ''}
+    </div>`;
+  return `
+    <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin: var(--ceo-space-3) 0 2px;">Campaign schedule (when each begins · expected vs actual)</div>
+    ${sched.map(row).join('')}`;
 }
 
 function escapeHtml(str) {

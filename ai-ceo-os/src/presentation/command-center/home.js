@@ -885,7 +885,7 @@ function plannedCampaignsHtml(campaigns) {
     ? `<div><span class="ceo-text-muted">${escapeHtml(label)}:</span> ${escapeHtml(value)}</div>` : '';
   return `
     <details style="margin-top: var(--ceo-space-2);">
-      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📡 Campaign details (${campaigns.length}) — country, audience, budget, CTA, KPI</summary>
+      <summary class="ceo-text-secondary" style="cursor: pointer; font-size: var(--ceo-font-size-sm);">📡 Campaign SOPs (${campaigns.length}) — prerequisites, setup, audience, creative, budget, KPIs, kill/scale, optimization, exit</summary>
       <div class="ceo-card" style="margin-top: var(--ceo-space-2); font-size: 0.75rem;">
         ${campaigns.map((c) => `
           <div style="border-top: 1px solid var(--ceo-border); padding: var(--ceo-space-2) 0;">
@@ -896,14 +896,28 @@ function plannedCampaignsHtml(campaigns) {
             </div>
             ${field('Country', c.country)}
             ${field('Area / region', c.region)}
+            ${field('Prerequisites', c.prerequisites)}
+            ${field('Setup', c.setup)}
+            ${c.decisionGuide ? `<div style="margin-top:2px; padding:4px 6px; border-left:2px solid var(--ceo-accent); background:var(--ceo-surface-raised);"><span class="ceo-text-muted">🧭 How to decide (no experience needed):</span> ${escapeHtml(c.decisionGuide)}</div>` : ''}
             ${field('Target audience', c.audience)}
             ${field('Audience interests', c.interests)}
+            ${field('Creative', c.creative)}
             ${field('Language', c.language)}
             ${field('Objective', c.objective)}
             ${field('Budget', c.budget)}
+            ${field('Daily actions', c.dailyActions)}
             ${field('Campaign duration', c.duration)}
+            ${field('A/B test', c.abTest)}
+            ${field('Optimization', c.optimization)}
+            ${field('Kill / scale rules', c.killScale)}
+            ${field('Weekly review', c.weeklyReview)}
+            ${field('Lead follow-up', c.followUp)}
+            ${field('Deposit assist', c.depositAssist)}
+            ${field('Retention', c.retention)}
             ${field('CTA', c.cta)}
             ${field('KPI', c.kpi)}
+            ${field('Success criteria', c.success)}
+            ${field('Exit criteria', c.exit)}
             ${field('Expected result', c.expected)}
           </div>`).join('')}
       </div>

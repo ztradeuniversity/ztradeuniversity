@@ -105,8 +105,14 @@ const CHANNEL_PLAYBOOK = {
     audience: 'Interests: XAUUSD/gold trading, forex beginners, Exness/broker verification, halal investing, scam awareness, prop-firm challenges · PK+GCC, 22–45, mobile-first, Roman-Urdu readers',
     language: 'Urdu / Roman-Urdu', mode: 'Organic', budget: '$0',
     duration: 'Daily, continuous (20m/day)',
+    setup: '1 public channel (daily gold note, 2–3 posts/day, NO signals) + 1 IB-gated VIP group + a Telegram bot capturing joins/leads → CRM. Sat voice-chat Q&A.',
+    dailyActions: '2–3 posts (gold note + 1 educational + occasional soft CTA); answer EVERY question <24h; flag 1–2 IB-ready members into follow-ups.',
+    weeklyReview: 'New members, 30-day retention, member→verified-Exness %, DAU/MAU; which post types drove joins.',
     cta: 'Free course link — never a deposit ask; 1 in 3 posts carries NO ask',
-    kpi: 'Reply-rate; every question answered <24h; 1–2 IB-ready members flagged',
+    kpi: 'Reply-rate; every question answered <24h; 30-day retention ≥60%; member→verified ≥5% by M6; DAU/MAU ≥25%',
+    followUp: 'Flagged IB-ready members → daily ib_followups; new joins → welcome + free-course link.',
+    success: 'A self-sustaining community hub where members convert to verified Exness at ≥5% — the funnel\'s conversion midpoint.',
+    exit: 'Never — this is the permanent community core; only prune inactive VIP members.',
     expected: '~2 qualified conversations/day',
   },
   technical_analysis: {
@@ -159,8 +165,16 @@ const CHANNEL_PLAYBOOK = {
     audience: 'Search intent: "forex kya hai", "MT5 kaise use karen", "$100 se trading", "Exness deposit Pakistan", "scam broker pehchan" · the first 20 videos ARE the free course',
     language: 'Urdu (Roman-Urdu title targeting Urdu search queries)', mode: 'Organic', budget: '$0 (~$30 one-time mic)',
     duration: '1–2/wk, 8–15 min',
+    prerequisites: 'A ~$30 mic; a channel with playlists set up so the first 20 videos = the free course.',
+    setup: 'Channel art + "Start here" playlist = the course · Urdu search-query titles · cards/end-screens → next lesson + Telegram · IB link in description (disclosed).',
+    creative: 'Search-intent teardowns (one question per video), imperfect one-take fine; strong title + thumbnail; first 30s hook.',
+    dailyActions: 'None daily (weekly production); reply to comments, pin the free-course + Telegram link.',
+    weeklyReview: 'Watch-time %, subs gained, which titles pulled search impressions; pick next titles from real search queries.',
+    optimization: 'Refresh titles/thumbnails on videos with impressions but low CTR; double down on formats with >40% watch-time.',
     cta: '"Poora seekhna hai to free course — link description mein" (never deposit); Telegram + IB link with disclosure',
-    kpi: 'Watch-time ≥40%; 10K subs by M9',
+    kpi: 'Watch-time ≥40%; 10K subs by M9; comment→Telegram flow',
+    success: 'A playlist that functions as the free course + evergreen search that converts — authority compounding for years.',
+    exit: 'Never (evergreen asset); only retire individual underperforming videos.',
     expected: 'Authority + evergreen search; playlist = course = lead magnet (zero extra production)',
   },
   publish_chain: {
@@ -177,8 +191,16 @@ const CHANNEL_PLAYBOOK = {
     audience: 'Community members + course-completers (the conversion-ready pool)',
     language: 'Urdu', mode: 'Organic', budget: '$0',
     duration: 'Weekly fixed slot (1.5h)',
+    prerequisites: 'A community to invite (Telegram); a fixed Gulf-evening-friendly slot; a simple deck/screen for the teach segment.',
+    setup: 'Fixed weekly slot · registration via Telegram · reminder sequence (T-24h, T-1h) · replay pinned after.',
+    audienceSelection: 'Community members + course-completers — the conversion-ready pool, not cold traffic.',
+    dailyActions: 'On class day: promote at T-24h and T-1h; run 30m teach + 15m honest market review + 15m Q&A; capture attendees.',
+    weeklyReview: 'Attendance, replay views, and attendee→conversation→registration — webinars convert 3–5× cold leads, so protect the slot.',
     cta: '"Course complete karne wale mujhse personal baat kar sakte hain"',
-    kpi: 'Attendance + replay views',
+    kpi: 'Attendance + replay views; attendee→registration ≥3–5× lead baseline',
+    followUp: 'Every attendee gets a personal WhatsApp within 24h → the strongest conversion moment in the week.',
+    success: 'A reliable weekly ritual where warm attendees convert several-fold above cold leads.',
+    exit: 'Never (core conversion ritual); only change the slot if attendance data says so.',
     expected: 'The weekly ritual + conversion moment',
   },
   // PRIORITY 1 acquisition channel (blueprint §6.1) — short-form video is the
@@ -194,6 +216,7 @@ const CHANNEL_PLAYBOOK = {
     duration: 'Batch-record 2 days/wk; 1 short/day/platform (same asset, native re-uploads)',
     cta: 'Telegram link in bio/comments — every video',
     kpi: '30 shorts/mo · viewer→profile CTR ≥1.5% · ≥15 Telegram joins/10K views · 100K+ views/mo by M6',
+    decisionGuide: 'WHAT TO POST TODAY: take the next title from your Idea Bank (Growth page) or the "Produce" suggestion on Today — never invent a topic. Beginner formats that reliably work: "3 mistakes new traders make", "is trading halal/real/risky", a gold (XAUUSD) chart breakdown, "how to start with $100". THE HOOK (first 1–2 seconds): a payoff or bold question — e.g. "Trading mein 90% log kyun haarte hain?" / "Gold aaj kahan jaa raha hai?". One take, talk to camera, imperfect is fine. IF UNSURE: post a "3-mistakes" video — it consistently performs for beginners.',
     expected: 'Mass top-of-funnel reach at $0 — the primary lead engine',
   },
   facebook_ads: {
@@ -205,11 +228,263 @@ const CHANNEL_PLAYBOOK = {
     language: 'Urdu (EN for NG later)', mode: 'PAID (accelerant, never the backbone)',
     budget: '$0 until the gate. WHY DELAYED (evidence): Meta needs ~50 conversions/wk to optimize (~$2,000/wk); at $150/mo, ads = donating to Meta. Once open: spend ≤50% of trailing-month commission. NOTE: $30–50/mo Reel BOOSTS of proven organic clips are allowed from day 1 (that is not a campaign).',
     duration: 'Rolling 2-week test cycles; kill any ad-set with CPL >$5 after $50 spend',
+    prerequisites: 'GATE: 100 actives + $1,000/mo commission run-rate. Boost infra already live (Business Manager, Ad Account, Pixel, Page). A library of proven-organic clips to use as creatives.',
+    setup: '(1) Lead-Generation campaign (instant forms), (2) connect form → Telegram bot, (3) 1 ad-set: broad PK 18–35 + interests, exclude existing leads, (4) load 3 proven-clip creatives, (5) daily budget = 50% trailing commission ÷ 30, (6) free-course lead form.',
+    decisionGuide: 'EXACT META SETTINGS (first campaign): Objective = "Leads" → Performance goal = "Maximise number of leads" → Conversion location = "Instant forms" → turn "Advantage+ audience" OFF for the first test (so YOU control it) → Pakistan, 18–35, add the interests above → Placements = "Advantage+ (automatic)" ON → Bid = "Highest volume / lowest cost" (no cap). READ CPL: in Ads Manager add the column "Cost per result" — that IS your CPL. Under $3 = good, keep; over $5 after $50 spent = turn that ad-set OFF. SCALE: CPL under $3 and holding → raise budget +20% every 2–3 days (never double). IF UNSURE: one broad ad-set, $16/day, lowest-cost bid, 3 clip creatives — let Meta learn 3–4 days before judging.',
+    creative: 'UGC screen-recording + proven-organic clips ONLY — never studio ads. Hook in first 2s. 3 variants per launch; refresh any that fatigues (frequency >2 or CPL drift +30%).',
+    dailyActions: 'Check spend pacing + CPL (2m). Move every new form-lead into the WhatsApp/Telegram deposit-assist pipeline same day.',
+    abTest: 'One variable at a time: creative first (3 clips, same audience), then audience (broad vs interest-stacked), then form length. Decide at ≥$50 spend or 20 leads per variant.',
+    optimization: 'Kill any ad-set CPL >$5 after $50. Scale the winner +20%/2–3 days (never double overnight — resets learning). Consolidate to the top 1–2 ad-sets.',
+    killScale: 'KILL: ad-set CPL >$5 after $50 · frequency >3 · lead→reg <5%. SCALE: CPL <$3 and reg-rate holding → +20% budget. PAUSE ALL: if commission run-rate drops below the spend it requires.',
+    weeklyReview: 'CPL per ad-set, lead→registration→funded→active by campaign, cost-per-registration vs boosts vs organic. Reallocate next week to the lowest cost-per-active.',
+    followUp: 'Every form-lead: Telegram auto-welcome within minutes → personal WhatsApp within 24h. Ad-leads are colder than organic — expect lower reg-rate, lead with the free course.',
+    depositAssist: 'Same daily WhatsApp deposit-assist pipeline: screen-share the JazzCash/Easypaisa/bank rail; reg→FTD ≥25% assisted.',
+    retention: 'Funded ad-clients enter the same Day-1/7/30 retention ladder — ad CAC is only justified if they survive 90 days.',
     cta: 'Free course lead form — never a deposit ask',
-    kpi: 'Target CPL $1.50–3.00; paid spend ≤50% of trailing commission',
+    kpi: 'Target CPL $1.50–3.00; lead→reg ≥8%; reg→FTD ≥25%; cost-per-active ≤ trailing ARPU × payback target',
+    success: 'CPL ≤$3 sustained + cost-per-active below client LTV → paid is a net-positive accelerant; increase within the ≤50%-commission cap.',
+    exit: 'Pause the campaign whenever CPL >$5 for 2 weeks unfixable, OR commission run-rate falls below required spend — fall back to boosts-only until the funnel recovers.',
     expected: 'Paid accelerant — only after organic + commission prove the funnel',
   },
+  // Low-budget clip BOOST — the paid lever the blueprint already permits from
+  // day 1 but never scheduled. Boosting a PROVEN clip is amplification, not
+  // campaign optimization, so Meta's "~50 conversions/wk to optimize"
+  // constraint does not apply — a $2/day boost of a known-good asset simply
+  // buys more reach for it. Distinct from the gated lead-gen campaign below.
+  paid_boost: {
+    activity: 'Paid clip boost (proven organic clips only)', platform: 'Facebook / Instagram boost', country: 'Pakistan (+ Gulf-expat targeting)',
+    region: 'Broad PK 18–35 nationwide + Lahore/Karachi/Islamabad/Faisalabad',
+    objective: 'Amplify a KNOWN-good clip for reach → Telegram (not campaign optimization)',
+    audience: 'Broad 18–35; the clip does the targeting — no complex ad-sets',
+    interests: 'Forex/gold/XAUUSD, Exness, MT4/MT5, financial literacy, freelancing/side-income',
+    language: 'Urdu', mode: 'PAID — low-budget amplifier, allowed from day 1',
+    prerequisites: 'Day 45+ (≥6 weeks posting → a proven clip + engagement baseline). Business Manager + Ad Account + payment method + Pixel + linked Page/IG (the day-45 setup block).',
+    setup: 'One-time: Business Manager → Ad Account (PKR/Karachi) → payment → Pixel on link page → link Page + Instagram. Then it is just the Boost button on the best post.',
+    creative: 'ONLY a clip that already performed organically (top saves/shares this week). Never boost an unproven post — that is buying reach for a guess.',
+    decisionGuide: 'WHICH CLIP (fixed rule, not a judgment — Meta Insights live outside this system, so you apply it): most SAVES this week; tiebreak shares, then views. HOW TO BOOST: on that post tap "Boost" → goal "more link clicks/messages" → audience "People you choose" → Pakistan, 18–35, add the interests above → $2/day × 5 days → run. READ IT (fixed rule, tied to the KPI): after 2 days check joins vs spend — on pace for ≥15 joins per $10 boost (≤$0.67/join) = keep; under 10 joins per $10 (>$1/join) = stop and boost the next-ranked clip. NO DATA YET (first boost): use your most-viewed clip, $2/day, broad PK 18–35.',
+    dailyActions: 'None daily; the boost runs itself. Route the Telegram joins it produces into the daily community + WhatsApp pipeline.',
+    abTest: 'Boost 2 candidate clips $2/day for 2 days; keep spending on whichever gets the lower cost-per-Telegram-join.',
+    optimization: 'Shift the weekly $10 toward the format that consistently wins (e.g. 3-mistake > chart-breakdown). Broaden or tighten the interest set based on join quality.',
+    killScale: 'KILL any boost with CPL >$5 or fewer than 10 joins per $10 boost (>$1/join). SCALE (raise to $3–5/day) only a clip beating the KPI — ≥15 joins per $10 (≤$0.67/join). Never exceed $50/mo until the gated campaign opens.',
+    weeklyReview: 'On review day: which boosted clip won, CPL, joins, and whether boosted joins convert as well as organic joins. Pick next week\'s clip.',
+    followUp: 'Boosted leads are warm (they chose to click) — same daily Telegram welcome + WhatsApp within 24h.',
+    retention: 'Feeds the same community → deposit-assist → retention ladder as organic leads.',
+    cta: 'Telegram link — every boost',
+    kpi: '3–10× the clip\'s organic reach · CPL <$5 · ≥15 Telegram joins per $10 boost (≤$0.67/join)',
+    success: 'Consistently hitting ≥15 joins per $10 (≤$0.67/join) at $30–50/mo → the cheap top-of-funnel accelerant is working; keep it running permanently alongside the gated campaign.',
+    exit: 'Never fully exit (it is cheap) — but pause any single boost that can\'t beat $5 CPL, and redirect that $10 to a better clip.',
+    expected: 'Pulls forward months-1–6 leads + builds the pixel/audience/CPL baseline the gated campaign needs',
+  },
+  instagram: {
+    activity: 'Instagram (Reels + profile funnel)', platform: 'Instagram', country: 'Pakistan + Gulf expats (Urdu)',
+    prerequisites: 'The same short-form clip already made for the day (no separate production). A business/creator IG account linked to the Facebook Page.',
+    setup: 'Convert to a creator account · bio link → Telegram · pinned 3 best Reels · Story highlights = "Free course", "Proof", "How to start".',
+    audience: 'Beginners + Gulf-expat Pakistanis; Instagram skews slightly higher-income than FB in PK.',
+    creative: 'Native re-upload of the day\'s Reel (no TikTok watermark) + weekly carousel (3-mistake / gold-level teardown). Vertical, captioned.',
+    language: 'Urdu + English terms', mode: 'Organic (rides shortform) + eligible for the same paid boost',
+    budget: '$0 organic; shares the $30–50/mo boost pool where IG outperforms FB',
+    dailyActions: 'Re-upload the day\'s Reel to IG; reply to every comment/DM; move DMs → Telegram.',
+    cta: 'Telegram link in bio + comments', duration: 'Daily re-upload (5m on top of the shortform task)',
+    kpi: 'Reel reach; profile→Telegram CTR ≥1.5%; DM conversations', weeklyReview: 'Compare IG vs FB Reel reach for the same clip; boost on whichever wins.',
+    success: 'A second $0 reach surface delivering Telegram joins at parity with FB Reels.',
+    exit: 'Never — it is a free re-upload; only drop it if IG reach is persistently <10% of FB for the same asset.',
+    expected: 'Free incremental reach + a higher-income slice, on content you already produced',
+  },
+  tiktok: {
+    activity: 'TikTok (short-form, market-dependent)', platform: 'TikTok', country: 'PK (unreliable) · Africa/SEA (primary)',
+    prerequisites: 'The day\'s short-form clip. A TikTok account for the target market. NOTE: TikTok is repeatedly banned in Pakistan — treat PK as auto-repost-only, never depend on it there.',
+    setup: 'Market account · bio link (or linktree where TikTok blocks broker links) → Telegram · post natively (no other-platform watermark).',
+    audience: 'Never-traded beginners, 18–30, mobile-first — strongest in Nigeria/Kenya/Indonesia/Vietnam (Phase 3–4 markets).',
+    creative: 'Native re-upload, remove watermarks, trending-audio where it fits; hook in first 1s. Same educational clips.',
+    language: 'Urdu (PK repost) · English (Africa) · native (SEA, Phase 4)', mode: 'Organic (PRIMARY reach engine in Africa/SEA)',
+    budget: '$0 (TikTok paid = REJECT for forex: category-restricted + ban risk)',
+    dailyActions: 'Re-upload in active markets; reply; funnel to Telegram/WhatsApp.',
+    cta: 'Telegram/WhatsApp via bio', duration: 'Daily in primary markets; auto-repost only in PK',
+    kpi: 'Views, saves, profile CTR; TG joins per 10K views', killScale: 'Scale time into TikTok in a market only once it out-reaches FB/YT there; in PK cap at zero native minutes.',
+    success: 'A dominant low-CPM reach engine in the Phase-3/4 markets (NG/KE/ID/VN).',
+    exit: 'Do not build on TikTok in any market that bans it or blocks broker funnels; keep it auto-repost-only there.',
+    expected: 'The primary short-form engine in Africa/SEA; a free auto-repost shelf in PK',
+  },
+  seo: {
+    activity: 'Website / GEO + SEO (high-intent search)', platform: 'Website (Cloudflare Pages)', country: 'All (search is borderless)',
+    prerequisites: 'Phase 2 (day 270+): the video library exists to embed, and a domain is live. Google Search Console + a sitemap.',
+    setup: 'Search Console verified · sitemap submitted · 1 pillar page template (H1/meta/FAQ schema/embedded video/IB link with disclosure) · internal-link map.',
+    audience: 'High-intent searchers: "Exness deposit JazzCash", "MT5 Exness Pakistan", "forex halal hai", "$100 se trading".',
+    creative: 'One 2,500–4,000w pillar or cluster page per week, built from a proven video\'s transcript + FAQ; embed the video; screenshots of the real rail.',
+    decisionGuide: 'WHICH KEYWORD (a lookup, not a judgment): after ~30 days open Google Search Console → Performance → sort by Impressions → take the highest-impressions query at position 5–15 (closest to page 1) and write THAT page next — the data decides. BEFORE any data exists: use, in order, "Exness deposit JazzCash", "MT5 kaise use karen", "forex halal hai ya nahin". FALLBACK: turn your most-viewed video into a page using its exact title as the H1 — that topic already proved demand.',
+    language: 'Urdu content, EN title/meta', mode: 'Organic (compounding)',
+    budget: '$10/mo (domain + Cloudflare free tier)',
+    dailyActions: 'None daily — this is a weekly build. Answer any question a ranking page surfaces via the community.',
+    duration: 'Weekly: 1 page + refresh 1 old page', weeklyReview: 'Search Console: impressions, clicks, avg position of target queries; which page moved; pick next week\'s keyword from real query data.',
+    optimization: 'Update pages ranking positions 5–15 first (fastest wins); add internal links from new pages to money pages; refresh stale numbers.',
+    killScale: 'SCALE keyword clusters that convert to Telegram joins; DROP topics with impressions but zero clicks after 90 days (fix title/intent once, then retire).',
+    followUp: 'Every page CTA → free course → Telegram; SEO leads are the highest-intent in the funnel.',
+    cta: 'In-page: free course + related lessons + IB link (disclosed)',
+    kpi: 'Phase 2 exit 5K visits/mo; Phase 3 30K/mo; page→Telegram CTR; assisted keyword rankings',
+    success: 'A compounding free-at-margin traffic source delivering high-intent leads without ongoing spend.',
+    exit: 'Never retire the channel (evergreen); only retire individual non-converting pages.',
+    expected: 'Compounding, near-zero-marginal-cost high-intent traffic (Phase 2+)',
+  },
+  // --- Full-funnel channels the Executive Strategy Report surfaced as gaps:
+  // the reg→funded jump, the referral engine, the sub-IB network (the back
+  // half of 50,000), and the per-market launch funnel. Content only — these
+  // reuse the existing per-campaign display + SOP surfaces.
+  deposit_assist: {
+    activity: 'WhatsApp deposit-assist', platform: 'WhatsApp (personal)', country: 'Every active market',
+    audience: 'Every new registrant under the IB link — the single highest-converting funnel step',
+    language: 'Client\'s language', mode: 'Organic', budget: '$0',
+    duration: 'Daily, per new registrant (10–15m each)',
+    prerequisites: 'WhatsApp Business installed; labels configured as pipeline stages (lead / registered / funded / active); a registrant to assist.',
+    setup: 'WhatsApp Business · labels = CRM stages · saved quick-replies for each rail (JazzCash/Easypaisa/bank/M-Pesa) · deposit walkthrough screen-recording ready.',
+    dailyActions: 'Message every new registrant within 24h → identify their rail → screen-share the exact deposit steps → confirm FTD → tag funded in CRM. Segmented broadcast ≤3–4/wk.',
+    weeklyReview: 'Registration→FTD % (assisted vs baseline), response time, stuck registrants; which rail causes the most friction.',
+    cta: 'Screen-share the local deposit rail; solve the practical blocker, never pressure',
+    kpi: 'Registration→first-deposit ≥25% (assisted) vs ~15% unassisted; response <2h daytime',
+    retention: 'Funded → straight onto the Day-1/7/30 retention ladder; assist their first trades (risk rules, not signals).',
+    success: 'Assisted reg→FTD holding ≥25% — the sales floor that turns registrations into revenue.',
+    exit: 'Never (core sales function); delegate to a hire only past ~500 actives when founder time caps out.',
+    expected: 'The reg→funded jump that turns registrations into revenue',
+  },
+  referral_program: {
+    activity: 'Referral engine', platform: 'WhatsApp/Telegram + tracked links', country: 'Every active market',
+    audience: 'Stable/profitable existing clients — the cheapest active you ever add',
+    language: 'Client\'s language', mode: 'Organic (reward = rebate / free-VIP)', budget: 'commission share',
+    duration: 'Ongoing ask on every stable-client touch; launches ~300 actives',
+    prerequisites: '~300 actives (a base worth referring from); a defined reward; a tracked-link mechanism per client.',
+    setup: 'Reward = rebate or free-VIP · unique tracked referral link per client · the value-framed ask script · a "referral ask" checkbox on every stable-client touch.',
+    audienceSelection: 'Only STABLE/profitable clients — never ask a losing or new client (damages trust).',
+    dailyActions: 'On retention/ib touches with stable clients: send their tracked link + the ask; log referrals received.',
+    weeklyReview: 'Referrals received → successful (→active) %; which clients refer; % of new actives from referral.',
+    cta: '"Kisi dost ko fayda ho to unka tracked link bhej dein" — value-framed, never spammy',
+    kpi: '≥10% of new actives from referrals by Phase 3; referral→active conversion',
+    retention: 'Reward referrers on their referral\'s RETENTION, not just signup — keeps quality high.',
+    success: 'Referrals become ≥10% of new actives at near-zero CAC — compounding word of mouth.',
+    exit: 'Never; throttle only if reward economics turn negative or fraud appears.',
+    expected: 'Compounding word-of-mouth — near-zero-CAC growth',
+  },
+  sub_ib: {
+    activity: 'Sub-IB partner network', platform: 'Direct + weekly partner call', country: 'Own clients → institutes → in-market leaders',
+    audience: 'Your best students + institute owners first; then vetted community leaders per market',
+    language: 'Per market', mode: 'Override commission (no cash cost)', budget: 'commission override',
+    duration: 'Weekly recruit → certify → scorecard block from Phase 3 (day 540+)',
+    prerequisites: 'Phase 3 (day 540+): a base of trained top students + institute relationships; a certification course; a compliance + fraud-audit process.',
+    setup: 'Certification course (free course + IB-business + compliance layer) · tiered override schedule (rewards retention) · monthly partner scorecard · fraud-audit checklist.',
+    audienceSelection: 'First 25 from your OWN top students + institute owners (highest trust, already trained); then vetted in-market community leaders.',
+    dailyActions: 'Weekly (Wed) block, phase-scaled to the plan\'s own gates: P3 founder-led 2 candidates/wk (→25 producing) · P4 partner-manager pipeline ~10/wk, founder interviews top 2–3 (→100–150) · P5 team + partner-referrals 20+/wk, founder governs quality (→400+). Certify → scorecard → audit BEFORE overrides.',
+    weeklyReview: 'Candidates → certified → producing; each partner\'s actives + book retention; fraud flags; recruit:producing ratio (~5:1).',
+    killScale: 'SCALE overrides for partners whose books retain; PAUSE payouts on any partner failing the monthly audit; DROP partners producing multi-accounting/bonus-abuse.',
+    cta: 'Certify → tiered override that rewards RETENTION, not just registration',
+    kpi: '~400–800 producing partners ≈ 40,000 of the 50k; recruit:producing ≈ 5:1; audit every book monthly BEFORE paying',
+    retention: 'Override rewards weighted to the partner\'s client RETENTION — the network only compounds if its clients survive.',
+    success: '400–800 producing partners delivering the majority of volume — the mechanism that reaches the back half of 50,000.',
+    exit: 'Never (the scale engine); off-board only partners who fail compliance/fraud audits.',
+    expected: 'The only realistic path to the back half of 50,000',
+  },
+  country_launch: {
+    activity: 'New-market launch funnel (hand-holding)', platform: 'Per market (see the day\'s funnel steps)', country: 'Metric-gated market entries',
+    audience: 'ONE market at a time, only after the prior gate — never spread thin',
+    language: 'Localized (native hire for non-English markets — never machine-translation)', mode: 'Organic-first, paid only post-proof', budget: 'reinvested commission',
+    duration: 'Multi-day launch sequence per market: research → active client → first sub-IB',
+    cta: 'Research → broker fit/fallback → KYC → rails/SMS test → localize → publish → communities → leads → webinar → deposit-assist → active → retention → referral → sub-IB',
+    kpi: 'First in-market active within 60–90 days of launch; first sub-IB within 6 months',
+    expected: 'A repeatable market-entry manual — not a content dump',
+  },
 };
+
+// --- Metric-gated market entries (Executive Strategy Report §Country) -----
+// The `day` is a Phase-2-exit-onward PLANNING proxy; the QUARTERLY GATE decides
+// the real go/no-go on data, never the calendar. Each carries its own broker
+// fit + fallback so the planner recommends the right broker per market instead
+// of assuming Exness onboards everyone.
+export const MARKET_ENTRY = [
+  { day: 540, market: 'Nigeria', broker: 'Exness', fallback: 'Deriv (deep Africa onboarding + local rails if Exness KYC/deposit friction)', language: 'English', rails: 'bank transfer + local card processors', platform: 'TikTok + Facebook Reels', note: 'First English market — ONLY after PK hits 500 actives + $5K/mo.' },
+  { day: 630, market: 'Kenya', broker: 'Exness', fallback: 'Deriv', language: 'English / Swahili', rails: 'M-Pesa (the conversion rail)', platform: 'TikTok + WhatsApp', note: 'M-Pesa deposit-assist is the whole game here.' },
+  { day: 720, market: 'South Africa', broker: 'Exness', fallback: 'HFM (FSCA-regulated trust angle)', language: 'English', rails: 'instant EFT / bank', platform: 'YouTube + Instagram', note: 'Higher LTV; lead with regulation + transparency.' },
+  { day: 960, market: 'Indonesia', broker: 'Exness', fallback: 'XM / Vantage (established SEA onboarding)', language: 'Bahasa Indonesia', rails: 'bank + e-wallet (OVO/GoPay)', platform: 'TikTok-dominant', note: 'NATIVE HIRE required — one language = one hire, never machine-translate.' },
+  { day: 1050, market: 'Malaysia', broker: 'Exness (Islamic / swap-free)', fallback: 'XM', language: 'Malay / English', rails: 'FPX online banking', platform: 'Facebook + TikTok', note: 'Lead with swap-free/halal — fits the existing halal series directly.' },
+  { day: 1140, market: 'Vietnam', broker: 'Exness', fallback: 'XM / Vantage', language: 'Vietnamese', rails: 'bank + e-wallet', platform: 'TikTok + YouTube', note: 'NATIVE HIRE required.' },
+  { day: 1260, market: 'Egypt', broker: 'Exness', fallback: 'XM (strong Arabic support)', language: 'Arabic', rails: 'local bank (mind currency controls)', platform: 'Facebook + YouTube', note: 'Arabic gateway; caution on currency-control + withdrawal friction.' },
+];
+
+// The complete first-contact → Active IB → sub-IB hand-holding funnel,
+// authored ONCE and applied per market with that market's broker, fallback,
+// rails, language and platform substituted in. Never skips an intermediate
+// step (broker fit, KYC, payment/SMS verification, localization, community,
+// webinar, deposit-assist, retention, referral, sub-IB).
+function buildCountryFunnel(m) {
+  return [
+    `🌍 ${m.market.toUpperCase()} LAUNCH FUNNEL — metric-gated (${m.note}) · multi-day sequence, work top-to-bottom, skip nothing:`,
+    `1. Market research: confirm forex legality, retail appetite, ad cost, competition, dominant platform (${m.platform}) and language (${m.language}).`,
+    `2. Broker fit: verify ${m.broker} onboards ${m.market} — KYC docs accepted, ${m.rails} supported, SMS/OTP works. If ANY fail → switch to fallback: ${m.fallback}.`,
+    `3. Create the ${m.broker} IB/partner sub-account for ${m.market}; complete KYC.`,
+    `4. Verify payment methods + SMS/OTP with a real test path (${m.rails}). If SMS unsupported → email/app verification or the fallback broker; generate those tasks.`,
+    `5. Build the localized landing page — ${m.language}, local proof, IB link WITH disclosure.`,
+    `6. Localize 5 content pieces (subtitle/dub top videos; never blind machine-translation).`,
+    `7. Publish the first 3 on ${m.platform}.`,
+    `8. Join 5 local ${m.market} trading communities; introduce, answer, never spam.`,
+    `9. Answer the first questions; establish the no-signals / education positioning.`,
+    `10. Capture the first leads → move into WhatsApp/Telegram in ${m.language}.`,
+    `11. Invite leads to the first free ${m.language} webinar / class.`,
+    `12. Run the webinar; record it; follow up EVERY attendee <24h.`,
+    `13. Assist registration under the IB link (screen-share if needed).`,
+    `14. Assist the first deposit — walk the ${m.rails} rail step-by-step (the highest-converting moment).`,
+    `15. Support the first trades: risk rules + platform help, never signals.`,
+    `16. Confirm 90-day active → log as Active IB Client in the CRM.`,
+    `17. Retention ladder: Day-1 / Day-7 / Day-30 touches; zero silent clients.`,
+    `18. Referral ask once the client is stable / profitable.`,
+    `19. Flag the best ${m.market} clients as sub-IB partner candidates.`,
+    `20. Recruit + certify the first local sub-IB partner → the market now compounds without you.`,
+  ];
+}
+
+// --- Campaign schedule (the planner's own "when does X begin") ------------
+// One source: the same gate days dayContent already uses + MARKET_ENTRY. The
+// Monthly AI Review joins the ACTUAL KPIs onto these (channel-performance.js).
+export const CAMPAIGN_SCHEDULE = [
+  { key: 'shortform', name: 'Short-form video (reach engine)', channel: 'organic', startDay: 1, endDay: PLAN_TOTAL_DAYS, expected: '100K+ views/mo by M6 · ≥15 Telegram joins per 10K views' },
+  { key: 'telegram', name: 'Telegram community', channel: 'telegram', startDay: 1, endDay: PLAN_TOTAL_DAYS, expected: '30-day retention ≥60% · member→verified ≥5% by M6' },
+  { key: 'youtube', name: 'YouTube long-form', channel: 'youtube', startDay: 1, endDay: PLAN_TOTAL_DAYS, expected: '10K subs by M9 · watch-time ≥40%' },
+  { key: 'webinar', name: 'Weekly live class / webinar', channel: 'webinar', startDay: 1, endDay: PLAN_TOTAL_DAYS, expected: '3–5× lead-baseline conversion' },
+  { key: 'seo', name: 'Website / SEO', channel: 'seo', startDay: 270, endDay: PLAN_TOTAL_DAYS, expected: '5K visits/mo by Phase 2 exit; 30K/mo Phase 3' },
+  { key: 'paid_boost', name: 'Paid clip boosts (proven clips)', channel: 'paid_ads', startDay: 45, endDay: PLAN_TOTAL_DAYS, expected: '$30–50/mo · CPL <$5 · 3–10× reach on proven clips' },
+  { key: 'facebook_ads', name: 'Facebook / Meta lead-gen campaign', channel: 'paid_ads', startDay: 270, endDay: PLAN_TOTAL_DAYS, expected: 'CPL $1.50–3.00 · spend ≤50% trailing commission (gated)' },
+  { key: 'referral', name: 'Referral program', channel: 'referral', startDay: 300, endDay: PLAN_TOTAL_DAYS, expected: '≥10% of new actives from referrals by Phase 3' },
+  { key: 'sub_ib', name: 'Sub-IB recruitment', channel: 'sub_ib', startDay: 540, endDay: PLAN_TOTAL_DAYS, expected: '400–800 producing partners over Years 2–5' },
+  ...MARKET_ENTRY.map((m) => ({
+    key: 'launch_' + m.market.toLowerCase().replace(/\s+/g, '_'),
+    name: m.market + ' launch',
+    channel: 'international',
+    startDay: m.day,
+    endDay: Math.min(m.day + 180, PLAN_TOTAL_DAYS),
+    expected: 'First in-market active in 60–90 days · first sub-IB within 6 months',
+  })),
+];
+
+// Convert the schedule's plan-day anchors to real calendar dates + a live
+// status (upcoming / active / complete) against today's plan day.
+export function buildCampaignSchedule(planStartDate, todayStr) {
+  const start = Date.parse(planStartDate);
+  const now = Date.parse(todayStr);
+  const known = Number.isFinite(start) && Number.isFinite(now);
+  const curDay = known ? Math.max(0, Math.round((now - start) / 86400000)) : 0;
+  const dateOf = (d) => {
+    const t = new Date(start);
+    t.setDate(t.getDate() + (d - 1));
+    return t.toISOString().slice(0, 10);
+  };
+  return CAMPAIGN_SCHEDULE.map((c) => ({
+    key: c.key,
+    name: c.name,
+    channel: c.channel,
+    expected: c.expected,
+    startDate: known ? dateOf(c.startDay) : null,
+    endDate: known ? (c.endDay >= PLAN_TOTAL_DAYS ? 'ongoing' : dateOf(c.endDay)) : null,
+    status: !known ? 'unknown'
+      : curDay < c.startDay ? 'upcoming'
+      : (c.endDay < PLAN_TOTAL_DAYS && curDay > c.endDay) ? 'complete'
+      : 'active',
+  }));
+}
 
 // One planned calendar date -> the day's platform + activity block, from the
 // same week rhythm mission.js instantiates (production/publish/review/class/
@@ -244,20 +519,31 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
     activities.push('Live class: 30m teach + 15m honest market review + 15m Q&A (1.5h)');
     campaignKeys.push('live_class');
     expected = 'Attendance + replay views — the weekly conversion moment';
+    // Social proof — evidence-standard in trust-deficit niches: captured
+    // student wins convert better than any ad. Weekly, right after class
+    // (the natural moment students share results). From ~day 30, once there
+    // are students to ask. Permission always; losses stay private
+    // (recognition-public/losses-private culture rule).
+    if (dayNumber >= 30) {
+      activities.push('Social proof capture (10m): ask 1 student/client for this week\'s win or testimonial (WITH permission; anonymized if preferred) → save to the proof library → use it in the next webinar slide + landing page. Never fabricate; losses stay private (culture rule).');
+    }
   }
 
   // The daily non-negotiables (cadence templates, seed-02 §1 + seed-07) —
   // the online engine AND the physical engine run together every day.
   // PRIORITY 1 (blueprint §6.1): 1 short-form video/day/platform — the $0
   // mass-reach lead engine. Batch-recorded 2 days/wk, posted daily.
-  activities.push('Short-form video: post 1 short to YT Shorts + TikTok + FB/IG Reels — CTA → Telegram (15m; batch-record 2 days/wk)');
-  campaignKeys.push('shortform_video');
+  const recs = opts.recs || {};
+  activities.push(recs.nextIdeaTitle
+    ? `Short-form video: post 1 short to YT Shorts + TikTok + FB/IG Reels — today's topic (auto-picked, next Idea Bank item): "${recs.nextIdeaTitle}" — CTA → Telegram (15m; batch-record 2 days/wk)`
+    : 'Short-form video: post 1 short to YT Shorts + TikTok + FB/IG Reels — CTA → Telegram (15m; batch-record 2 days/wk). Topic = next Idea Bank title / the "Produce" suggestion — never invent one; the clip SOP has the exact hook + "if unsure" default.');
+  campaignKeys.push('shortform_video', 'instagram', 'tiktok');
   activities.push('Telegram community touch: 1–2 posts, all questions <24h (20m)');
   campaignKeys.push('telegram_community');
   activities.push('Technical analysis post — levels/structure, education never signals (20m)');
   campaignKeys.push('technical_analysis');
-  activities.push('Retention due-list touches (15m) + IB follow-ups (15m)');
-  campaignKeys.push('retention_touches', 'ib_followups');
+  activities.push('WhatsApp deposit-assist: personally onboard every new registrant to their first deposit (15m) + IB follow-ups: advance 1 warm lead a stage (15m) + retention due-list touches (15m)');
+  campaignKeys.push('deposit_assist', 'ib_followups', 'retention_touches');
   activities.push('Physical IB Expansion: today\'s area outreach — visit/call/proposal (30m, see Physical tab)');
   campaignKeys.push('physical_outreach');
   activities.push('Personal trading: 5-question check-in + journal (15m)');
@@ -268,11 +554,45 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
     activities.push('Facebook groups: answer questions genuinely in PK forex groups, profile → Telegram (15m cap)');
     campaignKeys.push('facebook_groups');
   }
-  // Paid is gate-conditional ($1,000/mo commission run-rate ≈ Phase 1 exit,
-  // ~Month 9 / day 270 — blueprint §6.6), never calendar-forced. It surfaces
-  // as a planned spec from ~Month 6 so the founder sees the full gate before
-  // it opens, and never spends before commission funds it.
+  // --- PAID ACQUISITION (Executive Strategy Report §Advertising) ----------
+  // Two paid layers, deliberately separated by the evidence:
+  //  (1) LOW-BUDGET CLIP BOOSTS — start EARLY (day 45+). Boosting a PROVEN
+  //      clip is amplification, not optimization, so Meta's "~50 conversions/
+  //      wk to optimize" constraint does NOT apply. $30–50/mo fits the founder
+  //      envelope, accelerates the months-1–6 lead engine, and builds the
+  //      pixel/audience/CPL baseline the real campaign needs. WHY day 45:
+  //      ~6 weeks of daily posting yields a proven winner + an engagement
+  //      baseline — before that you would boost blind.
+  //  (2) OPTIMIZED LEAD-GEN CAMPAIGNS — still gated to the $1,000/mo
+  //      commission run-rate (~day 270). At $150/mo an optimized campaign
+  //      cannot feed Meta the conversion volume to optimize — that holds.
+  //
+  // One-time boost infrastructure setup (~6 weeks in; no campaign yet).
+  if (dayNumber === 45) {
+    activities.push('📣 PAID BOOST SETUP (one-time, ~$0 today): (1) create a Meta Business Manager, (2) create an Ad Account inside it (PKR + Karachi timezone), (3) add a payment method, (4) install the Meta Pixel on your link/landing page — or connect the Telegram-bot conversion, (5) confirm your Facebook Page + Instagram are linked. This only readies the Boost button — do NOT run a campaign yet.');
+  }
+  // Recurring weekly boost of the week's best organic clip — from day 45.
+  if (dayNumber >= 45) {
+    campaignKeys.push('paid_boost');
+    if (weekdayName === reviewDay) {
+      const chan = (opts.recs && opts.recs.bestChannel)
+        ? ` Best platform (auto-computed from your CRM attribution): ${opts.recs.bestChannel.label} — ${opts.recs.bestChannel.sharePct}% of your actives came from it.`
+        : '';
+      activities.push(`📣 Weekly clip boost (~$2/day × 5d ≈ $10/wk, ≤$50/mo): boost the clip with the most SAVES this week (fixed rule — not a judgment call), broad PK 18–35 forex-interest, CTA → Telegram (15m).${chan} Log spend + Telegram joins → CPL; kill any boost with CPL >$5. Boosted leads flow into the SAME daily Telegram + WhatsApp deposit-assist pipeline.`);
+    }
+  }
+  // The gated lead-gen campaign card surfaces from ~Month 5 so the founder
+  // sees the full spec before the gate opens.
   if (dayNumber > 150) campaignKeys.push('facebook_ads');
+  // Executable lead-gen campaign LAUNCH — conditional on the commission gate.
+  if (dayNumber === 270) {
+    activities.push('📣 META LEAD-GEN CAMPAIGN LAUNCH — ONLY if 100 actives + $1,000/mo commission (else keep boosting only): (1) create a Lead-Generation campaign (instant forms), (2) connect the form → Telegram bot, (3) build 1 ad-set — broad PK 18–35, forex/gold/Exness interests, EXCLUDE existing leads, (4) load 3 proven-clip creatives, (5) daily budget = 50% of trailing commission ÷ 30 (e.g. $1,000/mo → ≤$500/mo → ~$16/day), (6) write the free-course lead form (never a deposit ask), (7) launch. Target CPL $1.50–3.00.');
+  }
+  // Recurring paid optimization + the ad→WhatsApp conversion loop, once the
+  // campaign could be live (day 270+), on review day.
+  if (dayNumber > 270 && weekdayName === reviewDay) {
+    activities.push('📣 Paid-ads weekly optimization (15m): review CPL per ad-set → kill any >$5 after $50 spend → scale the winner +20% → refresh one fatigued creative. Confirm every ad lead got a WhatsApp deposit-assist touch. Log spend vs new registrations → cost-per-registration.');
+  }
 
   // Monthly anchors on a 28-day planning rhythm; quarterly gate every 91 days.
   if (dayNumber % 28 === 21) {
@@ -289,6 +609,70 @@ function dayContent(dayNumber, dateStr, weekdayName, opts) {
   }
   if (dayNumber === 525) {
     activities.push('PHASE 2 EXIT / ENGLISH-EXPANSION GATE (~Month 18): only if 500 actives + $5K/mo — begin English by repurposing your top-30 videos, Nigeria first. Do NOT expand before the PK engine hits its gate.');
+  }
+
+  // --- SEO / high-intent search — a compounding Phase-2 asset. Setup at the
+  // Phase-2 gate (day 270), then one page per week. Card surfaces from day 210.
+  if (dayNumber >= 210) campaignKeys.push('seo');
+  if (dayNumber === 270) {
+    activities.push('📄 SEO SETUP (Phase 2): verify Google Search Console + submit a sitemap; build the pillar-page template (H1/meta/FAQ schema/embedded video/disclosed IB link); list 20 high-intent Urdu queries ("Exness deposit JazzCash", "MT5 Exness Pakistan", "forex halal hai").');
+  }
+  if (dayNumber >= 270 && weekdayName === publishDay) {
+    activities.push('📄 SEO page build (part of the publish chain): turn this week\'s proven video into one 2,500–4,000w high-intent page (transcript + FAQ + embedded video + real-rail screenshots), internal-link it to the money pages, submit to Search Console.');
+  }
+
+  // --- Referral engine — the cheapest active you ever add. Surfaces as a
+  // planned spec from day 180; formally launches at the ~300-active gate, then
+  // becomes a recurring weekly ask.
+  if (dayNumber >= 180) campaignKeys.push('referral_program');
+  if (dayNumber === 300) {
+    activities.push('REFERRAL PROGRAM LAUNCH (~300 actives): set the reward (rebate / free-VIP), give every client a tracked referral link, write the value-framed ask, and add a "referral ask" to every stable-client touch.');
+  }
+  if (dayNumber > 300 && weekdayName === reviewDay) {
+    activities.push((opts.recs && opts.recs.referralTargets)
+      ? `🔁 Referral weekly (10m): the CRM auto-selected ${opts.recs.referralTargets} stable client${opts.recs.referralTargets === 1 ? '' : 's'} (engaged/retained) — send each their tracked referral link + the value-framed ask; log referrals received → successful (→active). Reward on the referral's RETENTION, not just signup.`
+      : '🔁 Referral weekly (10m): on this week\'s stable/profitable clients, send their tracked referral link + the value-framed ask; log referrals received → successful (→active). Reward on the referral\'s RETENTION, not just signup.');
+  }
+
+  // --- Sub-IB partner network — the ONLY realistic path to the back half of
+  // 50,000 (~80% of the target comes from partners). Opens in Phase 3 (day
+  // 540+): a weekly recruit/certify/scorecard block, plus the launch playbook.
+  if (dayNumber >= 540) {
+    campaignKeys.push('sub_ib');
+    if (weekdayName === 'wednesday') {
+      // Phase-scaled recruitment — the weekly cadence MUST match the plan's
+      // own gates (25 producing by P3 exit · 100–150 by P4 · 400+ in P5).
+      // 1/week forever would yield ~37 producing partners — mathematically
+      // incompatible with the 40,000 partner-driven actives the model needs.
+      // Scaling is delegation, not founder hours: P4+ the partner manager
+      // (hired at Phase 3 per the plan) runs the pipeline; P5 partners
+      // recruit partners; the founder governs scorecards and quality.
+      if (dayNumber <= 900) {
+        activities.push('Sub-IB partner block (45m, founder-led): recruit 2 candidates this week from your best clients / institutes → certify (course + IB-business + compliance) → update scorecards (actives added · THEIR book retention · fraud flags) → overrides only on retained volume. TARGET: 25 producing partners by the Phase 3 exit gate.');
+      } else if (dayNumber <= 1440) {
+        activities.push('Sub-IB pipeline review (45m, partner-manager runs it): the pipeline targets ~10 candidates/week team-wide; you interview the top 2–3, review every scorecard, and audit books BEFORE overrides are paid. TARGET: 100–150 producing partners by the Phase 4 exit gate.');
+      } else {
+        activities.push('Sub-IB ecosystem governance (45m): team + partner-referrals target 20+ candidates/week (partners recruiting partners via the white-label kit); you govern quality — certification pass-rate, book retention, fraud audits, override integrity. TARGET: 400+ producing partners (the 50k engine).');
+      }
+    }
+  }
+  if (dayNumber === 540) {
+    activities.push('SUB-IB PROGRAM LAUNCH (Phase 3): the first 25 partners come from your OWN top students + institute owners. Write the certification course (reuse the free course + an IB-business layer). Overrides reward RETENTION, never just registration. Audit every partner book monthly BEFORE paying.');
+  }
+
+  // --- Metric-gated market launches — the full per-country hand-holding
+  // funnel (research → broker fit/fallback → KYC → rails/SMS → localize →
+  // publish → communities → leads → webinar → deposit-assist → active →
+  // retention → referral → sub-IB). Emitted on the market's entry day only.
+  const entry = MARKET_ENTRY.find((m) => m.day === dayNumber);
+  if (entry) {
+    for (const line of buildCountryFunnel(entry)) activities.push(line);
+    campaignKeys.push('country_launch');
+  }
+  // India: inbound organic only — never advertise or run partner acquisition
+  // (RBI/SEBI hostility, payment blocking, legal risk to partners).
+  if (dayNumber === 545) {
+    activities.push('INDIA POLICY NOTE: do NOT run paid or partner acquisition into India (RBI/SEBI hostility, payment blocking, legal risk to partners). Serve inbound organic viewers only — never a launch campaign.');
   }
 
   return {
@@ -324,8 +708,13 @@ const NOTES = [
   'Losses stay private, recognition stays public — never reversed (PK/GCC culture rule).',
   'No DMs-for-signals — instant ban. This IS the positioning.',
   'Never guaranteed-profit language; never ignore halal questions; never urgency tactics.',
-  'Broker: Exness (PK), Exness Islamic — lead with it (GCC).',
-  'TikTok/Instagram: auto-repost only, zero native minutes (locked verdict).',
+  'Broker: Exness primary (PK/GCC/Africa). If a market\'s SMS/OTP, KYC or payment rails block Exness onboarding, switch to that market\'s fallback (Deriv/XM/HFM/Vantage) and generate those tasks — never force a broker that cannot onboard.',
+  'Short-form (Reels/Shorts/TikTok) is the PRIORITY-1 reach engine per market — not an auto-repost shelf (corrected verdict).',
+  'The back half of 50,000 comes from sub-IB partners, not solo content — recruit from your own best clients + institutes from Phase 3.',
+  'Reg→funded is the biggest single lever: personally deposit-assist every registrant (lifts ~15%→25%+).',
+  'India: inbound organic only — never advertise or run partner acquisition (regulatory + payment-block risk).',
+  'Paid has TWO layers: low-budget BOOSTS of proven clips start day 45 (amplification, $30–50/mo, inside the envelope); optimized LEAD-GEN campaigns stay gated to $1,000/mo commission (~day 270). Never confuse the two.',
+  'The planner decides from data wherever data exists: today\'s clip topic auto-fills from the Idea Bank, the boost platform from CRM attribution, referral targets from client stages, next month\'s channel effort from the Monthly Review Pareto. You are only asked to choose when the system genuinely has no data — and then the 🧭 line gives a fixed rule + a safe default.',
 ];
 
 function normalizeOpts(opts) {
@@ -334,6 +723,10 @@ function normalizeOpts(opts) {
     publishDay: opts.publishDay || 'tuesday',
     reviewDay: opts.reviewDay || 'friday',
     classDay: opts.classDay || 'saturday',
+    // Data-driven decision fill (channel-performance buildPlannerRecs):
+    // callers with DB access pass what the data already answers; null fields
+    // fall back to the ask-the-founder wording.
+    recs: opts.recs || null,
   };
 }
 

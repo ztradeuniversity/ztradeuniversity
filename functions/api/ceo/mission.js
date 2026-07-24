@@ -21,6 +21,7 @@ import { computeRetention } from '../../utils/ceo/retention-logic.js';
 import { delayCostLabel, automationStatusLabel } from '../../utils/ceo/coach-logic.js';
 import { EXECUTION_KITS } from '../../utils/ceo/execution-kits.js';
 import { planDayForDate } from '../../utils/ceo/plan-logic.js';
+import { buildPlannerRecs } from '../../utils/ceo/channel-performance.js';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const TIER_ORDER = { CRITICAL: 0, IMPORTANT: 1, OPTIONAL: 2 };
@@ -367,7 +368,14 @@ export async function onRequestGet({ request, env }) {
         const first = await db.select('daily_activities', `select=activity_date&owner_user_id=eq.${uid}&order=activity_date.asc&limit=1`);
         planStart = first[0]?.activity_date || realToday;
       }
-      plannedDay = planDayForDate(planStart, viewDate, { productionDay, publishDay, leavePeriods });
+      // Data-driven decision fill: when the system already knows the answer
+      // (next Idea Bank topic — from the acquisition section computed above —
+      // best channel by CRM attribution, stable referral targets), the planned
+      // day STATES it instead of asking the founder to choose. One small read;
+      // buildPlannerRecs is the same channel logic the Monthly Review uses.
+      const recClients = await db.select('ib_clients', `select=referral_source,stage&owner_user_id=eq.${uid}&limit=2000`);
+      const recs = buildPlannerRecs({ clients: recClients, nextIdeaTitle: acquisition?.nextIdea?.title || null });
+      plannedDay = planDayForDate(planStart, viewDate, { productionDay, publishDay, leavePeriods, recs });
     }
 
     const leavePeriod = onLeave ? leavePeriods.find((p) => p.start <= viewDate && viewDate <= p.end) : null;

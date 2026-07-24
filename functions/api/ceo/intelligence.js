@@ -13,6 +13,8 @@
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { computePerformance } from '../../utils/ceo/performance-logic.js';
 import { computePareto, computeFunnel, computeTrajectory, computeDimensions, buildExecutiveSummary, buildLessonsAndImprovements } from '../../utils/ceo/funnel-intelligence.js';
+import { computeChannelPerformance, channelPareto, attachActuals } from '../../utils/ceo/channel-performance.js';
+import { buildCampaignSchedule } from '../../utils/ceo/plan-logic.js';
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -45,6 +47,16 @@ export async function onRequestGet({ request, env }) {
       db.select('content_library', `select=pillar,status&owner_user_id=eq.${uid}&limit=200`),
       // 30-day window for computePerformance's execution/consistency scores.
       db.select('daily_activities', `select=activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=gte.${prevStart}&limit=2000`),
+    ]);
+
+    // Adaptive layer inputs — channel attribution (ib_clients.referral_source,
+    // already fetched above), real spend (growth_daily + marketing_campaigns),
+    // and the plan's own start anchor for the campaign schedule. Small reads,
+    // no new tables.
+    const [dailyRows, campaigns, planStartRows] = await Promise.all([
+      db.select('growth_daily', `select=metrics&owner_user_id=eq.${uid}&entry_date=gte.${prevStart}&limit=200`),
+      db.select('marketing_campaigns', `select=name,channel,status,budget,start_date&owner_user_id=eq.${uid}&limit=100`),
+      db.select('settings', `select=value&scope=eq.global&key=eq.plan.start_date`),
     ]);
 
     // KPI values need their keys — one more small lookup, only when any exist.
@@ -81,6 +93,14 @@ export async function onRequestGet({ request, env }) {
     const executiveSummary = buildExecutiveSummary({ funnel, pareto, trajectory });
     const { lessons, improvements } = buildLessonsAndImprovements({ funnel, pareto, trajectory });
 
+    // Adaptive execution layer: per-channel funnel comparison + Pareto 80/20
+    // effort reallocation (never removes a channel) + the campaign schedule
+    // with expected KPIs joined to measured actuals. All from real rows.
+    const channelPerformance = computeChannelPerformance({ clients, dailyRows, campaigns });
+    const channelPrioritization = channelPareto(channelPerformance);
+    const planStart = String(planStartRows[0]?.value || '').replace(/"/g, '') || `${month}-01`;
+    const campaignSchedule = attachActuals(buildCampaignSchedule(planStart, end), channelPerformance);
+
     return json({
       lessons,
       improvements,
@@ -94,6 +114,9 @@ export async function onRequestGet({ request, env }) {
       pareto,
       dimensions,
       executiveSummary,
+      channelPerformance,
+      channelPareto: channelPrioritization,
+      campaignSchedule,
     });
   } catch (err) {
     return json({ error: 'intelligence_failed', detail: String(err.message || err).slice(0, 300) }, 500);

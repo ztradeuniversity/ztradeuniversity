@@ -23,6 +23,14 @@ export const DAILY_METRICS = [
   { key: 'whatsapp', label: 'WhatsApp conversations', kind: 'up' },
   { key: 'telegram_growth', label: 'Telegram growth', kind: 'up' },
   { key: 'youtube_views', label: 'YouTube views', kind: 'up' },
+  // Adaptive-feedback inputs (Executive Strategy Report): the channel KPIs the
+  // channel-performance engine reads that the daily capture didn't yet hold.
+  // jsonb keys — additive, no schema change.
+  { key: 'assisted_deposits', label: 'WhatsApp assisted deposits', kind: 'up' },
+  { key: 'referrals', label: 'Referrals received', kind: 'up' },
+  { key: 'successful_referrals', label: 'Successful referrals (→active)', kind: 'up' },
+  { key: 'subib_certified', label: 'Sub-IB partners certified', kind: 'up' },
+  { key: 'subib_active', label: 'Sub-IB partners producing', kind: 'up' },
 ];
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);

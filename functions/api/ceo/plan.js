@@ -16,6 +16,7 @@
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
 import { generateGrowthDays, buildPhysicalRows, planDayForDate, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY, EXECUTIVE_OVERVIEW, SOCIAL_STRATEGY, SHORTFORM_MIX, PROVEN_WORKFLOW, currentPhaseContext } from '../../utils/ceo/plan-logic.js';
 import { CONTENT_LIBRARY, CONTENT_CATEGORIES } from '../../utils/ceo/content-kits.js';
+import { buildPlannerRecs } from '../../utils/ceo/channel-performance.js';
 
 // Country validation (Section 2): derive a status badge from the locked
 // priority/gate verdict already in the strategy row — active markets have a
@@ -127,7 +128,14 @@ export async function onRequestGet({ request, env }) {
     // loser from real completion history, and let the generator annotate
     // every FUTURE day with FOCUS/REDUCE lines. Fully automatic — no toggle.
     const today = new Date().toISOString().slice(0, 10);
-    const learn = await learnActivityWeights(db, uid, today);
+    // Data-driven decision fill (same buildPlannerRecs the Home planner uses):
+    // clients also feed the Executive Overview live count below — one fetch.
+    const [learn, recClients, nextIdeaRows] = await Promise.all([
+      learnActivityWeights(db, uid, today),
+      db.select('ib_clients', `select=referral_source,stage&owner_user_id=eq.${uid}&limit=2000`),
+      db.select('content_library', `select=title&owner_user_id=eq.${uid}&status=eq.idea&order=created_at.asc&limit=1`),
+    ]);
+    const recs = buildPlannerRecs({ clients: recClients, nextIdeaTitle: nextIdeaRows[0]?.title || null });
 
     const { days, hasMore, totalDays } = generateGrowthDays(startDate, offset, count, {
       productionDay,
@@ -136,6 +144,7 @@ export async function onRequestGet({ request, env }) {
       todayStr: today,
       focusLabel: learn.focusLabel,
       reduceLabel: learn.reduceLabel,
+      recs,
     });
 
     // Real completion status for days that have already happened: one
@@ -168,8 +177,8 @@ export async function onRequestGet({ request, env }) {
     // monthly target. One extra CRM read, only on the first page.
     let overviewLive = null;
     if (offset === 0) {
-      const clients = await db.select('ib_clients', `select=stage&owner_user_id=eq.${uid}&limit=2000`);
-      const active = clients.filter((c) => ['activated', 'engaged', 'retained'].includes(c.stage)).length;
+      // Reuses the recs fetch above — same table, same limit, one read total.
+      const active = recClients.filter((c) => ['activated', 'engaged', 'retained'].includes(c.stage)).length;
       const todayPlan = planDayForDate(startDate, today, { productionDay, publishDay, leavePeriods });
       const dayNumber = todayPlan?.day || Math.max(1, Math.floor((Date.parse(today) - Date.parse(startDate)) / 86400000) + 1);
       overviewLive = currentPhaseContext(dayNumber, active);
