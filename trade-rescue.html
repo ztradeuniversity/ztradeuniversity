@@ -152,20 +152,12 @@
   .gate .gb .primary{background:var(--accent);color:#fff}
   .gate .gb .ghost{background:transparent;color:var(--accent2)}
 
-  /* transcript review */
-  .review{max-width:760px;margin:0 auto 12px;padding:0 22px;display:none}
-  .review.on{display:block}
-  .reviewIn{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:13px 15px}
-  .reviewIn h4{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--accent2);
-    font-weight:700;margin-bottom:4px}
-  .reviewIn p{font-size:11.5px;color:var(--muted);margin-bottom:9px}
-  .reviewIn textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-radius:9px;
-    padding:10px 12px;font-family:inherit;font-size:14.5px;color:var(--text);resize:vertical;min-height:66px}
-  .reviewIn textarea:focus{outline:none;border-color:var(--accent)}
-  .rb{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
-  .rb button{font-size:12.5px;padding:6px 12px;border-radius:8px;border:1px solid var(--line2);
-    background:var(--bg);cursor:pointer;font-family:inherit;color:var(--text)}
-  .rb button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  /* Voice status — lives in the COMPOSER, never in the conversation thread. */
+  .vhint{display:none;align-items:center;gap:7px;margin:0 0 8px 6px;min-height:15px;
+    font-size:11.5px;font-weight:600;color:var(--accent2)}
+  .vhint.on{display:flex}
+  .vhint .t{font-weight:500;color:var(--muted);max-width:min(520px,64vw);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
   /* ── composer ────────────────────────────────────────── */
   .composer{border-top:1px solid var(--line);background:var(--bg);padding:14px 22px calc(12px + env(safe-area-inset-bottom))}
@@ -173,33 +165,43 @@
   .cbox{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--line2);border-radius:24px;
     padding:7px 7px 7px 8px;background:var(--bg);transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
   .cbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,137,31,.09)}
-  .icon{width:38px;height:38px;flex-shrink:0;border-radius:50%;border:0;background:transparent;
+  .icon{position:relative;width:40px;height:40px;flex-shrink:0;border-radius:50%;
+    border:1px solid var(--line);background:var(--bg2);
     color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
-  .icon:hover:not([disabled]){background:var(--bg2);color:var(--text)}
+  .icon:hover:not([disabled]){background:#ededee;color:var(--text);border-color:var(--line2)}
   .icon:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   .icon[disabled]{opacity:.35;cursor:not-allowed}
   .icon svg{width:19px;height:19px}
-  .icon.rec{background:#fdeaea;color:#c0392b}
-  .icon.rec::after{content:'';position:absolute;width:38px;height:38px;border-radius:50%;
-    border:1px solid rgba(192,57,43,.4);animation:ring 1.4s infinite}
+  .icon.rec{background:#fdeaea;color:#c0392b;border-color:rgba(192,57,43,.38)}
+  .icon.rec::after{content:'';position:absolute;inset:-1px;border-radius:50%;
+    border:1px solid rgba(192,57,43,.45);animation:ring 1.4s infinite}
   @keyframes ring{0%{transform:scale(.9);opacity:.8}100%{transform:scale(1.25);opacity:0}}
   textarea#in{flex:1;border:0;background:transparent;resize:none;font-family:inherit;font-size:15.5px;
     color:var(--text);padding:9px 2px;max-height:180px;min-height:38px;line-height:1.5}
   textarea#in:focus{outline:none}
+  textarea#in[dir="rtl"]{text-align:right}
   textarea#in::placeholder{color:var(--muted2)}
-  #send{width:38px;height:38px;flex-shrink:0;border-radius:50%;border:0;background:var(--text);
-    color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
-  #send:hover:not([disabled]){background:#000}
-  #send:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  #send[disabled]{opacity:.28;cursor:not-allowed}
-  #send svg{width:17px;height:17px}
+  #send{position:relative;width:40px;height:40px;flex-shrink:0;border-radius:50%;border:0;
+    background:linear-gradient(148deg,#d99a2c 0%,var(--accent) 46%,var(--accent2) 100%);
+    color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 7px rgba(200,137,31,.34);
+    transition:transform .12s,box-shadow .16s,background .16s,opacity .16s}
+  #send:hover:not([disabled]){transform:translateY(-1px);box-shadow:0 5px 13px rgba(200,137,31,.44)}
+  #send:active:not([disabled]){transform:translateY(0) scale(.95)}
+  #send:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+  #send[disabled]{background:var(--bg2);color:var(--muted2);box-shadow:none;
+    border:1px solid var(--line);cursor:not-allowed;transform:none}
+  #send svg{width:18px;height:18px;margin-left:-1px}
+  #send.busy svg{display:none}
+  #send .spin{display:none;width:15px;height:15px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.38);border-top-color:#fff;animation:spin .7s linear infinite}
+  #send.busy .spin{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .cfoot{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11px;color:var(--muted2);flex-wrap:wrap}
   .cfoot select{border:1px solid var(--line2);background:var(--bg);border-radius:7px;padding:3px 7px;
     font-family:inherit;font-size:11px;color:var(--muted);cursor:pointer}
   .cfoot select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   .cfoot .right{margin-left:auto;text-align:right}
-  .vs{color:var(--accent2);font-weight:600;display:none;align-items:center;gap:6px}
-  .vs.on{display:inline-flex}
   .verr{color:#b03a3a;display:none;width:100%}
   .verr.on{display:block}
 
@@ -214,7 +216,6 @@
     .burger{display:flex}
     .thread{padding:20px 16px 16px}
     .case{padding:0 16px}
-    .review{padding:0 16px}
     .composer{padding:11px 14px calc(10px + env(safe-area-inset-bottom))}
     .me .txt{max-width:88%}
     .topLink{display:none}
@@ -270,32 +271,20 @@
 
     <div class="case" id="caseBox"><div class="caseIn" id="caseIn"></div></div>
 
-    <div class="review" id="review">
-      <div class="reviewIn">
-        <h4>Check what I heard</h4>
-        <p>Numbers matter — please confirm the prices before this is sent.</p>
-        <label class="sr-only" for="reviewText">Edit the transcribed message</label>
-        <textarea id="reviewText" rows="2"></textarea>
-        <div class="rb">
-          <button class="primary" id="rSend" type="button">Looks right — send</button>
-          <button id="rRetry" type="button">Record again</button>
-          <button id="rCancel" type="button">Discard</button>
-        </div>
-      </div>
-    </div>
-
     <div class="composer">
       <div class="cwrap">
+        <div class="vhint" id="vhint" aria-live="polite"></div>
         <div class="cbox">
-          <button class="icon" id="mic" type="button" aria-label="Start voice input" title="Speak">
+          <button class="icon" id="mic" type="button" aria-label="Start voice input" title="Speak — the transcript lands in this box so you can edit it">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
               <rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4M8 21h8"/>
             </svg>
           </button>
           <label class="sr-only" for="in">Describe your open trade</label>
           <textarea id="in" rows="1" placeholder="Describe your open trade — instrument, entry, stop…" autocomplete="off"></textarea>
-          <button id="send" type="button" aria-label="Send">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          <button id="send" type="button" aria-label="Send message" title="Send" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.3 20.7 21.6 12 3.3 3.3v6.9L15 12 3.3 13.8z"/></svg>
+            <span class="spin" aria-hidden="true"></span>
           </button>
         </div>
         <div class="cfoot">
@@ -305,7 +294,6 @@
             <option value="ur-PK">اردو</option>
             <option value="ar-SA">العربية</option>
           </select>
-          <span class="vs" id="vs" aria-live="assertive"></span>
           <span class="right">Decision-support only — never a guaranteed outcome.</span>
           <span class="verr" id="verr" role="alert"></span>
         </div>
@@ -347,8 +335,7 @@ const IDENTITY_KEY = 'ztu_ai_identity';   // the EXISTING shared identity token
 const $ = (id) => document.getElementById(id);
 const thread = $('thread'), input = $('in'), sendBtn = $('send'), mic = $('mic');
 const caseBox = $('caseBox'), caseIn = $('caseIn'), histList = $('histList');
-const review = $('review'), reviewText = $('reviewText');
-const vs = $('vs'), verr = $('verr'), langSel = $('lang'), scrollArea = $('scrollArea');
+const vhint = $('vhint'), verr = $('verr'), langSel = $('lang'), scrollArea = $('scrollArea');
 const accBadge = $('accBadge'), verifyBtn = $('verifyBtn');
 const side = $('side'), scrim = $('scrim'), burger = $('burger');
 
@@ -362,6 +349,7 @@ try { const s = localStorage.getItem(LANG_KEY); if (s) langSel.value = s; } catc
 langSel.addEventListener('change', () => {
   try { localStorage.setItem(LANG_KEY, langSel.value); } catch {}
   if (rec) rec.lang = langSel.value;
+  applyDir();
 });
 const replyLang = () => ({ 'en-US':'en','ur-PK':'ur','ar-SA':'ar' })[langSel.value] || 'en';
 
@@ -420,7 +408,9 @@ function renderHist() {
 }
 function newConvo() {
   convo = { id: 'c' + Date.now(), title: '', turns: [], tradeCase: {} };
-  thread.innerHTML = ''; renderCase({}); closeReview(); stopSpeak();
+  thread.innerHTML = ''; renderCase({}); stopSpeak();
+  if (listening) { try { rec.stop(); } catch {} }
+  clearDraft();
   greet(); renderHist(); closeSide();
 }
 function openConvo(c) {
@@ -585,12 +575,61 @@ function toggleSpeak(btn, src) {
 }
 if (TTS_OK) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch {} }
 
-/* ── speech to text ────────────────────────────────────────────────────── */
+/* ── composer draft ─────────────────────────────────────────────────────
+   One text surface. Voice writes into it, typing edits it, Send submits it.
+   Nothing is sent — and no chat bubble is created — until Send is pressed. */
+const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;  // Arabic + Urdu script
+let draftFromVoice = false;          // this draft originated from speech
+
+function autoGrow() {
+  /* Empty composer keeps the CSS min-height — measuring scrollHeight before first
+     layout can report the max-height clamp and leave a tall, empty box. */
+  if (!input.value) { input.style.height = ''; return; }
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+}
+function applyDir() {
+  const v = input.value;
+  const rtl = v.trim() ? RTL_RE.test(v) : /^(ur|ar)/.test(langSel.value);
+  input.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+}
+function syncSend() { sendBtn.disabled = busy || !input.value.trim(); }
+function refreshComposer() { autoGrow(); applyDir(); syncSend(); }
+function clearDraft() { input.value = ''; draftFromVoice = false; hideHint(); refreshComposer(); }
+
+/* Joins two fragments with exactly one space — repeated calls cannot duplicate. */
+function joinDraft(a, b) {
+  a = (a || '').replace(/\s+$/, '');
+  b = (b || '').replace(/^\s+/, '').replace(/\s+$/, '');
+  return !a ? b : !b ? a : a + ' ' + b;
+}
+function setDraft(text, focusIt) {
+  input.value = text;
+  refreshComposer();
+  if (focusIt) {
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch {}
+    input.scrollTop = input.scrollHeight;
+  }
+}
+
+/* ── speech to text → editable composer draft ──────────────────────────── */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, listening = false, finalTxt = '';
-function showVs(l, kind) { vs.classList.add('on'); vs.innerHTML = (kind === 'rec' ? '<span class="rec-dot"></span>' : '') + esc(l); }
-function hideVs() { vs.classList.remove('on'); vs.innerHTML = ''; }
+let rec = null, listening = false;
+let baseText = '';      // whatever was already in the composer when recording began
+let finalTxt = '';      // rebuilt from the whole result list, so re-emitted results cannot duplicate
+let voiceErr = false, hintT = null;
+
+/* Voice status is composer-local UI. It is NEVER appended to the thread. */
+function showHint(html, autoHideMs) {
+  clearTimeout(hintT);
+  vhint.classList.add('on'); vhint.innerHTML = html;
+  if (autoHideMs) hintT = setTimeout(hideHint, autoHideMs);
+}
+function hideHint() { clearTimeout(hintT); vhint.classList.remove('on'); vhint.innerHTML = ''; }
 function showErr(m) { verr.textContent = m; verr.classList.add('on'); setTimeout(() => verr.classList.remove('on'), 7000); }
+
+const LISTEN_HTML = '<span class="rec-dot"></span><span>Listening…</span>';
 
 if (!SR) {
   mic.disabled = true;
@@ -599,19 +638,29 @@ if (!SR) {
 } else {
   rec = new SR();
   rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; rec.lang = langSel.value;
-  rec.onstart = () => { listening = true; mic.classList.add('rec');
-    mic.setAttribute('aria-label','Stop recording'); showState('Listening…','rec'); showVs('Listening','rec'); };
-  rec.onresult = (e) => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const c = e.results[i][0].transcript;
-      if (e.results[i].isFinal) finalTxt += c + ' '; else interim += c;
-    }
-    if (interim) showState('Listening… “' + interim.trim().slice(0, 64) + '”', 'rec');
+
+  rec.onstart = () => {
+    listening = true; voiceErr = false;
+    mic.classList.add('rec'); mic.setAttribute('aria-label', 'Stop recording');
+    showHint(LISTEN_HTML);
   };
+
+  rec.onresult = (e) => {
+    let fin = '', interim = '';
+    for (let i = 0; i < e.results.length; i++) {
+      const c = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin = joinDraft(fin, c); else interim = joinDraft(interim, c);
+    }
+    finalTxt = fin;
+    /* Live preview goes into the composer itself — not into the conversation. */
+    setDraft(joinDraft(joinDraft(baseText, finalTxt), interim), false);
+    showHint(LISTEN_HTML + (interim ? '<span class="t">' + esc(interim) + '</span>' : ''));
+  };
+
   rec.onerror = (e) => {
-    listening = false; mic.classList.remove('rec'); hideState(); hideVs();
     const err = e && e.error;
+    if (err === 'aborted') return;
+    voiceErr = true;
     showErr(err === 'not-allowed' || err === 'service-not-allowed'
       ? 'Microphone permission denied. Allow it in your browser settings, or type instead.'
       : err === 'no-speech' ? 'I didn’t catch anything — try again, or type it.'
@@ -619,39 +668,42 @@ if (!SR) {
       : err === 'network' ? 'Speech recognition needs a network connection. You can type instead.'
       : 'Voice input failed. You can type instead.');
   };
+
   rec.onend = () => {
-    listening = false; mic.classList.remove('rec');
-    mic.setAttribute('aria-label','Start voice input');
-    hideState(); hideVs();
-    const t = finalTxt.trim(); finalTxt = '';
-    if (t) openReview(t);
+    listening = false;
+    mic.classList.remove('rec'); mic.setAttribute('aria-label', 'Start voice input');
+    const draft = joinDraft(baseText, finalTxt);
+    finalTxt = ''; baseText = '';
+    if (draft) {
+      draftFromVoice = true;
+      setDraft(draft, true);                        // editable, focused, NOT sent
+      showHint('<span>✓ Transcribed — edit if needed, then press Send.</span>', 6000);
+    } else if (voiceErr) {
+      hideHint();
+    } else {
+      showHint('<span>No speech detected — try again, or type your trade.</span>', 5000);
+    }
+    voiceErr = false;
   };
+
   mic.addEventListener('click', () => {
     if (busy) return;
     if (listening) { try { rec.stop(); } catch {} return; }
-    stopSpeak(); finalTxt = ''; rec.lang = langSel.value;
+    stopSpeak();
+    finalTxt = ''; voiceErr = false;
+    baseText = input.value.trim();                  // dictation appends to what is already typed
+    rec.lang = langSel.value;
     try { rec.start(); } catch { showErr('Could not start the microphone. Please type instead.'); }
   });
 }
 
-/* ── transcript review — never auto-submits a mis-heard number ──────────── */
-function openReview(t) {
-  reviewText.value = t; review.classList.add('on');
-  reviewText.focus(); reviewText.setSelectionRange(t.length, t.length);
-  showVs('Review your transcript');
-}
-function closeReview() { review.classList.remove('on'); reviewText.value = ''; hideVs(); }
-$('rSend').addEventListener('click', () => { const t = reviewText.value.trim(); closeReview(); if (t) ask(t, true); });
-$('rCancel').addEventListener('click', closeReview);
-$('rRetry').addEventListener('click', () => { closeReview(); mic.click(); });
-reviewText.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('rSend').click(); } });
-
 /* ── send ──────────────────────────────────────────────────────────────── */
 async function ask(text, spoken) {
   if (busy || !text.trim()) return;
-  busy = true; sendBtn.disabled = true; mic.disabled = !SR; stopSpeak();
+  busy = true; sendBtn.disabled = true; sendBtn.classList.add('busy');
+  mic.disabled = !SR; stopSpeak();
   addMe(text, !!spoken);
-  input.value = ''; input.style.height = 'auto';
+  clearDraft();
 
   showState('Reading your trade…');
   const t1 = setTimeout(() => showState('Pulling current market data…'), 700);
@@ -680,13 +732,28 @@ async function ask(text, spoken) {
     clearTimeout(t1); clearTimeout(t2); hideState();
     addAI('Could not reach the analysis service. Check your connection and try again.');
   } finally {
-    busy = false; sendBtn.disabled = false; mic.disabled = !SR; input.focus();
+    busy = false; sendBtn.classList.remove('busy'); mic.disabled = !SR;
+    input.focus(); syncSend();
   }
 }
 
-sendBtn.addEventListener('click', () => ask(input.value, false));
-input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input.value, false); } });
-input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; });
+/* The only path from composer to endpoint. viaVoice survives editing, so the
+   server-side numeric confirmation still guards a mis-heard price. */
+function submitDraft() {
+  if (busy) return;
+  const t = input.value.trim();
+  if (!t) { input.focus(); return; }
+  if (listening) { try { rec.stop(); } catch {} }
+  ask(t, draftFromVoice);
+}
+sendBtn.addEventListener('click', submitDraft);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitDraft(); }
+});
+input.addEventListener('input', () => {
+  if (!input.value.trim()) draftFromVoice = false;   // cleared by hand — no longer a voice draft
+  refreshComposer();
+});
 
 /* ── sidebar ───────────────────────────────────────────────────────────── */
 function openSide() { side.classList.add('open'); scrim.classList.add('open'); burger.setAttribute('aria-expanded','true'); }
@@ -694,7 +761,12 @@ function closeSide() { side.classList.remove('open'); scrim.classList.remove('op
 burger.addEventListener('click', () => side.classList.contains('open') ? closeSide() : openSide());
 scrim.addEventListener('click', closeSide);
 $('newBtn').addEventListener('click', newConvo);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSide(); closeReview(); } });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeSide();
+  if (listening) { try { rec.stop(); } catch {} return; }
+  hideHint();
+});
 
 /* ── boot ──────────────────────────────────────────────────────────────── */
 function greet() {
@@ -705,6 +777,7 @@ function greet() {
 }
 
 newConvo();
+refreshComposer();
 refreshAccess();
 
 /* Homepage hand-off — the same ?q=…&send=1 contract the assistant accepted, so
@@ -713,8 +786,7 @@ try {
   const p = new URLSearchParams(location.search);
   const q = p.get('q');
   if (q) {
-    input.value = q;
-    input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+    setDraft(q, true);
     if (p.get('send') === '1') setTimeout(() => ask(q, false), 60);
   }
 } catch {}
