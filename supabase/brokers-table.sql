@@ -89,18 +89,25 @@ DROP POLICY IF EXISTS brokers_anon_read   ON public.brokers;
 DROP POLICY IF EXISTS brokers_anon_insert ON public.brokers;
 DROP POLICY IF EXISTS brokers_anon_update ON public.brokers;
 
--- Seed with EXACTLY the five options both forms hardcode today, in their
--- current order, so behaviour on day one is identical to before this change.
-INSERT INTO public.brokers (name, sort_order) VALUES
-  ('Exness',     10),
-  ('HFM',        20),
-  ('Pepperstone',30),
-  ('IC Markets', 40),
-  ('Other',      50)
-ON CONFLICT DO NOTHING;
+-- ── NO SEED DATA — DELIBERATE ──────────────────────────────────────────────
+-- An earlier version of this file seeded five broker names ('Exness', 'HFM',
+-- 'Pepperstone', 'IC Markets', 'Other') to preserve day-one behaviour. That
+-- was a mistake: it pre-populated the administrator's list with brokers they
+-- had never chosen, and because the public selector correctly renders whatever
+-- is active, "IC Markets" and "Other" appeared on the public form and looked
+-- exactly like a surviving hardcoded list. There is no implicit "Other".
+--
+-- The table now starts EMPTY. The administrator adds their own brokers in
+-- Admin Dashboard → Your Brokers, and until at least one exists the public
+-- form says broker selection is unavailable rather than inventing options.
+--
+-- IF YOU ALREADY RAN THE SEEDED VERSION of this file: the five rows are still
+-- there. Remove the ones you did not want with the Delete button in Your
+-- Brokers (no SQL needed) — deleting a broker configuration row never touches
+-- license_requests.broker_name on historical requests.
 
 -- ── POST-CHECKS ────────────────────────────────────────────────────────────
--- 1. The five seeded rows, all active:
+-- 1. The table (empty on a fresh install — brokers are added from the UI):
 --   SELECT id, name, is_active, sort_order FROM public.brokers ORDER BY sort_order, name;
 --
 -- 2. RLS is on and NO policy exists (this is the security guarantee):

@@ -1275,7 +1275,7 @@
         <section class="dash-section" id="section-brokers">
           <div class="section-intro">
             <h2 class="section-heading">Your Brokers</h2>
-            <p class="section-sub">The broker list shown on the public <strong>License Request</strong> form. Add a broker and it appears in the public selector immediately — no code change and no deploy. Disabling a broker only removes it from <strong>new</strong> submissions: every existing request keeps the broker it was submitted with, and matching, compiling and delivery are unaffected. Names are matched case-insensitively, so <code>Exness</code> and <code>exness</code> are the same broker.</p>
+            <p class="section-sub">The <strong>only</strong> source of broker options on the public <strong>License Request</strong> form — nothing is hardcoded there and there is no implicit “Other”. Add a broker and it appears in the public selector immediately; no code change, no deploy. <strong>Disable</strong> hides a broker from new submissions but keeps it stored so you can enable it again. <strong>Delete</strong> permanently removes the configuration record. Either way, every existing request keeps the broker it was submitted with — matching, compiling and delivery are never affected. Names are matched case-insensitively, so <code>Exness</code> and <code>exness</code> are the same broker.</p>
           </div>
 
           <div class="ib-changed-search">
@@ -1437,16 +1437,12 @@
                 </label>
                 <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
                   Broker <span style="color:#fca5a5">*</span>
-                  <!-- Fallback options only. Populated at runtime from the
-                       ACTIVE brokers in Your Brokers (table `brokers`) — edit
-                       the list there, not here. -->
+                  <!-- INTENTIONALLY EMPTY — populated at runtime from the
+                       ACTIVE brokers in Your Brokers (table `brokers`). Do not
+                       re-add hardcoded <option> elements: they would offer
+                       brokers that are not currently configured. -->
                   <select id="createLicenseBroker" class="ib-changed-search-input" style="margin-top:4px">
                     <option value="">— select broker —</option>
-                    <option value="Exness">Exness</option>
-                    <option value="HFM">HFM</option>
-                    <option value="Pepperstone">Pepperstone</option>
-                    <option value="IC Markets">IC Markets</option>
-                    <option value="Other">Other</option>
                   </select>
                 </label>
                 <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">

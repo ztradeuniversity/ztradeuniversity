@@ -783,19 +783,15 @@
         <!-- EXTENSION — Broker Name (required dropdown) -->
         <div class="lic-field" id="field-broker">
           <label for="lic-broker">Broker Name <span class="lic-req">*</span></label>
-          <!-- These options are a NO-JS / DB-unavailable fallback only. At
-               runtime refreshBrokerOptions() replaces them with the ACTIVE
-               brokers from Admin Dashboard → Your Brokers (table `brokers`),
-               which is the authoritative list. Do not edit broker names here
-               to add or remove a broker — do it in the dashboard. -->
-          <select id="lic-broker" name="broker_name" required>
-            <option value="" disabled selected hidden>Select your broker</option>
-            <option value="Exness">Exness</option>
-            <option value="HFM">HFM</option>
-            <option value="Pepperstone">Pepperstone</option>
-            <option value="IC Markets">IC Markets</option>
-            <option value="Other">Other</option>
+          <!-- INTENTIONALLY EMPTY. The ONLY source of broker options is Admin
+               Dashboard → Your Brokers (table `brokers`, served by
+               /api/brokers). Hardcoded <option> elements used to live here and
+               were the reason the public form could show brokers the
+               administrator had never configured. Do not re-add any. -->
+          <select id="lic-broker" name="broker_name" required disabled>
+            <option value="" disabled selected hidden>Loading brokers…</option>
           </select>
+          <p class="lic-msg" id="lic-broker-status" hidden></p>
           <span class="lic-field-msg" id="msg-broker">Please choose the broker where you opened your MT5 account.</span>
         </div>
 
@@ -1005,28 +1001,43 @@ const whatsappCcInput    = document.getElementById('lic-whatsapp-cc');
 const whatsappLocalInput = document.getElementById('lic-whatsapp-local');
 const licPhoneHint       = document.getElementById('licPhoneHint');
 
-/* ── ADMIN-MANAGED BROKER LIST ────────────────────────────────────────────
-   The <select> in the markup ships with the historical five options so the
-   form is usable before this script runs and if the database is unreachable.
-   Here they are replaced by the ACTIVE brokers the administrator manages in
-   Admin Dashboard → Your Brokers (table `brokers`). Submit-time validation
-   reads ACTIVE_BROKERS below rather than a hardcoded array, so adding a broker
-   in the dashboard needs no code change. ZTUBrokers.load() never throws and
-   never returns an empty list — on any failure it yields the same five options
-   the markup already had, so the public form can never end up unusable.      */
-let ACTIVE_BROKERS = (window.ZTUBrokers ? window.ZTUBrokers.FALLBACK_BROKERS.slice() : []);
+/* ── ADMIN-MANAGED BROKER LIST — THE ONLY SOURCE ──────────────────────────
+   Every option in #lic-broker comes from Admin Dashboard → Your Brokers
+   (table `brokers`, served by /api/brokers). There is NO hardcoded list, no
+   fallback list and no implicit "Other": if the administrator has not
+   configured a broker, it cannot be selected here.
+
+   When the list cannot be read, or is empty, the selector stays DISABLED and
+   says so. It never substitutes brokers of its own — showing a broker that is
+   not currently configured is exactly the bug this replaces.               */
+let ACTIVE_BROKERS = [];
+function setBrokerStatus(msg, disable) {
+  const el = document.getElementById('lic-broker-status');
+  if (el) { el.textContent = msg || ''; el.hidden = !msg; }
+  if (brokerInput) brokerInput.disabled = !!disable;
+}
 async function refreshBrokerOptions() {
   if (!window.ZTUBrokers || !brokerInput) return;
   const r = await window.ZTUBrokers.load();   // active brokers only, via /api/brokers
-  ACTIVE_BROKERS = r.names;
-  window.ZTUBrokers.populate(brokerInput, r.names, {
+  ACTIVE_BROKERS = r.ok ? r.names : [];
+
+  if (!r.ok) {
+    brokerInput.innerHTML = '<option value="" disabled selected hidden>Unavailable</option>';
+    setBrokerStatus('Broker selection is temporarily unavailable. Please try again shortly or contact support.', true);
+    console.error('[license-request] broker list unavailable —', r.error);
+    return;
+  }
+  if (!ACTIVE_BROKERS.length) {
+    brokerInput.innerHTML = '<option value="" disabled selected hidden>No brokers available</option>';
+    setBrokerStatus('No brokers are currently available for selection. Please contact support.', true);
+    return;
+  }
+  window.ZTUBrokers.populate(brokerInput, ACTIVE_BROKERS, {
     placeholder: 'Select your broker',
     hidePlaceholder: true,
     keepValue: true
   });
-  if (r.source !== 'db') {
-    console.warn('[license-request] broker list fell back to the built-in options —', r.error);
-  }
+  setBrokerStatus('', false);
 }
 refreshBrokerOptions();
 
@@ -1667,6 +1678,24 @@ form.addEventListener('submit', async function (e) {
       submitBtn.disabled = false;
       submitBtn.classList.remove('is-loading');
       return;   // STOP — no ack email, no engine trigger.
+    }
+
+    /* Server-side broker rejection (supabase/license-requests-broker-validation.sql).
+       The BEFORE INSERT trigger refuses a broker that is not currently active,
+       so a tampered/stale value can never create a license request. Surface it
+       as a clear field error and refresh the selector — deliberately NOT
+       silently rewritten to some default broker. */
+    if (insertErr && /broker_not_allowed/i.test(String(insertErr.message || ''))) {
+      showToast(
+        'error',
+        'That broker is no longer available',
+        'The broker you selected is not currently offered. Please pick one from the updated list and submit again.'
+      );
+      markFieldError('broker', 'Please choose your broker from the list.');
+      refreshBrokerOptions();
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('is-loading');
+      return;   // STOP — no row, no ack email, no engine trigger.
     }
 
     if (insertErr) throw new Error('Database error: ' + (insertErr.message || insertErr));

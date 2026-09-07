@@ -7239,13 +7239,14 @@ const AdminDashboard = (() => {
         ? '<span style="color:#22c55e;font-weight:700">● Active</span>'
         : '<span style="color:#9ca3af;font-weight:700">○ Hidden from new requests</span>';
       const toggleBtn = active
-        ? `<button class="iq-btn iq-btn--action" data-broker-toggle="${esc(r.id)}" data-broker-to="0" type="button" title="Stop offering this broker on new License Requests. Existing requests keep their broker." style="background:rgba(156,163,175,0.16);border-color:rgba(156,163,175,0.45);color:#9ca3af">Disable</button>`
+        ? `<button class="iq-btn iq-btn--action" data-broker-toggle="${esc(r.id)}" data-broker-to="0" type="button" title="Hide from NEW License Requests. The broker stays stored and can be enabled again. Existing requests keep their broker." style="background:rgba(156,163,175,0.16);border-color:rgba(156,163,175,0.45);color:#9ca3af">Disable</button>`
         : `<button class="iq-btn iq-btn--action" data-broker-toggle="${esc(r.id)}" data-broker-to="1" type="button" title="Offer this broker again on new License Requests" style="background:rgba(34,197,94,0.16);border-color:rgba(34,197,94,0.45);color:#22c55e">Enable</button>`;
+      const delBtn = `<button class="iq-btn iq-btn--danger" data-broker-del="${esc(r.id)}" data-broker-name="${esc(r.name)}" type="button" title="Permanently remove this broker from the configuration. Existing license requests keep their own broker name.">Delete</button>`;
       return `<div class="ib-changed-row">
         <span class="ib-changed-acct">${esc(r.name)}</span>
         <span>${statusPill}</span>
         <span>${esc(dt)}</span>
-        <span>${toggleBtn}</span>
+        <span>${toggleBtn} ${delBtn}</span>
       </div>`;
     }).join('');
 
@@ -7264,6 +7265,35 @@ const AdminDashboard = (() => {
           _populateCreateLicenseBroker();
         } catch (e) {
           showToast('Could not update broker: ' + (e.message || e), 'error');
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // Permanent removal of a broker CONFIGURATION row. Confirmation is explicit
+    // about the distinction from Disable and about historical data being safe.
+    bodyEl.querySelectorAll('[data-broker-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id   = btn.dataset.brokerDel;
+        const name = btn.dataset.brokerName || 'this broker';
+        const okGo = window.confirm(
+          `Permanently delete “${name}” from your broker list?\n\n` +
+          `• It will no longer be offered on the public License Request form.\n` +
+          `• Existing license requests KEEP the broker they were submitted with — nothing historical is changed.\n` +
+          `• This cannot be undone; you would have to add “${name}” again.\n\n` +
+          `Choose Cancel if you only want to hide it temporarily — use Disable for that.`
+        );
+        if (!okGo) return;
+        btn.disabled = true;
+        try {
+          const resp = await _brokerApi('', { method: 'POST', body: JSON.stringify({ action: 'delete', id }) });
+          const body = await resp.json().catch(() => ({}));
+          if (!body.ok) throw new Error(body.message || body.detail || body.error || ('HTTP ' + resp.status));
+          showToast(body.message || `“${name}” deleted.`, 'success');
+          _renderBrokers();
+          _populateCreateLicenseBroker();
+        } catch (e) {
+          showToast('Could not delete broker: ' + (e.message || e), 'error');
           btn.disabled = false;
         }
       });

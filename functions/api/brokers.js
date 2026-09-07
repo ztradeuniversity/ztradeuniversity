@@ -181,5 +181,30 @@ export async function onRequest(context) {
     return json({ ok: true, id, active, name: row ? row.name : null });
   }
 
+  // ── DELETE — permanently remove a broker CONFIGURATION row ────────────────
+  // Safe to do physically: `brokers` is referenced by NO foreign key anywhere
+  // in the schema. license_requests.broker_name is a plain TEXT column holding
+  // the name captured AT SUBMISSION TIME — it is not a lookup into this table
+  // and nothing reconstructs a historical broker from here. Deleting a broker
+  // therefore only stops it being offered for FUTURE selections; every existing
+  // license request, broker-report row, email record and compile/delivery
+  // record keeps its own values untouched.
+  if (action === 'delete') {
+    const id = String(body.id ?? '').trim();
+    if (!id) return json({ ok: false, error: 'invalid_id' }, 400);
+    // Read the name first so the response can name what was removed.
+    const before = await sb(env, 'GET', `id=eq.${encodeURIComponent(id)}&select=id,name`);
+    const target = (before.ok && Array.isArray(before.data) && before.data.length) ? before.data[0] : null;
+    const del = await sb(env, 'DELETE', `id=eq.${encodeURIComponent(id)}`, null, 'return=minimal');
+    if (!del.ok) return json({ ok: false, error: 'delete_failed', detail: del.raw.slice(0, 300) }, 200);
+    return json({
+      ok: true, deleted: true, id,
+      name: target ? target.name : null,
+      message: target
+        ? `“${target.name}” permanently removed from your broker list. Existing requests keep their broker.`
+        : 'Broker removed.'
+    });
+  }
+
   return json({ ok: false, error: 'unknown_action' }, 400);
 }

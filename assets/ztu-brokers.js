@@ -15,12 +15,13 @@
      · admin/pages/admin-dashboard.html → "Your Brokers" manager + the
                                           Create License Request selector
 
-   FALLBACK_BROKERS below is NOT a second source of truth — it is the
-   resilience path used only when the `brokers` table cannot be read (table not
-   migrated yet, network failure, RLS change). Without it, a database hiccup
-   would leave the public form with an empty broker selector and block real
-   submissions. It matches the five options both pages hardcoded before this
-   change, so behaviour is unchanged when the table is unavailable.
+   THERE IS DELIBERATELY NO FALLBACK BROKER LIST. An earlier version of this
+   file carried FALLBACK_BROKERS = ['Exness','HFM','Pepperstone','IC Markets',
+   'Other'] for resilience. That was wrong: it meant a failed API call silently
+   offered brokers the administrator had never configured (or had deleted),
+   producing exactly the admin/public mismatch this file now prevents. If the
+   list cannot be read, load() returns ok:false with an EMPTY list and the
+   caller must show "temporarily unavailable" — never an invented broker.
 
    NORMALIZATION: the administrator's chosen spelling is preserved for display;
    comparison is done on trim + collapse-whitespace + lowercase, matching the
@@ -31,6 +32,7 @@
      <script src="/assets/ztu-brokers.js" defer></script>
      const r = await ZTUBrokers.load();                                    // active only (public)
      const r = await ZTUBrokers.load({activeOnly:false, adminToken:tok});  // manager view
+     if (!r.ok) → show "temporarily unavailable"; never invent a broker
      ZTUBrokers.populate(selectEl, r.names, { placeholder:'Select your broker' });
    ════════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -38,7 +40,6 @@
   if (window.ZTUBrokers) return;                 // guard against a double include
 
   var TABLE = 'brokers';
-  var FALLBACK_BROKERS = ['Exness', 'HFM', 'Pepperstone', 'IC Markets', 'Other'];
 
   /* Display-safe normalization: trim the ends and collapse internal runs of
      whitespace. Case is preserved — this is what gets stored and shown. */
@@ -68,52 +69,61 @@
      can return disabled brokers too; without it only ACTIVE brokers come back,
      which is exactly what the public form should see.
 
-     Returns { names, rows, source:'api'|'fallback', error }.
-     NEVER throws and NEVER returns an empty list — a caller can always render
-     a usable selector from `names`. */
+     Returns { ok, names, rows, error }.
+       ok:true  → `names` is the authoritative list (may legitimately be EMPTY
+                  when the administrator has configured no brokers).
+       ok:false → the list could not be read; `names` is ALWAYS empty. Callers
+                  must surface "temporarily unavailable" and must not offer any
+                  broker of their own.
+     Never throws.
+
+     Cache-busting: the endpoint already answers `Cache-Control: no-store`, and
+     `cache:'no-store'` here stops a bfcache/Back-Forward restore from replaying
+     a stale list after the administrator deletes a broker. */
   async function load(opts) {
     opts = opts || {};
     var wantAll = opts.activeOnly === false;
-    var fb = function (why) {
-      return { names: FALLBACK_BROKERS.slice(), rows: [], source: 'fallback', error: why || null };
-    };
+    var fail = function (why) { return { ok: false, names: [], rows: [], error: why || 'unavailable' }; };
     try {
-      var headers = {};
+      var headers = { 'Cache-Control': 'no-cache' };
       if (opts.adminToken) headers.Authorization = 'Bearer ' + opts.adminToken;
-      var res = await fetch('/api/brokers' + (wantAll ? '?all=1' : ''), { headers: headers });
-      if (!res.ok) return fb('http_' + res.status);
+      var res = await fetch('/api/brokers' + (wantAll ? '?all=1' : ''), { headers: headers, cache: 'no-store' });
+      if (!res.ok) return fail('http_' + res.status);
       var body = await res.json();
-      if (body.configured === false) return fb(body.note || 'not_configured');
-      if (body.error)                return fb(body.detail || body.error);
+      if (body.configured === false) return fail(body.note || 'not_configured');
+      if (body.error)                return fail(body.detail || body.error);
 
       if (wantAll) {
         var rows = Array.isArray(body.brokers) ? body.brokers : [];
-        return { names: rows.map(function (r) { return normalize(r.name); }).filter(Boolean),
-                 rows: rows, source: 'api', error: null };
+        return { ok: true, names: rows.map(function (r) { return normalize(r.name); }).filter(Boolean),
+                 rows: rows, error: null };
       }
       var names = (Array.isArray(body.brokers) ? body.brokers : [])
         .map(function (n) { return normalize(n); }).filter(Boolean);
-      if (!names.length) return fb('no_active_brokers');
-      return { names: names, rows: [], source: 'api', error: null };
+      // An empty list is a VALID answer (no brokers configured), not a failure.
+      return { ok: true, names: names, rows: [], error: null };
     } catch (e) {
-      return fb((e && e.message) || 'exception');
+      return fail((e && e.message) || 'exception');
     }
   }
 
   /* Render `names` into a <select>.
      opts.placeholder     — text for a leading disabled option (omit for none)
      opts.hidePlaceholder — also mark that option hidden (public form style)
-     opts.keepValue       — preserve the currently selected value; if that value
-                            is no longer offered (e.g. a broker was disabled
-                            after the record was created) it is appended so an
-                            existing/historical selection is never silently
-                            rewritten to something else. */
+     opts.keepValue       — re-select the current value IF it is still in the
+                            list. A value that is no longer offered is dropped,
+                            NOT re-added: appending it (the previous behaviour)
+                            meant a broker the administrator had just deleted
+                            reappeared in the selector on the next refresh.
+                            Historical broker names live in
+                            license_requests.broker_name and are never
+                            reconstructed from this selector. */
   function populate(sel, names, opts) {
     opts = opts || {};
     if (!sel) return;
-    var keep = opts.keepValue ? String(sel.value || '') : '';
     var list = (names || []).slice();
-    if (keep && list.map(key).indexOf(key(keep)) === -1) list.push(keep);
+    var wanted = opts.keepValue ? String(sel.value || '') : '';
+    var keep = (wanted && list.map(key).indexOf(key(wanted)) !== -1) ? wanted : '';
 
     var html = '';
     if (opts.placeholder !== undefined) {
@@ -128,11 +138,10 @@
   }
 
   window.ZTUBrokers = {
-    TABLE:             TABLE,
-    FALLBACK_BROKERS:  FALLBACK_BROKERS,
-    normalize:         normalize,
-    key:               key,
-    load:              load,
-    populate:          populate
+    TABLE:      TABLE,
+    normalize:  normalize,
+    key:        key,
+    load:       load,
+    populate:   populate
   };
 })();
