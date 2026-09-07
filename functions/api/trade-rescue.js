@@ -68,6 +68,7 @@ const L10N = {
     heardCheck: "Before I analyse — I want to be sure I heard your numbers right:",
     heardConfirm: 'If that’s correct just say **yes**; if not, tell me the right value.',
     switched: 'Of course — I’ll carry on in English.',
+    confirmEntry: (v) => `Before I go further — did you enter at **${v}**? If that is not right, just tell me the price.`,
     // Hedged on purpose: this reflects back what the trader SAID, and never
     // claims to know how they feel.
     senseUnsure: 'It sounds like you’re unsure what to do with this one. Let’s take it apart properly rather than guess.',
@@ -95,6 +96,7 @@ const L10N = {
     heardCheck: 'تجزیے سے پہلے میں آپ کے numbers confirm کرنا چاہتا ہوں:',
     heardConfirm: 'اگر یہ درست ہے تو **جی ہاں** لکھیں؛ ورنہ صحیح value بتا دیں۔',
     switched: 'ضرور — اب میں اردو میں بات کروں گا۔',
+    confirmEntry: (v) => `آگے بڑھنے سے پہلے — کیا آپ کی entry **${v}** پر تھی؟ اگر یہ درست نہیں تو صحیح price بتا دیں۔`,
     senseUnsure: 'آپ کی بات سے لگ رہا ہے کہ آپ اس ٹریڈ کے بارے میں غیر یقینی ہیں۔ اندازے لگانے کے بجائے اسے ترتیب سے دیکھ لیتے ہیں۔',
     nextOne: 'اگلی بات جو مجھے درکار ہے:',
     andThen: 'اس کے بعد میں موجودہ market data لے کر آپ کو مکمل تجزیہ دوں گا۔',
@@ -120,6 +122,7 @@ const L10N = {
     heardCheck: 'قبل التحليل، أريد التأكد من الأرقام:',
     heardConfirm: 'إذا كانت صحيحة اكتب **نعم**؛ وإلا أخبرني بالقيمة الصحيحة.',
     switched: 'بالتأكيد — سأكمل بالعربية.',
+    confirmEntry: (v) => `قبل أن أكمل — هل كان دخولك عند **${v}**؟ إذا لم يكن صحيحاً فأخبرني بالسعر الصحيح.`,
     senseUnsure: 'يبدو من كلامك أنك غير متأكد ممّا تفعله بهذه الصفقة. دعنا نحللها بشكل منظم بدل التخمين.',
     nextOne: 'الأمر التالي الذي أحتاجه:',
     andThen: 'بعد ذلك سأجلب بيانات السوق الحالية وأعطيك التحليل الكامل.',
@@ -174,6 +177,11 @@ const NON_LATIN_SIGNALS = [
   'صفقة', 'شراء', 'بيع', 'خسارة', 'ربح', 'وقف', 'مركز', 'ذهب', 'بيتكوين',
   'عالقة', 'عالق', 'محتجزة', 'ضدي', 'أحتفظ', 'أغلق', 'ماذا أفعل', 'دخول',
 ];
+
+// A plain "yes" to a confirmation. Non-Latin alternatives carry no \b, because
+// JavaScript's \b is ASCII-only and never fires beside Urdu/Arabic letters.
+const AFFIRMATIVE = /^\s*(?:(?:yes|yeah|yep|yup|correct|right|exactly|true)\b|(?:ہاں|جی|درست|صحیح|ٹھیک|بالکل|نعم|صح|أجل))/i;
+const isAffirmative = (t) => AFFIRMATIVE.test(String(t || '').trim());
 
 function inScope(text, tradeCase) {
   if (tradeCase && (tradeCase.instrument || tradeCase.direction || tradeCase.entry != null)) return true;
@@ -365,8 +373,13 @@ export async function onRequest(context) {
   // market data and can return nothing that is not in the message; every value
   // is validated in interpretTradeMessage() before it gets here, and only
   // still-empty fields are filled, so a deterministic capture always wins.
+  // Trigger on EITHER signal: little was gained, or something required is still
+  // missing. The reported transcript gained three facts (instrument, direction,
+  // floating state) and so never reached this layer under the gained-only rule,
+  // even though it was long, spoken, and still missing the entry.
   const substantive = message.trim().length >= 40;
-  if (substantive && (factCount(tCase) - factsBefore) <= 2) {
+  const thin = (factCount(tCase) - factsBefore) <= 2;
+  if (substantive && (thin || missingRequired(tCase).length > 0)) {
     try {
       const sem = await interpretTradeMessage(env, message, INSTRUMENTS.map(i => i.id));
       if (sem) {
@@ -409,6 +422,30 @@ export async function onRequest(context) {
       L.push('');
       L.push(T.heardConfirm);
       return respond({ mode: 'confirm', reply: L.join('\n'), tradeCase: tCase });
+    }
+  }
+
+  // 2c ── SPOKEN NUMBER, UNCERTAIN ROLE.
+  // A price heard as words ("چار ہزار تین سو اسی") is captured as the entry only
+  // when a position verb is attached to it. Otherwise it is a candidate: read it
+  // back once and let the trader confirm or correct it. Guessing would silently
+  // corrupt every entry-dependent calculation; asking blankly for something they
+  // already said is the behaviour this whole fix exists to remove.
+  if (tCase.entry == null && tCase.entry_candidate != null) {
+    if (tCase.entry_pending && isAffirmative(message)) {
+      tCase.entry = tCase.entry_candidate;
+      tCase.entry_pending = false;
+    } else if (!(tCase.asked || []).includes('entry')) {
+      tCase.asked = Array.from(new Set([...(tCase.asked || []), 'entry']));
+      tCase.last_asked = 'entry';
+      tCase.entry_pending = true;
+      const known = caseSummary(tCase);
+      const out = [];
+      if (L.switched && T.switched) out.push(T.switched);
+      out.push(known ? T.gotIt(known) : T.start);
+      out.push('');
+      out.push(T.confirmEntry(tCase.entry_candidate));
+      return respond({ mode: 'question', reply: out.join('\n'), tradeCase: tCase });
     }
   }
 

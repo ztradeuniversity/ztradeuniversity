@@ -60,6 +60,7 @@ export function emptyCase() {
     floating_state: null,      // 'profit' | 'loss' | 'breakeven'
     emotional_state: null,
     user_notes: [],
+    entry_candidate: null,     // a spoken number that MIGHT be the entry — confirmed, never assumed
     reported_move: null,       // trader's own "~40 points against me" — never converted
     account_context: null,     // trader's own account/balance remark, verbatim
     asked: [],                 // field keys already asked — never ask twice
@@ -342,6 +343,25 @@ export function extractNonLatin(raw, cur, already) {
     if (m && m[1] && m[1].trim().length >= 6) p.original_thesis = m[1].trim();
   }
 
+  // SPOKEN ENTRY — "چار ہزار تین سو اسی پر لی تھی". Two confidence levels:
+  // attached to a position verb it IS the entry; otherwise it is only a
+  // CANDIDATE, confirmed with the trader rather than assumed. A figure followed
+  // by a currency word is an account remark, not a price, and is excluded.
+  if (!have('entry')) {
+    for (const w of findWordNumbers(s)) {
+      const after = s.slice(w.end, w.end + 30);
+      if (/^\s*(?:ڈالر|دولار|\$|dollars?)/.test(after)) continue;   // account balance
+      // Urdu puts the marker AFTER the number ("4380 پر لی تھی"); Arabic and English
+      // put it BEFORE ("بعت ... عند أربعة آلاف", "sold at four thousand"). Check both sides.
+      const before = s.slice(Math.max(0, w.index - 45), w.index);
+      const positional =
+        /^\s*(?:پہ|پر|پے|سے|عند|على|at|from)\s*(?:\S+\s+){0,2}?(?:لی|لیا|لگی|لگا|لگائی|خرید\w*|بیچ\w*|اشتريت|بعت|دخلت|entry|sell|buy)/i.test(after)
+        || /(?:اشتريت|بعت|دخلت|خرید\w*|بیچ\w*|sold|bought|entered|entry|short(?:ed)?|long(?:ed)?)[^.۔]{0,25}?(?:عند|من|على|at|from|پر|پہ)\s*$/i.test(before);
+      if (positional && w.value >= 10) { p.entry = w.value; break; }
+      if (!p.entry_candidate && w.value >= 100) p.entry_candidate = w.value;
+    }
+  }
+
   // UNCERTAINTY / PRESSURE — recorded ONLY as "the trader expressed this", never
   // as a diagnosis of how they actually feel.
   if (/(?:سمجھ\s*نہیں|پتا\s*نہیں|کنفیوز|الجھن|حیران|پریشان|ڈر|امید|محتار|لا\s*أعرف|قلق|خائف)/.test(s)
@@ -370,6 +390,62 @@ export function extractNonLatin(raw, cur, already) {
   }
 
   return p;
+}
+
+// ── SPOKEN NUMBERS ──────────────────────────────────────────────────────────
+// "چار ہزار تین سو اسی" is 4380. Voice input produces this constantly and the
+// digit-only patterns above cannot see it, which is how a trader who HAD stated
+// their entry still got asked for it.
+const WORD_UNITS = {
+  // Urdu
+  'ایک': 1, 'دو': 2, 'تین': 3, 'چار': 4, 'پانچ': 5, 'چھ': 6, 'چھے': 6, 'سات': 7, 'آٹھ': 8, 'نو': 9,
+  'دس': 10, 'بیس': 20, 'تیس': 30, 'چالیس': 40, 'پچاس': 50, 'ساٹھ': 60, 'ستر': 70, 'اسی': 80, 'نوے': 90,
+  // Arabic
+  'واحد': 1, 'اثنان': 2, 'اثنين': 2, 'ثلاثة': 3, 'ثلاث': 3, 'أربعة': 4, 'اربعة': 4, 'خمسة': 5,
+  'ستة': 6, 'سبعة': 7, 'ثمانية': 8, 'تسعة': 9, 'عشرة': 10, 'عشرون': 20, 'ثلاثون': 30,
+  'أربعون': 40, 'خمسون': 50, 'ستون': 60, 'سبعون': 70, 'ثمانون': 80, 'تسعون': 90,
+  // English
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+const WORD_HUNDRED = ['سو', 'مائة', 'مئة', 'hundred'];
+const WORD_THOUSAND = ['ہزار', 'ألف', 'الف', 'آلاف', 'الاف', 'thousand'];
+const WORD_TOKENS = [...Object.keys(WORD_UNITS), ...WORD_HUNDRED, ...WORD_THOUSAND];
+
+/** Convert a run of number words to a value. "چار ہزار تین سو اسی" → 4380. */
+export function parseWordNumber(tokens) {
+  let total = 0, current = 0, seen = false;
+  for (const raw of tokens) {
+    const w = String(raw).toLowerCase();
+    if (WORD_UNITS[w] != null || WORD_UNITS[raw] != null) {
+      current += (WORD_UNITS[raw] != null ? WORD_UNITS[raw] : WORD_UNITS[w]); seen = true;
+    } else if (WORD_HUNDRED.includes(raw) || WORD_HUNDRED.includes(w)) {
+      current = (current || 1) * 100; seen = true;
+    } else if (WORD_THOUSAND.includes(raw) || WORD_THOUSAND.includes(w)) {
+      total += (current || 1) * 1000; current = 0; seen = true;
+    } else return null;
+  }
+  if (!seen) return null;
+  return total + current;
+}
+
+/** Every run of consecutive number words in the text, with its position. */
+export function findWordNumbers(text) {
+  const s = String(text || '');
+  const alt = WORD_TOKENS.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const re = new RegExp(`(?:^|[\\s،,])((?:(?:${alt})(?:[\\s،,]+|$))+)`, 'gi');
+  const out = [];
+  let m;
+  while ((m = re.exec(s)) !== null) {
+    const phrase = m[1].trim();
+    const toks = phrase.split(/[\s،,]+/).filter(Boolean);
+    const value = parseWordNumber(toks);
+    if (value != null) {
+      const at = m.index + m[0].indexOf(phrase);
+      out.push({ value, text: phrase, index: at, end: at + phrase.length });
+    }
+  }
+  return out;
 }
 
 // ── "I DON'T KNOW" ──────────────────────────────────────────────────────────
