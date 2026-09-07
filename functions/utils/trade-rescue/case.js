@@ -60,7 +60,11 @@ export function emptyCase() {
     floating_state: null,      // 'profit' | 'loss' | 'breakeven'
     emotional_state: null,
     user_notes: [],
+    reported_move: null,       // trader's own "~40 points against me" — never converted
+    account_context: null,     // trader's own account/balance remark, verbatim
     asked: [],                 // field keys already asked — never ask twice
+    unavailable: [],           // field keys the trader said they cannot supply
+    last_asked: null,          // what the previous turn asked, so "I don't know" has a referent
     turns: 0,
   };
 }
@@ -103,20 +107,47 @@ export function extractFromText(text, current) {
     }
   }
 
-  // Direction — Latin with boundaries, non-Latin as substrings (same \b reason).
+  // Direction — WHOSE buy/sell is this?
+  //
+  // A trader describing a stuck position almost always describes the market in
+  // the same breath: "میں نے سیل لگا دی تھی اور مارکیٹ اس کے بعد بائی ہوتی جا رہی
+  // ہے" — I placed a SELL, and the market has been going UP since. The previous
+  // implementation tested bare word presence with buy first, so "بائی" (the
+  // market's movement) won and the case was recorded as a BUY. Every downstream
+  // judgement then ran against the wrong side of the trade.
+  //
+  // So: look for a direction word ATTACHED TO A POSITION VERB first (I placed /
+  // took / opened / sold). Only if that finds nothing fall back to bare
+  // presence — and then only when exactly one side is mentioned. When both
+  // appear with no verb to disambiguate, leave it null and ask; a guessed
+  // direction is far worse than one more question.
   if (!cur.direction) {
-    // Includes the transliterated forms traders actually type ("بائی" = buy,
-    // "سیل" = sell) alongside the native words — the exact phrasing that made
-    // "میری گولڈ کی بائی ٹریڈ" fail direction extraction.
-    const buyNL  = ['خرید', 'خریدا', 'شراء', 'لانگ', 'بائی', 'بای', 'لونگ'];
-    const sellNL = ['فروخت', 'بیچ', 'بيع', 'شارٹ', 'سیل', 'سيل'];
-    if (/\b(buy|long|bought|buying)\b/i.test(t) || buyNL.some(w => raw.includes(w))) p.direction = 'buy';
-    else if (/\b(sell|short|sold|selling|shorted)\b/i.test(t) || sellNL.some(w => raw.includes(w))) p.direction = 'sell';
+    const buyNL  = ['خرید', 'خریدا', 'شراء', 'اشتريت', 'لانگ', 'بائی', 'بای', 'لونگ'];
+    const sellNL = ['فروخت', 'بیچ', 'بيع', 'بعت', 'شارٹ', 'سیل', 'سيل'];
+    // Urdu/Arabic: <direction word> … <verb of taking a position>, within a few words.
+    const POS_VERB = '(?:لگا|لگائی|لگادی|لی|لیا|کی|کر\\s*(?:دی|لی)|کھول|فتحت|دخلت|وضعت)';
+    const nlPositional = (words) =>
+      words.some(w => new RegExp(`${w}[^۔.!?]{0,18}?${POS_VERB}`).test(raw)
+                   || new RegExp(`${POS_VERB}[^۔.!?]{0,10}?${w}`).test(raw));
+    // English: an explicit statement of the trader's own position.
+    const enBuy  = /\b(i (?:bought|am long|went long)|my (?:buy|long)|(?:buy|long) (?:entry|position|trade)|opened a (?:buy|long))\b/i;
+    const enSell = /\b(i (?:sold|am short|went short)|my (?:sell|short)|(?:sell|short) (?:entry|position|trade)|opened a (?:sell|short))\b/i;
+
+    const posBuy  = enBuy.test(t)  || nlPositional(buyNL);
+    const posSell = enSell.test(t) || nlPositional(sellNL);
+    if (posBuy !== posSell) p.direction = posBuy ? 'buy' : 'sell';
+    else if (!posBuy) {
+      const bareBuy  = /\b(buy|long|bought|buying)\b/i.test(t) || buyNL.some(w => raw.includes(w));
+      const bareSell = /\b(sell|short|sold|selling|shorted)\b/i.test(t) || sellNL.some(w => raw.includes(w));
+      if (bareBuy !== bareSell) p.direction = bareBuy ? 'buy' : 'sell';
+      // both or neither → ambiguous, stays null and gets asked
+    }
   }
 
   // Explicit "no stop loss" — a first-class answer, not a missing field.
   if (/\b(no|without|nahi|nahin|koi nahi|بغیر|نہیں)\b[^.]{0,24}\b(sl|stop ?loss|stop)\b/i.test(t)
-      || /\b(sl|stop ?loss)\b[^.]{0,16}\b(nahi|nahin|none|not set|نہیں)\b/i.test(t)) {
+      || /\b(sl|stop ?loss)\b[^.]{0,16}\b(nahi|nahin|none|not set)\b/i.test(t)
+      || /\b(sl|stop ?loss|stop)\b[^.۔]{0,16}(?:نہیں|نہ لگایا|بغیر)/i.test(raw)) {
     p.has_stop_loss = false; p.stop_loss = null;
   }
 
@@ -127,7 +158,7 @@ export function extractFromText(text, current) {
     const m = raw.match(re);
     if (m) { const v = num(m[1]); if (v !== null) p[key] = v; }
   };
-  if (!cur.entry)       grab('entry|entered|bought at|sold at|open(?:ed)? at|buy at|sell at', 'entry');
+  if (!cur.entry)       grab('entry|entered|(?:bought|sold|buy|sell|open(?:ed)?|short(?:ed)?|long(?:ed)?)(?:\\s+\\w+){0,2}\\s+(?:at|from)', 'entry');
   if (!cur.stop_loss && p.has_stop_loss !== false) grab('sl|stop ?loss|stop', 'stop_loss');
   if (!cur.take_profit) grab('tp|take ?profit|target', 'take_profit');
   if (p.stop_loss != null) p.has_stop_loss = true;
@@ -191,11 +222,32 @@ export function extractFromText(text, current) {
     const fl = t
       .replace(/\b(stop ?loss|stoploss|sl)\b/gi, ' ')
       .replace(/\b(take ?profit|takeprofit|tp)\b/gi, ' ');
-    const lossNL = ['نقصان', 'منفی', 'خسارة'];
-    const profNL = ['منافع', 'نفع', 'ربح'];
+    // Transliterations matter more than the formal words here: traders say
+    // "لوس ہو چکا ہے", not "نقصان ہو چکا ہے". Missing 'لوس' is why the reported
+    // message's clearest fact — that the position is well underwater — was lost.
+    const lossNL = ['نقصان', 'منفی', 'خسارة', 'لوس', 'لاس', 'خسارہ', 'ڈوب', 'مائنس'];
+    const profNL = ['منافع', 'نفع', 'ربح', 'پرافٹ', 'فائدہ', 'فایدہ'];
     if (/\b(in (a )?loss|losing|drawdown|underwater|negative)\b/i.test(fl) || lossNL.some(w => raw.includes(w))) p.floating_state = 'loss';
     else if (/\b(in (a )?profit|winning|positive|green)\b/i.test(fl) || profNL.some(w => raw.includes(w))) p.floating_state = 'profit';
     else if (/\b(breakeven|break even)\b/i.test(fl)) p.floating_state = 'breakeven';
+  }
+
+  // Roman-Urdu entry — "4380 se lagi thi" / "4380 pe li thi" / "4380 par khareeda".
+  // The Urdu-script patterns need an Urdu verb; Roman Urdu writes the verb in
+  // Latin, so the same sentence typed phonetically lost its entry. A position
+  // verb is required, so "3 days se stuck" cannot be read as an entry.
+  if (!cur.entry && p.entry == null) {
+    const m = raw.match(/(\d+(?:[.,]\d+)?)\s*(?:se|pe|pr|par|py)\s+(?:\S+\s+){0,2}?(?:lagi|laga|lagai|li|liya|khareed\w*|becha|bechi|entry|buy|sell)\b/i);
+    if (m) { const v = num(m[1]); if (v !== null) p.entry = v; }
+  }
+
+  // Trader-reported movement — "about 40 points against me". Preserved as THEIR
+  // report, never converted into a price or a P/L: a "point" depends on the
+  // broker's convention and on what it is measured from, neither of which is
+  // verifiable here.
+  if (!cur.reported_move) {
+    const mv = raw.match(/(\d+(?:[.,]\d+)?)\s*(?:points?|pips?|pts?)\b/i);
+    if (mv) p.reported_move = `${mv[1]} points (trader-reported)`;
   }
 
   // Emotional pressure — only when the trader says it themselves.
@@ -243,7 +295,7 @@ export function extractNonLatin(raw, cur, already) {
   if (!have('entry')) {
     const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:پہ|پر|پے|عند|على)?\s*(?:انٹری|اینٹری|entry|دخول)/i)
            || s.match(/(?:انٹری|اینٹری|entry|دخول|سعر الدخول)\s*(?:پہ|پر|عند|:|=)?\s*(\d+(?:[.,]\d+)?)/i)
-           || s.match(/(\d+(?:[.,]\d+)?)\s*(?:پہ|پر|پے|سے)\s*(?:\S+\s+){0,2}?(?:لی|لیا|لی تھی|لگائی|خریدی|خریدا|بیچی|بیچا)/)
+           || s.match(/(\d+(?:[.,]\d+)?)\s*(?:پہ|پر|پے|سے)\s*(?:\S+\s+){0,2}?(?:لی|لیا|لگی|لگا|لگے|لگائی|خریدی|خریدا|بیچی|بیچا)/)
            || s.match(/(?:اشتريت|بعت|دخلت)\s*(?:\S+\s+){0,2}?(?:عند|من|على)?\s*(\d+(?:[.,]\d+)?)/);
     if (m) { const v = parseFloat(m[1].replace(',', '.')); if (Number.isFinite(v)) p.entry = v; }
   }
@@ -292,11 +344,61 @@ export function extractNonLatin(raw, cur, already) {
 
   // UNCERTAINTY / PRESSURE — recorded ONLY as "the trader expressed this", never
   // as a diagnosis of how they actually feel.
-  if (/(?:سمجھ\s*نہیں|پتا\s*نہیں|کنفیوز|الجھن|حیران|پریشان|ڈر|امید|محتار|لا\s*أعرف|قلق|خائف)/.test(s)) {
+  if (/(?:سمجھ\s*نہیں|پتا\s*نہیں|کنفیوز|الجھن|حیران|پریشان|ڈر|امید|محتار|لا\s*أعرف|قلق|خائف)/.test(s)
+      || /(?:کیا\s*کروں|کیا\s*کرنا\s*چاہی?[ےئ]|ماذا\s*أفعل|ما\s*العمل)/.test(s)) {
     p.emotional_state = 'pressure_expressed';
   }
 
+  // TRADER-REPORTED MOVEMENT — "تقریباً 40 points خلاف" / "40 پوائنٹ نیچے".
+  // Kept as the trader's own words. It is NOT converted into a price or a P/L:
+  // "40 points" depends on a broker's point convention and on what it is measured
+  // from, none of which is verifiable here.
+  if (!have('reported_move')) {
+    const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:points?|پوائنٹس?|پپس?|pips?|نقطة|نقاط)[^۔.!?]{0,24}?(?:خلاف|نیچے|اوپر|against|ضد|down|up)?/i);
+    if (m) p.reported_move = `${m[1]} points (trader-reported)`;
+  }
+
+  // ACCOUNT CONTEXT — "میرے پاس ٹوٹل ایک ہزار ڈالر ہے". Verbatim, unverified.
+  // A tight window: the amount plus at most three preceding words. Voice
+  // transcripts arrive with no sentence punctuation, so a wide window simply
+  // swallows the surrounding clause and starts mid-word.
+  if (!have('account_context')) {
+    const m = s.match(/((?:\S+\s+){0,3}(?:\d[\d,.]*|ایک|دو|تین|چار|پانچ|دس|سو|ہزار)(?:\s*ہزار)?\s*(?:ڈالر|دولار))/);
+    if (m && /(?:ٹوٹل|کل|اکاؤنٹ|بیلنس|حساب|رصيد|إجمالي|پاس)/.test(m[1])) {
+      p.account_context = m[1].trim().slice(0, 60) + ' (trader-reported)';
+    }
+  }
+
   return p;
+}
+
+// ── "I DON'T KNOW" ──────────────────────────────────────────────────────────
+// A trader who cannot remember their entry is giving a real answer. Before this
+// the field simply stayed null, so the case could only leave the question loop
+// by exhausting its turn budget — and the analysis then reasoned as though the
+// value were merely absent rather than genuinely unobtainable.
+const UNKNOWN_RE = new RegExp([
+  "\\b(i )?(don'?t|do not|dont) (know|remember|recall)\\b",
+  '\\b(no idea|not sure|unsure|cant remember|can\'t remember|forgot|unknown|n/?a)\\b',
+  '\\b(pata nahi|pta nahi|yaad nahi|nahi pata|maloom nahi)\\b',
+  '(?:یاد\\s*نہیں|پتا?\\s*نہیں|معلوم\\s*نہیں|نہیں\\s*پتا)',
+  '(?:لا\\s*أعرف|لا\\s*أتذكر|غير\\s*متأكد)',
+].join('|'), 'i');
+
+export function isUnknownAnswer(text) {
+  const t = String(text || '').trim();
+  if (!t || t.length > 120) return false;   // a long message is context, not a shrug
+  return UNKNOWN_RE.test(t);
+}
+
+export function markUnavailable(c, key) {
+  if (!key) return c;
+  c.unavailable = Array.from(new Set([...(c.unavailable || []), key]));
+  return c;
+}
+
+export function isUnavailable(c, key) {
+  return (c && Array.isArray(c.unavailable) && c.unavailable.includes(key)) || false;
 }
 
 export function normalizeTf(s) {
@@ -375,6 +477,9 @@ export function questionText(q, lang) {
 }
 
 function isFilled(c, key) {
+  // A field the trader has told us they cannot supply is ANSWERED, not missing.
+  // This is what stops the same question coming back around.
+  if (isUnavailable(c, key)) return true;
   const v = c[key];
   if (key === 'has_stop_loss') return v === true || v === false;
   if (Array.isArray(v)) return v.length > 0;
@@ -404,27 +509,37 @@ export function nextQuestions(c, max = 2) {
 // moment entry+SL are known produced a materially thinner read.
 // It only has to have been ASKED, never answered — a trader who ignores it still
 // gets their analysis on the next turn.
+// Analysis begins when there is enough to say something USEFUL — not when the
+// case is complete. Waiting for a perfect case is what turned a trader who had
+// already explained their situation into someone answering a form.
+//
+// Only instrument and direction are genuinely load-bearing: without them there
+// is no position to reason about. Entry and Stop Loss materially improve the
+// read, so they are still asked — but "known OR unavailable OR already asked"
+// is enough to move on, and the report then states plainly what it could not
+// verify. Three turns is a hard ceiling regardless.
 export function readyForAnalysis(c) {
-  const stalled = (c.turns || 0) >= 4;
-  if (stalled) return true;
-  if (missingRequired(c).length > 0) {
-    const unaskedRequired = missingRequired(c).filter(k => !(c.asked || []).includes(k));
-    return unaskedRequired.length === 0 && (c.turns || 0) >= 3;
-  }
-  const thesisKnown = !!c.original_thesis;
-  const thesisAsked = (c.asked || []).includes('original_thesis');
-  return thesisKnown || thesisAsked;
+  if ((c.turns || 0) >= 3) return true;
+  if (!isFilled(c, 'instrument') || !isFilled(c, 'direction')) return false;
+
+  const settled = (k) => isFilled(c, k) || (c.asked || []).includes(k);
+  if (!settled('entry') || !settled('has_stop_loss')) return false;
+
+  return !!c.original_thesis || (c.asked || []).includes('original_thesis');
 }
 
 export function caseSummary(c) {
   const L = [];
   if (c.instrument) L.push(`${c.instrument}${c.direction ? ' — ' + c.direction.toUpperCase() : ''}`);
+  else if (c.direction) L.push(c.direction.toUpperCase());
   if (c.entry != null) L.push(`entry ${c.entry}`);
+  else if (isUnavailable(c, 'entry')) L.push('entry not available');
+  if (c.reported_move) L.push(`~${c.reported_move}`);
+  if (c.floating_state) L.push(`currently in ${c.floating_state}`);
   if (c.has_stop_loss === false) L.push('NO stop loss');
   else if (c.stop_loss != null) L.push(`SL ${c.stop_loss}`);
   if (c.take_profit != null) L.push(`TP ${c.take_profit}`);
   if (c.timeframe_entry) L.push(`entry TF ${c.timeframe_entry}`);
   if (c.holding_duration) L.push(`held ${c.holding_duration}`);
-  if (c.floating_state) L.push(`currently in ${c.floating_state}`);
   return L.join(' · ');
 }

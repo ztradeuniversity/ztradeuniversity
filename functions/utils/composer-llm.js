@@ -233,6 +233,98 @@ export async function generateTradeRescueReport(env, brief, lang = 'en') {
   } catch { return ''; }
 }
 
+// ── TRADE RESCUE — SEMANTIC INTAKE ──────────────────────────────────────────
+// The deterministic extractor in trade-rescue/case.js is conservative by design:
+// it only captures a value when the phrasing makes the meaning unambiguous. That
+// is right for numbers, but it means a trader who explains their situation in a
+// natural paragraph — especially in mixed Urdu/English speech from the voice
+// composer — can have most of what they said dropped, and then be asked for it.
+//
+// This layer reads that same sentence semantically. It is NOT a second source of
+// market facts: it is given the trader's message and nothing else, it is
+// forbidden to supply anything the message does not state, and every value it
+// returns is re-validated below before it can enter the Trade Case. Same
+// callModel transport (Workers AI → OpenAI), same credentials, no new key.
+const TRADE_INTAKE_SYSTEM = `You read ONE message from a trader about a position they ALREADY HOLD, and return what that message states about it as strict JSON.
+
+RULES — these override everything else:
+1. Extract ONLY what the message actually says about the TRADER'S OWN position. If the message does not state a field, OMIT that field. Never guess, never fill a gap.
+2. You have NO market data. Never output a current price, a support/resistance level, a trend reading, an indicator value, a news item or an economic event. You are reading a sentence, not analysing a market.
+3. "direction" is the side the TRADER is holding — not what the market is doing. "I placed a sell and the market keeps going up" is direction "sell". Read the verb attached to the word.
+4. Every number you output must appear literally in the message. Never compute, convert, round or infer one.
+5. "reported_move" is the trader's own description of how far the trade has moved (e.g. "40 points against me"). Copy it as text. Never convert it into a price or a profit/loss.
+6. "original_thesis" is why they entered, in their own words, copied verbatim.
+7. "unknown_fields" lists field names the trader explicitly says they do not know or cannot remember.
+8. Output ONLY the JSON object. No markdown fence, no commentary, no reasoning.
+
+JSON shape (include only the keys the message supports):
+{"instrument":string,"direction":"buy"|"sell","entry":number,"stop_loss":number,"has_stop_loss":boolean,"take_profit":number,"position_size":string,"holding_duration":string,"original_thesis":string,"floating_state":"profit"|"loss"|"breakeven","reported_move":string,"account_context":string,"emotional_state":"pressure_expressed","unknown_fields":string[]}`;
+
+const INTAKE_STRINGS = ['position_size', 'holding_duration', 'original_thesis', 'reported_move', 'account_context'];
+const INTAKE_NUMBERS = ['entry', 'stop_loss', 'take_profit'];
+
+/**
+ * Semantic reading of one trader message.
+ *
+ * @param {object} env
+ * @param {string} message            the trader's own words
+ * @param {string[]} allowInstruments canonical instrument ids the system supports
+ * @returns {Promise<object|null>}    validated partial Trade Case, or null
+ */
+export async function interpretTradeMessage(env, message, allowInstruments = []) {
+  if (!llmConfigured(env)) return null;
+  const msg = String(message || '').trim();
+  if (msg.length < 12) return null;
+
+  let raw = '';
+  try {
+    raw = await callModel(env, TRADE_INTAKE_SYSTEM, `TRADER MESSAGE:\n\n${msg}`, null, 400);
+  } catch { return null; }
+  if (!raw) return null;
+
+  // Models occasionally wrap JSON in a fence or prose despite the instruction.
+  const m = String(raw).match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  let d;
+  try { d = JSON.parse(m[0]); } catch { return null; }
+  if (!d || typeof d !== 'object') return null;
+
+  // ── VALIDATION — nothing reaches the case that the message does not support.
+  const out = {};
+  const digits = msg.replace(/[^\d]/g, '');
+
+  if (typeof d.instrument === 'string') {
+    const want = d.instrument.trim().toUpperCase();
+    if (allowInstruments.includes(want)) out.instrument = want;
+  }
+  if (d.direction === 'buy' || d.direction === 'sell') out.direction = d.direction;
+  if (['profit', 'loss', 'breakeven'].includes(d.floating_state)) out.floating_state = d.floating_state;
+  if (d.emotional_state === 'pressure_expressed') out.emotional_state = 'pressure_expressed';
+  if (typeof d.has_stop_loss === 'boolean') out.has_stop_loss = d.has_stop_loss;
+
+  for (const k of INTAKE_NUMBERS) {
+    const v = Number(d[k]);
+    if (!Number.isFinite(v)) continue;
+    // The digits of any number must actually occur in the message, so a value
+    // can never be computed, converted or hallucinated into the case.
+    const asWritten = String(d[k]).replace(/[^\d]/g, '');
+    if (asWritten && digits.includes(asWritten)) out[k] = v;
+  }
+  if (out.stop_loss != null) out.has_stop_loss = true;
+
+  for (const k of INTAKE_STRINGS) {
+    if (typeof d[k] === 'string' && d[k].trim()) out[k] = d[k].trim().slice(0, 200);
+  }
+
+  if (Array.isArray(d.unknown_fields)) {
+    const known = [...INTAKE_STRINGS, ...INTAKE_NUMBERS, 'instrument', 'direction', 'has_stop_loss'];
+    const u = d.unknown_fields.filter(k => typeof k === 'string' && known.includes(k));
+    if (u.length) out.unavailable = u;
+  }
+
+  return Object.keys(out).length ? out : null;
+}
+
 // ── LEVEL 3 — educational generation for an in-domain question the internal KB did
 // NOT cover. Reuses the SAME Workers-AI→OpenAI callModel chain (so DB/API priority is
 // untouched — this is only ever invoked AFTER both miss). English-only (Language Lock).

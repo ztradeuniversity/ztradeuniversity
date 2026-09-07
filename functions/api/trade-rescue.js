@@ -26,11 +26,11 @@
 // the full, factual analysis.
 // ════════════════════════════════════════════════════════════════════════════
 
-import { emptyCase, mergeCase, extractFromText, nextQuestions, readyForAnalysis, missingRequired, caseSummary, questionText } from '../utils/trade-rescue/case.js';
+import { emptyCase, mergeCase, extractFromText, nextQuestions, readyForAnalysis, missingRequired, caseSummary, questionText, INSTRUMENTS, isUnknownAnswer, markUnavailable, isUnavailable } from '../utils/trade-rescue/case.js';
 import { collectEvidence, provenanceLines } from '../utils/trade-rescue/evidence.js';
 import { runAnalysis, KIND } from '../utils/trade-rescue/analysis.js';
 import { selectKnowledge } from '../utils/trade-rescue/knowledge.js';
-import { generateTradeRescueReport } from '../utils/composer-llm.js';
+import { generateTradeRescueReport, interpretTradeMessage } from '../utils/composer-llm.js';
 import { resolveLang } from '../utils/trade-rescue/language.js';
 // ── ACCESS: the SAME gate the AI assistant already uses ──────────────────────
 // resolveTier reads the identity token minted by /api/ai-access after the
@@ -192,6 +192,11 @@ function buildBrief(c, ev, analysis, knowledge) {
   const L = [];
   L.push(`TRADE CASE: ${caseSummary(c) || '(incomplete)'}`);
   if (c.original_thesis) L.push(`Trader's original thesis: ${c.original_thesis}`);
+  if (c.reported_move) L.push(`Trader reports the position has moved about ${c.reported_move}. This is THEIR report — it is not verified, and it must not be converted into a price or a profit/loss figure.`);
+  if (c.account_context) L.push(`Trader's own account remark: ${c.account_context} (unverified, trader-reported).`);
+  if ((c.unavailable || []).length) {
+    L.push(`THE TRADER COULD NOT SUPPLY: ${c.unavailable.join(', ')}. Do NOT compute anything that depends on these and do NOT ask for them again — say plainly which calculations are therefore unavailable, and analyse everything that does not depend on them.`);
+  }
   L.push('');
 
   L.push('CURRENT VERIFIED DATA (every value below was fetched just now; nothing here is remembered or estimated):');
@@ -336,8 +341,52 @@ export async function onRequest(context) {
 
   // 2 ── EXTRACT + MERGE
   const before = { entry: tCase.entry, stop_loss: tCase.stop_loss, take_profit: tCase.take_profit, position_size: tCase.position_size };
+  const FACTS = ['instrument', 'direction', 'entry', 'stop_loss', 'has_stop_loss', 'take_profit',
+                 'position_size', 'holding_duration', 'original_thesis', 'floating_state', 'reported_move'];
+  const factCount = (c) => FACTS.filter(k => c[k] !== null && c[k] !== undefined && c[k] !== '').length;
+  const factsBefore = factCount(tCase);
+
   tCase = mergeCase(tCase, extractFromText(message, tCase));
   tCase.turns = (tCase.turns || 0) + 1;
+
+  // 2a ── "I DON'T KNOW" is an ANSWER.
+  // A trader who cannot remember their entry has told us something real. Mark
+  // the field the previous turn asked about as unavailable so it is never asked
+  // again and the report states plainly that it could not be verified — instead
+  // of the case sitting on a null and the conversation grinding on.
+  if (tCase.last_asked && isUnknownAnswer(message)) markUnavailable(tCase, tCase.last_asked);
+
+  // 2b ── SEMANTIC FALLBACK — only when the deterministic pass came back thin.
+  // The extractor is deliberately conservative, which is correct for numbers but
+  // loses most of a natural paragraph (the reported failure: a trader explained
+  // instrument, side, size of the move, account context and their actual
+  // question, and only instrument + direction survived). This re-reads the SAME
+  // sentence semantically on the existing callModel transport. It is given no
+  // market data and can return nothing that is not in the message; every value
+  // is validated in interpretTradeMessage() before it gets here, and only
+  // still-empty fields are filled, so a deterministic capture always wins.
+  const substantive = message.trim().length >= 40;
+  if (substantive && (factCount(tCase) - factsBefore) <= 2) {
+    try {
+      const sem = await interpretTradeMessage(env, message, INSTRUMENTS.map(i => i.id));
+      if (sem) {
+        const patch = {};
+        for (const [k, v] of Object.entries(sem)) {
+          if (k === 'unavailable') continue;
+          const cur = tCase[k];
+          const empty = cur === null || cur === undefined || cur === ''
+                     || (Array.isArray(cur) && cur.length === 0);
+          if (empty) patch[k] = v;
+        }
+        if (patch.instrument) {
+          const ins = INSTRUMENTS.find(i => i.id === patch.instrument);
+          if (ins) patch.instrumentLive = ins.live;
+        }
+        tCase = mergeCase(tCase, patch);
+        for (const k of (sem.unavailable || [])) markUnavailable(tCase, k);
+      }
+    } catch { /* interpretation is an enhancement — never a failure path */ }
+  }
 
   // ── VOICE NUMERIC CONFIRMATION ───────────────────────────────────────────
   // Speech-to-text mis-hears digits ("4380" vs "4800", "0.10 lot" vs "1.0 lot"),
@@ -374,6 +423,7 @@ export async function onRequest(context) {
     const qs = nextQuestions(tCase, known ? 1 : 2);
     if (qs.length) {
       tCase.asked = Array.from(new Set([...(tCase.asked || []), ...qs.map(q => q.key)]));
+      tCase.last_asked = qs[0].key;   // referent for a following "I don't know"
       const out = [];
 
       // Acknowledge a language switch once, on the turn it was asked for.

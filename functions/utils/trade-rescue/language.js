@@ -24,10 +24,25 @@ const norm = (l) => {
   return SUPPORTED.includes(v) ? v : null;
 };
 
-// Urdu uses retroflex/aspirate letters that Arabic does not: ٹ ڈ ڑ ں ے ہ گ چ پ ژ ھ.
-// Their presence is the cleanest available separator between the two scripts.
-const URDU_ONLY = /[ٹڈڑںےہگچپژھ]/;
+// Urdu and Arabic share an alphabet, so neither letters nor words alone separate
+// them reliably: Urdu's retroflex/aspirate letters (ٹ ڈ ڑ ں ے ہ گ چ پ ژ ھ) are
+// decisive when present, but a short Urdu phrase like "میری Gold ki SELL" has
+// none — which is why such a message used to be answered in Arabic. Score both
+// signals instead: distinctive letters weigh 2, distinctive function words 1.
 const ARABIC_SCRIPT = /[؀-ۿݐ-ݿ]/;
+const URDU_ONLY  = /[ٹڈڑںےہگچپژھ]/;
+// Deliberately excludes آ ؤ ئ — Urdu uses all three (آپ, کوئی).
+const ARABIC_ONLY = /[ةىإأًٌٍَُِّْ]/;
+const URDU_WORDS   = /(?:میری|میرا|میرے|میں|ہے|ہیں|کی|کا|کے|نے|سے|پر|نہیں|آپ|کیا|رہا|رہی|تھی|تھا|گیا|کروں|بھی|لیکن)/;
+const ARABIC_WORDS = /(?:أنا|هذا|هذه|في|من|على|عند|الذي|التي|صفقة|منذ|لدي|كيف|ماذا|أفعل|لقد)/;
+
+function scoreUrduVsArabic(s) {
+  const ur = (URDU_ONLY.test(s) ? 2 : 0) + (URDU_WORDS.test(s) ? 1 : 0);
+  const ar = (ARABIC_ONLY.test(s) ? 2 : 0) + (ARABIC_WORDS.test(s) ? 1 : 0);
+  if (ur > ar) return 'ur';
+  if (ar > ur) return 'ar';
+  return URDU_ONLY.test(s) ? 'ur' : 'ar';   // tie → the decisive letters win
+}
 
 // The trader naming a language, in any of the three languages. Deliberately
 // requires a "say/explain/reply/write in X" shape or an explicit "X میں" so that
@@ -64,7 +79,7 @@ export function explicitLangRequest(text) {
 export function detectScriptLang(text) {
   const s = String(text || '');
   if (!s.trim()) return null;
-  if (ARABIC_SCRIPT.test(s)) return URDU_ONLY.test(s) ? 'ur' : 'ar';
+  if (ARABIC_SCRIPT.test(s)) return scoreUrduVsArabic(s);
   // Latin script: Roman Urdu is still answered in Urdu when it is unmistakable
   // ("mera trade phans gaya hai") — that is the trader's language, not English.
   if (/\b(mera|meri|mujhe|kya|kaise|nahi|nahin|hai|hoon|kar\s?(?:un|na)|phans|phansi|karun|batao|bataye|samajh)\b/i.test(s)
