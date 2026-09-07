@@ -228,8 +228,11 @@ export function extractFromText(text, current) {
     // message's clearest fact — that the position is well underwater — was lost.
     const lossNL = ['نقصان', 'منفی', 'خسارة', 'لوس', 'لاس', 'خسارہ', 'ڈوب', 'مائنس'];
     const profNL = ['منافع', 'نفع', 'ربح', 'پرافٹ', 'فائدہ', 'فایدہ'];
-    if (/\b(in (a )?loss|losing|drawdown|underwater|negative)\b/i.test(fl) || lossNL.some(w => raw.includes(w))) p.floating_state = 'loss';
-    else if (/\b(in (a )?profit|winning|positive|green)\b/i.test(fl) || profNL.some(w => raw.includes(w))) p.floating_state = 'profit';
+    // A bare "loss" / "profit" is safe here because the Stop Loss and Take
+    // Profit vocabulary was stripped above, so this catches the mixed phrasing
+    // people actually write: "main loss mein hoon", "میں loss میں ہوں".
+    if (/\b(in (a )?loss|losing|drawdown|underwater|negative|loss)\b/i.test(fl) || lossNL.some(w => raw.includes(w))) p.floating_state = 'loss';
+    else if (/\b(in (a )?profit|winning|positive|green|profit)\b/i.test(fl) || profNL.some(w => raw.includes(w))) p.floating_state = 'profit';
     else if (/\b(breakeven|break even)\b/i.test(fl)) p.floating_state = 'breakeven';
   }
 
@@ -552,51 +555,51 @@ export function normalizeTf(s) {
 // every language — that is how traders actually read their own platforms, and
 // translating them would reduce clarity rather than improve it.
 export const QUESTIONS = [
-  { key: 'instrument',       required: true,
+  { key: 'instrument',       required: true,  value: 100,
     q:  'Which instrument is the trade on — for example Gold (XAU/USD), BTC/USD, or a currency pair?',
     ur: 'یہ ٹریڈ کس instrument پر ہے؟ مثلاً Gold (XAU/USD)، BTC/USD، یا کوئی currency pair؟',
     ar: 'ما هي الأداة التي تتداولها؟ مثلاً Gold (XAU/USD) أو BTC/USD أو زوج عملات؟' },
-  { key: 'direction',        required: true,
+  { key: 'direction',        required: true,  value: 95,
     q:  'Is it a **Buy** (long) or a **Sell** (short)?',
     ur: 'یہ **Buy** (long) ہے یا **Sell** (short)؟',
     ar: 'هل هي **Buy** (شراء) أم **Sell** (بيع)؟' },
-  { key: 'entry',            required: true,
+  { key: 'entry',            required: true,  value: 80,
     q:  'What price did you enter at?',
     ur: 'آپ کا entry price کیا تھا؟',
     ar: 'ما هو سعر الدخول (Entry) الخاص بك؟' },
-  { key: 'has_stop_loss',    required: true,
+  { key: 'has_stop_loss',    required: true,  value: 75,
     q:  'Do you have a **Stop Loss** on this trade? If yes, at what price — if not, just say "no SL".',
     ur: 'کیا اس ٹریڈ پر **Stop Loss** لگا ہوا ہے؟ اگر ہاں تو کس price پر — اگر نہیں تو صرف "no SL" لکھ دیں۔',
     ar: 'هل لديك **Stop Loss** على هذه الصفقة؟ إذا نعم فعند أي سعر — وإذا لا فاكتب "no SL".' },
-  { key: 'holding_duration', required: false,
+  { key: 'holding_duration', required: false, value: 40,
     q:  'How long have you been holding it?',
     ur: 'آپ اسے کتنے عرصے سے hold کیے ہوئے ہیں؟',
     ar: 'منذ متى وأنت تحتفظ بهذه الصفقة؟' },
-  { key: 'original_thesis',  required: false,
+  { key: 'original_thesis',  required: false, value: 70,
     q:  'What made you take this trade in the first place?',
     ur: 'آپ نے یہ ٹریڈ اصل میں کس وجہ سے لی تھی؟',
     ar: 'ما الذي دفعك لدخول هذه الصفقة في الأساس؟' },
-  { key: 'take_profit',      required: false,
+  { key: 'take_profit',      required: false, value: 35,
     q:  'Do you have a **Take Profit** target set? If yes, at what price?',
     ur: 'کیا کوئی **Take Profit** target مقرر ہے؟ اگر ہاں تو کس price پر؟',
     ar: 'هل حددت هدف **Take Profit**؟ إذا نعم فعند أي سعر؟' },
-  { key: 'timeframe_entry',  required: false,
+  { key: 'timeframe_entry',  required: false, value: 25,
     q:  'Which timeframe did you take the entry on (M15, H1, H4, D1…)?',
     ur: 'آپ نے entry کس timeframe پر لی تھی (M15، H1، H4، D1…)؟',
     ar: 'على أي timeframe دخلت الصفقة (M15، H1، H4، D1…)؟' },
-  { key: 'position_size',    required: false,
+  { key: 'position_size',    required: false, value: 30,
     q:  'Is this a normal position size for your account, or larger than usual?',
     ur: 'کیا یہ آپ کے account کے لیے normal position size ہے یا معمول سے بڑی؟',
     ar: 'هل حجم المركز طبيعي بالنسبة لحسابك أم أكبر من المعتاد؟' },
-  { key: 'support_levels',   required: false,
+  { key: 'support_levels',   required: false, value: 12, late: true,
     q:  'Where do you see the nearest **Support** for this instrument?',
     ur: 'آپ کے خیال میں قریب ترین **Support** کہاں ہے؟',
     ar: 'أين ترى أقرب **Support** لهذه الأداة؟' },
-  { key: 'resistance_levels',required: false,
+  { key: 'resistance_levels',required: false, value: 10, late: true,
     q:  'And the nearest **Resistance**?',
     ar: 'وأين أقرب **Resistance**؟',
     ur: 'اور قریب ترین **Resistance** کہاں ہے؟' },
-  { key: 'trend_context',    required: false,
+  { key: 'trend_context',    required: false, value: 15, late: true,
     q:  'On your higher timeframe, is the market trending up, down, or ranging?',
     ur: 'آپ کے higher timeframe پر market اوپر جا رہی ہے، نیچے، یا range میں ہے؟',
     ar: 'على الإطار الزمني الأعلى، هل السوق صاعد أم هابط أم في نطاق عرضي؟' },
@@ -625,14 +628,16 @@ export function missingRequired(c) {
 
 // Up to `max` questions for this turn — never repeats, never asks what is known.
 export function nextQuestions(c, max = 2) {
-  const out = [];
-  for (const q of QUESTIONS) {
-    if (out.length >= max) break;
-    if (isFilled(c, q.key)) continue;
-    if ((c.asked || []).includes(q.key)) continue;
-    out.push(q);
-  }
-  return out;
+  const analysed = (c.analyses || 0) > 0;
+  return QUESTIONS
+    .filter(q => !isFilled(c, q.key))
+    .filter(q => !(c.asked || []).includes(q.key))
+    // `late` questions ask the trader for their own read of structure. They are
+    // only useful once there is an analysis to weigh them against, so they never
+    // stand between the trader and their first one.
+    .filter(q => !q.late || analysed)
+    .sort((a, b) => (b.value || 0) - (a.value || 0))
+    .slice(0, max);
 }
 
 // Analysis runs once every REQUIRED field is answered AND the single most
@@ -651,14 +656,29 @@ export function nextQuestions(c, max = 2) {
 // read, so they are still asked — but "known OR unavailable OR already asked"
 // is enough to move on, and the report then states plainly what it could not
 // verify. Three turns is a hard ceiling regardless.
+// MINIMUM VIABLE ANALYSIS.
+//
+// Instrument and direction are the only genuinely load-bearing facts: without
+// them there is no position to reason about and no market to fetch. Everything
+// else enriches the read, and the report already states plainly what it could
+// not verify — so none of it is worth withholding an analysis for.
+//
+// The previous rule required entry AND stop-loss to be settled AND the thesis to
+// have been asked, which meant a trader who had already given instrument,
+// direction, entry, stop-loss status and floating state still got another
+// question instead of the analysis their case could support. That is the
+// questionnaire behaviour this replaces.
+//
+// One question is still asked when the opening message carries nothing beyond
+// the position itself, because a single high-value answer materially improves
+// the first analysis. After that the trader is never held up again.
 export function readyForAnalysis(c) {
-  if ((c.turns || 0) >= 3) return true;
+  if ((c.turns || 0) >= 2) return true;
   if (!isFilled(c, 'instrument') || !isFilled(c, 'direction')) return false;
 
-  const settled = (k) => isFilled(c, k) || (c.asked || []).includes(k);
-  if (!settled('entry') || !settled('has_stop_loss')) return false;
-
-  return !!c.original_thesis || (c.asked || []).includes('original_thesis');
+  // Any one of these makes the first analysis substantially more useful.
+  const enriching = ['entry', 'has_stop_loss', 'floating_state', 'reported_move', 'holding_duration', 'original_thesis'];
+  return enriching.some(k => isFilled(c, k));
 }
 
 export function caseSummary(c) {

@@ -69,6 +69,7 @@ const L10N = {
     heardCheck: "Before I analyse — I want to be sure I heard your numbers right:",
     heardConfirm: 'If that’s correct just say **yes**; if not, tell me the right value.',
     switched: 'Of course — I’ll carry on in English.',
+    livePrice: (i, p, at) => `I have pulled the current ${i} price myself — **${p}** (retrieved ${at}).`,
     confirmEntry: (v) => `Before I go further — did you enter at **${v}**? If that is not right, just tell me the price.`,
     // Hedged on purpose: this reflects back what the trader SAID, and never
     // claims to know how they feel.
@@ -97,6 +98,7 @@ const L10N = {
     heardCheck: 'تجزیے سے پہلے میں آپ کے numbers confirm کرنا چاہتا ہوں:',
     heardConfirm: 'اگر یہ درست ہے تو **جی ہاں** لکھیں؛ ورنہ صحیح value بتا دیں۔',
     switched: 'ضرور — اب میں اردو میں بات کروں گا۔',
+    livePrice: (i, p, at) => `موجودہ ${i} price میں نے خود لے لیا ہے — **${p}** (retrieved ${at})۔`,
     confirmEntry: (v) => `آگے بڑھنے سے پہلے — کیا آپ کی entry **${v}** پر تھی؟ اگر یہ درست نہیں تو صحیح price بتا دیں۔`,
     senseUnsure: 'آپ کی بات سے لگ رہا ہے کہ آپ اس ٹریڈ کے بارے میں غیر یقینی ہیں۔ اندازے لگانے کے بجائے اسے ترتیب سے دیکھ لیتے ہیں۔',
     nextOne: 'اگلی بات جو مجھے درکار ہے:',
@@ -123,6 +125,7 @@ const L10N = {
     heardCheck: 'قبل التحليل، أريد التأكد من الأرقام:',
     heardConfirm: 'إذا كانت صحيحة اكتب **نعم**؛ وإلا أخبرني بالقيمة الصحيحة.',
     switched: 'بالتأكيد — سأكمل بالعربية.',
+    livePrice: (i, p, at) => `جلبت سعر ${i} الحالي بنفسي — **${p}** (retrieved ${at}).`,
     confirmEntry: (v) => `قبل أن أكمل — هل كان دخولك عند **${v}**؟ إذا لم يكن صحيحاً فأخبرني بالسعر الصحيح.`,
     senseUnsure: 'يبدو من كلامك أنك غير متأكد ممّا تفعله بهذه الصفقة. دعنا نحللها بشكل منظم بدل التخمين.',
     nextOne: 'الأمر التالي الذي أحتاجه:',
@@ -414,6 +417,9 @@ export async function onRequest(context) {
       // explicit position marker in the sentence, so it is the better guess
       // to put in front of the trader. They can correct it in one word.
       if (k === 'entry' && tCase.entry == null) { delete patch.entry; patch.entry_candidate = dv; }
+      // Direction decides whether every piece of evidence counts for or
+      // against the trader. A disagreement there is never resolved silently.
+      if (k === 'direction' && tCase.direction == null) delete patch.direction;
       // For every other field the deterministic reading is grammar-anchored and stands.
     }
   }
@@ -453,6 +459,21 @@ export async function onRequest(context) {
     }
   }
 
+  // Current price is something this system retrieves; it is never a question.
+  // Showing it on a question turn makes that visible to the trader, and costs one
+  // request against the same endpoint the analysis turn uses.
+  async function currentPriceLine() {
+    if (!tCase.instrumentLive) return null;
+    try {
+      const r = await fetch(`${origin}/api/market`, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) return null;
+      const d = await r.json();
+      const q = d && d[tCase.instrumentLive];
+      if (!q || typeof q.price !== 'number') return null;
+      return T.livePrice(tCase.instrument, q.price, d.updatedAt || new Date().toISOString());
+    } catch { return null; }
+  }
+
   // 3 ── QUESTION ENGINE — a mentor's turn, not a form.
   // Once anything at all is known the trader gets ONE question, phrased as a
   // sentence, after a short acknowledgement of what was just understood. Two are
@@ -477,6 +498,8 @@ export async function onRequest(context) {
       }
 
       out.push(known ? T.gotIt(known) : T.start);
+      const priceLine = await currentPriceLine();
+      if (priceLine) out.push(priceLine);
       out.push('');
       if (qs.length > 1) {
         out.push(T.needTwo);
@@ -491,6 +514,7 @@ export async function onRequest(context) {
 
   // 4 ── EVIDENCE (current, timestamped, or explicitly unavailable)
   const evidence = await collectEvidence(origin, tCase);
+  tCase.analyses = (tCase.analyses || 0) + 1;
 
   // 5 ── ANALYSIS
   const analysis = runAnalysis(tCase, evidence);

@@ -355,7 +355,15 @@ export async function interpretTradeMessage(env, message, opts = {}) {
   if (out.stop_loss != null) out.has_stop_loss = true;
 
   for (const k of INTAKE_STRINGS) {
-    if (typeof d[k] === 'string' && d[k].trim()) out[k] = d[k].trim().slice(0, 200);
+    if (typeof d[k] !== 'string' || !d[k].trim()) continue;
+    const val = d[k].trim().slice(0, 200);
+    // A "reported move" is a DISTANCE. Without a magnitude it is just a remark
+    // about the market, and printing it in the case summary as though the trader
+    // had quantified their loss is misleading.
+    if (k === 'reported_move' && !/\d/.test(val)) continue;
+    // Likewise a duration has to say how long.
+    if (k === 'holding_duration' && !/\d|day|hour|week|month|دن|گھنٹ|ہفت|مہین|يوم|ساعة|أسبوع|شهر/i.test(val)) continue;
+    out[k] = val;
   }
 
   if (Array.isArray(d.unknown_fields)) {
