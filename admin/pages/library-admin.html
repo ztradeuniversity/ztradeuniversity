@@ -784,6 +784,41 @@ async function sbDelete(table, id) {
   if (!r.ok) throw await sbError('DELETE', table, r);
 }
 
+/* Build a Supabase-Storage-safe object-key segment from a real filename.
+
+   ROOT CAUSE THIS FIXES: the object key was previously built as
+   `${Date.now()}_${file.name.replace(/\s/g,'_')}` — only whitespace was
+   sanitized, so every other character in the filename reached Supabase
+   verbatim. Supabase Storage validates every object key against
+   VALID_OBJECT_KEY = /^[A-Za-z0-9_/!.*'() &$=@;:+,?-]*$/ (ASCII only) and
+   rejects anything else with HTTP 400 "Invalid key: <key>". An Urdu (or any
+   non-ASCII) filename therefore produced a key Storage refused — the reported
+   "Save failed: Upload failed (400): Invalid key: books/urdu/…" — after the
+   bytes had already been sent, which is why the progress bar reached 100%
+   before the error appeared.
+
+   The stored key is an internal identifier only; the human-readable name shown
+   in the Library and in this admin list comes from the `title` column, which is
+   a normal DB text column and keeps full Urdu/Unicode support. Nothing
+   user-visible is lost by normalising the key.
+
+   ASCII filenames are unaffected: the output is byte-identical to the previous
+   expression for names made of letters, digits, spaces, dots, hyphens and
+   underscores (verified against the object keys already live in this project).
+   The extension is preserved as-is (case included); uniqueness continues to
+   come from the Date.now() prefix the callers add.                            */
+function safeStorageName(name) {
+  const raw  = String(name || '').trim();
+  const dot  = raw.lastIndexOf('.');
+  const ext  = dot > 0 ? raw.slice(dot + 1).replace(/[^A-Za-z0-9]/g, '').slice(0, 10) : '';
+  const base = (dot > 0 ? raw.slice(0, dot) : raw)
+    .replace(/[^A-Za-z0-9._-]+/g, '_')   // anything outside the safe ASCII set → _
+    .replace(/_{2,}/g, '_')              // collapse runs so one Urdu phrase ≠ 20 underscores
+    .replace(/^[._-]+|[._-]+$/g, '')     // no leading/trailing separators
+    .slice(0, 80);
+  return (base || 'file') + (ext ? '.' + ext : '');
+}
+
 /* Upload a file to Supabase Storage WITHOUT a client-side service key.
    1. Ask the backend for a short-lived signed upload URL.
    2. PUT the raw bytes straight to that URL (keeps XHR progress; large files
@@ -1326,7 +1361,7 @@ async function saveItem() {
 
     const coverFile = document.getElementById('fCoverFile')?.files?.[0];
     if (coverFile) {
-      const path = `covers/${Date.now()}_${coverFile.name.replace(/\s/g,'_')}`;
+      const path = `covers/${Date.now()}_${safeStorageName(coverFile.name)}`;
       showProgressUI('cover', 0);
       coverUrl = await uploadFile('library-covers', path, coverFile, p => showProgressUI('cover', p));
       hideProgressUI('cover');
@@ -1335,7 +1370,7 @@ async function saveItem() {
     if (currentTab === 'books') {
       const pdfFile = document.getElementById('fPdfFile')?.files?.[0];
       if (pdfFile) {
-        const path = `books/${lang}/${Date.now()}_${pdfFile.name.replace(/\s/g,'_')}`;
+        const path = `books/${lang}/${Date.now()}_${safeStorageName(pdfFile.name)}`;
         showProgressUI('pdf', 0);
         mediaUrl = await uploadFile('library-books', path, pdfFile, p => showProgressUI('pdf', p));
         hideProgressUI('pdf');
@@ -1346,7 +1381,7 @@ async function saveItem() {
     if (currentTab === 'audio') {
       const audioFile = document.getElementById('fAudioFile')?.files?.[0];
       if (audioFile) {
-        const path = `audio/${lang}/${Date.now()}_${audioFile.name.replace(/\s/g,'_')}`;
+        const path = `audio/${lang}/${Date.now()}_${safeStorageName(audioFile.name)}`;
         showProgressUI('audio', 0);
         mediaUrl = await uploadFile('library-audio', path, audioFile, p => showProgressUI('audio', p));
         hideProgressUI('audio');
@@ -1357,7 +1392,7 @@ async function saveItem() {
     if (currentTab === 'videos') {
       const videoFile = document.getElementById('fVideoFile')?.files?.[0];
       if (videoFile) {
-        const path = `videos/${lang}/${Date.now()}_${videoFile.name.replace(/\s/g,'_')}`;
+        const path = `videos/${lang}/${Date.now()}_${safeStorageName(videoFile.name)}`;
         showProgressUI('videoFile', 0);
         mediaUrl = await uploadFile('library-videos', path, videoFile, p => showProgressUI('videoFile', p));
         hideProgressUI('videoFile');
