@@ -234,55 +234,95 @@ export async function generateTradeRescueReport(env, brief, lang = 'en') {
 }
 
 // ── TRADE RESCUE — SEMANTIC INTAKE ──────────────────────────────────────────
-// The deterministic extractor in trade-rescue/case.js is conservative by design:
-// it only captures a value when the phrasing makes the meaning unambiguous. That
-// is right for numbers, but it means a trader who explains their situation in a
-// natural paragraph — especially in mixed Urdu/English speech from the voice
-// composer — can have most of what they said dropped, and then be asked for it.
+// Understanding comes BEFORE structured extraction. Traders describe an open
+// position in natural, often spoken, often mixed-language sentences; a regex
+// pass over that is a losing arms race, and losing it corrupts trade facts
+// (the reported case: "چار ہزار تینتالیس" read as 43 instead of 4043).
 //
-// This layer reads that same sentence semantically. It is NOT a second source of
-// market facts: it is given the trader's message and nothing else, it is
-// forbidden to supply anything the message does not state, and every value it
-// returns is re-validated below before it can enter the Trade Case. Same
-// callModel transport (Workers AI → OpenAI), same credentials, no new key.
-const TRADE_INTAKE_SYSTEM = `You read ONE message from a trader about a position they ALREADY HOLD, and return what that message states about it as strict JSON.
+// This layer reads the WHOLE utterance, plus what is already known about the
+// case so a follow-up turn is understood in context. It is NOT a source of
+// market facts: it is given the trader's words and nothing else, it is
+// forbidden to produce anything the message does not state, and every value it
+// returns is re-validated below before it can reach the Trade Case.
+//
+// TRANSPORT — no new credential architecture. resolveOpenAI()/callOpenAI() are
+// the project's EXISTING OpenAI configuration and retry path, used directly here
+// so semantic intake is genuinely OpenAI-backed rather than whatever callModel
+// happens to pick first. When OpenAI is not configured this falls back to
+// callModel (Workers AI), and when nothing is configured it returns null and the
+// deterministic extractor carries the turn alone.
+const TRADE_INTAKE_SYSTEM = `You interpret ONE message from a trader about a position they ALREADY HOLD, and return what that message means as strict JSON.
 
 RULES — these override everything else:
-1. Extract ONLY what the message actually says about the TRADER'S OWN position. If the message does not state a field, OMIT that field. Never guess, never fill a gap.
-2. You have NO market data. Never output a current price, a support/resistance level, a trend reading, an indicator value, a news item or an economic event. You are reading a sentence, not analysing a market.
-3. "direction" is the side the TRADER is holding — not what the market is doing. "I placed a sell and the market keeps going up" is direction "sell". Read the verb attached to the word.
-4. Every number you output must appear literally in the message. Never compute, convert, round or infer one.
-5. "reported_move" is the trader's own description of how far the trade has moved (e.g. "40 points against me"). Copy it as text. Never convert it into a price or a profit/loss.
-6. "original_thesis" is why they entered, in their own words, copied verbatim.
-7. "unknown_fields" lists field names the trader explicitly says they do not know or cannot remember.
-8. Output ONLY the JSON object. No markdown fence, no commentary, no reasoning.
+1. Interpret ONLY the trader's message. If it does not state a field, OMIT that field. Never guess and never fill a gap.
+2. You have NO market data. Never output a current price, support/resistance level, trend reading, indicator, news item, economic event, probability or timestamp. You are reading a sentence, not analysing a market.
+3. "direction" is the side the TRADER holds — not what the market is doing. "I placed a sell and the market keeps going up" is direction "sell". Read the verb attached to the word.
+4. NUMBERS ARE CRITICAL. Understand spoken number grammar in Urdu, Arabic and English, including mixed word/digit forms:
+   "چار ہزار تینتالیس" = 4043 · "چار ہزار 43" = 4043 · "4 ہزار 43" = 4043
+   "چار ہزار تین سو اسی" = 4380 · "four thousand forty-three" = 4043
+   "أربعة آلاف وثلاثة وأربعون" = 4043
+   Never truncate a compound number to its last part.
+5. Classify each number by its ROLE from the grammar around it. An entry price, an account balance ("ایک ہزار ڈالر کا account"), a distance moved ("چالیس points خلاف"), a target and a stop are different fields. If the role is unclear, put the field name in "ambiguous_fields" instead of guessing.
+6. "reported_move" is the trader's own description of how far the trade has moved. Copy it as text; never convert it to a price or a profit/loss.
+7. "original_thesis" is why they entered, copied verbatim in their own words.
+8. "unknown_fields" lists fields the trader explicitly says they do not know or cannot remember.
+9. "explicit_language_request" is set ONLY when the trader actually asks to be answered in a language ("مجھے English میں جواب دیں"). Writing in a language is NOT a request.
+10. "semantic_confidence" is "high" only when the sentence states the facts plainly; "medium" when interpretation was needed; "low" when the text is garbled or could be read more than one way.
+11. Output ONLY the JSON object. No markdown fence, no commentary, no reasoning.
 
-JSON shape (include only the keys the message supports):
-{"instrument":string,"direction":"buy"|"sell","entry":number,"stop_loss":number,"has_stop_loss":boolean,"take_profit":number,"position_size":string,"holding_duration":string,"original_thesis":string,"floating_state":"profit"|"loss"|"breakeven","reported_move":string,"account_context":string,"emotional_state":"pressure_expressed","unknown_fields":string[]}`;
+JSON shape (include only keys the message supports):
+{"instrument":string,"direction":"buy"|"sell","entry":number,"stop_loss":number,"has_stop_loss":boolean,"take_profit":number,"position_size":string,"holding_duration":string,"timeframe_entry":string,"original_thesis":string,"floating_state":"profit"|"loss"|"breakeven","reported_move":string,"account_context":string,"user_experience":string,"emotional_state":"pressure_expressed","language":"en"|"ur"|"ar","explicit_language_request":"en"|"ur"|"ar","semantic_confidence":"high"|"medium"|"low","ambiguous_fields":string[],"unknown_fields":string[]}`;
 
-const INTAKE_STRINGS = ['position_size', 'holding_duration', 'original_thesis', 'reported_move', 'account_context'];
+const INTAKE_STRINGS = ['position_size', 'holding_duration', 'original_thesis', 'reported_move',
+                        'account_context', 'user_experience', 'timeframe_entry'];
 const INTAKE_NUMBERS = ['entry', 'stop_loss', 'take_profit'];
+const INTAKE_FIELDS = [...INTAKE_STRINGS, ...INTAKE_NUMBERS, 'instrument', 'direction', 'has_stop_loss'];
 
 /**
  * Semantic reading of one trader message.
  *
  * @param {object} env
- * @param {string} message            the trader's own words
- * @param {string[]} allowInstruments canonical instrument ids the system supports
- * @returns {Promise<object|null>}    validated partial Trade Case, or null
+ * @param {string} message              the trader's own words
+ * @param {object} opts
+ * @param {string[]} opts.allowInstruments  canonical instrument ids the system supports
+ * @param {number[]} opts.allowedNumbers    every numeric value the message actually
+ *                                          supports — digits AND spoken numbers,
+ *                                          computed by the caller's number reader
+ * @param {object}  opts.known              facts already established, for context
+ * @returns {Promise<object|null>} validated partial case, plus _confidence/_ambiguous
  */
-export async function interpretTradeMessage(env, message, allowInstruments = []) {
-  if (!llmConfigured(env)) return null;
+export async function interpretTradeMessage(env, message, opts = {}) {
   const msg = String(message || '').trim();
-  if (msg.length < 12) return null;
+  if (msg.length < 6) return null;
+
+  const allowInstruments = opts.allowInstruments || [];
+  const allowedNumbers = (opts.allowedNumbers || []).map(Number).filter(Number.isFinite);
+
+  // Only the trade facts already known travel with the request — never the
+  // trader's raw history, identity or any unrelated data.
+  const known = {};
+  for (const k of INTAKE_FIELDS) {
+    const v = opts.known ? opts.known[k] : null;
+    if (v !== null && v !== undefined && v !== '') known[k] = v;
+  }
+  const user = Object.keys(known).length
+    ? `ALREADY KNOWN ABOUT THIS TRADE (context only — do not repeat it back):\n${JSON.stringify(known)}\n\nTRADER MESSAGE:\n\n${msg}`
+    : `TRADER MESSAGE:\n\n${msg}`;
 
   let raw = '';
-  try {
-    raw = await callModel(env, TRADE_INTAKE_SYSTEM, `TRADER MESSAGE:\n\n${msg}`, null, 400);
-  } catch { return null; }
+  const oa = resolveOpenAI(env);
+  if (oa.usable) {
+    // Guaranteed OpenAI for this step, via the project's existing resolver and
+    // retry path. No second credential system, no new environment variable.
+    try {
+      raw = await callOpenAI(oa, [{ role: 'system', content: TRADE_INTAKE_SYSTEM }, { role: 'user', content: user }], env, null, 500);
+    } catch { raw = ''; }
+  }
+  if (!raw && llmConfigured(env)) {
+    try { raw = await callModel(env, TRADE_INTAKE_SYSTEM, user, null, 500); } catch { raw = ''; }
+  }
   if (!raw) return null;
 
-  // Models occasionally wrap JSON in a fence or prose despite the instruction.
   const m = String(raw).match(/\{[\s\S]*\}/);
   if (!m) return null;
   let d;
@@ -305,10 +345,12 @@ export async function interpretTradeMessage(env, message, allowInstruments = [])
   for (const k of INTAKE_NUMBERS) {
     const v = Number(d[k]);
     if (!Number.isFinite(v)) continue;
-    // The digits of any number must actually occur in the message, so a value
-    // can never be computed, converted or hallucinated into the case.
-    const asWritten = String(d[k]).replace(/[^\d]/g, '');
-    if (asWritten && digits.includes(asWritten)) out[k] = v;
+    // A number is admissible only if the trader's own text supports it: either
+    // its digits appear literally, or the spoken-number reader found that exact
+    // value in the sentence. A figure the model computed or invented is dropped.
+    const written = String(d[k]).replace(/[^\d]/g, '');
+    const supported = allowedNumbers.includes(v) || (written && digits.includes(written));
+    if (supported) out[k] = v;
   }
   if (out.stop_loss != null) out.has_stop_loss = true;
 
@@ -317,12 +359,18 @@ export async function interpretTradeMessage(env, message, allowInstruments = [])
   }
 
   if (Array.isArray(d.unknown_fields)) {
-    const known = [...INTAKE_STRINGS, ...INTAKE_NUMBERS, 'instrument', 'direction', 'has_stop_loss'];
-    const u = d.unknown_fields.filter(k => typeof k === 'string' && known.includes(k));
+    const u = d.unknown_fields.filter(k => typeof k === 'string' && INTAKE_FIELDS.includes(k));
     if (u.length) out.unavailable = u;
   }
+  if (['en', 'ur', 'ar'].includes(d.explicit_language_request)) {
+    out._langRequest = d.explicit_language_request;
+  }
+  out._confidence = ['high', 'medium', 'low'].includes(d.semantic_confidence) ? d.semantic_confidence : 'medium';
+  out._ambiguous = Array.isArray(d.ambiguous_fields)
+    ? d.ambiguous_fields.filter(k => typeof k === 'string' && INTAKE_FIELDS.includes(k)) : [];
 
-  return Object.keys(out).length ? out : null;
+  const real = Object.keys(out).filter(k => !k.startsWith('_'));
+  return real.length ? out : null;
 }
 
 // ── LEVEL 3 — educational generation for an in-domain question the internal KB did

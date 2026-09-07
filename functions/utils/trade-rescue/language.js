@@ -98,14 +98,30 @@ export function detectScriptLang(text) {
  *          turn, so the caller can acknowledge it once instead of every turn.
  */
 export function resolveLang(message, clientLang, tradeCase) {
+  const sel = norm(clientLang);
+  const seen = norm(tradeCase && tradeCase.lang_sel);
   const asked = explicitLangRequest(message);
-  if (asked) return { lang: asked, switched: asked !== norm(tradeCase && tradeCase.lang_pref), pref: asked };
 
+  // 1. An explicit request always wins and becomes the sticky preference.
+  if (asked) {
+    return { lang: asked, switched: asked !== norm(tradeCase && tradeCase.lang_pref), pref: asked, sel };
+  }
+  // 2. Moving the selector is itself an explicit choice, so it overrides and
+  //    clears any earlier spoken preference.
+  if (sel && seen && sel !== seen) {
+    return { lang: sel, switched: false, pref: null, sel, selChanged: true };
+  }
+  // 3. A preference stated earlier in this conversation is sticky.
   const pref = norm(tradeCase && tradeCase.lang_pref);
-  if (pref) return { lang: pref, switched: false, pref };
+  if (pref) return { lang: pref, switched: false, pref, sel };
 
-  const script = norm(detectScriptLang(message));
-  if (script) return { lang: script, switched: false, pref: null };
-
-  return { lang: norm(clientLang) || 'en', switched: false, pref: null };
+  // 4. Otherwise the selector is authoritative.
+  //
+  // The script the trader happens to be TYPING in is deliberately NOT used here.
+  // It was, and that made the output language flip whenever someone mixed Roman
+  // Urdu or an English trading term into a sentence. detectScriptLang() is kept
+  // and exported because understanding the input still benefits from knowing the
+  // script — but understanding the input and choosing the reply language are two
+  // different decisions, and only the trader gets to make the second one.
+  return { lang: sel || 'en', switched: false, pref: null, sel };
 }

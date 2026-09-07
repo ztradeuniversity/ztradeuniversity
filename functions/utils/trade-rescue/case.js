@@ -374,8 +374,17 @@ export function extractNonLatin(raw, cur, already) {
   // "40 points" depends on a broker's point convention and on what it is measured
   // from, none of which is verifiable here.
   if (!have('reported_move')) {
-    const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:points?|پوائنٹس?|پپس?|pips?|نقطة|نقاط)[^۔.!?]{0,24}?(?:خلاف|نیچے|اوپر|against|ضد|down|up)?/i);
+    const UNIT = '(?:points?|پوائنٹس?|پپس?|pips?|نقطة|نقاط)';
+    const m = s.match(new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*${UNIT}`, 'i'));
     if (m) p.reported_move = `${m[1]} points (trader-reported)`;
+    else {
+      // Spoken form: "چالیس points خلاف" — the distance is a word, not a digit.
+      for (const w of findWordNumbers(s)) {
+        if (new RegExp(`^\\s*${UNIT}`, 'i').test(s.slice(w.end, w.end + 14))) {
+          p.reported_move = `${w.value} points (trader-reported)`; break;
+        }
+      }
+    }
   }
 
   // ACCOUNT CONTEXT — "میرے پاس ٹوٹل ایک ہزار ڈالر ہے". Verbatim, unverified.
@@ -393,53 +402,101 @@ export function extractNonLatin(raw, cur, already) {
 }
 
 // ── SPOKEN NUMBERS ──────────────────────────────────────────────────────────
-// "چار ہزار تین سو اسی" is 4380. Voice input produces this constantly and the
-// digit-only patterns above cannot see it, which is how a trader who HAD stated
-// their entry still got asked for it.
+// "چار ہزار تینتالیس" is 4043. Voice input produces prices as words constantly,
+// and getting one wrong is not a cosmetic failure in a trading system — it
+// silently corrupts every entry-dependent calculation downstream.
+//
+// The previous table only carried units and round tens, so Urdu's 11–99 (which
+// are irregular single words: تینتالیس = 43, not "چالیس تین") terminated the
+// parse: "چار ہزار تینتالیس" resolved to 4000 and the separate digit pass then
+// captured a nearby "43" as the entry. That is the reported 4043 → 43 defect.
+//
+// Digits are accepted INSIDE a word run, because speech-to-text mixes the two
+// freely ("چار ہزار 43", "4 ہزار 43"). Runs made only of digits are left to the
+// digit patterns above.
+const URDU_TEENS_TENS = {
+  'گیارہ': 11, 'بارہ': 12, 'تیرہ': 13, 'چودہ': 14, 'پندرہ': 15, 'سولہ': 16, 'سترہ': 17, 'اٹھارہ': 18, 'انیس': 19,
+  'اکیس': 21, 'بائیس': 22, 'تیئس': 23, 'چوبیس': 24, 'پچیس': 25, 'چھبیس': 26, 'ستائیس': 27, 'اٹھائیس': 28, 'انتیس': 29,
+  'اکتیس': 31, 'بتیس': 32, 'تینتیس': 33, 'چونتیس': 34, 'پینتیس': 35, 'چھتیس': 36, 'سینتیس': 37, 'اڑتیس': 38, 'انتالیس': 39,
+  'اکتالیس': 41, 'بیالیس': 42, 'تینتالیس': 43, 'چوالیس': 44, 'پینتالیس': 45, 'چھیالیس': 46, 'سینتالیس': 47, 'اڑتالیس': 48, 'انچاس': 49,
+  'اکاون': 51, 'باون': 52, 'ترپن': 53, 'چون': 54, 'پچپن': 55, 'چھپن': 56, 'ستاون': 57, 'اٹھاون': 58, 'انسٹھ': 59,
+  'اکسٹھ': 61, 'باسٹھ': 62, 'ترسٹھ': 63, 'چوسٹھ': 64, 'پینسٹھ': 65, 'چھیاسٹھ': 66, 'سڑسٹھ': 67, 'اڑسٹھ': 68, 'انہتر': 69,
+  'اکہتر': 71, 'بہتر': 72, 'تہتر': 73, 'چوہتر': 74, 'پچہتر': 75, 'چھہتر': 76, 'ستتر': 77, 'اٹھہتر': 78, 'اناسی': 79,
+  'اکیاسی': 81, 'بیاسی': 82, 'تراسی': 83, 'چوراسی': 84, 'پچاسی': 85, 'چھیاسی': 86, 'ستاسی': 87, 'اٹھاسی': 88, 'نواسی': 89,
+  'اکانوے': 91, 'بانوے': 92, 'ترانوے': 93, 'چورانوے': 94, 'پچانوے': 95, 'چھیانوے': 96, 'ستانوے': 97, 'اٹھانوے': 98, 'ننانوے': 99,
+};
 const WORD_UNITS = {
-  // Urdu
+  ...URDU_TEENS_TENS,
   'ایک': 1, 'دو': 2, 'تین': 3, 'چار': 4, 'پانچ': 5, 'چھ': 6, 'چھے': 6, 'سات': 7, 'آٹھ': 8, 'نو': 9,
   'دس': 10, 'بیس': 20, 'تیس': 30, 'چالیس': 40, 'پچاس': 50, 'ساٹھ': 60, 'ستر': 70, 'اسی': 80, 'نوے': 90,
   // Arabic
   'واحد': 1, 'اثنان': 2, 'اثنين': 2, 'ثلاثة': 3, 'ثلاث': 3, 'أربعة': 4, 'اربعة': 4, 'خمسة': 5,
   'ستة': 6, 'سبعة': 7, 'ثمانية': 8, 'تسعة': 9, 'عشرة': 10, 'عشرون': 20, 'ثلاثون': 30,
-  'أربعون': 40, 'خمسون': 50, 'ستون': 60, 'سبعون': 70, 'ثمانون': 80, 'تسعون': 90,
+  'أربعون': 40, 'اربعون': 40, 'خمسون': 50, 'ستون': 60, 'سبعون': 70, 'ثمانون': 80, 'تسعون': 90,
   // English
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16,
+  seventeen: 17, eighteen: 18, nineteen: 19,
   twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
 };
-const WORD_HUNDRED = ['سو', 'مائة', 'مئة', 'hundred'];
-const WORD_THOUSAND = ['ہزار', 'ألف', 'الف', 'آلاف', 'الاف', 'thousand'];
-const WORD_TOKENS = [...Object.keys(WORD_UNITS), ...WORD_HUNDRED, ...WORD_THOUSAND];
+const WORD_HUNDRED = ['سو', 'مائة', 'مئة', 'ثلاثمائة', 'hundred'];
+// بزار / حزار are not Urdu words — they are the mis-transcriptions speech
+// recognition produces for ہزار, and treating them as the real word is what lets
+// a garbled voice price still be read correctly.
+const WORD_THOUSAND = ['ہزار', 'بزار', 'حزار', 'ألف', 'الف', 'آلاف', 'الاف', 'thousand'];
 
-/** Convert a run of number words to a value. "چار ہزار تین سو اسی" → 4380. */
+// Longest-first, so "تینتالیس" (43) can never be matched as "تین" (3) + leftovers.
+const WORD_TOKENS = [...Object.keys(WORD_UNITS), ...WORD_HUNDRED, ...WORD_THOUSAND]
+  .sort((a, b) => b.length - a.length);
+
+const isDigits = (t) => /^\d+(?:[.,]\d+)?$/.test(t);
+// Arabic joins with a leading waw ("وثلاثة وأربعون"); English hyphenates
+// ("forty-three"). Normalise both before lookup.
+const normTok = (t) => String(t).replace(/^و/, '').toLowerCase();
+
+/** Convert a run of number words (digits allowed) to a value. */
 export function parseWordNumber(tokens) {
-  let total = 0, current = 0, seen = false;
-  for (const raw of tokens) {
-    const w = String(raw).toLowerCase();
-    if (WORD_UNITS[w] != null || WORD_UNITS[raw] != null) {
-      current += (WORD_UNITS[raw] != null ? WORD_UNITS[raw] : WORD_UNITS[w]); seen = true;
-    } else if (WORD_HUNDRED.includes(raw) || WORD_HUNDRED.includes(w)) {
-      current = (current || 1) * 100; seen = true;
-    } else if (WORD_THOUSAND.includes(raw) || WORD_THOUSAND.includes(w)) {
-      total += (current || 1) * 1000; current = 0; seen = true;
-    } else return null;
+  let total = 0, current = 0, sawWord = false, sawAny = false;
+  const flat = [];
+  for (const t of tokens) for (const part of String(t).split('-')) if (part) flat.push(part);
+
+  for (const raw of flat) {
+    const w = normTok(raw);
+    if (isDigits(w)) {
+      const v = parseFloat(w.replace(',', '.'));
+      if (!Number.isFinite(v)) return null;
+      // A large standalone figure IS the number ("4043"); a small one continues
+      // the phrase ("چار ہزار 43" → 4000 + 43).
+      if (v >= 1000 && total === 0 && current === 0) current = v;
+      else current += v;
+      sawAny = true; continue;
+    }
+    const unit = WORD_UNITS[raw] != null ? WORD_UNITS[raw] : WORD_UNITS[w];
+    if (unit != null) { current += unit; sawWord = true; sawAny = true; continue; }
+    if (WORD_HUNDRED.includes(raw) || WORD_HUNDRED.includes(w)) {
+      current = (current || 1) * 100; sawWord = true; sawAny = true; continue;
+    }
+    if (WORD_THOUSAND.includes(raw) || WORD_THOUSAND.includes(w)) {
+      total += (current || 1) * 1000; current = 0; sawWord = true; sawAny = true; continue;
+    }
+    return null;
   }
-  if (!seen) return null;
+  if (!sawAny || !sawWord) return null;   // digits alone belong to the digit patterns
   return total + current;
 }
 
-/** Every run of consecutive number words in the text, with its position. */
+/** Every run of consecutive number words (digits allowed inside) with position. */
 export function findWordNumbers(text) {
   const s = String(text || '');
   const alt = WORD_TOKENS.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const re = new RegExp(`(?:^|[\\s،,])((?:(?:${alt})(?:[\\s،,]+|$))+)`, 'gi');
+  const tok = `(?:و?(?:${alt})|\\d+(?:[.,]\\d+)?)`;
+  const re = new RegExp(`(?:^|[\\s،,])((?:${tok}[-\\s،,]*)+)`, 'gi');
   const out = [];
   let m;
   while ((m = re.exec(s)) !== null) {
-    const phrase = m[1].trim();
-    const toks = phrase.split(/[\s،,]+/).filter(Boolean);
-    const value = parseWordNumber(toks);
+    const phrase = m[1].trim().replace(/[-\s،,]+$/, '');
+    if (!phrase) continue;
+    const value = parseWordNumber(phrase.split(/[\s،,]+/).filter(Boolean));
     if (value != null) {
       const at = m.index + m[0].indexOf(phrase);
       out.push({ value, text: phrase, index: at, end: at + phrase.length });

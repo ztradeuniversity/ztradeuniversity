@@ -32,6 +32,7 @@ import { runAnalysis, KIND } from '../utils/trade-rescue/analysis.js';
 import { selectKnowledge } from '../utils/trade-rescue/knowledge.js';
 import { generateTradeRescueReport, interpretTradeMessage } from '../utils/composer-llm.js';
 import { resolveLang } from '../utils/trade-rescue/language.js';
+import { findWordNumbers } from '../utils/trade-rescue/case.js';
 // ── ACCESS: the SAME gate the AI assistant already uses ──────────────────────
 // resolveTier reads the identity token minted by /api/ai-access after the
 // existing Library OTP flow; readGuestCount/buildGuestCookie are the SAME signed
@@ -316,7 +317,9 @@ export async function onRequest(context) {
   // survives every following turn, including voice.
   const L = resolveLang(message, body.lang, tCase);
   const lang = L.lang;
+  if (L.selChanged) delete tCase.lang_pref;     // moving the selector clears an older spoken preference
   if (L.pref) tCase.lang_pref = L.pref;
+  if (L.sel) tCase.lang_sel = L.sel;            // remember it so the NEXT change is detectable
   const T = pickL10n(lang);
 
   // 0 ── ACCESS GATE — identical rule to the AI assistant.
@@ -354,7 +357,69 @@ export async function onRequest(context) {
   const factCount = (c) => FACTS.filter(k => c[k] !== null && c[k] !== undefined && c[k] !== '').length;
   const factsBefore = factCount(tCase);
 
-  tCase = mergeCase(tCase, extractFromText(message, tCase));
+  // Every numeric value the trader's own text actually supports — digits AND
+  // spoken numbers. This is the allowlist the semantic layer is validated
+  // against, so it can never introduce a figure the trader did not say.
+  const allowedNumbers = [
+    ...(message.match(/\d+(?:[.,]\d+)?/g) || []).map(x => parseFloat(x.replace(',', '.'))),
+    ...findWordNumbers(message).map(w => w.value),
+  ].filter(Number.isFinite);
+
+  // 2a ── SEMANTIC UNDERSTANDING FIRST.
+  // The trader's whole utterance is interpreted before anything is pattern-
+  // matched out of it, because the meaning of a number depends on the sentence
+  // around it. Existing case facts travel as context so a follow-up turn is
+  // understood as part of the same trade. Never blocks the turn: on any failure
+  // the deterministic extractor carries it alone, exactly as before.
+  let sem = null;
+  try {
+    sem = await interpretTradeMessage(env, message, {
+      allowInstruments: INSTRUMENTS.map(i => i.id),
+      allowedNumbers,
+      known: tCase,
+    });
+  } catch { sem = null; }
+
+  // 2b ── DETERMINISTIC PASS — first-pass capture, and the safety check that
+  // decides whether a semantic value is allowed to stand.
+  const det = extractFromText(message, tCase);
+
+  // 2c ── RECONCILE. Neither side simply wins. Where only one produced a value
+  // it is taken; where both agree there is nothing to settle; where they
+  // disagree on the entry the number is NOT committed — it becomes a candidate
+  // and the trader is asked, because silently choosing between two readings of
+  // a price is exactly how a wrong entry corrupts every later calculation.
+  const patch = { ...det };
+  const lowConfidence = sem && sem._confidence === 'low';
+  const ambiguous = new Set((sem && sem._ambiguous) || []);
+  if (sem) {
+    if (sem._langRequest) tCase.lang_pref = sem._langRequest;
+    for (const [k, v] of Object.entries(sem)) {
+      if (k.startsWith('_') || k === 'unavailable') continue;
+      const dv = det[k];
+      const detEmpty = dv === null || dv === undefined || dv === '';
+      const isNumeric = k === 'entry' || k === 'stop_loss' || k === 'take_profit';
+
+      if (detEmpty) {
+        // A number the model was unsure about is offered for confirmation
+        // rather than written in as fact.
+        if (isNumeric && (lowConfidence || ambiguous.has(k))) {
+          if (k === 'entry' && tCase.entry == null) patch.entry_candidate = v;
+        } else patch[k] = v;
+        continue;
+      }
+      if (dv === v) continue;
+      // Disagreement on the entry: commit neither, and propose the
+      // DETERMINISTIC reading for confirmation - it is anchored to an
+      // explicit position marker in the sentence, so it is the better guess
+      // to put in front of the trader. They can correct it in one word.
+      if (k === 'entry' && tCase.entry == null) { delete patch.entry; patch.entry_candidate = dv; }
+      // For every other field the deterministic reading is grammar-anchored and stands.
+    }
+  }
+
+  tCase = mergeCase(tCase, patch);
+  if (sem && Array.isArray(sem.unavailable)) for (const k of sem.unavailable) markUnavailable(tCase, k);
   tCase.turns = (tCase.turns || 0) + 1;
 
   // 2a ── "I DON'T KNOW" is an ANSWER.
@@ -363,67 +428,6 @@ export async function onRequest(context) {
   // again and the report states plainly that it could not be verified — instead
   // of the case sitting on a null and the conversation grinding on.
   if (tCase.last_asked && isUnknownAnswer(message)) markUnavailable(tCase, tCase.last_asked);
-
-  // 2b ── SEMANTIC FALLBACK — only when the deterministic pass came back thin.
-  // The extractor is deliberately conservative, which is correct for numbers but
-  // loses most of a natural paragraph (the reported failure: a trader explained
-  // instrument, side, size of the move, account context and their actual
-  // question, and only instrument + direction survived). This re-reads the SAME
-  // sentence semantically on the existing callModel transport. It is given no
-  // market data and can return nothing that is not in the message; every value
-  // is validated in interpretTradeMessage() before it gets here, and only
-  // still-empty fields are filled, so a deterministic capture always wins.
-  // Trigger on EITHER signal: little was gained, or something required is still
-  // missing. The reported transcript gained three facts (instrument, direction,
-  // floating state) and so never reached this layer under the gained-only rule,
-  // even though it was long, spoken, and still missing the entry.
-  const substantive = message.trim().length >= 40;
-  const thin = (factCount(tCase) - factsBefore) <= 2;
-  if (substantive && (thin || missingRequired(tCase).length > 0)) {
-    try {
-      const sem = await interpretTradeMessage(env, message, INSTRUMENTS.map(i => i.id));
-      if (sem) {
-        const patch = {};
-        for (const [k, v] of Object.entries(sem)) {
-          if (k === 'unavailable') continue;
-          const cur = tCase[k];
-          const empty = cur === null || cur === undefined || cur === ''
-                     || (Array.isArray(cur) && cur.length === 0);
-          if (empty) patch[k] = v;
-        }
-        if (patch.instrument) {
-          const ins = INSTRUMENTS.find(i => i.id === patch.instrument);
-          if (ins) patch.instrumentLive = ins.live;
-        }
-        tCase = mergeCase(tCase, patch);
-        for (const k of (sem.unavailable || [])) markUnavailable(tCase, k);
-      }
-    } catch { /* interpretation is an enhancement — never a failure path */ }
-  }
-
-  // ── VOICE NUMERIC CONFIRMATION ───────────────────────────────────────────
-  // Speech-to-text mis-hears digits ("4380" vs "4800", "0.10 lot" vs "1.0 lot"),
-  // and a wrong entry or stop silently corrupts every downstream calculation.
-  // So a trade number first captured from a SPOKEN turn is read back once for
-  // confirmation instead of being trusted. Typed numbers are not re-confirmed —
-  // the trader can already see what they wrote. Nothing is altered or normalised
-  // either way; this only asks.
-  if (body.viaVoice) {
-    const heard = [];
-    if (before.entry == null && tCase.entry != null) heard.push(['entry', 'Entry', tCase.entry]);
-    if (before.stop_loss == null && tCase.stop_loss != null) heard.push(['stop_loss', 'Stop Loss', tCase.stop_loss]);
-    if (before.take_profit == null && tCase.take_profit != null) heard.push(['take_profit', 'Take Profit', tCase.take_profit]);
-    if (before.position_size == null && tCase.position_size != null) heard.push(['position_size', 'Size', tCase.position_size]);
-    const unconfirmed = heard.filter(([k]) => !(tCase.voice_confirmed || []).includes(k));
-    if (unconfirmed.length) {
-      tCase.voice_confirmed = Array.from(new Set([...(tCase.voice_confirmed || []), ...unconfirmed.map(h => h[0])]));
-      const L = [T.heardCheck];
-      for (const [, label, val] of unconfirmed) L.push(`- **${label}: ${val}**`);
-      L.push('');
-      L.push(T.heardConfirm);
-      return respond({ mode: 'confirm', reply: L.join('\n'), tradeCase: tCase });
-    }
-  }
 
   // 2c ── SPOKEN NUMBER, UNCERTAIN ROLE.
   // A price heard as words ("چار ہزار تین سو اسی") is captured as the entry only

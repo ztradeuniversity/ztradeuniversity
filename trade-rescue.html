@@ -167,6 +167,7 @@
   .cbox{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--line2);border-radius:24px;
     padding:7px 7px 7px 8px;background:var(--bg);transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
   .cbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,137,31,.09)}
+  .cluster{display:flex;align-items:center;gap:6px;flex-shrink:0;align-self:flex-end}
   .icon{position:relative;width:40px;height:40px;flex-shrink:0;border-radius:50%;
     border:1px solid var(--line);background:var(--bg2);
     color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
@@ -196,7 +197,7 @@
   #send[disabled]{background:var(--accent-soft);color:#caa059;box-shadow:none;
     border:1px solid rgba(200,137,31,.34);cursor:not-allowed;transform:none}
   #send svg{width:18px;height:18px;margin-left:-1px}
-  textarea#in[dir="rtl"] ~ #send svg{transform:scaleX(-1);margin-left:1px}
+  textarea#in[dir="rtl"] ~ .cluster #send svg{transform:scaleX(-1);margin-left:1px}
   #send.busy svg{display:none}
   #send .spin{display:none;width:15px;height:15px;border-radius:50%;
     border:2px solid rgba(255,255,255,.38);border-top-color:#fff;animation:spin .7s linear infinite}
@@ -279,17 +280,21 @@
       <div class="cwrap">
         <div class="vhint" id="vhint" aria-live="polite"></div>
         <div class="cbox">
+          <label class="sr-only" for="in">Describe your open trade</label>
+          <textarea id="in" rows="1" placeholder="Describe your open trade — instrument, entry, stop…" autocomplete="off"></textarea>
+          <!-- Mic and Send are ONE action cluster on the same side: speak or send,
+               the two ways of committing what is in the box, side by side. -->
+          <div class="cluster">
           <button class="icon" id="mic" type="button" aria-label="Start voice input" title="Speak — the transcript lands in this box so you can edit it">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
               <rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4M8 21h8"/>
             </svg>
           </button>
-          <label class="sr-only" for="in">Describe your open trade</label>
-          <textarea id="in" rows="1" placeholder="Describe your open trade — instrument, entry, stop…" autocomplete="off"></textarea>
           <button id="send" type="button" aria-label="Send message" title="Send" disabled>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.3 20.7 21.6 12 3.3 3.3v6.9L15 12 3.3 13.8z"/></svg>
             <span class="spin" aria-hidden="true"></span>
           </button>
+          </div>
         </div>
         <div class="cfoot">
           <label for="lang" class="sr-only">Language</label>
@@ -437,6 +442,7 @@ function addMe(text, spoken, record) {
     convo.turns.push({ role: 'me', text, voice: !!spoken });
     if (!convo.title) { convo.title = text.slice(0, 46) + (text.length > 46 ? '…' : ''); }
   }
+  return t;
 }
 function addAI(markdown, evidence, record, gate) {
   const t = document.createElement('div'); t.className = 'turn ai';
@@ -772,6 +778,11 @@ let rec = null, listening = false;
 let baseText = '';      // whatever was already in the composer when recording began
 let finalTxt = '';      // rebuilt from the whole result list, so re-emitted results cannot duplicate
 let voiceErr = false, hintT = null;
+// Set when Send is pressed while the mic is still open. rec.stop() resolves
+// asynchronously, so without this flag rec.onend fires AFTER ask() has cleared
+// the composer and puts the just-sent transcript straight back into it — the
+// reported "text stays in the box after Send".
+let voiceConsumed = false;
 
 /* Voice status is composer-local UI. It is NEVER appended to the thread. */
 function showHint(html, autoHideMs) {
@@ -836,6 +847,7 @@ if (!SR) {
     mic.classList.remove('rec', 'busy'); mic.setAttribute('aria-label', 'Start voice input');
     const draft = joinDraft(baseText, finalTxt);
     finalTxt = ''; baseText = '';
+    if (voiceConsumed) { voiceConsumed = false; hideHint(); return; }   // already sent
     if (draft) {
       draftFromVoice = true;
       setDraft(draft, true);                        // editable, focused, NOT sent
@@ -864,7 +876,7 @@ async function ask(text, spoken) {
   if (busy || !text.trim()) return;
   busy = true; sendBtn.disabled = true; sendBtn.classList.add('busy');
   mic.disabled = !SR; stopSpeak();
-  addMe(text, !!spoken);
+  const meTurn = addMe(text, !!spoken);
   clearDraft();
 
   showState('Reading your trade…');
@@ -898,7 +910,12 @@ async function ask(text, spoken) {
     persist();
   } catch {
     clearTimeout(t1); clearTimeout(t2); hideState();
-    addAI('Could not reach the analysis service. Check your connection and try again.');
+    // The request never landed, so the trader should not lose what they wrote.
+    // Take the bubble back too, otherwise resending would duplicate the turn.
+    if (meTurn) { try { meTurn.remove(); } catch {} }
+    if (convo && Array.isArray(convo.turns)) convo.turns.pop();
+    setDraft(text, true); draftFromVoice = !!spoken;
+    addAI('Could not reach the analysis service. Check your connection and try again — your message is still in the box.');
   } finally {
     busy = false; sendBtn.classList.remove('busy'); mic.disabled = !SR;
     input.focus(); syncSend();
@@ -911,7 +928,7 @@ function submitDraft() {
   if (busy) return;
   const t = input.value.trim();
   if (!t) { input.focus(); return; }
-  if (listening) { try { rec.stop(); } catch {} }
+  if (listening) { voiceConsumed = true; try { rec.stop(); } catch {} }
   ask(t, draftFromVoice);
 }
 sendBtn.addEventListener('click', submitDraft);
