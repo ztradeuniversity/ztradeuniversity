@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>ZTU Trade Rescue — Trade Management Decision Support</title>
+<meta name="description" content="Stuck in a trade? ZTU Trade Rescue collects your trade context, pulls verified current market data, and gives you a structured, evidence-based read on where the position stands. Decision support, not signals." />
+<link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+<link rel="stylesheet" href="assets/lux-global.css" />
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#1a1410; --navy2:#0d0902; --gold:#c89c3f; --gold2:#d4ae5e;
+    --panel:#221b14; --panel2:#2b2219; --line:#3a2f22;
+    --text:#f0e9df; --muted:#a1907c;
+    --ok:#4ea87a; --warn:#d1a34a; --bad:#c96a6a;
+    --radius:14px;
+  }
+  body{background:linear-gradient(170deg,var(--navy) 0%,var(--navy2) 100%);color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;
+    display:flex;flex-direction:column;font-size:15px;line-height:1.6}
+
+  header.tr-top{border-bottom:1px solid var(--line);background:rgba(13,9,2,.75);backdrop-filter:blur(10px);
+    position:sticky;top:0;z-index:20}
+  .tr-top-in{max-width:900px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .tr-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+  .tr-brand img{width:30px;height:30px;border-radius:7px}
+  .tr-brand b{font-size:15px;letter-spacing:.02em}
+  .tr-brand span{display:block;font-size:10.5px;color:var(--gold);letter-spacing:.16em;text-transform:uppercase}
+  .tr-top a.back{margin-left:auto;font-size:12.5px;color:var(--muted);text-decoration:none;
+    border:1px solid var(--line);padding:6px 12px;border-radius:8px}
+  .tr-top a.back:hover{color:var(--gold2);border-color:var(--gold)}
+
+  main{flex:1;width:100%;max-width:900px;margin:0 auto;padding:22px 20px 140px}
+
+  .tr-hero{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:20px 22px;margin-bottom:18px}
+  .tr-hero h1{font-size:22px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+  .tr-hero h1 em{font-style:normal;color:var(--gold2)}
+  .tr-hero p{color:var(--muted);font-size:14px;max-width:64ch}
+  .tr-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .tr-badge{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--gold2);
+    border:1px solid rgba(200,156,63,.35);background:rgba(200,156,63,.08);padding:3px 9px;border-radius:20px}
+
+  .tr-case{border:1px solid var(--line);background:var(--panel2);border-radius:var(--radius);
+    padding:12px 16px;margin-bottom:16px;font-size:13px;display:none}
+  .tr-case.on{display:block}
+  .tr-case h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .tr-case-grid{display:flex;flex-wrap:wrap;gap:6px}
+  .tr-chip{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:7px;
+    padding:3px 9px;font-size:12px}
+  .tr-chip b{color:var(--gold2);font-weight:600}
+  .tr-chip.risk{border-color:rgba(201,106,106,.5);background:rgba(201,106,106,.12)}
+
+  .msgs{display:flex;flex-direction:column;gap:14px}
+  .msg{border-radius:var(--radius);padding:14px 17px;max-width:100%;border:1px solid transparent}
+  .msg.user{background:rgba(200,156,63,.10);border-color:rgba(200,156,63,.28);align-self:flex-end;max-width:82%}
+  .msg.bot{background:var(--panel);border-color:var(--line)}
+  .msg.bot h3{font-size:14px;color:var(--gold2);margin:16px 0 7px;font-weight:700;letter-spacing:.01em}
+  .msg.bot h3:first-child{margin-top:0}
+  .msg.bot ul{margin:6px 0 10px;padding-left:20px}
+  .msg.bot li{margin-bottom:5px}
+  .msg.bot p{margin-bottom:9px}
+  .msg.bot p:last-child{margin-bottom:0}
+  .msg.bot strong{color:#fff}
+  .msg.bot em{color:var(--muted);font-style:italic}
+  .msg.bot a{color:var(--gold2)}
+  .msg.bot code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px;font-size:.9em}
+
+  .prov{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted)}
+  .prov b{color:var(--gold2);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
+  .prov div{margin-top:3px}
+  .prov .miss{color:var(--warn)}
+
+  .typing{display:flex;gap:5px;padding:16px 18px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--gold);opacity:.4;animation:bl 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes bl{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+
+  .starters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .starter{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--text);
+    border-radius:20px;padding:7px 14px;font-size:12.5px;cursor:pointer;font-family:inherit;text-align:left}
+  .starter:hover{border-color:var(--gold);color:var(--gold2)}
+
+  .composer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,9,2,.94);
+    backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:12px 20px 16px}
+  .composer-in{max-width:900px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+  textarea#trIn{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    color:var(--text);padding:12px 14px;font-family:inherit;font-size:14.5px;resize:none;
+    min-height:48px;max-height:150px;line-height:1.5}
+  textarea#trIn:focus{outline:none;border-color:var(--gold)}
+  button#trSend{background:linear-gradient(135deg,var(--gold2),var(--gold));border:none;color:#1a1410;
+    font-weight:700;border-radius:12px;padding:0 22px;height:48px;cursor:pointer;font-size:14.5px;font-family:inherit}
+  button#trSend:disabled{opacity:.45;cursor:not-allowed}
+  .composer-note{max-width:900px;margin:8px auto 0;font-size:11px;color:var(--muted);text-align:center}
+
+  @media(max-width:620px){
+    main{padding:16px 14px 150px}
+    .msg.user{max-width:92%}
+    .tr-hero{padding:16px}
+    .tr-hero h1{font-size:19px}
+  }
+</style>
+</head>
+<body>
+
+<header class="tr-top">
+  <div class="tr-top-in">
+    <a class="tr-brand" href="index.html">
+      <img src="assets/ztu-logo.png" alt="" />
+      <b>Trade Rescue<span>Z Trade University</span></b>
+    </a>
+    <a class="back" href="ai-trade-assistant.html">General AI Assistant →</a>
+  </div>
+</header>
+
+<main>
+  <section class="tr-hero">
+    <h1>Stuck in a trade? <em>Let's work through it.</em></h1>
+    <p>Tell me about the position you're holding. I'll ask what I need to understand it, pull the market data I can actually verify right now, and give you a structured read on where the trade stands — what supports it, what works against it, and what would prove it wrong.</p>
+    <div class="tr-badges">
+      <span class="tr-badge">Decision support</span>
+      <span class="tr-badge">Verified data only</span>
+      <span class="tr-badge">Not signals</span>
+    </div>
+  </section>
+
+  <div class="tr-case" id="trCase">
+    <h3>Trade case so far</h3>
+    <div class="tr-case-grid" id="trCaseGrid"></div>
+  </div>
+
+  <div class="msgs" id="trMsgs"></div>
+
+  <div class="starters" id="trStarters">
+    <button class="starter" type="button">My Gold buy trade is stuck</button>
+    <button class="starter" type="button">I'm short BTC with no stop loss</button>
+    <button class="starter" type="button">Should I hold my XAU/USD long over the weekend?</button>
+    <button class="starter" type="button">My trade went into profit then reversed</button>
+  </div>
+</main>
+
+<div class="composer">
+  <div class="composer-in">
+    <textarea id="trIn" rows="1" placeholder="Describe your open trade — instrument, direction, entry, stop…" autocomplete="off"></textarea>
+    <button id="trSend" type="button">Analyse</button>
+  </div>
+  <p class="composer-note">Educational decision-support only — never a guaranteed outcome, and never financial advice.</p>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   ZTU TRADE RESCUE — client
+   The Trade Case lives here for the life of the conversation and is echoed to
+   the server on every turn. It is deliberately NOT persisted anywhere: open
+   position details never touch localStorage or any server-side memory table.
+   ══════════════════════════════════════════════════════════════════════════ */
+const API   = '/api/trade-rescue';
+const msgs  = document.getElementById('trMsgs');
+const input = document.getElementById('trIn');
+const send  = document.getElementById('trSend');
+const caseBox = document.getElementById('trCase');
+const caseGrid = document.getElementById('trCaseGrid');
+const starters = document.getElementById('trStarters');
+
+let tradeCase = {};
+let busy = false;
+
+function uiLang() {
+  try { return (navigator.language || 'en').slice(0, 2); } catch { return 'en'; }
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+/* Minimal, safe markdown — headings, bold, italics, links, bullets. Everything
+   is escaped first, so model output can never inject markup. */
+function md(src) {
+  const lines = String(src || '').split('\n');
+  let out = '', inList = false;
+  const inline = (s) => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*]+?)\*/g, '$1<em>$2</em>')
+    .replace(/_([^_]+?)_/g, '<em>$1</em>')
+    .replace(/`([^`]+?)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { if (inList) { out += '</ul>'; inList = false; } continue; }
+    const h = /^#{2,4}\s+(.*)$/.exec(line);
+    if (h) { if (inList) { out += '</ul>'; inList = false; } out += '<h3>' + inline(h[1]) + '</h3>'; continue; }
+    const li = /^[-•]\s+(.*)$/.exec(line);
+    if (li) { if (!inList) { out += '<ul>'; inList = true; } out += '<li>' + inline(li[1]) + '</li>'; continue; }
+    if (inList) { out += '</ul>'; inList = false; }
+    out += '<p>' + inline(line) + '</p>';
+  }
+  if (inList) out += '</ul>';
+  return out;
+}
+
+function addUser(text) {
+  const d = document.createElement('div');
+  d.className = 'msg user';
+  d.textContent = text;
+  msgs.appendChild(d);
+  d.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function addBot(html, evidence) {
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = html;
+  if (evidence) {
+    const p = document.createElement('div');
+    p.className = 'prov';
+    let h = '<b>Where this came from</b>';
+    for (const line of (evidence.provenance || [])) h += '<div>' + esc(line) + '</div>';
+    for (const u of (evidence.unavailable || [])) h += '<div class="miss">⚠️ ' + esc(u) + '</div>';
+    p.innerHTML = h;
+    d.appendChild(p);
+  }
+  msgs.appendChild(d);
+  d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function typing(on) {
+  let t = document.getElementById('trTyping');
+  if (on) {
+    if (t) return;
+    t = document.createElement('div');
+    t.id = 'trTyping';
+    t.className = 'msg bot typing';
+    t.innerHTML = '<i></i><i></i><i></i>';
+    msgs.appendChild(t);
+    t.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  } else if (t) { t.remove(); }
+}
+
+/* Live view of what the system knows, so the trader can see it is not being
+   asked the same thing twice. */
+function renderCase(c) {
+  tradeCase = c || {};
+  const chips = [];
+  const push = (label, val, cls) => { if (val !== null && val !== undefined && val !== '') chips.push('<span class="tr-chip ' + (cls || '') + '"><b>' + esc(label) + '</b> ' + esc(val) + '</span>'); };
+  push('Instrument', tradeCase.instrument);
+  push('Direction', tradeCase.direction ? tradeCase.direction.toUpperCase() : null);
+  push('Entry', tradeCase.entry);
+  if (tradeCase.has_stop_loss === false) chips.push('<span class="tr-chip risk"><b>Stop Loss</b> none</span>');
+  else push('Stop Loss', tradeCase.stop_loss);
+  push('Take Profit', tradeCase.take_profit);
+  push('Entry TF', tradeCase.timeframe_entry);
+  push('Held', tradeCase.holding_duration);
+  push('Floating', tradeCase.floating_state);
+  push('Size', tradeCase.position_size);
+  caseGrid.innerHTML = chips.join('');
+  caseBox.classList.toggle('on', chips.length > 0);
+}
+
+async function ask(text) {
+  if (busy || !text.trim()) return;
+  busy = true; send.disabled = true;
+  starters.style.display = 'none';
+  addUser(text);
+  input.value = ''; input.style.height = 'auto';
+  typing(true);
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, tradeCase, lang: uiLang() }),
+    });
+    typing(false);
+    if (!res.ok) { addBot('<p>Something went wrong reaching the analysis service (HTTP ' + res.status + '). Please try again.</p>'); return; }
+    const data = await res.json();
+    renderCase(data.tradeCase);
+    addBot(md(data.reply), data.mode === 'analysis' ? data.evidence : null);
+  } catch (e) {
+    typing(false);
+    addBot('<p>Could not reach the analysis service. Check your connection and try again.</p>');
+  } finally {
+    busy = false; send.disabled = false; input.focus();
+  }
+}
+
+send.addEventListener('click', () => ask(input.value));
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input.value); }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 150) + 'px';
+});
+starters.addEventListener('click', e => {
+  const b = e.target.closest('.starter');
+  if (b) ask(b.textContent);
+});
+
+addBot(md([
+  "I'm **ZTU Trade Rescue**. I help you think through a trade you're already in — not signals, not predictions.",
+  '',
+  "Tell me what you're holding and roughly what's bothering you about it. I'll ask a few targeted questions, pull the market data I can verify right now, and lay out what supports the trade, what works against it, and what would prove the idea wrong.",
+].join('\n')));
+</script>
+
+<script src="/assets/ztu-lang.js" defer></script>
+</body>
+</html>
