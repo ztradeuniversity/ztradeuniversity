@@ -248,14 +248,15 @@ export async function onRequest(context) {
   if (tier !== 'unlimited') {
     const used = await readGuestCount(env, request);
     if (used >= visitorLimit) {
-      return json({ mode: 'limit', tier: 'visitor', gate: limitReachedPayload(env, lang), tradeCase: tCase });
+      return json({ mode: 'limit', tier: 'visitor', freeLimit: visitorLimit,
+                    gate: limitReachedPayload(env, lang), tradeCase: tCase });
     }
     guestSetCookie = await buildGuestCookie(env, used + 1);
   }
   // Attach the updated guest count to whatever this turn returns.
   const respond = (payload, status = 200) => {
     const h = guestSetCookie ? { ...JSON_H, 'Set-Cookie': guestSetCookie } : JSON_H;
-    return new Response(JSON.stringify({ ...payload, tier }), { status, headers: h });
+    return new Response(JSON.stringify({ ...payload, tier, freeLimit: visitorLimit }), { status, headers: h });
   };
 
   // 1 ── SCOPE GATE

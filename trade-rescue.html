@@ -156,6 +156,8 @@
   .vhint{display:none;align-items:center;gap:7px;margin:0 0 8px 6px;min-height:15px;
     font-size:11.5px;font-weight:600;color:var(--accent2)}
   .vhint.on{display:flex}
+  .vhint .sp{width:10px;height:10px;border-radius:50%;border:2px solid rgba(169,113,26,.3);
+    border-top-color:var(--accent2);animation:spin .7s linear infinite}
   .vhint .t{font-weight:500;color:var(--muted);max-width:min(520px,64vw);
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -175,6 +177,8 @@
   .icon.rec{background:#fdeaea;color:#c0392b;border-color:rgba(192,57,43,.38)}
   .icon.rec::after{content:'';position:absolute;inset:-1px;border-radius:50%;
     border:1px solid rgba(192,57,43,.45);animation:ring 1.4s infinite}
+  .icon.busy{background:var(--accent-soft);color:var(--accent2);border-color:rgba(200,137,31,.42)}
+  .icon.err{background:#fdeaea;color:#b03a3a;border-color:rgba(176,58,58,.42)}
   @keyframes ring{0%{transform:scale(.9);opacity:.8}100%{transform:scale(1.25);opacity:0}}
   textarea#in{flex:1;border:0;background:transparent;resize:none;font-family:inherit;font-size:15.5px;
     color:var(--text);padding:9px 2px;max-height:180px;min-height:38px;line-height:1.5}
@@ -189,9 +193,10 @@
   #send:hover:not([disabled]){transform:translateY(-1px);box-shadow:0 5px 13px rgba(200,137,31,.44)}
   #send:active:not([disabled]){transform:translateY(0) scale(.95)}
   #send:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
-  #send[disabled]{background:var(--bg2);color:var(--muted2);box-shadow:none;
-    border:1px solid var(--line);cursor:not-allowed;transform:none}
+  #send[disabled]{background:var(--accent-soft);color:#caa059;box-shadow:none;
+    border:1px solid rgba(200,137,31,.34);cursor:not-allowed;transform:none}
   #send svg{width:18px;height:18px;margin-left:-1px}
+  textarea#in[dir="rtl"] ~ #send svg{transform:scaleX(-1);margin-left:1px}
   #send.busy svg{display:none}
   #send .spin{display:none;width:15px;height:15px;border-radius:50%;
     border:2px solid rgba(255,255,255,.38);border-top-color:#fff;animation:spin .7s linear infinite}
@@ -503,13 +508,69 @@ function renderCase(c) {
   caseBox.classList.toggle('on', out.length > 0);
 }
 
-/* ── access badge — driven by the EXISTING member wiring ───────────────── */
+/* ── access — REUSES the existing shared member wiring, nothing new ───────
+   Authoritative chain, identical to ai-trade-assistant.html:
+
+     library-auth eligibility (ib_stars_active / special_access)
+       → /api/journal-access          — the shared premium card's OTP
+       → shared session  ztu_lib_v3   — written by the card itself
+       → /api/ai-access 'bridge'      — mints the SHARED AI token
+       → ztu_ai_identity
+       → /api/ai-access 'session'     — validates it → tier
+
+   Rescue mints nothing of its own: same endpoint, same keys, same 15-day
+   shared expiry, same OTP. Two defects lived here before:
+
+     1. 'session' answers { valid, tier } and has NO `ok` field (only
+        request/verify/resend/logout do), yet this file tested `d.ok`, so the
+        tier could never resolve to 'unlimited' even with a perfect token.
+     2. The premium card writes ztu_journal_v1 + ztu_lib_v3 but NEVER
+        ztu_ai_identity — each surface mints that itself via 'bridge'. Rescue
+        skipped that step, so after a successful OTP there was simply no token
+        for refreshAccess() to read.                                          */
+const ACCT_KEY     = 'ztu_ai_acct';
+const VERIFIED_KEY = 'ztu_ai_verified';
+const LIB_KEY      = 'ztu_lib_v3';
+const LIB_TTL      = 15 * 24 * 60 * 60 * 1000;   // == library.html SESSION_TTL_MS
+
 function identityToken() { try { return localStorage.getItem(IDENTITY_KEY) || ''; } catch { return ''; } }
+function setIdentityToken(t) { try { localStorage.setItem(IDENTITY_KEY, t); } catch {} }
+function markVerified(acct) {
+  try {
+    if (acct) localStorage.setItem(ACCT_KEY, acct);
+    localStorage.setItem(VERIFIED_KEY, '1');
+  } catch {}
+}
+function clearIdentity() {
+  try { localStorage.removeItem(IDENTITY_KEY); localStorage.removeItem(VERIFIED_KEY); } catch {}
+}
+function storedAcct() { try { return localStorage.getItem(ACCT_KEY) || ''; } catch { return ''; } }
+
+/* The shared Library session — same shape and TTL the Library and the AI
+   assistant use. An existing clock is never extended. */
+function readLibSession() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LIB_KEY) || 'null');
+    if (!v || !v.account || !v.createdAt) return null;
+    if (Date.now() - v.createdAt > LIB_TTL) { localStorage.removeItem(LIB_KEY); return null; }
+    return v;
+  } catch { return null; }
+}
+function writeLibSession(account) {
+  const a = String(account || '').trim();
+  if (!a) return;
+  try {
+    const ex = readLibSession();
+    if (ex && ex.account === a) return;
+    localStorage.setItem(LIB_KEY, JSON.stringify({ account: a, createdAt: Date.now() }));
+  } catch {}
+}
+function clearLibSession() { try { localStorage.removeItem(LIB_KEY); } catch {} }
 
 function paintAccess() {
   if (tier === 'unlimited') {
     accBadge.className = 'acc ok';
-    accBadge.innerHTML = '✓ <b>Verified</b><span class="detail"> · Unlimited</span>';
+    accBadge.innerHTML = '✓ <b>Verified</b><span class="detail"> · Unlimited access</span>';
     verifyBtn.hidden = true;
   } else {
     accBadge.className = 'acc no';
@@ -518,30 +579,116 @@ function paintAccess() {
   }
 }
 
-/* Validate the existing token with the existing endpoint — no new auth. */
-async function refreshAccess() {
-  const tok = identityToken();
-  if (!tok) { tier = 'visitor'; paintAccess(); return; }
-  try {
-    const r = await fetch('/api/ai-access', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'session', token: tok, lang: replyLang() }),
-    });
-    const d = await r.json().catch(() => ({}));
-    tier = (d && d.ok && d.tier === 'unlimited') ? 'unlimited' : 'visitor';
-  } catch { tier = identityToken() ? 'unlimited' : 'visitor'; }
+/* The single place a tier change is applied, so the badge, the verify button
+   and any already-rendered limit card can never disagree. */
+function applyTier(next) {
+  const was = tier;
+  tier = next === 'unlimited' ? 'unlimited' : 'visitor';
   paintAccess();
+  if (tier === 'unlimited' && was !== 'unlimited') dropGateCards();
 }
 
-/* Verification uses the SAME shared premium card every other surface uses. */
+/* A free-limit card rendered before verification is no longer true after it.
+   Drop it from the thread AND from the persisted turns, so reopening the
+   conversation cannot replay a restriction that no longer applies. */
+function dropGateCards() {
+  let removed = false;
+  for (const g of Array.from(thread.querySelectorAll('.gate'))) {
+    const turn = g.closest('.turn');
+    if (turn) { turn.remove(); removed = true; }
+  }
+  if (convo && Array.isArray(convo.turns)) {
+    const n = convo.turns.length;
+    convo.turns = convo.turns.filter(t => !t.gate);
+    if (convo.turns.length !== n) removed = true;
+  }
+  if (removed) {
+    addAI('✓ **Verified — unlimited analyses are active.** Carry on with your trade.', null, true);
+    persist();
+  }
+}
+
+async function aiAccess(payload) {
+  const r = await fetch('/api/ai-access', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...payload, lang: replyLang() }),
+  });
+  return r.json().catch(() => ({}));
+}
+
+/* LIBRARY/MEMBER → RESCUE. An already-verified member must never face a second
+   OTP. 'bridge' re-validates the account against the SAME eligibility source
+   and mints the standard token tied to the SAME session start, so both
+   surfaces expire together. */
+async function bridgeFromLibrary() {
+  const lib = readLibSession();
+  if (!lib) return false;
+  const d = await aiAccess({ action: 'bridge', account: lib.account, sessionStart: lib.createdAt });
+  if (d.valid && d.token) { setIdentityToken(d.token); markVerified(lib.account); return true; }
+  if (d.valid === false) clearLibSession();   // definitively no longer eligible
+  return false;
+}
+
+async function refreshAccess() {
+  try {
+    if (!identityToken()) await bridgeFromLibrary();
+    const tok = identityToken();
+    if (!tok) { applyTier('visitor'); return; }
+
+    const d = await aiAccess({ action: 'session', token: tok });
+    if (d.valid && d.tier === 'unlimited') {
+      if (d.token) setIdentityToken(d.token);        // refreshed eligibility window
+      markVerified(storedAcct());
+      writeLibSession(storedAcct());                 // keep the shared session in step
+      applyTier('unlimited');
+      return;
+    }
+    /* Only a definitive removal clears the session — ai-access already
+       distinguishes that from a transient re-check failure. */
+    if (d.removed) { clearIdentity(); clearLibSession(); }
+    applyTier('visitor');
+  } catch {
+    paintAccess();   // offline: keep what we have rather than falsely downgrading
+  }
+}
+
+/* Verification uses the SAME shared premium card, OTP and endpoint as Journal,
+   Library and the AI assistant. onApproved is awaited BEFORE the card shows its
+   approval modal, so by the time the user presses Continue the badge behind it
+   has already flipped — no reload, no second OTP. */
 function openVerify() {
   if (window.ZTUPremiumCard && typeof window.ZTUPremiumCard.open === 'function') {
-    window.ZTUPremiumCard.open({ entry: 'ai', dismissible: true, onApproved: () => { refreshAccess(); } });
+    window.ZTUPremiumCard.open({
+      entry: 'rescue', dismissible: true,
+      onApproved: async (result) => {
+        const acct = result && result.account;
+        if (acct) {
+          markVerified(acct);
+          writeLibSession(acct);
+          const lib = readLibSession();
+          const d = await aiAccess({
+            action: 'bridge', account: acct,
+            sessionStart: (lib && lib.createdAt) || Date.now(),
+          });
+          if (d.valid && d.token) { setIdentityToken(d.token); applyTier('unlimited'); return; }
+        }
+        await refreshAccess();
+      },
+    });
   } else {
     window.location.href = 'license-request.html';
   }
 }
 verifyBtn.addEventListener('click', openVerify);
+
+/* Verification completed in ANOTHER tab (Library, Journal or the AI assistant)
+   must land here too, without a manual refresh. */
+window.addEventListener('storage', (e) => {
+  if (e && (e.key === IDENTITY_KEY || e.key === LIB_KEY || e.key === VERIFIED_KEY)) refreshAccess();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && tier !== 'unlimited') refreshAccess();
+});
 
 /* ── text to speech ────────────────────────────────────────────────────── */
 const TTS_OK = ('speechSynthesis' in window);
@@ -594,7 +741,14 @@ function applyDir() {
   input.setAttribute('dir', rtl ? 'rtl' : 'ltr');
 }
 function syncSend() { sendBtn.disabled = busy || !input.value.trim(); }
-function refreshComposer() { autoGrow(); applyDir(); syncSend(); }
+/* The full prompt wraps to two lines on a phone and would be clipped by the
+   single-line composer, so narrow viewports get the short form. */
+const PH_FULL  = 'Describe your open trade — instrument, entry, stop…';
+const PH_SHORT = 'Describe your open trade…';
+const narrowMQ = window.matchMedia('(max-width: 560px)');
+function syncPlaceholder() { input.placeholder = narrowMQ.matches ? PH_SHORT : PH_FULL; }
+try { narrowMQ.addEventListener('change', syncPlaceholder); } catch { narrowMQ.addListener(syncPlaceholder); }
+function refreshComposer() { autoGrow(); applyDir(); syncSend(); syncPlaceholder(); }
 function clearDraft() { input.value = ''; draftFromVoice = false; hideHint(); refreshComposer(); }
 
 /* Joins two fragments with exactly one space — repeated calls cannot duplicate. */
@@ -641,6 +795,7 @@ if (!SR) {
 
   rec.onstart = () => {
     listening = true; voiceErr = false;
+    mic.classList.remove('busy', 'err');
     mic.classList.add('rec'); mic.setAttribute('aria-label', 'Stop recording');
     showHint(LISTEN_HTML);
   };
@@ -657,10 +812,18 @@ if (!SR) {
     showHint(LISTEN_HTML + (interim ? '<span class="t">' + esc(interim) + '</span>' : ''));
   };
 
+  rec.onspeechend = () => {
+    if (!listening) return;
+    mic.classList.remove('rec'); mic.classList.add('busy');
+    showHint('<span class="sp"></span><span>Transcribing…</span>');
+  };
+
   rec.onerror = (e) => {
     const err = e && e.error;
     if (err === 'aborted') return;
     voiceErr = true;
+    mic.classList.remove('rec', 'busy'); mic.classList.add('err');
+    setTimeout(() => mic.classList.remove('err'), 2600);
     showErr(err === 'not-allowed' || err === 'service-not-allowed'
       ? 'Microphone permission denied. Allow it in your browser settings, or type instead.'
       : err === 'no-speech' ? 'I didn’t catch anything — try again, or type it.'
@@ -671,7 +834,7 @@ if (!SR) {
 
   rec.onend = () => {
     listening = false;
-    mic.classList.remove('rec'); mic.setAttribute('aria-label', 'Start voice input');
+    mic.classList.remove('rec', 'busy'); mic.setAttribute('aria-label', 'Start voice input');
     const draft = joinDraft(baseText, finalTxt);
     finalTxt = ''; baseText = '';
     if (draft) {
@@ -723,7 +886,8 @@ async function ask(text, spoken) {
     clearTimeout(t1); clearTimeout(t2); hideState();
     if (!res.ok) { addAI('Something went wrong reaching the analysis service (HTTP ' + res.status + '). Please try again.'); return; }
     const d = await res.json();
-    if (d.tier) { tier = d.tier; paintAccess(); }
+    if (d.freeLimit) freeLimit = d.freeLimit;
+    if (d.tier) applyTier(d.tier);
     if (d.mode === 'limit') { addAI('', null, true, d.gate); persist(); return; }
     renderCase(d.tradeCase);
     addAI(d.reply, d.mode === 'analysis' ? d.evidence : null, true);

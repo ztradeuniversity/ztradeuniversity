@@ -175,6 +175,7 @@
   function headlineFor(entry) {
     if (entry === 'library') return ['Unlock the ZTU <span>Library</span>', 'One approval unlocks the Library — plus your Trading Journal and AI Unlimited.'];
     if (entry === 'ai')      return ['Unlock <span>Unlimited AI</span>', 'One approval unlocks Unlimited AI — plus your Trading Journal and Library.'];
+    if (entry === 'rescue')  return ['Unlock <span>ZTU Rescue</span>', 'One approval unlocks ZTU Rescue — plus your Trading Journal, Library and Unlimited AI.'];
     return ['Unlock ZTU <span>Premium</span>', 'One approval unlocks your Trading Journal — plus the Library and Unlimited AI.'];
   }
 
@@ -264,9 +265,9 @@
       approvedOv.innerHTML =
         '<div class="zpc-card">'
         + '<div class="zpc-ac-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'
-        + '<h3 class="zpc-ac-title">Access Approved</h3>'
+        + '<h3 class="zpc-ac-title" data-zpc-ac-title>Access Approved</h3>'
         + '<p class="zpc-ac-lead" data-zpc-ac-lead>You now have full ZTU membership access.</p>'
-        + '<div style="display:inline-block;text-align:left;">'
+        + '<div style="display:inline-block;text-align:left;" data-zpc-ac-grants>'
         +   '<div class="zpc-grant"><i>✓</i> Trading Journal Access</div>'
         +   '<div class="zpc-grant"><i>✓</i> Library Access</div>'
         +   '<div class="zpc-grant"><i>✓</i> AI Unlimited Access</div>'
@@ -361,9 +362,24 @@
     var entry = state.opts ? state.opts.entry : 'journal';
     var lead = entry === 'library' ? 'Your Library is unlocked — plus your Trading Journal and Unlimited AI.'
       : entry === 'ai' ? 'Your Unlimited AI is unlocked — plus your Trading Journal and Library.'
+      : entry === 'rescue' ? 'ZTU Rescue is unlocked — plus your Trading Journal, Library and Unlimited AI.'
       : 'Your Trading Journal is unlocked — plus your Library and Unlimited AI.';
     if (!state.opts || state.opts.showApprovedModal !== false) {
       approvedOv.querySelector('[data-zpc-ac-lead]').textContent = lead;
+      // Surface-specific title + grant list. Every non-rescue entry is restored to
+      // the original wording, so Journal / Library / AI are untouched.
+      var acTitle = approvedOv.querySelector('[data-zpc-ac-title]');
+      if (acTitle) acTitle.textContent = entry === 'rescue' ? 'ZTU Rescue — Access Approved' : 'Access Approved';
+      var acGrants = approvedOv.querySelector('[data-zpc-ac-grants]');
+      if (acGrants) {
+        // Truthful: this one approval writes the shared session that unlocks all
+        // four surfaces (Rescue runs on the same Unlimited AI tier).
+        acGrants.innerHTML =
+          (entry === 'rescue' ? '<div class="zpc-grant"><i>✓</i> ZTU Rescue — Unlimited Analyses</div>' : '')
+          + '<div class="zpc-grant"><i>✓</i> Trading Journal Access</div>'
+          + '<div class="zpc-grant"><i>✓</i> Library Access</div>'
+          + '<div class="zpc-grant"><i>✓</i> AI Unlimited Access</div>';
+      }
       approvedOv.classList.add('on');
     }
   }
