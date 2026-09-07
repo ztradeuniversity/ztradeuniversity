@@ -31,6 +31,15 @@ import { collectEvidence, provenanceLines } from '../utils/trade-rescue/evidence
 import { runAnalysis, KIND } from '../utils/trade-rescue/analysis.js';
 import { selectKnowledge } from '../utils/trade-rescue/knowledge.js';
 import { generateTradeRescueReport } from '../utils/composer-llm.js';
+// ── ACCESS: the SAME gate the AI assistant already uses ──────────────────────
+// resolveTier reads the identity token minted by /api/ai-access after the
+// existing Library OTP flow; readGuestCount/buildGuestCookie are the SAME signed
+// `ztu_ai_guest` cookie the assistant counts against. Trade Rescue therefore
+// shares ONE counter, ONE token, ONE secret and ONE membership with the rest of
+// the site — no second auth system, no second OTP, no second counter, and a
+// member who verified once for the Library/Journal/AI is already verified here.
+import { resolveTier, readGuestCount, buildGuestCookie } from '../utils/identity-session.js';
+import { limitReachedPayload } from '../utils/access-copy.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -55,6 +64,8 @@ const L10N = {
     needOne: 'One thing I still need:',
     thenAnalyse: "After that I'll pull the current market data and give you the full read.",
     englishNote: null,
+    heardCheck: "Before I analyse — I want to be sure I heard your numbers right:",
+    heardConfirm: 'If that’s correct just say **yes**; if not, tell me the right value.',
   },
   ur: {
     disclaimer: '_یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔_',
@@ -64,6 +75,8 @@ const L10N = {
     needOne: 'ایک چیز اور درکار ہے:',
     thenAnalyse: 'اس کے بعد میں موجودہ market data لے کر آپ کو مکمل تجزیہ دوں گا۔',
     englishNote: '_تفصیلی تجزیہ اس وقت انگریزی میں دستیاب ہے۔_',
+    heardCheck: 'تجزیے سے پہلے میں آپ کے numbers confirm کرنا چاہتا ہوں:',
+    heardConfirm: 'اگر یہ درست ہے تو **جی ہاں** لکھیں؛ ورنہ صحیح value بتا دیں۔',
   },
   ar: {
     disclaimer: '_هذا دعم لاتخاذ القرار بناءً على الأدلة المتاحة الآن — وليس نتيجة مضمونة ولا نصيحة مالية. ظروف السوق قد تتغير في أي وقت، والقرار بشأن مركزك يبقى قرارك أنت._',
@@ -73,6 +86,8 @@ const L10N = {
     needOne: 'ما زلت أحتاج أمراً واحداً:',
     thenAnalyse: 'بعد ذلك سأجلب بيانات السوق الحالية وأعطيك التحليل الكامل.',
     englishNote: '_التحليل التفصيلي متاح حالياً باللغة الإنجليزية._',
+    heardCheck: 'قبل التحليل، أريد التأكد من الأرقام:',
+    heardConfirm: 'إذا كانت صحيحة اكتب **نعم**؛ وإلا أخبرني بالقيمة الصحيحة.',
   },
 };
 const pickL10n = (lang) => L10N[String(lang || 'en').slice(0, 2).toLowerCase()] || L10N.en;
@@ -221,14 +236,61 @@ export async function onRequest(context) {
   const T = pickL10n(lang);
   let tCase = mergeCase(emptyCase(), body.tradeCase || {});
 
+  // 0 ── ACCESS GATE — identical rule to the AI assistant.
+  // Verified members ('unlimited') are never counted. Everyone else gets exactly
+  // AI_VISITOR_MESSAGE_LIMIT (default 5) free analyses, counted in the SAME
+  // signed cookie the assistant uses, so the two surfaces share one allowance
+  // rather than handing a guest double. On exhaustion the SAME limitReachedPayload
+  // is returned, so the upgrade path and copy are the existing ones.
+  const { tier } = await resolveTier(env, body.identityToken || '');
+  const visitorLimit = parseInt(env.AI_VISITOR_MESSAGE_LIMIT ?? '5', 10) || 5;
+  let guestSetCookie = null;
+  if (tier !== 'unlimited') {
+    const used = await readGuestCount(env, request);
+    if (used >= visitorLimit) {
+      return json({ mode: 'limit', tier: 'visitor', gate: limitReachedPayload(env, lang), tradeCase: tCase });
+    }
+    guestSetCookie = await buildGuestCookie(env, used + 1);
+  }
+  // Attach the updated guest count to whatever this turn returns.
+  const respond = (payload, status = 200) => {
+    const h = guestSetCookie ? { ...JSON_H, 'Set-Cookie': guestSetCookie } : JSON_H;
+    return new Response(JSON.stringify({ ...payload, tier }), { status, headers: h });
+  };
+
   // 1 ── SCOPE GATE
   if (!inScope(message, tCase)) {
-    return json({ mode: 'scope', reply: SCOPE_REPLY, tradeCase: tCase });
+    return respond({ mode: 'scope', reply: SCOPE_REPLY, tradeCase: tCase });
   }
 
   // 2 ── EXTRACT + MERGE
+  const before = { entry: tCase.entry, stop_loss: tCase.stop_loss, take_profit: tCase.take_profit, position_size: tCase.position_size };
   tCase = mergeCase(tCase, extractFromText(message, tCase));
   tCase.turns = (tCase.turns || 0) + 1;
+
+  // ── VOICE NUMERIC CONFIRMATION ───────────────────────────────────────────
+  // Speech-to-text mis-hears digits ("4380" vs "4800", "0.10 lot" vs "1.0 lot"),
+  // and a wrong entry or stop silently corrupts every downstream calculation.
+  // So a trade number first captured from a SPOKEN turn is read back once for
+  // confirmation instead of being trusted. Typed numbers are not re-confirmed —
+  // the trader can already see what they wrote. Nothing is altered or normalised
+  // either way; this only asks.
+  if (body.viaVoice) {
+    const heard = [];
+    if (before.entry == null && tCase.entry != null) heard.push(['entry', 'Entry', tCase.entry]);
+    if (before.stop_loss == null && tCase.stop_loss != null) heard.push(['stop_loss', 'Stop Loss', tCase.stop_loss]);
+    if (before.take_profit == null && tCase.take_profit != null) heard.push(['take_profit', 'Take Profit', tCase.take_profit]);
+    if (before.position_size == null && tCase.position_size != null) heard.push(['position_size', 'Size', tCase.position_size]);
+    const unconfirmed = heard.filter(([k]) => !(tCase.voice_confirmed || []).includes(k));
+    if (unconfirmed.length) {
+      tCase.voice_confirmed = Array.from(new Set([...(tCase.voice_confirmed || []), ...unconfirmed.map(h => h[0])]));
+      const L = [T.heardCheck];
+      for (const [, label, val] of unconfirmed) L.push(`- **${label}: ${val}**`);
+      L.push('');
+      L.push(T.heardConfirm);
+      return respond({ mode: 'confirm', reply: L.join('\n'), tradeCase: tCase });
+    }
+  }
 
   // 3 ── QUESTION ENGINE
   if (!readyForAnalysis(tCase)) {
@@ -242,7 +304,7 @@ export async function onRequest(context) {
       L.push(qs.length > 1 ? T.needTwo : T.needOne);
       for (const q of qs) L.push(`- ${questionText(q, lang)}`);
       if (!missingRequired(tCase).length) L.push(`\n${T.thenAnalyse}`);
-      return json({ mode: 'question', reply: L.join('\n'), tradeCase: tCase });
+      return respond({ mode: 'question', reply: L.join('\n'), tradeCase: tCase });
     }
   }
 
@@ -268,7 +330,7 @@ export async function onRequest(context) {
   if (synthesizedBy === 'deterministic' && T.englishNote) reply += `\n\n${T.englishNote}`;
   reply += `\n\n${T.disclaimer}`;
 
-  return json({
+  return respond({
     mode: 'analysis',
     reply,
     tradeCase: tCase,

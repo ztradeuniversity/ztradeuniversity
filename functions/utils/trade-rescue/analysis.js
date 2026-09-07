@@ -258,6 +258,32 @@ export function layerBehaviour(c) {
   return { id: 'behaviour', title: 'Trader behaviour', findings: f, evidence: [], strengths, weaknesses };
 }
 
+// ── LAYER 7b — CRYPTO / PROJECT CONTEXT ─────────────────────────────────────
+// A crypto position is a bet on a project as well as a chart. This platform has
+// NO verified source for tokenomics, supply schedules, team, roadmap or protocol
+// developments — checked against the available providers, which return price,
+// macro and general news only. So this layer reports exactly what IS verifiable
+// for the asset and states plainly that project fundamentals are not, rather
+// than reciting remembered token facts that could be stale or wrong.
+export function layerCrypto(c, ev) {
+  const CRYPTO = { 'BTC/USD': 'Bitcoin', 'ETH/USD': 'Ethereum' };
+  const name = CRYPTO[c.instrument] || (/BTC|ETH|crypto|coin|token/i.test(String(c.instrument || '')) ? c.instrument : null);
+  if (!name) return null;
+
+  const f = [];
+  if (ev.priceStatus === 'verified') {
+    f.push({ kind: KIND.FACT, text: `${name} price and session range are verified above from the live market feed.` });
+  }
+  if (ev.regime && ev.regime.label) {
+    f.push({ kind: KIND.ANALYSIS, text: `Major crypto has generally traded as a high-beta risk asset in recent cycles, so the ${ev.regime.label} regime reading is relevant background pressure. That is a tendency, not a mechanical link.` });
+  }
+  f.push({ kind: KIND.UNCERTAINTY, text: `Project fundamentals for ${name} — tokenomics, supply schedule, protocol developments, ecosystem activity, treasury or team changes — could not be independently verified. This platform has no data source for them, so none are asserted here. If your trade thesis rests on a project-level development, verify it at the source before acting on it.` });
+  if (!CRYPTO[c.instrument]) {
+    f.push({ kind: KIND.UNCERTAINTY, text: `${c.instrument} also has no verified live price on our data plan, so this analysis carries no current market values for it at all.` });
+  }
+  return { id: 'crypto', title: 'Crypto / project context', findings: f, evidence: [] };
+}
+
 // ── LAYER 8 — SCENARIOS ─────────────────────────────────────────────────────
 // Conditional paths only. Each is anchored to a condition that can be observed.
 export function layerScenarios(c, ev) {
@@ -346,6 +372,10 @@ export function runAnalysis(tradeCase, evidence) {
     layerBehaviour(tradeCase),
     layerScenarios(tradeCase, evidence),
   ];
+  // Only attached for a crypto instrument; returns null otherwise, so a Gold
+  // case never carries an irrelevant section.
+  const crypto = layerCrypto(tradeCase, evidence);
+  if (crypto) layers.splice(6, 0, crypto);
   const weighed = weighEvidence(layers);
   const decision = layerDecisionSupport(tradeCase, evidence, weighed);
   return { layers, weighed, decision };

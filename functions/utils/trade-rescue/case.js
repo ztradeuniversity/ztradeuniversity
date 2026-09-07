@@ -200,7 +200,84 @@ export function extractFromText(text, current) {
     p.emotional_state = 'pressure_expressed';
   }
 
+  // Non-Latin natural speech. Everything above is written for Latin phrasing
+  // with \b boundaries and English labels, so a fluent Urdu/Arabic sentence —
+  // exactly what voice input produces — yielded almost nothing. Verified against
+  // the real sentence "میری گولڈ کی بائی تین دن سے پھنسی ہوئی ہے، میں نے 4380 پہ
+  // انٹری لی تھی، اسٹاپ لاس بھی نہیں لگایا": before this layer only instrument
+  // and direction were captured.
+  Object.assign(p, extractNonLatin(raw, cur, p));
+
   if (raw.trim().length > 3) p.user_notes = [raw.trim().slice(0, 400)];
+  return p;
+}
+
+// Written number words traders actually speak, Urdu and Arabic.
+const NL_NUMWORD = {
+  'ایک': 1, 'دو': 2, 'تین': 3, 'چار': 4, 'پانچ': 5, 'چھ': 6, 'سات': 7, 'آٹھ': 8, 'نو': 9, 'دس': 10,
+  'واحد': 1, 'اثنين': 2, 'يومين': 2, 'ثلاثة': 3, 'ثلاث': 3, 'أربعة': 4, 'خمسة': 5, 'ستة': 6, 'سبعة': 7,
+};
+const NL_UNIT = [
+  { re: /(?:منٹ|دقيقة|دقائق)/, unit: 'minute' },
+  { re: /(?:گھنٹ|ساعة|ساعات)/, unit: 'hour' },
+  { re: /(?:دن|روز|يوم|أيام)/,  unit: 'day' },
+  { re: /(?:ہفت|أسبوع|أسابيع)/, unit: 'week' },
+  { re: /(?:مہین|شهر|أشهر)/,    unit: 'month' },
+];
+
+export function extractNonLatin(raw, cur, already) {
+  const p = {};
+  const s = String(raw || '');
+  if (!/[؀-ۿ]/.test(s)) return p;   // no Arabic-script content — nothing to do
+  const have = (k) => (already && already[k] != null) || (cur && cur[k] != null && cur[k] !== '');
+
+  // ENTRY — "4380 پہ انٹری لی" / "انٹری 4380" / "سعر الدخول 4380"
+  if (!have('entry')) {
+    const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:پہ|پر|پے|عند|على)?\s*(?:انٹری|اینٹری|entry|دخول)/i)
+           || s.match(/(?:انٹری|اینٹری|entry|دخول|سعر الدخول)\s*(?:پہ|پر|عند|:|=)?\s*(\d+(?:[.,]\d+)?)/i);
+    if (m) { const v = parseFloat(m[1].replace(',', '.')); if (Number.isFinite(v)) p.entry = v; }
+  }
+
+  // STOP LOSS — negation ("نہیں لگایا" / "بدون") vs a stated level.
+  if (!have('has_stop_loss') && (cur ? cur.has_stop_loss == null : true)) {
+    const slWord = /(?:اسٹاپ\s*لاس|سٹاپ\s*لاس|stop\s*loss|وقف\s*(?:الخسارة|خسارة))/i;
+    if (slWord.test(s)) {
+      const negated = /(?:نہیں|نہ|بغیر|بدون|ما\s*(?:وضعت|في)|لا\s*يوجد)/.test(s);
+      const lvl = s.match(new RegExp(`${slWord.source}\\s*(?:پہ|پر|عند|:|=)?\\s*(\\d+(?:[.,]\\d+)?)`, 'i'));
+      if (lvl) { const v = parseFloat(lvl[1].replace(',', '.')); if (Number.isFinite(v)) { p.stop_loss = v; p.has_stop_loss = true; } }
+      else if (negated) p.has_stop_loss = false;
+    }
+  }
+
+  // TAKE PROFIT
+  if (!have('take_profit')) {
+    const m = s.match(/(?:ٹی\s*پی|take\s*profit|ٹارگٹ|هدف|جني\s*الأرباح)\s*(?:پہ|پر|عند|:|=)?\s*(\d+(?:[.,]\d+)?)/i);
+    if (m) { const v = parseFloat(m[1].replace(',', '.')); if (Number.isFinite(v)) p.take_profit = v; }
+  }
+
+  // HOLDING DURATION — "تین دن سے" / "منذ ثلاثة أيام"
+  if (!have('holding_duration')) {
+    for (const u of NL_UNIT) {
+      const digit = s.match(new RegExp(`(\\d+)\\s*${u.re.source}`));
+      if (digit) { const n = Number(digit[1]); p.holding_duration = `${n} ${u.unit}${n > 1 ? 's' : ''}`; break; }
+      const words = Object.keys(NL_NUMWORD).join('|');
+      const word = s.match(new RegExp(`(${words})\\s*${u.re.source}`));
+      if (word) { const n = NL_NUMWORD[word[1]]; if (n) { p.holding_duration = `${n} ${u.unit}${n > 1 ? 's' : ''}`; break; } }
+    }
+  }
+
+  // LOT SIZE — "0.10 لاٹ"
+  if (!have('position_size')) {
+    const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:لاٹ|لوٹ|lot|عقد)/i);
+    if (m) p.position_size = `${m[1].replace(',', '.')} lots`;
+  }
+
+  // UNCERTAINTY / PRESSURE — recorded ONLY as "the trader expressed this", never
+  // as a diagnosis of how they actually feel.
+  if (/(?:سمجھ\s*نہیں|پتا\s*نہیں|کنفیوز|الجھن|حیران|پریشان|ڈر|امید|محتار|لا\s*أعرف|قلق|خائف)/.test(s)) {
+    p.emotional_state = 'pressure_expressed';
+  }
+
   return p;
 }
 

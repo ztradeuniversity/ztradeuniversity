@@ -224,6 +224,16 @@
 
     .hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; text-align: center; }
 
+    /* Small, restrained descriptors above the hero title. */
+    .hero-tags {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+      font-size: 11px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--muted, #64748b);
+    }
+    .hero-tags i { width: 3px; height: 3px; border-radius: 50%; background: var(--orange); display: inline-block; }
+    @media (max-width: 420px) { .hero-tags { font-size: 9.5px; gap: 7px; } }
+
     .hero-title {
       font-family: 'Poppins','Inter',sans-serif;
       font-weight: 800; letter-spacing: -1px; line-height: 1.02;
@@ -897,14 +907,20 @@
 
     <div class="container">
       <div class="hero-inner">
-        <h1 class="hero-title"><span class="ztu">ZTU</span> <span class="ai">AI</span></h1>
-        <div class="hero-subtitle">Trading Assistant</div>
+        <!-- Trade Rescue is now the primary trading-assistance entry point.
+             The general AI Assistant is unchanged and still reachable at
+             ai-trade-assistant.html (kept in the nav and the footer links). -->
+        <div class="hero-tags" aria-label="What ZTU Rescue does">
+          <span>Data-Driven</span><i></i><span>Decision Support</span><i></i><span>Verified Data</span>
+        </div>
+        <h1 class="hero-title"><span class="ztu">ZTU</span> <span class="ai">Rescue</span></h1>
+        <div class="hero-subtitle">Trade Management &amp; Analysis</div>
         <div class="hero-underline"></div>
 
         <!-- CHAT BOX — wired to existing AI assistant -->
         <form class="chat-form" id="chatForm" onsubmit="return goChat(event)" role="search">
           <input id="homeChatInput" type="text" autocomplete="off"
-                 placeholder="Ask me anything about trading..." aria-label="Ask the ZTU AI trading assistant" />
+                 placeholder="Describe your open trade — instrument, entry, stop…" aria-label="Describe your open trade for ZTU Rescue" />
           <button class="chat-tool" type="button" id="micBtn" hidden
                   onclick="toggleMic()" aria-pressed="false" aria-label="Voice input" title="Voice input">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
@@ -1234,11 +1250,15 @@
     });
 
 
-    /* ── Chat box → existing AI assistant (prefills + auto-sends) ── */
+    /* ── Chat box → ZTU Rescue (prefills + auto-sends) ──
+       The ?q=…&send=1 contract is unchanged — trade-rescue.html accepts the
+       same parameters the assistant did, so any existing link or bookmark of
+       that shape keeps working. ai-trade-assistant.html is untouched and still
+       reachable from the navigation. */
     function goChat(e) {
       if (e) e.preventDefault();
       var v = document.getElementById('homeChatInput').value.trim();
-      var url = 'ai-trade-assistant.html';
+      var url = 'trade-rescue.html';
       if (v) url += '?q=' + encodeURIComponent(v) + '&send=1';
       window.location.href = url;
       return false;
