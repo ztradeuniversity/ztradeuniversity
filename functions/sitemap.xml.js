@@ -16,7 +16,7 @@ const BASE_URL = 'https://ztradeuniversity.com';
 // Ported 1:1 from the previous static sitemap.xml.
 const STATIC_ENTRIES = [
   { url: `${BASE_URL}/privacy-policy.html`, lastmod: '2026-05-15', changefreq: 'yearly', priority: 0.4 },
-  { url: `${BASE_URL}/ai-trade-assistant.html`, lastmod: '2026-06-01', changefreq: 'weekly', priority: 0.9 },
+  { url: `${BASE_URL}/trade-rescue.html`, lastmod: '2026-06-01', changefreq: 'weekly', priority: 0.9 },
   { url: `${BASE_URL}/`, lastmod: '2026-05-15', changefreq: 'weekly', priority: 1.0 },
   { url: `${BASE_URL}/articles.html`, lastmod: '2026-05-15', changefreq: 'weekly', priority: 0.9 },
   { url: `${BASE_URL}/about.html`, lastmod: '2026-05-15', changefreq: 'monthly', priority: 0.7 },

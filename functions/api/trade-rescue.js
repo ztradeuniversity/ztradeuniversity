@@ -31,6 +31,7 @@ import { collectEvidence, provenanceLines } from '../utils/trade-rescue/evidence
 import { runAnalysis, KIND } from '../utils/trade-rescue/analysis.js';
 import { selectKnowledge } from '../utils/trade-rescue/knowledge.js';
 import { generateTradeRescueReport } from '../utils/composer-llm.js';
+import { resolveLang } from '../utils/trade-rescue/language.js';
 // ── ACCESS: the SAME gate the AI assistant already uses ──────────────────────
 // resolveTier reads the identity token minted by /api/ai-access after the
 // existing Library OTP flow; readGuestCount/buildGuestCookie are the SAME signed
@@ -66,6 +67,22 @@ const L10N = {
     englishNote: null,
     heardCheck: "Before I analyse — I want to be sure I heard your numbers right:",
     heardConfirm: 'If that’s correct just say **yes**; if not, tell me the right value.',
+    switched: 'Of course — I’ll carry on in English.',
+    // Hedged on purpose: this reflects back what the trader SAID, and never
+    // claims to know how they feel.
+    senseUnsure: 'It sounds like you’re unsure what to do with this one. Let’s take it apart properly rather than guess.',
+    nextOne: 'Next thing I need:',
+    andThen: 'Then I’ll pull the current market data and give you the full read.',
+    scope: [
+      "I'm **ZTU Rescue** — I work on one thing: helping you think through a trade you're already in.",
+      '',
+      "Tell me about an open position and I'll take it from there — for example:",
+      '• _"My Gold buy is stuck, I\'m 40 points down"_',
+      '• _"I\'m short BTC from 82,000 with no stop loss"_',
+      '• _"Should I hold my XAU/USD long over the weekend?"_',
+      '',
+      "I'll ask a few questions about the trade, pull the current market data I can verify, and give you a structured read on where it stands.",
+    ].join('\n'),
   },
   ur: {
     disclaimer: '_یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔_',
@@ -77,6 +94,20 @@ const L10N = {
     englishNote: '_تفصیلی تجزیہ اس وقت انگریزی میں دستیاب ہے۔_',
     heardCheck: 'تجزیے سے پہلے میں آپ کے numbers confirm کرنا چاہتا ہوں:',
     heardConfirm: 'اگر یہ درست ہے تو **جی ہاں** لکھیں؛ ورنہ صحیح value بتا دیں۔',
+    switched: 'ضرور — اب میں اردو میں بات کروں گا۔',
+    senseUnsure: 'آپ کی بات سے لگ رہا ہے کہ آپ اس ٹریڈ کے بارے میں غیر یقینی ہیں۔ اندازے لگانے کے بجائے اسے ترتیب سے دیکھ لیتے ہیں۔',
+    nextOne: 'اگلی بات جو مجھے درکار ہے:',
+    andThen: 'اس کے بعد میں موجودہ market data لے کر آپ کو مکمل تجزیہ دوں گا۔',
+    scope: [
+      'میں **ZTU Rescue** ہوں — میرا کام ایک ہی ہے: آپ کی اُس ٹریڈ کو سمجھنا جو پہلے سے کھلی ہوئی ہے۔',
+      '',
+      'مجھے اپنی open position کے بارے میں بتائیں، مثلاً:',
+      '• _"میری گولڈ کی buy پھنسی ہوئی ہے، 40 points نیچے ہوں"_',
+      '• _"میں نے BTC 82,000 سے sell کی ہے، stop loss نہیں ہے"_',
+      '• _"کیا میں اپنی XAU/USD buy weekend پر رکھوں؟"_',
+      '',
+      'میں ٹریڈ کے بارے میں چند سوال کروں گا، جو market data میں verify کر سکتا ہوں وہ لاؤں گا، اور پھر آپ کو ترتیب سے تجزیہ دوں گا۔',
+    ].join('\n'),
   },
   ar: {
     disclaimer: '_هذا دعم لاتخاذ القرار بناءً على الأدلة المتاحة الآن — وليس نتيجة مضمونة ولا نصيحة مالية. ظروف السوق قد تتغير في أي وقت، والقرار بشأن مركزك يبقى قرارك أنت._',
@@ -88,6 +119,20 @@ const L10N = {
     englishNote: '_التحليل التفصيلي متاح حالياً باللغة الإنجليزية._',
     heardCheck: 'قبل التحليل، أريد التأكد من الأرقام:',
     heardConfirm: 'إذا كانت صحيحة اكتب **نعم**؛ وإلا أخبرني بالقيمة الصحيحة.',
+    switched: 'بالتأكيد — سأكمل بالعربية.',
+    senseUnsure: 'يبدو من كلامك أنك غير متأكد ممّا تفعله بهذه الصفقة. دعنا نحللها بشكل منظم بدل التخمين.',
+    nextOne: 'الأمر التالي الذي أحتاجه:',
+    andThen: 'بعد ذلك سأجلب بيانات السوق الحالية وأعطيك التحليل الكامل.',
+    scope: [
+      'أنا **ZTU Rescue** — عملي شيء واحد: مساعدتك على التفكير في صفقة أنت داخلها بالفعل.',
+      '',
+      'أخبرني عن مركز مفتوح وسأتولى الأمر — مثلاً:',
+      '• _"صفقة شراء الذهب عالقة وأنا خاسر 40 نقطة"_',
+      '• _"لدي بيع BTC من 82,000 بدون وقف خسارة"_',
+      '• _"هل أحتفظ بصفقة XAU/USD خلال عطلة نهاية الأسبوع؟"_',
+      '',
+      'سأطرح بضعة أسئلة عن الصفقة، وأجلب بيانات السوق التي أستطيع التحقق منها، ثم أعطيك قراءة منظمة لوضعها.',
+    ].join('\n'),
   },
 };
 const pickL10n = (lang) => L10N[String(lang || 'en').slice(0, 2).toLowerCase()] || L10N.en;
@@ -96,13 +141,38 @@ const pickL10n = (lang) => L10N[String(lang || 'en').slice(0, 2).toLowerCase()] 
 // Trade Rescue answers ONE kind of question. Anything else is declined with a
 // clear pointer rather than silently handed to the general chatbot — the task's
 // TEST 10 behaviour, made explicit instead of implicit.
-const TRADE_SIGNALS = /\b(trade|position|entry|entered|buy|sell|long|short|stop ?loss|sl\b|take ?profit|tp\b|lot|pip|drawdown|floating|stuck|underwater|losing|profit|hold|close|exit|margin|hedge|averag)\b/i;
+// Deliberately wider than trading jargon. A trader in trouble writes "my gold
+// trade is dead", "phans gayi", "market is against me", "should I cut it" — not
+// "I have an open position with negative floating P/L". Keyword matching is only
+// the FIRST gate: once the case carries an instrument, direction or entry the
+// conversation is in scope regardless of how the next message is phrased, and
+// the extraction layer reads meaning rather than commands.
+const TRADE_SIGNALS = new RegExp([
+  // instrument / mechanics
+  '\\b(trade|trading|position|entry|entered|buy|bought|sell|sold|long|short|lot|pip|point)\\b',
+  '\\b(stop ?loss|sl|take ?profit|tp|margin|hedge|averag|scal(?:e|ing) in|add(?:ing)? to)\\b',
+  '\\b(gold|xau|btc|bitcoin|eur ?usd|gbp ?usd|usd ?jpy|silver|xag|oil|nas100|us30)\\b',
+  // trouble, in the words people actually use
+  '\\b(stuck|trapped|jammed|jam|frozen|dead|sitting there|going nowhere|not moving)\\b',
+  '\\b(underwater|drawdown|floating|losing|loss|in profit|red|green|against me|went against)\\b',
+  '\\b(reversed|turned around|came back|moved down|moved up|blew past)\\b',
+  // the decision they are stuck on
+  '\\b(hold(?:ing)?|close|cut|exit|book|square off|wait|should i|what (?:do|should) i)\\b',
+  // Roman Urdu / Hinglish, which voice input produces constantly
+  '\\b(phans|phansi|phas|ulta|ulat|nuqsan|nuksan|faida|band kar|rakhun|karun|bech)\\w*',
+].join('|'), 'i');
 // Non-Latin scope vocabulary is matched as plain substrings — JavaScript's \b is
 // ASCII-only and never fires beside Arabic/Urdu characters, so a regex with
 // boundaries silently rejects every Urdu and Arabic message.
 const NON_LATIN_SIGNALS = [
-  'ٹریڈ', 'پوزیشن', 'خرید', 'فروخت', 'نقصان', 'منافع', 'سٹاپ', 'سودا',   // Urdu
-  'صفقة', 'شراء', 'بيع', 'خسارة', 'ربح', 'وقف', 'مركز',                    // Arabic
+  // Urdu — instruments, mechanics, and the vocabulary of a trade in trouble
+  'ٹریڈ', 'پوزیشن', 'خرید', 'فروخت', 'نقصان', 'منافع', 'سٹاپ', 'سودا', 'اسٹاپ',
+  'گولڈ', 'سونا', 'سونے', 'بٹ کوائن', 'بٹکوائن', 'بائی', 'سیل', 'انٹری', 'اینٹری',
+  'پھنس', 'پھنسی', 'پھنسا', 'اٹک', 'اٹکی', 'الٹا', 'الٹی', 'خلاف', 'مندی', 'تیزی',
+  'رکھوں', 'بند کر', 'بیچ', 'کیا کروں', 'سمجھ نہیں',
+  // Arabic
+  'صفقة', 'شراء', 'بيع', 'خسارة', 'ربح', 'وقف', 'مركز', 'ذهب', 'بيتكوين',
+  'عالقة', 'عالق', 'محتجزة', 'ضدي', 'أحتفظ', 'أغلق', 'ماذا أفعل', 'دخول',
 ];
 
 function inScope(text, tradeCase) {
@@ -111,18 +181,9 @@ function inScope(text, tradeCase) {
   return TRADE_SIGNALS.test(t) || NON_LATIN_SIGNALS.some(w => t.includes(w));
 }
 
-const SCOPE_REPLY = [
-  "I'm **ZTU Trade Rescue** — I work on one thing: helping you think through a trade you're already in.",
-  '',
-  'Tell me about an open position and I\'ll take it from there — for example:',
-  '• _"My Gold buy is stuck, I\'m 40 points down"_',
-  '• _"I\'m short BTC from 82,000 with no stop loss"_',
-  '• _"Should I hold my XAU/USD long over the weekend?"_',
-  '',
-  "I'll ask a few questions about the trade, pull the current market data I can verify, and give you a structured read on where it stands.",
-  '',
-  'For general trading education — what a concept means, how a strategy works — the [AI Trading Assistant](/ai-trade-assistant.html) is the right place. I deliberately don\'t answer those here, so this stays a trade-management tool.',
-].join('\n');
+// Rescue is the only trading-assistance surface, so an out-of-scope message is
+// redirected back to what Rescue itself does — never handed off to another
+// product. (The former general assistant is retired; nothing points at it.)
 
 // ── DETERMINISTIC BRIEF ──────────────────────────────────────────────────────
 // The complete, factual report. Also the exact text handed to the LLM, so the
@@ -231,10 +292,19 @@ export async function onRequest(context) {
   try { body = await request.json(); } catch { return json({ error: 'invalid json' }, 400); }
 
   const message = String(body.message || '').slice(0, 2000);
-  const lang = String(body.lang || 'en').slice(0, 8);
   const origin = new URL(request.url).origin;
-  const T = pickL10n(lang);
   let tCase = mergeCase(emptyCase(), body.tradeCase || {});
+
+  // WHICH LANGUAGE — an explicit request ("explain in English", "اردو میں
+  // بتائیں") wins and is remembered on the case; otherwise the script the
+  // trader is actually writing in decides; the composer selector is only the
+  // last fallback. The trader should never have to find a dropdown to be
+  // understood. `lang_pref` is part of the stateless case, so the choice
+  // survives every following turn, including voice.
+  const L = resolveLang(message, body.lang, tCase);
+  const lang = L.lang;
+  if (L.pref) tCase.lang_pref = L.pref;
+  const T = pickL10n(lang);
 
   // 0 ── ACCESS GATE — identical rule to the AI assistant.
   // Verified members ('unlimited') are never counted. Everyone else gets exactly
@@ -261,7 +331,7 @@ export async function onRequest(context) {
 
   // 1 ── SCOPE GATE
   if (!inScope(message, tCase)) {
-    return respond({ mode: 'scope', reply: SCOPE_REPLY, tradeCase: tCase });
+    return respond({ mode: 'scope', reply: T.scope, tradeCase: tCase });
   }
 
   // 2 ── EXTRACT + MERGE
@@ -293,19 +363,38 @@ export async function onRequest(context) {
     }
   }
 
-  // 3 ── QUESTION ENGINE
+  // 3 ── QUESTION ENGINE — a mentor's turn, not a form.
+  // Once anything at all is known the trader gets ONE question, phrased as a
+  // sentence, after a short acknowledgement of what was just understood. Two are
+  // only ever asked on a cold open, where there is nothing to acknowledge yet.
+  // A field already supplied is never asked about again (see `asked` + isFilled),
+  // which is what stops the "enter instrument / enter entry / enter stop" feel.
   if (!readyForAnalysis(tCase)) {
-    const qs = nextQuestions(tCase, 2);
+    const known = caseSummary(tCase);
+    const qs = nextQuestions(tCase, known ? 1 : 2);
     if (qs.length) {
       tCase.asked = Array.from(new Set([...(tCase.asked || []), ...qs.map(q => q.key)]));
-      const known = caseSummary(tCase);
-      const L = [];
-      L.push(known ? T.gotIt(known) : T.start);
-      L.push('');
-      L.push(qs.length > 1 ? T.needTwo : T.needOne);
-      for (const q of qs) L.push(`- ${questionText(q, lang)}`);
-      if (!missingRequired(tCase).length) L.push(`\n${T.thenAnalyse}`);
-      return respond({ mode: 'question', reply: L.join('\n'), tradeCase: tCase });
+      const out = [];
+
+      // Acknowledge a language switch once, on the turn it was asked for.
+      if (L.switched && T.switched) out.push(T.switched);
+
+      // Reflect back pressure the trader EXPRESSED — hedged, and only once.
+      if (tCase.emotional_state === 'pressure_expressed' && !tCase.pressure_ack && T.senseUnsure) {
+        tCase.pressure_ack = true;
+        out.push(T.senseUnsure);
+      }
+
+      out.push(known ? T.gotIt(known) : T.start);
+      out.push('');
+      if (qs.length > 1) {
+        out.push(T.needTwo);
+        for (const q of qs) out.push(`- ${questionText(q, lang)}`);
+      } else {
+        out.push(`${T.nextOne} ${questionText(qs[0], lang)}`);
+      }
+      if (!missingRequired(tCase).length) out.push(`\n${T.andThen || T.thenAnalyse}`);
+      return respond({ mode: 'question', reply: out.join('\n'), tradeCase: tCase });
     }
   }
 

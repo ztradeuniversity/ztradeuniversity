@@ -267,7 +267,6 @@
       <span class="acc" id="accBadge" aria-live="polite">…</span>
       <button class="verifyBtn" id="verifyBtn" type="button" hidden>Verify with IB</button>
       <span class="sp"></span>
-      <a class="topLink" href="ai-trade-assistant.html">General AI Assistant →</a>
     </header>
 
     <div class="scroll" id="scrollArea">
@@ -509,7 +508,7 @@ function renderCase(c) {
 }
 
 /* ── access — REUSES the existing shared member wiring, nothing new ───────
-   Authoritative chain, identical to ai-trade-assistant.html:
+   Authoritative chain, shared with every other ZTU surface:
 
      library-auth eligibility (ib_stars_active / special_access)
        → /api/journal-access          — the shared premium card's OTP
@@ -891,6 +890,11 @@ async function ask(text, spoken) {
     if (d.mode === 'limit') { addAI('', null, true, d.gate); persist(); return; }
     renderCase(d.tradeCase);
     addAI(d.reply, d.mode === 'analysis' ? d.evidence : null, true);
+    /* Hand the answer to the homepage speaker (the retired assistant's job). */
+    try {
+      sessionStorage.setItem('ztuLastAnswer', ttsText(d.reply));
+      sessionStorage.setItem('ztuLastAnswerLang', BCP47[replyLang()] || 'en-US');
+    } catch {}
     persist();
   } catch {
     clearTimeout(t1); clearTimeout(t2); hideState();

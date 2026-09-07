@@ -157,8 +157,12 @@ export function extractFromText(text, current) {
 
   // Original thesis — captured from the trader's own "because …" / "I thought …"
   // clause. Stored verbatim; never paraphrased, since the analysis quotes it back.
+  // Matched in English, Roman Urdu and (below, in extractNonLatin) Urdu/Arabic:
+  // "why did you enter?" is the question that separates a plan from hope, and
+  // an English-only pattern silently lost the answer from most of the audience.
   if (!cur.original_thesis) {
-    const th = raw.match(/\b(?:because|since|as|reason was|i (?:thought|expected|believed|saw))\b\s+(.{8,200}?)(?:[.!?]|$)/i);
+    const th = raw.match(/\b(?:because|since|as|reason was|i (?:thought|expected|believed|saw))\b\s+(.{8,200}?)(?:[.!?]|$)/i)
+            || raw.match(/\b(?:kyunki|kyunke|kyun ?ke|isliye|is ?liye|mujhe laga|maine socha|socha (?:tha|ke))\b\s+(.{8,200}?)(?:[.!?]|$)/i);
     if (th) p.original_thesis = th[1].trim();
   }
 
@@ -231,10 +235,16 @@ export function extractNonLatin(raw, cur, already) {
   if (!/[؀-ۿ]/.test(s)) return p;   // no Arabic-script content — nothing to do
   const have = (k) => (already && already[k] != null) || (cur && cur[k] != null && cur[k] !== '');
 
-  // ENTRY — "4380 پہ انٹری لی" / "انٹری 4380" / "سعر الدخول 4380"
+  // ENTRY — "4380 پہ انٹری لی" / "انٹری 4380" / "سعر الدخول 4380", and also the
+  // way people actually speak it, where the verb carries the meaning and the
+  // word "entry" never appears at all: "میں نے 4380 پر لی تھی" / "اشتريت عند 4380".
+  // The verb is REQUIRED in that third form so a bare number elsewhere in the
+  // sentence (a support level, a target) can never be mistaken for the entry.
   if (!have('entry')) {
     const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:پہ|پر|پے|عند|على)?\s*(?:انٹری|اینٹری|entry|دخول)/i)
-           || s.match(/(?:انٹری|اینٹری|entry|دخول|سعر الدخول)\s*(?:پہ|پر|عند|:|=)?\s*(\d+(?:[.,]\d+)?)/i);
+           || s.match(/(?:انٹری|اینٹری|entry|دخول|سعر الدخول)\s*(?:پہ|پر|عند|:|=)?\s*(\d+(?:[.,]\d+)?)/i)
+           || s.match(/(\d+(?:[.,]\d+)?)\s*(?:پہ|پر|پے|سے)\s*(?:\S+\s+){0,2}?(?:لی|لیا|لی تھی|لگائی|خریدی|خریدا|بیچی|بیچا)/)
+           || s.match(/(?:اشتريت|بعت|دخلت)\s*(?:\S+\s+){0,2}?(?:عند|من|على)?\s*(\d+(?:[.,]\d+)?)/);
     if (m) { const v = parseFloat(m[1].replace(',', '.')); if (Number.isFinite(v)) p.entry = v; }
   }
 
@@ -270,6 +280,14 @@ export function extractNonLatin(raw, cur, already) {
   if (!have('position_size')) {
     const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:لاٹ|لوٹ|lot|عقد)/i);
     if (m) p.position_size = `${m[1].replace(',', '.')} lots`;
+  }
+
+  // ORIGINAL THESIS — "کیونکہ …" / "میں نے سوچا …" / "لأن …" / "اعتقدت …".
+  // Stored verbatim in the trader's own words, exactly like the English path.
+  if (!have('original_thesis')) {
+    const m = s.match(/(?:کیونکہ|کیوں\s*کہ|اس\s*لیے\s*کہ|میں\s*نے\s*سوچا|مجھے\s*لگا|لگ\s*رہا\s*تھا)\s*(?:کہ)?\s*(.{6,200}?)(?:[۔.!?\n]|$)/)
+           || s.match(/(?:لأن(?:ني|ه)?|بسبب|اعتقدت|ظننت|توقعت)\s*(.{6,200}?)(?:[.!?\n]|$)/);
+    if (m && m[1] && m[1].trim().length >= 6) p.original_thesis = m[1].trim();
   }
 
   // UNCERTAINTY / PRESSURE — recorded ONLY as "the trader expressed this", never
@@ -315,6 +333,14 @@ export const QUESTIONS = [
     q:  'Do you have a **Stop Loss** on this trade? If yes, at what price — if not, just say "no SL".',
     ur: 'کیا اس ٹریڈ پر **Stop Loss** لگا ہوا ہے؟ اگر ہاں تو کس price پر — اگر نہیں تو صرف "no SL" لکھ دیں۔',
     ar: 'هل لديك **Stop Loss** على هذه الصفقة؟ إذا نعم فعند أي سعر — وإذا لا فاكتب "no SL".' },
+  { key: 'holding_duration', required: false,
+    q:  'How long have you been holding it?',
+    ur: 'آپ اسے کتنے عرصے سے hold کیے ہوئے ہیں؟',
+    ar: 'منذ متى وأنت تحتفظ بهذه الصفقة؟' },
+  { key: 'original_thesis',  required: false,
+    q:  'What made you take this trade in the first place?',
+    ur: 'آپ نے یہ ٹریڈ اصل میں کس وجہ سے لی تھی؟',
+    ar: 'ما الذي دفعك لدخول هذه الصفقة في الأساس؟' },
   { key: 'take_profit',      required: false,
     q:  'Do you have a **Take Profit** target set? If yes, at what price?',
     ur: 'کیا کوئی **Take Profit** target مقرر ہے؟ اگر ہاں تو کس price پر؟',
@@ -323,14 +349,6 @@ export const QUESTIONS = [
     q:  'Which timeframe did you take the entry on (M15, H1, H4, D1…)?',
     ur: 'آپ نے entry کس timeframe پر لی تھی (M15، H1، H4، D1…)؟',
     ar: 'على أي timeframe دخلت الصفقة (M15، H1، H4، D1…)؟' },
-  { key: 'original_thesis',  required: false,
-    q:  'What was your original reason for entering this trade?',
-    ur: 'اس ٹریڈ میں داخل ہونے کی اصل وجہ کیا تھی؟',
-    ar: 'ما هو السبب الأصلي لدخولك هذه الصفقة؟' },
-  { key: 'holding_duration', required: false,
-    q:  'How long have you been holding it?',
-    ur: 'آپ اسے کتنے عرصے سے hold کیے ہوئے ہیں؟',
-    ar: 'منذ متى وأنت تحتفظ بهذه الصفقة؟' },
   { key: 'position_size',    required: false,
     q:  'Is this a normal position size for your account, or larger than usual?',
     ur: 'کیا یہ آپ کے account کے لیے normal position size ہے یا معمول سے بڑی؟',

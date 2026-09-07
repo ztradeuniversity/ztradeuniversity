@@ -127,7 +127,7 @@ function renderPage({ article, seo, related, widget, chips, images }) {
     ? `<section class="chips-section">
         <h2>Ask the AI Mentor</h2>
         <div class="chips-row">
-          ${chips.map(c => `<a class="chip" href="/ai-trade-assistant.html">${escapeHtml(c)}</a>`).join('\n')}
+          ${chips.map(c => `<a class="chip" href="/trade-rescue.html">${escapeHtml(c)}</a>`).join('\n')}
         </div>
       </section>`
     : '';

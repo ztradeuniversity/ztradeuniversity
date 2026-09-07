@@ -2,7 +2,7 @@
    ZTU UNIFIED PREMIUM ACCESS CARD — single shared component  (Phase 4B Ext.)
    File: /assets/ztu-premium-card.js
 
-   ONE access wall reused by Trading Journal, AI Trading Assistant and Library.
+   ONE access wall reused by Trading Journal, ZTU Rescue and Library.
    No surface keeps its own access markup. Verification reuses the existing
    unified gate (/api/journal-access → library-auth → ib_stars_active /
    special_access). No new access logic, no new tables.
@@ -168,7 +168,7 @@
   }
 
   function waLink() {
-    var msg = encodeURIComponent('Hi ZTU — I need help with premium access to the Trading Journal / Library / AI Assistant.');
+    var msg = encodeURIComponent('Hi ZTU — I need help with premium access to the Trading Journal / Library / ZTU Rescue.');
     return 'https://wa.me/' + CFG.WHATSAPP_SUPPORT_NUMBER + '?text=' + msg;
   }
 
@@ -199,7 +199,7 @@
     +     '<div class="zpc-feat"><span class="ic">🧠</span><span class="lbl">Psychology Analysis</span></div>'
     +     '<div class="zpc-feat"><span class="ic">📊</span><span class="lbl">Performance Reports</span></div>'
     +   '</div></div>'
-    +   '<div class="zpc-pcard"><h4>AI Assistant</h4><div class="feats">'
+    +   '<div class="zpc-pcard"><h4>ZTU Rescue</h4><div class="feats">'
     +     '<div class="zpc-feat"><span class="ic">🤖</span><span class="lbl">Unlimited AI</span></div>'
     +     '<div class="zpc-feat"><span class="ic">🎯</span><span class="lbl">Trade Guidance</span></div>'
     +     '<div class="zpc-feat"><span class="ic">📚</span><span class="lbl">Market Learning</span></div>'
