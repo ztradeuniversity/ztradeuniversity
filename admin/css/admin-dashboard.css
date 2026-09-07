@@ -1604,6 +1604,46 @@ html, body {
 }
 .stat-value--ok { color: var(--color-success); font-size: 18px; }
 
+/* Clickable summary cards — each card opens the real records behind its number.
+   Affordance only; the existing card layout/colours are untouched. */
+.stat-card--clickable { cursor: pointer; }
+.stat-card--clickable:hover { border-color: rgba(99,102,241,0.45); }
+.stat-card--clickable:focus-visible {
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: 2px;
+}
+.stat-card--clickable.is-active {
+  border-color: rgba(99,102,241,0.65);
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.35), var(--shadow-card);
+}
+
+/* Drill-down chip above the Recent Requests table */
+.stat-detail-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  background: rgba(99,102,241,0.07);
+  border: 1px solid rgba(99,102,241,0.22);
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  color: var(--color-text);
+}
+.stat-detail-chip__text { font-weight: 500; }
+.stat-detail-chip__clear {
+  background: transparent;
+  border: 1px solid rgba(99,102,241,0.35);
+  color: var(--color-primary, #6366f1);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.stat-detail-chip__clear:hover { background: rgba(99,102,241,0.12); }
+
 
 /* ════════════════════════════════════════════════════════════════
    INFO PANEL (match status explainer)

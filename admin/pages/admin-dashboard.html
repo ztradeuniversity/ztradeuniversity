@@ -222,6 +222,16 @@
 
         <div class="nav-divider"></div>
 
+        <!-- Your Brokers — the broker names offered on the public License
+             Request form. Historical requests keep their own broker value. -->
+        <a href="#" class="nav-item" data-section="brokers" data-label="Your Brokers">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7.5h14M3 7.5l1.5-3.5h11L17 7.5M3 7.5V16h14V7.5"/>
+            <path d="M8 16v-4h4v4"/>
+          </svg>
+          Your Brokers
+        </a>
+
         <a href="#" class="nav-item" data-section="templates" data-label="Templates">
           <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3.5" y="2" width="13" height="16" rx="1.5"/>
@@ -339,7 +349,7 @@
           <!-- Stat Cards -->
           <div class="stat-grid">
 
-            <div class="stat-card">
+            <div class="stat-card stat-card--clickable" data-stat-card="total" role="button" tabindex="0" aria-label="Show the records behind Total Requests">
               <div class="stat-icon stat-icon--blue">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
                   <path d="M3 5h14M3 10h10M3 15h12"/>
@@ -351,7 +361,7 @@
               </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card stat-card--clickable" data-stat-card="waiting" role="button" tabindex="0" aria-label="Show the records behind Waiting for Match">
               <div class="stat-icon stat-icon--amber">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
                   <circle cx="9" cy="9" r="5.5"/>
@@ -364,7 +374,7 @@
               </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card stat-card--clickable" data-stat-card="compile" role="button" tabindex="0" aria-label="Show the records behind Ready to Compile">
               <div class="stat-icon stat-icon--purple">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
                   <circle cx="10" cy="10" r="2.5"/>
@@ -377,7 +387,7 @@
               </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card stat-card--clickable" data-stat-card="delivered" role="button" tabindex="0" aria-label="Show the records behind Delivered">
               <div class="stat-icon stat-icon--green">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
                   <path d="M2 8.5l8-5 8 5v7.5a1 1 0 01-1 1H3a1 1 0 01-1-1V8.5z"/>
@@ -390,7 +400,7 @@
               </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card stat-card--clickable" data-stat-card="health" role="button" tabindex="0" aria-label="Open the System Status page">
               <div class="stat-icon stat-icon--green">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
                   <path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.2 5.2l1.4 1.4M13.4 13.4l1.4 1.4"/>
@@ -444,6 +454,13 @@
                   <option value="rejected">Match Not Found</option>
                 </select>
               </div>
+            </div>
+            <!-- Stat-card drill-down chip — shows which summary card is driving
+                 the rows below, so the number and the records can never disagree
+                 silently. Hidden until a stat card is clicked. -->
+            <div class="stat-detail-chip" id="statDetailChip" hidden>
+              <span class="stat-detail-chip__text" id="statDetailChipText"></span>
+              <button type="button" class="stat-detail-chip__clear" id="statDetailChipClear">Show all</button>
             </div>
             <!-- Fetch indicator — shown briefly while loadData() runs -->
             <div class="table-fetch-state" id="tableFetchState" hidden>
@@ -1251,6 +1268,49 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
+             Your Brokers — the broker options offered on the public
+             License Request form. Reuses the Special Access layout
+             pattern so it inherits the existing dashboard styling.
+        ═══════════════════════════════════════════════════════════ -->
+        <section class="dash-section" id="section-brokers">
+          <div class="section-intro">
+            <h2 class="section-heading">Your Brokers</h2>
+            <p class="section-sub">The broker list shown on the public <strong>License Request</strong> form. Add a broker and it appears in the public selector immediately — no code change and no deploy. Disabling a broker only removes it from <strong>new</strong> submissions: every existing request keeps the broker it was submitted with, and matching, compiling and delivery are unaffected. Names are matched case-insensitively, so <code>Exness</code> and <code>exness</code> are the same broker.</p>
+          </div>
+
+          <div class="ib-changed-search">
+            <div class="ib-changed-search-hdr">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+                <path d="M3 7.5h14M3 7.5l1.5-3.5h11L17 7.5M3 7.5V16h14V7.5"/>
+              </svg>
+              <span>Add Broker</span>
+            </div>
+            <div class="ib-changed-search-row">
+              <input type="text" id="brokerNameInput" placeholder="broker name (e.g. XM)" class="ib-changed-search-input" autocomplete="off" maxlength="60" />
+              <button class="ib-changed-search-btn" id="brokerAddBtn" type="button">Add Broker</button>
+            </div>
+            <div class="ib-changed-search-result" id="brokerAddResult" hidden></div>
+          </div>
+
+          <div class="intake-queue" id="brokersWrap">
+            <div class="intake-queue-header">
+              <h3 class="intake-queue-title">Brokers</h3>
+              <span class="intake-queue-count" id="brokerListCount">0</span>
+              <div class="intake-queue-actions">
+                <button class="iq-btn iq-btn--ghost" id="brokerListRefresh" type="button">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="intake-queue-panel" role="tabpanel">
+              <div class="ib-changed-col-labels" aria-hidden="true">
+                <span>Broker</span><span>Status</span><span>Added</span><span>Actions</span>
+              </div>
+              <div class="ib-changed-rows" id="brokerListBody"></div>
+              <p class="intake-queue-empty" id="brokerListEmpty" hidden>No brokers configured yet. Add one above.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════
              Phase 15.6 Task 6 — IB Changed Accounts
         ═══════════════════════════════════════════════════════════ -->
         <!-- Phase 16.2 Issue 4 — Blocked Clients section -->
@@ -1377,6 +1437,9 @@
                 </label>
                 <label style="font-size:11px;color:var(--color-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">
                   Broker <span style="color:#fca5a5">*</span>
+                  <!-- Fallback options only. Populated at runtime from the
+                       ACTIVE brokers in Your Brokers (table `brokers`) — edit
+                       the list there, not here. -->
                   <select id="createLicenseBroker" class="ib-changed-search-input" style="margin-top:4px">
                     <option value="">— select broker —</option>
                     <option value="Exness">Exness</option>
@@ -2433,6 +2496,9 @@
   <!-- SheetJS (xlsx) — client-side XLSX/CSV parsing, no server upload needed -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="../js/admin-auth-client.js"></script>
+  <!-- Shared broker-list reader/renderer (table `brokers`) — same module the
+       public License Request form uses, so the names live in one place. -->
+  <script src="/assets/ztu-brokers.js"></script>
   <script src="../js/admin-dashboard.js"></script>
 </body>
 </html>

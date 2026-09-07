@@ -668,6 +668,7 @@ const AdminDashboard = (() => {
     if (sectionId === 'ib-changed')        _renderIbChangedList();
     if (sectionId === 'blocked-clients')   _renderBlockedList();   // Phase 16.2 Issue 4
     if (sectionId === 'special-access')    _renderSpecialAccess(); // Path 2 — Special Access
+    if (sectionId === 'brokers')           _renderBrokers();       // Your Brokers — public form's broker list
     // Phase 13 — CRM sections
     if (sectionId === 'crm-active')    renderCrmActive();
     if (sectionId === 'crm-inactive')  renderCrmInactive();
@@ -749,6 +750,105 @@ const AdminDashboard = (() => {
     if (els.statWaiting)   els.statWaiting.textContent   = s.waiting;
     if (els.statCompile)   els.statCompile.textContent   = s.compile;
     if (els.statDelivered) els.statDelivered.textContent = s.delivered;
+  }
+
+
+  /* ═══════════════════════════════════════════════════════════
+     STAT CARD DRILL-DOWN — click a summary card, see its records
+     ──────────────────────────────────────────────────────────
+     Each card opens the REAL request records that produced its number.
+     The status groups below are the SAME expressions computeStats() uses,
+     read from the SAME State.requests array and rendered by the SAME
+     buildRow() the Recent Requests table already uses — so the number on a
+     card and the rows revealed by clicking it can never disagree, and no
+     summary data is duplicated or hardcoded.
+
+     'health' has no underlying request records (it is a service indicator,
+     not a count), so it opens the existing System Status section rather than
+     inventing a meaningless detail screen.
+  ══════════════════════════════════════════════════════════ */
+  const STAT_CARD_DETAIL = {
+    total:     { statuses: null,                             label: 'All requests' },
+    waiting:   { statuses: ['waiting_match', 'new_request'], label: 'Waiting for Match' },
+    compile:   { statuses: ['ready_compile', 'compiled'],    label: 'Ready to Compile' },
+    delivered: { statuses: ['delivered'],                    label: 'Delivered' },
+  };
+
+  /* Render the Recent Requests table from an explicit status GROUP.
+     Separate from renderTable() (which filters by the single <select> value)
+     so the existing filter contract is left exactly as it was. */
+  function renderTableByStatuses(statuses) {
+    if (!els.tableBody) return 0;
+    const rows = statuses
+      ? State.requests.filter(r => statuses.indexOf(r.status) !== -1)
+      : State.requests;
+    els.tableBody.innerHTML = rows.length ? rows.map(buildRow).join('') : buildEmptyState();
+    return rows.length;
+  }
+
+  function _statChipEls() {
+    return {
+      chip:  document.getElementById('statDetailChip'),
+      text:  document.getElementById('statDetailChipText'),
+      clear: document.getElementById('statDetailChipClear'),
+    };
+  }
+
+  /* Called by renderTable() so a normal filter change / post-action re-render
+     can never leave a stale drill-down chip claiming something else. */
+  function _clearStatDetailChip() {
+    const { chip } = _statChipEls();
+    if (chip) chip.hidden = true;
+    document.querySelectorAll('.stat-card--clickable.is-active')
+      .forEach(c => c.classList.remove('is-active'));
+  }
+
+  function showStatCardDetail(key) {
+    // System Health → the existing System Status section (no request records).
+    if (key === 'health') {
+      activateSection('status', 'System Status');
+      return;
+    }
+    const def = STAT_CARD_DETAIL[key];
+    if (!def) return;
+
+    const count = renderTableByStatuses(def.statuses);
+    const total = State.requests.length;
+
+    const { chip, text } = _statChipEls();
+    if (chip && text) {
+      text.textContent = def.statuses
+        ? `Showing ${count} ${count === 1 ? 'record' : 'records'} behind “${def.label}” (of ${total} total)`
+        : `Showing all ${count} ${count === 1 ? 'record' : 'records'}`;
+      chip.hidden = false;
+    }
+    document.querySelectorAll('.stat-card--clickable.is-active')
+      .forEach(c => c.classList.remove('is-active'));
+    const card = document.querySelector(`[data-stat-card="${key}"]`);
+    if (card) card.classList.add('is-active');
+
+    // Bring the records into view — the card sits above the table.
+    const tableCard = document.getElementById('requestTable');
+    if (tableCard && tableCard.scrollIntoView) {
+      tableCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function bindStatCards() {
+    document.querySelectorAll('[data-stat-card]').forEach(card => {
+      const key = card.dataset.statCard;
+      card.addEventListener('click', () => showStatCardDetail(key));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showStatCardDetail(key); }
+      });
+    });
+    const { clear } = _statChipEls();
+    if (clear) {
+      clear.addEventListener('click', () => {
+        if (els.tableFilter) els.tableFilter.value = 'all';
+        renderTable('all');   // renderTable() clears the chip itself
+      });
+    }
   }
 
 
@@ -884,6 +984,9 @@ const AdminDashboard = (() => {
 
   function renderTable(filter) {
     if (!els.tableBody) return;
+    // A filter change / post-action re-render supersedes any stat-card
+    // drill-down, so the chip can never describe rows that are no longer shown.
+    _clearStatDetailChip();
     filter = filter || 'all';
     const rows = filter === 'all'
       ? State.requests
@@ -7067,6 +7170,168 @@ const AdminDashboard = (() => {
      (lookupSpecialAccess) — this UI only manages the code↔email rows.
      Columns: id, special_code, email, is_active, notes, created_at.
                                                                      */
+  /* ═══════════════════════════════════════════════════════════
+     YOUR BROKERS — admin-managed broker list (table `brokers`)
+     ───────────────────────────────────────────────────────────
+     The broker names offered on the public License Request form. Reading and
+     rendering both go through the SHARED /assets/ztu-brokers.js module, which
+     the public form uses too, so the names live in exactly one place.
+
+     Disabling a broker sets is_active=false. That removes it from NEW
+     selectors ONLY — every license_requests row keeps its own broker_name, so
+     historical records, the dashboard's broker column, matching, compiling and
+     delivery are all untouched. There is deliberately no delete: the table has
+     no DELETE policy, so a broker can be retired but never destroyed.
+  ══════════════════════════════════════════════════════════ */
+  /* Every broker read/write goes through /api/brokers carrying the admin
+     session token. The browser NEVER touches the `brokers` table directly —
+     that table has no anon policies, so the public anon key can neither read
+     around this endpoint nor write to it. */
+  function _brokerApi(path, init) {
+    init = init || {};
+    const tok = (typeof AdminAuth !== 'undefined' && AdminAuth._token) ? AdminAuth._token : null;
+    init.headers = Object.assign({ 'Content-Type': 'application/json' }, init.headers || {},
+      tok ? { Authorization: 'Bearer ' + tok } : {});
+    return fetch('/api/brokers' + (path || ''), init);
+  }
+
+  async function _renderBrokers() {
+    const bodyEl = document.getElementById('brokerListBody');
+    const cntEl  = document.getElementById('brokerListCount');
+    const empEl  = document.getElementById('brokerListEmpty');
+    if (!bodyEl) return;
+    bodyEl.innerHTML = '<div class="ib-changed-row" style="opacity:.6"><span>Loading…</span></div>';
+    let rows = [];
+    try {
+      const resp = await _brokerApi('?all=1');
+      const body = await resp.json().catch(() => ({}));
+      if (body.configured === false || body.error) {
+        bodyEl.innerHTML = '';
+        if (empEl) {
+          empEl.hidden = false;
+          const detail = String(body.detail || body.error || body.note || '');
+          empEl.textContent = /PGRST205|does not exist|schema cache/i.test(detail)
+            ? 'brokers table missing — run supabase/brokers-table.sql in the SQL editor. The public form is still using its built-in fallback list until then.'
+            : (body.configured === false
+                ? 'Broker store not connected — EA_SUPABASE_URL / EA_SUPABASE_SERVICE_KEY are not set.'
+                : 'Load failed: ' + detail);
+        }
+        console.error('[Brokers] load failed:', body);
+        return;
+      }
+      rows = Array.isArray(body.brokers) ? body.brokers : [];
+    } catch (e) {
+      bodyEl.innerHTML = '';
+      if (empEl) { empEl.hidden = false; empEl.textContent = 'Load exception: ' + (e.message || e); }
+      return;
+    }
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (rows.length === 0) {
+      bodyEl.innerHTML = '';
+      if (empEl) { empEl.hidden = false; empEl.textContent = 'No brokers configured yet. Add one above.'; }
+      return;
+    }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const dt = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
+      const active = !!r.is_active;
+      const statusPill = active
+        ? '<span style="color:#22c55e;font-weight:700">● Active</span>'
+        : '<span style="color:#9ca3af;font-weight:700">○ Hidden from new requests</span>';
+      const toggleBtn = active
+        ? `<button class="iq-btn iq-btn--action" data-broker-toggle="${esc(r.id)}" data-broker-to="0" type="button" title="Stop offering this broker on new License Requests. Existing requests keep their broker." style="background:rgba(156,163,175,0.16);border-color:rgba(156,163,175,0.45);color:#9ca3af">Disable</button>`
+        : `<button class="iq-btn iq-btn--action" data-broker-toggle="${esc(r.id)}" data-broker-to="1" type="button" title="Offer this broker again on new License Requests" style="background:rgba(34,197,94,0.16);border-color:rgba(34,197,94,0.45);color:#22c55e">Enable</button>`;
+      return `<div class="ib-changed-row">
+        <span class="ib-changed-acct">${esc(r.name)}</span>
+        <span>${statusPill}</span>
+        <span>${esc(dt)}</span>
+        <span>${toggleBtn}</span>
+      </div>`;
+    }).join('');
+
+    bodyEl.querySelectorAll('[data-broker-toggle]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const id = btn.dataset.brokerToggle;
+        const to = btn.dataset.brokerTo === '1';
+        try {
+          const resp = await _brokerApi('', { method: 'POST', body: JSON.stringify({ action: 'set-active', id, active: to }) });
+          const body = await resp.json().catch(() => ({}));
+          if (!body.ok) throw new Error(body.message || body.detail || body.error || ('HTTP ' + resp.status));
+          showToast(to ? 'Broker enabled — it will appear on new License Requests.'
+                       : 'Broker disabled — hidden from new License Requests. Existing requests are unchanged.', 'success');
+          _renderBrokers();
+          _populateCreateLicenseBroker();
+        } catch (e) {
+          showToast('Could not update broker: ' + (e.message || e), 'error');
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  /* Add a broker. Case/whitespace-insensitive duplicate handling: an existing
+     row with the same normalized name is REACTIVATED rather than duplicated,
+     which also matches the table's lower(btrim(name)) unique index. */
+  async function _brokerAdd() {
+    const inp = document.getElementById('brokerNameInput');
+    const btn = document.getElementById('brokerAddBtn');
+    const out = document.getElementById('brokerAddResult');
+    if (!inp || !btn) return;
+    const say = (msg, ok) => {
+      if (!out) return;
+      out.hidden = false;
+      out.textContent = msg;
+      out.style.color = ok ? '#22c55e' : '#fca5a5';
+    };
+    const N = window.ZTUBrokers;
+    const raw  = inp.value;
+    const name = N ? N.normalize(raw) : String(raw || '').trim().replace(/\s+/g, ' ');
+    if (!name)            { say('Enter a broker name.', false); return; }
+    if (name.length > 60) { say('Broker name is too long (max 60 characters).', false); return; }
+
+    btn.disabled = true;
+    try {
+      // Duplicate detection, normalization and re-enable-vs-insert all happen
+      // SERVER-SIDE in /api/brokers — the client never decides what is written.
+      const resp = await _brokerApi('', { method: 'POST', body: JSON.stringify({ action: 'add', name }) });
+      const body = await resp.json().catch(() => ({}));
+      if (resp.status === 403) { say('Admin session expired — reload and sign in again.', false); btn.disabled = false; return; }
+      if (!body.ok) {
+        say(body.message || body.detail || body.error || ('HTTP ' + resp.status), false);
+        if (body.error === 'duplicate') _renderBrokers();
+        btn.disabled = false;
+        return;
+      }
+      say(body.message || 'Saved.', true);
+      inp.value = '';
+      _renderBrokers();
+      _populateCreateLicenseBroker();
+    } catch (e) {
+      say('Could not save broker: ' + (e.message || e), false);
+    }
+    btn.disabled = false;
+  }
+
+  /* Fill the Create License Request modal's broker <select> from the same
+     ACTIVE admin-managed list the public form uses. Falls back to the shared
+     built-in list if the table cannot be read, so the modal always works. */
+  async function _populateCreateLicenseBroker() {
+    const sel = document.getElementById('createLicenseBroker');
+    if (!sel || !window.ZTUBrokers) return;
+    const r = await window.ZTUBrokers.load();   // active brokers only, via /api/brokers
+    window.ZTUBrokers.populate(sel, r.names, { placeholder: '— select broker —', keepValue: true });
+  }
+
+  function bindBrokers() {
+    const addBtn = document.getElementById('brokerAddBtn');
+    const refBtn = document.getElementById('brokerListRefresh');
+    const inp    = document.getElementById('brokerNameInput');
+    if (addBtn) addBtn.addEventListener('click', _brokerAdd);
+    if (refBtn) refBtn.addEventListener('click', _renderBrokers);
+    if (inp)    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); _brokerAdd(); } });
+  }
+
   async function _renderSpecialAccess() {
     const bodyEl = document.getElementById('saListBody');
     const cntEl  = document.getElementById('saListCount');
@@ -7742,18 +8007,35 @@ const AdminDashboard = (() => {
             body_html:         ackBodyHtml,
             body_text:         'Your license request has been received successfully. Your account is not yet present in our latest broker report. The system will automatically re-check future broker uploads for up to 48 hours.',
           };
+          // Same defect the public form had: license_requests.id is BIGINT but
+          // the live email_outbox.request_id column is UUID, so attaching the id
+          // made this INSERT fail 22P02 and no ack row was created — silently,
+          // because supabase-js returns {data,error} rather than throwing.
+          // Attempt with the link, retry once without it on a type error, and
+          // only stamp ack_email_sent_at when a row was really created.
           if (insertedId) ackRow.request_id = String(insertedId);
-          await supabaseClient.from('email_outbox').insert([ackRow]);
-          console.log('[Phase18.3 admin] ack email queued for', email);
-          // Phase 18.4 — mark single-shot.
-          try {
-            if (insertedId) {
-              await supabaseClient
-                .from(DB_SCHEMA.TABLE)
-                .update({ ack_email_sent_at: new Date().toISOString() })
-                .eq('id', insertedId);
+          let ackIns = await supabaseClient.from('email_outbox').insert([ackRow]);
+          if (ackIns.error && ackRow.request_id !== undefined) {
+            const em = String(ackIns.error.message || '').toLowerCase();
+            if (String(ackIns.error.code || '') === '22P02' || em.indexOf('invalid input syntax') !== -1 || em.indexOf('uuid') !== -1) {
+              delete ackRow.request_id;
+              ackIns = await supabaseClient.from('email_outbox').insert([ackRow]);
             }
-          } catch (_) { /* column-missing soft-fail */ }
+          }
+          if (ackIns.error) {
+            console.error('[Phase18.3 admin] ack email NOT queued for', email, '—', ackIns.error.message || ackIns.error);
+          } else {
+            console.log('[Phase18.3 admin] ack email queued for', email);
+            // Phase 18.4 — mark single-shot.
+            try {
+              if (insertedId) {
+                await supabaseClient
+                  .from(DB_SCHEMA.TABLE)
+                  .update({ ack_email_sent_at: new Date().toISOString() })
+                  .eq('id', insertedId);
+              }
+            } catch (_) { /* column-missing soft-fail */ }
+          }
         }
       } catch (e) { console.warn('[Phase18.3 admin] ack email queue failed:', e); }
     }
@@ -11046,6 +11328,9 @@ const AdminDashboard = (() => {
 
     // Bind all interactive controls before first render
     bindFilter();
+    bindStatCards();         // summary cards → the real records behind each number
+    bindBrokers();           // Your Brokers — admin-managed public broker list
+    _populateCreateLicenseBroker();
     bindTableActions();
     bindRunBtn();
     bindResetBtn();

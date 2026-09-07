@@ -15,6 +15,10 @@
 
   <!-- Supabase JS via CDN (no framework, no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Admin-managed broker list (table `brokers`). One shared reader/renderer,
+       so broker names are never hardcoded per page. Falls back to the previous
+       five options if the table cannot be read, so the form always works. -->
+  <script src="/assets/ztu-brokers.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -779,6 +783,11 @@
         <!-- EXTENSION — Broker Name (required dropdown) -->
         <div class="lic-field" id="field-broker">
           <label for="lic-broker">Broker Name <span class="lic-req">*</span></label>
+          <!-- These options are a NO-JS / DB-unavailable fallback only. At
+               runtime refreshBrokerOptions() replaces them with the ACTIVE
+               brokers from Admin Dashboard → Your Brokers (table `brokers`),
+               which is the authoritative list. Do not edit broker names here
+               to add or remove a broker — do it in the dashboard. -->
           <select id="lic-broker" name="broker_name" required>
             <option value="" disabled selected hidden>Select your broker</option>
             <option value="Exness">Exness</option>
@@ -995,6 +1004,31 @@ const brokerInput   = document.getElementById('lic-broker');  /* EXTENSION — b
 const whatsappCcInput    = document.getElementById('lic-whatsapp-cc');
 const whatsappLocalInput = document.getElementById('lic-whatsapp-local');
 const licPhoneHint       = document.getElementById('licPhoneHint');
+
+/* ── ADMIN-MANAGED BROKER LIST ────────────────────────────────────────────
+   The <select> in the markup ships with the historical five options so the
+   form is usable before this script runs and if the database is unreachable.
+   Here they are replaced by the ACTIVE brokers the administrator manages in
+   Admin Dashboard → Your Brokers (table `brokers`). Submit-time validation
+   reads ACTIVE_BROKERS below rather than a hardcoded array, so adding a broker
+   in the dashboard needs no code change. ZTUBrokers.load() never throws and
+   never returns an empty list — on any failure it yields the same five options
+   the markup already had, so the public form can never end up unusable.      */
+let ACTIVE_BROKERS = (window.ZTUBrokers ? window.ZTUBrokers.FALLBACK_BROKERS.slice() : []);
+async function refreshBrokerOptions() {
+  if (!window.ZTUBrokers || !brokerInput) return;
+  const r = await window.ZTUBrokers.load();   // active brokers only, via /api/brokers
+  ACTIVE_BROKERS = r.names;
+  window.ZTUBrokers.populate(brokerInput, r.names, {
+    placeholder: 'Select your broker',
+    hidePlaceholder: true,
+    keepValue: true
+  });
+  if (r.source !== 'db') {
+    console.warn('[license-request] broker list fell back to the built-in options —', r.error);
+  }
+}
+refreshBrokerOptions();
 
 /* ── Phase 13.6 — Country dial-code directory ─────────────────────────────
    id    — ISO 3166-1 alpha-2 (used as <option value>)
@@ -1342,21 +1376,35 @@ form.addEventListener('submit', async function (e) {
   /* 1. Validate ---------------------------------------- */
   const account  = accountInput.value.trim();
   const email    = emailInput.value.trim();
-  const broker   = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION */
+  let   broker   = brokerInput ? brokerInput.value.trim() : '';   /* EXTENSION — canonicalized below */
   let   whatsapp = '';   /* Phase 13.6 — combined from country + local in validation block */
   /* Phase 16.8 — Screenshot file requirement removed. */
 
-  /* Whitelist of valid broker values matches the dropdown <option>s — guards against
-     manually-tampered form values. */
-  const ALLOWED_BROKERS = ['Exness', 'HFM', 'Pepperstone', 'IC Markets', 'Other'];
+  /* Whitelist of valid broker values — now the ACTIVE admin-managed list
+     (Admin Dashboard → Your Brokers) rather than a hardcoded array, so a broker
+     added there is accepted with no code change and a disabled one stops being
+     accepted for NEW submissions. Compared case/whitespace-insensitively via
+     ZTUBrokers.key(), matching the table's lower(btrim(name)) unique index.
+     Still guards against manually-tampered form values. */
+  const ALLOWED_BROKERS = ACTIVE_BROKERS;
 
   let ok = true;
   if (!account)         { markFieldError('account'); ok = false; }
   if (!email)           { markFieldError('email', 'Please enter your email address.'); ok = false; }
   else if (!validEmail(email)) { markFieldError('email', 'Please enter a valid email address.'); ok = false; }
-  if (!broker || ALLOWED_BROKERS.indexOf(broker) === -1) {
+  const _brokerKey = window.ZTUBrokers ? window.ZTUBrokers.key : (s => String(s || '').trim().toLowerCase());
+  const _brokerMatch = broker
+    ? ALLOWED_BROKERS.find(b => _brokerKey(b) === _brokerKey(broker))
+    : null;
+  if (!_brokerMatch) {
     markFieldError('broker', 'Please choose your broker from the list.');
     ok = false;
+  } else {
+    /* Store the administrator's chosen spelling, not whatever casing/spacing
+       arrived in the form — so license_requests.broker_name is always the
+       canonical name from Your Brokers and reports never split one broker
+       across "Exness" / "exness" / " EXNESS ". */
+    broker = _brokerMatch;
   }
   /* Phase 13.6 — WhatsApp: build combined international number from selector + local input */
   {
@@ -1469,6 +1517,83 @@ form.addEventListener('submit', async function (e) {
       console.warn('[Submit] duplicate check failed, continuing:', e);
     }
 
+    /* ════════════════════════════════════════════════════════════════════
+       ACTIVE-CYCLE DUPLICATE GUARD — one open submission per account+email
+       ────────────────────────────────────────────────────────────────────
+       WHY THIS EXISTS: the Phase 16.1 guard above only blocks when a prior
+       request already reached 'emailed'/'delivered'. A prior request that is
+       still being PROCESSED matched nothing, so the same person could submit
+       the same account + email again and again while their first request was
+       still open — each resubmission creating another license_requests row,
+       another ack email, and another not-found email. (Observed in live data:
+       two rows for account 256887256 / ra1717345@gmail.com, 2026-08-25 and
+       2026-08-27; the first was still 'pending' when the second was created.)
+
+       RULE: block only while a prior request for the SAME account_number and
+       the SAME email is still inside its active processing cycle.
+         · pending / matched / compile_ready / compiled (+ legacy aliases)
+             → still open, the outcome has not been communicated → BLOCK.
+         · emailed / delivered → handled by the Phase 16.1 guard above.
+         · unmatched / rejected → the 48-hour window closed and the customer
+             was told the outcome, so a fresh attempt is legitimate → ALLOW.
+
+       STALE-PENDING VALVE: the 'pending' → 'unmatched' sweep runs in the admin
+       dashboard (RETRY_POOL_MAX_DAYS = 2 days, admin-dashboard.js), so it only
+       runs when an admin opens it. A 'pending' row older than twice that window
+       is treated as abandoned rather than active — otherwise a stalled sweep
+       would lock a real customer out permanently. Rows already moving through
+       the compile/delivery pipeline block regardless of age, because they will
+       still produce a delivery.
+
+       Matching is done on account_number in SQL (exact) and on email in JS
+       (trimmed + lower-cased) rather than with ilike, because '_' and '%' are
+       LIKE wildcards and an address such as john_doe@gmail.com would otherwise
+       match a different person's email.
+
+       On a hit: NO license_requests row, NO email_outbox row, NO engine
+       trigger — the submission is stopped before any of them.
+    ════════════════════════════════════════════════════════════════════ */
+    var ACTIVE_CYCLE_STATUSES = ['pending', 'matched', 'compile_ready', 'compiled', 'approved', 'compiling'];
+    var RETRY_WINDOW_MS       = 2 * 24 * 60 * 60 * 1000;   // 48 h — mirrors RETRY_POOL_MAX_DAYS
+    var STALE_PENDING_MS      = 2 * RETRY_WINDOW_MS;       // abandoned-row valve
+    try {
+      var emailNorm = String(email || '').trim().toLowerCase();
+      var activeResp = await supabaseClient
+        .from(TABLE_NAME)
+        .select('id, status, email, created_at')
+        .eq('account_number', account)
+        .in('status', ACTIVE_CYCLE_STATUSES)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      var openRow = null;
+      if (!activeResp.error && Array.isArray(activeResp.data)) {
+        for (var i = 0; i < activeResp.data.length; i++) {
+          var row = activeResp.data[i];
+          if (String(row.email || '').trim().toLowerCase() !== emailNorm) continue;
+          var ageMs = Date.now() - new Date(row.created_at).getTime();
+          var isPending = (row.status === 'pending');
+          if (isPending && ageMs > STALE_PENDING_MS) continue;   // abandoned — allow a fresh attempt
+          openRow = row;
+          break;
+        }
+      }
+
+      if (openRow) {
+        showToast(
+          'info',
+          'You have already submitted this account',
+          'We already have a request for this account number and email, and it is still being processed. Please wait 48 hours — you will receive an email as soon as your submission has been processed. There is no need to submit again.'
+        );
+        console.log('[Submit] duplicate blocked — open request id=' + openRow.id + ' status=' + openRow.status);
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+        return;   // STOP — no row, no email, no trigger.
+      }
+    } catch (e) {
+      console.warn('[Submit] active-cycle duplicate check failed, continuing:', e);
+    }
+
     /* Phase 16.8 — Screenshot upload + Storage step removed.
        Verification now runs entirely through the broker partner report.
        The license_requests row no longer carries screenshot_url. */
@@ -1520,6 +1645,28 @@ form.addEventListener('submit', async function (e) {
         const fallback = await supabaseClient.from(TABLE_NAME).insert([baseRow]);
         insertErr = fallback.error;
       }
+    }
+
+    /* Race-safe duplicate handling. The pre-insert guard above cannot stop two
+       submissions that arrive in the same instant from two different devices —
+       both read "no open request" before either row is written (verified: two
+       concurrent submits produced two rows). The only atomic defence is a
+       PARTIAL UNIQUE INDEX in Postgres, which is NOT applied by this change
+       (see the report — it needs your approval). If it IS added later, Postgres
+       rejects the losing insert with SQLSTATE 23505, and this branch turns that
+       into the same friendly duplicate message instead of a raw "Database
+       error". Harmless while no such index exists — 23505 simply never fires. */
+    if (insertErr && (String(insertErr.code || '') === '23505'
+        || /duplicate key value|unique constraint/i.test(String(insertErr.message || '')))) {
+      showToast(
+        'info',
+        'You have already submitted this account',
+        'We already have a request for this account number and email, and it is still being processed. Please wait 48 hours — you will receive an email as soon as your submission has been processed. There is no need to submit again.'
+      );
+      console.log('[Submit] duplicate blocked at the database (23505) — concurrent submission.');
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('is-loading');
+      return;   // STOP — no ack email, no engine trigger.
     }
 
     if (insertErr) throw new Error('Database error: ' + (insertErr.message || insertErr));
@@ -1637,20 +1784,69 @@ form.addEventListener('submit', async function (e) {
             body_html:         ackBodyHtml,
             body_text:         ackBodyText,
           };
+          /* ── ACK-EMAIL QUEUE — type-tolerant + honest about the result ──
+             ROOT CAUSE THIS FIXES: `request_id` was always attached as
+             String(license_requests.id). license_requests.id is BIGINT
+             (verified: ids 37-47), but the LIVE email_outbox.request_id column
+             is UUID (verified: PostgREST 22P02 "invalid input syntax for type
+             uuid"). A bigint id can never be a valid uuid, so this INSERT
+             returned HTTP 400 on every submission and NO acknowledgement email
+             was ever queued from this page. The failure was invisible because
+             supabase-js RETURNS {data,error} instead of throwing: the bare
+             `await` ignored it, the success line still logged, and
+             ack_email_sent_at was still stamped — so the row looked
+             acknowledged while nothing had been queued.
+
+             NOTE: the project's own documented migration (admin-dashboard.js,
+             "REQUIRED SUPABASE MIGRATION") specifies `request_id TEXT` —
+             "license_requests.id as text (UUID or numeric — works either way)".
+             The live column is uuid, so production diverges from the documented
+             design. supabase/email-outbox-request-id-type.sql realigns it.
+
+             Until that migration runs, the link is simply omitted rather than
+             losing the whole email: attempt WITH request_id, and on a type
+             error retry once WITHOUT it — the same graceful-cascade pattern the
+             license_requests insert above already uses for missing columns.
+             ack_email_sent_at is now stamped ONLY when a row was really
+             created, so the flag can never again claim an email that does not
+             exist. Reads the same _safeUuid-style tolerance the dashboard's
+             _insertEmailOutbox() already applies for this exact column.       */
           if (licenseRowId_18_3) ackRow.request_id = String(licenseRowId_18_3);
-          await supabaseClient.from('email_outbox').insert([ackRow]);
-          console.log('[Phase18.3] ack email queued for', email);
-          /* Phase 18.4 — mark the license_request so future broker uploads
-             and dashboard sweeps cannot queue a duplicate ack.  Soft-fail
-             if the column hasn't been migrated yet. */
-          try {
-            if (licenseRowId_18_3) {
-              await supabaseClient
-                .from(TABLE_NAME)
-                .update({ ack_email_sent_at: new Date().toISOString() })
-                .eq('id', licenseRowId_18_3);
+
+          let ackIns = await supabaseClient.from('email_outbox').insert([ackRow]);
+          if (ackIns.error && ackRow.request_id !== undefined) {
+            const em = String(ackIns.error.message || '').toLowerCase();
+            const ec = String(ackIns.error.code || '');
+            const looksLikeTypeMismatch =
+              ec === '22P02' || em.indexOf('invalid input syntax') !== -1 || em.indexOf('uuid') !== -1;
+            if (looksLikeTypeMismatch) {
+              console.warn('[Phase18.3] email_outbox.request_id rejected the license id (' +
+                (ackIns.error.message || ec) + ') — re-queuing the ack without the link. ' +
+                'Run supabase/email-outbox-request-id-type.sql to restore it.');
+              delete ackRow.request_id;
+              ackIns = await supabaseClient.from('email_outbox').insert([ackRow]);
             }
-          } catch (_) { /* column-missing soft-fail */ }
+          }
+
+          if (ackIns.error) {
+            /* Do NOT log success and do NOT stamp ack_email_sent_at — the row
+               was not created, and a false stamp would permanently suppress
+               the retry paths that would otherwise queue it later. */
+            console.error('[Phase18.3] ack email NOT queued for', email, '—', ackIns.error.message || ackIns.error);
+          } else {
+            console.log('[Phase18.3] ack email queued for', email);
+            /* Phase 18.4 — mark the license_request so future broker uploads
+               and dashboard sweeps cannot queue a duplicate ack.  Soft-fail
+               if the column hasn't been migrated yet. */
+            try {
+              if (licenseRowId_18_3) {
+                await supabaseClient
+                  .from(TABLE_NAME)
+                  .update({ ack_email_sent_at: new Date().toISOString() })
+                  .eq('id', licenseRowId_18_3);
+              }
+            } catch (_) { /* column-missing soft-fail */ }
+          }
         }
         }
       } catch (e) {
