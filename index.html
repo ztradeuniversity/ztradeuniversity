@@ -132,24 +132,26 @@
       box-shadow: 0 8px 20px rgba(247,147,26,0.32);
     }
     .head-cta { display: flex; align-items: center; gap: 12px; }
-    .head-cta-hint {
-      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-      max-width: 205px; padding-right: 2px; text-align: right; line-height: 1.3;
+    /* Premium compact CTA replacing the old sentence-style "Already joined
+       under our IB? Submit your License Request" link — now a proper
+       secondary button (icon + label), clearly a click target rather than a
+       line of prose. Kept visually secondary to .btn-signin (the primary
+       "How to Join Us" action) since License Request serves the narrower,
+       already-a-member audience. */
+    .btn-license {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 44px; padding: 0 18px; border-radius: 100px;
+      border: 1.5px solid var(--border); background: var(--surface); color: var(--heading);
+      font-size: 13.5px; font-weight: 700; white-space: nowrap; cursor: pointer;
+      transition: border-color .2s, color .2s, transform .2s, box-shadow .2s;
     }
-    .head-cta-hint span { font-size: 11px; color: var(--muted); }
-    .head-cta-hint a {
-      color: var(--heading); font-size: 11.5px; font-weight: 700;
-      cursor: pointer; text-decoration: underline;
-      text-decoration-color: rgba(247,147,26,.35); text-underline-offset: 2px;
-      transition: color .2s, text-decoration-color .2s;
+    .btn-license svg { color: var(--orange); flex-shrink: 0; }
+    .btn-license:hover, .btn-license:focus-visible {
+      border-color: var(--orange); color: var(--orange); transform: translateY(-1px); box-shadow: var(--shadow-sm);
     }
-    .head-cta-hint a::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 6px 2px 0; border-radius: 50%; background: var(--orange); }
-    .head-cta-hint a:hover { color: var(--orange); text-decoration-color: var(--orange); }
     @media (max-width: 1040px) {
       .head-cta { gap: 8px; }
-      .head-cta-hint { max-width: 150px; }
-      .head-cta-hint span { font-size: 10px; }
-      .head-cta-hint a { font-size: 10.5px; }
+      .btn-license { padding: 0 14px; font-size: 12.5px; }
     }
 
     .hamburger {
@@ -186,10 +188,10 @@
       color: var(--text); transition: background .18s, color .18s;
     }
     .mobile-panel a:hover { background: var(--orange-soft); color: var(--orange); }
-    /* Submit-License-Request CTA — the only mobile path to license-request.html
-       (the desktop-only .head-cta-hint is hidden below 760px); styled to stand
-       out from the plain nav links below it so it reads as an action, not a
-       destination. */
+    /* Submit-License-Request CTA — a text-labelled fallback path to
+       license-request.html alongside the header's own icon-only .btn-license
+       (which shrinks to icon-only below 760px); styled to stand out from the
+       plain nav links below it so it reads as an action, not a destination. */
     .mobile-panel a.mm-cta {
       color: var(--orange); background: var(--orange-soft);
       border: 1px solid rgba(247,147,26,.28); margin-bottom: 10px;
@@ -220,126 +222,15 @@
     .soc.fb:hover { color: #1877F2; border-color: #1877F2; }
     .soc.x:hover  { color: var(--heading); border-color: var(--heading); }
 
-    /* ── HERO ─────────────────────────────────────────────────── */
-    .hero { position: relative; overflow: hidden; padding: 46px 0 64px; }
-
-    /* chart decorations */
-    .hero-chart {
-      position: absolute; top: 12%; pointer-events: none; z-index: 0;
-      width: clamp(150px, 16vw, 260px); height: auto; opacity: .22;
-    }
-    .hero-chart.left  { left: 1.5%; }
-    .hero-chart.right { right: 1.5%; top: 8%; transform: scaleX(-1); }
-
-    .hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; text-align: center; }
-
-    /* Small, restrained descriptors above the hero title. */
-    .hero-tags {
-      display: flex; align-items: center; justify-content: center;
-      gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
-      font-size: 11px; font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--muted, #64748b);
-    }
-    .hero-tags i { width: 3px; height: 3px; border-radius: 50%; background: var(--orange); display: inline-block; }
-    @media (max-width: 420px) { .hero-tags { font-size: 9.5px; gap: 7px; } }
-
-    .hero-title {
-      font-family: 'Poppins','Inter',sans-serif;
-      font-weight: 800; letter-spacing: -1px; line-height: 1.02;
-      font-size: clamp(42px, 7.4vw, 64px);
-    }
-    .hero-title .ztu { color: var(--orange); }
-    .hero-title .ai  { color: var(--heading); }
-    .hero-subtitle {
-      font-family: 'Poppins','Inter',sans-serif;
-      font-weight: 700; color: var(--heading);
-      font-size: clamp(24px, 3.6vw, 32px);
-      margin-top: 6px; letter-spacing: -.3px;
-    }
-    .hero-underline {
-      width: 64px; height: 4px; border-radius: 3px;
-      background: var(--orange); margin: 18px auto 0;
-    }
-
-    /* ── CHAT BOX ──────────────────────────────────────────────── */
-    .chat-form {
-      margin: 38px auto 0; max-width: 720px;
-      display: flex; align-items: center; gap: 10px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 100px; padding: 9px 9px 9px 26px;
-      box-shadow: var(--shadow);
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .chat-form:focus-within { border-color: var(--orange); box-shadow: 0 10px 34px rgba(247,147,26,0.18); }
-    .chat-form input {
-      flex: 1; border: 0; outline: 0; background: transparent;
-      font-family: inherit; font-size: 16px; color: var(--text);
-      min-width: 0; padding: 12px 0;
-    }
-    .chat-form input::placeholder { color: var(--muted); }
-    .chat-send {
-      width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
-      border: 0; cursor: pointer;
-      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
-      color: #fff; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 18px rgba(247,147,26,0.4);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .chat-send:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 24px rgba(247,147,26,0.5); }
-    .chat-send svg { width: 21px; height: 21px; transform: translateX(1px); }
-
-    /* the outer .chat-form already shows focus via :focus-within — the inner
-       input must not draw its own outline (that created the double-box look) */
-    .chat-form input:focus,
-    .chat-form input:focus-visible { outline: none; box-shadow: none; border: 0; }
-
-    /* voice input (mic) + read aloud (speaker) */
-    .chat-tool {
-      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-      border: 0; background: transparent; cursor: pointer; color: var(--muted);
-      display: flex; align-items: center; justify-content: center;
-      transition: background .2s, color .2s, transform .2s;
-    }
-    .chat-tool svg { width: 19px; height: 19px; }
-    .chat-tool:hover { background: var(--orange-soft); color: var(--orange); }
-    .chat-tool.is-active { background: var(--orange-soft); color: var(--orange); }
-    .chat-tool.is-listening { animation: ztuPulse 1.3s ease-in-out infinite; }
-    @keyframes ztuPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(247,147,26,0.45); }
-      50%      { box-shadow: 0 0 0 7px rgba(247,147,26,0); }
-    }
-    @media (prefers-reduced-motion: reduce) { .chat-tool.is-listening { animation: none; } }
-    .chat-hint {
-      max-width: 720px; margin: 9px auto 0; text-align: center;
-      font-size: 13px; font-weight: 600; color: var(--muted); min-height: 18px;
-    }
-    .chat-hint.is-error { color: #dc2626; }
-
-    /* ── QUICK ACTIONS ─────────────────────────────────────────── */
-    .quick-actions {
-      margin: 22px auto 0; max-width: 720px;
-      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
-    }
-    .qa {
-      flex: 1 1 220px; max-width: 320px;
-      display: flex; align-items: center; gap: 12px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 15px 20px;
-      box-shadow: var(--shadow-sm);
-      transition: transform .2s, box-shadow .2s, border-color .2s;
-    }
-    .qa:hover { transform: translateY(-2px); border-color: var(--orange); box-shadow: var(--shadow); }
-    .qa .qa-ic { color: var(--orange); display: flex; flex-shrink: 0; }
-    .qa .qa-label { font-size: 15px; font-weight: 700; color: var(--heading); flex: 1; }
-    .qa .qa-arrow { color: var(--muted); display: flex; transition: transform .2s, color .2s; }
-    .qa:hover .qa-arrow { color: var(--orange); transform: translateX(3px); }
-
-    /* ── FUNCTION HUB (middle area) ────────────────────────────────
+    /* ── FUNCTION HUB (primary middle-area content) ──────────────────
        Three grouped sections — Learn & Improve · Market & Trading
-       Tools · IB Member Tools — a scannable directory of all nine
-       destinations, replacing the old three-card grid. Every .hub-card
-       is a single clickable unit: icon, name, one-line description,
-       arrow. */
+       Tools · IB Member Tools — a scannable directory of every
+       destination. Every .hub-card is a single clickable unit: icon,
+       name, one-line description, arrow. This is now the FIRST thing
+       after the social-media strip — the old hero/chatbot presentation
+       (ZTU Rescue title, chat input, mic/speaker, quick-actions row,
+       Journal promo card) has been removed; ZTU Rescue and the Journal
+       both still exist at their own destinations, linked from here. */
     .features { padding: 8px 0 64px; }
     .hub { padding: 8px 0 64px; }
     .hub-head { text-align: center; max-width: 640px; margin: 0 auto 40px; }
@@ -396,13 +287,29 @@
     .hub-arrow { color: var(--muted); flex-shrink: 0; margin-top: 10px; display: flex; transition: transform .22s ease, color .22s ease; }
     .hub-card:hover .hub-arrow { color: var(--orange); transform: translateX(3px); }
 
+    /* IB Member Tools — same card system, restrained gold differentiation:
+       a touch richer border and a slightly stronger glow on hover, nothing
+       louder than that, so all three groups still read as one coherent hub. */
+    .hub-card.is-ib { border-color: rgba(247,147,26,.22); }
+    .hub-card.is-ib .hub-ic { box-shadow: 0 0 0 3px rgba(247,147,26,.09); }
+    .hub-card.is-ib:hover, .hub-card.is-ib:focus-visible {
+      border-color: rgba(247,147,26,.6); box-shadow: 0 10px 26px rgba(247,147,26,.18);
+    }
+
+    /* Four cards (IB group only) — one extra column at full desktop width,
+       falling back to the same 2-/1-column breakpoints as the other groups. */
+    .hub-grid.is-quad { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 1040px) {
+      .hub-grid.is-quad { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .hub-sep { height: 1px; max-width: 1000px; margin: 34px auto; background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent); }
 
     @media (max-width: 780px) {
       .hub-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 560px) {
-      .hub-grid { grid-template-columns: 1fr; }
+      .hub-grid, .hub-grid.is-quad { grid-template-columns: 1fr; }
       .hub-sep { margin: 26px auto; }
       .hub-group-head { flex-direction: column; align-items: flex-start; gap: 6px; }
       .hub-head { margin-bottom: 32px; }
@@ -420,30 +327,18 @@
     /* ── RESPONSIVE ────────────────────────────────────────────── */
     @media (max-width: 860px) {
       .btn-signin span.si-label { display: inline; }
-      .hero-chart { opacity: .15; }
     }
     @media (max-width: 760px) {
       .hamburger { display: flex; }
       .brand-text b { font-size: 16px; }
       .head-inner { gap: 10px; }
-      .head-cta-hint { display: none; }
+      .btn-license { height: 42px; padding: 0 12px; }
+      .btn-license .bl-label { display: none; }
       .btn-signin { height: 42px; padding: 0 16px; font-size: 14px; }
       .theme-toggle { width: 42px; height: 42px; }
       .soc { width: 36px; height: 36px; }
       .soc svg { width: 16px; height: 16px; }
       .social-strip-inner { gap: 10px; }
-      .hero { padding: 32px 0 48px; }
-      .hero-chart { width: 100px; opacity: .12; }
-      .hero-chart.left { left: -10px; }
-      .hero-chart.right { right: -10px; }
-      .chat-form { padding: 7px 7px 7px 20px; }
-      .chat-form input { font-size: 15px; }
-      .chat-send { width: 48px; height: 48px; }
-      .chat-tool { width: 36px; height: 36px; }
-      .chat-tool svg { width: 17px; height: 17px; }
-      .chat-form { gap: 4px; }
-      .quick-actions { flex-direction: column; }
-      .qa { flex: none; width: 100%; max-width: none; }
     }
     @media (max-width: 600px) {
       .container { padding: 0 18px; }
@@ -453,7 +348,13 @@
       .brand { gap: 0; }
       .brand-text { display: none; }
       .head-right, .head-cta { gap: 6px; }
-      .btn-signin { padding: 0 6px; font-size: 12px; }
+      .btn-license { padding: 0 10px; }
+      /* At this width four controls (language, theme, license, join) is too
+         tight for "How to Join Us" as full text without overflowing — drop to
+         icon-only here, same pattern already used for the language chip and
+         .btn-license; aria-label keeps the full accessible name. */
+      .btn-signin { padding: 0 11px; }
+      .btn-signin span.si-label { display: none; }
     }
     @media (max-width: 380px) {
       .brand-text span { letter-spacing: 2.5px; }
@@ -535,45 +436,6 @@
       .ib-benefits { grid-template-columns: 1fr; }
       .ib-actions { flex-direction: column; }
       .ib-primary, .ib-secondary { justify-content: center; }
-    }
-
-    /* ── JOURNAL PROMO (premium feature card, UI only) ── */
-    .journal-promo {
-      max-width: 720px; margin: 22px auto 0; position: relative; overflow: hidden;
-      display: flex; align-items: center; gap: 22px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 26px 28px;
-      transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s, border-color .26s;
-    }
-    .journal-promo::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, transparent, var(--orange), transparent);
-    }
-    .journal-promo:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.4); }
-    .journal-ic {
-      width: 64px; height: 64px; border-radius: 18px; flex-shrink: 0;
-      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
-      display: flex; align-items: center; justify-content: center; color: var(--orange);
-    }
-    .journal-ic svg { width: 32px; height: 32px; }
-    .journal-body { text-align: left; }
-    .jp-badge {
-      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 11px;
-      padding: 5px 12px; border-radius: 100px;
-      font-family: 'Poppins','Inter',sans-serif; font-size: 10.5px; font-weight: 800;
-      letter-spacing: 1.4px; text-transform: uppercase;
-      color: var(--orange); background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.3);
-    }
-    .jp-badge svg { width: 12px; height: 12px; }
-    .journal-body h3 {
-      font-family: 'Poppins','Inter',sans-serif; font-size: 20px; font-weight: 700;
-      color: var(--heading); letter-spacing: -.3px; margin-bottom: 7px;
-    }
-    .journal-body p { font-size: 14.5px; color: var(--muted); max-width: 460px; }
-    @media (max-width: 600px) {
-      .journal-promo { flex-direction: column; text-align: center; gap: 16px; padding: 24px 20px; }
-      .journal-body { text-align: center; }
-      .journal-body p { margin: 0 auto; }
     }
 
     /* ── IB JOIN GUIDE (premium membership landing card) ── */
@@ -814,10 +676,10 @@
           <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
         <div class="head-cta">
-          <p class="head-cta-hint">
-            <span>Already joined under our IB?</span>
-            <a href="license-request.html">Submit your License Request</a>
-          </p>
+          <a href="license-request.html" class="btn-license" aria-label="Submit your License Request" title="Submit your License Request">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span class="bl-label">License Request</span>
+          </a>
           <a href="#how-to-join" id="signInBtn" class="btn-signin" aria-label="How to Join Us">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>
             <span class="si-label">How to Join Us</span>
@@ -878,99 +740,14 @@
     </div>
   </div>
 
-  <!-- ════════════════ HERO ════════════════ -->
-  <section class="hero notranslate" translate="no">
-    <!-- chart decorations (left & right) -->
-    <svg class="hero-chart left" viewBox="0 0 120 160" aria-hidden="true" fill="none">
-      <polyline points="6,150 26,120 46,128 66,86 86,96 112,40" stroke="#F7931A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
-      <g stroke-linecap="round">
-        <line x1="14" y1="96"  x2="14" y2="150" stroke="#F7931A" stroke-width="2"/><rect x="9"  y="110" width="10" height="30" rx="2" fill="#F7931A"/>
-        <line x1="36" y1="86"  x2="36" y2="138" stroke="#0F172A" stroke-width="2"/><rect x="31" y="98"  width="10" height="30" rx="2" fill="#0F172A"/>
-        <line x1="58" y1="66"  x2="58" y2="120" stroke="#F7931A" stroke-width="2"/><rect x="53" y="80"  width="10" height="30" rx="2" fill="#F7931A"/>
-        <line x1="80" y1="80"  x2="80" y2="128" stroke="#0F172A" stroke-width="2"/><rect x="75" y="92"  width="10" height="28" rx="2" fill="#0F172A"/>
-        <line x1="102" y1="34" x2="102" y2="96" stroke="#F7931A" stroke-width="2"/><rect x="97" y="48" width="10" height="36" rx="2" fill="#F7931A"/>
-      </g>
-    </svg>
-    <svg class="hero-chart right" viewBox="0 0 120 160" aria-hidden="true" fill="none">
-      <polyline points="6,150 26,120 46,128 66,86 86,96 112,40" stroke="#F7931A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
-      <g stroke-linecap="round">
-        <line x1="14" y1="96"  x2="14" y2="150" stroke="#F7931A" stroke-width="2"/><rect x="9"  y="110" width="10" height="30" rx="2" fill="#F7931A"/>
-        <line x1="36" y1="86"  x2="36" y2="138" stroke="#0F172A" stroke-width="2"/><rect x="31" y="98"  width="10" height="30" rx="2" fill="#0F172A"/>
-        <line x1="58" y1="66"  x2="58" y2="120" stroke="#F7931A" stroke-width="2"/><rect x="53" y="80"  width="10" height="30" rx="2" fill="#F7931A"/>
-        <line x1="80" y1="80"  x2="80" y2="128" stroke="#0F172A" stroke-width="2"/><rect x="75" y="92"  width="10" height="28" rx="2" fill="#0F172A"/>
-        <line x1="102" y1="34" x2="102" y2="96" stroke="#F7931A" stroke-width="2"/><rect x="97" y="48" width="10" height="36" rx="2" fill="#F7931A"/>
-      </g>
-    </svg>
-
-    <div class="container">
-      <div class="hero-inner">
-        <!-- ZTU Rescue is the only trading-assistance entry point. The former
-             general AI Assistant is retired; its URL now redirects here. -->
-        <div class="hero-tags" aria-label="What ZTU Rescue does">
-          <span>Data-Driven</span><i></i><span>Decision Support</span><i></i><span>Verified Data</span>
-        </div>
-        <h1 class="hero-title"><span class="ztu">ZTU</span> <span class="ai">Rescue</span></h1>
-        <div class="hero-subtitle">Trade Management &amp; Analysis</div>
-        <div class="hero-underline"></div>
-
-        <!-- CHAT BOX — wired to existing AI assistant -->
-        <form class="chat-form" id="chatForm" onsubmit="return goChat(event)" role="search">
-          <input id="homeChatInput" type="text" autocomplete="off"
-                 placeholder="Describe your open trade — instrument, entry, stop…" aria-label="Describe your open trade for ZTU Rescue" />
-          <button class="chat-tool" type="button" id="micBtn" hidden
-                  onclick="toggleMic()" aria-pressed="false" aria-label="Voice input" title="Voice input">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
-          </button>
-          <button class="chat-tool" type="button" id="speakBtn" hidden
-                  onclick="toggleSpeak()" aria-pressed="false" aria-label="Read aloud" title="Read aloud">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 9 8 9 13 5 13 19 8 15 4 15" fill="currentColor" stroke="none"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
-          </button>
-          <button class="chat-send" type="submit" aria-label="Send message">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg>
-          </button>
-        </form>
-        <p class="chat-hint" id="chatHint" role="status" aria-live="polite"></p>
-
-        <!-- QUICK ACTIONS -->
-        <div class="quick-actions">
-          <a class="qa" href="free-classes.html">
-            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span>
-            <span class="qa-label">Free Classes</span>
-            <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-          </a>
-          <a class="qa" href="signal-history.html">
-            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg></span>
-            <span class="qa-label">Signal History</span>
-            <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-          </a>
-          <a class="qa" href="articles.html">
-            <span class="qa-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <span class="qa-label">Read Articles</span>
-            <span class="qa-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-          </a>
-        </div>
-
-        <!-- TRADING JOURNAL PROMOTION — opens the public intro/landing page first,
-             NOT the app itself (trading-journal-intro.html explains the product,
-             then routes to journal.html via the existing premium session/OTP flow). -->
-        <a class="journal-promo" href="trading-journal-intro.html">
-          <div class="journal-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H18"/><path d="M9 7h5M9 11h5"/></svg>
-          </div>
-          <div class="journal-body">
-            <span class="jp-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16.5 13.5 18.5 21 12 16.5 5.5 21 7.5 13.5 2 9 9 9 12 2" fill="currentColor" stroke="none"/></svg>Premium</span>
-            <h3>Improve Your Trading with Our Journal</h3>
-            <p>Submit your trade history and receive mentor-guided feedback to identify weaknesses and continuously improve your trading performance.</p>
-          </div>
-        </a>
-      </div>
-    </div>
-  </section>
-
   <!-- ════════════════ FUNCTION HUB — Learn & Improve · Market & Trading Tools · IB Member Tools ════════════════
-       Nine destinations, grouped by purpose. Every link below points at an
+       The primary middle-area content — directly after the social strip, no
+       hero/chatbot presentation above it any more. ZTU Rescue and the Trading
+       Journal both still exist at their own destinations and are linked below;
+       only their old homepage hero/promo presentation was removed. Ten
+       destinations, grouped by purpose. Every link below points at an
        EXISTING route already used elsewhere on the site (trading-tools.html's
-       tool cards, the hero quick-actions, mt5-bot.html, library.html) —
+       tool cards, mt5-bot.html, library.html, trading-journal-intro.html) —
        nothing here is a new page, a new route, or a new system. -->
   <section class="hub notranslate" translate="no" aria-label="Explore Z Trade University">
     <div class="container">
@@ -978,7 +755,7 @@
       <div class="hub-head">
         <span class="hub-eyebrow">Everything in one place</span>
         <h2 class="hub-title">Explore Z Trade University</h2>
-        <p class="hub-sub"><b>9 tools</b> across 3 categories — learning, market tools, and IB member exclusives.</p>
+        <p class="hub-sub"><b>10 tools</b> across 3 categories — learning, market tools, and IB member exclusives.</p>
       </div>
 
       <!-- SECTION 1 · LEARN & IMPROVE -->
@@ -1060,10 +837,10 @@
             <span class="hub-ib-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Only for IB Members</span>
             <h3 class="hub-group-title">IB Member Tools</h3>
           </div>
-          <span class="hub-group-count">3 tools</span>
+          <span class="hub-group-count">4 tools</span>
         </div>
-        <div class="hub-grid">
-          <a class="hub-card" href="mt5-bot.html">
+        <div class="hub-grid is-quad">
+          <a class="hub-card is-ib" href="mt5-bot.html">
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg></span>
             <span class="hub-body">
               <span class="hub-name">Amplify Bot</span>
@@ -1071,7 +848,7 @@
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
-          <a class="hub-card" href="trade-rescue.html">
+          <a class="hub-card is-ib" href="trade-rescue.html">
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span>
             <span class="hub-body">
               <span class="hub-name">ZTU Rescue</span>
@@ -1079,11 +856,23 @@
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
-          <a class="hub-card" href="library.html">
+          <a class="hub-card is-ib" href="library.html">
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg></span>
             <span class="hub-body">
               <span class="hub-name">Library</span>
               <span class="hub-desc">Videos, Audios, Books.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <!-- "Trading General" — per the task's own naming; the underlying,
+               verified destination is trading-journal-intro.html (the Trading
+               Journal's existing public intro/landing page, previously
+               promoted only from the now-removed hero). -->
+          <a class="hub-card is-ib" href="trading-journal-intro.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H18"/><path d="M9 7h5M9 11h5"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Trading General</span>
+              <span class="hub-desc">Log your trades and get mentor-guided feedback to improve your overall trading.</span>
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
@@ -1302,127 +1091,6 @@
       if (e.target === this) toggleMenu();
     });
 
-
-    /* ── Chat box → ZTU Rescue (prefills + auto-sends) ──
-       The ?q=…&send=1 contract is unchanged — trade-rescue.html accepts the
-       same parameters the assistant did, so any existing link or bookmark of
-       that shape keeps working. */
-    function goChat(e) {
-      if (e) e.preventDefault();
-      var v = document.getElementById('homeChatInput').value.trim();
-      var url = 'trade-rescue.html';
-      if (v) url += '?q=' + encodeURIComponent(v) + '&send=1';
-      window.location.href = url;
-      return false;
-    }
-
-    /* ── Voice input (Web Speech API) — homepage only, no libraries ── */
-    (function () {
-      var input   = document.getElementById('homeChatInput');
-      var micBtn  = document.getElementById('micBtn');
-      var hint    = document.getElementById('chatHint');
-      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR || !input || !micBtn) return;   /* unsupported → button stays hidden */
-
-      var rec = new SR();
-      rec.continuous = false;
-      rec.interimResults = true;
-      rec.lang = document.documentElement.lang || 'en-US';
-
-      var listening = false;
-      var baseText  = '';
-
-      function say(msg, isError) {
-        if (!hint) return;
-        hint.textContent = msg || '';
-        hint.classList.toggle('is-error', !!isError);
-      }
-      function setListening(on) {
-        listening = on;
-        micBtn.classList.toggle('is-active', on);
-        micBtn.classList.toggle('is-listening', on);
-        micBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-        micBtn.setAttribute('aria-label', on ? 'Stop voice input' : 'Voice input');
-      }
-
-      rec.onstart  = function () { setListening(true); say('Listening… speak now.'); };
-      rec.onend    = function () { setListening(false); };
-      rec.onresult = function (e) {
-        var text = '';
-        for (var i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
-        input.value = (baseText ? baseText + ' ' : '') + text.trim();
-        if (e.results[e.results.length - 1].isFinal) { say(''); input.focus(); }
-      };
-      rec.onerror = function (e) {
-        setListening(false);
-        var err = e && e.error;
-        if (err === 'not-allowed' || err === 'service-not-allowed') {
-          say('Microphone blocked. Allow mic access in your browser settings.', true);
-        } else if (err === 'no-speech') {
-          say('No speech detected. Tap the mic and try again.', true);
-        } else if (err === 'audio-capture') {
-          say('No microphone found.', true);
-        } else if (err !== 'aborted') {
-          say('Voice input is unavailable right now.', true);
-        } else { say(''); }
-      };
-
-      window.toggleMic = function () {
-        if (listening) { rec.stop(); say(''); return; }
-        baseText = input.value.trim();
-        try { rec.start(); }
-        catch (err) { /* already started */ }
-      };
-
-      micBtn.hidden = false;
-    })();
-
-    /* ── Read aloud (SpeechSynthesis) — speaks the real AI answer produced by
-          ZTU Rescue, which hands it over via sessionStorage ── */
-    (function () {
-      var input    = document.getElementById('homeChatInput');
-      var speakBtn = document.getElementById('speakBtn');
-      var hint     = document.getElementById('chatHint');
-      if (!('speechSynthesis' in window) || !input || !speakBtn) return;
-
-      function reset() {
-        speakBtn.classList.remove('is-active');
-        speakBtn.setAttribute('aria-pressed', 'false');
-        speakBtn.setAttribute('aria-label', 'Read aloud');
-      }
-
-      window.toggleSpeak = function () {
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-          window.speechSynthesis.cancel(); reset();
-          if (hint) { hint.textContent = ''; hint.classList.remove('is-error'); }
-          return;
-        }
-        /* the real AI answer, handed over by ZTU Rescue */
-        var text = '', lang = '';
-        try {
-          text = (sessionStorage.getItem('ztuLastAnswer') || '').trim();
-          lang = (sessionStorage.getItem('ztuLastAnswerLang') || '').trim();
-        } catch (err) {}
-        if (!text) {
-          if (hint) {
-            hint.textContent = 'No AI answer to read yet — ask a question first, then come back and tap the speaker.';
-            hint.classList.add('is-error');
-          }
-          return;
-        }
-        var u = new SpeechSynthesisUtterance(text);
-        u.lang = lang || document.documentElement.lang || 'en-US';
-        u.onend = reset;
-        u.onerror = reset;
-        speakBtn.classList.add('is-active');
-        speakBtn.setAttribute('aria-pressed', 'true');
-        speakBtn.setAttribute('aria-label', 'Stop reading');
-        window.speechSynthesis.speak(u);
-      };
-
-      window.addEventListener('beforeunload', function () { window.speechSynthesis.cancel(); });
-      speakBtn.hidden = false;
-    })();
 
     /* ── IB Partner modal (Sign In) ── */
     (function () {
