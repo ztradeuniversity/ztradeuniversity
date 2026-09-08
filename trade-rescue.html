@@ -64,12 +64,20 @@
   .scroll{flex:1;overflow-y:auto}
   .wrap{max-width:860px;margin:0 auto;padding:26px 22px 64px}
 
-  /* ── steps ── */
-  .steps{display:flex;gap:6px;margin-bottom:26px;flex-wrap:wrap}
-  .steps i{flex:1;min-width:34px;height:3px;border-radius:2px;background:var(--line);transition:.25s}
-  .steps i.done{background:var(--accent)}
-  .steps i.now{background:var(--accent);opacity:.45}
-  .stepNo{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent2);font-weight:700;margin-bottom:7px}
+  /* ── one-page sections ── */
+  .secHead{display:flex;align-items:center;gap:10px;margin:32px 0 13px;
+    font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .secHead::after{content:'';flex:1;height:1px;background:var(--line)}
+  .secNo{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;
+    background:var(--accent-soft);color:var(--accent2);font-size:10.5px;font-weight:800;letter-spacing:0}
+  .opt{font-weight:600;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);
+    background:var(--accent-soft);border-radius:5px;padding:1px 6px;margin-inline-start:5px}
+  .segs.slim button{padding:9px 14px;flex:0 0 auto;min-width:132px}
+  .segs.slim button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent2)}
+  .layers{margin-bottom:12px}
+  .tf{margin-bottom:16px}
+  .submitRow{margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+  .btn.big{width:100%;padding:15px 20px;font-size:15px;border-radius:12px}
   h1{font-size:25px;line-height:1.25;letter-spacing:-.02em;margin:0 0 8px}
   .lede{color:var(--muted);font-size:14.5px;margin:0 0 24px;max-width:62ch}
 
@@ -257,7 +265,6 @@
 
     <div class="scroll" id="scrollArea">
       <div class="wrap">
-        <div class="steps" id="steps" aria-hidden="true"></div>
         <div id="view"></div>
       </div>
     </div>
@@ -288,25 +295,27 @@ const LANG_KEY     = 'ztu_rescue_lang';
 const IDENTITY_KEY = 'ztu_ai_identity';      // the EXISTING shared identity token
 
 const $ = (id) => document.getElementById(id);
-const view = $('view'), stepsEl = $('steps'), histList = $('histList');
+const view = $('view'), histList = $('histList');
 const accBadge = $('accBadge'), verifyBtn = $('verifyBtn'), langSel = $('lang');
 const side = $('side'), scrim = $('scrim'), burger = $('burger');
 
 let tier = 'visitor', freeLimit = 5;
-let step = 0, busy = false, result = null;
+let busy = false, result = null;
 let C = newCase();
 
+/* Size is not asked for either: with no size the arithmetic runs on equal unit
+   weights, which is enough for direction, breakeven and per-layer contribution.
+   Asking for lots would add a field most traders would guess at. */
 function newCase() {
   return {
-    instrument: null, direction: null, multi: null,
+    instrument: null, direction: null, multi: false,
     layers: [blankLayer()],
     account: { starting_balance: '', current_balance: '', floating_pl: '' },
-    contractUnits: '',
-    context: { thesis: '', concern: '', horizon: '', hedged: '', confidence: '', note: '' },
+    context: { thesis: '', concern: '' },
   };
 }
 function blankLayer(dir) {
-  return { direction: dir || null, entry: '', size: '', opened_at: '', stop_loss: '', take_profit: '', purpose: '', note: '' };
+  return { direction: dir || null, entry: '', stop_loss: '', take_profit: '' };
 }
 
 /* ── i18n ─────────────────────────────────────────────────────────────────
@@ -314,102 +323,84 @@ function blankLayer(dir) {
 const I18N = {
   en: {
     newAssessment: 'New assessment', yourAssessments: 'Your assessments', verifyIb: 'Verify with IB',
-    s1: 'Which instrument is the position in?', s1l: 'Rescue analyses the instruments it can independently verify — a live price, macro context and news for each. Nothing else is offered, because an assessment without verified data is just an opinion.',
-    s2: 'Which way is the position?', s2l: 'The overall idea behind the trade. Individual layers can differ — a hedge is added later.',
-    s3: 'How is the position built?', s3l: 'One order, or several? Averaging in and hedging change the answer completely, so each order is entered separately.',
-    s4: 'Account and risk context', s4l: 'Optional, and never verified against your broker — but it is what turns "the trade is down" into "the exposure is too large".',
-    s5: 'Trade context', s5l: 'The part only you can supply. The market data is fetched automatically; this is what the evidence gets weighed against.',
-    s6: 'Review', s6l: 'Check the position, then run the assessment. Current price, macro context, news and historical candles are retrieved at that moment.',
-    single: 'One position', singleD: 'A single order.',
-    multiple: 'Multiple layers', multipleD: 'Averaged in, scaled, or hedged.',
+    pageTitle: 'Trade Rescue Assessment',
+    pageLede: 'Describe the position once. Current price, macro context, news and market history are retrieved for you — nothing you can look up is asked for here.',
+    secAsset: 'Asset', secDirection: 'Direction', secPosition: 'Position',
+    secAccount: 'Account & risk', secContext: 'Trade context',
+    single: 'One position', multiple: 'Multiple layers',
     buy: 'BUY', buyD: 'Long — you profit if price rises.',
     sell: 'SELL', sellD: 'Short — you profit if price falls.',
-    layer: 'Layer', entry: 'Entry price', size: 'Size (lots)', opened: 'Date opened',
-    sl: 'Stop Loss', tp: 'Take Profit', purpose: 'Purpose', note: 'Note',
-    addLayer: '+ Add another layer', optional: 'optional',
-    describeLayers: 'Or describe them in your own words',
-    describeLayersH: 'Speak or type, in any language: “I sold at four thousand forty, then another at four thousand forty-five, then a hedge buy at four thousand fifty.”',
-    readLayers: 'Read this into the layers',
-    startBal: 'Balance when this started', curBal: 'Balance now', floatPl: 'Floating P/L now',
-    units: 'Units per 1.00 lot',
+    side: 'Side', layer: 'Layer', entry: 'Entry price',
+    sl: 'Stop Loss', tp: 'Take Profit', optional: 'optional', remove: 'Remove layer',
+    addLayer: '+ Add layer',
+    startBal: 'Balance at start', curBal: 'Balance now', floatPl: 'Floating P/L now',
     thesis: 'Why did you take this trade?', concern: 'What is worrying you now?',
-    horizon: 'Intended time horizon', hedged: 'Is any part hedged?', confidence: 'How confident are you now?',
-    note: 'Anything else that matters',
-    back: 'Back', next: 'Continue', analyse: 'Run the assessment',
-    analysing: 'Fetching current market data and assessing the position…',
-    needInstrument: 'Choose an instrument to continue.', needDirection: 'Choose a direction to continue.',
+    analyse: 'Review & Analyse',
+    analysing: 'Retrieving current market data and assessing the position…',
+    analysing2: 'Pulling market history and macro context…',
+    analysing3: 'Taking a little longer — still working…',
+    needInstrument: 'Choose an asset.', needDirection: 'Choose a direction.',
     needLayer: 'At least one layer needs a side and an entry price.',
-    yes: 'Yes', no: 'No', dontKnow: 'Not sure',
+    failed: 'The assessment could not be completed just now. Everything you entered is still here — please try again.',
     netExposure: 'Net exposure', breakeven: 'Breakeven', floating: 'Floating result', current: 'Current price',
     unavailable: 'Unavailable', strength: 'Evidence strength', coverage: 'Coverage',
     howMeasured: 'How this is measured', sources: 'Sources and retrieval times',
-    again: 'Assess another position',
+    again: 'Assess another position', backup: 'backup feed used',
+    units: 'units', pts: 'weighted pts',
   },
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
-    s1: 'یہ position کس instrument میں ہے؟', s1l: 'Rescue صرف وہ instruments دیکھتا ہے جن کا live price، macro context اور news آزادانہ طور پر verify ہو سکے۔',
-    s2: 'Position کس طرف ہے؟', s2l: 'ٹریڈ کا مجموعی خیال۔ انفرادی layers مختلف ہو سکتی ہیں — hedge بعد میں شامل ہوتا ہے۔',
-    s3: 'Position کیسے بنی ہے؟', s3l: 'ایک order یا کئی؟ Averaging اور hedging جواب مکمل بدل دیتے ہیں، اس لیے ہر order الگ درج کریں۔',
-    s4: 'Account اور risk context', s4l: 'اختیاری، اور broker سے verify نہیں ہوتا — لیکن یہی "trade نیچے ہے" کو "exposure بہت بڑا ہے" میں بدلتا ہے۔',
-    s5: 'Trade context', s5l: 'یہ صرف آپ بتا سکتے ہیں۔ Market data خود آ جاتا ہے؛ evidence کا موازنہ اسی سے ہوتا ہے۔',
-    s6: 'نظرثانی', s6l: 'Position دیکھ لیں، پھر تجزیہ چلائیں۔ موجودہ price، macro، news اور historical candles اسی وقت لیے جائیں گے۔',
-    single: 'ایک position', singleD: 'صرف ایک order۔',
-    multiple: 'کئی layers', multipleD: 'Average, scale یا hedge۔',
+    pageTitle: 'Trade Rescue تجزیہ',
+    pageLede: 'اپنی position ایک بار بتائیں۔ موجودہ price، macro context، news اور market history خود لے لی جاتی ہے — جو چیز system خود دیکھ سکتا ہے وہ آپ سے نہیں پوچھی جاتی۔',
+    secAsset: 'Asset', secDirection: 'Direction', secPosition: 'Position',
+    secAccount: 'Account اور risk', secContext: 'Trade context',
+    single: 'ایک position', multiple: 'کئی layers',
     buy: 'BUY', buyD: 'Long — price بڑھے تو منافع۔',
     sell: 'SELL', sellD: 'Short — price گرے تو منافع۔',
-    layer: 'Layer', entry: 'Entry price', size: 'Size (lots)', opened: 'کس تاریخ کو کھولی',
-    sl: 'Stop Loss', tp: 'Take Profit', purpose: 'مقصد', note: 'نوٹ',
-    addLayer: '+ ایک اور layer', optional: 'اختیاری',
-    describeLayers: 'یا اپنے الفاظ میں بتائیں',
-    describeLayersH: 'بولیں یا لکھیں: ”میں نے چار ہزار چالیس پر سیل لی، پھر چار ہزار پینتالیس پر دوسری، پھر چار ہزار پچاس پر hedge buy۔“',
-    readLayers: 'اسے layers میں پڑھیں',
+    side: 'Side', layer: 'Layer', entry: 'Entry price',
+    sl: 'Stop Loss', tp: 'Take Profit', optional: 'اختیاری', remove: 'Layer ہٹائیں',
+    addLayer: '+ Layer شامل کریں',
     startBal: 'شروع میں balance', curBal: 'ابھی balance', floatPl: 'ابھی floating P/L',
-    units: 'فی 1.00 lot units',
-    thesis: 'یہ ٹریڈ کس وجہ سے لی تھی؟', concern: 'اب آپ کو کیا فکر ہے؟',
-    horizon: 'کتنے عرصے کا ارادہ تھا', hedged: 'کوئی حصہ hedge ہے؟', confidence: 'اب کتنا اعتماد ہے؟',
-    note: 'کوئی اور اہم بات',
-    back: 'واپس', next: 'آگے', analyse: 'تجزیہ چلائیں',
+    thesis: 'یہ ٹریڈ آپ نے کس وجہ سے لی تھی؟', concern: 'اب آپ کو کس بات کی فکر ہے؟',
+    analyse: 'جائزہ لیں اور تجزیہ کریں',
     analysing: 'موجودہ market data لے کر position کا جائزہ لیا جا رہا ہے…',
-    needInstrument: 'آگے بڑھنے کے لیے instrument منتخب کریں۔', needDirection: 'آگے بڑھنے کے لیے direction منتخب کریں۔',
+    analysing2: 'Market history اور macro context لیا جا رہا ہے…',
+    analysing3: 'تھوڑا وقت لگ رہا ہے — کام جاری ہے…',
+    needInstrument: 'Asset منتخب کریں۔', needDirection: 'Direction منتخب کریں۔',
     needLayer: 'کم از کم ایک layer میں side اور entry price ضروری ہے۔',
-    yes: 'ہاں', no: 'نہیں', dontKnow: 'یقین نہیں',
+    failed: 'تجزیہ ابھی مکمل نہیں ہو سکا۔ آپ کی درج کردہ تمام معلومات موجود ہیں — دوبارہ کوشش کریں۔',
     netExposure: 'Net exposure', breakeven: 'Breakeven', floating: 'Floating نتیجہ', current: 'موجودہ price',
     unavailable: 'دستیاب نہیں', strength: 'Evidence کی مضبوطی', coverage: 'Coverage',
     howMeasured: 'یہ کیسے ناپا گیا', sources: 'ذرائع اور وقت',
-    again: 'ایک اور position دیکھیں',
+    again: 'ایک اور position دیکھیں', backup: 'backup feed استعمال ہوا',
+    units: 'یونٹس', pts: 'وزنی points',
   },
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
-    s1: 'ما الأداة التي فيها المركز؟', s1l: 'يحلل Rescue الأدوات التي يمكنه التحقق منها بشكل مستقل — سعر حي وسياق كلي وأخبار.',
-    s2: 'في أي اتجاه المركز؟', s2l: 'الفكرة العامة للصفقة. قد تختلف الطبقات — التحوط يُضاف لاحقاً.',
-    s3: 'كيف بُني المركز؟', s3l: 'أمر واحد أم عدة؟ التعزيز والتحوط يغيّران الإجابة تماماً، لذا يُدخل كل أمر على حدة.',
-    s4: 'سياق الحساب والمخاطر', s4l: 'اختياري ولا يُتحقق منه لدى الوسيط — لكنه ما يحوّل «الصفقة خاسرة» إلى «الانكشاف كبير جداً».',
-    s5: 'سياق الصفقة', s5l: 'ما لا يستطيع تقديمه سواك. بيانات السوق تُجلب تلقائياً؛ وبها تُوزن الأدلة.',
-    s6: 'مراجعة', s6l: 'راجع المركز ثم شغّل التقييم. السعر الحالي والسياق الكلي والأخبار والشموع التاريخية تُجلب في تلك اللحظة.',
-    single: 'مركز واحد', singleD: 'أمر واحد.',
-    multiple: 'عدة طبقات', multipleD: 'تعزيز أو تدرج أو تحوط.',
+    pageTitle: 'تقييم إنقاذ الصفقة',
+    pageLede: 'صِف المركز مرة واحدة. السعر الحالي والسياق الكلي والأخبار وتاريخ السوق تُجلب لك — ولا يُطلب منك شيء يمكن للنظام جلبه بنفسه.',
+    secAsset: 'الأداة', secDirection: 'الاتجاه', secPosition: 'المركز',
+    secAccount: 'الحساب والمخاطر', secContext: 'سياق الصفقة',
+    single: 'مركز واحد', multiple: 'عدة طبقات',
     buy: 'شراء', buyD: 'Long — تربح إذا ارتفع السعر.',
     sell: 'بيع', sellD: 'Short — تربح إذا انخفض السعر.',
-    layer: 'طبقة', entry: 'سعر الدخول', size: 'الحجم (لوت)', opened: 'تاريخ الفتح',
-    sl: 'Stop Loss', tp: 'Take Profit', purpose: 'الغرض', note: 'ملاحظة',
-    addLayer: '+ طبقة أخرى', optional: 'اختياري',
-    describeLayers: 'أو صِفها بكلماتك',
-    describeLayersH: 'تحدث أو اكتب: «بعت عند أربعة آلاف وأربعين، ثم أخرى عند أربعة آلاف وخمسة وأربعين، ثم شراء تحوط عند أربعة آلاف وخمسين.»',
-    readLayers: 'اقرأ هذا إلى الطبقات',
+    side: 'الجهة', layer: 'طبقة', entry: 'سعر الدخول',
+    sl: 'Stop Loss', tp: 'Take Profit', optional: 'اختياري', remove: 'حذف الطبقة',
+    addLayer: '+ إضافة طبقة',
     startBal: 'الرصيد عند البداية', curBal: 'الرصيد الآن', floatPl: 'الربح/الخسارة العائمة',
-    units: 'وحدات لكل 1.00 لوت',
     thesis: 'لماذا دخلت هذه الصفقة؟', concern: 'ما الذي يقلقك الآن؟',
-    horizon: 'المدى الزمني المقصود', hedged: 'هل جزء منها محوّط؟', confidence: 'ما مدى ثقتك الآن؟',
-    note: 'أي شيء آخر مهم',
-    back: 'رجوع', next: 'متابعة', analyse: 'شغّل التقييم',
+    analyse: 'راجع وحلّل',
     analysing: 'يتم جلب بيانات السوق الحالية وتقييم المركز…',
-    needInstrument: 'اختر أداة للمتابعة.', needDirection: 'اختر اتجاهاً للمتابعة.',
+    analysing2: 'يتم جلب تاريخ السوق والسياق الكلي…',
+    analysing3: 'يستغرق وقتاً أطول قليلاً — العمل جارٍ…',
+    needInstrument: 'اختر أداة.', needDirection: 'اختر اتجاهاً.',
     needLayer: 'تحتاج طبقة واحدة على الأقل إلى جهة وسعر دخول.',
-    yes: 'نعم', no: 'لا', dontKnow: 'غير متأكد',
+    failed: 'تعذّر إكمال التقييم الآن. كل ما أدخلته ما زال موجوداً — حاول مرة أخرى.',
     netExposure: 'صافي الانكشاف', breakeven: 'نقطة التعادل', floating: 'النتيجة العائمة', current: 'السعر الحالي',
     unavailable: 'غير متاح', strength: 'قوة الأدلة', coverage: 'التغطية',
     howMeasured: 'كيف يُقاس هذا', sources: 'المصادر وأوقات الجلب',
-    again: 'قيّم مركزاً آخر',
+    again: 'قيّم مركزاً آخر', backup: 'تم استخدام مصدر احتياطي',
+    units: 'وحدات', pts: 'نقاط موزونة',
   },
 };
 const lang = () => langSel.value || 'en';
@@ -557,160 +548,133 @@ function autoGrow(el) {
   el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 220) + 'px';
 }
 
-/* ── STEPS ────────────────────────────────────────────────────────────── */
-const STEPS = 6;
-function paintSteps() {
-  stepsEl.innerHTML = '';
-  if (result) return;
-  for (let i = 0; i < STEPS; i++) {
-    const b = document.createElement('i');
-    b.className = i < step ? 'done' : i === step ? 'now' : '';
-    stepsEl.appendChild(b);
-  }
-}
+/* ── ONE-PAGE INTAKE ──────────────────────────────────────────────────────
+   Everything the assessment needs, on one scrollable page, with a single
+   action at the bottom. No step navigation, and nothing collected that the
+   analysis does not actually consume:
 
-function head(n, titleKey, ledeKey) {
-  return '<div class="stepNo">' + esc(lang() === 'en' ? 'Step ' + n + ' of ' + STEPS : n + ' / ' + STEPS) + '</div>' +
-    '<h1>' + esc(t(titleKey)) + '</h1><p class="lede">' + esc(t(ledeKey)) + '</p>';
-}
-function nav(backOk, nextKey, nextDisabled) {
-  return '<div class="nav">' +
-    (backOk ? '<button class="btn" id="back" type="button">' + esc(t('back')) + '</button>' : '') +
-    '<span class="navSp"></span>' +
-    '<button class="btn primary" id="next" type="button"' + (nextDisabled ? ' disabled' : '') + '>' + esc(t(nextKey)) + '</button>' +
-    '</div><div class="err" id="err"></div>';
-}
-
+     · entry DATE was removed — historical entry-time context cannot be
+       verified without it, and inventing a date to keep the field alive would
+       be worse than reporting that one layer of evidence as unavailable;
+     · layer PURPOSE was removed — a hedge is identified from opposing sides,
+       not from a label the trader has to type;
+     · CONTRACT SIZE was removed — the instrument convention is known and
+       declared for the two supported instruments, and where it is not, results
+       stay in price points rather than being converted to money on a guess.  */
 const ASSETS = [
   { id: 'XAU/USD', name: 'Gold', sub: 'XAU/USD' },
   { id: 'BTC/USD', name: 'Bitcoin', sub: 'BTC/USD' },
 ];
 
+function sec(n, titleKey) {
+  return '<div class="secHead"><span class="secNo">' + n + '</span>' + esc(t(titleKey)) + '</div>';
+}
+
 function render() {
   document.documentElement.dir = rtl() ? 'rtl' : 'ltr';
-  paintSteps();
   if (result) return renderResult();
 
-  let h = '';
-  if (step === 0) {
-    h += head(1, 's1', 's1l') + '<div class="tiles">';
-    for (const a of ASSETS) {
-      h += '<button class="tile' + (C.instrument === a.id ? ' on' : '') + '" type="button" data-asset="' + a.id + '">' +
-        '<b>' + esc(a.name) + '</b><span>' + esc(a.sub) + '</span></button>';
-    }
-    h += '</div>' + nav(false, 'next', !C.instrument);
-  } else if (step === 1) {
-    h += head(2, 's2', 's2l') + '<div class="tiles">' +
-      '<button class="tile buy' + (C.direction === 'buy' ? ' on' : '') + '" type="button" data-dir="buy"><b>' + esc(t('buy')) + '</b><span>' + esc(t('buyD')) + '</span></button>' +
-      '<button class="tile sell' + (C.direction === 'sell' ? ' on' : '') + '" type="button" data-dir="sell"><b>' + esc(t('sell')) + '</b><span>' + esc(t('sellD')) + '</span></button>' +
-      '</div>' + nav(true, 'next', !C.direction);
-  } else if (step === 2) {
-    h += head(3, 's3', 's3l');
-    h += '<div class="tiles" style="margin-bottom:18px">' +
-      '<button class="tile' + (C.multi === false ? ' on' : '') + '" type="button" data-multi="0"><b>' + esc(t('single')) + '</b><span>' + esc(t('singleD')) + '</span></button>' +
-      '<button class="tile' + (C.multi === true ? ' on' : '') + '" type="button" data-multi="1"><b>' + esc(t('multiple')) + '</b><span>' + esc(t('multipleD')) + '</span></button>' +
-      '</div>';
-    if (C.multi !== null) {
-      h += '<div id="layers">' + C.layers.map(layerHtml).join('') + '</div>';
-      if (C.multi) h += '<button class="addLayer" id="addLayer" type="button">' + esc(t('addLayer')) + '</button>';
-      h += '<div class="card" style="margin-top:16px"><label class="f">' + esc(t('describeLayers')) + '</label>' +
-        '<div class="vrow"><textarea id="layerText" rows="2" placeholder="' + esc(t('describeLayersH')) + '"></textarea>' +
-        micButton('layerText', t('describeLayers')) + '</div>' +
-        '<div class="nav" style="margin-top:11px"><button class="btn" id="readLayers" type="button">' + esc(t('readLayers')) + '</button></div>' +
-        '<div class="vnote" id="layerNote"></div></div>';
-    }
-    h += nav(true, 'next', C.multi === null);
-  } else if (step === 3) {
-    h += head(4, 's4', 's4l') + '<div class="card"><div class="grid3">' +
-      field('acc_start', t('startBal'), C.account.starting_balance, 'number') +
-      field('acc_now', t('curBal'), C.account.current_balance, 'number') +
-      field('acc_fpl', t('floatPl'), C.account.floating_pl, 'number') +
-      '</div><div style="margin-top:14px">' +
-      field('units', t('units') + ' — ' + t('optional'), C.contractUnits, 'number') +
-      '<div class="hint">' + esc(C.instrument === 'BTC/USD' ? '1 BTC per 1.00 lot is assumed unless you change it.' : '100 oz per 1.00 lot is assumed unless you change it.') + '</div>' +
-      '</div></div>' + nav(true, 'next', false);
-  } else if (step === 4) {
-    h += head(5, 's5', 's5l') + '<div class="card">' +
-      textField('ctx_thesis', t('thesis'), C.context.thesis) +
-      textField('ctx_concern', t('concern'), C.context.concern) +
-      '<div class="grid2" style="margin-top:14px">' +
-      field('ctx_horizon', t('horizon') + ' — ' + t('optional'), C.context.horizon, 'text') +
-      selectField('ctx_hedged', t('hedged'), C.context.hedged, [['', '—'], ['yes', t('yes')], ['no', t('no')], ['unsure', t('dontKnow')]]) +
-      '</div>' +
-      '<div style="margin-top:14px">' + textField('ctx_note', t('note') + ' — ' + t('optional'), C.context.note) + '</div>' +
-      '</div>' + nav(true, 'next', false);
-  } else {
-    h += head(6, 's6', 's6l') + reviewHtml() + nav(true, 'analyse', false) +
-      '<div class="busy" id="busy"><span class="spin"></span><span id="busyText">' + esc(t('analysing')) + '</span></div>';
+  let h = '<h1>' + esc(t('pageTitle')) + '</h1><p class="lede">' + esc(t('pageLede')) + '</p>';
+
+  /* A — ASSET */
+  h += sec('A', 'secAsset') + '<div class="tiles">';
+  for (const a of ASSETS) {
+    h += '<button class="tile' + (C.instrument === a.id ? ' on' : '') + '" type="button" data-asset="' + a.id + '">' +
+      '<b>' + esc(a.name) + '</b><span>' + esc(a.sub) + '</span></button>';
   }
+  h += '</div>';
+
+  /* B — DIRECTION */
+  h += sec('B', 'secDirection') + '<div class="tiles">' +
+    '<button class="tile buy' + (C.direction === 'buy' ? ' on' : '') + '" type="button" data-dir="buy"><b>' + esc(t('buy')) + '</b><span>' + esc(t('buyD')) + '</span></button>' +
+    '<button class="tile sell' + (C.direction === 'sell' ? ' on' : '') + '" type="button" data-dir="sell"><b>' + esc(t('sell')) + '</b><span>' + esc(t('sellD')) + '</span></button>' +
+    '</div>';
+
+  /* C — POSITION LAYERS */
+  h += sec('C', 'secPosition') +
+    '<div class="segs slim" style="margin-bottom:14px">' +
+    '<button type="button" data-multi="0" class="' + (C.multi === false ? 'on' : '') + '">' + esc(t('single')) + '</button>' +
+    '<button type="button" data-multi="1" class="' + (C.multi === true ? 'on' : '') + '">' + esc(t('multiple')) + '</button>' +
+    '</div>';
+  h += '<div class="layers">' + C.layers.map(layerHtml).join('') + '</div>';
+  if (C.multi) h += '<button class="addLayer" id="addLayer" type="button">' + esc(t('addLayer')) + '</button>';
+
+  /* D — ACCOUNT / RISK */
+  h += sec('D', 'secAccount') + '<div class="grid3">' +
+    field('acc_start', t('startBal'), C.account.starting_balance, 'number', true) +
+    field('acc_now', t('curBal'), C.account.current_balance, 'number', true) +
+    field('acc_fpl', t('floatPl'), C.account.floating_pl, 'number', true) +
+    '</div>';
+
+  /* E — TRADE CONTEXT */
+  h += sec('E', 'secContext') +
+    textField('ctx_thesis', t('thesis'), C.context.thesis) +
+    textField('ctx_concern', t('concern'), C.context.concern);
+
+  /* SUBMIT */
+  h += '<div class="submitRow">' +
+    '<button class="btn primary big" id="go" type="button">' + esc(t('analyse')) + '</button>' +
+    '<div class="err" id="err" role="alert"></div>' +
+    '<div class="busy" id="busy"><span class="spin"></span><span id="busyText">' + esc(t('analysing')) + '</span></div>' +
+    '</div>';
+
   view.innerHTML = h;
   wire();
 }
 
-function field(id, label, val, type) {
-  return '<div><label class="f" for="' + id + '">' + esc(label) + '</label>' +
+/* `opt` marks a field visibly optional — the trader should never wonder
+   whether a blank Stop Loss will block the assessment. */
+function field(id, label, val, type, opt) {
+  return '<div><label class="f" for="' + id + '">' + esc(label) +
+    (opt ? ' <span class="opt">' + esc(t('optional')) + '</span>' : '') + '</label>' +
     '<input id="' + id + '" type="' + (type || 'text') + '" value="' + esc(val) + '" ' +
     (type === 'number' ? 'step="any" inputmode="decimal"' : '') + ' /></div>';
 }
-function selectField(id, label, val, opts) {
-  return '<div><label class="f" for="' + id + '">' + esc(label) + '</label><select class="f" id="' + id + '">' +
-    opts.map(([v, l]) => '<option value="' + esc(v) + '"' + (val === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('') +
-    '</select></div>';
-}
 function textField(id, label, val) {
-  return '<div style="margin-bottom:14px"><label class="f" for="' + id + '">' + esc(label) + '</label>' +
+  return '<div class="tf"><label class="f" for="' + id + '">' + esc(label) + '</label>' +
     '<div class="vrow"><textarea id="' + id + '" rows="2">' + esc(val) + '</textarea>' + micButton(id, label) + '</div></div>';
 }
+
+/* A layer is a side and an entry price. Stop Loss and Take Profit are offered
+   because they change the risk read materially; nothing else is asked. */
 function layerHtml(l, i) {
   const p = (k) => 'L' + i + '_' + k;
   return '<div class="layer" data-layer="' + i + '">' +
     '<h4>' + esc(t('layer')) + ' ' + (i + 1) + '</h4>' +
-    (C.multi && C.layers.length > 1 ? '<button class="del" type="button" data-del="' + i + '" aria-label="Remove">×</button>' : '') +
-    '<div class="grid2"><div><label class="f">' + esc(t('buy')) + ' / ' + esc(t('sell')) + ' <span class="req">*</span></label>' +
+    (C.multi && C.layers.length > 1 ? '<button class="del" type="button" data-del="' + i + '" aria-label="' + esc(t('remove')) + '">×</button>' : '') +
+    '<div class="grid2">' +
+    '<div><label class="f">' + esc(t('side')) + ' <span class="req">*</span></label>' +
     '<div class="segs"><button type="button" data-d="buy" data-seg="' + i + '" class="' + (l.direction === 'buy' ? 'on' : '') + '">' + esc(t('buy')) + '</button>' +
     '<button type="button" data-d="sell" data-seg="' + i + '" class="' + (l.direction === 'sell' ? 'on' : '') + '">' + esc(t('sell')) + '</button></div></div>' +
     field(p('entry'), t('entry') + ' *', l.entry, 'number') + '</div>' +
-    '<div class="grid3" style="margin-top:12px">' +
-    field(p('size'), t('size'), l.size, 'number') +
-    field(p('date'), t('opened'), l.opened_at, 'date') +
-    field(p('purpose'), t('purpose'), l.purpose, 'text') + '</div>' +
     '<div class="grid2" style="margin-top:12px">' +
-    field(p('sl'), t('sl') + ' — ' + t('optional'), l.stop_loss, 'number') +
-    field(p('tp'), t('tp') + ' — ' + t('optional'), l.take_profit, 'number') + '</div>' +
+    field(p('sl'), t('sl'), l.stop_loss, 'number', true) +
+    field(p('tp'), t('tp'), l.take_profit, 'number', true) + '</div>' +
     '</div>';
-}
-function reviewHtml() {
-  const rows = C.layers.filter(l => l.direction && l.entry !== '').map((l, i) =>
-    '<tr><td>' + (i + 1) + (l.purpose ? ' <em>(' + esc(l.purpose) + ')</em>' : '') + '</td><td><b>' + esc(String(l.direction).toUpperCase()) + '</b></td>' +
-    '<td>' + esc(l.entry) + '</td><td>' + esc(l.size || '—') + '</td><td>' + esc(l.opened_at || '—') + '</td>' +
-    '<td>' + esc(l.stop_loss || '—') + '</td></tr>').join('');
-  return '<div class="card rev"><table><thead><tr>' +
-    '<th>' + esc(t('layer')) + '</th><th></th><th>' + esc(t('entry')) + '</th><th>' + esc(t('size')) + '</th>' +
-    '<th>' + esc(t('opened')) + '</th><th>' + esc(t('sl')) + '</th></tr></thead><tbody>' +
-    (rows || '<tr><td colspan="6">—</td></tr>') + '</tbody></table>' +
-    '<div class="hint" style="margin-top:12px">' + esc(C.instrument || '') + ' · ' + esc(String(C.direction || '').toUpperCase()) + '</div></div>';
 }
 
 /* ── DOM → state ─────────────────────────────────────────────────────── */
 function syncFromDom() {
   C.layers.forEach((l, i) => {
     const g = (k) => { const e = $('L' + i + '_' + k); return e ? e.value.trim() : undefined; };
-    const map = { entry: 'entry', size: 'size', date: 'opened_at', purpose: 'purpose', sl: 'stop_loss', tp: 'take_profit' };
-    for (const [dom, key] of Object.entries(map)) { const v = g(dom); if (v !== undefined) l[key] = v; }
+    for (const [dom, key] of Object.entries({ entry: 'entry', sl: 'stop_loss', tp: 'take_profit' })) {
+      const v = g(dom); if (v !== undefined) l[key] = v;
+    }
   });
   const gv = (id) => { const e = $(id); return e ? e.value.trim() : undefined; };
-  const a = { acc_start: 'starting_balance', acc_now: 'current_balance', acc_fpl: 'floating_pl' };
-  for (const [id, k] of Object.entries(a)) { const v = gv(id); if (v !== undefined) C.account[k] = v; }
-  const u = gv('units'); if (u !== undefined) C.contractUnits = u;
-  const cx = { ctx_thesis: 'thesis', ctx_concern: 'concern', ctx_horizon: 'horizon', ctx_hedged: 'hedged', ctx_note: 'note' };
-  for (const [id, k] of Object.entries(cx)) { const v = gv(id); if (v !== undefined) C.context[k] = v; }
+  for (const [id, k] of Object.entries({ acc_start: 'starting_balance', acc_now: 'current_balance', acc_fpl: 'floating_pl' })) {
+    const v = gv(id); if (v !== undefined) C.account[k] = v;
+  }
+  for (const [id, k] of Object.entries({ ctx_thesis: 'thesis', ctx_concern: 'concern' })) {
+    const v = gv(id); if (v !== undefined) C.context[k] = v;
+  }
 }
 
 function wire() {
-  view.querySelectorAll('[data-asset]').forEach(b => b.addEventListener('click', () => { C.instrument = b.dataset.asset; render(); }));
+  view.querySelectorAll('[data-asset]').forEach(b => b.addEventListener('click', () => { syncFromDom(); C.instrument = b.dataset.asset; render(); }));
   view.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
-    C.direction = b.dataset.dir;
-    if (C.layers.length === 1 && !C.layers[0].direction) C.layers[0].direction = C.direction;
+    syncFromDom(); C.direction = b.dataset.dir;
+    C.layers.forEach(l => { if (!l.direction) l.direction = C.direction; });
     render();
   }));
   view.querySelectorAll('[data-multi]').forEach(b => b.addEventListener('click', () => {
@@ -723,63 +687,27 @@ function wire() {
     syncFromDom(); C.layers[+b.dataset.seg].direction = b.dataset.d; render();
   }));
   view.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
-    syncFromDom(); C.layers.splice(+b.dataset.del, 1); if (!C.layers.length) C.layers = [blankLayer(C.direction)]; render();
+    syncFromDom(); C.layers.splice(+b.dataset.del, 1);
+    if (!C.layers.length) C.layers = [blankLayer(C.direction)];
+    render();
   }));
   const add = $('addLayer');
   if (add) add.addEventListener('click', () => { syncFromDom(); C.layers.push(blankLayer(C.direction)); render(); });
   view.querySelectorAll('[data-mic]').forEach(b => b.addEventListener('click', () => startDictation(b, b.dataset.mic)));
   view.querySelectorAll('textarea').forEach(el => { autoGrow(el); el.addEventListener('input', () => autoGrow(el)); });
-  const rl = $('readLayers'); if (rl) rl.addEventListener('click', readLayersFromText);
-  const back = $('back'); if (back) back.addEventListener('click', () => { syncFromDom(); step = Math.max(0, step - 1); render(); });
-  const next = $('next'); if (next) next.addEventListener('click', onNext);
+  const go = $('go'); if (go) go.addEventListener('click', submit);
 }
 
-function onNext() {
+/* Validation happens once, at submit — the trader is never blocked mid-page. */
+function submit() {
   syncFromDom();
   const err = $('err');
-  if (step === 0 && !C.instrument) { err.textContent = t('needInstrument'); return; }
-  if (step === 1 && !C.direction) { err.textContent = t('needDirection'); return; }
-  if (step === 2) {
-    const ok = C.layers.some(l => l.direction && String(l.entry).trim() !== '');
-    if (!ok) { err.textContent = t('needLayer'); return; }
-  }
-  if (step === STEPS - 1) return runAssessment();
-  step++; render();
-}
-
-/* ── semantic multi-layer read ───────────────────────────────────────── */
-async function readLayersFromText() {
-  const el = $('layerText'); const note = $('layerNote');
-  const text = el ? el.value.trim() : '';
-  if (!text) return;
-  note.textContent = '…';
-  try {
-    const r = await fetch(API, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'interpret_layers', text, lang: lang(), identityToken: identityToken() }),
-    });
-    const d = await r.json();
-    if (Array.isArray(d.layers) && d.layers.length) {
-      syncFromDom();
-      C.multi = d.layers.length > 1 ? true : C.multi;
-      C.layers = d.layers.map(l => Object.assign(blankLayer(), {
-        direction: l.direction, entry: l.entry ?? '', size: l.size ?? '',
-        opened_at: l.opened_at || '', stop_loss: l.stop_loss ?? '', take_profit: l.take_profit ?? '',
-        purpose: l.purpose || '',
-      }));
-      render();
-      const n2 = $('layerNote');
-      if (n2) n2.textContent = d.ambiguous
-        ? 'Read into the fields below — some of it was unclear, so please check every value before continuing.'
-        : 'Read into the fields below — check the values, then continue.';
-    } else {
-      note.textContent = d.degraded
-        ? 'That could not be read automatically just now. Please fill the layers in below.'
-        : 'I could not separate the orders confidently. Please fill the layers in below.';
-    }
-  } catch {
-    note.textContent = 'That could not be read automatically just now. Please fill the layers in below.';
-  }
+  err.textContent = '';
+  if (!C.instrument) { err.textContent = t('needInstrument'); return; }
+  if (!C.direction) { err.textContent = t('needDirection'); return; }
+  if (C.multi === null) C.multi = C.layers.length > 1;
+  if (!C.layers.some(l => l.direction && String(l.entry).trim() !== '')) { err.textContent = t('needLayer'); return; }
+  runAssessment();
 }
 
 /* ── run ─────────────────────────────────────────────────────────────── */
@@ -787,22 +715,20 @@ async function runAssessment() {
   if (busy) return;
   syncFromDom();
   busy = true;
-  const nx = $('next'); if (nx) nx.disabled = true;
+  const go = $('go'); if (go) go.disabled = true;
   const b = $('busy'); if (b) b.classList.add('on');
   const bt = $('busyText');
-  const t1 = setTimeout(() => { if (bt) bt.textContent = lang() === 'en' ? 'Retrieving historical candles and macro context…' : t('analysing'); }, 2500);
-  const t2 = setTimeout(() => { if (bt) bt.textContent = lang() === 'en' ? 'This is taking a little longer — still working…' : t('analysing'); }, 9000);
+  const t1 = setTimeout(() => { if (bt) bt.textContent = t('analysing2'); }, 2500);
+  const t2 = setTimeout(() => { if (bt) bt.textContent = t('analysing3'); }, 9000);
 
   const num = (v) => (String(v).trim() === '' ? null : Number(v));
   const payload = {
     action: 'assess', lang: lang(), identityToken: identityToken(),
     case: {
       instrument: C.instrument,
-      contractUnits: num(C.contractUnits),
       layers: C.layers.filter(l => l.direction && String(l.entry).trim() !== '').map(l => ({
-        direction: l.direction, entry: num(l.entry), size: num(l.size),
-        opened_at: l.opened_at || null, stop_loss: num(l.stop_loss), take_profit: num(l.take_profit),
-        purpose: l.purpose || null,
+        direction: l.direction, entry: num(l.entry),
+        stop_loss: num(l.stop_loss), take_profit: num(l.take_profit),
       })),
       account: {
         starting_balance: num(C.account.starting_balance),
@@ -811,8 +737,7 @@ async function runAssessment() {
       },
       context: {
         thesis: C.context.thesis || null, concern: C.context.concern || null,
-        horizon: C.context.horizon || null, hedged: C.context.hedged || null,
-        note: C.context.note || null, primary_direction: C.direction,
+        primary_direction: C.direction,
       },
     },
   };
@@ -830,16 +755,11 @@ async function runAssessment() {
     clearTimeout(t1); clearTimeout(t2); showErr();
   } finally {
     busy = false;
-    const n2 = $('next'); if (n2) n2.disabled = false;
+    const g2 = $('go'); if (g2) g2.disabled = false;
     const b2 = $('busy'); if (b2) b2.classList.remove('on');
   }
 }
-function showErr() {
-  const e = $('err');
-  if (e) e.textContent = lang() === 'en'
-    ? 'The assessment could not be completed just now. Your position is still filled in — please try again.'
-    : t('analysing');
-}
+function showErr() { const e = $('err'); if (e) e.textContent = t('failed'); }
 
 /* ── results ─────────────────────────────────────────────────────────── */
 function renderResult() {
@@ -866,9 +786,10 @@ function renderResult() {
     '<span class="tag">' + p.layerCount + ' ' + esc(t('layer')) + (p.layerCount > 1 ? 's' : '') + '</span></div><div class="stats">';
   h += stat('current', ev.priceStatus === 'verified' ? String(ev.price) : t('unavailable'),
     ev.priceAt ? new Date(ev.priceAt).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '');
-  h += stat('netExposure', Math.abs(p.netSize) + ' lots', p.hedged ? p.grossLongSize + ' long / ' + p.grossShortSize + ' short' : '');
+  const unitLabel = p.sized ? 'lots' : t('units');
+  h += stat('netExposure', Math.abs(p.netSize) + ' ' + unitLabel, p.hedged ? p.grossLongSize + ' long / ' + p.grossShortSize + ' short' : '');
   h += stat('breakeven', p.breakevenPrice != null ? String(p.breakevenPrice) : t('unavailable'), 'DERIVED');
-  h += stat('floating', p.floatingPoints != null ? p.floatingPoints + ' lot-pts' : t('unavailable'),
+  h += stat('floating', p.floatingPoints != null ? p.floatingPoints + ' ' + (p.sized ? 'lot-pts' : t('pts')) : t('unavailable'),
     p.floatingMoney != null ? money(p.floatingMoney) : 'DERIVED',
     p.floatingPoints > 0 ? ' pos' : p.floatingPoints < 0 ? ' neg' : '');
   h += '</div></div>';
@@ -889,7 +810,18 @@ function renderResult() {
   }
   h += '</div>';
 
+  const P = d.providers || {};
+  const provRow = (key, label) => {
+    const p = P[key]; if (!p) return '';
+    const ok = p.status === 'verified';
+    return '<div>· <b>' + esc(label) + '</b> — ' +
+      (ok ? esc(p.provider || '') + (p.viaFallback ? ' <em>(' + esc(t('backup')) + ')</em>' : '') +
+            (p.at ? ', ' + esc(String(p.at).replace('T', ' ').slice(0, 16)) + ' UTC' : '')
+          : esc(p.note || t('unavailable'))) + '</div>';
+  };
   h += '<div class="report">' + md(d.report) + '<div class="prov"><b>' + esc(t('sources')) + '</b>' +
+    provRow('price', t('current')) + provRow('macro', 'Macro') + provRow('news', 'News') +
+    provRow('calendar', 'Events') + provRow('history', 'Market history') +
     (ev.provenance || []).map(x => '<div>· ' + esc(x) + '</div>').join('') +
     '<div>· ' + esc(d.history.status === 'verified'
       ? 'Historical candles — ' + d.history.source + ', ' + d.history.count + ' daily candles'
@@ -958,7 +890,7 @@ function renderHistory() {
     histList.appendChild(b);
   }
 }
-function startNew() { result = null; step = 0; C = newCase(); render(); closeSide(); }
+function startNew() { result = null; C = newCase(); render(); closeSide(); }
 
 /* ── shell ───────────────────────────────────────────────────────────── */
 function openSide() { side.classList.add('open'); scrim.classList.add('open'); burger.setAttribute('aria-expanded', 'true'); }

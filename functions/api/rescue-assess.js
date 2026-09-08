@@ -361,6 +361,21 @@ export async function onRequest(context) {
       firstAt: history.firstAt || null, lastAt: history.lastAt || null,
       volatility: history.volatility, dateContext: history.dateContext, source: history.source || null,
     },
+    // Per data type: which feed answered, and whether it was the backup. The
+    // UI shows this verbatim, so a value served by gold-api.com is never
+    // presented as TwelveData. Failure of one provider is reported as that
+    // provider's failure only — never as "market data unavailable".
+    providers: {
+      price: { status: evidence.priceStatus, provider: evidence.priceProvider,
+               viaFallback: !!evidence.priceViaFallback, at: evidence.priceAt },
+      macro: { status: evidence.regime ? 'verified' : 'unavailable', provider: 'FRED', viaFallback: false, at: evidence.collectedAt },
+      news:  { status: evidence.newsStatus, provider: evidence.newsProvider,
+               viaFallback: !!evidence.newsViaFallback, at: evidence.newsAt },
+      calendar: { status: evidence.calendarStatus, provider: 'Finnhub', viaFallback: false, at: evidence.calendarAt || null },
+      history: { status: history.status, provider: history.status === 'verified' ? 'TwelveData /time_series' : null,
+                 viaFallback: false, at: history.retrievedAt || null, note: history.note || null },
+      reasoning: { status: plan.degraded ? 'unavailable' : 'verified', provider: plan.provider, reason: plan.reason },
+    },
     synthesis: { provider: plan.provider, degraded: plan.degraded, reason: plan.reason },
     provenanceLegend: PROVENANCE,
   });

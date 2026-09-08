@@ -67,6 +67,8 @@ export async function collectEvidence(origin, tradeCase) {
     collectedAt: startedAt,
     instrument: tradeCase.instrument || null,
     price: null, priceStatus: EV.UNAVAILABLE, priceAt: null, priceSource: null,
+    priceProvider: null, priceViaFallback: false,   // which feed actually answered
+    newsProvider: null, newsViaFallback: false,
     session: null,                // today's high/low + change from the same source
     regime: null,
     yields: null,
@@ -91,7 +93,13 @@ export async function collectEvidence(origin, tradeCase) {
     bundle.price = q.price;
     bundle.priceStatus = EV.VERIFIED;
     bundle.priceAt = mkOk.updatedAt || startedAt;
-    bundle.priceSource = 'ZTU /api/market (TwelveData, gold-api fallback)';
+    // /api/market reports per-instrument provider status: 'ok' = TwelveData
+    // answered, 'fallback' = the keyless gold-api.com backup did. Report the
+    // one that actually served this number, never the pair.
+    const mkStatus = (mkOk.sourceStatus || {})[`twelvedata_${liveKey}`];
+    bundle.priceViaFallback = mkStatus === 'fallback';
+    bundle.priceProvider = bundle.priceViaFallback ? 'gold-api.com (backup feed)' : 'TwelveData';
+    bundle.priceSource = `ZTU /api/market — ${bundle.priceProvider}`;
     bundle.session = { high: q.high ?? null, low: q.low ?? null, change: q.change ?? null, changePct: q.changePct ?? null };
     facts.push(item(`${tradeCase.instrument} current price`, q.price, bundle.priceSource, bundle.priceAt, EV.VERIFIED));
     if (q.high != null && q.low != null) {
@@ -137,6 +145,9 @@ export async function collectEvidence(origin, tradeCase) {
       title: a.title, source: a.source, publishedAt: a.publishedAt, url: a.url,
     }));
     bundle.newsStatus = EV.VERIFIED;
+    const nwStatus = nwOk.sourceStatus || {};
+    bundle.newsViaFallback = nwStatus.finnhub !== 'ok' && nwStatus.gnews === 'ok';
+    bundle.newsProvider = bundle.newsViaFallback ? 'GNews (backup feed)' : 'Finnhub';
     bundle.newsAt = nwOk.updatedAt || startedAt;
     if (!bundle.news.length) {
       bundle.unavailable.push(`No recent headline in the current feed is specific to ${tradeCase.instrument || 'this instrument'}.`);
@@ -166,9 +177,13 @@ export async function collectEvidence(origin, tradeCase) {
 // One-line, human-readable provenance for anything the trader is shown.
 export function provenanceLines(bundle) {
   const L = [];
-  if (bundle.priceStatus === EV.VERIFIED) L.push(`Price — ${bundle.priceSource}, retrieved ${bundle.priceAt}`);
+  if (bundle.priceStatus === EV.VERIFIED) {
+    L.push(`Price — ${bundle.priceSource}${bundle.priceViaFallback ? ' [primary feed unavailable, backup used]' : ''}, retrieved ${bundle.priceAt}`);
+  }
   if (bundle.regime) L.push(`Market regime & yields — ZTU /api/sentiment (FRED), retrieved ${bundle.collectedAt}`);
-  if (bundle.newsStatus === EV.VERIFIED) L.push(`News — ZTU /api/news (Finnhub), retrieved ${bundle.newsAt}`);
+  if (bundle.newsStatus === EV.VERIFIED) {
+    L.push(`News — ZTU /api/news — ${bundle.newsProvider || 'Finnhub'}${bundle.newsViaFallback ? ' [primary feed unavailable, backup used]' : ''}, retrieved ${bundle.newsAt}`);
+  }
   if (bundle.calendarStatus === EV.VERIFIED) L.push(`Economic calendar — ZTU /api/calendar, retrieved ${bundle.calendarAt}`);
   return L;
 }

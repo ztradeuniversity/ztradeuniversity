@@ -67,8 +67,10 @@ export function normalizeLayers(list) {
     .filter(l => l.direction || l.entry != null);
 }
 
-/** A layer can only enter the arithmetic when it has a side, a price and a size. */
-const computable = (l) => l.direction && l.entry != null && l.size != null && l.size > 0;
+/** A layer enters the arithmetic once it has a side and a price. Size is
+    optional: when it is absent every layer carries equal weight. */
+const computable = (l) => !!l.direction && l.entry != null;
+const weightOf = (l) => (l.size != null && l.size > 0 ? l.size : 1);
 
 /**
  * Aggregate a set of layers against one verified current price.
@@ -82,7 +84,11 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
   const L = (layers || []).map((l, i) => (l.id ? l : normalizeLayer(l, i)));
   const usable = L.filter(computable);
   const conv = CONTRACT_UNITS[instrument] || null;
-  const units = num(unitsOverride) ?? (conv ? conv.units : null);
+  // Money requires BOTH a contract convention and real sizes. Without sizes the
+  // weights are relative, so a currency figure would be fiction.
+  const sized = usable.length > 0 && usable.every(l => l.size != null && l.size > 0);
+  const units = sized ? (num(unitsOverride) ?? (conv ? conv.units : null)) : null;
+  const unitWord = sized ? 'lots' : 'units';
 
   const out = {
     provenance: PROVENANCE.DERIVED,
@@ -100,7 +106,8 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
     hedgeRatio: null,           // 0 = unhedged, 1 = fully hedged
     hedged: false,
     perLayer: [],
-    floatingPoints: null,       // Σ size × signed price distance  (lot-points)
+    floatingPoints: null,       // Σ weight × signed price distance
+    sized: false,               // true only when real lot sizes were supplied
     floatingMoney: null,        // only when a contract size is known
     currentPrice: currentPrice ?? null,
     priceStatus: currentPrice == null ? PROVENANCE.UNAVAILABLE : PROVENANCE.VERIFIED,
@@ -110,17 +117,18 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
     notes: [],
   };
 
+  out.sized = sized;
   if (!usable.length) {
-    out.notes.push('No layer carried a side, an entry price and a size together, so position arithmetic could not be performed.');
+    out.notes.push('No layer carried both a side and an entry price, so position arithmetic could not be performed.');
     return out;
   }
 
   if (units != null) {
-    out.assumptions.push(conv && units === conv.units
-      ? `Contract size: ${conv.label} (standard retail convention — correct it if your broker differs).`
-      : `Contract size: ${units} units per 1.00 lot (as you supplied).`);
+    out.assumptions.push(`Contract size: ${conv.label} (standard retail convention — correct it if your broker differs).`);
+  } else if (!sized) {
+    out.notes.push('No position sizes were supplied, so every layer is weighted equally. Direction, breakeven and which layer helps or hurts are unaffected; a money figure is not produced, because relative weights cannot support one.');
   } else {
-    out.notes.push('No contract size is known for this instrument, so profit and loss is reported in price points only — never converted to money.');
+    out.notes.push('No contract size is known for this instrument, so results stay in price points and are never converted to money.');
   }
 
   let sumSigned = 0, sumSignedEntry = 0;
@@ -128,22 +136,23 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
 
   for (const l of usable) {
     const sign = l.direction === 'buy' ? 1 : -1;
-    if (sign > 0) { out.grossLongSize += l.size; longSizeEntry += l.size * l.entry; }
-    else { out.grossShortSize += l.size; shortSizeEntry += l.size * l.entry; }
-    sumSigned += sign * l.size;
-    sumSignedEntry += sign * l.size * l.entry;
+    const w = weightOf(l);
+    if (sign > 0) { out.grossLongSize += w; longSizeEntry += w * l.entry; }
+    else { out.grossShortSize += w; shortSizeEntry += w * l.entry; }
+    sumSigned += sign * w;
+    sumSignedEntry += sign * w * l.entry;
     if (l.stop_loss == null) out.layersWithoutStop += 1;
 
     const row = {
-      id: l.id, direction: l.direction, entry: l.entry, size: l.size,
+      id: l.id, direction: l.direction, entry: l.entry, size: l.size, weight: weightOf(l),
       opened_at: l.opened_at, purpose: l.purpose,
       distance: null, points: null, money: null, helping: null,
     };
     if (currentPrice != null) {
       // Signed distance in the trader's favour.
       row.distance = round(sign * (currentPrice - l.entry), 4);
-      row.points = round(row.distance * l.size, 4);
-      if (units != null) row.money = round(row.distance * l.size * units, 2);
+      row.points = round(row.distance * weightOf(l), 4);
+      if (units != null) row.money = round(row.distance * weightOf(l) * units, 2);
       row.helping = row.distance > 0 ? true : row.distance < 0 ? false : null;
     }
     out.perLayer.push(row);
@@ -178,7 +187,7 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
   }
 
   if (out.incomplete > 0) {
-    out.notes.push(`${out.incomplete} layer(s) were left out of the arithmetic because they did not carry a side, an entry price and a size.`);
+    out.notes.push(`${out.incomplete} layer(s) were left out of the arithmetic because they did not carry both a side and an entry price.`);
   }
   return out;
 }
@@ -204,7 +213,7 @@ export function aggregateToCase(pos, base) {
     c.floating_state = pos.floatingPoints > 0 ? 'profit' : pos.floatingPoints < 0 ? 'loss' : 'breakeven';
   }
   if (pos.netSize != null) {
-    c.position_size = `${Math.abs(pos.netSize)} lots net${pos.hedged ? ` (${pos.grossLongSize} long / ${pos.grossShortSize} short)` : ''}`;
+    c.position_size = `${Math.abs(pos.netSize)} ${pos.sized ? 'lots' : 'equally weighted units'} net${pos.hedged ? ` (${pos.grossLongSize} long / ${pos.grossShortSize} short)` : ''}`;
   }
   return c;
 }
@@ -214,16 +223,18 @@ export function positionLines(pos, instrument) {
   const L = [];
   if (!pos || !pos.computableCount) return L;
   L.push(`Layers supplied: ${pos.layerCount} (${pos.computableCount} complete enough to compute).`);
-  if (pos.grossLongSize) L.push(`Gross long ${pos.grossLongSize} lots, weighted average entry ${pos.avgLongEntry}.`);
-  if (pos.grossShortSize) L.push(`Gross short ${pos.grossShortSize} lots, weighted average entry ${pos.avgShortEntry}.`);
-  L.push(`Net exposure ${Math.abs(pos.netSize)} lots ${pos.netDirection === 'flat' ? '(delta-flat)' : pos.netDirection.toUpperCase()}.`);
+  const U = pos.sized ? 'lots' : 'equally weighted units';
+  if (pos.grossLongSize) L.push(`Gross long ${pos.grossLongSize} ${U}, weighted average entry ${pos.avgLongEntry}.`);
+  if (pos.grossShortSize) L.push(`Gross short ${pos.grossShortSize} ${U}, weighted average entry ${pos.avgShortEntry}.`);
+  L.push(`Net exposure ${Math.abs(pos.netSize)} ${U} ${pos.netDirection === 'flat' ? '(delta-flat)' : pos.netDirection.toUpperCase()}.`);
   if (pos.hedged) L.push(`Hedged: ${Math.round(pos.hedgeRatio * 100)}% of the larger side is offset by the opposite side.`);
   if (pos.breakevenPrice != null) L.push(`Aggregate breakeven price ${pos.breakevenPrice} (DERIVED from the layers above).`);
   if (pos.floatingPoints != null) {
-    L.push(`Aggregate floating result ${pos.floatingPoints} lot-points${pos.floatingMoney != null ? ` (≈ ${pos.floatingMoney} account currency)` : ''} at the current verified price ${pos.currentPrice} — DERIVED, not broker-confirmed.`);
+    L.push(`Aggregate floating result ${pos.floatingPoints} ${pos.sized ? 'lot-points' : 'weighted points'}${pos.floatingMoney != null ? ` (≈ ${pos.floatingMoney} account currency)` : ''} at the current verified price ${pos.currentPrice} — DERIVED, not broker-confirmed.`);
   }
-  if (pos.worstLayer) L.push(`Worst layer ${pos.worstLayer.id}: ${pos.worstLayer.direction.toUpperCase()} @ ${pos.worstLayer.entry}, ${pos.worstLayer.points} lot-points.`);
-  if (pos.bestLayer && pos.bestLayer.id !== pos.worstLayer?.id) L.push(`Best layer ${pos.bestLayer.id}: ${pos.bestLayer.direction.toUpperCase()} @ ${pos.bestLayer.entry}, ${pos.bestLayer.points} lot-points.`);
+  const PT = pos.sized ? 'lot-points' : 'weighted points';
+  if (pos.worstLayer) L.push(`Worst layer ${pos.worstLayer.id}: ${pos.worstLayer.direction.toUpperCase()} @ ${pos.worstLayer.entry}, ${pos.worstLayer.points} ${PT}.`);
+  if (pos.bestLayer && pos.bestLayer.id !== pos.worstLayer?.id) L.push(`Best layer ${pos.bestLayer.id}: ${pos.bestLayer.direction.toUpperCase()} @ ${pos.bestLayer.entry}, ${pos.bestLayer.points} ${PT}.`);
   if (pos.layersWithoutStop) L.push(`${pos.layersWithoutStop} of ${pos.computableCount} layer(s) carry no Stop Loss.`);
   for (const a of pos.assumptions) L.push(`Assumption stated to the trader: ${a}`);
   for (const n of pos.notes) L.push(n);
