@@ -337,3 +337,54 @@ export async function fetchFinnhubNews(apiKey, category = 'general') {
   return data.slice(0, 20);
 }
 
+
+// ─── TWELVEDATA TIME SERIES (OHLC) ────────────────────────────────────────────
+
+/**
+ * Historical OHLC candles from TwelveData.
+ *
+ * Uses the SAME TWELVEDATA_API_KEY the live-quote fetcher already uses — this
+ * project's quote path is verified working in production, and /time_series is
+ * the same account's endpoint, so historical context needs no new credential.
+ * Depth and request rate are whatever the configured plan allows; when the plan
+ * refuses, this throws and the caller reports the data as unavailable rather
+ * than estimating it.
+ *
+ * @param {string} symbol    e.g. 'XAU/USD'
+ * @param {string} interval  '1day' | '4h' | '1h' …
+ * @param {number} outputsize  number of candles (max 5000 on paid plans)
+ * @param {string} apiKey
+ * @returns {Promise<{symbol:string, interval:string, candles:Array<{datetime:string,open:number,high:number,low:number,close:number}>}>}
+ */
+export async function fetchTwelveDataSeries(symbol, interval, outputsize, apiKey) {
+  const url = [
+    'https://api.twelvedata.com/time_series',
+    `?symbol=${encodeURIComponent(symbol)}`,
+    `&interval=${encodeURIComponent(interval)}`,
+    `&outputsize=${encodeURIComponent(String(outputsize))}`,
+    `&apikey=${encodeURIComponent(apiKey)}`,
+  ].join('');
+
+  const data = await fetchJSON(url);
+
+  if (data.status === 'error') {
+    throw new Error(`TwelveData time_series: ${data.message || 'error'} for "${symbol}" ${interval}`);
+  }
+  if (!Array.isArray(data.values) || !data.values.length) {
+    throw new Error(`TwelveData time_series: no candles returned for "${symbol}" ${interval}`);
+  }
+
+  const candles = data.values.map((v) => ({
+    datetime: v.datetime,
+    open:  parseFloat(v.open),
+    high:  parseFloat(v.high),
+    low:   parseFloat(v.low),
+    close: parseFloat(v.close),
+  })).filter(c => Number.isFinite(c.close));
+
+  if (!candles.length) throw new Error(`TwelveData time_series: no usable candles for "${symbol}"`);
+
+  // TwelveData returns newest-first; oldest-first is what analysis wants.
+  candles.reverse();
+  return { symbol, interval, candles };
+}

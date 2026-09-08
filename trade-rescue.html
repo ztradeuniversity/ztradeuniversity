@@ -1,311 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="robots" content="noindex, nofollow" />
-<title>ZTU Rescue — Trade Management &amp; Analysis</title>
-<meta name="description" content="Stuck in a trade? Speak or type. ZTU Rescue collects your trade context, pulls verified current market data, and gives a structured, evidence-based read on where the position stands." />
-<link rel="icon" type="image/png" href="assets/ztu-logo.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZTU Rescue — Structured Trade Assessment</title>
+<meta name="description" content="ZTU Rescue — describe your open position, and get a structured, evidence-based trade-management assessment built from verified market data." />
+<link rel="icon" href="assets/ztu-logo.png" />
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  /* ══ ZTU RESCUE — STRUCTURED TRADE ASSESSMENT ══════════════════════════════
+     A premium analytics intake, not a chat. The trader states the position
+     once; the system fetches everything else itself. Light, spacious, restrained
+     gold accent — the ZTU palette, nothing decorative competing with the data. */
   :root{
-    --bg:#ffffff; --bg2:#f7f7f8; --side:#f9f9fa;
-    --line:#e6e6e8; --line2:#d9d9dd;
-    --text:#1f2024; --muted:#6b6d76; --muted2:#8e919b;
-    --accent:#c8891f; --accent2:#a9711a; --accent-soft:#fdf6e8;
-    --ok:#177245; --ok-bg:#e9f5ef; --warn:#8a6100; --warn-bg:#fdf3e0;
-    --user:#f2f3f5;
-    --r:12px;
-    --side-w:264px;
+    --bg:#ffffff; --bg2:#f7f7f8; --side:#fafafa; --panel:#fcfcfd;
+    --line:#e8e8ea; --line2:#dcdce0;
+    --text:#17181c; --muted:#63656e; --muted2:#8e919b;
+    --accent:#c8891f; --accent2:#a9711a; --accent-soft:#fdf7ea;
+    --ok:#177245; --ok-bg:#eaf5ef; --warn:#8a6100; --warn-bg:#fdf3e0;
+    --bear:#b03a3a; --bear-bg:#fdeced; --bull:#177245;
+    --r:14px; --side-w:264px;
   }
+  *{box-sizing:border-box}
   html,body{height:100%}
-  body{background:var(--bg);color:var(--text);
-    font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased;overflow:hidden}
-  .app{display:flex;height:100dvh}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.6 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
 
-  /* ── sidebar ─────────────────────────────────────────── */
+  /* ── sidebar ── */
   aside{width:var(--side-w);flex-shrink:0;background:var(--side);border-right:1px solid var(--line);
-    display:flex;flex-direction:column;transition:transform .22s ease}
-  .side-top{padding:12px;border-bottom:1px solid var(--line)}
-  .newbtn{width:100%;display:flex;align-items:center;gap:9px;background:var(--bg);
-    border:1px solid var(--line2);border-radius:var(--r);padding:10px 13px;font-size:14px;
-    font-weight:600;color:var(--text);cursor:pointer;font-family:inherit;transition:.14s}
-  .newbtn:hover{border-color:var(--accent);color:var(--accent2)}
-  .newbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .side-scroll{flex:1;overflow-y:auto;padding:10px 8px}
-  .side-lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);
-    padding:8px 8px 6px;font-weight:600}
-  .hitem{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;
-    border:0;border-radius:9px;padding:9px 10px;font-size:13.5px;color:var(--muted);cursor:pointer;
-    font-family:inherit;line-height:1.4}
-  .hitem:hover{background:#eeeef0;color:var(--text)}
-  .hitem.on{background:#eceef1;color:var(--text);font-weight:600}
-  .hitem span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-  .hitem .del{opacity:0;border:0;background:transparent;color:var(--muted2);cursor:pointer;
-    font-size:14px;padding:0 3px;border-radius:5px;line-height:1}
-  .hitem:hover .del{opacity:1}
-  .hitem .del:hover{color:#c0392b}
-  .side-foot{padding:11px 12px;border-top:1px solid var(--line);font-size:12px}
-  .side-foot a{color:var(--muted);text-decoration:none}
-  .side-foot a:hover{color:var(--accent2)}
+    display:flex;flex-direction:column;transition:transform .22s}
+  .newBtn{margin:14px;padding:11px 14px;border:1px solid var(--line2);border-radius:11px;background:var(--bg);
+    font:600 14px/1 inherit;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:9px;text-align:left}
+  .newBtn:hover{border-color:var(--accent);color:var(--accent2)}
+  .sideHead{padding:6px 18px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);font-weight:700}
+  .histList{flex:1;overflow-y:auto;padding:2px 10px 14px}
+  .histList button{width:100%;text-align:left;border:0;background:transparent;border-radius:9px;padding:9px 10px;
+    cursor:pointer;font:inherit;color:var(--text);display:block}
+  .histList button:hover{background:var(--bg2)}
+  .histList button b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .histList button span{font-size:11.5px;color:var(--muted2)}
+  .sideFoot{padding:12px 18px;border-top:1px solid var(--line);font-size:12px}
+  .sideFoot a{color:var(--muted);text-decoration:none}
+  .sideFoot a:hover{color:var(--accent2)}
   .sideScrim{display:none}
 
-  /* ── main ────────────────────────────────────────────── */
+  /* ── main ── */
   main{flex:1;display:flex;flex-direction:column;min-width:0}
-  header.bar{display:flex;align-items:center;gap:11px;padding:11px 20px;
-    border-bottom:1px solid var(--line);background:rgba(255,255,255,.9);backdrop-filter:blur(8px)}
-  .burger{display:none;background:transparent;border:1px solid var(--line2);border-radius:9px;
-    width:34px;height:34px;cursor:pointer;color:var(--muted);align-items:center;justify-content:center}
-  .title{font-size:15.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
-  .title b{color:var(--accent2)}
-  .bar .sp{margin-left:auto}
-
-  /* compact access badge */
-  .acc{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;padding:4px 10px;
-    border-radius:20px;border:1px solid var(--line2);background:var(--bg2);color:var(--muted);white-space:nowrap}
-  .acc.ok{background:var(--ok-bg);border-color:#bfe0ce;color:var(--ok)}
-  .acc.no{background:var(--warn-bg);border-color:#f0dcb4;color:var(--warn)}
-  .acc b{font-weight:700}
-  .verifyBtn{font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;
-    border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;
-    font-family:inherit;white-space:nowrap;transition:.14s}
+  header.bar{display:flex;align-items:center;gap:12px;padding:13px 22px;border-bottom:1px solid var(--line);background:var(--bg)}
+  .burger{display:none;width:34px;height:34px;border:1px solid var(--line2);border-radius:9px;background:var(--bg);cursor:pointer;
+    align-items:center;justify-content:center;flex-shrink:0}
+  .brand{font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+  .brand span{color:var(--accent)}
+  .acc{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .acc.ok{background:var(--ok-bg);color:var(--ok)}
+  .acc.no{background:var(--warn-bg);color:var(--warn)}
+  .verifyBtn{font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--accent);
+    background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap}
   .verifyBtn:hover{background:var(--accent2);border-color:var(--accent2)}
-  .verifyBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .topLink{font-size:12px;color:var(--muted);text-decoration:none;white-space:nowrap}
-  .topLink:hover{color:var(--accent2)}
+  .sp{flex:1}
+  .langWrap{display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:20px;padding:4px 10px}
+  .langWrap select{border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--text);cursor:pointer;outline:none}
 
-  /* ── conversation ────────────────────────────────────── */
-  .scroll{flex:1;overflow-y:auto;scroll-behavior:smooth}
-  .thread{max-width:760px;margin:0 auto;padding:28px 22px 20px;display:flex;flex-direction:column;gap:26px}
-  .turn{display:flex;flex-direction:column;gap:7px}
-  .turn.me{align-items:flex-end}
-  .me .txt{background:var(--user);border-radius:18px 18px 5px 18px;padding:11px 16px;max-width:78%;
-    white-space:pre-wrap;word-wrap:break-word}
-  .me .mic-tag{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted2)}
-  .ai .txt{max-width:100%}
-  .ai .txt h3{font-size:14.5px;font-weight:700;margin:22px 0 7px;color:var(--text);letter-spacing:-.005em}
-  .ai .txt h3:first-child{margin-top:0}
-  .ai .txt p{margin-bottom:11px}
-  .ai .txt p:last-child{margin-bottom:0}
-  .ai .txt ul{margin:6px 0 13px;padding-left:20px}
-  .ai .txt li{margin-bottom:5px}
-  .ai .txt li::marker{color:var(--accent)}
-  .ai .txt strong{font-weight:650}
-  .ai .txt em{color:var(--muted)}
-  .ai .txt a{color:var(--accent2)}
-  .ai .txt code{background:var(--bg2);padding:1.5px 6px;border-radius:5px;
-    font-family:'JetBrains Mono',monospace;font-size:.87em}
+  .scroll{flex:1;overflow-y:auto}
+  .wrap{max-width:860px;margin:0 auto;padding:26px 22px 64px}
 
-  .rowacts{display:flex;gap:5px;align-items:center;margin-top:3px}
-  .iact{background:transparent;border:0;color:var(--muted2);border-radius:7px;padding:5px 8px;
-    font-size:12px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
-  .iact:hover{background:var(--bg2);color:var(--text)}
-  .iact:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-  .iact[aria-pressed="true"]{color:var(--accent2);background:var(--accent-soft)}
+  /* ── steps ── */
+  .steps{display:flex;gap:6px;margin-bottom:26px;flex-wrap:wrap}
+  .steps i{flex:1;min-width:34px;height:3px;border-radius:2px;background:var(--line);transition:.25s}
+  .steps i.done{background:var(--accent)}
+  .steps i.now{background:var(--accent);opacity:.45}
+  .stepNo{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent2);font-weight:700;margin-bottom:7px}
+  h1{font-size:25px;line-height:1.25;letter-spacing:-.02em;margin:0 0 8px}
+  .lede{color:var(--muted);font-size:14.5px;margin:0 0 24px;max-width:62ch}
 
-  /* provenance — compressed into a detail disclosure */
-  details.prov{margin-top:10px;font-size:12px}
-  details.prov summary{cursor:pointer;color:var(--muted2);list-style:none;display:inline-flex;
-    align-items:center;gap:6px;padding:3px 0}
-  details.prov summary::-webkit-details-marker{display:none}
-  details.prov summary::before{content:'▸';font-size:10px;transition:.15s}
-  details.prov[open] summary::before{transform:rotate(90deg)}
-  details.prov .body{margin-top:7px;padding:10px 12px;background:var(--bg2);border-radius:9px;
-    border:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:10.5px;
-    line-height:1.65;color:var(--muted)}
-  details.prov .miss{color:var(--warn)}
+  .card{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:20px;margin-bottom:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+  .req{color:var(--accent2)}
+  input[type=text],input[type=number],input[type=date],textarea,select.f{
+    width:100%;border:1px solid var(--line2);border-radius:10px;background:var(--bg);padding:10px 12px;
+    font:inherit;font-size:14.5px;color:var(--text);outline:none;transition:.15s}
+  input:focus,textarea:focus,select.f:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,137,31,.1)}
+  textarea{resize:vertical;min-height:76px}
+  .hint{font-size:11.5px;color:var(--muted2);margin-top:5px}
 
-  /* trade case strip */
-  .case{max-width:760px;margin:0 auto;padding:0 22px;display:none}
-  .case.on{display:block}
-  .caseIn{display:flex;flex-wrap:wrap;gap:6px;padding:11px 0 3px;border-top:1px solid var(--line)}
-  .chip{display:inline-flex;gap:6px;align-items:baseline;background:var(--bg2);
-    border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12px}
-  .chip b{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted2);font-weight:600}
-  .chip s{text-decoration:none;font-family:'JetBrains Mono',monospace;color:var(--text)}
-  .chip.alert{background:#fdf0f0;border-color:#f2d5d5}
-  .chip.alert s{color:#b03a3a}
+  /* choice tiles */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tile{border:1.5px solid var(--line2);border-radius:12px;background:var(--bg);padding:16px;cursor:pointer;
+    text-align:left;font:inherit;transition:.15s;display:flex;flex-direction:column;gap:3px}
+  .tile:hover{border-color:var(--accent)}
+  .tile.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 3px rgba(200,137,31,.09)}
+  .tile b{font-size:15px}
+  .tile span{font-size:12px;color:var(--muted)}
+  .tile.buy.on{border-color:var(--bull);background:var(--ok-bg);box-shadow:0 0 0 3px rgba(23,114,69,.09)}
+  .tile.sell.on{border-color:var(--bear);background:var(--bear-bg);box-shadow:0 0 0 3px rgba(176,58,58,.09)}
 
-  /* state line */
-  .state{display:inline-flex;align-items:center;gap:9px;color:var(--muted);font-size:14px}
-  .dots{display:inline-flex;gap:4px}
-  .dots i{width:6px;height:6px;border-radius:50%;background:var(--muted2);animation:bl 1.25s infinite}
-  .dots i:nth-child(2){animation-delay:.18s}.dots i:nth-child(3){animation-delay:.36s}
-  @keyframes bl{0%,62%,100%{opacity:.3}31%{opacity:1}}
-  .rec-dot{width:9px;height:9px;border-radius:50%;background:#d14343;animation:pl 1.1s infinite}
-  @keyframes pl{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+  /* layers */
+  .layer{border:1px solid var(--line2);border-radius:12px;background:var(--bg);padding:15px;margin-bottom:12px;position:relative}
+  .layer h4{margin:0 0 12px;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent2);font-weight:700}
+  .layer .del{position:absolute;top:11px;inset-inline-end:11px;border:0;background:transparent;color:var(--muted2);
+    cursor:pointer;font-size:17px;line-height:1;padding:3px 6px;border-radius:7px}
+  .layer .del:hover{background:var(--bear-bg);color:var(--bear)}
+  .segs{display:flex;gap:6px}
+  .segs button{flex:1;border:1.5px solid var(--line2);background:var(--bg);border-radius:9px;padding:8px;
+    font:600 13px/1 inherit;color:var(--muted);cursor:pointer}
+  .segs button.on[data-d=buy]{border-color:var(--bull);background:var(--ok-bg);color:var(--bull)}
+  .segs button.on[data-d=sell]{border-color:var(--bear);background:var(--bear-bg);color:var(--bear)}
+  .addLayer{width:100%;border:1.5px dashed var(--line2);background:transparent;border-radius:12px;padding:13px;
+    font:600 13.5px/1 inherit;color:var(--accent2);cursor:pointer}
+  .addLayer:hover{border-color:var(--accent);background:var(--accent-soft)}
 
-  /* limit / gate card */
-  .gate{border:1px solid #f0dcb4;background:var(--warn-bg);border-radius:var(--r);padding:16px 18px}
-  .gate h4{font-size:14.5px;font-weight:700;margin-bottom:6px;color:var(--warn)}
-  .gate p{font-size:13.5px;color:#6d5518;margin-bottom:10px}
-  .gate ul{margin:0 0 12px;padding-left:19px;font-size:13px;color:#6d5518}
-  .gate li{margin-bottom:3px}
-  .gate .gb{display:flex;gap:8px;flex-wrap:wrap}
-  .gate .gb a,.gate .gb button{font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;
+  /* voice */
+  .vrow{display:flex;gap:8px;align-items:flex-start}
+  .vrow textarea{flex:1}
+  .mic{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:1px solid var(--line2);background:var(--bg);
+    color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .mic:hover:not([disabled]){border-color:var(--accent);color:var(--accent2)}
+  .mic[disabled]{opacity:.35;cursor:not-allowed}
+  .mic.rec{background:var(--bear-bg);border-color:var(--bear);color:var(--bear)}
+  .mic svg{width:18px;height:18px}
+  .vnote{font-size:11.5px;color:var(--accent2);margin-top:6px;min-height:16px}
+
+  /* nav */
+  .nav{display:flex;gap:10px;margin-top:22px;align-items:center}
+  .btn{border:1px solid var(--line2);background:var(--bg);border-radius:11px;padding:11px 20px;
+    font:600 14px/1 inherit;color:var(--text);cursor:pointer;transition:.15s}
+  .btn:hover:not([disabled]){border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover:not([disabled]){background:var(--accent2);border-color:var(--accent2)}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .navSp{flex:1}
+  .err{color:var(--bear);font-size:12.5px;margin-top:10px;min-height:18px}
+
+  /* review */
+  .rev{font-size:14px}
+  .rev table{width:100%;border-collapse:collapse}
+  .rev th,.rev td{text-align:start;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .rev th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700}
+
+  /* ── results ── */
+  .rHead{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:20px;margin-bottom:16px}
+  .rTop{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .rTop h2{margin:0;font-size:21px;letter-spacing:-.02em}
+  .rTop .tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;
+    background:var(--accent-soft);color:var(--accent2)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .stat{border:1px solid var(--line);border-radius:11px;padding:12px;background:var(--bg)}
+  .stat i{display:block;font-style:normal;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:4px}
+  .stat b{font-size:17px;font-weight:700;letter-spacing:-.01em;display:block}
+  .stat u{display:block;text-decoration:none;font-size:11px;color:var(--muted2);margin-top:3px}
+  .stat.pos b{color:var(--bull)} .stat.neg b{color:var(--bear)}
+
+  .meters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .meter{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:15px}
+  .meter h5{margin:0 0 3px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);font-weight:700}
+  .meter .lean{font-size:15.5px;font-weight:700;margin-bottom:9px;text-transform:capitalize}
+  .meter .lean.bullish{color:var(--bull)} .meter .lean.bearish{color:var(--bear)} .meter .lean.neutral{color:var(--muted)}
+  .track{position:relative;height:6px;border-radius:4px;background:linear-gradient(90deg,#f2dcdc,#eeeeee,#dcefe4);margin:0 0 8px}
+  .track .pin{position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;background:var(--bg);
+    border:2.5px solid var(--muted);transform:translateX(-50%);transition:.3s}
+  .track .pin.bullish{border-color:var(--bull)} .track .pin.bearish{border-color:var(--bear)}
+  .meter .sub{font-size:11px;color:var(--muted2);display:flex;justify-content:space-between;gap:6px}
+  .meter details{margin-top:9px}
+  .meter summary{font-size:11.5px;color:var(--accent2);cursor:pointer}
+  .meter details ul{margin:7px 0 0;padding-inline-start:16px;font-size:11.5px;color:var(--muted);line-height:1.55}
+
+  .report{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:22px 24px}
+  .report h3{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent2);font-weight:700;
+    margin:22px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .report h3:first-child{margin-top:0}
+  .report p{margin:0 0 10px}
+  .report ul{margin:0 0 12px;padding-inline-start:19px}
+  .report li{margin-bottom:5px}
+  .report table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:13px;display:block;overflow-x:auto}
+  .report th,.report td{border:1px solid var(--line);padding:7px 9px;text-align:start;white-space:nowrap}
+  .report th{background:var(--bg2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2)}
+  .report em{color:var(--muted);font-size:13px}
+  .report code{background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:13px}
+  .prov{margin-top:16px;font-size:11.5px;color:var(--muted2);border-top:1px solid var(--line);padding-top:12px}
+  .prov b{display:block;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px;color:var(--muted)}
+  .prov div{margin-bottom:3px}
+
+  .gate{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:20px;margin-bottom:16px}
+  .gate h4{margin:0 0 8px;font-size:16px;color:var(--accent2)}
+  .gate ul{margin:0 0 12px;padding-inline-start:18px;font-size:13.5px}
+  .gate .gb{display:flex;gap:9px;flex-wrap:wrap}
+  .gate .gb a,.gate .gb button{font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;
     text-decoration:none;cursor:pointer;font-family:inherit;border:1px solid var(--accent)}
   .gate .gb .primary{background:var(--accent);color:#fff}
   .gate .gb .ghost{background:transparent;color:var(--accent2)}
 
-  /* Voice status — lives in the COMPOSER, never in the conversation thread. */
-  .vhint{display:none;align-items:center;gap:7px;margin:0 0 8px 6px;min-height:15px;
-    font-size:11.5px;font-weight:600;color:var(--accent2)}
-  .vhint.on{display:flex}
-  .vhint .sp{width:10px;height:10px;border-radius:50%;border:2px solid rgba(169,113,26,.3);
-    border-top-color:var(--accent2);animation:spin .7s linear infinite}
-  .vhint .t{font-weight:500;color:var(--muted);max-width:min(520px,64vw);
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-  /* ── composer ────────────────────────────────────────── */
-  .composer{border-top:1px solid var(--line);background:var(--bg);padding:14px 22px calc(12px + env(safe-area-inset-bottom))}
-  .cwrap{max-width:760px;margin:0 auto}
-  .cbox{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--line2);border-radius:24px;
-    padding:7px 7px 7px 8px;background:var(--bg);transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-  .cbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,137,31,.09)}
-  .cluster{display:flex;align-items:center;gap:6px;flex-shrink:0;align-self:flex-end}
-  .icon{position:relative;width:40px;height:40px;flex-shrink:0;border-radius:50%;
-    border:1px solid var(--line);background:var(--bg2);
-    color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
-  .icon:hover:not([disabled]){background:#ededee;color:var(--text);border-color:var(--line2)}
-  .icon:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-  .icon[disabled]{opacity:.35;cursor:not-allowed}
-  .icon svg{width:19px;height:19px}
-  .icon.rec{background:#fdeaea;color:#c0392b;border-color:rgba(192,57,43,.38)}
-  .icon.rec::after{content:'';position:absolute;inset:-1px;border-radius:50%;
-    border:1px solid rgba(192,57,43,.45);animation:ring 1.4s infinite}
-  .icon.busy{background:var(--accent-soft);color:var(--accent2);border-color:rgba(200,137,31,.42)}
-  .icon.err{background:#fdeaea;color:#b03a3a;border-color:rgba(176,58,58,.42)}
-  @keyframes ring{0%{transform:scale(.9);opacity:.8}100%{transform:scale(1.25);opacity:0}}
-  textarea#in{flex:1;border:0;background:transparent;resize:none;font-family:inherit;font-size:15.5px;
-    color:var(--text);padding:9px 2px;max-height:180px;min-height:38px;line-height:1.5}
-  textarea#in:focus{outline:none}
-  textarea#in[dir="rtl"]{text-align:right}
-  textarea#in::placeholder{color:var(--muted2)}
-  #send{position:relative;width:40px;height:40px;flex-shrink:0;border-radius:50%;border:0;
-    background:linear-gradient(148deg,#d99a2c 0%,var(--accent) 46%,var(--accent2) 100%);
-    color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
-    box-shadow:0 2px 7px rgba(200,137,31,.34);
-    transition:transform .12s,box-shadow .16s,background .16s,opacity .16s}
-  #send:hover:not([disabled]){transform:translateY(-1px);box-shadow:0 5px 13px rgba(200,137,31,.44)}
-  #send:active:not([disabled]){transform:translateY(0) scale(.95)}
-  #send:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
-  #send[disabled]{background:var(--accent-soft);color:#caa059;box-shadow:none;
-    border:1px solid rgba(200,137,31,.34);cursor:not-allowed;transform:none}
-  #send svg{width:18px;height:18px;margin-left:-1px}
-  textarea#in[dir="rtl"] ~ .cluster #send svg{transform:scaleX(-1);margin-left:1px}
-  #send.busy svg{display:none}
-  #send .spin{display:none;width:15px;height:15px;border-radius:50%;
-    border:2px solid rgba(255,255,255,.38);border-top-color:#fff;animation:spin .7s linear infinite}
-  #send.busy .spin{display:block}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .cfoot{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11px;color:var(--muted2);flex-wrap:wrap}
-  .cfoot select{border:1px solid var(--line2);background:var(--bg);border-radius:7px;padding:3px 7px;
-    font-family:inherit;font-size:11px;color:var(--muted);cursor:pointer}
-  .cfoot select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-  .cfoot .right{margin-left:auto;text-align:right}
-  .verr{color:#b03a3a;display:none;width:100%}
-  .verr.on{display:block}
+  .busy{display:none;align-items:center;gap:11px;color:var(--muted);font-size:14px;padding:26px 0}
+  .busy.on{display:flex}
+  .spin{width:17px;height:17px;border:2px solid var(--line2);border-top-color:var(--accent);border-radius:50%;
+    animation:sp .7s linear infinite;flex-shrink:0}
+  @keyframes sp{to{transform:rotate(360deg)}}
 
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  [dir=rtl] .lede,[dir=rtl] .report,[dir=rtl] .rev{text-align:right}
 
   @media(max-width:860px){
     aside{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.16)}
     aside.open{transform:none}
-    .sideScrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:55;
-      opacity:0;pointer-events:none;transition:.2s}
+    .sideScrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:55;opacity:0;pointer-events:none;transition:.2s}
     .sideScrim.open{opacity:1;pointer-events:auto}
     .burger{display:flex}
-    .thread{padding:20px 16px 16px}
-    .case{padding:0 16px}
-    .composer{padding:11px 14px calc(10px + env(safe-area-inset-bottom))}
-    .me .txt{max-width:88%}
-    .topLink{display:none}
+    .wrap{padding:20px 15px 56px}
+    .grid2,.grid3{grid-template-columns:1fr}
+    .meters{grid-template-columns:1fr}
+    .report{padding:18px 15px}
   }
-  /* Narrow phones: the header must never push the Verify action off-screen. */
   @media(max-width:560px){
     header.bar{padding:10px 12px;gap:8px}
-    .title{font-size:14px}
+    .brand{font-size:14.5px}
     .acc{font-size:10.5px;padding:3px 8px}
     .acc .detail{display:none}
     .verifyBtn{font-size:10.5px;padding:4px 9px}
+    h1{font-size:21px}
   }
   @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-
 <div class="app">
   <div class="sideScrim" id="scrim"></div>
-
   <aside id="side">
-    <div class="side-top">
-      <button class="newbtn" id="newBtn" type="button">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        New analysis
-      </button>
-    </div>
-    <div class="side-scroll">
-      <div class="side-lbl">Your analyses</div>
-      <div id="histList"></div>
-    </div>
-    <div class="side-foot">
-      <a href="index.html">← Z Trade University</a>
-    </div>
+    <button class="newBtn" id="newBtn" type="button">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span data-i18n="newAssessment">New assessment</span>
+    </button>
+    <div class="sideHead" data-i18n="yourAssessments">Your assessments</div>
+    <div class="histList" id="histList"></div>
+    <div class="sideFoot"><a href="index.html">← Z Trade University</a></div>
   </aside>
 
   <main>
     <header class="bar">
-      <button class="burger" id="burger" type="button" aria-label="Open history"
-        aria-controls="side" aria-expanded="false">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
-      <div class="title">ZTU <b>Rescue</b></div>
+      <span class="brand">ZTU <span>Rescue</span></span>
       <span class="acc" id="accBadge" aria-live="polite">…</span>
-      <button class="verifyBtn" id="verifyBtn" type="button" hidden>Verify with IB</button>
+      <button class="verifyBtn" id="verifyBtn" type="button" hidden data-i18n="verifyIb">Verify with IB</button>
       <span class="sp"></span>
+      <span class="langWrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true" style="color:var(--muted)"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
+        <label class="sr-only" for="lang">Language</label>
+        <select id="lang">
+          <option value="en">English</option>
+          <option value="ur">اردو</option>
+          <option value="ar">العربية</option>
+        </select>
+      </span>
     </header>
 
     <div class="scroll" id="scrollArea">
-      <div class="thread" id="thread" role="log" aria-live="polite" aria-label="Conversation"></div>
-    </div>
-
-    <div class="case" id="caseBox"><div class="caseIn" id="caseIn"></div></div>
-
-    <div class="composer">
-      <div class="cwrap">
-        <div class="vhint" id="vhint" aria-live="polite"></div>
-        <div class="cbox">
-          <label class="sr-only" for="in">Describe your open trade</label>
-          <textarea id="in" rows="1" placeholder="Describe your open trade — instrument, entry, stop…" autocomplete="off"></textarea>
-          <!-- Mic and Send are ONE action cluster on the same side: speak or send,
-               the two ways of committing what is in the box, side by side. -->
-          <div class="cluster">
-          <button class="icon" id="mic" type="button" aria-label="Start voice input" title="Speak — the transcript lands in this box so you can edit it">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
-              <rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4M8 21h8"/>
-            </svg>
-          </button>
-          <button id="send" type="button" aria-label="Send message" title="Send" disabled>
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.3 20.7 21.6 12 3.3 3.3v6.9L15 12 3.3 13.8z"/></svg>
-            <span class="spin" aria-hidden="true"></span>
-          </button>
-          </div>
-        </div>
-        <div class="cfoot">
-          <label for="lang" class="sr-only">Language</label>
-          <select id="lang" title="Language for voice input and spoken replies">
-            <option value="en-US">English</option>
-            <option value="ur-PK">اردو</option>
-            <option value="ar-SA">العربية</option>
-          </select>
-          <span class="right">Decision-support only — never a guaranteed outcome.</span>
-          <span class="verr" id="verr" role="alert"></span>
-        </div>
+      <div class="wrap">
+        <div class="steps" id="steps" aria-hidden="true"></div>
+        <div id="view"></div>
       </div>
     </div>
   </main>
@@ -314,245 +267,164 @@
 <script src="/assets/ztu-premium-card.js" defer></script>
 <script>
 /* ══════════════════════════════════════════════════════════════════════════
-   ZTU RESCUE — client
+   ZTU RESCUE — STRUCTURED TRADE ASSESSMENT (client)
 
-   ACCESS: reuses the site's EXISTING member gate with no additions. The
-   identity token minted by /api/ai-access after the Library OTP flow lives in
-   localStorage['ztu_ai_identity']; it is sent with every request and the server
-   resolves the tier with the SAME resolveTier() the AI assistant uses, counting
-   guests in the SAME signed ztu_ai_guest cookie against the SAME
-   AI_VISITOR_MESSAGE_LIMIT (5). Verification is handled by the existing shared
-   ZTUPremiumCard — one identity across Library, Journal, AI and Rescue. There
-   is no second auth system, no second OTP, no second counter here.
+   The trader states the position once, in structured form. Everything the
+   system can obtain for itself — current price, session range, macro, news,
+   events, historical candles — is fetched server-side at analysis time and
+   never asked for here.
 
-   HISTORY: browser-local only, under a key of its own so Rescue history and
-   general-chatbot history never mix. Nothing is sent to a server and nothing
-   about an open position is persisted beyond this browser.
-
-   VOICE: the browser-native Web Speech API implementation is carried over
-   unchanged — recognition, transcript review, numeric confirmation and
-   speechSynthesis playback.
+   Preserved without modification from the previous build:
+     · the access chain (library-auth → /api/journal-access → ztu_lib_v3 →
+       /api/ai-access bridge → ztu_ai_identity → session → tier). No second
+       auth system, no second OTP, no second counter — the SAME signed
+       ztu_ai_guest allowance every other ZTU surface counts against.
+     · the shared premium card for verification.
+     · Rescue's own history key, kept separate from the retired assistant's.
    ══════════════════════════════════════════════════════════════════════════ */
-(function () {
-'use strict';
-
-const API = '/api/trade-rescue';
-const HIST_KEY = 'ztu_rescue_hist_v1';    // deliberately NOT the assistant's key
-const LANG_KEY = 'ztu_rescue_lang';
-const IDENTITY_KEY = 'ztu_ai_identity';   // the EXISTING shared identity token
+const API          = '/api/rescue-assess';
+const HIST_KEY     = 'ztu_rescue_cases_v1';
+const LANG_KEY     = 'ztu_rescue_lang';
+const IDENTITY_KEY = 'ztu_ai_identity';      // the EXISTING shared identity token
 
 const $ = (id) => document.getElementById(id);
-const thread = $('thread'), input = $('in'), sendBtn = $('send'), mic = $('mic');
-const caseBox = $('caseBox'), caseIn = $('caseIn'), histList = $('histList');
-const vhint = $('vhint'), verr = $('verr'), langSel = $('lang'), scrollArea = $('scrollArea');
-const accBadge = $('accBadge'), verifyBtn = $('verifyBtn');
+const view = $('view'), stepsEl = $('steps'), histList = $('histList');
+const accBadge = $('accBadge'), verifyBtn = $('verifyBtn'), langSel = $('lang');
 const side = $('side'), scrim = $('scrim'), burger = $('burger');
 
-let convo = null;        // {id, title, turns:[], tradeCase:{}}
-let busy = false;
-let tier = 'visitor';
-let freeLimit = 5;       // replaced by the server's real allowance on first reply
+let tier = 'visitor', freeLimit = 5;
+let step = 0, busy = false, result = null;
+let C = newCase();
 
-/* ── language ──────────────────────────────────────────────────────────── */
-try { const s = localStorage.getItem(LANG_KEY); if (s) langSel.value = s; } catch {}
-langSel.addEventListener('change', () => {
-  try { localStorage.setItem(LANG_KEY, langSel.value); } catch {}
-  if (rec) rec.lang = langSel.value;
-  applyDir();
-});
-const replyLang = () => ({ 'en-US':'en','ur-PK':'ur','ar-SA':'ar' })[langSel.value] || 'en';
-
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
-  c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-
-function md(src) {
-  const inline = (s) => esc(s)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*]+?)\*/g, '$1<em>$2</em>')
-    .replace(/_([^_]+?)_/g, '<em>$1</em>')
-    .replace(/`([^`]+?)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
-  let out = '', list = false;
-  for (const raw of String(src || '').split('\n')) {
-    const line = raw.trim();
-    if (!line) { if (list) { out += '</ul>'; list = false; } continue; }
-    const h = /^#{2,4}\s+(.*)$/.exec(line);
-    if (h) { if (list) { out += '</ul>'; list = false; } out += '<h3>' + inline(h[1]) + '</h3>'; continue; }
-    const li = /^[-•]\s+(.*)$/.exec(line);
-    if (li) { if (!list) { out += '<ul>'; list = true; } out += '<li>' + inline(li[1]) + '</li>'; continue; }
-    if (list) { out += '</ul>'; list = false; }
-    out += '<p>' + inline(line) + '</p>';
-  }
-  return list ? out + '</ul>' : out;
+function newCase() {
+  return {
+    instrument: null, direction: null, multi: null,
+    layers: [blankLayer()],
+    account: { starting_balance: '', current_balance: '', floating_pl: '' },
+    contractUnits: '',
+    context: { thesis: '', concern: '', horizon: '', hedged: '', confidence: '', note: '' },
+  };
+}
+function blankLayer(dir) {
+  return { direction: dir || null, entry: '', size: '', opened_at: '', stop_loss: '', take_profit: '', purpose: '', note: '' };
 }
 
-/* ── history (browser-local) ───────────────────────────────────────────── */
-function loadHist() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } }
-function saveHist(h) { try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 40))); } catch {} }
-function persist() {
-  if (!convo || !convo.turns.length) return;
-  const h = loadHist().filter(c => c.id !== convo.id);
-  h.unshift(convo); saveHist(h); renderHist();
-}
-function renderHist() {
-  const h = loadHist();
-  histList.innerHTML = h.length ? '' : '<div style="padding:8px 10px;font-size:12.5px;color:var(--muted2)">No analyses yet.</div>';
-  for (const c of h) {
-    const b = document.createElement('button');
-    b.className = 'hitem' + (convo && c.id === convo.id ? ' on' : '');
-    b.type = 'button';
-    b.innerHTML = '<span></span><button class="del" type="button" aria-label="Delete">×</button>';
-    b.querySelector('span').textContent = c.title || 'Untitled analysis';
-    b.addEventListener('click', (e) => {
-      if (e.target.classList.contains('del')) {
-        e.stopPropagation();
-        saveHist(loadHist().filter(x => x.id !== c.id));
-        if (convo && convo.id === c.id) newConvo(); else renderHist();
-        return;
-      }
-      openConvo(c);
-    });
-    histList.appendChild(b);
-  }
-}
-function newConvo() {
-  convo = { id: 'c' + Date.now(), title: '', turns: [], tradeCase: {} };
-  thread.innerHTML = ''; renderCase({}); stopSpeak();
-  if (listening) { try { rec.stop(); } catch {} }
-  clearDraft();
-  greet(); renderHist(); closeSide();
-}
-function openConvo(c) {
-  convo = JSON.parse(JSON.stringify(c));
-  thread.innerHTML = ''; stopSpeak();
-  for (const t of convo.turns) {
-    if (t.role === 'me') addMe(t.text, t.voice, false);
-    else addAI(t.text, t.evidence, false, t.gate);
-  }
-  renderCase(convo.tradeCase); renderHist(); closeSide();
-}
+/* ── i18n ─────────────────────────────────────────────────────────────────
+   Form labels switch with the selector, exactly like the report does. */
+const I18N = {
+  en: {
+    newAssessment: 'New assessment', yourAssessments: 'Your assessments', verifyIb: 'Verify with IB',
+    s1: 'Which instrument is the position in?', s1l: 'Rescue analyses the instruments it can independently verify — a live price, macro context and news for each. Nothing else is offered, because an assessment without verified data is just an opinion.',
+    s2: 'Which way is the position?', s2l: 'The overall idea behind the trade. Individual layers can differ — a hedge is added later.',
+    s3: 'How is the position built?', s3l: 'One order, or several? Averaging in and hedging change the answer completely, so each order is entered separately.',
+    s4: 'Account and risk context', s4l: 'Optional, and never verified against your broker — but it is what turns "the trade is down" into "the exposure is too large".',
+    s5: 'Trade context', s5l: 'The part only you can supply. The market data is fetched automatically; this is what the evidence gets weighed against.',
+    s6: 'Review', s6l: 'Check the position, then run the assessment. Current price, macro context, news and historical candles are retrieved at that moment.',
+    single: 'One position', singleD: 'A single order.',
+    multiple: 'Multiple layers', multipleD: 'Averaged in, scaled, or hedged.',
+    buy: 'BUY', buyD: 'Long — you profit if price rises.',
+    sell: 'SELL', sellD: 'Short — you profit if price falls.',
+    layer: 'Layer', entry: 'Entry price', size: 'Size (lots)', opened: 'Date opened',
+    sl: 'Stop Loss', tp: 'Take Profit', purpose: 'Purpose', note: 'Note',
+    addLayer: '+ Add another layer', optional: 'optional',
+    describeLayers: 'Or describe them in your own words',
+    describeLayersH: 'Speak or type, in any language: “I sold at four thousand forty, then another at four thousand forty-five, then a hedge buy at four thousand fifty.”',
+    readLayers: 'Read this into the layers',
+    startBal: 'Balance when this started', curBal: 'Balance now', floatPl: 'Floating P/L now',
+    units: 'Units per 1.00 lot',
+    thesis: 'Why did you take this trade?', concern: 'What is worrying you now?',
+    horizon: 'Intended time horizon', hedged: 'Is any part hedged?', confidence: 'How confident are you now?',
+    note: 'Anything else that matters',
+    back: 'Back', next: 'Continue', analyse: 'Run the assessment',
+    analysing: 'Fetching current market data and assessing the position…',
+    needInstrument: 'Choose an instrument to continue.', needDirection: 'Choose a direction to continue.',
+    needLayer: 'At least one layer needs a side and an entry price.',
+    yes: 'Yes', no: 'No', dontKnow: 'Not sure',
+    netExposure: 'Net exposure', breakeven: 'Breakeven', floating: 'Floating result', current: 'Current price',
+    unavailable: 'Unavailable', strength: 'Evidence strength', coverage: 'Coverage',
+    howMeasured: 'How this is measured', sources: 'Sources and retrieval times',
+    again: 'Assess another position',
+  },
+  ur: {
+    newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
+    s1: 'یہ position کس instrument میں ہے؟', s1l: 'Rescue صرف وہ instruments دیکھتا ہے جن کا live price، macro context اور news آزادانہ طور پر verify ہو سکے۔',
+    s2: 'Position کس طرف ہے؟', s2l: 'ٹریڈ کا مجموعی خیال۔ انفرادی layers مختلف ہو سکتی ہیں — hedge بعد میں شامل ہوتا ہے۔',
+    s3: 'Position کیسے بنی ہے؟', s3l: 'ایک order یا کئی؟ Averaging اور hedging جواب مکمل بدل دیتے ہیں، اس لیے ہر order الگ درج کریں۔',
+    s4: 'Account اور risk context', s4l: 'اختیاری، اور broker سے verify نہیں ہوتا — لیکن یہی "trade نیچے ہے" کو "exposure بہت بڑا ہے" میں بدلتا ہے۔',
+    s5: 'Trade context', s5l: 'یہ صرف آپ بتا سکتے ہیں۔ Market data خود آ جاتا ہے؛ evidence کا موازنہ اسی سے ہوتا ہے۔',
+    s6: 'نظرثانی', s6l: 'Position دیکھ لیں، پھر تجزیہ چلائیں۔ موجودہ price، macro، news اور historical candles اسی وقت لیے جائیں گے۔',
+    single: 'ایک position', singleD: 'صرف ایک order۔',
+    multiple: 'کئی layers', multipleD: 'Average, scale یا hedge۔',
+    buy: 'BUY', buyD: 'Long — price بڑھے تو منافع۔',
+    sell: 'SELL', sellD: 'Short — price گرے تو منافع۔',
+    layer: 'Layer', entry: 'Entry price', size: 'Size (lots)', opened: 'کس تاریخ کو کھولی',
+    sl: 'Stop Loss', tp: 'Take Profit', purpose: 'مقصد', note: 'نوٹ',
+    addLayer: '+ ایک اور layer', optional: 'اختیاری',
+    describeLayers: 'یا اپنے الفاظ میں بتائیں',
+    describeLayersH: 'بولیں یا لکھیں: ”میں نے چار ہزار چالیس پر سیل لی، پھر چار ہزار پینتالیس پر دوسری، پھر چار ہزار پچاس پر hedge buy۔“',
+    readLayers: 'اسے layers میں پڑھیں',
+    startBal: 'شروع میں balance', curBal: 'ابھی balance', floatPl: 'ابھی floating P/L',
+    units: 'فی 1.00 lot units',
+    thesis: 'یہ ٹریڈ کس وجہ سے لی تھی؟', concern: 'اب آپ کو کیا فکر ہے؟',
+    horizon: 'کتنے عرصے کا ارادہ تھا', hedged: 'کوئی حصہ hedge ہے؟', confidence: 'اب کتنا اعتماد ہے؟',
+    note: 'کوئی اور اہم بات',
+    back: 'واپس', next: 'آگے', analyse: 'تجزیہ چلائیں',
+    analysing: 'موجودہ market data لے کر position کا جائزہ لیا جا رہا ہے…',
+    needInstrument: 'آگے بڑھنے کے لیے instrument منتخب کریں۔', needDirection: 'آگے بڑھنے کے لیے direction منتخب کریں۔',
+    needLayer: 'کم از کم ایک layer میں side اور entry price ضروری ہے۔',
+    yes: 'ہاں', no: 'نہیں', dontKnow: 'یقین نہیں',
+    netExposure: 'Net exposure', breakeven: 'Breakeven', floating: 'Floating نتیجہ', current: 'موجودہ price',
+    unavailable: 'دستیاب نہیں', strength: 'Evidence کی مضبوطی', coverage: 'Coverage',
+    howMeasured: 'یہ کیسے ناپا گیا', sources: 'ذرائع اور وقت',
+    again: 'ایک اور position دیکھیں',
+  },
+  ar: {
+    newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
+    s1: 'ما الأداة التي فيها المركز؟', s1l: 'يحلل Rescue الأدوات التي يمكنه التحقق منها بشكل مستقل — سعر حي وسياق كلي وأخبار.',
+    s2: 'في أي اتجاه المركز؟', s2l: 'الفكرة العامة للصفقة. قد تختلف الطبقات — التحوط يُضاف لاحقاً.',
+    s3: 'كيف بُني المركز؟', s3l: 'أمر واحد أم عدة؟ التعزيز والتحوط يغيّران الإجابة تماماً، لذا يُدخل كل أمر على حدة.',
+    s4: 'سياق الحساب والمخاطر', s4l: 'اختياري ولا يُتحقق منه لدى الوسيط — لكنه ما يحوّل «الصفقة خاسرة» إلى «الانكشاف كبير جداً».',
+    s5: 'سياق الصفقة', s5l: 'ما لا يستطيع تقديمه سواك. بيانات السوق تُجلب تلقائياً؛ وبها تُوزن الأدلة.',
+    s6: 'مراجعة', s6l: 'راجع المركز ثم شغّل التقييم. السعر الحالي والسياق الكلي والأخبار والشموع التاريخية تُجلب في تلك اللحظة.',
+    single: 'مركز واحد', singleD: 'أمر واحد.',
+    multiple: 'عدة طبقات', multipleD: 'تعزيز أو تدرج أو تحوط.',
+    buy: 'شراء', buyD: 'Long — تربح إذا ارتفع السعر.',
+    sell: 'بيع', sellD: 'Short — تربح إذا انخفض السعر.',
+    layer: 'طبقة', entry: 'سعر الدخول', size: 'الحجم (لوت)', opened: 'تاريخ الفتح',
+    sl: 'Stop Loss', tp: 'Take Profit', purpose: 'الغرض', note: 'ملاحظة',
+    addLayer: '+ طبقة أخرى', optional: 'اختياري',
+    describeLayers: 'أو صِفها بكلماتك',
+    describeLayersH: 'تحدث أو اكتب: «بعت عند أربعة آلاف وأربعين، ثم أخرى عند أربعة آلاف وخمسة وأربعين، ثم شراء تحوط عند أربعة آلاف وخمسين.»',
+    readLayers: 'اقرأ هذا إلى الطبقات',
+    startBal: 'الرصيد عند البداية', curBal: 'الرصيد الآن', floatPl: 'الربح/الخسارة العائمة',
+    units: 'وحدات لكل 1.00 لوت',
+    thesis: 'لماذا دخلت هذه الصفقة؟', concern: 'ما الذي يقلقك الآن؟',
+    horizon: 'المدى الزمني المقصود', hedged: 'هل جزء منها محوّط؟', confidence: 'ما مدى ثقتك الآن؟',
+    note: 'أي شيء آخر مهم',
+    back: 'رجوع', next: 'متابعة', analyse: 'شغّل التقييم',
+    analysing: 'يتم جلب بيانات السوق الحالية وتقييم المركز…',
+    needInstrument: 'اختر أداة للمتابعة.', needDirection: 'اختر اتجاهاً للمتابعة.',
+    needLayer: 'تحتاج طبقة واحدة على الأقل إلى جهة وسعر دخول.',
+    yes: 'نعم', no: 'لا', dontKnow: 'غير متأكد',
+    netExposure: 'صافي الانكشاف', breakeven: 'نقطة التعادل', floating: 'النتيجة العائمة', current: 'السعر الحالي',
+    unavailable: 'غير متاح', strength: 'قوة الأدلة', coverage: 'التغطية',
+    howMeasured: 'كيف يُقاس هذا', sources: 'المصادر وأوقات الجلب',
+    again: 'قيّم مركزاً آخر',
+  },
+};
+const lang = () => langSel.value || 'en';
+const t = (k) => (I18N[lang()] && I18N[lang()][k]) || I18N.en[k] || k;
+const rtl = () => lang() === 'ur' || lang() === 'ar';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/* ── rendering ─────────────────────────────────────────────────────────── */
-function addMe(text, spoken, record) {
-  const t = document.createElement('div'); t.className = 'turn me';
-  if (spoken) { const m = document.createElement('div'); m.className = 'mic-tag'; m.textContent = 'Spoken'; t.appendChild(m); }
-  const d = document.createElement('div'); d.className = 'txt'; d.textContent = text;
-  t.appendChild(d); thread.appendChild(t); scrollDown();
-  if (record !== false) {
-    convo.turns.push({ role: 'me', text, voice: !!spoken });
-    if (!convo.title) { convo.title = text.slice(0, 46) + (text.length > 46 ? '…' : ''); }
-  }
-  return t;
-}
-function addAI(markdown, evidence, record, gate) {
-  const t = document.createElement('div'); t.className = 'turn ai';
-  const d = document.createElement('div'); d.className = 'txt';
-
-  if (gate) {
-    d.innerHTML = '<div class="gate"><h4>' + esc(gate.title) + '</h4><p>' + esc(gate.headline) + '</p>'
-      + '<ul>' + (gate.steps || []).map(s => '<li>' + esc(s) + '</li>').join('') + '</ul>'
-      + '<div class="gb"><button class="primary" id="gateVerify" type="button">' + esc(gate.verifyCta ? gate.verifyCta.label : 'Verify now') + '</button>'
-      + '<a class="ghost" href="' + esc(gate.cta ? gate.cta.url : 'license-request.html') + '">' + esc(gate.cta ? gate.cta.label : 'Join IB') + '</a></div>'
-      + '<p style="margin:10px 0 0;font-size:12px">' + esc(gate.freeNotice || '') + '</p></div>';
-  } else {
-    d.innerHTML = md(markdown);
-  }
-
-  if (evidence) {
-    const det = document.createElement('details'); det.className = 'prov';
-    let h = '';
-    for (const l of (evidence.provenance || [])) h += '<div>' + esc(l) + '</div>';
-    for (const u of (evidence.unavailable || [])) h += '<div class="miss">⚠ ' + esc(u) + '</div>';
-    det.innerHTML = '<summary>Sources &amp; timestamps</summary><div class="body">' + (h || '<div>No external data was used for this turn.</div>') + '</div>';
-    d.appendChild(det);
-  }
-  t.appendChild(d);
-
-  if (!gate && TTS_OK && markdown) {
-    const acts = document.createElement('div'); acts.className = 'rowacts';
-    const b = document.createElement('button');
-    b.className = 'iact'; b.type = 'button'; b.setAttribute('aria-pressed', 'false');
-    b.innerHTML = '🔊 Listen';
-    b.addEventListener('click', () => toggleSpeak(b, markdown));
-    acts.appendChild(b);
-    const cp = document.createElement('button');
-    cp.className = 'iact'; cp.type = 'button'; cp.textContent = 'Copy';
-    cp.addEventListener('click', () => { try { navigator.clipboard.writeText(markdown); cp.textContent = 'Copied'; setTimeout(() => cp.textContent = 'Copy', 1400); } catch {} });
-    acts.appendChild(cp);
-    t.appendChild(acts);
-  }
-  thread.appendChild(t); scrollDown();
-  if (gate) { const gv = $('gateVerify'); if (gv) gv.addEventListener('click', openVerify); }
-  if (record !== false) convo.turns.push({ role: 'ai', text: markdown, evidence, gate });
-}
-function scrollDown() { scrollArea.scrollTop = scrollArea.scrollHeight; }
-
-function showState(label, kind) {
-  hideState();
-  const t = document.createElement('div'); t.className = 'turn ai'; t.id = 'stateT';
-  t.innerHTML = '<div class="state">' + (kind === 'rec' ? '<span class="rec-dot"></span>' : '<span class="dots"><i></i><i></i><i></i></span>')
-    + '<span>' + esc(label) + '</span></div>';
-  thread.appendChild(t); scrollDown();
-}
-function hideState() { const t = $('stateT'); if (t) t.remove(); }
-
-function renderCase(c) {
-  if (convo) convo.tradeCase = c || {};
-  const out = [];
-  const chip = (l, v, cls) => { if (v !== null && v !== undefined && v !== '')
-    out.push('<span class="chip ' + (cls || '') + '"><b>' + esc(l) + '</b><s>' + esc(v) + '</s></span>'); };
-  chip('Instrument', c && c.instrument);
-  chip('Direction', c && c.direction ? c.direction.toUpperCase() : null);
-  chip('Entry', c && c.entry);
-  if (c && c.has_stop_loss === false) chip('Stop Loss', 'None', 'alert'); else chip('Stop Loss', c && c.stop_loss);
-  chip('Take Profit', c && c.take_profit);
-  chip('Entry TF', c && c.timeframe_entry);
-  chip('Holding', c && c.holding_duration);
-  chip('Size', c && c.position_size);
-  caseIn.innerHTML = out.join('');
-  caseBox.classList.toggle('on', out.length > 0);
-}
-
-/* ── access — REUSES the existing shared member wiring, nothing new ───────
-   Authoritative chain, shared with every other ZTU surface:
-
-     library-auth eligibility (ib_stars_active / special_access)
-       → /api/journal-access          — the shared premium card's OTP
-       → shared session  ztu_lib_v3   — written by the card itself
-       → /api/ai-access 'bridge'      — mints the SHARED AI token
-       → ztu_ai_identity
-       → /api/ai-access 'session'     — validates it → tier
-
-   Rescue mints nothing of its own: same endpoint, same keys, same 15-day
-   shared expiry, same OTP. Two defects lived here before:
-
-     1. 'session' answers { valid, tier } and has NO `ok` field (only
-        request/verify/resend/logout do), yet this file tested `d.ok`, so the
-        tier could never resolve to 'unlimited' even with a perfect token.
-     2. The premium card writes ztu_journal_v1 + ztu_lib_v3 but NEVER
-        ztu_ai_identity — each surface mints that itself via 'bridge'. Rescue
-        skipped that step, so after a successful OTP there was simply no token
-        for refreshAccess() to read.                                          */
-const ACCT_KEY     = 'ztu_ai_acct';
-const VERIFIED_KEY = 'ztu_ai_verified';
-const LIB_KEY      = 'ztu_lib_v3';
-const LIB_TTL      = 15 * 24 * 60 * 60 * 1000;   // == library.html SESSION_TTL_MS
-
+/* ── ACCESS — the EXISTING shared member wiring, unchanged ──────────────── */
+const ACCT_KEY = 'ztu_ai_acct', VERIFIED_KEY = 'ztu_ai_verified', LIB_KEY = 'ztu_lib_v3';
+const LIB_TTL = 15 * 24 * 60 * 60 * 1000;
 function identityToken() { try { return localStorage.getItem(IDENTITY_KEY) || ''; } catch { return ''; } }
-function setIdentityToken(t) { try { localStorage.setItem(IDENTITY_KEY, t); } catch {} }
-function markVerified(acct) {
-  try {
-    if (acct) localStorage.setItem(ACCT_KEY, acct);
-    localStorage.setItem(VERIFIED_KEY, '1');
-  } catch {}
-}
-function clearIdentity() {
-  try { localStorage.removeItem(IDENTITY_KEY); localStorage.removeItem(VERIFIED_KEY); } catch {}
-}
+function setIdentityToken(x) { try { localStorage.setItem(IDENTITY_KEY, x); } catch {} }
+function markVerified(a) { try { if (a) localStorage.setItem(ACCT_KEY, a); localStorage.setItem(VERIFIED_KEY, '1'); } catch {} }
+function clearIdentity() { try { localStorage.removeItem(IDENTITY_KEY); localStorage.removeItem(VERIFIED_KEY); } catch {} }
 function storedAcct() { try { return localStorage.getItem(ACCT_KEY) || ''; } catch { return ''; } }
-
-/* The shared Library session — same shape and TTL the Library and the AI
-   assistant use. An existing clock is never extended. */
 function readLibSession() {
   try {
     const v = JSON.parse(localStorage.getItem(LIB_KEY) || 'null');
@@ -562,13 +434,9 @@ function readLibSession() {
   } catch { return null; }
 }
 function writeLibSession(account) {
-  const a = String(account || '').trim();
-  if (!a) return;
-  try {
-    const ex = readLibSession();
-    if (ex && ex.account === a) return;
-    localStorage.setItem(LIB_KEY, JSON.stringify({ account: a, createdAt: Date.now() }));
-  } catch {}
+  const a = String(account || '').trim(); if (!a) return;
+  try { const ex = readLibSession(); if (ex && ex.account === a) return;
+    localStorage.setItem(LIB_KEY, JSON.stringify({ account: a, createdAt: Date.now() })); } catch {}
 }
 function clearLibSession() { try { localStorage.removeItem(LIB_KEY); } catch {} }
 
@@ -579,88 +447,49 @@ function paintAccess() {
     verifyBtn.hidden = true;
   } else {
     accBadge.className = 'acc no';
-    accBadge.innerHTML = '× <b>Unverified</b><span class="detail"> · ' + freeLimit + ' free analyses</span>';
+    accBadge.innerHTML = '× <b>Unverified</b><span class="detail"> · ' + freeLimit + ' free</span>';
     verifyBtn.hidden = false;
   }
 }
-
-/* The single place a tier change is applied, so the badge, the verify button
-   and any already-rendered limit card can never disagree. */
 function applyTier(next) {
   const was = tier;
   tier = next === 'unlimited' ? 'unlimited' : 'visitor';
   paintAccess();
-  if (tier === 'unlimited' && was !== 'unlimited') dropGateCards();
-}
-
-/* A free-limit card rendered before verification is no longer true after it.
-   Drop it from the thread AND from the persisted turns, so reopening the
-   conversation cannot replay a restriction that no longer applies. */
-function dropGateCards() {
-  let removed = false;
-  for (const g of Array.from(thread.querySelectorAll('.gate'))) {
-    const turn = g.closest('.turn');
-    if (turn) { turn.remove(); removed = true; }
-  }
-  if (convo && Array.isArray(convo.turns)) {
-    const n = convo.turns.length;
-    convo.turns = convo.turns.filter(t => !t.gate);
-    if (convo.turns.length !== n) removed = true;
-  }
-  if (removed) {
-    addAI('✓ **Verified — unlimited analyses are active.** Carry on with your trade.', null, true);
-    persist();
+  if (tier === 'unlimited' && was !== 'unlimited') {
+    document.querySelectorAll('.gate').forEach((n) => n.remove());
   }
 }
-
 async function aiAccess(payload) {
-  const r = await fetch('/api/ai-access', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, lang: replyLang() }),
-  });
-  return r.json().catch(() => ({}));
+  try {
+    const r = await fetch('/api/ai-access', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, lang: lang() }),
+    });
+    return await r.json().catch(() => ({}));
+  } catch { return {}; }
 }
-
-/* LIBRARY/MEMBER → RESCUE. An already-verified member must never face a second
-   OTP. 'bridge' re-validates the account against the SAME eligibility source
-   and mints the standard token tied to the SAME session start, so both
-   surfaces expire together. */
 async function bridgeFromLibrary() {
-  const lib = readLibSession();
-  if (!lib) return false;
+  const lib = readLibSession(); if (!lib) return false;
   const d = await aiAccess({ action: 'bridge', account: lib.account, sessionStart: lib.createdAt });
   if (d.valid && d.token) { setIdentityToken(d.token); markVerified(lib.account); return true; }
-  if (d.valid === false) clearLibSession();   // definitively no longer eligible
+  if (d.valid === false) clearLibSession();
   return false;
 }
-
 async function refreshAccess() {
   try {
     if (!identityToken()) await bridgeFromLibrary();
     const tok = identityToken();
     if (!tok) { applyTier('visitor'); return; }
-
     const d = await aiAccess({ action: 'session', token: tok });
     if (d.valid && d.tier === 'unlimited') {
-      if (d.token) setIdentityToken(d.token);        // refreshed eligibility window
-      markVerified(storedAcct());
-      writeLibSession(storedAcct());                 // keep the shared session in step
-      applyTier('unlimited');
-      return;
+      if (d.token) setIdentityToken(d.token);
+      markVerified(storedAcct()); writeLibSession(storedAcct());
+      applyTier('unlimited'); return;
     }
-    /* Only a definitive removal clears the session — ai-access already
-       distinguishes that from a transient re-check failure. */
     if (d.removed) { clearIdentity(); clearLibSession(); }
     applyTier('visitor');
-  } catch {
-    paintAccess();   // offline: keep what we have rather than falsely downgrading
-  }
+  } catch { paintAccess(); }
 }
-
-/* Verification uses the SAME shared premium card, OTP and endpoint as Journal,
-   Library and the AI assistant. onApproved is awaited BEFORE the card shows its
-   approval modal, so by the time the user presses Continue the badge behind it
-   has already flipped — no reload, no second OTP. */
 function openVerify() {
   if (window.ZTUPremiumCard && typeof window.ZTUPremiumCard.open === 'function') {
     window.ZTUPremiumCard.open({
@@ -668,317 +497,490 @@ function openVerify() {
       onApproved: async (result) => {
         const acct = result && result.account;
         if (acct) {
-          markVerified(acct);
-          writeLibSession(acct);
+          markVerified(acct); writeLibSession(acct);
           const lib = readLibSession();
-          const d = await aiAccess({
-            action: 'bridge', account: acct,
-            sessionStart: (lib && lib.createdAt) || Date.now(),
-          });
+          const d = await aiAccess({ action: 'bridge', account: acct, sessionStart: (lib && lib.createdAt) || Date.now() });
           if (d.valid && d.token) { setIdentityToken(d.token); applyTier('unlimited'); return; }
         }
         await refreshAccess();
       },
     });
-  } else {
-    window.location.href = 'license-request.html';
-  }
+  } else window.location.href = 'license-request.html';
 }
 verifyBtn.addEventListener('click', openVerify);
 
-/* Verification completed in ANOTHER tab (Library, Journal or the AI assistant)
-   must land here too, without a manual refresh. */
-window.addEventListener('storage', (e) => {
-  if (e && (e.key === IDENTITY_KEY || e.key === LIB_KEY || e.key === VERIFIED_KEY)) refreshAccess();
-});
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && tier !== 'unlimited') refreshAccess();
-});
-
-/* ── text to speech ────────────────────────────────────────────────────── */
-const TTS_OK = ('speechSynthesis' in window);
-let speakingBtn = null;
-const BCP47 = { en:'en-US', ur:'ur-PK', ar:'ar-SA' };
-function ttsText(s) {
-  return String(s || '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/https?:\/\/\S+/g, ' ').replace(/[#*_`>~|]/g, ' ')
-    .replace(/\s+/g, ' ').trim().slice(0, 2200);
-}
-function stopSpeak() {
-  try { speechSynthesis.cancel(); } catch {}
-  if (speakingBtn) { speakingBtn.innerHTML = '🔊 Listen'; speakingBtn.setAttribute('aria-pressed','false'); speakingBtn = null; }
-}
-function toggleSpeak(btn, src) {
-  if (speakingBtn === btn) { stopSpeak(); return; }
-  stopSpeak();
-  const text = ttsText(src); if (!text) return;
-  try {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = BCP47[replyLang()] || 'en-US';
-    const vlist = speechSynthesis.getVoices() || [];
-    const base = u.lang.split('-')[0];
-    const v = vlist.find(x => x.lang === u.lang) || vlist.find(x => x.lang && x.lang.indexOf(base) === 0);
-    if (v) u.voice = v;
-    u.onend = () => { if (speakingBtn === btn) stopSpeak(); };
-    u.onerror = () => { stopSpeak(); showErr('Playback failed — you can still read the answer.'); };
-    speakingBtn = btn; btn.innerHTML = '⏹ Stop'; btn.setAttribute('aria-pressed','true');
-    speechSynthesis.speak(u);
-  } catch { stopSpeak(); showErr('Speech playback is not available in this browser.'); }
-}
-if (TTS_OK) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch {} }
-
-/* ── composer draft ─────────────────────────────────────────────────────
-   One text surface. Voice writes into it, typing edits it, Send submits it.
-   Nothing is sent — and no chat bubble is created — until Send is pressed. */
-const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;  // Arabic + Urdu script
-let draftFromVoice = false;          // this draft originated from speech
-
-function autoGrow() {
-  /* Empty composer keeps the CSS min-height — measuring scrollHeight before first
-     layout can report the max-height clamp and leave a tall, empty box. */
-  if (!input.value) { input.style.height = ''; return; }
-  input.style.height = 'auto';
-  input.style.height = Math.min(input.scrollHeight, 180) + 'px';
-}
-function applyDir() {
-  const v = input.value;
-  const rtl = v.trim() ? RTL_RE.test(v) : /^(ur|ar)/.test(langSel.value);
-  input.setAttribute('dir', rtl ? 'rtl' : 'ltr');
-}
-function syncSend() { sendBtn.disabled = busy || !input.value.trim(); }
-/* The full prompt wraps to two lines on a phone and would be clipped by the
-   single-line composer, so narrow viewports get the short form. */
-const PH_FULL  = 'Describe your open trade — instrument, entry, stop…';
-const PH_SHORT = 'Describe your open trade…';
-const narrowMQ = window.matchMedia('(max-width: 560px)');
-function syncPlaceholder() { input.placeholder = narrowMQ.matches ? PH_SHORT : PH_FULL; }
-try { narrowMQ.addEventListener('change', syncPlaceholder); } catch { narrowMQ.addListener(syncPlaceholder); }
-function refreshComposer() { autoGrow(); applyDir(); syncSend(); syncPlaceholder(); }
-function clearDraft() { input.value = ''; draftFromVoice = false; hideHint(); refreshComposer(); }
-
-/* Joins two fragments with exactly one space — repeated calls cannot duplicate. */
-function joinDraft(a, b) {
-  a = (a || '').replace(/\s+$/, '');
-  b = (b || '').replace(/^\s+/, '').replace(/\s+$/, '');
-  return !a ? b : !b ? a : a + ' ' + b;
-}
-function setDraft(text, focusIt) {
-  input.value = text;
-  refreshComposer();
-  if (focusIt) {
-    input.focus();
-    try { input.setSelectionRange(input.value.length, input.value.length); } catch {}
-    input.scrollTop = input.scrollHeight;
-  }
-}
-
-/* ── speech to text → editable composer draft ──────────────────────────── */
+/* ── VOICE — fills structured fields, never bypasses them ────────────────
+   The transcript lands in the field as an editable draft. Numbers spoken as
+   words are normalised server-side by the semantic layer and shown back for
+   confirmation; nothing ambiguous is committed silently. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, listening = false;
-let baseText = '';      // whatever was already in the composer when recording began
-let finalTxt = '';      // rebuilt from the whole result list, so re-emitted results cannot duplicate
-let voiceErr = false, hintT = null;
-// Set when Send is pressed while the mic is still open. rec.stop() resolves
-// asynchronously, so without this flag rec.onend fires AFTER ask() has cleared
-// the composer and puts the just-sent transcript straight back into it — the
-// reported "text stays in the box after Send".
-let voiceConsumed = false;
+const BCP47 = { en: 'en-US', ur: 'ur-PK', ar: 'ar-SA' };
+let rec = null, recTarget = null, recBase = '', recFinal = '';
 
-/* Voice status is composer-local UI. It is NEVER appended to the thread. */
-function showHint(html, autoHideMs) {
-  clearTimeout(hintT);
-  vhint.classList.add('on'); vhint.innerHTML = html;
-  if (autoHideMs) hintT = setTimeout(hideHint, autoHideMs);
+function micButton(targetId, note) {
+  return '<button class="mic" type="button" data-mic="' + targetId + '"' + (SR ? '' : ' disabled') +
+    ' aria-label="' + esc(note || 'Dictate') + '" title="' + esc(note || 'Dictate') + '">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">' +
+    '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4M8 21h8"/></svg></button>';
 }
-function hideHint() { clearTimeout(hintT); vhint.classList.remove('on'); vhint.innerHTML = ''; }
-function showErr(m) { verr.textContent = m; verr.classList.add('on'); setTimeout(() => verr.classList.remove('on'), 7000); }
-
-const LISTEN_HTML = '<span class="rec-dot"></span><span>Listening…</span>';
-
-if (!SR) {
-  mic.disabled = true;
-  mic.title = 'Voice input is not supported in this browser. Try Chrome, Edge or Safari — or just type.';
-  mic.setAttribute('aria-label', mic.title);
-} else {
+function startDictation(btn, targetId) {
+  if (!SR) return;
+  const el = $(targetId); if (!el) return;
+  if (rec && recTarget === targetId) { try { rec.stop(); } catch {} return; }
+  if (rec) { try { rec.abort(); } catch {} }
   rec = new SR();
-  rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; rec.lang = langSel.value;
-
-  rec.onstart = () => {
-    listening = true; voiceErr = false;
-    mic.classList.remove('busy', 'err');
-    mic.classList.add('rec'); mic.setAttribute('aria-label', 'Stop recording');
-    showHint(LISTEN_HTML);
-  };
-
+  rec.continuous = true; rec.interimResults = true; rec.lang = BCP47[lang()] || 'en-US';
+  recTarget = targetId; recBase = el.value.trim(); recFinal = '';
+  rec.onstart = () => btn.classList.add('rec');
   rec.onresult = (e) => {
     let fin = '', interim = '';
     for (let i = 0; i < e.results.length; i++) {
       const c = e.results[i][0].transcript;
-      if (e.results[i].isFinal) fin = joinDraft(fin, c); else interim = joinDraft(interim, c);
+      if (e.results[i].isFinal) fin += c + ' '; else interim += c + ' ';
     }
-    finalTxt = fin;
-    /* Live preview goes into the composer itself — not into the conversation. */
-    setDraft(joinDraft(joinDraft(baseText, finalTxt), interim), false);
-    showHint(LISTEN_HTML + (interim ? '<span class="t">' + esc(interim) + '</span>' : ''));
+    recFinal = fin.trim();
+    el.value = [recBase, recFinal, interim.trim()].filter(Boolean).join(' ').trim();
+    autoGrow(el);
   };
-
-  rec.onspeechend = () => {
-    if (!listening) return;
-    mic.classList.remove('rec'); mic.classList.add('busy');
-    showHint('<span class="sp"></span><span>Transcribing…</span>');
-  };
-
-  rec.onerror = (e) => {
-    const err = e && e.error;
-    if (err === 'aborted') return;
-    voiceErr = true;
-    mic.classList.remove('rec', 'busy'); mic.classList.add('err');
-    setTimeout(() => mic.classList.remove('err'), 2600);
-    showErr(err === 'not-allowed' || err === 'service-not-allowed'
-      ? 'Microphone permission denied. Allow it in your browser settings, or type instead.'
-      : err === 'no-speech' ? 'I didn’t catch anything — try again, or type it.'
-      : err === 'audio-capture' ? 'No microphone found. Please type instead.'
-      : err === 'network' ? 'Speech recognition needs a network connection. You can type instead.'
-      : 'Voice input failed. You can type instead.');
-  };
-
+  rec.onerror = () => { btn.classList.remove('rec'); };
   rec.onend = () => {
-    listening = false;
-    mic.classList.remove('rec', 'busy'); mic.setAttribute('aria-label', 'Start voice input');
-    const draft = joinDraft(baseText, finalTxt);
-    finalTxt = ''; baseText = '';
-    if (voiceConsumed) { voiceConsumed = false; hideHint(); return; }   // already sent
-    if (draft) {
-      draftFromVoice = true;
-      setDraft(draft, true);                        // editable, focused, NOT sent
-      showHint('<span>✓ Transcribed — edit if needed, then press Send.</span>', 6000);
-    } else if (voiceErr) {
-      hideHint();
-    } else {
-      showHint('<span>No speech detected — try again, or type your trade.</span>', 5000);
-    }
-    voiceErr = false;
+    btn.classList.remove('rec');
+    el.value = [recBase, recFinal].filter(Boolean).join(' ').trim();
+    autoGrow(el); el.focus();
+    rec = null; recTarget = null;
+    syncFromDom();
   };
-
-  mic.addEventListener('click', () => {
-    if (busy) return;
-    if (listening) { try { rec.stop(); } catch {} return; }
-    stopSpeak();
-    finalTxt = ''; voiceErr = false;
-    baseText = input.value.trim();                  // dictation appends to what is already typed
-    rec.lang = langSel.value;
-    try { rec.start(); } catch { showErr('Could not start the microphone. Please type instead.'); }
-  });
+  try { rec.start(); } catch { btn.classList.remove('rec'); rec = null; recTarget = null; }
+}
+function autoGrow(el) {
+  if (el.tagName !== 'TEXTAREA') return;
+  el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 220) + 'px';
 }
 
-/* ── send ──────────────────────────────────────────────────────────────── */
-async function ask(text, spoken) {
-  if (busy || !text.trim()) return;
-  busy = true; sendBtn.disabled = true; sendBtn.classList.add('busy');
-  mic.disabled = !SR; stopSpeak();
-  const meTurn = addMe(text, !!spoken);
-  clearDraft();
+/* ── STEPS ────────────────────────────────────────────────────────────── */
+const STEPS = 6;
+function paintSteps() {
+  stepsEl.innerHTML = '';
+  if (result) return;
+  for (let i = 0; i < STEPS; i++) {
+    const b = document.createElement('i');
+    b.className = i < step ? 'done' : i === step ? 'now' : '';
+    stepsEl.appendChild(b);
+  }
+}
 
-  showState('Reading your trade…');
-  const t1 = setTimeout(() => showState('Pulling current market data…'), 700);
-  const t2 = setTimeout(() => showState('Analysing the evidence…'), 2400);
+function head(n, titleKey, ledeKey) {
+  return '<div class="stepNo">' + esc(lang() === 'en' ? 'Step ' + n + ' of ' + STEPS : n + ' / ' + STEPS) + '</div>' +
+    '<h1>' + esc(t(titleKey)) + '</h1><p class="lede">' + esc(t(ledeKey)) + '</p>';
+}
+function nav(backOk, nextKey, nextDisabled) {
+  return '<div class="nav">' +
+    (backOk ? '<button class="btn" id="back" type="button">' + esc(t('back')) + '</button>' : '') +
+    '<span class="navSp"></span>' +
+    '<button class="btn primary" id="next" type="button"' + (nextDisabled ? ' disabled' : '') + '>' + esc(t(nextKey)) + '</button>' +
+    '</div><div class="err" id="err"></div>';
+}
+
+const ASSETS = [
+  { id: 'XAU/USD', name: 'Gold', sub: 'XAU/USD' },
+  { id: 'BTC/USD', name: 'Bitcoin', sub: 'BTC/USD' },
+];
+
+function render() {
+  document.documentElement.dir = rtl() ? 'rtl' : 'ltr';
+  paintSteps();
+  if (result) return renderResult();
+
+  let h = '';
+  if (step === 0) {
+    h += head(1, 's1', 's1l') + '<div class="tiles">';
+    for (const a of ASSETS) {
+      h += '<button class="tile' + (C.instrument === a.id ? ' on' : '') + '" type="button" data-asset="' + a.id + '">' +
+        '<b>' + esc(a.name) + '</b><span>' + esc(a.sub) + '</span></button>';
+    }
+    h += '</div>' + nav(false, 'next', !C.instrument);
+  } else if (step === 1) {
+    h += head(2, 's2', 's2l') + '<div class="tiles">' +
+      '<button class="tile buy' + (C.direction === 'buy' ? ' on' : '') + '" type="button" data-dir="buy"><b>' + esc(t('buy')) + '</b><span>' + esc(t('buyD')) + '</span></button>' +
+      '<button class="tile sell' + (C.direction === 'sell' ? ' on' : '') + '" type="button" data-dir="sell"><b>' + esc(t('sell')) + '</b><span>' + esc(t('sellD')) + '</span></button>' +
+      '</div>' + nav(true, 'next', !C.direction);
+  } else if (step === 2) {
+    h += head(3, 's3', 's3l');
+    h += '<div class="tiles" style="margin-bottom:18px">' +
+      '<button class="tile' + (C.multi === false ? ' on' : '') + '" type="button" data-multi="0"><b>' + esc(t('single')) + '</b><span>' + esc(t('singleD')) + '</span></button>' +
+      '<button class="tile' + (C.multi === true ? ' on' : '') + '" type="button" data-multi="1"><b>' + esc(t('multiple')) + '</b><span>' + esc(t('multipleD')) + '</span></button>' +
+      '</div>';
+    if (C.multi !== null) {
+      h += '<div id="layers">' + C.layers.map(layerHtml).join('') + '</div>';
+      if (C.multi) h += '<button class="addLayer" id="addLayer" type="button">' + esc(t('addLayer')) + '</button>';
+      h += '<div class="card" style="margin-top:16px"><label class="f">' + esc(t('describeLayers')) + '</label>' +
+        '<div class="vrow"><textarea id="layerText" rows="2" placeholder="' + esc(t('describeLayersH')) + '"></textarea>' +
+        micButton('layerText', t('describeLayers')) + '</div>' +
+        '<div class="nav" style="margin-top:11px"><button class="btn" id="readLayers" type="button">' + esc(t('readLayers')) + '</button></div>' +
+        '<div class="vnote" id="layerNote"></div></div>';
+    }
+    h += nav(true, 'next', C.multi === null);
+  } else if (step === 3) {
+    h += head(4, 's4', 's4l') + '<div class="card"><div class="grid3">' +
+      field('acc_start', t('startBal'), C.account.starting_balance, 'number') +
+      field('acc_now', t('curBal'), C.account.current_balance, 'number') +
+      field('acc_fpl', t('floatPl'), C.account.floating_pl, 'number') +
+      '</div><div style="margin-top:14px">' +
+      field('units', t('units') + ' — ' + t('optional'), C.contractUnits, 'number') +
+      '<div class="hint">' + esc(C.instrument === 'BTC/USD' ? '1 BTC per 1.00 lot is assumed unless you change it.' : '100 oz per 1.00 lot is assumed unless you change it.') + '</div>' +
+      '</div></div>' + nav(true, 'next', false);
+  } else if (step === 4) {
+    h += head(5, 's5', 's5l') + '<div class="card">' +
+      textField('ctx_thesis', t('thesis'), C.context.thesis) +
+      textField('ctx_concern', t('concern'), C.context.concern) +
+      '<div class="grid2" style="margin-top:14px">' +
+      field('ctx_horizon', t('horizon') + ' — ' + t('optional'), C.context.horizon, 'text') +
+      selectField('ctx_hedged', t('hedged'), C.context.hedged, [['', '—'], ['yes', t('yes')], ['no', t('no')], ['unsure', t('dontKnow')]]) +
+      '</div>' +
+      '<div style="margin-top:14px">' + textField('ctx_note', t('note') + ' — ' + t('optional'), C.context.note) + '</div>' +
+      '</div>' + nav(true, 'next', false);
+  } else {
+    h += head(6, 's6', 's6l') + reviewHtml() + nav(true, 'analyse', false) +
+      '<div class="busy" id="busy"><span class="spin"></span><span id="busyText">' + esc(t('analysing')) + '</span></div>';
+  }
+  view.innerHTML = h;
+  wire();
+}
+
+function field(id, label, val, type) {
+  return '<div><label class="f" for="' + id + '">' + esc(label) + '</label>' +
+    '<input id="' + id + '" type="' + (type || 'text') + '" value="' + esc(val) + '" ' +
+    (type === 'number' ? 'step="any" inputmode="decimal"' : '') + ' /></div>';
+}
+function selectField(id, label, val, opts) {
+  return '<div><label class="f" for="' + id + '">' + esc(label) + '</label><select class="f" id="' + id + '">' +
+    opts.map(([v, l]) => '<option value="' + esc(v) + '"' + (val === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('') +
+    '</select></div>';
+}
+function textField(id, label, val) {
+  return '<div style="margin-bottom:14px"><label class="f" for="' + id + '">' + esc(label) + '</label>' +
+    '<div class="vrow"><textarea id="' + id + '" rows="2">' + esc(val) + '</textarea>' + micButton(id, label) + '</div></div>';
+}
+function layerHtml(l, i) {
+  const p = (k) => 'L' + i + '_' + k;
+  return '<div class="layer" data-layer="' + i + '">' +
+    '<h4>' + esc(t('layer')) + ' ' + (i + 1) + '</h4>' +
+    (C.multi && C.layers.length > 1 ? '<button class="del" type="button" data-del="' + i + '" aria-label="Remove">×</button>' : '') +
+    '<div class="grid2"><div><label class="f">' + esc(t('buy')) + ' / ' + esc(t('sell')) + ' <span class="req">*</span></label>' +
+    '<div class="segs"><button type="button" data-d="buy" data-seg="' + i + '" class="' + (l.direction === 'buy' ? 'on' : '') + '">' + esc(t('buy')) + '</button>' +
+    '<button type="button" data-d="sell" data-seg="' + i + '" class="' + (l.direction === 'sell' ? 'on' : '') + '">' + esc(t('sell')) + '</button></div></div>' +
+    field(p('entry'), t('entry') + ' *', l.entry, 'number') + '</div>' +
+    '<div class="grid3" style="margin-top:12px">' +
+    field(p('size'), t('size'), l.size, 'number') +
+    field(p('date'), t('opened'), l.opened_at, 'date') +
+    field(p('purpose'), t('purpose'), l.purpose, 'text') + '</div>' +
+    '<div class="grid2" style="margin-top:12px">' +
+    field(p('sl'), t('sl') + ' — ' + t('optional'), l.stop_loss, 'number') +
+    field(p('tp'), t('tp') + ' — ' + t('optional'), l.take_profit, 'number') + '</div>' +
+    '</div>';
+}
+function reviewHtml() {
+  const rows = C.layers.filter(l => l.direction && l.entry !== '').map((l, i) =>
+    '<tr><td>' + (i + 1) + (l.purpose ? ' <em>(' + esc(l.purpose) + ')</em>' : '') + '</td><td><b>' + esc(String(l.direction).toUpperCase()) + '</b></td>' +
+    '<td>' + esc(l.entry) + '</td><td>' + esc(l.size || '—') + '</td><td>' + esc(l.opened_at || '—') + '</td>' +
+    '<td>' + esc(l.stop_loss || '—') + '</td></tr>').join('');
+  return '<div class="card rev"><table><thead><tr>' +
+    '<th>' + esc(t('layer')) + '</th><th></th><th>' + esc(t('entry')) + '</th><th>' + esc(t('size')) + '</th>' +
+    '<th>' + esc(t('opened')) + '</th><th>' + esc(t('sl')) + '</th></tr></thead><tbody>' +
+    (rows || '<tr><td colspan="6">—</td></tr>') + '</tbody></table>' +
+    '<div class="hint" style="margin-top:12px">' + esc(C.instrument || '') + ' · ' + esc(String(C.direction || '').toUpperCase()) + '</div></div>';
+}
+
+/* ── DOM → state ─────────────────────────────────────────────────────── */
+function syncFromDom() {
+  C.layers.forEach((l, i) => {
+    const g = (k) => { const e = $('L' + i + '_' + k); return e ? e.value.trim() : undefined; };
+    const map = { entry: 'entry', size: 'size', date: 'opened_at', purpose: 'purpose', sl: 'stop_loss', tp: 'take_profit' };
+    for (const [dom, key] of Object.entries(map)) { const v = g(dom); if (v !== undefined) l[key] = v; }
+  });
+  const gv = (id) => { const e = $(id); return e ? e.value.trim() : undefined; };
+  const a = { acc_start: 'starting_balance', acc_now: 'current_balance', acc_fpl: 'floating_pl' };
+  for (const [id, k] of Object.entries(a)) { const v = gv(id); if (v !== undefined) C.account[k] = v; }
+  const u = gv('units'); if (u !== undefined) C.contractUnits = u;
+  const cx = { ctx_thesis: 'thesis', ctx_concern: 'concern', ctx_horizon: 'horizon', ctx_hedged: 'hedged', ctx_note: 'note' };
+  for (const [id, k] of Object.entries(cx)) { const v = gv(id); if (v !== undefined) C.context[k] = v; }
+}
+
+function wire() {
+  view.querySelectorAll('[data-asset]').forEach(b => b.addEventListener('click', () => { C.instrument = b.dataset.asset; render(); }));
+  view.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
+    C.direction = b.dataset.dir;
+    if (C.layers.length === 1 && !C.layers[0].direction) C.layers[0].direction = C.direction;
+    render();
+  }));
+  view.querySelectorAll('[data-multi]').forEach(b => b.addEventListener('click', () => {
+    syncFromDom();
+    C.multi = b.dataset.multi === '1';
+    if (!C.multi) C.layers = [C.layers[0] || blankLayer(C.direction)];
+    render();
+  }));
+  view.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
+    syncFromDom(); C.layers[+b.dataset.seg].direction = b.dataset.d; render();
+  }));
+  view.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    syncFromDom(); C.layers.splice(+b.dataset.del, 1); if (!C.layers.length) C.layers = [blankLayer(C.direction)]; render();
+  }));
+  const add = $('addLayer');
+  if (add) add.addEventListener('click', () => { syncFromDom(); C.layers.push(blankLayer(C.direction)); render(); });
+  view.querySelectorAll('[data-mic]').forEach(b => b.addEventListener('click', () => startDictation(b, b.dataset.mic)));
+  view.querySelectorAll('textarea').forEach(el => { autoGrow(el); el.addEventListener('input', () => autoGrow(el)); });
+  const rl = $('readLayers'); if (rl) rl.addEventListener('click', readLayersFromText);
+  const back = $('back'); if (back) back.addEventListener('click', () => { syncFromDom(); step = Math.max(0, step - 1); render(); });
+  const next = $('next'); if (next) next.addEventListener('click', onNext);
+}
+
+function onNext() {
+  syncFromDom();
+  const err = $('err');
+  if (step === 0 && !C.instrument) { err.textContent = t('needInstrument'); return; }
+  if (step === 1 && !C.direction) { err.textContent = t('needDirection'); return; }
+  if (step === 2) {
+    const ok = C.layers.some(l => l.direction && String(l.entry).trim() !== '');
+    if (!ok) { err.textContent = t('needLayer'); return; }
+  }
+  if (step === STEPS - 1) return runAssessment();
+  step++; render();
+}
+
+/* ── semantic multi-layer read ───────────────────────────────────────── */
+async function readLayersFromText() {
+  const el = $('layerText'); const note = $('layerNote');
+  const text = el ? el.value.trim() : '';
+  if (!text) return;
+  note.textContent = '…';
+  try {
+    const r = await fetch(API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'interpret_layers', text, lang: lang(), identityToken: identityToken() }),
+    });
+    const d = await r.json();
+    if (Array.isArray(d.layers) && d.layers.length) {
+      syncFromDom();
+      C.multi = d.layers.length > 1 ? true : C.multi;
+      C.layers = d.layers.map(l => Object.assign(blankLayer(), {
+        direction: l.direction, entry: l.entry ?? '', size: l.size ?? '',
+        opened_at: l.opened_at || '', stop_loss: l.stop_loss ?? '', take_profit: l.take_profit ?? '',
+        purpose: l.purpose || '',
+      }));
+      render();
+      const n2 = $('layerNote');
+      if (n2) n2.textContent = d.ambiguous
+        ? 'Read into the fields below — some of it was unclear, so please check every value before continuing.'
+        : 'Read into the fields below — check the values, then continue.';
+    } else {
+      note.textContent = d.degraded
+        ? 'That could not be read automatically just now. Please fill the layers in below.'
+        : 'I could not separate the orders confidently. Please fill the layers in below.';
+    }
+  } catch {
+    note.textContent = 'That could not be read automatically just now. Please fill the layers in below.';
+  }
+}
+
+/* ── run ─────────────────────────────────────────────────────────────── */
+async function runAssessment() {
+  if (busy) return;
+  syncFromDom();
+  busy = true;
+  const nx = $('next'); if (nx) nx.disabled = true;
+  const b = $('busy'); if (b) b.classList.add('on');
+  const bt = $('busyText');
+  const t1 = setTimeout(() => { if (bt) bt.textContent = lang() === 'en' ? 'Retrieving historical candles and macro context…' : t('analysing'); }, 2500);
+  const t2 = setTimeout(() => { if (bt) bt.textContent = lang() === 'en' ? 'This is taking a little longer — still working…' : t('analysing'); }, 9000);
+
+  const num = (v) => (String(v).trim() === '' ? null : Number(v));
+  const payload = {
+    action: 'assess', lang: lang(), identityToken: identityToken(),
+    case: {
+      instrument: C.instrument,
+      contractUnits: num(C.contractUnits),
+      layers: C.layers.filter(l => l.direction && String(l.entry).trim() !== '').map(l => ({
+        direction: l.direction, entry: num(l.entry), size: num(l.size),
+        opened_at: l.opened_at || null, stop_loss: num(l.stop_loss), take_profit: num(l.take_profit),
+        purpose: l.purpose || null,
+      })),
+      account: {
+        starting_balance: num(C.account.starting_balance),
+        current_balance: num(C.account.current_balance),
+        floating_pl: num(C.account.floating_pl),
+      },
+      context: {
+        thesis: C.context.thesis || null, concern: C.context.concern || null,
+        horizon: C.context.horizon || null, hedged: C.context.hedged || null,
+        note: C.context.note || null, primary_direction: C.direction,
+      },
+    },
+  };
 
   try {
-    const res = await fetch(API, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: text,
-        tradeCase: (convo && convo.tradeCase) || {},
-        lang: replyLang(),
-        viaVoice: !!spoken,
-        identityToken: identityToken(),   // the EXISTING shared token
-      }),
-    });
-    clearTimeout(t1); clearTimeout(t2); hideState();
-    if (!res.ok) { addAI('Something went wrong reaching the analysis service (HTTP ' + res.status + '). Please try again.'); return; }
-    const d = await res.json();
+    const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await r.json();
+    clearTimeout(t1); clearTimeout(t2);
     if (d.freeLimit) freeLimit = d.freeLimit;
     if (d.tier) applyTier(d.tier);
-    if (d.mode === 'limit') { addAI('', null, true, d.gate); persist(); return; }
-    renderCase(d.tradeCase);
-    addAI(d.reply, d.mode === 'analysis' ? d.evidence : null, true);
-    /* Hand the answer to the homepage speaker (the retired assistant's job). */
-    try {
-      sessionStorage.setItem('ztuLastAnswer', ttsText(d.reply));
-      sessionStorage.setItem('ztuLastAnswerLang', BCP47[replyLang()] || 'en-US');
-    } catch {}
-    persist();
+    if (d.mode === 'limit') { result = { gate: d.gate }; render(); return; }
+    if (d.mode !== 'assessment') { showErr(); return; }
+    result = d; saveHistory(d); render(); renderHistory();
   } catch {
-    clearTimeout(t1); clearTimeout(t2); hideState();
-    // The request never landed, so the trader should not lose what they wrote.
-    // Take the bubble back too, otherwise resending would duplicate the turn.
-    if (meTurn) { try { meTurn.remove(); } catch {} }
-    if (convo && Array.isArray(convo.turns)) convo.turns.pop();
-    setDraft(text, true); draftFromVoice = !!spoken;
-    addAI('Could not reach the analysis service. Check your connection and try again — your message is still in the box.');
+    clearTimeout(t1); clearTimeout(t2); showErr();
   } finally {
-    busy = false; sendBtn.classList.remove('busy'); mic.disabled = !SR;
-    input.focus(); syncSend();
+    busy = false;
+    const n2 = $('next'); if (n2) n2.disabled = false;
+    const b2 = $('busy'); if (b2) b2.classList.remove('on');
   }
 }
-
-/* The only path from composer to endpoint. viaVoice survives editing, so the
-   server-side numeric confirmation still guards a mis-heard price. */
-function submitDraft() {
-  if (busy) return;
-  const t = input.value.trim();
-  if (!t) { input.focus(); return; }
-  if (listening) { voiceConsumed = true; try { rec.stop(); } catch {} }
-  ask(t, draftFromVoice);
+function showErr() {
+  const e = $('err');
+  if (e) e.textContent = lang() === 'en'
+    ? 'The assessment could not be completed just now. Your position is still filled in — please try again.'
+    : t('analysing');
 }
-sendBtn.addEventListener('click', submitDraft);
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitDraft(); }
-});
-input.addEventListener('input', () => {
-  if (!input.value.trim()) draftFromVoice = false;   // cleared by hand — no longer a voice draft
-  refreshComposer();
-});
 
-/* ── sidebar ───────────────────────────────────────────────────────────── */
-function openSide() { side.classList.add('open'); scrim.classList.add('open'); burger.setAttribute('aria-expanded','true'); }
-function closeSide() { side.classList.remove('open'); scrim.classList.remove('open'); burger.setAttribute('aria-expanded','false'); }
-burger.addEventListener('click', () => side.classList.contains('open') ? closeSide() : openSide());
+/* ── results ─────────────────────────────────────────────────────────── */
+function renderResult() {
+  if (result.gate) {
+    const g = result.gate;
+    view.innerHTML = '<div class="gate"><h4>' + esc(g.title || '') + '</h4><p>' + esc(g.headline || '') + '</p>' +
+      '<ul>' + (g.steps || []).map(s => '<li>' + esc(s) + '</li>').join('') + '</ul>' +
+      '<div class="gb"><button class="primary" id="gVerify" type="button">' + esc((g.verifyCta && g.verifyCta.label) || 'Verify now') + '</button>' +
+      (g.cta ? '<a class="ghost" href="' + esc(g.cta.url) + '">' + esc(g.cta.label) + '</a>' : '') + '</div>' +
+      (g.freeNotice ? '<div class="hint" style="margin-top:10px">' + esc(g.freeNotice) + '</div>' : '') + '</div>';
+    const gv = $('gVerify'); if (gv) gv.addEventListener('click', openVerify);
+    return;
+  }
+
+  const d = result, p = d.position, ev = d.evidence;
+  const money = (v) => (v == null ? null : (v > 0 ? '+' : '') + v.toLocaleString());
+  const stat = (labelKey, val, sub, cls) =>
+    '<div class="stat' + (cls || '') + '"><i>' + esc(t(labelKey)) + '</i><b>' + esc(val) + '</b>' +
+    (sub ? '<u>' + esc(sub) + '</u>' : '') + '</div>';
+
+  let h = '<div class="rHead"><div class="rTop"><h2>' + esc(d.instrument) + '</h2>' +
+    '<span class="tag">' + esc(p.netDirection === 'flat' ? 'DELTA-FLAT' : String(p.netDirection || '').toUpperCase()) + '</span>' +
+    (p.hedged ? '<span class="tag">HEDGED ' + Math.round(p.hedgeRatio * 100) + '%</span>' : '') +
+    '<span class="tag">' + p.layerCount + ' ' + esc(t('layer')) + (p.layerCount > 1 ? 's' : '') + '</span></div><div class="stats">';
+  h += stat('current', ev.priceStatus === 'verified' ? String(ev.price) : t('unavailable'),
+    ev.priceAt ? new Date(ev.priceAt).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '');
+  h += stat('netExposure', Math.abs(p.netSize) + ' lots', p.hedged ? p.grossLongSize + ' long / ' + p.grossShortSize + ' short' : '');
+  h += stat('breakeven', p.breakevenPrice != null ? String(p.breakevenPrice) : t('unavailable'), 'DERIVED');
+  h += stat('floating', p.floatingPoints != null ? p.floatingPoints + ' lot-pts' : t('unavailable'),
+    p.floatingMoney != null ? money(p.floatingMoney) : 'DERIVED',
+    p.floatingPoints > 0 ? ' pos' : p.floatingPoints < 0 ? ' neg' : '');
+  h += '</div></div>';
+
+  h += '<div class="meters">';
+  for (const k of ['technical', 'fundamental', 'sentiment']) {
+    const m = d.meters[k];
+    const pct = m.score == null ? 50 : Math.round((m.score + 1) / 2 * 100);
+    h += '<div class="meter"><h5>' + esc(m.label) + '</h5>' +
+      '<div class="lean ' + esc(m.lean || 'neutral') + '">' + esc(m.lean || t('unavailable')) + '</div>' +
+      '<div class="track"><span class="pin ' + esc(m.lean || '') + '" style="left:' + pct + '%"></span></div>' +
+      '<div class="sub"><span>' + esc(t('strength')) + ': <b>' + esc(m.strength) + '</b></span>' +
+      '<span>' + esc(t('coverage')) + ' ' + Math.round(m.coverage * 100) + '%</span></div>' +
+      '<details><summary>' + esc(t('howMeasured')) + '</summary><ul>' +
+      m.inputsUsed.map(i => '<li>' + esc(i.basis) + ' → ' + (i.lean > 0 ? '+1' : i.lean < 0 ? '−1' : '0') + '</li>').join('') +
+      (m.inputsUnavailable.length ? '<li><em>' + esc(t('unavailable')) + ': ' + esc(m.inputsUnavailable.join(', ')) + '</em></li>' : '') +
+      '</ul></details></div>';
+  }
+  h += '</div>';
+
+  h += '<div class="report">' + md(d.report) + '<div class="prov"><b>' + esc(t('sources')) + '</b>' +
+    (ev.provenance || []).map(x => '<div>· ' + esc(x) + '</div>').join('') +
+    '<div>· ' + esc(d.history.status === 'verified'
+      ? 'Historical candles — ' + d.history.source + ', ' + d.history.count + ' daily candles'
+      : (d.history.note || 'Historical market data unavailable')) + '</div>' +
+    (ev.unavailable || []).map(x => '<div>· ' + esc(x) + '</div>').join('') +
+    '<div>· Meters: ' + esc(d.meters.methodology.formula) + '</div>' +
+    '<div>· ' + esc(d.meters.methodology.strength) + '</div>' +
+    '</div></div>';
+
+  h += '<div class="nav"><span class="navSp"></span><button class="btn primary" id="again" type="button">' + esc(t('again')) + '</button></div>';
+  view.innerHTML = h;
+  const ag = $('again'); if (ag) ag.addEventListener('click', startNew);
+}
+
+/* Minimal markdown → HTML. Headings, bullets, tables, bold/italic only. */
+function md(src) {
+  const lines = String(src || '').split('\n');
+  let out = '', inUl = false, inTable = false;
+  const inline = (s) => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])_(.+?)_($|[\s.,)])/g, '$1<em>$2</em>$3')
+    .replace(/`(.+?)`/g, '<code>$1</code>');
+  const closeUl = () => { if (inUl) { out += '</ul>'; inUl = false; } };
+  const closeTable = () => { if (inTable) { out += '</tbody></table>'; inTable = false; } };
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (!l) { closeUl(); closeTable(); continue; }
+    if (/^\|/.test(l)) {
+      const cells = l.split('|').slice(1, -1).map(c => c.trim());
+      if (/^[-\s|:]+$/.test(l)) continue;
+      if (!inTable) { out += '<table><thead><tr>' + cells.map(c => '<th>' + inline(c) + '</th>').join('') + '</tr></thead><tbody>'; inTable = true; }
+      else out += '<tr>' + cells.map(c => '<td>' + inline(c) + '</td>').join('') + '</tr>';
+      continue;
+    }
+    closeTable();
+    if (/^###\s+/.test(l)) { closeUl(); out += '<h3>' + inline(l.replace(/^###\s+/, '')) + '</h3>'; continue; }
+    if (/^[-•]\s+/.test(l)) { if (!inUl) { out += '<ul>'; inUl = true; } out += '<li>' + inline(l.replace(/^[-•]\s+/, '')) + '</li>'; continue; }
+    closeUl();
+    out += '<p>' + inline(l) + '</p>';
+  }
+  closeUl(); closeTable();
+  return out;
+}
+
+/* ── history — Rescue's own key, never the retired assistant's ────────── */
+function readHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } }
+function saveHistory(d) {
+  const list = readHistory();
+  list.unshift({
+    id: 'c' + Date.now(), at: new Date().toISOString(),
+    instrument: d.instrument, direction: d.position.netDirection,
+    layers: d.position.layerCount, report: d.report,
+    payload: { position: d.position, meters: d.meters, evidence: d.evidence, history: d.history, instrument: d.instrument, report: d.report },
+  });
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 25))); } catch {}
+}
+function renderHistory() {
+  const list = readHistory();
+  histList.innerHTML = '';
+  for (const c of list) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<b>' + esc(c.instrument + ' · ' + String(c.direction || '').toUpperCase()) + '</b>' +
+      '<span>' + esc(new Date(c.at).toISOString().slice(0, 10)) + ' · ' + c.layers + ' layer' + (c.layers > 1 ? 's' : '') + '</span>';
+    b.addEventListener('click', () => { result = c.payload; render(); closeSide(); });
+    histList.appendChild(b);
+  }
+}
+function startNew() { result = null; step = 0; C = newCase(); render(); closeSide(); }
+
+/* ── shell ───────────────────────────────────────────────────────────── */
+function openSide() { side.classList.add('open'); scrim.classList.add('open'); burger.setAttribute('aria-expanded', 'true'); }
+function closeSide() { side.classList.remove('open'); scrim.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); }
+burger.addEventListener('click', () => (side.classList.contains('open') ? closeSide() : openSide()));
 scrim.addEventListener('click', closeSide);
-$('newBtn').addEventListener('click', newConvo);
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  closeSide();
-  if (listening) { try { rec.stop(); } catch {} return; }
-  hideHint();
+$('newBtn').addEventListener('click', startNew);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSide(); });
+
+langSel.addEventListener('change', () => {
+  try { localStorage.setItem(LANG_KEY, langSel.value); } catch {}
+  document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+  syncFromDom(); render();
 });
 
-/* ── boot ──────────────────────────────────────────────────────────────── */
-function greet() {
-  addAI([
-    "I'm **ZTU Rescue**. Tell me about a trade you're already in and I'll work through it with you.",
-    SR ? '\nType it, or press the microphone and just say it.' : '',
-  ].join('\n'), null, false);
-}
-
-newConvo();
-refreshComposer();
+/* ── boot ────────────────────────────────────────────────────────────── */
+try { const l = localStorage.getItem(LANG_KEY); if (l && I18N[l]) langSel.value = l; } catch {}
+document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+paintAccess();
 refreshAccess();
-
-/* Homepage hand-off — the same ?q=…&send=1 contract the assistant accepted, so
-   the existing link shape keeps working. */
-try {
-  const p = new URLSearchParams(location.search);
-  const q = p.get('q');
-  if (q) {
-    setDraft(q, true);
-    if (p.get('send') === '1') setTimeout(() => ask(q, false), 60);
-  }
-} catch {}
-
-})();
+renderHistory();
+render();
 </script>
-
-<script src="/assets/ztu-lang.js" defer></script>
 </body>
 </html>

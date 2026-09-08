@@ -598,3 +598,152 @@ export function makeLLMComposer(env) {
     }
   };
 }
+
+// ── ZTU RESCUE — STRUCTURED RESCUE PLAN ─────────────────────────────────────
+// Synthesis for the structured assessment. Same grounding contract as
+// generateTradeRescueReport: the model only ever rewrites a brief that is
+// already built from verified data and the trader's own figures.
+//
+// The return shape is deliberate. The caller must be able to tell the difference
+// between "the market data was unavailable" and "the model was unavailable", so
+// a failure here reports `degraded: true` with the deterministic report intact —
+// never a message implying the evidence itself was missing.
+const RESCUE_PLAN_SYSTEM = `You are ZTU Rescue — a trade-management analyst writing a structured assessment of a trader's OPEN, multi-layer position. You are not a tutor, not a signal service, and not a recovery guarantee.
+
+ABSOLUTE RULES — these override everything else:
+1. Use ONLY the EVIDENCE BRIEF. Never add, estimate, recall or infer any price, level, support/resistance, trend, candle pattern, indicator value, yield, statistic, news item, event, date or timestamp. If the brief marks something unavailable, say so plainly.
+2. NEVER state a probability, percentage chance, confidence figure or odds of any outcome — including any "chance of recovery". No such figure exists in the brief and none may be produced.
+3. NEVER promise or imply recovery, profit, or a guaranteed direction. Do not write "will rise", "will recover", "will reverse".
+4. NEVER issue an unconditional command ("close this", "hold this"). Every management idea is conditional on a stated, checkable trigger.
+5. Preserve every number and timestamp EXACTLY as the brief gives it. Introduce no number that is not already there.
+6. Keep the brief's labels intact: USER_PROVIDED figures are the trader's, DERIVED figures are computed, VERIFIED figures came from a data source with a timestamp. Never promote one to another.
+7. Never recommend adding to a losing position to recover losses. If averaging or hedging is discussed at all, tie it explicitly to defined risk, defined invalidation and current exposure — and name the danger.
+8. Where the brief gives per-layer results, say which layers are helping and which are hurting, using its numbers.
+
+STYLE: an experienced trade-management consultant briefing a client — calm, precise, direct, never patronising and never flattering. Short evidence bullets; reasoning in a few tight sentences. Research is already done; the reader wants clarity.
+
+OUTPUT — use these exact markdown headings, in this order, omitting any the brief cannot support:
+### Position Summary
+### Current Market
+### Technical
+### Fundamental
+### News / Events
+### What Supports Your Trade
+### What Works Against It
+### Risk
+### Your Strength
+### Your Main Weakness
+### TRADE MANAGEMENT / LOSS RECOVERY PLAN
+Under that final heading give exactly three conditional scenarios — thesis still supported, thesis weakening, thesis invalidated — each with what would confirm it, what to monitor, and what management consideration follows. State clearly that this is not a guaranteed recovery path.
+Finish with one short paragraph: decision-support on currently available evidence, not a guaranteed outcome, conditions change, the decision is the trader's.
+Output only the report.`;
+
+/**
+ * @returns {Promise<{text:string, provider:string, degraded:boolean, reason:string|null}>}
+ */
+export async function generateRescuePlan(env, brief, lang = 'en') {
+  const langLine = (lang && lang !== 'en')
+    ? `\n\nWrite the entire report in the language with code "${lang}". Keep these terms in English: Support, Resistance, Entry, Stop Loss, Take Profit, Risk/Reward, Market Structure, Momentum, Volatility, Liquidity, Fundamentals, Hedge.`
+    : '';
+  const system = RESCUE_PLAN_SYSTEM + langLine;
+  const user = `EVIDENCE BRIEF:\n\n${brief}`;
+
+  if (!llmConfigured(env)) {
+    return { text: '', provider: 'none', degraded: true, reason: 'not_configured' };
+  }
+
+  // OpenAI first and directly — callOpenAI already retries once on a transient
+  // failure (timeout, 429, 5xx) and logs the failure rather than hiding it.
+  const oa = resolveOpenAI(env);
+  if (oa.usable) {
+    try {
+      const t = await callOpenAI(oa, [{ role: 'system', content: system }, { role: 'user', content: user }], env, null, 1800);
+      if (t && t.trim().length > 200) return { text: t.trim(), provider: 'openai', degraded: false, reason: null };
+    } catch { /* fall through to the shared chain */ }
+  }
+  try {
+    const t = await callModel(env, system, user, null, 1800);
+    if (t && t.trim().length > 200) return { text: t.trim(), provider: 'workers-ai', degraded: false, reason: null };
+  } catch { /* deterministic report stands */ }
+
+  return { text: '', provider: 'none', degraded: true, reason: 'llm_unavailable' };
+}
+
+// ── ZTU RESCUE — MULTI-LAYER INTAKE ─────────────────────────────────────────
+// One sentence often describes a whole book: "پہلے چار ہزار چالیس پر سیل لی، پھر
+// چار ہزار پینتالیس پر دوسری، پھر چار ہزار پچاس پر hedge کے لیے buy". Reading
+// that into separate layers is a language problem, not a parsing problem, so it
+// goes to the model — but every number that comes back must already exist in the
+// sentence, and the caller supplies the list of values the sentence supports.
+const LAYERS_SYSTEM = `You read ONE message in which a trader describes the orders making up a single position, and return those orders as strict JSON.
+
+RULES — these override everything else:
+1. Return ONLY orders the message actually describes. Never invent an order, a price, a size or a date.
+2. Each order has a side. "sell"/"short"/"سیل"/"بیع" is "sell"; "buy"/"long"/"بائی"/"شراء" is "buy". Read the verb attached to the word — a remark about which way the MARKET is moving is not an order.
+3. Understand spoken numbers in Urdu, Arabic and English, including mixed word/digit forms: "چار ہزار تینتالیس" = 4043, "چار ہزار 43" = 4043, "چار ہزار چالیس" = 4040, "four thousand forty-five" = 4045. Never truncate a compound number to its last part.
+4. Every number you output must be present in the message. Never compute or convert one.
+5. "purpose" is only set when the trader says why an order exists (e.g. "hedge", "average down"). Otherwise omit it.
+6. You have NO market data. Never output a current price, level, indicator, news item or event.
+7. If the message is too unclear to separate the orders, return {"layers":[],"ambiguous":true}.
+8. Output ONLY the JSON object — no fence, no commentary.
+
+JSON shape:
+{"layers":[{"direction":"buy"|"sell","entry":number,"size":number,"opened_at":"YYYY-MM-DD","stop_loss":number,"take_profit":number,"purpose":string,"note":string}],"ambiguous":boolean}`;
+
+/**
+ * @param {number[]} allowedNumbers every value the sentence supports (digits AND
+ *        spoken numbers), computed by the caller's number reader.
+ * @returns {Promise<{layers:object[], ambiguous:boolean, dropped:number}|null>}
+ */
+export async function interpretLayers(env, text, allowedNumbers = []) {
+  const msg = String(text || '').trim();
+  if (msg.length < 8 || !llmConfigured(env)) return null;
+
+  const user = `TRADER MESSAGE:\n\n${msg}`;
+  let raw = '';
+  const oa = resolveOpenAI(env);
+  if (oa.usable) {
+    try { raw = await callOpenAI(oa, [{ role: 'system', content: LAYERS_SYSTEM }, { role: 'user', content: user }], env, null, 700); }
+    catch { raw = ''; }
+  }
+  if (!raw) { try { raw = await callModel(env, LAYERS_SYSTEM, user, null, 700); } catch { return null; } }
+  if (!raw) return null;
+
+  const m = String(raw).match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  let d;
+  try { d = JSON.parse(m[0]); } catch { return null; }
+  if (!d || !Array.isArray(d.layers)) return null;
+
+  const digits = msg.replace(/[^\d]/g, '');
+  const allowed = allowedNumbers.map(Number).filter(Number.isFinite);
+  const supported = (v) => {
+    if (!Number.isFinite(v)) return false;
+    const w = String(v).replace(/[^\d]/g, '');
+    return allowed.includes(v) || (w && digits.includes(w));
+  };
+
+  const out = [];
+  let dropped = 0;
+  for (const l of d.layers.slice(0, 20)) {
+    const dir = l && String(l.direction || '').toLowerCase();
+    if (dir !== 'buy' && dir !== 'sell') { dropped++; continue; }
+    const entry = Number(l.entry);
+    // An order with an unsupported price is dropped whole — a layer with the
+    // wrong entry is worse than a layer the trader has to re-type.
+    if (!supported(entry)) { dropped++; continue; }
+    const row = { direction: dir, entry };
+    const size = Number(l.size);
+    if (supported(size)) row.size = size;
+    for (const k of ['stop_loss', 'take_profit']) {
+      const v = Number(l[k]);
+      if (supported(v)) row[k] = v;
+    }
+    if (typeof l.opened_at === 'string' && /^\d{4}-\d{2}-\d{2}/.test(l.opened_at)) row.opened_at = l.opened_at.slice(0, 10);
+    for (const k of ['purpose', 'note']) {
+      if (typeof l[k] === 'string' && l[k].trim()) row[k] = l[k].trim().slice(0, 60);
+    }
+    out.push(row);
+  }
+  return { layers: out, ambiguous: !!d.ambiguous || dropped > 0, dropped };
+}
