@@ -668,7 +668,7 @@ const AdminDashboard = (() => {
     if (sectionId === 'ib-changed')        _renderIbChangedList();
     if (sectionId === 'blocked-clients')   _renderBlockedList();   // Phase 16.2 Issue 4
     if (sectionId === 'special-access')    _renderSpecialAccess(); // Path 2 — Special Access
-    if (sectionId === 'brokers')           _renderBrokers();       // Your Brokers — public form's broker list
+    if (sectionId === 'brokers')           { _renderBrokers(); _renderWhatsappSetting(); }  // Your Brokers + Payment/WhatsApp Contact
     // Phase 13 — CRM sections
     if (sectionId === 'crm-active')    renderCrmActive();
     if (sectionId === 'crm-inactive')  renderCrmInactive();
@@ -7362,6 +7362,68 @@ const AdminDashboard = (() => {
     if (inp)    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); _brokerAdd(); } });
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     Payment / WhatsApp Contact — reuses /api/course-enrollment's
+     get-whatsapp (public read) / set-whatsapp (admin write) actions,
+     which are themselves backed by the EXISTING generic site_settings
+     table (functions/utils/site-settings.js) — no new table, no new
+     admin module. Same Bearer-token pattern as _brokerApi above.
+  ══════════════════════════════════════════════════════════ */
+  function _courseApi(body) {
+    const tok = (typeof AdminAuth !== 'undefined' && AdminAuth._token) ? AdminAuth._token : null;
+    return fetch('/api/course-enrollment', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, tok ? { Authorization: 'Bearer ' + tok } : {}),
+      body: JSON.stringify(body),
+    });
+  }
+
+  async function _renderWhatsappSetting() {
+    const inp = document.getElementById('waNumberInput');
+    if (!inp) return;
+    try {
+      const resp = await _courseApi({ action: 'get-whatsapp' });
+      const body = await resp.json().catch(() => ({}));
+      inp.value = (body.ok && body.whatsapp) ? body.whatsapp : '';
+      inp.placeholder = (body.ok && body.whatsapp) ? '' : 'e.g. 923001234567';
+    } catch (e) { /* leave the field blank — save still works */ }
+  }
+
+  async function _waSave() {
+    const inp = document.getElementById('waNumberInput');
+    const btn = document.getElementById('waSaveBtn');
+    const out = document.getElementById('waSaveResult');
+    if (!inp || !btn) return;
+    const say = (msg, ok) => {
+      if (!out) return;
+      out.hidden = false; out.textContent = msg; out.style.color = ok ? '#22c55e' : '#fca5a5';
+    };
+    const number = inp.value.trim();
+    if (!number) { say('Enter a WhatsApp number (digits only, with country code).', false); return; }
+
+    btn.disabled = true;
+    try {
+      // Normalization + validation happen SERVER-SIDE too — the client never
+      // decides what is written, same discipline as _brokerAdd above.
+      const resp = await _courseApi({ action: 'set-whatsapp', number });
+      const body = await resp.json().catch(() => ({}));
+      if (resp.status === 401 || resp.status === 403) { say('Admin session expired — reload and sign in again.', false); btn.disabled = false; return; }
+      if (!body.ok) { say(body.error === 'invalid_number' ? 'That does not look like a valid phone number.' : (body.error || ('HTTP ' + resp.status)), false); btn.disabled = false; return; }
+      inp.value = body.whatsapp;
+      say('Saved — the enrollment page now shows +' + body.whatsapp + '.', true);
+    } catch (e) {
+      say('Could not save: ' + (e.message || e), false);
+    }
+    btn.disabled = false;
+  }
+
+  function bindWhatsappSetting() {
+    const btn = document.getElementById('waSaveBtn');
+    const inp = document.getElementById('waNumberInput');
+    if (btn) btn.addEventListener('click', _waSave);
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); _waSave(); } });
+  }
+
   async function _renderSpecialAccess() {
     const bodyEl = document.getElementById('saListBody');
     const cntEl  = document.getElementById('saListCount');
@@ -11360,6 +11422,7 @@ const AdminDashboard = (() => {
     bindFilter();
     bindStatCards();         // summary cards → the real records behind each number
     bindBrokers();           // Your Brokers — admin-managed public broker list
+    bindWhatsappSetting();   // Payment / WhatsApp Contact — premium-course-enrollment.html
     _populateCreateLicenseBroker();
     bindTableActions();
     bindRunBtn();

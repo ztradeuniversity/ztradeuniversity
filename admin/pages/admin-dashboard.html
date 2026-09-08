@@ -1308,6 +1308,29 @@
               <p class="intake-queue-empty" id="brokerListEmpty" hidden>No brokers configured yet. Add one above.</p>
             </div>
           </div>
+
+          <!-- ═══════════════════════════════════════════════════════
+               Payment / WhatsApp Contact — the number shown on
+               premium-course-enrollment.html for payment-screenshot
+               verification. Stored in the EXISTING generic site_settings
+               key/value table (functions/utils/site-settings.js) via
+               /api/course-enrollment's get-whatsapp / set-whatsapp
+               actions — no new settings table, no new admin module.
+          ═══════════════════════════════════════════════════════════ -->
+          <div class="ib-changed-search" style="margin-top:22px">
+            <div class="ib-changed-search-hdr">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+                <path d="M17 9.5a7 7 0 0 1-9.9 6.4L3 17l1.1-4.1A7 7 0 1 1 17 9.5z"/>
+              </svg>
+              <span>Payment / WhatsApp Contact</span>
+            </div>
+            <p class="section-sub" style="margin:0 0 10px">The official WhatsApp number learners send their Premium Course payment screenshot to, shown on the public enrollment page. Digits only, with country code (e.g. <code>923001234567</code>).</p>
+            <div class="ib-changed-search-row">
+              <input type="text" id="waNumberInput" placeholder="e.g. 923001234567" class="ib-changed-search-input" autocomplete="off" maxlength="20" style="flex:1 1 220px" />
+              <button class="ib-changed-search-btn" id="waSaveBtn" type="button">Save</button>
+            </div>
+            <div class="ib-changed-search-result" id="waSaveResult" hidden></div>
+          </div>
         </section>
 
         <!-- ═══════════════════════════════════════════════════════

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Premium Course + Live Mentorship — Enrollment | Z Trade University</title>
+<meta name="description" content="Enroll in the Z Trade University Premium Course with live mentorship — Batch 30. Submit your details and payment information for review." />
+<link rel="icon" type="image/png" href="assets/ztu-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ════════════════════════════════════════════════════════════════
+     PREMIUM COURSE ENROLLMENT
+     No file upload of any kind. The learner submits structured payment
+     details here, then separately sends the payment screenshot to the
+     team's WhatsApp number (admin-configured, never hardcoded) for
+     verification. This page holds no key and stores no file.
+     ════════════════════════════════════════════════════════════════ */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --orange:#F7931A; --orange-soft:rgba(247,147,26,0.12); --orange-deep:#e07e0a;
+    --bg:#FAFAFA; --surface:#FFFFFF; --text:#0F172A; --heading:#0F172A;
+    --muted:#64708A; --border:#EAEAEA;
+    --shadow-sm:0 1px 2px rgba(15,23,42,0.04); --shadow:0 8px 28px rgba(15,23,42,0.07);
+    --shadow-lg:0 20px 50px rgba(15,23,42,0.10); --radius:16px; --radius-lg:22px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B1120; --surface:#131C30; --text:#E8EDF6; --heading:#F4F7FC;
+    --muted:#93A0B8; --border:rgba(255,255,255,0.09);
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.4); --shadow:0 8px 28px rgba(0,0,0,0.45); --shadow-lg:0 20px 50px rgba(0,0,0,0.55);
+  }
+  body{font-family:'Inter','Poppins',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    -webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+  a{text-decoration:none;color:inherit}
+  .container{width:100%;max-width:880px;margin:0 auto;padding:0 24px}
+
+  header.site-head{position:sticky;top:0;z-index:200;background:color-mix(in srgb,var(--surface) 92%,transparent);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm)}
+  .head-inner{max-width:880px;margin:0 auto;padding:0 24px;height:70px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .head-right{display:flex;align-items:center;gap:10px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand img{height:38px;width:auto;display:block}
+  .brand-text{display:flex;flex-direction:column;line-height:1.08}
+  .brand-text b{font-family:'Poppins','Inter',sans-serif;font-size:16px;font-weight:800;letter-spacing:.5px;color:var(--heading)}
+  .brand-text span{font-size:9.5px;font-weight:700;letter-spacing:4px;color:var(--orange);text-transform:uppercase}
+  .back-home{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:100px;
+    border:1.5px solid var(--border);color:var(--heading);font-size:13.5px;font-weight:700;white-space:nowrap;transition:.2s}
+  .back-home:hover{border-color:var(--orange);color:var(--orange)}
+  .back-home svg{width:15px;height:15px}
+
+  /* ── offer summary ── */
+  .en-hero{padding:44px 0 8px;text-align:center}
+  .en-tag{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;font-size:10.5px;font-weight:800;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--orange);background:var(--orange-soft);
+    border:1px solid rgba(247,147,26,.28);border-radius:100px;padding:5px 13px 5px 11px}
+  .en-tag svg{width:12px;height:12px}
+  .en-hero h1{font-family:'Poppins','Inter',sans-serif;font-weight:800;letter-spacing:-1px;
+    font-size:clamp(26px,4.4vw,38px);line-height:1.12;color:var(--heading)}
+  .en-hero h1 .accent{color:var(--orange)}
+  .en-facts{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .en-fact{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:100px;
+    background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);
+    font-size:13px;font-weight:700;color:var(--heading)}
+  .en-fact svg{width:14px;height:14px;color:var(--orange);flex-shrink:0}
+  .en-fact.price b{font-family:'Poppins','Inter',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.5px}
+  .en-fact.price i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--muted)}
+
+  /* ── form ── */
+  .en-form{margin:30px auto 60px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    box-shadow:var(--shadow);padding:28px 30px;margin-bottom:16px}
+  .card-head{margin-bottom:18px}
+  .card-head h2{font-family:'Poppins','Inter',sans-serif;font-size:17px;font-weight:800;color:var(--heading);letter-spacing:-.2px}
+  .card-head p{font-size:13px;color:var(--muted);margin-top:3px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  label{display:block;font-size:12.5px;font-weight:700;color:var(--heading);margin-bottom:6px}
+  label .opt{font-weight:600;color:var(--muted);font-size:11.5px}
+  label .req{color:var(--orange)}
+  input[type=text],input[type=date],input[type=number],textarea,select{width:100%;border:1.5px solid var(--border);border-radius:11px;
+    background:var(--bg);padding:12px 14px;font:inherit;font-size:14.5px;color:var(--text);outline:none;transition:.15s}
+  input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(247,147,26,.12)}
+  textarea{resize:vertical;min-height:84px;line-height:1.6}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .field.is-hidden{display:none}
+
+  /* ── payment verification (WhatsApp) ── */
+  .wa-box{border:1.5px dashed rgba(247,147,26,.4);background:var(--orange-soft);border-radius:14px;
+    padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .wa-ic{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:var(--surface);
+    border:1px solid rgba(247,147,26,.3);color:var(--orange);display:flex;align-items:center;justify-content:center}
+  .wa-ic svg{width:21px;height:21px}
+  .wa-body{flex:1 1 220px;min-width:0}
+  .wa-body b{display:block;font-size:14px;color:var(--heading)}
+  .wa-body span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .wa-btn{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;border-radius:100px;white-space:nowrap;
+    background:#25D366;color:#fff;font-size:14px;font-weight:700;box-shadow:0 6px 16px rgba(37,211,102,.32);
+    transition:transform .2s,box-shadow .2s}
+  .wa-btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(37,211,102,.42)}
+  .wa-btn svg{width:17px;height:17px}
+  .wa-box.is-unset{border-color:var(--border);background:var(--bg)}
+  .wa-box.is-unset .wa-ic{color:var(--muted);border-color:var(--border)}
+
+  .submit-row{margin-top:8px}
+  .btn-submit{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    padding:16px 26px;border-radius:100px;border:0;cursor:pointer;font-family:inherit;font-size:15.5px;font-weight:700;
+    background:linear-gradient(135deg,var(--orange) 0%,var(--orange-deep) 100%);color:#fff;
+    box-shadow:0 8px 22px rgba(247,147,26,.32);transition:transform .2s,box-shadow .2s,opacity .2s}
+  .btn-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 28px rgba(247,147,26,.45)}
+  .btn-submit:disabled{opacity:.6;cursor:not-allowed}
+  .btn-submit svg{width:17px;height:17px}
+  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;
+    animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .msg{margin-top:12px;font-size:13px;font-weight:600;min-height:19px;text-align:center}
+  .msg.err{color:#b03a3a}
+  .msg.ok{color:#16a34a}
+
+  .legal{font-size:12px;color:var(--muted);text-align:center;line-height:1.6;margin-top:14px}
+
+  /* ── success ── */
+  .done{display:none;text-align:center;padding:40px 26px}
+  .done.on{display:block}
+  .done-ic{width:66px;height:66px;border-radius:50%;margin:0 auto 16px;background:rgba(22,163,74,.1);
+    border:1px solid rgba(22,163,74,.3);color:#16a34a;display:flex;align-items:center;justify-content:center}
+  .done-ic svg{width:31px;height:31px}
+  .done h2{font-family:'Poppins','Inter',sans-serif;font-size:22px;font-weight:800;color:var(--heading);margin-bottom:8px}
+  .done p{font-size:14px;color:var(--muted);max-width:46ch;margin:0 auto}
+  .done .ref{display:inline-block;margin-top:16px;padding:9px 18px;border-radius:100px;background:var(--orange-soft);
+    border:1px solid rgba(247,147,26,.28);color:var(--orange);font-size:13px;font-weight:800;letter-spacing:.06em}
+  .done .wa-box{margin-top:22px;text-align:left}
+  .done a.home{display:inline-flex;align-items:center;gap:8px;margin-top:22px;padding:12px 24px;border-radius:100px;
+    border:1.5px solid var(--border);font-size:14px;font-weight:700;color:var(--heading)}
+  .done a.home:hover{border-color:var(--orange);color:var(--orange)}
+
+  .foot{padding:0 0 34px}
+  .foot-div{width:min(92%,860px);height:2px;margin:0 auto 18px;border-radius:2px;
+    background:linear-gradient(90deg,transparent,var(--orange),transparent)}
+  .foot-text{text-align:center;font-size:12.5px;color:var(--muted)}
+
+  a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+    outline:2px solid var(--orange);outline-offset:2px;border-radius:6px}
+  @media (max-width:640px){
+    .container,.head-inner{padding:0 18px}
+    .grid2{grid-template-columns:1fr}
+    .card{padding:22px 18px}
+    .brand-text{display:none}
+    .en-hero{padding:32px 0 4px}
+    .wa-box{flex-direction:column;align-items:stretch;text-align:center}
+    .wa-btn{justify-content:center}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+  <header class="site-head notranslate" translate="no">
+    <div class="head-inner">
+      <a href="index.html" class="brand" aria-label="Z Trade University home">
+        <img src="assets/ztu-logo.png" alt="Z Trade University" />
+        <span class="brand-text"><b>Z TRADE</b><span>University</span></span>
+      </a>
+      <div class="head-right">
+        <a class="back-home" href="index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Home
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="en-hero">
+    <div class="container">
+      <span class="en-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Premium · Paid course</span>
+      <h1>Premium Course + <span class="accent">Live Mentorship</span></h1>
+      <div class="en-facts">
+        <span class="en-fact price"><b>$150</b><i>one-time</i></span>
+        <span class="en-fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Next batch — Batch 30</span>
+        <span class="en-fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Live mentorship included</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="container en-form">
+    <form id="enrollForm" novalidate>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Your details</h2>
+          <p>So we know who is joining Batch 30.</p>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="fullName">Full name <span class="req">*</span></label>
+            <input type="text" id="fullName" autocomplete="name" maxlength="120" required />
+          </div>
+          <div class="field">
+            <label for="fatherName">Father's name <span class="req">*</span></label>
+            <input type="text" id="fatherName" maxlength="120" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="contact">How should we contact you? <span class="opt">(optional)</span></label>
+          <input type="text" id="contact" maxlength="160" placeholder="WhatsApp number or email" />
+          <p class="hint">Used only to confirm your enrollment and batch schedule.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>About your trading</h2>
+          <p>Short answers are fine — this helps place you in the right group.</p>
+        </div>
+        <div class="field">
+          <label for="background">What have you studied before?</label>
+          <textarea id="background" maxlength="1500" placeholder="Courses, books, self-study, live trading experience…"></textarea>
+        </div>
+        <div class="field">
+          <label for="goals">What do you want to learn?</label>
+          <textarea id="goals" maxlength="1500" placeholder="The specific skills or areas you want to work on."></textarea>
+        </div>
+        <div class="field">
+          <label for="expectations">Course expectations</label>
+          <textarea id="expectations" maxlength="1500" placeholder="What would make this course worth it for you?"></textarea>
+        </div>
+        <div class="field">
+          <label for="referral">How did you hear about this course?</label>
+          <select id="referral">
+            <option value="">Select one…</option>
+            <option>Z Trade University website</option>
+            <option>WhatsApp</option>
+            <option>Telegram</option>
+            <option>YouTube</option>
+            <option>Instagram / Facebook / TikTok</option>
+            <option>A friend or existing student</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Payment details <span class="req">*</span></h2>
+          <p>Pay the $150 course fee, then tell us the payment details below so we can verify it.</p>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="paySender">Payment sender name <span class="req">*</span></label>
+            <input type="text" id="paySender" maxlength="120" placeholder="Name the payment was sent under" required />
+          </div>
+          <div class="field">
+            <label for="payDate">Payment date <span class="req">*</span></label>
+            <input type="date" id="payDate" required />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="payMethod">Payment method <span class="req">*</span></label>
+            <select id="payMethod" required>
+              <option value="">Select one…</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field" id="bankNameField">
+            <label for="bankName">Bank name <span class="req">*</span></label>
+            <input type="text" id="bankName" maxlength="120" placeholder="e.g. HBL, Meezan, Easypaisa" />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field" id="txnField">
+            <label for="txnId">Transaction ID <span class="req">*</span></label>
+            <input type="text" id="txnId" maxlength="120" placeholder="Reference / transaction number" />
+          </div>
+          <div class="field">
+            <label for="amountPaid">Amount paid (USD) <span class="req">*</span></label>
+            <input type="number" id="amountPaid" min="0" step="0.01" value="150" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Payment verification</label>
+          <div class="wa-box" id="waBox">
+            <span class="wa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+            <span class="wa-body">
+              <b>After submitting, send your payment screenshot on WhatsApp</b>
+              <span id="waSub">Loading the payment verification number…</span>
+            </span>
+            <a class="wa-btn" id="waBtn" href="#" target="_blank" rel="noopener" hidden>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.5-.2-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.5-.7-2.5-1.3-3.5-3-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4zM12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+              Message on WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <button class="btn-submit" type="submit" id="submitBtn">
+          <span id="submitLabel">Submit Enrollment</span>
+          <svg id="submitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <div class="msg" id="msg" role="status" aria-live="polite"></div>
+        <p class="legal">Educational training only — not financial advice, and no guarantee of trading profit. Your enrollment is confirmed after the team verifies your payment.</p>
+      </div>
+    </form>
+
+    <div class="card done" id="done">
+      <div class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h2>Enrollment submitted</h2>
+      <p>Thank you. Your details are with the Z Trade University team — you will be contacted once your payment has been verified and your place in Batch 30 is confirmed.</p>
+      <div class="ref" id="doneRef"></div>
+      <div class="wa-box" id="waBoxDone">
+        <span class="wa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+        <span class="wa-body">
+          <b>One last step — send your payment screenshot</b>
+          <span id="waSubDone">Loading the payment verification number…</span>
+        </span>
+        <a class="wa-btn" id="waBtnDone" href="#" target="_blank" rel="noopener" hidden>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.5-.2-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.5-.7-2.5-1.3-3.5-3-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4zM12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+          Message on WhatsApp
+        </a>
+      </div>
+      <div><a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Z Trade University
+      </a></div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <div class="foot-div"></div>
+    <p class="foot-text">© <span id="yr"></span> Z Trade University — Educational content only, not financial advice.</p>
+  </footer>
+
+<script src="/assets/ztu-lang.js" defer></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   ENROLLMENT SUBMIT — structured payment details, no file upload.
+
+   The learner fills payment details (sender name, date, method, bank if
+   relevant, transaction id, amount) and submits — ONE request:
+     POST /api/course-enrollment { action:'submit', enrollment:{…} }
+   Payment proof is verified separately: the page shows the admin-configured
+   WhatsApp number (fetched via { action:'get-whatsapp' }, never hardcoded)
+   and the learner sends their screenshot there directly.
+
+   If the backend is not configured yet the API answers
+   'enrollment_not_configured' and this page says so honestly instead of
+   pretending the enrollment was received.
+   ══════════════════════════════════════════════════════════════════════════ */
+const API = '/api/course-enrollment';
+const $ = (id) => document.getElementById(id);
+
+try { if (localStorage.getItem('ztu-theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+$('yr').textContent = new Date().getFullYear();
+
+async function callApi(payload) {
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  return r.json();
+}
+
+/* ── payment method → conditional fields ──
+   Bank Transfer: bank name required. Cash: bank name hidden, transaction id
+   optional (cash often has no reference number). Other: transaction id
+   required, no bank name. */
+const payMethod = $('payMethod'), bankField = $('bankNameField'), bankInput = $('bankName');
+const txnField = $('txnField'), txnInput = $('txnId');
+function syncPaymentFields() {
+  const m = payMethod.value;
+  const isBank = m === 'Bank Transfer';
+  const isCash = m === 'Cash';
+  bankField.classList.toggle('is-hidden', !isBank);
+  bankInput.required = isBank;
+  if (!isBank) bankInput.value = '';
+  txnInput.required = !isCash && !!m;
+  txnField.querySelector('.req').style.display = isCash ? 'none' : '';
+}
+payMethod.addEventListener('change', syncPaymentFields);
+syncPaymentFields();
+
+/* ── WhatsApp payment-verification number (admin-configured, never hardcoded) ── */
+function waLink(number, refText) {
+  const text = encodeURIComponent(`Hi, I just submitted my Premium Course (Batch 30) enrollment${refText ? ' — reference ' + refText : ''}. Here is my payment screenshot:`);
+  return `https://wa.me/${number}?text=${text}`;
+}
+async function loadWhatsapp(refText) {
+  let number = null;
+  try {
+    const res = await callApi({ action: 'get-whatsapp' });
+    if (res.ok) number = res.whatsapp;
+  } catch (e) { /* leave number null — shown as "not yet configured" below */ }
+
+  [['waSub', 'waBtn', 'waBox'], ['waSubDone', 'waBtnDone', 'waBoxDone']].forEach(([subId, btnId, boxId]) => {
+    const sub = $(subId), btn = $(btnId), box = $(boxId);
+    if (!sub || !btn || !box) return;
+    if (number) {
+      sub.textContent = 'WhatsApp: +' + number;
+      btn.href = waLink(number, refText);
+      btn.hidden = false;
+      box.classList.remove('is-unset');
+    } else {
+      sub.textContent = 'The payment verification number is not set up yet — please check the Z Trade University WhatsApp on the homepage instead.';
+      btn.hidden = true;
+      box.classList.add('is-unset');
+    }
+  });
+}
+loadWhatsapp('');
+
+function say(text, kind) {
+  const m = $('msg');
+  m.textContent = text || '';
+  m.className = 'msg' + (kind ? ' ' + kind : '');
+}
+function busy(on) {
+  $('submitBtn').disabled = on;
+  $('submitLabel').textContent = on ? 'Submitting…' : 'Submit Enrollment';
+  $('submitIcon').outerHTML = on
+    ? '<span class="spin" id="submitIcon"></span>'
+    : '<svg id="submitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+}
+
+$('enrollForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fullName   = $('fullName').value.trim();
+  const fatherName = $('fatherName').value.trim();
+  const sender     = $('paySender').value.trim();
+  const payDate    = $('payDate').value;
+  const method     = $('payMethod').value;
+  const bank       = $('bankName').value.trim();
+  const txn        = $('txnId').value.trim();
+  const amount     = parseFloat($('amountPaid').value);
+
+  if (!fullName)   { say('Please enter your full name.', 'err'); $('fullName').focus(); return; }
+  if (!fatherName) { say("Please enter your father's name.", 'err'); $('fatherName').focus(); return; }
+  if (!sender)      { say('Please enter the payment sender name.', 'err'); $('paySender').focus(); return; }
+  if (!payDate)     { say('Please enter the payment date.', 'err'); $('payDate').focus(); return; }
+  if (!method)      { say('Please select a payment method.', 'err'); $('payMethod').focus(); return; }
+  if (method === 'Bank Transfer' && !bank) { say('Please enter the bank name.', 'err'); $('bankName').focus(); return; }
+  if (method !== 'Cash' && !txn)   { say('Please enter the transaction ID.', 'err'); $('txnId').focus(); return; }
+  if (!Number.isFinite(amount) || amount <= 0) { say('Please enter a valid amount paid.', 'err'); $('amountPaid').focus(); return; }
+
+  busy(true); say('Saving your enrollment…');
+
+  try {
+    const res = await callApi({
+      action: 'submit',
+      enrollment: {
+        full_name: fullName,
+        father_name: fatherName,
+        contact: $('contact').value.trim(),
+        background: $('background').value.trim(),
+        goals: $('goals').value.trim(),
+        expectations: $('expectations').value.trim(),
+        referral_source: $('referral').value,
+        payment_sender_name: sender,
+        payment_date: payDate,
+        payment_method: method,
+        bank_name: method === 'Bank Transfer' ? bank : '',
+        transaction_id: txn,
+        amount_paid: amount,
+      },
+    });
+    if (!res.ok) { busy(false); return say(explain(res), 'err'); }
+
+    const ref = res.reference ? 'Reference ' + res.reference : '';
+    $('enrollForm').style.display = 'none';
+    $('done').classList.add('on');
+    $('doneRef').textContent = ref;
+    loadWhatsapp(res.reference || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    busy(false);
+    say('Something went wrong while submitting. Please check your connection and try again.', 'err');
+  }
+});
+
+/* Honest, non-technical error text — and never a false "submitted". */
+function explain(res) {
+  switch (res && res.error) {
+    case 'enrollment_not_configured':
+      return 'Enrollment is not open through this form yet. Please contact the team on WhatsApp to enroll for Batch 30.';
+    case 'insert_failed':
+      return 'Enrollment could not be saved right now. Please try again shortly, or contact the team on WhatsApp.';
+    case 'missing_required':        return 'Please fill in your full name and your father’s name.';
+    case 'missing_sender_name':     return 'Please enter the payment sender name.';
+    case 'missing_payment_date':    return 'Please enter the payment date.';
+    case 'missing_payment_method':  return 'Please select a payment method.';
+    case 'missing_bank_name':       return 'Please enter the bank name.';
+    case 'missing_transaction_id':  return 'Please enter the transaction ID.';
+    case 'invalid_amount':          return 'Please enter a valid amount paid.';
+    default: return 'Enrollment could not be completed right now. Please try again shortly.';
+  }
+}
+</script>
+</body>
+</html>

@@ -246,14 +246,26 @@
     .hub-sub b { color: var(--heading); font-weight: 700; }
 
     .hub-group { max-width: 1000px; margin: 0 auto; animation: hubIn .5s cubic-bezier(.4,0,.2,1) both; }
-    .hub-group[data-hub-group="tools"] { animation-delay: .08s; }
-    .hub-group[data-hub-group="ib"]    { animation-delay: .16s; }
+    .hub-group[data-hub-group="ib"]      { animation-delay: .08s; }
+    .hub-group[data-hub-group="premium"] { animation-delay: .16s; }
     @keyframes hubIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .hub-group { animation: none; } }
 
     .hub-group-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
     .hub-group-title { font-family: 'Poppins','Inter',sans-serif; font-size: 18px; font-weight: 800; color: var(--heading); letter-spacing: -.2px; }
     .hub-group-count { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
+    /* Access-level tags. Three states, three restrained treatments so the
+       page answers "free / member / paid" at a glance (§23). */
+    .hub-tag {
+      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;
+      font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      border-radius: 100px; padding: 4px 12px 4px 10px;
+    }
+    .hub-tag svg { width: 11px; height: 11px; }
+    .hub-tag.is-free-tag {
+      color: #0f766e; background: rgba(13,148,136,.10); border: 1px solid rgba(13,148,136,.26);
+    }
+    [data-theme="dark"] .hub-tag.is-free-tag { color: #5eead4; background: rgba(45,212,191,.12); border-color: rgba(45,212,191,.28); }
     .hub-ib-tag {
       display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;
       font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
@@ -296,20 +308,66 @@
       border-color: rgba(247,147,26,.6); box-shadow: 0 10px 26px rgba(247,147,26,.18);
     }
 
-    /* Four cards (IB group only) — one extra column at full desktop width,
-       falling back to the same 2-/1-column breakpoints as the other groups. */
-    .hub-grid.is-quad { grid-template-columns: repeat(4, 1fr); }
-    @media (max-width: 1040px) {
-      .hub-grid.is-quad { grid-template-columns: repeat(2, 1fr); }
-    }
-
     .hub-sep { height: 1px; max-width: 1000px; margin: 34px auto; background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent); }
+
+    /* ── PREMIUM COURSE + LIVE MENTORSHIP (the paid tier) ──────────
+       The strongest visual emphasis on the page, but still restrained:
+       one gold-edged card, a clear price, the next batch, one CTA. */
+    .premium-offer {
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap;
+      background: var(--surface); border: 1.5px solid rgba(247,147,26,.38);
+      border-radius: var(--radius-lg); box-shadow: 0 14px 40px rgba(247,147,26,.12);
+      padding: 30px 32px;
+    }
+    .premium-offer::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+    }
+    .po-body { flex: 1 1 340px; min-width: 0; }
+    .po-title {
+      font-family: 'Poppins','Inter',sans-serif; font-size: clamp(20px, 2.6vw, 25px);
+      font-weight: 800; color: var(--heading); letter-spacing: -.4px; margin: 4px 0 8px;
+    }
+    .po-desc { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 46ch; }
+    .po-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .po-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; color: var(--heading);
+      background: var(--bg2, var(--surface-2)); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 13px;
+    }
+    .po-chip svg { width: 13px; height: 13px; color: var(--orange); flex-shrink: 0; }
+    .po-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+    .po-price { display: flex; align-items: baseline; gap: 6px; }
+    .po-price b {
+      font-family: 'Poppins','Inter',sans-serif; font-size: 40px; font-weight: 800;
+      color: var(--heading); letter-spacing: -1.5px; line-height: 1;
+    }
+    .po-price span { font-size: 13px; font-weight: 700; color: var(--muted); }
+    .po-cta {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 26px; border-radius: 100px; white-space: nowrap;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+      color: #fff; font-size: 15px; font-weight: 700;
+      box-shadow: 0 8px 22px rgba(247,147,26,.34);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .po-cta svg { width: 16px; height: 16px; }
+    .po-cta:hover, .po-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(247,147,26,.45); }
+    .po-cta:hover svg { transform: translateX(2px); }
+    @media (max-width: 700px) {
+      .premium-offer { padding: 26px 20px; gap: 20px; }
+      .po-side { align-items: stretch; width: 100%; }
+      .po-price { justify-content: flex-start; }
+      .po-cta { justify-content: center; width: 100%; }
+    }
 
     @media (max-width: 780px) {
       .hub-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 560px) {
-      .hub-grid, .hub-grid.is-quad { grid-template-columns: 1fr; }
+      .hub-grid { grid-template-columns: 1fr; }
       .hub-sep { margin: 26px auto; }
       .hub-group-head { flex-direction: column; align-items: flex-start; gap: 6px; }
       .hub-head { margin-bottom: 32px; }
@@ -740,29 +798,36 @@
     </div>
   </div>
 
-  <!-- ════════════════ FUNCTION HUB — Learn & Improve · Market & Trading Tools · IB Member Tools ════════════════
-       The primary middle-area content — directly after the social strip, no
-       hero/chatbot presentation above it any more. ZTU Rescue and the Trading
-       Journal both still exist at their own destinations and are linked below;
-       only their old homepage hero/promo presentation was removed. Ten
-       destinations, grouped by purpose. Every link below points at an
-       EXISTING route already used elsewhere on the site (trading-tools.html's
-       tool cards, mt5-bot.html, library.html, trading-journal-intro.html) —
-       nothing here is a new page, a new route, or a new system. -->
+  <!-- ════════════════ FUNCTION HUB — FREE · IB MEMBERS · PREMIUM COURSE ════════════════
+       The whole access model in one view. Every destination below already
+       exists (only paid-courses.html and the enrolment page are new), and each
+       group reflects REAL, audited access behaviour — not marketing:
+         FREE — free-classes / articles / trader-assessment / live-sentiment /
+                signal-history carry no auth gate of any kind. Trade Audit opens
+                ZTU Rescue, which allows a limited number of assessments before
+                asking for IB verification; its wording says so.
+         IB   — paid-courses / journal / mt5-bot / library all sit behind the
+                SAME existing library-auth OTP + broker_accounts gate, and ZTU
+                Rescue becomes unlimited on that same verification.
+         PAID — the premium course is a separate paid enrolment, not a tier of
+                the IB membership. -->
   <section class="hub notranslate" translate="no" aria-label="Explore Z Trade University">
     <div class="container">
 
       <div class="hub-head">
         <span class="hub-eyebrow">Everything in one place</span>
         <h2 class="hub-title">Explore Z Trade University</h2>
-        <p class="hub-sub"><b>10 tools</b> across 3 categories — learning, market tools, and IB member exclusives.</p>
+        <p class="hub-sub"><b>Free to start.</b> More unlocks when you join under our IB — plus a premium course with live mentorship when you are ready.</p>
       </div>
 
-      <!-- SECTION 1 · LEARN & IMPROVE -->
-      <div class="hub-group" data-hub-group="learn">
+      <!-- ── LEVEL 1 · FREE ──────────────────────────────────────────────── -->
+      <div class="hub-group" data-hub-group="free">
         <div class="hub-group-head">
-          <h3 class="hub-group-title">Learn &amp; Improve</h3>
-          <span class="hub-group-count">3 tools</span>
+          <div>
+            <span class="hub-tag is-free-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free for everyone</span>
+            <h3 class="hub-group-title">Free Tools</h3>
+          </div>
+          <span class="hub-group-count">6 tools</span>
         </div>
         <div class="hub-grid">
           <a class="hub-card" href="free-classes.html">
@@ -789,18 +854,6 @@
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
-        </div>
-      </div>
-
-      <div class="hub-sep" role="separator"></div>
-
-      <!-- SECTION 2 · MARKET & TRADING TOOLS -->
-      <div class="hub-group" data-hub-group="tools">
-        <div class="hub-group-head">
-          <h3 class="hub-group-title">Market &amp; Trading Tools</h3>
-          <span class="hub-group-count">3 tools</span>
-        </div>
-        <div class="hub-grid">
           <a class="hub-card" href="live-sentiment.html">
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg></span>
             <span class="hub-body">
@@ -813,7 +866,7 @@
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
             <span class="hub-body">
               <span class="hub-name">Trade Audit</span>
-              <span class="hub-desc">Audit your trade before entering and know what supports or weakens the idea.</span>
+              <span class="hub-desc">See what supports or weakens your trade idea — free to try, no sign-up.</span>
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
@@ -830,16 +883,32 @@
 
       <div class="hub-sep" role="separator"></div>
 
-      <!-- SECTION 3 · IB MEMBER TOOLS -->
+      <!-- ── LEVEL 2 · IB MEMBERS ────────────────────────────────────────── -->
       <div class="hub-group" data-hub-group="ib">
         <div class="hub-group-head">
           <div>
             <span class="hub-ib-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Only for IB Members</span>
             <h3 class="hub-group-title">IB Member Tools</h3>
           </div>
-          <span class="hub-group-count">4 tools</span>
+          <span class="hub-group-count">5 tools</span>
         </div>
-        <div class="hub-grid is-quad">
+        <div class="hub-grid">
+          <a class="hub-card is-ib" href="paid-courses.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5A2.5 2.5 0 0 1 4.5 4H9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 6.5A2.5 2.5 0 0 0 19.5 4H15a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/><polygon points="16.4 9.6 19.4 11.2 16.4 12.8 16.4 9.6" fill="currentColor" stroke="none"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Paid Courses</span>
+              <span class="hub-desc">Full course videos, unlocked with your IB verification.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card is-ib" href="trading-journal-intro.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H18"/><path d="M9 7h5M9 11h5"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Trading Journal</span>
+              <span class="hub-desc">Log your trades and get mentor-guided feedback.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
           <a class="hub-card is-ib" href="mt5-bot.html">
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg></span>
             <span class="hub-body">
@@ -852,7 +921,7 @@
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span>
             <span class="hub-body">
               <span class="hub-name">ZTU Rescue</span>
-              <span class="hub-desc">If your trade is stuck, get a clear evidence-based rescue assessment.</span>
+              <span class="hub-desc">Stuck trade? Get an evidence-based assessment — unlimited for members.</span>
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
@@ -860,22 +929,34 @@
             <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg></span>
             <span class="hub-body">
               <span class="hub-name">Library</span>
-              <span class="hub-desc">Videos, Audios, Books.</span>
+              <span class="hub-desc">Audios, books and the full premium library.</span>
             </span>
             <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           </a>
-          <!-- "Trading General" — per the task's own naming; the underlying,
-               verified destination is trading-journal-intro.html (the Trading
-               Journal's existing public intro/landing page, previously
-               promoted only from the now-removed hero). -->
-          <a class="hub-card is-ib" href="trading-journal-intro.html">
-            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H18"/><path d="M9 7h5M9 11h5"/></svg></span>
-            <span class="hub-body">
-              <span class="hub-name">Trading General</span>
-              <span class="hub-desc">Log your trades and get mentor-guided feedback to improve your overall trading.</span>
-            </span>
-            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-          </a>
+        </div>
+      </div>
+
+      <div class="hub-sep" role="separator"></div>
+
+      <!-- ── LEVEL 3 · PREMIUM COURSE (paid, separate from IB membership) ── -->
+      <div class="hub-group" data-hub-group="premium">
+        <div class="premium-offer">
+          <div class="po-body">
+            <span class="hub-tag hub-ib-tag" style="margin-bottom:2px">Premium · Paid course</span>
+            <h3 class="po-title">Premium Course + Live Mentorship</h3>
+            <p class="po-desc">A structured course taught with live mentorship sessions — learn the method, then apply it with guidance while you trade.</p>
+            <div class="po-meta">
+              <span class="po-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Next batch — Batch 30</span>
+              <span class="po-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Live mentorship included</span>
+            </div>
+          </div>
+          <div class="po-side">
+            <div class="po-price"><b>$150</b><span>one-time</span></div>
+            <a class="po-cta" href="premium-course-enrollment.html">
+              Enroll for Batch 30
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
         </div>
       </div>
 
