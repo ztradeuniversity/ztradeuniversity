@@ -186,6 +186,15 @@
       color: var(--text); transition: background .18s, color .18s;
     }
     .mobile-panel a:hover { background: var(--orange-soft); color: var(--orange); }
+    /* Submit-License-Request CTA — the only mobile path to license-request.html
+       (the desktop-only .head-cta-hint is hidden below 760px); styled to stand
+       out from the plain nav links below it so it reads as an action, not a
+       destination. */
+    .mobile-panel a.mm-cta {
+      color: var(--orange); background: var(--orange-soft);
+      border: 1px solid rgba(247,147,26,.28); margin-bottom: 10px;
+    }
+    .mobile-panel a.mm-cta:hover { background: var(--orange); color: #fff; }
 
     /* ── SOCIAL STRIP ─────────────────────────────────────────── */
     .social-strip { background: var(--strip-bg); border-bottom: 1px solid var(--border); }
@@ -325,63 +334,79 @@
     .qa .qa-arrow { color: var(--muted); display: flex; transition: transform .2s, color .2s; }
     .qa:hover .qa-arrow { color: var(--orange); transform: translateX(3px); }
 
-    /* ── FEATURE CARDS ─────────────────────────────────────────── */
+    /* ── FUNCTION HUB (middle area) ────────────────────────────────
+       Three grouped sections — Learn & Improve · Market & Trading
+       Tools · IB Member Tools — a scannable directory of all nine
+       destinations, replacing the old three-card grid. Every .hub-card
+       is a single clickable unit: icon, name, one-line description,
+       arrow. */
     .features { padding: 8px 0 64px; }
-    .cards-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
-      max-width: 1000px; margin: 0 auto;
+    .hub { padding: 8px 0 64px; }
+    .hub-head { text-align: center; max-width: 640px; margin: 0 auto 40px; }
+    .hub-eyebrow {
+      display: block; font-size: 11px; font-weight: 800; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 8px;
     }
-    .fcard {
+    .hub-title {
+      font-family: 'Poppins','Inter',sans-serif; font-size: clamp(24px, 3.2vw, 30px);
+      font-weight: 800; color: var(--heading); letter-spacing: -.4px; margin-bottom: 8px;
+    }
+    .hub-sub { font-size: 14px; color: var(--muted); }
+    .hub-sub b { color: var(--heading); font-weight: 700; }
+
+    .hub-group { max-width: 1000px; margin: 0 auto; animation: hubIn .5s cubic-bezier(.4,0,.2,1) both; }
+    .hub-group[data-hub-group="tools"] { animation-delay: .08s; }
+    .hub-group[data-hub-group="ib"]    { animation-delay: .16s; }
+    @keyframes hubIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .hub-group { animation: none; } }
+
+    .hub-group-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .hub-group-title { font-family: 'Poppins','Inter',sans-serif; font-size: 18px; font-weight: 800; color: var(--heading); letter-spacing: -.2px; }
+    .hub-group-count { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
+    .hub-ib-tag {
+      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;
+      font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--orange); background: var(--orange-soft); border: 1px solid rgba(247,147,26,.28);
+      border-radius: 100px; padding: 4px 12px 4px 10px;
+    }
+    .hub-ib-tag svg { width: 11px; height: 11px; }
+
+    .hub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+    .hub-card {
+      display: flex; align-items: flex-start; gap: 14px;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 30px 26px 26px;
-      display: flex; flex-direction: column; align-items: center; text-align: center;
-      box-shadow: var(--shadow);
-      transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s, border-color .26s;
-      position: relative; overflow: hidden;
+      border-radius: 14px; padding: 17px 18px; box-shadow: var(--shadow-sm);
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
     }
-    .fcard::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, transparent, var(--orange), transparent);
-      opacity: 0; transition: opacity .26s;
+    .hub-card:hover, .hub-card:focus-visible {
+      transform: translateY(-3px); border-color: rgba(247,147,26,.45); box-shadow: var(--shadow);
     }
-    .fcard:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: rgba(247,147,26,0.4); }
-    .fcard:hover::before { opacity: 1; }
+    .hub-ic {
+      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+      background: var(--orange-soft); border: 1px solid rgba(247,147,26,.22);
+      color: var(--orange); display: flex; align-items: center; justify-content: center;
+      transition: transform .22s ease;
+    }
+    .hub-ic svg { width: 20px; height: 20px; }
+    .hub-card:hover .hub-ic { transform: scale(1.08); }
+    .hub-body { flex: 1; min-width: 0; }
+    .hub-name { display: block; font-size: 15px; font-weight: 700; color: var(--heading); margin-bottom: 3px; }
+    .hub-desc { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+    .hub-arrow { color: var(--muted); flex-shrink: 0; margin-top: 10px; display: flex; transition: transform .22s ease, color .22s ease; }
+    .hub-card:hover .hub-arrow { color: var(--orange); transform: translateX(3px); }
 
-    .fcard-icon {
-      width: 64px; height: 64px; border-radius: 50%;
-      background: var(--orange-soft); border: 1px solid rgba(247,147,26,0.22);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--orange); margin-bottom: 16px;
-    }
-    .fcard-icon svg { width: 30px; height: 30px; }
-    .fcard h3 {
-      font-family: 'Poppins','Inter',sans-serif;
-      font-size: 21px; font-weight: 700; color: var(--heading);
-      letter-spacing: -.3px; margin-bottom: 18px;
-    }
-    .fcard-btn {
-      display: inline-flex; align-items: center; gap: 9px;
-      padding: 11px 24px; border-radius: 100px;
-      border: 1.5px solid var(--orange); color: var(--orange);
-      font-size: 14.5px; font-weight: 700;
-      transition: background .2s, color .2s, box-shadow .2s, transform .2s;
-    }
-    .fcard-btn svg { width: 15px; height: 15px; transition: transform .2s; }
-    .fcard:hover .fcard-btn {
-      background: var(--orange); color: #fff;
-      box-shadow: 0 8px 20px rgba(247,147,26,0.3);
-    }
-    .fcard:hover .fcard-btn svg { transform: translateX(3px); }
+    .hub-sep { height: 1px; max-width: 1000px; margin: 34px auto; background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent); }
 
-    .fcard-feats {
-      display: flex; justify-content: center; gap: 26px;
-      margin-top: 24px; padding-top: 20px;
-      border-top: 1px solid var(--border); width: 100%;
+    @media (max-width: 780px) {
+      .hub-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    .feat { display: flex; flex-direction: column; align-items: center; gap: 7px; }
-    .feat .feat-ic { color: var(--orange); display: flex; }
-    .feat .feat-ic svg { width: 19px; height: 19px; }
-    .feat span { font-size: 12.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    @media (max-width: 560px) {
+      .hub-grid { grid-template-columns: 1fr; }
+      .hub-sep { margin: 26px auto; }
+      .hub-group-head { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .hub-head { margin-bottom: 32px; }
+    }
 
     /* ── FOOTER ────────────────────────────────────────────────── */
     .site-foot { padding: 0 0 30px; }
@@ -393,12 +418,6 @@
     .foot-text { text-align: center; font-size: 13.5px; font-weight: 500; color: var(--muted); }
 
     /* ── RESPONSIVE ────────────────────────────────────────────── */
-    @media (max-width: 940px) {
-      .cards-grid { grid-template-columns: repeat(2, 1fr); max-width: 640px; }
-      .cards-grid .card-slot:last-child { grid-column: 1 / -1; max-width: 380px; margin: 0 auto; width: 100%; }
-      .fcard-feats { gap: 12px; }
-      .feat span { font-size: 11.5px; }
-    }
     @media (max-width: 860px) {
       .btn-signin span.si-label { display: inline; }
       .hero-chart { opacity: .15; }
@@ -427,8 +446,6 @@
       .qa { flex: none; width: 100%; max-width: none; }
     }
     @media (max-width: 600px) {
-      .cards-grid { grid-template-columns: 1fr; max-width: 400px; }
-      .cards-grid .card-slot:last-child { grid-column: auto; max-width: none; }
       .container { padding: 0 18px; }
     }
     @media (max-width: 480px) {
@@ -440,7 +457,6 @@
     }
     @media (max-width: 380px) {
       .brand-text span { letter-spacing: 2.5px; }
-      .fcard-feats { gap: 16px; }
     }
 
     /* ── IB MODAL ──────────────────────────────────────────────── */
@@ -519,26 +535,6 @@
       .ib-benefits { grid-template-columns: 1fr; }
       .ib-actions { flex-direction: column; }
       .ib-primary, .ib-secondary { justify-content: center; }
-    }
-
-    /* ── CARD BADGES (Free / Premium) — float above each feature card ── */
-    .card-slot { position: relative; display: flex; }
-    .card-slot > .fcard { width: 100%; }
-    .card-badge {
-      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-      z-index: 4; display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 14px; border-radius: 100px; white-space: nowrap;
-      font-family: 'Poppins','Inter',sans-serif;
-      font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-    }
-    .card-badge svg { width: 12px; height: 12px; }
-    .card-badge.is-free {
-      color: #fff; background: linear-gradient(135deg, #16a34a 0%, #12854e 100%);
-      border: 1px solid rgba(22,163,74,0.55); box-shadow: 0 6px 16px rgba(22,163,74,0.32);
-    }
-    .card-badge.is-premium {
-      color: var(--orange); background: linear-gradient(135deg, #1e2a44 0%, #0F172A 100%);
-      border: 1px solid rgba(247,147,26,0.45); box-shadow: 0 6px 16px rgba(15,23,42,0.30);
     }
 
     /* ── JOURNAL PROMO (premium feature card, UI only) ── */
@@ -841,6 +837,7 @@
         </a>
         <button class="mm-close" type="button" onclick="toggleMenu()" aria-label="Close menu">&times;</button>
       </div>
+      <a href="license-request.html" class="mm-cta" onclick="toggleMenu()">Submit your License Request</a>
       <a href="index.html"                onclick="toggleMenu()">Home</a>
       <a href="trade-rescue.html"         onclick="toggleMenu()">ZTU Rescue</a>
       <a href="trading-tools.html"        onclick="toggleMenu()">Trading Tools</a>
@@ -970,72 +967,129 @@
     </div>
   </section>
 
-  <!-- ════════════════ FEATURE CARDS (order: Trading Tools · MT5 Bot · Library) ════════════════ -->
-  <section class="features notranslate" translate="no">
+  <!-- ════════════════ FUNCTION HUB — Learn & Improve · Market & Trading Tools · IB Member Tools ════════════════
+       Nine destinations, grouped by purpose. Every link below points at an
+       EXISTING route already used elsewhere on the site (trading-tools.html's
+       tool cards, the hero quick-actions, mt5-bot.html, library.html) —
+       nothing here is a new page, a new route, or a new system. -->
+  <section class="hub notranslate" translate="no" aria-label="Explore Z Trade University">
     <div class="container">
-      <div class="cards-grid">
 
-        <!-- 1 · TRADING TOOLS -->
-        <div class="card-slot">
-          <span class="card-badge is-free"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free</span>
-          <article class="fcard">
-            <div class="fcard-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>
-            </div>
-            <h3>Trading Tools</h3>
-            <a class="fcard-btn" href="trading-tools.html">
-              Explore (Free)
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-            <div class="fcard-feats">
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Trade Audit</span></div>
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span>Self Audit</span></div>
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg></span><span>Market<br>Sentiment</span></div>
-            </div>
-          </article>
-        </div>
-
-        <!-- 2 · MT5 BOT -->
-        <div class="card-slot">
-          <span class="card-badge is-premium notranslate" translate="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Premium</span>
-          <article class="fcard">
-            <div class="fcard-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg>
-            </div>
-            <h3>MT5 Bot</h3>
-            <a class="fcard-btn" href="mt5-bot.html">
-              Learn More
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-            <div class="fcard-feats">
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" stroke="none"/></svg></span><span>Automated</span></div>
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/></svg></span><span>Risk Free</span></div>
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>24/7</span></div>
-            </div>
-          </article>
-        </div>
-
-        <!-- 3 · LIBRARY -->
-        <div class="card-slot">
-          <span class="card-badge is-premium notranslate" translate="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Premium</span>
-          <article class="fcard">
-            <div class="fcard-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg>
-            </div>
-            <h3>Library</h3>
-            <a class="fcard-btn" href="library.html">
-              Get Library Access
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-            <div class="fcard-feats">
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span><span>Videos</span></div>
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span><span>Audios</span></div>
-              <div class="feat"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Books</span></div>
-            </div>
-          </article>
-        </div>
-
+      <div class="hub-head">
+        <span class="hub-eyebrow">Everything in one place</span>
+        <h2 class="hub-title">Explore Z Trade University</h2>
+        <p class="hub-sub"><b>9 tools</b> across 3 categories — learning, market tools, and IB member exclusives.</p>
       </div>
+
+      <!-- SECTION 1 · LEARN & IMPROVE -->
+      <div class="hub-group" data-hub-group="learn">
+        <div class="hub-group-head">
+          <h3 class="hub-group-title">Learn &amp; Improve</h3>
+          <span class="hub-group-count">3 tools</span>
+        </div>
+        <div class="hub-grid">
+          <a class="hub-card" href="free-classes.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Free Class &amp; Book</span>
+              <span class="hub-desc">Check our Free Class and Free Book of the Week.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card" href="articles.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Read Articles</span>
+              <span class="hub-desc">Explore practical trading articles and insights.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card" href="trader-assessment.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Self Assessment</span>
+              <span class="hub-desc">Discover your strengths and weaknesses and become a better trader.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hub-sep" role="separator"></div>
+
+      <!-- SECTION 2 · MARKET & TRADING TOOLS -->
+      <div class="hub-group" data-hub-group="tools">
+        <div class="hub-group-head">
+          <h3 class="hub-group-title">Market &amp; Trading Tools</h3>
+          <span class="hub-group-count">3 tools</span>
+        </div>
+        <div class="hub-grid">
+          <a class="hub-card" href="live-sentiment.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Market Sentiment</span>
+              <span class="hub-desc">Check live market sentiment data for free.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card" href="trade-rescue.html?q=Please%20help%20me%20audit%20my%20trade%20idea">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Trade Audit</span>
+              <span class="hub-desc">Audit your trade before entering and know what supports or weakens the idea.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card" href="signal-history.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Signal History</span>
+              <span class="hub-desc">Our real signal history.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hub-sep" role="separator"></div>
+
+      <!-- SECTION 3 · IB MEMBER TOOLS -->
+      <div class="hub-group" data-hub-group="ib">
+        <div class="hub-group-head">
+          <div>
+            <span class="hub-ib-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Only for IB Members</span>
+            <h3 class="hub-group-title">IB Member Tools</h3>
+          </div>
+          <span class="hub-group-count">3 tools</span>
+        </div>
+        <div class="hub-grid">
+          <a class="hub-card" href="mt5-bot.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Amplify Bot</span>
+              <span class="hub-desc">Automate your trade with smart SL/TP and layer management.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card" href="trade-rescue.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">ZTU Rescue</span>
+              <span class="hub-desc">If your trade is stuck, get a clear evidence-based rescue assessment.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+          <a class="hub-card" href="library.html">
+            <span class="hub-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg></span>
+            <span class="hub-body">
+              <span class="hub-name">Library</span>
+              <span class="hub-desc">Videos, Audios, Books.</span>
+            </span>
+            <span class="hub-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        </div>
+      </div>
+
     </div>
   </section>
 
