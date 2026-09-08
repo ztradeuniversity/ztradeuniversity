@@ -19,6 +19,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 export const KIND = { FACT: 'FACT', ANALYSIS: 'ANALYSIS', SCENARIO: 'SCENARIO', UNCERTAINTY: 'UNCERTAINTY' };
+import { computeVerifiedRange, defensibleInvalidation } from './levels.js';
 
 // Directional reading of one piece of evidence, RELATIVE TO THE TRADER'S SIDE.
 // `basis` is mandatory — an item with no stated basis cannot enter the balance.
@@ -47,7 +48,7 @@ export function layerTradeContext(c) {
 // computed support/resistance therefore CANNOT be derived, and this layer says
 // so rather than inventing levels. What it can do exactly is measure the
 // position against verified numbers.
-export function layerTechnical(c, ev) {
+export function layerTechnical(c, ev, ohlc) {
   const f = [], e = [];
   if (ev.priceStatus !== 'verified') {
     f.push({ kind: KIND.UNCERTAINTY, text: `No verified live price for ${c.instrument || 'this instrument'}, so distance to entry, stop and target cannot be measured here.` });
@@ -76,8 +77,8 @@ export function layerTechnical(c, ev) {
       // Position within the DAY's realised range is a real, measurable fact.
       // It is a weak signal on its own and is labelled as such.
       if (posPct >= 70) e.push(c.direction === 'buy'
-        ? supportive(`Price is in the upper ${100 - posPct}% of today's range.`, "position within today's verified session range")
-        : opposing(`Price is in the upper ${100 - posPct}% of today's range, against a short.`, "position within today's verified session range"));
+        ? supportive(`Price is in the upper ${r2(100 - posPct)}% of today's range.`, "position within today's verified session range")
+        : opposing(`Price is in the upper ${r2(100 - posPct)}% of today's range, against a short.`, "position within today's verified session range"));
       else if (posPct <= 30) e.push(c.direction === 'sell'
         ? supportive(`Price is in the lower ${posPct}% of today's range.`, "position within today's verified session range")
         : opposing(`Price is in the lower ${posPct}% of today's range, against a long.`, "position within today's verified session range"));
@@ -107,8 +108,34 @@ export function layerTechnical(c, ev) {
       : (c.direction === 'sell' ? supportive(`Your stated resistance at ${v} is still capping price.`, 'your level vs verified current price') : neutral(`Resistance at ${v} still overhead.`, 'your level vs verified current price')));
   }
 
-  if (!lv.length) {
+  // The candle-based range below is itself a verified support/resistance-class
+  // level, so the generic "no candle history" message must not fire once real
+  // OHLC is present — it would flatly contradict the range stated two lines later.
+  const hasOhlc = !!(ohlc && ohlc.status === 'verified' && Array.isArray(ohlc.closes) && ohlc.closes.length >= 5);
+  if (!lv.length && !hasOhlc) {
     f.push({ kind: KIND.UNCERTAINTY, text: 'No support or resistance level is available. Our market feed provides price and session range only — not candle history — so this system cannot compute structural levels, and it will not invent them.' });
+  }
+
+  // ── VERIFIED RECENT RANGE (real OHLC, when the caller supplies it) ────────
+  // Only the structured Rescue endpoint fetches /api/market-history and passes
+  // it here; the conversational endpoint calls this layer without a third
+  // argument and gets exactly its prior behaviour. The range is the highest and
+  // lowest CLOSE over the verified daily candles — not a chart pattern, stated
+  // as exactly what it is. An invalidation candidate is offered only when it
+  // sits on the side of price that would actually falsify the direction; see
+  // levels.js for the refusal cases.
+  if (hasOhlc) {
+    const range = computeVerifiedRange(ohlc.closes);
+    if (range && ev.priceStatus === 'verified') {
+      f.push({ kind: KIND.FACT, text: `Verified trading range over the last ${range.sessions} sessions: ${range.low} – ${range.high} (${ohlc.source || 'TwelveData /time_series'}).` });
+      const inv = defensibleInvalidation(c.direction, ev.price, range);
+      if (inv.ok) {
+        f.push({ kind: KIND.ANALYSIS, text: `A break ${inv.side} ${inv.level} would take price outside the verified ${range.sessions}-session range — the most defensible invalidation level this system can offer from real data, not a chart pattern.` });
+        e.push(neutral(`Verified range ${range.low}–${range.high} over ${range.sessions} sessions; a break ${inv.side} ${inv.level} would invalidate the range.`, `${ohlc.source || 'TwelveData /time_series'} — verified daily closes`));
+      } else {
+        f.push({ kind: KIND.UNCERTAINTY, text: `${inv.reason} No invalidation level is proposed from the recent range.` });
+      }
+    }
   }
   return { id: 'technical', title: 'Technical / market structure', findings: f, evidence: e };
 }
@@ -154,6 +181,7 @@ export function layerFundamental(c, ev) {
       e.push(neutral(`Regime reads ${ev.regime.label} — background context for ${c.instrument || 'this instrument'}.`, 'VIX-derived regime'));
     }
   }
+  f.push({ kind: KIND.UNCERTAINTY, text: 'Supply/demand data (central-bank purchases, ETF flows, futures positioning, mine supply or on-chain flow) could not be independently verified — this platform has no connected source for it, so none is asserted here.' });
   return { id: 'fundamental', title: 'Fundamental / macro', findings: f, evidence: e };
 }
 
@@ -361,10 +389,10 @@ export function layerDecisionSupport(c, ev, weighed) {
 }
 
 // ── ORCHESTRATOR ────────────────────────────────────────────────────────────
-export function runAnalysis(tradeCase, evidence) {
+export function runAnalysis(tradeCase, evidence, ohlc = null) {
   const layers = [
     layerTradeContext(tradeCase),
-    layerTechnical(tradeCase, evidence),
+    layerTechnical(tradeCase, evidence, ohlc),
     layerFundamental(tradeCase, evidence),
     layerNews(tradeCase, evidence),
     layerSentiment(tradeCase, evidence),

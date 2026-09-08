@@ -347,6 +347,8 @@ const I18N = {
     howMeasured: 'How this is measured', sources: 'Sources and retrieval times',
     again: 'Assess another position', backup: 'backup feed used',
     units: 'units', pts: 'weighted pts',
+    provMacro: 'Macro', provNews: 'News', provEvents: 'Events', provHistory: 'Market history',
+    histLabel: 'Historical candles', histDaily: 'daily candles', histUnavailable: 'Historical market data unavailable',
   },
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
@@ -374,6 +376,8 @@ const I18N = {
     howMeasured: 'یہ کیسے ناپا گیا', sources: 'ذرائع اور وقت',
     again: 'ایک اور position دیکھیں', backup: 'backup feed استعمال ہوا',
     units: 'یونٹس', pts: 'وزنی points',
+    provMacro: 'میکرو ڈیٹا', provNews: 'خبریں', provEvents: 'واقعات', provHistory: 'مارکیٹ کی تاریخ',
+    histLabel: 'تاریخی Candles', histDaily: 'روزانہ candles', histUnavailable: 'Historical market data دستیاب نہیں',
   },
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
@@ -400,6 +404,8 @@ const I18N = {
     unavailable: 'غير متاح', strength: 'قوة الأدلة', coverage: 'التغطية',
     howMeasured: 'كيف يُقاس هذا', sources: 'المصادر وأوقات الجلب',
     again: 'قيّم مركزاً آخر', backup: 'تم استخدام مصدر احتياطي',
+    provMacro: 'البيانات الكلية', provNews: 'الأخبار', provEvents: 'الأحداث', provHistory: 'تاريخ السوق',
+    histLabel: 'الشموع التاريخية', histDaily: 'شمعة يومية', histUnavailable: 'بيانات السوق التاريخية غير متاحة',
     units: 'وحدات', pts: 'نقاط موزونة',
   },
 };
@@ -788,7 +794,10 @@ function renderResult() {
     ev.priceAt ? new Date(ev.priceAt).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '');
   const unitLabel = p.sized ? 'lots' : t('units');
   h += stat('netExposure', Math.abs(p.netSize) + ' ' + unitLabel, p.hedged ? p.grossLongSize + ' long / ' + p.grossShortSize + ' short' : '');
-  h += stat('breakeven', p.breakevenPrice != null ? String(p.breakevenPrice) : t('unavailable'), 'DERIVED');
+  // Break-even stays fully computed (p.breakevenPrice) and travels to the
+  // results endpoint's `levels` field for anything that wants it — it is just
+  // no longer one of the headline cards. It is a computation aid, not
+  // something a trader asked to see as a primary figure.
   h += stat('floating', p.floatingPoints != null ? p.floatingPoints + ' ' + (p.sized ? 'lot-pts' : t('pts')) : t('unavailable'),
     p.floatingMoney != null ? money(p.floatingMoney) : 'DERIVED',
     p.floatingPoints > 0 ? ' pos' : p.floatingPoints < 0 ? ' neg' : '');
@@ -820,12 +829,12 @@ function renderResult() {
           : esc(p.note || t('unavailable'))) + '</div>';
   };
   h += '<div class="report">' + md(d.report) + '<div class="prov"><b>' + esc(t('sources')) + '</b>' +
-    provRow('price', t('current')) + provRow('macro', 'Macro') + provRow('news', 'News') +
-    provRow('calendar', 'Events') + provRow('history', 'Market history') +
+    provRow('price', t('current')) + provRow('macro', t('provMacro')) + provRow('news', t('provNews')) +
+    provRow('calendar', t('provEvents')) + provRow('history', t('provHistory')) +
     (ev.provenance || []).map(x => '<div>· ' + esc(x) + '</div>').join('') +
     '<div>· ' + esc(d.history.status === 'verified'
-      ? 'Historical candles — ' + d.history.source + ', ' + d.history.count + ' daily candles'
-      : (d.history.note || 'Historical market data unavailable')) + '</div>' +
+      ? t('histLabel') + ' — ' + d.history.source + ', ' + d.history.count + ' ' + t('histDaily')
+      : (d.history.note || t('histUnavailable'))) + '</div>' +
     (ev.unavailable || []).map(x => '<div>· ' + esc(x) + '</div>').join('') +
     '<div>· Meters: ' + esc(d.meters.methodology.formula) + '</div>' +
     '<div>· ' + esc(d.meters.methodology.strength) + '</div>' +

@@ -126,7 +126,7 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
   if (units != null) {
     out.assumptions.push(`Contract size: ${conv.label} (standard retail convention — correct it if your broker differs).`);
   } else if (!sized) {
-    out.notes.push('No position sizes were supplied, so every layer is weighted equally. Direction, breakeven and which layer helps or hurts are unaffected; a money figure is not produced, because relative weights cannot support one.');
+    out.notes.push('No position sizes were supplied, so every layer is weighted equally. Direction and which layer helps or hurts are unaffected; a money figure is not produced, because relative weights cannot support one.');
   } else {
     out.notes.push('No contract size is known for this instrument, so results stay in price points and are never converted to money.');
   }
@@ -174,7 +174,7 @@ export function analyzePosition(layers, instrument, currentPrice, unitsOverride 
   // Breakeven: the price P where Σ signᵢ·sizeᵢ·(P − entryᵢ) = 0.
   // Undefined for a perfectly hedged book, where P/L no longer moves with price.
   if (Math.abs(sumSigned) > 1e-9) out.breakevenPrice = round(sumSignedEntry / sumSigned, 4);
-  else out.notes.push('Long and short size are equal, so the book is delta-flat: further price movement no longer changes the aggregate result, and there is no breakeven price to compute.');
+  else out.notes.push('Long and short size are equal, so the book is delta-flat: further price movement no longer changes the aggregate result.');
 
   if (currentPrice != null) {
     out.floatingPoints = round(out.perLayer.reduce((a, r) => a + (r.points || 0), 0), 4);
@@ -218,8 +218,12 @@ export function aggregateToCase(pos, base) {
   return c;
 }
 
-/** Human-readable position lines for the evidence brief. All DERIVED. */
-export function positionLines(pos, instrument) {
+/** Human-readable position lines for the evidence brief. All DERIVED.
+ *  `includeBreakeven` defaults to true for internal/API callers that want the
+ *  full picture; the results page deliberately renders with it OFF, since
+ *  break-even is a computation aid, not something a trader asked for as a
+ *  headline figure — it stays available on `pos.breakevenPrice` either way. */
+export function positionLines(pos, instrument, { includeBreakeven = true } = {}) {
   const L = [];
   if (!pos || !pos.computableCount) return L;
   L.push(`Layers supplied: ${pos.layerCount} (${pos.computableCount} complete enough to compute).`);
@@ -228,7 +232,7 @@ export function positionLines(pos, instrument) {
   if (pos.grossShortSize) L.push(`Gross short ${pos.grossShortSize} ${U}, weighted average entry ${pos.avgShortEntry}.`);
   L.push(`Net exposure ${Math.abs(pos.netSize)} ${U} ${pos.netDirection === 'flat' ? '(delta-flat)' : pos.netDirection.toUpperCase()}.`);
   if (pos.hedged) L.push(`Hedged: ${Math.round(pos.hedgeRatio * 100)}% of the larger side is offset by the opposite side.`);
-  if (pos.breakevenPrice != null) L.push(`Aggregate breakeven price ${pos.breakevenPrice} (DERIVED from the layers above).`);
+  if (includeBreakeven && pos.breakevenPrice != null) L.push(`Aggregate breakeven price ${pos.breakevenPrice} (DERIVED from the layers above).`);
   if (pos.floatingPoints != null) {
     L.push(`Aggregate floating result ${pos.floatingPoints} ${pos.sized ? 'lot-points' : 'weighted points'}${pos.floatingMoney != null ? ` (≈ ${pos.floatingMoney} account currency)` : ''} at the current verified price ${pos.currentPrice} — DERIVED, not broker-confirmed.`);
   }
