@@ -116,21 +116,6 @@
     }
     .theme-toggle:hover { color: var(--orange); border-color: var(--orange); transform: translateY(-1px); }
 
-    /* Trading History — compact header utility link (§6/§19). Desktop-only:
-       below 760px the hamburger is already visible and the mobile menu's
-       own "Signal History" row (unchanged) is the discovery path instead,
-       so this icon never has to compete with License Request / How to Join
-       Us / Theme / Language in an already-tight mobile header row. */
-    .history-link {
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--surface); border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted); flex-shrink: 0; box-shadow: var(--shadow-sm);
-      transition: transform .2s, color .2s, border-color .2s;
-    }
-    .history-link:hover, .history-link:focus-visible { color: var(--orange); border-color: var(--orange); transform: translateY(-1px); }
-    .history-link svg { width: 19px; height: 19px; }
-    @media (max-width: 760px) { .history-link { display: none; } }
     .theme-toggle .icon-moon { display: none; }
     [data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
     [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
@@ -214,6 +199,23 @@
     }
     .mobile-panel a.mm-cta:hover { background: var(--orange); color: #fff; }
 
+    /* ── LICENSE REQUEST MICROCOPY ────────────────────────────────
+       Sits in normal page flow (NOT inside the sticky 72px header, which has
+       no room left for a second line) directly under it, so it reads as
+       "attached to" License Request without risking header overflow at any
+       tested width. Distinct line, distinct link, from How to Join Us. */
+    .lic-hint-bar { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .lic-hint-inner { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 0; text-align: center; }
+    .lic-hint-inner svg { width: 14px; height: 14px; color: var(--orange); flex-shrink: 0; }
+    .lic-hint-bar span, .lic-hint-bar a { font-size: 12px; color: var(--muted); }
+    .lic-hint-bar a { color: var(--orange); font-weight: 700; text-decoration: none; }
+    .lic-hint-bar a:hover, .lic-hint-bar a:focus-visible { text-decoration: underline; }
+    .lic-hint-short { display: none; }
+    @media (max-width: 480px) {
+      .lic-hint-full { display: none; }
+      .lic-hint-short { display: inline; }
+    }
+
     /* ── SOCIAL STRIP ─────────────────────────────────────────── */
     .social-strip { background: var(--strip-bg); border-bottom: 1px solid var(--border); }
     .social-strip-inner {
@@ -267,9 +269,6 @@
     @keyframes hubIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .hub-group { animation: none; } }
 
-    .hub-group-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .hub-group-title { font-family: 'Poppins','Inter',sans-serif; font-size: 18px; font-weight: 800; color: var(--heading); letter-spacing: -.2px; }
-    .hub-group-count { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
     /* Access-level tags. Three states, three restrained treatments so the
        page answers "free / member / paid" at a glance (§23). */
     .hub-tag {
@@ -340,8 +339,11 @@
       content: ''; position: absolute; top: 2px; bottom: 2px; left: 50%; width: 1px; transform: translateX(-50%);
       background: linear-gradient(180deg, transparent, var(--border) 12%, var(--border) 88%, transparent);
     }
-    .cmp-panel-head { margin-bottom: 14px; }
-    .cmp-panel-head .hub-group-title { font-size: 16px; margin-top: 2px; }
+    /* The badge alone is the panel's heading (§3) — no repeated h3 underneath.
+       A small muted count sits beside it so "5 tools / 5 tools" reads as a
+       deliberate, symmetrical pair rather than duplicated headings. */
+    .cmp-panel-head { margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cmp-count { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
     .cmp-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .cmp-card {
       display: flex; align-items: center; gap: 10px;
@@ -376,7 +378,7 @@
     @media (max-width: 640px) {
       .hub-compare { gap: 12px; }
       .cmp-panel-head .hub-tag, .cmp-panel-head .hub-ib-tag { font-size: 9px; padding: 3px 9px 3px 8px; }
-      .cmp-panel-head .hub-group-title { font-size: 13.5px; }
+      .cmp-count { font-size: 9.5px; }
       .cmp-card { padding: 9px 8px; gap: 7px; border-radius: 11px; }
       .cmp-ic { width: 27px; height: 27px; border-radius: 8px; }
       .cmp-ic svg { width: 13px; height: 13px; }
@@ -386,55 +388,67 @@
     }
 
     /* ── PREMIUM COURSE + LIVE MENTORSHIP (the paid tier) ──────────
-       The strongest visual emphasis on the page, but still restrained:
-       one gold-edged card, a clear price, the next batch, one CTA. */
+       Clean, minimal, unmistakably a DIFFERENT offer from "Paid Courses"
+       (the IB panel's free-with-membership video library): its own price,
+       its own admissions state, its own CTA. No false urgency — the status
+       line states the real, current, closed-admissions fact plainly. */
     .premium-offer {
       position: relative; overflow: hidden;
-      display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap;
-      background: var(--surface); border: 1.5px solid rgba(247,147,26,.38);
-      border-radius: var(--radius-lg); box-shadow: 0 14px 40px rgba(247,147,26,.12);
-      padding: 30px 32px;
+      background: var(--surface); border: 1.5px solid rgba(247,147,26,.32);
+      border-radius: var(--radius-lg); box-shadow: 0 10px 30px rgba(247,147,26,.09);
+      padding: 26px 28px;
     }
     .premium-offer::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
       background: linear-gradient(90deg, transparent, var(--orange), transparent);
     }
-    .po-body { flex: 1 1 340px; min-width: 0; }
-    .po-title {
-      font-family: 'Poppins','Inter',sans-serif; font-size: clamp(20px, 2.6vw, 25px);
-      font-weight: 800; color: var(--heading); letter-spacing: -.4px; margin: 4px 0 8px;
+    .po-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+    .po-status {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
     }
-    .po-desc { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 46ch; }
-    .po-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .po-status .po-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted2, var(--muted)); flex-shrink: 0; }
+    .po-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-top: 10px; }
+    .po-body { flex: 1 1 320px; min-width: 0; }
+    .po-title {
+      font-family: 'Poppins','Inter',sans-serif; font-size: clamp(19px, 2.4vw, 23px);
+      font-weight: 800; color: var(--heading); letter-spacing: -.4px; margin: 0 0 7px;
+    }
+    .po-desc { font-size: 13.5px; color: var(--muted); line-height: 1.6; max-width: 48ch; }
     .po-chip {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
       font-size: 12px; font-weight: 700; color: var(--heading);
       background: var(--bg2, var(--surface-2)); border: 1px solid var(--border);
       border-radius: 100px; padding: 5px 13px;
     }
     .po-chip svg { width: 13px; height: 13px; color: var(--orange); flex-shrink: 0; }
-    .po-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-    .po-price { display: flex; align-items: baseline; gap: 6px; }
+    .po-price { flex: 0 0 auto; display: flex; align-items: baseline; gap: 6px; }
     .po-price b {
-      font-family: 'Poppins','Inter',sans-serif; font-size: 40px; font-weight: 800;
+      font-family: 'Poppins','Inter',sans-serif; font-size: 36px; font-weight: 800;
       color: var(--heading); letter-spacing: -1.5px; line-height: 1;
     }
     .po-price span { font-size: 13px; font-weight: 700; color: var(--muted); }
+    .po-enroll {
+      display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+      margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);
+    }
+    .po-enroll-copy { flex: 1 1 280px; min-width: 0; font-size: 13px; color: var(--muted); line-height: 1.55; }
+    .po-enroll-copy b { color: var(--heading); font-weight: 700; }
     .po-cta {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 14px 26px; border-radius: 100px; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
+      padding: 13px 24px; border-radius: 100px; white-space: nowrap;
       background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
-      color: #fff; font-size: 15px; font-weight: 700;
-      box-shadow: 0 8px 22px rgba(247,147,26,.34);
+      color: #fff; font-size: 14px; font-weight: 700;
+      box-shadow: 0 8px 22px rgba(247,147,26,.3);
       transition: transform .2s, box-shadow .2s;
     }
-    .po-cta svg { width: 16px; height: 16px; }
-    .po-cta:hover, .po-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(247,147,26,.45); }
+    .po-cta svg { width: 15px; height: 15px; }
+    .po-cta:hover, .po-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(247,147,26,.42); }
     .po-cta:hover svg { transform: translateX(2px); }
     @media (max-width: 700px) {
-      .premium-offer { padding: 26px 20px; gap: 20px; }
-      .po-side { align-items: stretch; width: 100%; }
-      .po-price { justify-content: flex-start; }
+      .premium-offer { padding: 22px 18px; }
+      .po-price { align-items: baseline; }
+      .po-enroll { flex-direction: column; align-items: stretch; }
       .po-cta { justify-content: center; width: 100%; }
     }
 
@@ -444,7 +458,6 @@
     @media (max-width: 560px) {
       .hub-grid { grid-template-columns: 1fr; }
       .hub-sep { margin: 26px auto; }
-      .hub-group-head { flex-direction: column; align-items: flex-start; gap: 6px; }
       .hub-head { margin-bottom: 32px; }
     }
 
@@ -808,9 +821,6 @@
           <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
-        <a href="signal-history.html" class="history-link" aria-label="Trading History" title="Trading History">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>
-        </a>
         <div class="head-cta">
           <a href="license-request.html" class="btn-license" aria-label="Submit your License Request" title="Submit your License Request">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -824,6 +834,18 @@
       </div>
     </div>
   </header>
+
+  <!-- ════════════════ LICENSE REQUEST MICROCOPY ════════════════
+       Context for the header's License Request CTA — for members who
+       already joined under our IB, distinct from "How to Join Us" (for
+       people who have not joined yet). -->
+  <div class="lic-hint-bar notranslate" translate="no">
+    <div class="container lic-hint-inner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>
+      <span class="lic-hint-full">Already joined our IB? <a href="license-request.html">Submit your License Request</a>.</span>
+      <span class="lic-hint-short">Already joined IB? <a href="license-request.html">License Request</a></span>
+    </div>
+  </div>
 
   <!-- ════════════════ MOBILE MENU ════════════════ -->
   <div class="mobile-menu notranslate" id="mobileMenu" translate="no">
@@ -919,7 +941,7 @@
         <div class="cmp-panel" data-hub-group="free">
           <div class="cmp-panel-head">
             <span class="hub-tag is-free-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free for everyone</span>
-            <h3 class="hub-group-title">Free for Everyone</h3>
+            <span class="cmp-count">5 tools</span>
           </div>
           <div class="cmp-grid">
             <a class="cmp-card" href="free-classes.html">
@@ -950,6 +972,13 @@
                 <span class="cmp-desc">Check live market sentiment data for free.</span>
               </span>
             </a>
+            <a class="cmp-card" href="signal-history.html">
+              <span class="cmp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/><circle cx="18" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+              <span class="cmp-body">
+                <span class="cmp-name">Signal History</span>
+                <span class="cmp-desc">Our real signal history.</span>
+              </span>
+            </a>
           </div>
           <p class="cmp-note">No sign-up, no account, no verification.</p>
         </div>
@@ -958,7 +987,7 @@
         <div class="cmp-panel" data-hub-group="ib">
           <div class="cmp-panel-head">
             <span class="hub-ib-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.5 3L12 5l4.5 6L21 8l-1.5 10h-15z" fill="currentColor" stroke="none"/></svg>Free for IB Members Only</span>
-            <h3 class="hub-group-title">Included Free for IB Members</h3>
+            <span class="cmp-count">5 tools</span>
           </div>
           <div class="cmp-grid">
             <a class="cmp-card is-ib is-first" href="paid-courses.html">
@@ -1007,19 +1036,22 @@
       <!-- ── LEVEL 3 · PREMIUM COURSE (paid, separate from IB membership) ── -->
       <div class="hub-group" data-hub-group="premium">
         <div class="premium-offer">
-          <div class="po-body">
-            <span class="hub-tag hub-ib-tag" style="margin-bottom:2px">Premium · Paid course</span>
-            <h3 class="po-title">Premium Course + Live Mentorship</h3>
-            <p class="po-desc">A structured course taught with live mentorship sessions — learn the method, then apply it with guidance while you trade.</p>
-            <div class="po-meta">
-              <span class="po-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Next batch — Batch 30</span>
+          <div class="po-top">
+            <span class="hub-tag hub-ib-tag" style="margin-bottom:0">Premium · Paid course</span>
+            <span class="po-status"><span class="po-dot"></span>Admissions Closed</span>
+          </div>
+          <div class="po-main">
+            <div class="po-body">
+              <h3 class="po-title">Premium Course + Live Mentorship</h3>
+              <p class="po-desc">A structured course taught with live mentorship sessions — learn the method, then apply it with guidance while you trade.</p>
               <span class="po-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Live mentorship included</span>
             </div>
-          </div>
-          <div class="po-side">
             <div class="po-price"><b>$150</b><span>one-time</span></div>
+          </div>
+          <div class="po-enroll">
+            <p class="po-enroll-copy">Admissions for the current batch are closed. Want to join the next batch? <b>Next batch — Batch 30.</b> Pre-enroll now.</p>
             <a class="po-cta" href="premium-course-enrollment.html">
-              Enroll for Batch 30
+              Pre-Enroll for Batch 30
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </a>
           </div>
