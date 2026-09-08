@@ -34,14 +34,25 @@ function item(label, value, source, at, status, note) {
   return { label, value, source, retrievedAt: at, status, note: note || null };
 }
 
+// Retries ONCE, and only for a TRANSIENT failure — a network/timeout error
+// (no HTTP status at all) or a 5xx from the upstream. A definitive failure
+// (e.g. calendar's known 403 plan restriction) is never retried: it will not
+// succeed differently a second time, so retrying it would only waste a
+// request. This is the only difference from before — no new provider, no new
+// credential, same VERIFIED-or-UNAVAILABLE contract either way.
 async function getJson(origin, path, ms = 9000) {
-  try {
-    const r = await fetch(`${origin}${path}`, { signal: AbortSignal.timeout(ms) });
-    if (!r.ok) return { ok: false, error: `http_${r.status}` };
-    return { ok: true, data: await r.json() };
-  } catch (e) {
-    return { ok: false, error: (e && e.message) || 'fetch_failed' };
-  }
+  const attempt = async () => {
+    try {
+      const r = await fetch(`${origin}${path}`, { signal: AbortSignal.timeout(ms) });
+      if (!r.ok) return { ok: false, error: `http_${r.status}`, status: r.status };
+      return { ok: true, data: await r.json() };
+    } catch (e) {
+      return { ok: false, error: (e && e.message) || 'fetch_failed', status: null };
+    }
+  };
+  let res = await attempt();
+  if (!res.ok && (res.status == null || res.status >= 500)) res = await attempt();
+  return res;
 }
 
 // Which news items plausibly bear on this instrument. Uses the `assets` tags the

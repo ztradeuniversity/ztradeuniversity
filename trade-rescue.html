@@ -99,6 +99,7 @@
   input:focus,textarea:focus,select.f:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,137,31,.1)}
   textarea{resize:vertical;min-height:76px}
   .hint{font-size:11.5px;color:var(--muted2);margin-top:5px}
+  .sideHint{font-size:11px;color:var(--muted2);margin:6px 0 0;line-height:1.4}
 
   /* choice tiles */
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -367,7 +368,7 @@ let C = newCase();
    Asking for lots would add a field most traders would guess at. */
 function newCase() {
   return {
-    instrument: null, direction: null, multi: false,
+    instrument: null, multi: false,
     layers: [blankLayer()],
     account: { starting_balance: '', current_balance: '', floating_pl: '' },
     context: { thesis: '', concern: '' },
@@ -384,7 +385,7 @@ const I18N = {
     newAssessment: 'New assessment', yourAssessments: 'Your assessments', verifyIb: 'Verify with IB',
     pageTitle: 'Trade Rescue Assessment',
     pageLede: 'Describe the position once. Current price, macro context, news and market history are retrieved for you — nothing you can look up is asked for here.',
-    secAsset: 'Asset', secDirection: 'Direction', secPosition: 'Position',
+    secAsset: 'Asset', secPosition: 'Position',
     secAccount: 'Account & risk', secContext: 'Trade context',
     single: 'One position', multiple: 'Multiple layers',
     buy: 'BUY', buyD: 'Long — you profit if price rises.',
@@ -398,7 +399,7 @@ const I18N = {
     analysing: 'Retrieving current market data and assessing the position…',
     analysing2: 'Pulling market history and macro context…',
     analysing3: 'Taking a little longer — still working…',
-    needInstrument: 'Choose an asset.', needDirection: 'Choose a direction.',
+    needInstrument: 'Choose an asset.',
     needLayer: 'At least one layer needs a side and an entry price.',
     failed: 'The assessment could not be completed just now. Everything you entered is still here — please try again.',
     netExposure: 'Net exposure', breakeven: 'Breakeven', floating: 'Floating result', current: 'Current price',
@@ -418,7 +419,7 @@ const I18N = {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
     pageTitle: 'Trade Rescue تجزیہ',
     pageLede: 'اپنی position ایک بار بتائیں۔ موجودہ price، macro context، news اور market history خود لے لی جاتی ہے — جو چیز system خود دیکھ سکتا ہے وہ آپ سے نہیں پوچھی جاتی۔',
-    secAsset: 'Asset', secDirection: 'Direction', secPosition: 'Position',
+    secAsset: 'Asset', secPosition: 'Position',
     secAccount: 'Account اور risk', secContext: 'Trade context',
     single: 'ایک position', multiple: 'کئی layers',
     buy: 'BUY', buyD: 'Long — price بڑھے تو منافع۔',
@@ -432,7 +433,7 @@ const I18N = {
     analysing: 'موجودہ market data لے کر position کا جائزہ لیا جا رہا ہے…',
     analysing2: 'Market history اور macro context لیا جا رہا ہے…',
     analysing3: 'تھوڑا وقت لگ رہا ہے — کام جاری ہے…',
-    needInstrument: 'Asset منتخب کریں۔', needDirection: 'Direction منتخب کریں۔',
+    needInstrument: 'Asset منتخب کریں۔',
     needLayer: 'کم از کم ایک layer میں side اور entry price ضروری ہے۔',
     failed: 'تجزیہ ابھی مکمل نہیں ہو سکا۔ آپ کی درج کردہ تمام معلومات موجود ہیں — دوبارہ کوشش کریں۔',
     netExposure: 'Net exposure', breakeven: 'Breakeven', floating: 'Floating نتیجہ', current: 'موجودہ price',
@@ -452,7 +453,7 @@ const I18N = {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
     pageTitle: 'تقييم إنقاذ الصفقة',
     pageLede: 'صِف المركز مرة واحدة. السعر الحالي والسياق الكلي والأخبار وتاريخ السوق تُجلب لك — ولا يُطلب منك شيء يمكن للنظام جلبه بنفسه.',
-    secAsset: 'الأداة', secDirection: 'الاتجاه', secPosition: 'المركز',
+    secAsset: 'الأداة', secPosition: 'المركز',
     secAccount: 'الحساب والمخاطر', secContext: 'سياق الصفقة',
     single: 'مركز واحد', multiple: 'عدة طبقات',
     buy: 'شراء', buyD: 'Long — تربح إذا ارتفع السعر.',
@@ -466,7 +467,7 @@ const I18N = {
     analysing: 'يتم جلب بيانات السوق الحالية وتقييم المركز…',
     analysing2: 'يتم جلب تاريخ السوق والسياق الكلي…',
     analysing3: 'يستغرق وقتاً أطول قليلاً — العمل جارٍ…',
-    needInstrument: 'اختر أداة.', needDirection: 'اختر اتجاهاً.',
+    needInstrument: 'اختر أداة.',
     needLayer: 'تحتاج طبقة واحدة على الأقل إلى جهة وسعر دخول.',
     failed: 'تعذّر إكمال التقييم الآن. كل ما أدخلته ما زال موجوداً — حاول مرة أخرى.',
     netExposure: 'صافي الانكشاف', breakeven: 'نقطة التعادل', floating: 'النتيجة العائمة', current: 'السعر الحالي',
@@ -664,14 +665,14 @@ function render() {
   }
   h += '</div>';
 
-  /* B — DIRECTION */
-  h += sec('B', 'secDirection') + '<div class="tiles">' +
-    '<button class="tile buy' + (C.direction === 'buy' ? ' on' : '') + '" type="button" data-dir="buy"><b>' + esc(t('buy')) + '</b><span>' + esc(t('buyD')) + '</span></button>' +
-    '<button class="tile sell' + (C.direction === 'sell' ? ' on' : '') + '" type="button" data-dir="sell"><b>' + esc(t('sell')) + '</b><span>' + esc(t('sellD')) + '</span></button>' +
-    '</div>';
-
-  /* C — POSITION LAYERS */
-  h += sec('C', 'secPosition') +
+  /* B — POSITION LAYERS. Side (BUY/SELL) lives ONLY here now — each layer's
+     own Side control is the canonical direction; a one-position assessment
+     is simply a single layer, so Layer 1's side IS the position direction.
+     No separate top-level direction selector exists any more (removed —
+     it asked the same BUY/SELL question a second time for no reason; see
+     layerHtml() for the short beginner explanation now attached to the
+     control that actually remains). */
+  h += sec('B', 'secPosition') +
     '<div class="segs slim" style="margin-bottom:14px">' +
     '<button type="button" data-multi="0" class="' + (C.multi === false ? 'on' : '') + '">' + esc(t('single')) + '</button>' +
     '<button type="button" data-multi="1" class="' + (C.multi === true ? 'on' : '') + '">' + esc(t('multiple')) + '</button>' +
@@ -679,15 +680,15 @@ function render() {
   h += '<div class="layers">' + C.layers.map(layerHtml).join('') + '</div>';
   if (C.multi) h += '<button class="addLayer" id="addLayer" type="button">' + esc(t('addLayer')) + '</button>';
 
-  /* D — ACCOUNT / RISK */
-  h += sec('D', 'secAccount') + '<div class="grid3">' +
+  /* C — ACCOUNT / RISK */
+  h += sec('C', 'secAccount') + '<div class="grid3">' +
     field('acc_start', t('startBal'), C.account.starting_balance, 'number', true) +
     field('acc_now', t('curBal'), C.account.current_balance, 'number', true) +
     field('acc_fpl', t('floatPl'), C.account.floating_pl, 'number', true) +
     '</div>';
 
-  /* E — TRADE CONTEXT */
-  h += sec('E', 'secContext') +
+  /* D — TRADE CONTEXT */
+  h += sec('D', 'secContext') +
     textField('ctx_thesis', t('thesis'), C.context.thesis) +
     textField('ctx_concern', t('concern'), C.context.concern);
 
@@ -725,7 +726,8 @@ function layerHtml(l, i) {
     '<div class="grid2">' +
     '<div><label class="f">' + esc(t('side')) + ' <span class="req">*</span></label>' +
     '<div class="segs"><button type="button" data-d="buy" data-seg="' + i + '" class="' + (l.direction === 'buy' ? 'on' : '') + '">' + esc(t('buy')) + '</button>' +
-    '<button type="button" data-d="sell" data-seg="' + i + '" class="' + (l.direction === 'sell' ? 'on' : '') + '">' + esc(t('sell')) + '</button></div></div>' +
+    '<button type="button" data-d="sell" data-seg="' + i + '" class="' + (l.direction === 'sell' ? 'on' : '') + '">' + esc(t('sell')) + '</button></div>' +
+    '<p class="sideHint">' + esc(t('buy')) + ': ' + esc(t('buyD')) + ' · ' + esc(t('sell')) + ': ' + esc(t('sellD')) + '</p></div>' +
     field(p('entry'), t('entry') + ' *', l.entry, 'number') + '</div>' +
     '<div class="grid2" style="margin-top:12px">' +
     field(p('sl'), t('sl'), l.stop_loss, 'number', true) +
@@ -752,15 +754,10 @@ function syncFromDom() {
 
 function wire() {
   view.querySelectorAll('[data-asset]').forEach(b => b.addEventListener('click', () => { syncFromDom(); C.instrument = b.dataset.asset; render(); }));
-  view.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
-    syncFromDom(); C.direction = b.dataset.dir;
-    C.layers.forEach(l => { if (!l.direction) l.direction = C.direction; });
-    render();
-  }));
   view.querySelectorAll('[data-multi]').forEach(b => b.addEventListener('click', () => {
     syncFromDom();
     C.multi = b.dataset.multi === '1';
-    if (!C.multi) C.layers = [C.layers[0] || blankLayer(C.direction)];
+    if (!C.multi) C.layers = [C.layers[0] || blankLayer()];
     render();
   }));
   view.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
@@ -768,11 +765,11 @@ function wire() {
   }));
   view.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     syncFromDom(); C.layers.splice(+b.dataset.del, 1);
-    if (!C.layers.length) C.layers = [blankLayer(C.direction)];
+    if (!C.layers.length) C.layers = [blankLayer()];
     render();
   }));
   const add = $('addLayer');
-  if (add) add.addEventListener('click', () => { syncFromDom(); C.layers.push(blankLayer(C.direction)); render(); });
+  if (add) add.addEventListener('click', () => { syncFromDom(); C.layers.push(blankLayer()); render(); });
   view.querySelectorAll('[data-mic]').forEach(b => b.addEventListener('click', () => startDictation(b, b.dataset.mic)));
   view.querySelectorAll('textarea').forEach(el => { autoGrow(el); el.addEventListener('input', () => autoGrow(el)); });
   const go = $('go'); if (go) go.addEventListener('click', submit);
@@ -784,7 +781,6 @@ function submit() {
   const err = $('err');
   err.textContent = '';
   if (!C.instrument) { err.textContent = t('needInstrument'); return; }
-  if (!C.direction) { err.textContent = t('needDirection'); return; }
   if (C.multi === null) C.multi = C.layers.length > 1;
   if (!C.layers.some(l => l.direction && String(l.entry).trim() !== '')) { err.textContent = t('needLayer'); return; }
   runAssessment();
@@ -802,11 +798,12 @@ async function runAssessment() {
   const t2 = setTimeout(() => { if (bt) bt.textContent = t('analysing3'); }, 9000);
 
   const num = (v) => (String(v).trim() === '' ? null : Number(v));
+  const usableLayers = C.layers.filter(l => l.direction && String(l.entry).trim() !== '');
   const payload = {
     action: 'assess', lang: lang(), identityToken: identityToken(),
     case: {
       instrument: C.instrument,
-      layers: C.layers.filter(l => l.direction && String(l.entry).trim() !== '').map(l => ({
+      layers: usableLayers.map(l => ({
         direction: l.direction, entry: num(l.entry),
         stop_loss: num(l.stop_loss), take_profit: num(l.take_profit),
       })),
@@ -817,7 +814,13 @@ async function runAssessment() {
       },
       context: {
         thesis: C.context.thesis || null, concern: C.context.concern || null,
-        primary_direction: C.direction,
+        // No standalone direction state exists any more — the layer array is
+        // the one source of truth. Layer 1's side IS the position direction
+        // for a single-layer assessment (the common case this field once
+        // asked about redundantly); for multi-layer it is simply the first
+        // layer's side, same as the server already derives net direction
+        // from the full `layers` array regardless of this field's value.
+        primary_direction: usableLayers[0] ? usableLayers[0].direction : null,
       },
     },
   };

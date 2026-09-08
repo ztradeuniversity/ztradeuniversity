@@ -62,7 +62,15 @@ async function collectHistory(origin, instrument, dates) {
   try {
     const qs = new URLSearchParams({ symbol: instrument, interval: '1day', outputsize: '60' });
     if (dates.length) qs.set('dates', dates.join(','));
-    const r = await fetch(`${origin}/api/market-history?${qs}`, { signal: AbortSignal.timeout(9000) });
+    const url = `${origin}/api/market-history?${qs}`;
+    // Same retry-once-on-transient-failure rule as collectEvidence()'s
+    // getJson(): a 5xx or network/timeout error gets one retry; a definitive
+    // 4xx (plan restriction, bad request) does not, since retrying it cannot
+    // succeed differently.
+    const attempt = () => fetch(url, { signal: AbortSignal.timeout(9000) }).catch(() => null);
+    let r = await attempt();
+    if (!r || (!r.ok && r.status >= 500)) r = await attempt();
+    if (!r) { out.note = 'Historical market data could not be independently verified: the market-history endpoint did not respond.'; return out; }
     if (!r.ok) { out.note = `Historical market data could not be independently verified (HTTP ${r.status}).`; return out; }
     const d = await r.json();
     if (d.status !== 'verified') { out.note = d.note || 'Historical market data could not be independently verified.'; return out; }
