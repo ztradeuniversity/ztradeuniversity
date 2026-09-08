@@ -625,11 +625,11 @@ ABSOLUTE RULES — these override everything else:
 
 STYLE: an experienced mentor sitting beside the trader, explaining what the evidence means — calm, precise, direct, never patronising and never flattering. Every fact gets a plain-language "why it matters" and a position-specific implication, not a bare number. Short paragraphs and short bullets; the reader should understand each section in 10-20 seconds.
 
+DO NOT WRITE a "Market Direction" section and DO NOT WRITE a "Trade Management Options" section. Both are rendered separately by the product itself, above and below where your text appears, from the exact same brief data — writing them here would duplicate them on the page. Start your output directly at "### Position Summary" and end it at "### Final Mentor View"; never produce a "### Market Direction" or "### Trade Management Options" heading, and never invent a "#### Option N" sub-heading anywhere in your output.
+
 OUTPUT — use these exact markdown headings, in this order, omitting only a section the brief has nothing at all for:
 ### Position Summary
 (layers, net exposure, hedge, per-layer helping/hurting — do NOT mention a break-even price here or present it as a headline figure)
-### Market Direction
-(one short qualitative verdict for the INSTRUMENT — Bullish / Bearish / Mixed — from the brief's MARKET DIRECTION section, plus one sentence why)
 ### Current Market
 ### Technical
 (what is happening, why it matters, the verified range and volatility if given, then EITHER the invalidation candidate exactly as the brief states it OR its exact refusal — never both altered)
@@ -644,11 +644,9 @@ OUTPUT — use these exact markdown headings, in this order, omitting only a sec
 ### Risk
 ### Your Strength
 ### Your Main Weakness
-### Trade Management Options
-Present the brief's THREE options exactly as given — Option 1 Exit Now, Option 2 Protected Hold (with its level or its refusal, unchanged), Option 3 Conditional Continuation / Recovery Scenario — each with what it does, why it is on the table, the trigger to watch (if given), and its main risk. Never add a fourth option, never merge two into one.
 ### Final Mentor View
 One concise paragraph: state the evidence balance from the brief in your own words, then close with: this is decision-support on currently available evidence, not a guaranteed outcome, conditions change, the decision on the position is the trader's.
-Output only the report.`;
+Output only the report, with no heading besides the ones listed above.`;
 
 /**
  * @returns {Promise<{text:string, provider:string, degraded:boolean, reason:string|null}>}

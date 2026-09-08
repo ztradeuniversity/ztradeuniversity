@@ -34,11 +34,18 @@
   .newBtn:hover{border-color:var(--accent);color:var(--accent2)}
   .sideHead{padding:6px 18px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);font-weight:700}
   .histList{flex:1;overflow-y:auto;padding:2px 10px 14px}
-  .histList button{width:100%;text-align:left;border:0;background:transparent;border-radius:9px;padding:9px 10px;
+  .histItem{position:relative}
+  .histItem button.histSelect{width:100%;text-align:left;border:0;background:transparent;border-radius:9px;padding:9px 34px 9px 10px;
     cursor:pointer;font:inherit;color:var(--text);display:block}
-  .histList button:hover{background:var(--bg2)}
-  .histList button b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .histList button span{font-size:11.5px;color:var(--muted2)}
+  [dir=rtl] .histItem button.histSelect{text-align:right;padding:9px 10px 9px 34px}
+  .histItem button.histSelect:hover{background:var(--bg2)}
+  .histItem button.histSelect b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .histItem button.histSelect span{font-size:11.5px;color:var(--muted2)}
+  .histDel{position:absolute;top:7px;inset-inline-end:6px;width:24px;height:24px;border:0;background:transparent;border-radius:7px;
+    color:var(--muted2);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:.15s}
+  .histItem:hover .histDel,.histItem:focus-within .histDel{opacity:1}
+  .histDel:hover,.histDel:focus{background:var(--bear-bg);color:var(--bear);opacity:1}
   .sideFoot{padding:12px 18px;border-top:1px solid var(--line);font-size:12px}
   .sideFoot a{color:var(--muted);text-decoration:none}
   .sideFoot a:hover{color:var(--accent2)}
@@ -170,9 +177,59 @@
     border:2.5px solid var(--muted);transform:translateX(-50%);transition:.3s}
   .track .pin.bullish{border-color:var(--bull)} .track .pin.bearish{border-color:var(--bear)}
   .meter .sub{font-size:11px;color:var(--muted2);display:flex;justify-content:space-between;gap:6px}
-  .meter details{margin-top:9px}
-  .meter summary{font-size:11.5px;color:var(--accent2);cursor:pointer}
-  .meter details ul{margin:7px 0 0;padding-inline-start:16px;font-size:11.5px;color:var(--muted);line-height:1.55}
+
+  /* evidence — always expanded, FACT / IMPACT / SCORE per row (§1, §2, §4) */
+  .meter .measured{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .meter .measured .capt{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:7px}
+  .evRow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .evRow:last-child{border-bottom:0}
+  .evText{flex:1;min-width:0;font-size:12px;color:var(--muted);line-height:1.55}
+  .evText .impact{display:inline-block;margin-inline-start:6px;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1.5px 7px;border-radius:20px;white-space:nowrap}
+  .evText .impact.supportive{background:var(--ok-bg);color:var(--ok)}
+  .evText .impact.opposing{background:var(--bear-bg);color:var(--bear)}
+  .evText .impact.neutral{background:var(--bg2);color:var(--muted2)}
+  .scoreWrap{position:relative;display:inline-block;flex-shrink:0}
+  .scoreBtn{border:1.5px solid var(--line2);background:var(--bg);border-radius:8px;min-width:34px;height:26px;padding:0 7px;
+    font:800 12.5px/1 inherit;cursor:help;color:var(--muted);direction:ltr}
+  .scoreBtn.pos{border-color:var(--bull);color:var(--bull);background:var(--ok-bg)}
+  .scoreBtn.neg{border-color:var(--bear);color:var(--bear);background:var(--bear-bg)}
+  .scoreBtn.zero{border-color:var(--line2);color:var(--muted)}
+  .scoreTip{display:none;position:absolute;z-index:20;bottom:calc(100% + 8px);inset-inline-end:0;width:200px;max-width:65vw;
+    background:var(--text);color:#fff;font-size:11.5px;line-height:1.5;padding:9px 11px;border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.18);
+    text-align:start}
+  .scoreWrap:hover .scoreTip,.scoreWrap:focus-within .scoreTip{display:block}
+  .unavailLine{font-size:11.5px;color:var(--muted2);font-style:italic;padding:6px 0 0}
+
+  /* overall evidence + market direction (§5, §6) */
+  .overallCard{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:18px 20px;margin-bottom:16px}
+  .overallTop{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .overallScoreWrap{text-align:center;min-width:52px}
+  .overallScore{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;direction:ltr}
+  .overallScore.pos{color:var(--bull)} .overallScore.neg{color:var(--bear)} .overallScore.zero{color:var(--muted)}
+  .overallLabel{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-top:3px}
+  .overallHead{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px}
+  .overallText{font-size:13.5px;color:var(--text)}
+  .mdRow{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .mdRow .mdHead{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:5px}
+  .mdRow .mdLine{font-size:14.5px;font-weight:600;margin-bottom:6px}
+  .mdRow ul{margin:0;padding-inline-start:18px;font-size:12px;color:var(--muted)}
+  .mdRow ul li{margin-bottom:3px}
+
+  /* trade management options (§9–§17) */
+  .optCard{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:18px 20px;margin-bottom:12px}
+  .optCard.refused{border-style:dashed}
+  .optNum{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);font-weight:800}
+  .optTitle{font-size:16.5px;font-weight:800;letter-spacing:-.01em;text-transform:uppercase;margin:2px 0 4px}
+  .optSub{font-size:12px;color:var(--muted2);margin-bottom:12px}
+  .optField{margin-bottom:10px}
+  .optField:last-child{margin-bottom:0}
+  .optField b{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .optField p{margin:0;font-size:13.5px;line-height:1.55}
+
+  /* overview separator (§18) */
+  .overviewSep{display:flex;align-items:center;gap:10px;margin:30px 0 14px;
+    font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);font-weight:700}
+  .overviewSep::before,.overviewSep::after{content:'';flex:1;height:1px;background:var(--line)}
 
   .report{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:22px 24px}
   .report h3{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent2);font-weight:700;
@@ -218,6 +275,8 @@
     .grid2,.grid3{grid-template-columns:1fr}
     .meters{grid-template-columns:1fr}
     .report{padding:18px 15px}
+    .histDel{opacity:1}
+    .scoreTip{max-width:78vw}
   }
   @media(max-width:560px){
     header.bar{padding:10px 12px;gap:8px}
@@ -349,6 +408,11 @@ const I18N = {
     units: 'units', pts: 'weighted pts',
     provMacro: 'Macro', provNews: 'News', provEvents: 'Events', provHistory: 'Market history',
     histLabel: 'Historical candles', histDaily: 'daily candles', histUnavailable: 'Historical market data unavailable',
+    histDelete: 'Delete', histDeleteAria: 'Delete this assessment from history',
+    histDeleteConfirm: 'Remove this assessment from your history? This only clears it from this browser.',
+    overallEvidence: 'Overall Evidence', readOverview: 'Read Overview of the Market',
+    readReason: 'Read the reason below.', what: 'What', why: 'Why / Reason', trigger: 'Trigger to watch', risk: 'Risk', option: 'Option',
+    overallEvidenceScoreLabel: 'Overall Evidence Score', evidenceExplainAria: 'Why this evidence has this score',
   },
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
@@ -378,6 +442,11 @@ const I18N = {
     units: 'یونٹس', pts: 'وزنی points',
     provMacro: 'میکرو ڈیٹا', provNews: 'خبریں', provEvents: 'واقعات', provHistory: 'مارکیٹ کی تاریخ',
     histLabel: 'تاریخی Candles', histDaily: 'روزانہ candles', histUnavailable: 'Historical market data دستیاب نہیں',
+    histDelete: 'Delete', histDeleteAria: 'اس assessment کو history سے حذف کریں',
+    histDeleteConfirm: 'اس assessment کو آپ کی history سے ہٹا دیں؟ یہ صرف اس browser سے ہٹتا ہے۔',
+    overallEvidence: 'مجموعی Evidence', readOverview: 'مارکیٹ کا تفصیلی جائزہ پڑھیں',
+    readReason: 'نیچے وجہ پڑھیں۔', what: 'کیا', why: 'کیوں / وجہ', trigger: 'کس چیز پر نظر رکھیں', risk: 'Risk', option: 'آپشن',
+    overallEvidenceScoreLabel: 'مجموعی Evidence Score', evidenceExplainAria: 'یہ evidence یہ score کیوں رکھتی ہے',
   },
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
@@ -407,6 +476,11 @@ const I18N = {
     provMacro: 'البيانات الكلية', provNews: 'الأخبار', provEvents: 'الأحداث', provHistory: 'تاريخ السوق',
     histLabel: 'الشموع التاريخية', histDaily: 'شمعة يومية', histUnavailable: 'بيانات السوق التاريخية غير متاحة',
     units: 'وحدات', pts: 'نقاط موزونة',
+    histDelete: 'حذف', histDeleteAria: 'حذف هذا التقييم من السجل',
+    histDeleteConfirm: 'إزالة هذا التقييم من سجلك؟ هذا يزيله من هذا المتصفح فقط.',
+    overallEvidence: 'الأدلة الإجمالية', readOverview: 'اقرأ نظرة عامة على السوق',
+    readReason: 'اقرأ السبب أدناه.', what: 'ماذا', why: 'لماذا / السبب', trigger: 'ما يجب مراقبته', risk: 'المخاطرة', option: 'خيار',
+    overallEvidenceScoreLabel: 'درجة الأدلة الإجمالية', evidenceExplainAria: 'لماذا حصل هذا الدليل على هذه الدرجة',
   },
 };
 const lang = () => langSel.value || 'en';
@@ -781,6 +855,12 @@ function renderResult() {
   }
 
   const d = result, p = d.position, ev = d.evidence;
+  // `ui` (headings/labels, in the exact language this assessment was fetched
+  // in) travels with the result from the server — see rescue-assess.js. Older
+  // cached history entries saved before this UI existed won't have it, so
+  // every lookup below falls back to this page's own client-side string.
+  const UI = d.ui || {}, H = UI.headings || {}, Lb = UI.labels || {};
+  const uiT = (k) => H[k] || Lb[k] || t(k);
   const money = (v) => (v == null ? null : (v > 0 ? '+' : '') + v.toLocaleString());
   const stat = (labelKey, val, sub, cls) =>
     '<div class="stat' + (cls || '') + '"><i>' + esc(t(labelKey)) + '</i><b>' + esc(val) + '</b>' +
@@ -803,6 +883,11 @@ function renderResult() {
     p.floatingPoints > 0 ? ' pos' : p.floatingPoints < 0 ? ' neg' : '');
   h += '</div></div>';
 
+  // ── TECHNICAL / FUNDAMENTAL / SENTIMENT — always expanded, FACT → IMPACT →
+  // SCORE per row. `impact`/`tooltip`/`scoreStr` are pre-localized server-side
+  // (RI.meterInputExplain, applied to meters.js's own unmodified `lean` field
+  // in rescue-assess.js) — an older cached entry without them still renders
+  // correctly from `i.lean` alone, just without the impact tag/tooltip text.
   h += '<div class="meters">';
   for (const k of ['technical', 'fundamental', 'sentiment']) {
     const m = d.meters[k];
@@ -812,12 +897,66 @@ function renderResult() {
       '<div class="track"><span class="pin ' + esc(m.lean || '') + '" style="left:' + pct + '%"></span></div>' +
       '<div class="sub"><span>' + esc(t('strength')) + ': <b>' + esc(m.strength) + '</b></span>' +
       '<span>' + esc(t('coverage')) + ' ' + Math.round(m.coverage * 100) + '%</span></div>' +
-      '<details><summary>' + esc(t('howMeasured')) + '</summary><ul>' +
-      m.inputsUsed.map(i => '<li>' + esc(i.basis) + ' → ' + (i.lean > 0 ? '+1' : i.lean < 0 ? '−1' : '0') + '</li>').join('') +
-      (m.inputsUnavailable.length ? '<li><em>' + esc(t('unavailable')) + ': ' + esc(m.inputsUnavailable.join(', ')) + '</em></li>' : '') +
-      '</ul></details></div>';
+      '<div class="measured"><div class="capt">' + esc(t('howMeasured')) + '</div>' +
+      (m.inputsUsed || []).map(i => {
+        const cls = i.lean > 0 ? 'pos' : i.lean < 0 ? 'neg' : 'zero';
+        const scoreStr = i.scoreStr || (i.lean > 0 ? '+1' : i.lean < 0 ? '−1' : '0');
+        const impact = i.impact ? '<span class="impact ' + esc(i.stance || 'neutral') + '">' + esc(i.impact) + '</span>' : '';
+        const tip = i.tooltip || '';
+        return '<div class="evRow"><div class="evText">' + esc(i.basis) + impact + '</div>' +
+          '<span class="scoreWrap"><button type="button" class="scoreBtn ' + cls + '"' +
+          (tip ? ' title="' + esc(tip) + '"' : '') + ' aria-label="' + esc(uiT('evidenceExplainAria')) + '">' + esc(scoreStr) + '</button>' +
+          (tip ? '<span class="scoreTip" role="tooltip">' + esc(tip) + '</span>' : '') + '</span></div>';
+      }).join('') +
+      ((m.inputsUnavailable || []).length ? '<div class="unavailLine">' + esc(t('unavailable')) + ': ' + esc(m.inputsUnavailable.join(', ')) + '</div>' : '') +
+      '</div></div>';
   }
   h += '</div>';
+
+  // ── OVERALL EVIDENCE (sum of the three meters' own lean, display-only) +
+  // MARKET DIRECTION (the existing average-based read, unchanged) ──
+  const oe = d.overallEvidence, mdir = d.marketDirection;
+  if (oe || mdir) {
+    h += '<div class="overallCard">';
+    if (oe && oe.score != null) {
+      const cls = oe.score > 0 ? 'pos' : oe.score < 0 ? 'neg' : 'zero';
+      h += '<div class="overallTop"><div class="overallScoreWrap"><div class="overallScore ' + cls + '">' +
+        esc((oe.score > 0 ? '+' : '') + oe.score) + '</div><div class="overallLabel">' + esc(uiT('overallEvidenceScoreLabel')) + '</div></div>' +
+        '<div><div class="overallHead">' + esc(uiT('overallEvidence')) + '</div><div class="overallText">' + esc(oe.text) + '</div></div></div>';
+    } else if (oe) {
+      h += '<div class="overallHead">' + esc(uiT('overallEvidence')) + '</div><div class="overallText">' + esc(oe.text) + '</div>';
+    }
+    if (mdir) {
+      const mdLineHtml = esc(String(mdir.line || '')).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      h += '<div class="mdRow"><div class="mdHead">' + esc(uiT('marketDirection')) + '</div>' +
+        '<div class="mdLine">' + mdLineHtml + '</div>' +
+        ((mdir.drivers || []).length ? '<ul>' + mdir.drivers.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') +
+        '</div>';
+    }
+    h += '</div>';
+  }
+
+  // ── TRADE MANAGEMENT OPTIONS — structured JSON, real typography, never
+  // parsed out of markdown, so no "####" or "**" artifact can ever appear. ──
+  const opts = d.managementOptions || [];
+  if (opts.length) {
+    h += '<div class="optsWrap">';
+    opts.forEach((o, i) => {
+      h += '<div class="optCard' + (o.refused ? ' refused' : '') + '">' +
+        '<div class="optNum">' + esc(uiT('option')) + ' ' + (i + 1) + '</div>' +
+        '<div class="optTitle">' + esc(o.title) + '</div>' +
+        '<div class="optSub">' + esc(uiT('readReason')) + '</div>' +
+        '<div class="optField"><b>' + esc(uiT('what')) + '</b><p>' + esc(o.what) + '</p></div>' +
+        '<div class="optField"><b>' + esc(uiT('why')) + '</b><p>' + esc(o.why) + '</p></div>' +
+        (o.trigger ? '<div class="optField"><b>' + esc(uiT('trigger')) + '</b><p>' + esc(o.trigger) + '</p></div>' : '') +
+        '<div class="optField"><b>' + esc(uiT('risk')) + '</b><p>' + esc(o.risk) + '</p></div>' +
+        '</div>';
+    });
+    h += '</div>';
+  }
+
+  // ── READ OVERVIEW OF THE MARKET — the deeper, secondary explanation ──
+  h += '<div class="overviewSep">' + esc(uiT('readOverview')) + '</div>';
 
   const P = d.providers || {};
   const provRow = (key, label) => {
@@ -877,26 +1016,53 @@ function md(src) {
 
 /* ── history — Rescue's own key, never the retired assistant's ────────── */
 function readHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } }
+function writeHistory(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 25))); } catch {} }
 function saveHistory(d) {
   const list = readHistory();
   list.unshift({
     id: 'c' + Date.now(), at: new Date().toISOString(),
     instrument: d.instrument, direction: d.position.netDirection,
     layers: d.position.layerCount, report: d.report,
-    payload: { position: d.position, meters: d.meters, evidence: d.evidence, history: d.history, instrument: d.instrument, report: d.report },
+    payload: {
+      position: d.position, meters: d.meters, evidence: d.evidence, history: d.history,
+      instrument: d.instrument, report: d.report,
+      managementOptions: d.managementOptions, marketDirection: d.marketDirection,
+      overallEvidence: d.overallEvidence, ui: d.ui,
+    },
   });
-  try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 25))); } catch {}
+  writeHistory(list);
+}
+/* Removes one assessment from this browser's local Rescue history only — the
+   assessment itself was never persisted server-side, so there is nothing
+   else to delete. A native confirm() keeps this reliable and fully
+   keyboard/screen-reader accessible without adding a second UI pattern. */
+function deleteHistoryItem(id) {
+  if (!window.confirm(t('histDeleteConfirm'))) return;
+  writeHistory(readHistory().filter(c => c.id !== id));
+  renderHistory();
 }
 function renderHistory() {
   const list = readHistory();
   histList.innerHTML = '';
   for (const c of list) {
+    const item = document.createElement('div');
+    item.className = 'histItem';
     const b = document.createElement('button');
     b.type = 'button';
+    b.className = 'histSelect';
     b.innerHTML = '<b>' + esc(c.instrument + ' · ' + String(c.direction || '').toUpperCase()) + '</b>' +
       '<span>' + esc(new Date(c.at).toISOString().slice(0, 10)) + ' · ' + c.layers + ' layer' + (c.layers > 1 ? 's' : '') + '</span>';
     b.addEventListener('click', () => { result = c.payload; render(); closeSide(); });
-    histList.appendChild(b);
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'histDel';
+    del.setAttribute('aria-label', t('histDeleteAria'));
+    del.title = t('histDelete');
+    del.innerHTML = '×';
+    del.addEventListener('click', (e) => { e.stopPropagation(); deleteHistoryItem(c.id); });
+    item.appendChild(b);
+    item.appendChild(del);
+    histList.appendChild(item);
   }
 }
 function startNew() { result = null; C = newCase(); render(); closeSide(); }

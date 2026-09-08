@@ -44,36 +44,51 @@ export function headings(lang) {
       technical: 'Technical', fundamental: 'Fundamental', sentiment: 'Sentiment', news: 'News / Events',
       supports: 'What Supports Your Trade', against: 'What Works Against It', risk: 'Risk',
       strength: 'Your Strength', weakness: 'Your Main Weakness', options: 'Trade Management Options',
-      finalView: 'Final Mentor View', layerByLayer: 'Layer by layer — which part of the book is helping and which is hurting:' },
+      finalView: 'Final Mentor View', layerByLayer: 'Layer by layer — which part of the book is helping and which is hurting:',
+      overallEvidence: 'Overall Evidence', readOverview: 'Read Overview of the Market' },
     ur: { position: 'Position کا خلاصہ', marketDirection: 'مارکیٹ کا رجحان', currentMarket: 'موجودہ Market',
       technical: 'تکنیکی تجزیہ', fundamental: 'بنیادی تجزیہ', sentiment: 'مارکیٹ کا موڈ', news: 'خبریں / Events',
       supports: 'آپ کی Trade کو کیا Support کر رہا ہے', against: 'آپ کی Trade کے خلاف کیا جا رہا ہے', risk: 'خطرہ',
       strength: 'آپ کی Strength', weakness: 'آپ کی اہم Weakness', options: 'Trade Management کے آپشنز',
-      finalView: 'حتمی Mentor رائے', layerByLayer: 'Layer بہ Layer — کون سا حصہ مدد کر رہا ہے اور کون سا نقصان دے رہا ہے:' },
+      finalView: 'حتمی Mentor رائے', layerByLayer: 'Layer بہ Layer — کون سا حصہ مدد کر رہا ہے اور کون سا نقصان دے رہا ہے:',
+      overallEvidence: 'مجموعی Evidence', readOverview: 'مارکیٹ کا تفصیلی جائزہ پڑھیں' },
     ar: { position: 'ملخص المركز', marketDirection: 'اتجاه السوق', currentMarket: 'السوق الحالي',
       technical: 'التحليل الفني', fundamental: 'التحليل الأساسي', sentiment: 'المعنويات', news: 'الأخبار / الأحداث',
       supports: 'ما يدعم صفقتك', against: 'ما يعمل ضدها', risk: 'المخاطر',
       strength: 'نقطة قوتك', weakness: 'أبرز نقاط ضعفك', options: 'خيارات إدارة الصفقة',
-      finalView: 'الرأي النهائي للموجّه', layerByLayer: 'طبقة بطبقة — أي جزء من المركز يساعد وأيها يضر:' },
+      finalView: 'الرأي النهائي للموجّه', layerByLayer: 'طبقة بطبقة — أي جزء من المركز يساعد وأيها يضر:',
+      overallEvidence: 'الأدلة الإجمالية', readOverview: 'اقرأ نظرة عامة على السوق' },
   });
 }
 export function labels(lang) {
   return pick(lang, {
     en: { supportsYour: (d) => `Supports your ${d}`, worksAgainst: (d) => `Works against your ${d}`, contextOnly: 'Context only',
       layer: 'Layer', side: 'Side', size: 'Size', entry: 'Entry', result: 'Result', helping: 'helping', hurting: 'hurting', flat: '—',
-      what: 'What', why: 'Why', trigger: 'Trigger to watch', risk: 'Risk', option: 'Option',
+      what: 'What', why: 'Why / Reason', trigger: 'Trigger to watch', risk: 'Risk', option: 'Option',
       unavailable: 'Unavailable', degraded: '_The written analysis below was composed from the verified data without the AI reasoning layer, which was briefly unavailable. Every figure and source shown is unaffected._',
-      disclaimer: '_This is decision-support based on the evidence available right now — not a guaranteed outcome, and not financial advice. Market conditions can change at any time, and the decision on your own position is always yours._' },
+      disclaimer: '_This is decision-support based on the evidence available right now — not a guaranteed outcome, and not financial advice. Market conditions can change at any time, and the decision on your own position is always yours._',
+      readReason: 'Read the reason below.', overallEvidenceScoreLabel: 'Overall Evidence Score',
+      deleteHistory: 'Delete', deleteHistoryAria: 'Delete this assessment from history',
+      deleteHistoryConfirm: 'Remove this assessment from your history? This only clears it from this browser — it does not affect the assessment itself.',
+      howMeasured: 'How this is measured', evidenceExplainAria: 'Why this evidence has this score' },
     ur: { supportsYour: (d) => `آپ کی ${d} کو Support کرتا ہے`, worksAgainst: (d) => `آپ کی ${d} کے خلاف جاتا ہے`, contextOnly: 'صرف Context',
       layer: 'Layer', side: 'Side', size: 'Size', entry: 'Entry', result: 'نتیجہ', helping: 'مدد گار', hurting: 'نقصان دہ', flat: '—',
-      what: 'کیا', why: 'کیوں', trigger: 'کس چیز پر نظر رکھیں', risk: 'Risk', option: 'آپشن',
+      what: 'کیا', why: 'کیوں / وجہ', trigger: 'کس چیز پر نظر رکھیں', risk: 'Risk', option: 'آپشن',
       unavailable: 'دستیاب نہیں', degraded: '_نیچے دیا گیا تجزیہ verified data سے تیار کیا گیا ہے؛ AI reasoning layer عارضی طور پر دستیاب نہیں تھی۔ تمام figures اور sources بدستور درست ہیں۔_',
-      disclaimer: '_یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔_' },
+      disclaimer: '_یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔_',
+      readReason: 'نیچے وجہ پڑھیں۔', overallEvidenceScoreLabel: 'مجموعی Evidence Score',
+      deleteHistory: 'Delete', deleteHistoryAria: 'اس assessment کو history سے حذف کریں',
+      deleteHistoryConfirm: 'اس assessment کو آپ کی history سے ہٹا دیں؟ یہ صرف اس browser سے ہٹتا ہے — اصل assessment متاثر نہیں ہوتا۔',
+      howMeasured: 'یہ کیسے ناپا جاتا ہے', evidenceExplainAria: 'یہ evidence یہ score کیوں رکھتی ہے' },
     ar: { supportsYour: (d) => `يدعم صفقة ${d} الخاصة بك`, worksAgainst: (d) => `يعمل ضد صفقة ${d} الخاصة بك`, contextOnly: 'سياق فقط',
       layer: 'طبقة', side: 'الجهة', size: 'الحجم', entry: 'الدخول', result: 'النتيجة', helping: 'يساعد', hurting: 'يضر', flat: '—',
-      what: 'ماذا', why: 'لماذا', trigger: 'ما يجب مراقبته', risk: 'المخاطرة', option: 'خيار',
+      what: 'ماذا', why: 'لماذا / السبب', trigger: 'ما يجب مراقبته', risk: 'المخاطرة', option: 'خيار',
       unavailable: 'غير متاح', degraded: '_التحليل أدناه بُني من البيانات الموثقة دون طبقة الاستدلال بالذكاء الاصطناعي، التي كانت غير متاحة مؤقتاً. جميع الأرقام والمصادر غير متأثرة._',
-      disclaimer: '_هذا دعم لاتخاذ القرار بناءً على الأدلة المتاحة الآن — وليس نتيجة مضمونة ولا نصيحة مالية. ظروف السوق قد تتغير في أي وقت، والقرار بشأن مركزك يبقى قرارك أنت._' },
+      disclaimer: '_هذا دعم لاتخاذ القرار بناءً على الأدلة المتاحة الآن — وليس نتيجة مضمونة ولا نصيحة مالية. ظروف السوق قد تتغير في أي وقت، والقرار بشأن مركزك يبقى قرارك أنت._',
+      readReason: 'اقرأ السبب أدناه.', overallEvidenceScoreLabel: 'درجة الأدلة الإجمالية',
+      deleteHistory: 'حذف', deleteHistoryAria: 'حذف هذا التقييم من السجل',
+      deleteHistoryConfirm: 'إزالة هذا التقييم من سجلك؟ هذا يزيله من هذا المتصفح فقط — لا يؤثر على التقييم نفسه.',
+      howMeasured: 'كيف يُقاس هذا', evidenceExplainAria: 'لماذا حصل هذا الدليل على هذه الدرجة' },
   });
 }
 
@@ -434,6 +449,72 @@ export function marketDirectionText(lang, meters, instrument) {
     en: `**${leanWord}** for ${instrument}.`, ur: `${instrument} کے لیے **${leanWord}**۔`, ar: `**${leanWord}** بالنسبة لـ ${instrument}.`,
   });
   return { lean, line, drivers };
+}
+
+// ── OVERALL EVIDENCE SCORE ───────────────────────────────────────────────────
+// A display-only sum of the three meters' own categorical lean (+1 bullish /
+// −1 bearish / 0 neutral for the INSTRUMENT — exactly meters.js's `m.lean`,
+// nothing recomputed). This is an evidence count, not a probability: it is
+// labelled "Overall Evidence Score" everywhere, never "Probability" or "Odds".
+export function overallEvidence(lang, meters) {
+  const avail = ['technical', 'fundamental', 'sentiment'].map(k => meters[k]).filter(m => m && m.score != null);
+  if (!avail.length) {
+    return { score: null, text: pick(lang, {
+      en: 'Not enough verified evidence yet to form an overall evidence score.',
+      ur: 'ابھی overall evidence score بنانے کے لیے کافی verified evidence نہیں ہے۔',
+      ar: 'لا تتوفر أدلة موثقة كافية بعد لتشكيل درجة أدلة إجمالية.',
+    }) };
+  }
+  const score = avail.reduce((a, m) => a + (m.lean === 'bullish' ? 1 : m.lean === 'bearish' ? -1 : 0), 0);
+  const leanWord = pick(lang, {
+    en: score > 0 ? 'bullish' : score < 0 ? 'bearish' : 'neutral',
+    ur: score > 0 ? 'Bullish' : score < 0 ? 'Bearish' : 'Neutral',
+    ar: score > 0 ? 'صاعد' : score < 0 ? 'هابط' : 'محايد',
+  });
+  const text = pick(lang, {
+    en: `Overall evidence currently leans ${leanWord}.`,
+    ur: `Overall evidence اس وقت ${leanWord} کی طرف جھکاؤ رکھتی ہے۔`,
+    ar: `تميل الأدلة الإجمالية حالياً نحو ${leanWord}.`,
+  });
+  return { score, text };
+}
+
+// ── PER-EVIDENCE-ROW EXPLANATION ─────────────────────────────────────────────
+// Every meter input already carries a `lean` (+1/0/−1) relative to the
+// INSTRUMENT — meters.js's own field, never altered here. This turns that same
+// lean, plus the trader's own stated direction, into the position-specific
+// "Supports your X / Works against your X" tag (the SAME tag/labels already
+// used throughout the report body) and a one-sentence tooltip explanation.
+// No new financial relationship is stated — only the existing sign is read
+// and paired with the trader's direction, exactly the rule already applied
+// everywhere else in this module (see `tag()` above).
+export function meterInputExplain(lang, direction, lean) {
+  const L = labels(lang);
+  const d = dirWord(lang, direction);
+  const stance = lean > 0
+    ? (direction === 'buy' ? 'supportive' : direction === 'sell' ? 'opposing' : 'neutral')
+    : lean < 0
+    ? (direction === 'sell' ? 'supportive' : direction === 'buy' ? 'opposing' : 'neutral')
+    : 'neutral';
+  const scoreStr = lean > 0 ? '+1' : lean < 0 ? '−1' : '0';
+  const impact = stance === 'supportive' ? L.supportsYour(d) : stance === 'opposing' ? L.worksAgainst(d) : L.contextOnly;
+  const leanWord = pick(lang, {
+    en: lean > 0 ? 'bullish' : lean < 0 ? 'bearish' : 'neutral',
+    ur: lean > 0 ? 'Bullish' : lean < 0 ? 'Bearish' : 'Neutral',
+    ar: lean > 0 ? 'صاعد' : lean < 0 ? 'هابط' : 'محايد',
+  });
+  const tooltip = stance === 'neutral'
+    ? pick(lang, {
+      en: `This factor is neutral right now, so it does not lean for or against your ${d} position — it contributes 0 points.`,
+      ur: `یہ factor اس وقت neutral ہے، اس لیے یہ آپ کی ${d} position کے حق میں یا خلاف نہیں جھکتا — یہ 0 points دیتا ہے۔`,
+      ar: `هذا العامل محايد حالياً، لذا لا يميل لصالح أو ضد صفقة ${d} الخاصة بك — يساهم بـ 0 نقطة.`,
+    })
+    : pick(lang, {
+      en: `This is a ${leanWord} factor for the market. Given your ${d} position, it ${stance === 'supportive' ? 'supports' : 'works against'} your trade, so it contributes ${scoreStr} point.`,
+      ur: `یہ market کے لیے ایک ${leanWord} factor ہے۔ آپ کی ${d} position کو دیکھتے ہوئے، یہ آپ کی trade کو ${stance === 'supportive' ? 'support کرتا ہے' : 'کے خلاف جاتا ہے'}، اس لیے یہ ${scoreStr} point دیتا ہے۔`,
+      ar: `هذا عامل ${leanWord} بالنسبة للسوق. بالنظر إلى صفقة ${d} الخاصة بك، فإنه ${stance === 'supportive' ? 'يدعم' : 'يعمل ضد'} صفقتك، لذا يساهم بـ ${scoreStr} نقطة.`,
+    });
+  return { stance, impact, scoreStr, tooltip };
 }
 
 // ── POSITION SUMMARY ─────────────────────────────────────────────────────────

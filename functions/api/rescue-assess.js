@@ -346,11 +346,10 @@ function renderDeterministic(lang, c, pos, ev, hist, meters, analysis, range, in
   }
   L.push('');
 
-  L.push(`### ${H.marketDirection}`);
-  const md = RI.marketDirectionText(lang, meters, c.instrument);
-  L.push(md.line);
-  for (const d of md.drivers) L.push(`- ${d}`);
-  L.push('');
+  // Market Direction is now rendered separately at the top of the results page
+  // (from the `marketDirection` field in the response, computed once in
+  // onRequest() with the exact same RI.marketDirectionText() call) — so it is
+  // deliberately NOT repeated here, to avoid showing it twice.
 
   L.push(`### ${H.currentMarket}`);
   if (ev.priceStatus === 'verified') {
@@ -416,16 +415,13 @@ function renderDeterministic(lang, c, pos, ev, hist, meters, analysis, range, in
   if (behaviour.weaknesses.length) { L.push(`### ${H.weakness}`); for (const w2 of behaviour.weaknesses) L.push(`- ${w2}`); L.push(''); }
 
   const balance = analysis.weighed.balance; // symbolic only: 'favours'|'against'|'mixed'|'insufficient'
-  L.push(`### ${H.options}`);
-  const options = RI.managementOptionsLocalized(lang, c.direction, balance, invalidation);
-  options.forEach((o, i) => {
-    L.push(`**${Lb.option} ${i + 1} — ${o.title}**`);
-    L.push(`- ${Lb.what}: ${o.what}`);
-    L.push(`- ${Lb.why}: ${o.why}`);
-    if (o.trigger) L.push(`- ${Lb.trigger}: ${o.trigger}`);
-    L.push(`- ${Lb.risk}: ${o.risk}`);
-    L.push('');
-  });
+  // Trade Management Options are now rendered separately, directly under the
+  // meters, from the structured `managementOptions` field in the response
+  // (computed once in onRequest() via RI.managementOptionsLocalized(), and
+  // reused there for both the response field and this function's own
+  // `balance` input) — never as free markdown text here, so no heading-marker
+  // artifact can leak into the UI and the WHAT/WHY/TRIGGER/RISK fields always
+  // render with real typography instead of being parsed back out of prose.
 
   L.push(`### ${H.finalView}`);
   L.push(RI.finalMentorView(lang, c.direction, balance));
@@ -544,6 +540,25 @@ export async function onRequest(context) {
   const invalidation = defensibleInvalidation(
     tradeCase.direction, evidence.priceStatus === 'verified' ? evidence.price : null, range);
 
+  // Computed ONCE here so the JSON fields sent to the UI (managementOptions,
+  // marketDirection, overallEvidence, and the per-meter-input impact/tooltip
+  // below) and the deterministic report text are always the exact same
+  // values — never recomputed a second time and never allowed to diverge.
+  const balance = analysis.weighed.balance; // symbolic only: 'favours'|'against'|'mixed'|'insufficient'
+  const managementOptions = RI.managementOptionsLocalized(lang, tradeCase.direction, balance, invalidation);
+  const marketDirection = RI.marketDirectionText(lang, meters, ins.id);
+  const overallEvidence = RI.overallEvidence(lang, meters);
+  // Enriches (never replaces) meters.js's own `inputsUsed` rows with a
+  // position-specific impact tag and a tooltip explanation, both derived
+  // purely from the existing `lean` sign each row already carries plus the
+  // trader's own stated direction — meters.js itself is not modified.
+  const withExplain = (m) => (!m ? m : {
+    ...m,
+    inputsUsed: m.inputsUsed.map(i => ({ ...i, ...RI.meterInputExplain(lang, tradeCase.direction, i.lean) })),
+  });
+  const metersOut = { methodology: meters.methodology,
+    technical: withExplain(meters.technical), fundamental: withExplain(meters.fundamental), sentiment: withExplain(meters.sentiment) };
+
   // 4 ── SYNTHESIS. One model call, retried internally; deterministic on failure.
   const reportCase = { instrument: ins.id, direction: tradeCase.direction, account, context: ctx };
   const brief = buildBrief(reportCase, position, evidence, history, meters, analysis, knowledge, range, invalidation);
@@ -559,7 +574,18 @@ export async function onRequest(context) {
     instrument: ins.id,
     report,
     position,
-    meters,
+    meters: metersOut,
+    // Structured, non-markdown fields for the top-of-page UI — rendered with
+    // real HTML/CSS rather than parsed out of free text, so formatting is
+    // never at the mercy of the model's own markdown choices. Each is the
+    // exact same value the deterministic report text is built from.
+    managementOptions,
+    marketDirection,
+    overallEvidence,
+    // Shared localized labels the client uses to render the sections above,
+    // so no UI string is ever hand-duplicated in trade-rescue.html and
+    // allowed to drift from the language this response was built in.
+    ui: { headings: RI.headings(lang), labels: T },
     evidence: {
       collectedAt: evidence.collectedAt,
       price: evidence.price, priceStatus: evidence.priceStatus, priceAt: evidence.priceAt,
