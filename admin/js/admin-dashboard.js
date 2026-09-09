@@ -669,6 +669,7 @@ const AdminDashboard = (() => {
     if (sectionId === 'blocked-clients')   _renderBlockedList();   // Phase 16.2 Issue 4
     if (sectionId === 'special-access')    _renderSpecialAccess(); // Path 2 — Special Access
     if (sectionId === 'brokers')           { _renderBrokers(); _renderWhatsappSetting(); }  // Your Brokers + Payment/WhatsApp Contact
+    if (sectionId === 'course-enrollments') _ceRefreshAll();  // Paid Course Enrollments
     // Phase 13 — CRM sections
     if (sectionId === 'crm-active')    renderCrmActive();
     if (sectionId === 'crm-inactive')  renderCrmInactive();
@@ -7424,6 +7425,377 @@ const AdminDashboard = (() => {
     if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); _waSave(); } });
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     PAID COURSE ENROLLMENTS — admin management
+     ───────────────────────────────────────────────────────────
+     Reuses functions/api/course-enrollment.js (same 'dashboard' module
+     admin auth as the Payment/WhatsApp setting above, same _courseApi()
+     helper, same Supabase project) and the existing course_enrollments
+     table — no new table, no schema change.
+
+     STATUS MAPPING (display-only — the stored column keeps its original
+     4-value contract, see course-enrollment.js header for the full note):
+       pending  -> "Pending"    (amber)
+       approved -> "Verified"   (green)  — admin confirmed the payment
+       rejected -> "Unverified" (red)    — payment could not be confirmed
+     'payment_review' is not surfaced here; nothing writes it.
+
+     One 'list' call (no status filter) fetches every row; the 4 summary
+     counts, the nav badge (= pending count), and the All/Pending/Verified/
+     Unverified filter are all derived from that single cached array — no
+     extra endpoint, no duplicate counters. Re-fetched on section entry,
+     on the Refresh button, and after every mutating action (verify /
+     unverify / contact save / note save) so the badge and counts never
+     go stale after an admin action.
+  ══════════════════════════════════════════════════════════ */
+  let _ceRows = [];
+  let _ceFilter = 'all';
+  let _ceLoaded = false;
+
+  const CE_STATUS_MAP = {
+    pending:         { label: 'Pending',    cls: 'status-badge--warn' },
+    approved:        { label: 'Verified',   cls: 'status-badge--ok' },
+    rejected:        { label: 'Unverified', cls: 'status-badge--err' },
+    payment_review:  { label: 'Payment Review', cls: 'status-badge--warn' },
+  };
+  function _ceStatusInfo(status) {
+    return CE_STATUS_MAP[status] || { label: status || 'Pending', cls: 'status-badge--warn' };
+  }
+  function _ceReference(row) { return row && row.id ? String(row.id).slice(0, 8).toUpperCase() : '—'; }
+  function _ceFmtDate(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString(); } catch (_) { return String(iso); }
+  }
+  function _ceFmtDay(dateStr) {
+    if (!dateStr) return '—';
+    try { return new Date(dateStr + 'T00:00:00').toLocaleDateString(); } catch (_) { return String(dateStr); }
+  }
+  /* Not a strict phone field — the public form itself labels it "WhatsApp
+     number or email" (see premium-course-enrollment.html #contact) and
+     stores it as free text. No format is forced here for the same reason
+     functions/api/course-enrollment.js's adminUpdateContact() doesn't:
+     enforcing phone-only formatting would reject legitimate existing/edited
+     email contacts that the enrollment form itself always allowed. */
+  function _ceValidContact(v) { return typeof v === 'string' && v.trim().length <= 160; }
+
+  async function _ceFetchList() {
+    try {
+      const resp = await _courseApi({ action: 'list', limit: 500 });
+      const body = await resp.json().catch(() => ({}));
+      if (resp.status === 401 || resp.status === 403) { _ceRows = []; return { ok: false, error: 'unauthorized' }; }
+      if (!body.ok) { _ceRows = []; return { ok: false, error: body.error || ('HTTP ' + resp.status) }; }
+      _ceRows = Array.isArray(body.rows) ? body.rows : [];
+      _ceLoaded = true;
+      return { ok: true };
+    } catch (e) {
+      _ceRows = [];
+      return { ok: false, error: e.message || String(e) };
+    }
+  }
+
+  function _ceCounts() {
+    const c = { pending: 0, approved: 0, rejected: 0, total: _ceRows.length };
+    _ceRows.forEach(r => { if (c[r.status] !== undefined) c[r.status]++; });
+    return c;
+  }
+
+  function _ceUpdateBadge() {
+    const navEl = document.getElementById('courseEnrollNavCount');
+    if (!navEl) return;
+    const pending = _ceRows.filter(r => r.status === 'pending').length;
+    if (pending > 0) { navEl.textContent = String(pending); navEl.hidden = false; }
+    else navEl.hidden = true;
+  }
+
+  function _ceRenderStats() {
+    const c = _ceCounts();
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v); };
+    set('ceStatPending', c.pending);
+    set('ceStatVerified', c.approved);
+    set('ceStatUnverified', c.rejected);
+    set('ceStatTotal', c.total);
+  }
+
+  function _ceSetFilter(filter) {
+    _ceFilter = filter;
+    document.querySelectorAll('#ceFilterTabs .iq-tab').forEach(t => {
+      const on = t.dataset.ceTab === filter;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    _ceRenderRows();
+  }
+
+  function _ceRenderRows() {
+    const bodyEl = document.getElementById('ceListBody');
+    const cntEl  = document.getElementById('ceListCount');
+    const empEl  = document.getElementById('ceListEmpty');
+    if (!bodyEl) return;
+    const rows = _ceFilter === 'all' ? _ceRows : _ceRows.filter(r => r.status === _ceFilter);
+    if (cntEl) cntEl.textContent = String(rows.length);
+    if (rows.length === 0) {
+      bodyEl.innerHTML = '';
+      if (empEl) {
+        empEl.hidden = false;
+        empEl.textContent = _ceFilter === 'pending'
+          ? 'No pending paid-course enrollments.'
+          : (_ceLoaded ? 'No enrollments in this filter.' : 'Could not load enrollments — try Refresh.');
+      }
+      return;
+    }
+    if (empEl) empEl.hidden = true;
+    bodyEl.innerHTML = rows.map(r => {
+      const st = _ceStatusInfo(r.status);
+      const quickBtn = r.status === 'approved'
+        ? `<button class="iq-btn iq-btn--ghost" data-ce-quick="rejected" data-ce-id="${esc(r.id)}" type="button">Mark Unverified</button>`
+        : `<button class="iq-btn iq-btn--action" data-ce-quick="approved" data-ce-id="${esc(r.id)}" type="button">Verify</button>`;
+      return `<div class="ib-changed-row ce-cols" data-ce-row="${esc(r.id)}">
+        <span data-label="Student" class="ce-student-name" title="${esc(r.full_name || '')}">${esc(r.full_name || '—')}</span>
+        <span data-label="Contact" title="${esc(r.contact || '')}">${esc(r.contact || '—')}</span>
+        <span data-label="Method">${esc(r.payment_method || '—')}</span>
+        <span data-label="Amount">${r.amount_paid != null ? '$' + esc(String(r.amount_paid)) : '—'}</span>
+        <span data-label="Payment Date">${esc(_ceFmtDay(r.payment_date))}</span>
+        <span data-label="Status"><span class="status-badge ${st.cls}">${esc(st.label)}</span></span>
+        <span data-label="Submitted" title="${esc(_ceFmtDate(r.submitted_at))}">${esc(_ceFmtDate(r.submitted_at))}</span>
+        <span data-label="Actions" class="ce-row-actions">
+          <button class="iq-btn iq-btn--ghost" data-ce-view="${esc(r.id)}" type="button">View</button>
+          ${quickBtn}
+        </span>
+      </div>`;
+    }).join('');
+    bodyEl.querySelectorAll('[data-ce-view]').forEach(btn => {
+      btn.addEventListener('click', () => _ceOpenDetail(btn.dataset.ceView));
+    });
+    bodyEl.querySelectorAll('[data-ce-quick]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const res = await _ceSetStatus(btn.dataset.ceId, btn.dataset.ceQuick);
+        if (!res.ok) { btn.disabled = false; showToast('Update failed: ' + (res.error || 'unknown'), 'error', 4000); }
+      });
+    });
+  }
+
+  async function _ceRefreshAll() {
+    const res = await _ceFetchList();
+    _ceUpdateBadge();
+    _ceRenderStats();
+    _ceRenderRows();
+    return res;
+  }
+
+  async function _ceSetStatus(id, status) {
+    try {
+      const resp = await _courseApi({ action: 'set-status', id, status });
+      const body = await resp.json().catch(() => ({}));
+      if (resp.status === 401 || resp.status === 403) return { ok: false, error: 'Admin session expired — reload and sign in again.' };
+      if (!body.ok) return { ok: false, error: body.error || ('HTTP ' + resp.status) };
+      showToast(status === 'approved' ? 'Marked Verified.' : status === 'rejected' ? 'Marked Unverified.' : 'Status updated.', 'success', 2500);
+      await _ceRefreshAll();
+      if (_ceDetailId === id) _ceOpenDetail(id); // keep the open detail panel in sync
+      return { ok: true };
+    } catch (e) { return { ok: false, error: e.message || String(e) }; }
+  }
+
+  let _ceDetailId = null;
+
+  function _ceCloseDetail() {
+    const ov = document.getElementById('ceDetailOverlay');
+    if (ov) ov.hidden = true;
+    _ceDetailId = null;
+  }
+
+  function _ceOpenDetail(id) {
+    const row = _ceRows.find(r => String(r.id) === String(id));
+    if (!row) { showToast('Enrollment not found — try Refresh.', 'error', 3000); return; }
+    _ceDetailId = row.id;
+    const ov = document.getElementById('ceDetailOverlay');
+    const body = document.getElementById('ceDetailBody');
+    if (!ov || !body) return;
+    body.innerHTML = _ceDetailHtml(row);
+    ov.hidden = false;
+    _ceBindDetailActions(row);
+  }
+
+  const _ceNP = v => (v == null || v === '') ? '<span style="color:var(--color-muted)">— Not provided</span>' : esc(String(v));
+  function _ceField(label, value) {
+    return `<div class="ib-changed-result-field"><span class="ib-changed-result-label">${esc(label)}</span><span class="ib-changed-result-value">${_ceNP(value)}</span></div>`;
+  }
+
+  function _ceDetailHtml(r) {
+    const st = _ceStatusInfo(r.status);
+    // Only the field that actually applies to this row's payment_method is
+    // real data — the others were never asked for that method (see
+    // premium-course-enrollment.html's conditional payment fields), so they
+    // are never shown as "Not provided" alongside a genuinely-entered one.
+    const paymentSourceLabel = r.payment_method === 'Bank Transfer' ? 'Bank Name'
+      : r.payment_method === 'Cash' ? 'Cash Payment Details'
+      : r.payment_method === 'Other' ? 'Other Payment Source'
+      : 'Payment Source';
+    const paymentSourceValue = r.payment_method === 'Bank Transfer' ? r.bank_name : r.payment_source_details;
+
+    return `
+      <div class="ce-detail-section">Personal</div>
+      <div class="ce-detail-grid">
+        ${_ceField('Full Name', r.full_name)}
+        ${_ceField('Father Name', r.father_name)}
+      </div>
+      <div class="ib-changed-result-field" style="margin-top:12px">
+        <span class="ib-changed-result-label">Contact Number</span>
+        <div class="ce-contact-edit" id="ceContactView">
+          <span class="ib-changed-result-value" id="ceContactValue">${_ceNP(r.contact)}</span>
+          <button class="iq-btn iq-btn--ghost" id="ceContactEditBtn" type="button">Edit</button>
+        </div>
+        <div class="ce-contact-edit" id="ceContactEditRow" hidden>
+          <input type="text" class="ib-changed-search-input" id="ceContactInput" maxlength="160" value="${esc(r.contact || '')}" />
+          <button class="iq-btn iq-btn--action" id="ceContactSaveBtn" type="button">Save</button>
+          <button class="iq-btn iq-btn--ghost" id="ceContactCancelBtn" type="button">Cancel</button>
+        </div>
+        <p class="ce-field-error" id="ceContactError" hidden></p>
+      </div>
+
+      <div class="ce-detail-section">Background / Learning</div>
+      <div class="ce-detail-grid ce-detail-grid--single">
+        ${_ceField('Background', r.background)}
+        ${_ceField('Goals', r.goals)}
+        ${_ceField('Expectations', r.expectations)}
+        ${_ceField('Referral Source', r.referral_source)}
+      </div>
+
+      <div class="ce-detail-section">Course</div>
+      <div class="ce-detail-grid">
+        ${_ceField('Batch', r.batch)}
+        ${_ceField('Enrollment Reference', _ceReference(r))}
+        ${_ceField('Submitted At', _ceFmtDate(r.submitted_at))}
+        ${_ceField('Amount (course)', r.amount_usd != null ? '$' + r.amount_usd : null)}
+      </div>
+
+      <div class="ce-detail-section">Payment Details</div>
+      <div class="ce-detail-grid">
+        ${_ceField('Payment Sender Name', r.payment_sender_name)}
+        ${_ceField('Payment Date', _ceFmtDay(r.payment_date))}
+        ${_ceField('Payment Method', r.payment_method)}
+        ${_ceField(paymentSourceLabel, paymentSourceValue)}
+        ${_ceField('Transaction ID', r.transaction_id)}
+        ${_ceField('Amount Paid', r.amount_paid != null ? '$' + r.amount_paid : null)}
+      </div>
+
+      <div class="ce-detail-section">Admin</div>
+      <div class="ce-status-row">
+        <span class="status-badge ${st.cls}" id="ceDetailStatusBadge">${esc(st.label)}</span>
+        ${_ceField('Reviewed At', r.reviewed_at ? _ceFmtDate(r.reviewed_at) : null)}
+      </div>
+      <div class="ce-verify-actions">
+        <button class="iq-btn iq-btn--action" id="ceVerifyBtn" type="button" ${r.status === 'approved' ? 'disabled' : ''}>&#10003; Verify Enrollment</button>
+        <button class="iq-btn iq-btn--danger" id="ceUnverifyBtn" type="button" ${r.status === 'rejected' ? 'disabled' : ''}>Mark as Unverified</button>
+      </div>
+      <div class="ib-changed-result-field" style="margin-top:14px">
+        <span class="ib-changed-result-label">Admin Note</span>
+        <div class="ce-note-box">
+          <textarea id="ceNoteInput" maxlength="2000" placeholder="e.g. Payment verified through WhatsApp on 9 Sep.">${esc(r.admin_note || '')}</textarea>
+          <div class="ce-verify-actions" style="margin-top:8px">
+            <button class="iq-btn iq-btn--action" id="ceNoteSaveBtn" type="button">Save Note</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _ceBindDetailActions(row) {
+    const verifyBtn   = document.getElementById('ceVerifyBtn');
+    const unverifyBtn = document.getElementById('ceUnverifyBtn');
+    if (verifyBtn)   verifyBtn.addEventListener('click', async () => {
+      verifyBtn.disabled = true;
+      const res = await _ceSetStatus(row.id, 'approved');
+      if (!res.ok) { verifyBtn.disabled = false; showToast('Verify failed: ' + (res.error || 'unknown'), 'error', 4000); }
+    });
+    if (unverifyBtn) unverifyBtn.addEventListener('click', async () => {
+      unverifyBtn.disabled = true;
+      const res = await _ceSetStatus(row.id, 'rejected');
+      if (!res.ok) { unverifyBtn.disabled = false; showToast('Update failed: ' + (res.error || 'unknown'), 'error', 4000); }
+    });
+
+    // Contact edit — read/edit toggle, saved server-side (functions/api/
+    // course-enrollment.js's update-contact action), not just local UI state.
+    const editBtn   = document.getElementById('ceContactEditBtn');
+    const viewRow   = document.getElementById('ceContactView');
+    const editRow   = document.getElementById('ceContactEditRow');
+    const input     = document.getElementById('ceContactInput');
+    const saveBtn   = document.getElementById('ceContactSaveBtn');
+    const cancelBtn = document.getElementById('ceContactCancelBtn');
+    const errEl     = document.getElementById('ceContactError');
+    if (editBtn) editBtn.addEventListener('click', () => {
+      viewRow.hidden = true; editRow.hidden = false; input.focus();
+    });
+    if (cancelBtn) cancelBtn.addEventListener('click', () => {
+      if (errEl) errEl.hidden = true;
+      input.value = row.contact || '';
+      editRow.hidden = true; viewRow.hidden = false;
+    });
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+      const val = input.value.trim();
+      if (errEl) errEl.hidden = true;
+      if (!_ceValidContact(val)) { if (errEl) { errEl.textContent = 'Contact must be 160 characters or fewer.'; errEl.hidden = false; } return; }
+      saveBtn.disabled = true;
+      try {
+        const resp = await _courseApi({ action: 'update-contact', id: row.id, contact: val });
+        const body = await resp.json().catch(() => ({}));
+        if (resp.status === 401 || resp.status === 403) { if (errEl) { errEl.textContent = 'Admin session expired — reload and sign in again.'; errEl.hidden = false; } saveBtn.disabled = false; return; }
+        if (!body.ok) { if (errEl) { errEl.textContent = body.error || ('HTTP ' + resp.status); errEl.hidden = false; } saveBtn.disabled = false; return; }
+        row.contact = body.contact || '';
+        document.getElementById('ceContactValue').innerHTML = _ceNP(row.contact);
+        editRow.hidden = true; viewRow.hidden = false;
+        showToast('Contact updated.', 'success', 2500);
+        // Keep the cached list row + table in sync without a full refetch.
+        const cached = _ceRows.find(x => x.id === row.id);
+        if (cached) cached.contact = row.contact;
+        _ceRenderRows();
+      } catch (e) {
+        if (errEl) { errEl.textContent = 'Could not save: ' + (e.message || e); errEl.hidden = false; }
+      }
+      saveBtn.disabled = false;
+    });
+
+    const noteBtn = document.getElementById('ceNoteSaveBtn');
+    if (noteBtn) noteBtn.addEventListener('click', async () => {
+      const noteInput = document.getElementById('ceNoteInput');
+      const note = noteInput.value.trim();
+      noteBtn.disabled = true;
+      try {
+        const resp = await _courseApi({ action: 'update-note', id: row.id, note });
+        const body = await resp.json().catch(() => ({}));
+        if (resp.status === 401 || resp.status === 403) { showToast('Admin session expired — reload and sign in again.', 'error', 4000); noteBtn.disabled = false; return; }
+        if (!body.ok) { showToast('Save failed: ' + (body.error || 'unknown'), 'error', 4000); noteBtn.disabled = false; return; }
+        row.admin_note = body.admin_note || '';
+        const cached = _ceRows.find(x => x.id === row.id);
+        if (cached) cached.admin_note = row.admin_note;
+        showToast('Note saved.', 'success', 2500);
+      } catch (e) {
+        showToast('Could not save: ' + (e.message || e), 'error', 4000);
+      }
+      noteBtn.disabled = false;
+    });
+  }
+
+  function bindCourseEnrollments() {
+    const refreshBtn = document.getElementById('ceListRefresh');
+    if (refreshBtn) refreshBtn.addEventListener('click', () => _ceRefreshAll());
+
+    document.querySelectorAll('#ceFilterTabs .iq-tab').forEach(t => {
+      t.addEventListener('click', () => _ceSetFilter(t.dataset.ceTab));
+    });
+    document.querySelectorAll('[data-ce-filter]').forEach(card => {
+      const go = () => _ceSetFilter(card.dataset.ceFilter);
+      card.addEventListener('click', go);
+      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
+
+    const closeBtn = document.getElementById('ceDetailClose');
+    const overlay  = document.getElementById('ceDetailOverlay');
+    if (closeBtn) closeBtn.addEventListener('click', _ceCloseDetail);
+    if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) _ceCloseDetail(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _ceCloseDetail(); });
+  }
+
   async function _renderSpecialAccess() {
     const bodyEl = document.getElementById('saListBody');
     const cntEl  = document.getElementById('saListCount');
@@ -11423,6 +11795,8 @@ const AdminDashboard = (() => {
     bindStatCards();         // summary cards → the real records behind each number
     bindBrokers();           // Your Brokers — admin-managed public broker list
     bindWhatsappSetting();   // Payment / WhatsApp Contact — premium-course-enrollment.html
+    bindCourseEnrollments(); // Paid Course Enrollments admin module
+    _ceFetchList().then(() => { _ceUpdateBadge(); });  // populate the nav badge without requiring a section visit
     _populateCreateLicenseBroker();
     bindTableActions();
     bindRunBtn();

@@ -5766,3 +5766,65 @@ html, body {
   .cb-send-row { flex-direction: column; }
   .cb-send-btn  { width: 100%; justify-content: center; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PAID COURSE ENROLLMENTS (Premium Course admin module)
+   ─────────────────────────────────────────────────────────── */
+.stat-icon--red { background: rgba(239,68,68,0.14); color: var(--color-danger); }
+
+/* 8-column table: Student / Contact / Method / Amount / Payment Date /
+   Status / Submitted / Actions — overrides the 6-col .ib-changed-row grid,
+   everything else (padding, border, hover, font) is inherited. Fixed
+   column widths (not 1fr) + a matching min-width + a horizontally
+   scrollable panel wrapper avoids the container collapsing a flexible
+   column to 0px on medium desktop widths where the fixed columns alone
+   already exceed the space left by the sidebar. */
+.ce-cols { grid-template-columns: 160px 150px 100px 80px 100px 100px 120px 170px; min-width: 1080px; }
+.ce-cols span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ce-panel-scroll { overflow-x: auto; }
+.ce-student-name { color: var(--color-text); font-weight: 600; }
+.ce-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ce-row-actions .iq-btn { padding: 5px 10px; font-size: 11px; }
+
+.ce-detail-modal { width: min(680px, 94vw); }
+.ce-detail-section {
+  display: flex; align-items: center; gap: 7px;
+  margin: 18px 0 10px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-accent);
+}
+.ce-detail-section:first-child { margin-top: 0; }
+.ce-detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px;
+}
+.ce-detail-grid--single { grid-template-columns: 1fr; }
+.ce-field-error { color: var(--color-danger); font-size: 12px; margin: 6px 0 0; }
+.ce-contact-edit { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.ce-contact-edit[hidden] { display: none; }
+.ce-contact-edit input { flex: 1; }
+.ce-note-box { margin-top: 6px; }
+.ce-note-box textarea {
+  width: 100%; min-height: 64px; resize: vertical; font: inherit; font-size: 12.5px;
+  background: var(--color-surface-2, #1b2033); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); color: var(--color-text); padding: 8px 10px;
+}
+.ce-status-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.ce-verify-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+@media (max-width: 760px) {
+  .ce-panel-scroll { overflow-x: visible; }
+  .ib-changed-col-labels.ce-cols { display: none; }
+  .ib-changed-row.ce-cols {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    gap: 4px;
+    padding: 14px 16px;
+  }
+  .ib-changed-row.ce-cols span { white-space: normal; }
+  .ib-changed-row.ce-cols span[data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 700; text-transform: uppercase; font-size: 10px;
+    letter-spacing: 0.04em; color: var(--color-muted-bright); margin-right: 4px;
+  }
+  .ib-changed-row.ce-cols .ce-row-actions { margin-top: 4px; }
+  .ce-detail-grid { grid-template-columns: 1fr; }
+}

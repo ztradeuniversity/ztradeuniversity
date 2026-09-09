@@ -32,8 +32,23 @@
 //        => { ok, rows:[…] }
 //   { action:'set-status', id, status }                      (ADMIN)
 //        => { ok }
+//   { action:'update-contact', id, contact }                 (ADMIN)
+//        => { ok, contact }
+//   { action:'update-note', id, note }                       (ADMIN)
+//        => { ok, admin_note }
 //   { action:'set-whatsapp', number }                        (ADMIN)
 //        => { ok, whatsapp }
+//
+// STATUS MODEL (Admin Dashboard — Paid Course Enrollments)
+//   The stored `status` column keeps its original 4-value contract
+//   (pending/payment_review/approved/rejected) — unchanged, no migration.
+//   The admin module maps this to a 3-state PENDING / VERIFIED / UNVERIFIED
+//   workflow entirely at the DISPLAY layer:
+//     pending  -> "Pending"    (new submission, awaiting review)
+//     approved -> "Verified"   (admin checked the payment info and confirmed it)
+//     rejected -> "Unverified" (payment could not be confirmed)
+//   'payment_review' remains a valid stored value but is not surfaced by the
+//   admin UI — nothing currently writes it.
 //
 // SECURE BY DEFAULT: an action that needs EA Supabase answers
 // { ok:false, error:'enrollment_not_configured' } and writes nothing when the
@@ -62,6 +77,7 @@ const LIMITS = {
   background: 1500, goals: 1500, expectations: 1500, referral_source: 300,
   payment_sender_name: 120, payment_method: 20, bank_name: 120, transaction_id: 120,
   payment_source_details: 240,
+  contact: 160, admin_note: 2000,
 };
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: CORS });
@@ -99,10 +115,12 @@ export async function onRequest(ctx) {
 
   try {
     switch (body.action) {
-      case 'submit':      return await submit(sb, body, request);
-      case 'list':        return await adminList(sb, body, env, request);
-      case 'set-status':  return await adminSetStatus(sb, body, env, request);
-      default:            return json({ ok: false, error: 'unknown_action' }, 400);
+      case 'submit':          return await submit(sb, body, request);
+      case 'list':             return await adminList(sb, body, env, request);
+      case 'set-status':      return await adminSetStatus(sb, body, env, request);
+      case 'update-contact':  return await adminUpdateContact(sb, body, env, request);
+      case 'update-note':     return await adminUpdateNote(sb, body, env, request);
+      default:                return json({ ok: false, error: 'unknown_action' }, 400);
     }
   } catch (e) {
     return json({ ok: false, error: 'server_error', detail: String(e && e.message || e) }, 500);
@@ -233,4 +251,42 @@ async function adminSetStatus(sb, body, env, request) {
   });
   if (!r.ok) return json({ ok: false, error: 'update_failed', status: r.status }, 200);
   return json({ ok: true });
+}
+
+// contact is deliberately free text ("WhatsApp number or email", not a
+// strict phone field — see premium-course-enrollment.html's own field) so
+// this only trims + caps length, exactly like the original submit-time
+// validation. It does NOT force phone-number formatting: the enrollment
+// form itself never required one, so enforcing it here would reject
+// legitimate existing/edited email contacts.
+async function adminUpdateContact(sb, body, env, request) {
+  if (!(await requireAdmin(env, request))) return json({ ok: false, error: 'unauthorized' }, 401);
+  const id = String(body.id || '');
+  if (!id) return json({ ok: false, error: 'bad_request' }, 400);
+  const contact = String(body.contact == null ? '' : body.contact).trim().slice(0, LIMITS.contact);
+  const r = await fetch(`${sb.url}/rest/v1/${TABLE}?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { apikey: sb.key, Authorization: `Bearer ${sb.key}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify({ contact: contact || null }),
+  });
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) return json({ ok: false, error: 'update_failed', status: r.status }, 200);
+  const saved = Array.isArray(out) ? out[0] : out;
+  return json({ ok: true, contact: (saved && saved.contact) || null });
+}
+
+async function adminUpdateNote(sb, body, env, request) {
+  if (!(await requireAdmin(env, request))) return json({ ok: false, error: 'unauthorized' }, 401);
+  const id = String(body.id || '');
+  if (!id) return json({ ok: false, error: 'bad_request' }, 400);
+  const note = String(body.note == null ? '' : body.note).trim().slice(0, LIMITS.admin_note);
+  const r = await fetch(`${sb.url}/rest/v1/${TABLE}?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { apikey: sb.key, Authorization: `Bearer ${sb.key}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify({ admin_note: note || null }),
+  });
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) return json({ ok: false, error: 'update_failed', status: r.status }, 200);
+  const saved = Array.isArray(out) ? out[0] : out;
+  return json({ ok: true, admin_note: (saved && saved.admin_note) || null });
 }
