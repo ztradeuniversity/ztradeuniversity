@@ -41,23 +41,29 @@ const pick = (lang, obj) => obj[normLang(lang)];
 export function headings(lang) {
   return pick(lang, {
     en: { position: 'Position Summary', marketDirection: 'Market Direction', currentMarket: 'Current Market',
-      technical: 'Technical', fundamental: 'Fundamental', sentiment: 'Sentiment', news: 'News / Events',
+      technical: 'Technical', fundamental: 'Fundamental', sentiment: 'Sentiment', news: 'General News',
+      upcomingData: 'Upcoming Economic Data',
       supports: 'What Supports Your Trade', against: 'What Works Against It', risk: 'Risk',
       strength: 'Your Strength', weakness: 'Your Main Weakness', options: 'Trade Management Options',
-      finalView: 'Final Mentor View', layerByLayer: 'Layer by layer — which part of the book is helping and which is hurting:',
-      overallEvidence: 'Overall Evidence', readOverview: 'Read Overview of the Market' },
+      finalView: 'Final Mentor Review', layerByLayer: 'Layer by layer — which part of the book is helping and which is hurting:',
+      overallEvidence: 'Overall Evidence', readOverview: 'Read Overview of the Market',
+      fiveFactorOverview: 'Evidence Snapshot', overallRead: 'Overall Read' },
     ur: { position: 'Position کا خلاصہ', marketDirection: 'مارکیٹ کا رجحان', currentMarket: 'موجودہ Market',
-      technical: 'تکنیکی تجزیہ', fundamental: 'بنیادی تجزیہ', sentiment: 'مارکیٹ کا موڈ', news: 'خبریں / Events',
+      technical: 'تکنیکی تجزیہ', fundamental: 'بنیادی تجزیہ', sentiment: 'مارکیٹ کا موڈ', news: 'عمومی خبریں',
+      upcomingData: 'آنے والا Economic Data',
       supports: 'آپ کی Trade کو کیا Support کر رہا ہے', against: 'آپ کی Trade کے خلاف کیا جا رہا ہے', risk: 'خطرہ',
       strength: 'آپ کی Strength', weakness: 'آپ کی اہم Weakness', options: 'Trade Management کے آپشنز',
-      finalView: 'حتمی Mentor رائے', layerByLayer: 'Layer بہ Layer — کون سا حصہ مدد کر رہا ہے اور کون سا نقصان دے رہا ہے:',
-      overallEvidence: 'مجموعی Evidence', readOverview: 'مارکیٹ کا تفصیلی جائزہ پڑھیں' },
+      finalView: 'حتمی Mentor Review', layerByLayer: 'Layer بہ Layer — کون سا حصہ مدد کر رہا ہے اور کون سا نقصان دے رہا ہے:',
+      overallEvidence: 'مجموعی Evidence', readOverview: 'مارکیٹ کا تفصیلی جائزہ پڑھیں',
+      fiveFactorOverview: 'Evidence کا خلاصہ', overallRead: 'مجموعی رائے' },
     ar: { position: 'ملخص المركز', marketDirection: 'اتجاه السوق', currentMarket: 'السوق الحالي',
-      technical: 'التحليل الفني', fundamental: 'التحليل الأساسي', sentiment: 'المعنويات', news: 'الأخبار / الأحداث',
+      technical: 'التحليل الفني', fundamental: 'التحليل الأساسي', sentiment: 'المعنويات', news: 'الأخبار العامة',
+      upcomingData: 'البيانات الاقتصادية القادمة',
       supports: 'ما يدعم صفقتك', against: 'ما يعمل ضدها', risk: 'المخاطر',
       strength: 'نقطة قوتك', weakness: 'أبرز نقاط ضعفك', options: 'خيارات إدارة الصفقة',
-      finalView: 'الرأي النهائي للموجّه', layerByLayer: 'طبقة بطبقة — أي جزء من المركز يساعد وأيها يضر:',
-      overallEvidence: 'الأدلة الإجمالية', readOverview: 'اقرأ نظرة عامة على السوق' },
+      finalView: 'مراجعة الموجّه النهائية', layerByLayer: 'طبقة بطبقة — أي جزء من المركز يساعد وأيها يضر:',
+      overallEvidence: 'الأدلة الإجمالية', readOverview: 'اقرأ نظرة عامة على السوق',
+      fiveFactorOverview: 'لقطة الأدلة', overallRead: 'القراءة الإجمالية' },
   });
 }
 export function labels(lang) {
@@ -65,30 +71,42 @@ export function labels(lang) {
     en: { supportsYour: (d) => `Supports your ${d}`, worksAgainst: (d) => `Works against your ${d}`, contextOnly: 'Context only',
       layer: 'Layer', side: 'Side', size: 'Size', entry: 'Entry', result: 'Result', helping: 'helping', hurting: 'hurting', flat: '—',
       what: 'What', why: 'Why / Reason', trigger: 'Trigger to watch', risk: 'Risk', option: 'Option',
-      unavailable: 'Unavailable', degraded: '_The written analysis below was composed from the verified data without the AI reasoning layer, which was briefly unavailable. Every figure and source shown is unaffected._',
+      unavailable: 'Unavailable', degraded: 'This review was composed from the verified data without the AI reasoning layer, which was briefly unavailable. Every figure and source shown is unaffected.',
       disclaimer: '_This is decision-support based on the evidence available right now — not a guaranteed outcome, and not financial advice. Market conditions can change at any time, and the decision on your own position is always yours._',
       readReason: 'Read the reason below.', overallEvidenceScoreLabel: 'Overall Evidence Score',
       deleteHistory: 'Delete', deleteHistoryAria: 'Delete this assessment from history',
       deleteHistoryConfirm: 'Remove this assessment from your history? This only clears it from this browser — it does not affect the assessment itself.',
-      howMeasured: 'How this is measured', evidenceExplainAria: 'Why this evidence has this score' },
+      howMeasured: 'How this is measured', evidenceExplainAria: 'Why this evidence has this score',
+      managementFit: 'Management Fit', managementFitNote: 'How defensible this approach is given the evidence right now — not a probability of success.',
+      strongestSupport: 'Strongest support', strongestRisk: 'Biggest risk',
+      eventLabel: 'Event', whenLabel: 'When', whatItMeans: 'What this means', possibleBullish: 'If stronger than expected',
+      possibleBearish: 'If weaker than expected', tradeRelevance: 'Trade relevance', impactLabel: 'Impact', impactReason: 'Why / Reason', tradeEffect: 'Trade effect' },
     ur: { supportsYour: (d) => `آپ کی ${d} کو Support کرتا ہے`, worksAgainst: (d) => `آپ کی ${d} کے خلاف جاتا ہے`, contextOnly: 'صرف Context',
       layer: 'Layer', side: 'Side', size: 'Size', entry: 'Entry', result: 'نتیجہ', helping: 'مدد گار', hurting: 'نقصان دہ', flat: '—',
       what: 'کیا', why: 'کیوں / وجہ', trigger: 'کس چیز پر نظر رکھیں', risk: 'Risk', option: 'آپشن',
-      unavailable: 'دستیاب نہیں', degraded: '_نیچے دیا گیا تجزیہ verified data سے تیار کیا گیا ہے؛ AI reasoning layer عارضی طور پر دستیاب نہیں تھی۔ تمام figures اور sources بدستور درست ہیں۔_',
+      unavailable: 'دستیاب نہیں', degraded: 'یہ review verified data سے تیار کیا گیا ہے؛ AI reasoning layer عارضی طور پر دستیاب نہیں تھی۔ تمام figures اور sources بدستور درست ہیں۔',
       disclaimer: '_یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔_',
       readReason: 'نیچے وجہ پڑھیں۔', overallEvidenceScoreLabel: 'مجموعی Evidence Score',
       deleteHistory: 'Delete', deleteHistoryAria: 'اس assessment کو history سے حذف کریں',
       deleteHistoryConfirm: 'اس assessment کو آپ کی history سے ہٹا دیں؟ یہ صرف اس browser سے ہٹتا ہے — اصل assessment متاثر نہیں ہوتا۔',
-      howMeasured: 'یہ کیسے ناپا جاتا ہے', evidenceExplainAria: 'یہ evidence یہ score کیوں رکھتی ہے' },
+      howMeasured: 'یہ کیسے ناپا جاتا ہے', evidenceExplainAria: 'یہ evidence یہ score کیوں رکھتی ہے',
+      managementFit: 'Management Fit', managementFitNote: 'موجودہ evidence کو دیکھتے ہوئے یہ approach کتنی قابل دفاع ہے — کامیابی کی probability نہیں۔',
+      strongestSupport: 'سب سے مضبوط Support', strongestRisk: 'سب سے بڑا خطرہ',
+      eventLabel: 'Event', whenLabel: 'کب', whatItMeans: 'اس کا مطلب', possibleBullish: 'اگر توقع سے مضبوط ہو',
+      possibleBearish: 'اگر توقع سے کمزور ہو', tradeRelevance: 'Trade سے تعلق', impactLabel: 'Impact', impactReason: 'کیوں / وجہ', tradeEffect: 'Trade Effect' },
     ar: { supportsYour: (d) => `يدعم صفقة ${d} الخاصة بك`, worksAgainst: (d) => `يعمل ضد صفقة ${d} الخاصة بك`, contextOnly: 'سياق فقط',
       layer: 'طبقة', side: 'الجهة', size: 'الحجم', entry: 'الدخول', result: 'النتيجة', helping: 'يساعد', hurting: 'يضر', flat: '—',
       what: 'ماذا', why: 'لماذا / السبب', trigger: 'ما يجب مراقبته', risk: 'المخاطرة', option: 'خيار',
-      unavailable: 'غير متاح', degraded: '_التحليل أدناه بُني من البيانات الموثقة دون طبقة الاستدلال بالذكاء الاصطناعي، التي كانت غير متاحة مؤقتاً. جميع الأرقام والمصادر غير متأثرة._',
+      unavailable: 'غير متاح', degraded: 'بُنيت هذه المراجعة من البيانات الموثقة دون طبقة الاستدلال بالذكاء الاصطناعي، التي كانت غير متاحة مؤقتاً. جميع الأرقام والمصادر غير متأثرة.',
       disclaimer: '_هذا دعم لاتخاذ القرار بناءً على الأدلة المتاحة الآن — وليس نتيجة مضمونة ولا نصيحة مالية. ظروف السوق قد تتغير في أي وقت، والقرار بشأن مركزك يبقى قرارك أنت._',
       readReason: 'اقرأ السبب أدناه.', overallEvidenceScoreLabel: 'درجة الأدلة الإجمالية',
       deleteHistory: 'حذف', deleteHistoryAria: 'حذف هذا التقييم من السجل',
       deleteHistoryConfirm: 'إزالة هذا التقييم من سجلك؟ هذا يزيله من هذا المتصفح فقط — لا يؤثر على التقييم نفسه.',
-      howMeasured: 'كيف يُقاس هذا', evidenceExplainAria: 'لماذا حصل هذا الدليل على هذه الدرجة' },
+      howMeasured: 'كيف يُقاس هذا', evidenceExplainAria: 'لماذا حصل هذا الدليل على هذه الدرجة',
+      managementFit: 'ملاءمة الإدارة', managementFitNote: 'مدى إمكانية الدفاع عن هذا النهج بناءً على الأدلة الحالية — وليس احتمال النجاح.',
+      strongestSupport: 'أقوى دعم', strongestRisk: 'أكبر خطر',
+      eventLabel: 'الحدث', whenLabel: 'الموعد', whatItMeans: 'ماذا يعني هذا', possibleBullish: 'إذا كانت أقوى من المتوقع',
+      possibleBearish: 'إذا كانت أضعف من المتوقع', tradeRelevance: 'صلته بصفقتك', impactLabel: 'التأثير', impactReason: 'لماذا / السبب', tradeEffect: 'تأثير الصفقة' },
   });
 }
 
@@ -473,6 +491,50 @@ export function calendarUnavailable(lang, note) {
   });
 }
 
+// ── UPCOMING ECONOMIC DATA — a category distinct from GENERAL NEWS ──────────
+// evidence.js's calendar feed (Finnhub /calendar/economic) is honestly
+// documented elsewhere in this codebase as unavailable on the current plan
+// (HTTP 403) — so this almost always renders its unavailable branch, and
+// that is stated plainly rather than backfilled from memory. When a real
+// verified event IS present, this deliberately does NOT predict a result or
+// invent a consensus figure to compare against (none is provided by the
+// feed): "possible bullish / possible bearish" is a generic, honest
+// explanation of how a stronger/weaker-than-expected print could move the
+// instrument in either direction — not a forecast of which one will happen.
+export function calendarSection(lang, ev, instrumentName) {
+  const out = { events: [], unavailableText: null };
+  if (ev.calendarStatus !== 'verified' || !ev.calendar || !ev.calendar.length) {
+    out.unavailableText = calendarUnavailable(lang, ev.calendarNote);
+    return out;
+  }
+  out.events = ev.calendar.slice(0, 5).map((e) => ({
+    what: e.event || e.title,
+    when: e.time || e.date,
+    impact: e.impact || pick(lang, { en: 'impact not specified', ur: 'impact واضح نہیں', ar: 'التأثير غير محدد' }),
+    whatItMeans: pick(lang, {
+      en: 'A scheduled data release that can move markets once the actual figure is known.',
+      ur: 'ایک طے شدہ data release جو اصل figure معلوم ہونے کے بعد markets کو move کر سکتی ہے۔',
+      ar: 'إصدار بيانات مجدول يمكن أن يحرك الأسواق بمجرد معرفة الرقم الفعلي.',
+    }),
+    possibleBullish: pick(lang, {
+      en: `A stronger-than-expected result could pressure ${instrumentName} — direction depends on the actual number, which is not known in advance.`,
+      ur: `توقع سے مضبوط result ${instrumentName} پر دباؤ ڈال سکتا ہے — سمت اصل number پر منحصر ہے، جو پہلے سے معلوم نہیں۔`,
+      ar: `قد تضغط نتيجة أقوى من المتوقع على ${instrumentName} — يعتمد الاتجاه على الرقم الفعلي، وهو غير معروف مسبقاً.`,
+    }),
+    possibleBearish: pick(lang, {
+      en: `A weaker-than-expected result could support ${instrumentName} — again, this depends entirely on the actual release, not a prediction made here.`,
+      ur: `توقع سے کمزور result ${instrumentName} کو support دے سکتا ہے — یہ مکمل طور پر اصل release پر منحصر ہے، یہاں کوئی پیشگوئی نہیں کی جا رہی۔`,
+      ar: `قد تدعم نتيجة أضعف من المتوقع ${instrumentName} — يعتمد هذا بالكامل على الإصدار الفعلي، وليس تنبؤاً هنا.`,
+    }),
+    tradeRelevance: pick(lang, {
+      en: 'Worth watching if this falls inside your holding window — volatility around the release can widen normal price movement either way.',
+      ur: 'اگر یہ آپ کی holding window کے اندر آتا ہے تو دیکھنے کے قابل ہے — release کے ارد گرد volatility معمول کی price movement کو دونوں طرف وسیع کر سکتی ہے۔',
+      ar: 'يستحق المراقبة إذا وقع ضمن فترة احتفاظك — قد يوسّع التقلب حول الإصدار حركة السعر الطبيعية في أي الاتجاهين.',
+    }),
+  }));
+  return out;
+}
+
 // ── RISK ─────────────────────────────────────────────────────────────────────
 export function riskSection(lang, c) {
   const out = { facts: [], evidence: [] };
@@ -570,6 +632,40 @@ export function overallEvidence(lang, meters) {
     ar: `تميل الأدلة الإجمالية حالياً نحو ${leanWord}.`,
   });
   return { score, text };
+}
+
+// ── FIVE-FACTOR EVIDENCE SNAPSHOT ────────────────────────────────────────────
+// One compact row per evidence category, for the scan-in-seconds summary that
+// sits under the five evidence sections. Technical/Fundamental/Sentiment reuse
+// meters.js's own lean — nothing recomputed. Upcoming Data and General News
+// have no numeric score anywhere in this system (a scheduled event or a
+// headline is deliberately never converted into a bullish/bearish number —
+// see calendarSection()/newsItems() above), so they report the only honest
+// words available: CONDITIONAL (real events exist, direction genuinely
+// depends on the release) / NEUTRAL (headlines exist, none treated as
+// directional) / UNAVAILABLE (nothing verified). `overallEvidence` is passed
+// through unchanged — this function only adds the two non-scored rows.
+export function fiveFactorOverview(lang, meters, hasCalendarEvents, hasNews) {
+  const rows = [];
+  const leanWord = (m) => !m || m.score == null ? pick(lang, { en: 'Unavailable', ur: 'دستیاب نہیں', ar: 'غير متاح' })
+    : pick(lang, { en: { bullish: 'Bullish', bearish: 'Bearish', neutral: 'Neutral' }[m.lean],
+        ur: { bullish: 'Bullish', bearish: 'Bearish', neutral: 'Neutral' }[m.lean],
+        ar: { bullish: 'صاعد', bearish: 'هابط', neutral: 'محايد' }[m.lean] });
+  const H = headings(lang);
+  rows.push({ key: 'technical', label: H.technical, word: leanWord(meters.technical), lean: meters.technical && meters.technical.lean });
+  rows.push({ key: 'fundamental', label: H.fundamental, word: leanWord(meters.fundamental), lean: meters.fundamental && meters.fundamental.lean });
+  rows.push({ key: 'sentiment', label: H.sentiment, word: leanWord(meters.sentiment), lean: meters.sentiment && meters.sentiment.lean });
+  rows.push({
+    key: 'upcomingData', label: H.upcomingData,
+    word: hasCalendarEvents ? pick(lang, { en: 'Conditional', ur: 'Conditional', ar: 'مشروط' }) : pick(lang, { en: 'Unavailable', ur: 'دستیاب نہیں', ar: 'غير متاح' }),
+    lean: hasCalendarEvents ? 'neutral' : null,
+  });
+  rows.push({
+    key: 'news', label: H.news,
+    word: hasNews ? pick(lang, { en: 'Neutral', ur: 'Neutral', ar: 'محايد' }) : pick(lang, { en: 'Unavailable', ur: 'دستیاب نہیں', ar: 'غير متاح' }),
+    lean: hasNews ? 'neutral' : null,
+  });
+  return rows;
 }
 
 // ── PER-EVIDENCE-ROW EXPLANATION ─────────────────────────────────────────────
@@ -676,14 +772,27 @@ export function positionSummaryLines(lang, pos) {
   return L;
 }
 
-// ── TRADE MANAGEMENT OPTIONS ─────────────────────────────────────────────────
-export function managementOptionsLocalized(lang, direction, balance, invalidation) {
+// ── TRADE MANAGEMENT OPTIONS — three genuinely different strategies ─────────
+// Named for WHAT each one does, not "close/hold/hold-more": Immediate Risk
+// Reduction, Protected Continuation, Structured Reassessment. `pos` is
+// optional and, when it carries a real worst-vs-best split (a multi-layer
+// or hedged book), Option 1 names the actual worst layer from position.js's
+// own numbers instead of speaking only to a single-layer position.
+export function managementOptionsLocalized(lang, direction, balance, invalidation, pos) {
   const d = dirWord(lang, direction);
   const opts = [];
 
+  const multiLayerSplit = pos && pos.computableCount > 1 && pos.worstLayer
+    && (!pos.bestLayer || pos.bestLayer.id !== pos.worstLayer.id);
+  const worstId = multiLayerSplit ? pos.worstLayer.id : null;
+
   opts.push({
-    title: pick(lang, { en: 'Exit now', ur: 'ابھی Exit کریں', ar: 'الخروج الآن' }),
-    what: pick(lang, { en: 'Close the position (or its losing layers) immediately, removing the open exposure.',
+    title: pick(lang, { en: 'Immediate Risk Reduction', ur: 'فوری Risk Reduction', ar: 'تخفيض المخاطر الفوري' }),
+    what: multiLayerSplit ? pick(lang, {
+      en: `Close the worst-performing layer (${worstId}) now to cut the part of the book doing the most damage, or close the full position if you want the exposure removed entirely.`,
+      ur: `سب سے زیادہ نقصان دینے والا حصہ کاٹنے کے لیے abhi worst-performing layer (${worstId}) بند کریں، یا اگر مکمل طور پر exposure ختم کرنا چاہیں تو پوری position بند کریں۔`,
+      ar: `أغلق الطبقة الأسوأ أداءً (${worstId}) الآن لقطع الجزء الأكثر ضرراً من المركز، أو أغلق المركز بالكامل إذا أردت إزالة الانكشاف كلياً.`,
+    }) : pick(lang, { en: 'Close the position (or its losing layers) immediately, removing the open exposure.',
       ur: 'Position (یا اس کی losing layers) فوری طور پر بند کریں، open exposure ختم کر دیں۔',
       ar: 'إغلاق المركز (أو طبقاته الخاسرة) فوراً، وإزالة الانكشاف المفتوح.' }),
     why: pick(lang, {
@@ -705,7 +814,7 @@ export function managementOptionsLocalized(lang, direction, balance, invalidatio
   if (invalidation && invalidation.ok) {
     const sideWord = pick(lang, { en: invalidation.side, ur: invalidation.side === 'above' ? 'اوپر' : 'نیچے', ar: invalidation.side === 'above' ? 'أعلى' : 'أدنى' });
     opts.push({
-      title: pick(lang, { en: 'Protected hold', ur: 'Protected Hold', ar: 'احتفاظ محمي' }),
+      title: pick(lang, { en: 'Protected Continuation', ur: 'Protected Continuation', ar: 'الاستمرار المحمي' }),
       what: pick(lang, {
         en: `Keep the position open, with a protective stop at or beyond the verified level ${invalidation.level} (${invalidation.side} the current price).`,
         ur: `Position کو open رکھیں، verified level ${invalidation.level} پر یا اس سے آگے (موجودہ price سے ${sideWord}) protective stop کے ساتھ۔`,
@@ -729,7 +838,7 @@ export function managementOptionsLocalized(lang, direction, balance, invalidatio
     });
   } else {
     opts.push({
-      title: pick(lang, { en: 'Protected hold', ur: 'Protected Hold', ar: 'احتفاظ محمي' }),
+      title: pick(lang, { en: 'Protected Continuation', ur: 'Protected Continuation', ar: 'الاستمرار المحمي' }),
       what: pick(lang, { en: 'Keep the position open with a protective stop.', ur: 'Position کو protective stop کے ساتھ open رکھیں۔', ar: 'الاحتفاظ بالمركز مفتوحاً مع وقف وقائي.' }),
       why: pick(lang, {
         en: `An exact protective level cannot be independently justified from the available verified data${invalidation ? `: ${invalidation.reason}` : ''}.`,
@@ -746,7 +855,7 @@ export function managementOptionsLocalized(lang, direction, balance, invalidatio
   }
 
   opts.push({
-    title: pick(lang, { en: 'Conditional continuation / recovery scenario', ur: 'Conditional Continuation / Recovery Scenario', ar: 'سيناريو الاستمرار المشروط / التعافي' }),
+    title: pick(lang, { en: 'Structured Reassessment', ur: 'Structured Reassessment', ar: 'إعادة تقييم منظّمة' }),
     what: pick(lang, {
       en: 'Hold the position only while its confirming conditions remain true, on a defined schedule for reassessment — not indefinitely.',
       ur: 'Position کو صرف اس وقت تک hold کریں جب تک اس کی confirming conditions درست رہیں، ایک متعین reassessment schedule پر — لامحدود مدت تک نہیں۔',
@@ -781,8 +890,41 @@ export function managementOptionsLocalized(lang, direction, balance, invalidatio
   return opts;
 }
 
+// ── MANAGEMENT FIT RATINGS (1–10, deterministic — NOT a probability) ────────
+// "Management Fit" answers "how defensible is this approach given the
+// evidence right now", never "how likely is this to succeed". Every input is
+// a field this file's callers already compute — analysis.js's evidence
+// `balance`, meters.js's own per-meter `coverage`, the trader's stated
+// `has_stop_loss`, and levels.js's `invalidation.ok` — so the score is fully
+// explainable from data already on the page, not a second scoring engine.
+//   Immediate Risk Reduction — rises when the evidence balance leans against
+//     the position, or when there is no stop loss (an exit removes both).
+//   Protected Continuation   — rises when the balance favours the position
+//     AND a defensible invalidation level actually exists; falls sharply
+//     when no such level can be justified, since an undefended hold is the
+//     one thing this system will not quietly endorse.
+//   Structured Reassessment  — rises specifically when the evidence is
+//     genuinely mixed (its whole premise: wait for the picture to clarify)
+//     and when overall evidence coverage is strong enough to trust that read.
+const clamp1to10 = (n) => Math.max(1, Math.min(10, Math.round(n)));
+export function managementFitRatings({ balance, meters, hasStop, invalidation }) {
+  const covs = ['technical', 'fundamental', 'sentiment']
+    .map((k) => meters && meters[k]).filter((m) => m && m.coverage != null).map((m) => m.coverage);
+  const avgCoverage = covs.length ? covs.reduce((a, b) => a + b, 0) / covs.length : 0;
+  const evScore = balance === 'favours' ? 2 : balance === 'against' ? -2 : balance === 'insufficient' ? -1 : 0;
+
+  const exit = clamp1to10(5 + (evScore < 0 ? 2 : evScore > 0 ? -2 : 0) + (hasStop ? 0 : 2));
+  const protectedContinuation = clamp1to10(5 + (evScore > 0 ? 2 : evScore < 0 ? -2 : 0) + (invalidation && invalidation.ok ? 2 : -3));
+  const reassessment = clamp1to10(5 + (balance === 'mixed' ? 2 : 0) + (avgCoverage >= 0.75 ? 1 : avgCoverage < 0.5 ? -1 : 0));
+
+  return { exit, protectedContinuation, reassessment, avgCoverage: Math.round(avgCoverage * 100) / 100 };
+}
+
 // ── FINAL MENTOR VIEW ────────────────────────────────────────────────────────
-export function finalMentorView(lang, direction, balance) {
+// Kept for any caller that only wants the one-line balance summary (e.g. a
+// plain-text fallback) — the richer, structured review below is what the
+// result page actually renders.
+export function finalMentorViewLine(lang, direction, balance) {
   const d = dirWord(lang, direction);
   const balanceLine = pick(lang, {
     en: balance === 'against' ? `the evidence currently leans against your ${d}` : balance === 'favours' ? `the evidence currently leans in favour of your ${d}` : balance === 'mixed' ? 'the evidence is genuinely mixed' : 'there is not yet enough evidence to form a balance',
@@ -794,6 +936,74 @@ export function finalMentorView(lang, direction, balance) {
     ur: `موجودہ verified evidence کی بنیاد پر، ${balanceLine}۔ یہ ایک evidence-based decision-support تجزیہ ہے، کوئی guaranteed نتیجہ نہیں — آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔`,
     ar: `بناءً على الأدلة الموثقة الحالية، ${balanceLine}. هذا تقييم لدعم القرار قائم على الأدلة، وليس نتيجة مضمونة — القرار بشأن مركزك يبقى قرارك دائماً.`,
   });
+}
+
+// ── FINAL MENTOR REVIEW — structured, not a paragraph ───────────────────────
+// Answers exactly what a mentor sitting beside the trader would say: where
+// the trade stands, what helps it, what's the single biggest risk, and what
+// that implies for management. Every field is read straight from objects
+// analysis.js / position.js already computed (`weighed.supportive/opposing`,
+// `c.has_stop_loss`) — nothing here is a new judgement, only a compact
+// re-statement of the strongest single item already on each list, so this
+// can never disagree with the evidence sections above it.
+export function finalMentorReview(lang, direction, balance, weighed, tradeCase) {
+  const d = dirWord(lang, direction);
+  const whereNow = pick(lang, {
+    en: balance === 'against' ? `The evidence currently leans against your ${d}.` : balance === 'favours' ? `The evidence currently leans in favour of your ${d}.` : balance === 'mixed' ? 'The evidence is genuinely mixed — supportive and opposing factors are close in number.' : 'There is not yet enough verified evidence to form a clear balance.',
+    ur: balance === 'against' ? `Evidence اس وقت آپ کی ${d} کے خلاف جھکاؤ رکھتی ہے۔` : balance === 'favours' ? `Evidence اس وقت آپ کی ${d} کے حق میں جھکاؤ رکھتی ہے۔` : balance === 'mixed' ? 'Evidence حقیقی معنوں میں mixed ہے — supportive اور opposing factors تعداد میں قریب ہیں۔' : 'ابھی ایک واضح balance بنانے کے لیے کافی verified evidence نہیں ہے۔',
+    ar: balance === 'against' ? `تميل الأدلة حالياً ضد صفقة ${d} الخاصة بك.` : balance === 'favours' ? `تميل الأدلة حالياً لصالح صفقة ${d} الخاصة بك.` : balance === 'mixed' ? 'الأدلة مختلطة فعلاً — العوامل الداعمة والمعارضة متقاربة في العدد.' : 'لا تتوفر أدلة موثقة كافية بعد لتشكيل توازن واضح.',
+  });
+
+  const supportive = (weighed && weighed.supportive) || [];
+  const opposing = (weighed && weighed.opposing) || [];
+  const noStop = tradeCase && tradeCase.has_stop_loss === false;
+
+  const strongestSupport = supportive.length ? supportive[0].text : pick(lang, {
+    en: 'No supportive item currently stands out from the verified evidence.',
+    ur: 'موجودہ verified evidence میں فی الحال کوئی supportive item نمایاں نہیں ہے۔',
+    ar: 'لا يبرز حالياً أي عنصر داعم من الأدلة الموثقة.',
+  });
+
+  // The absence of a stop loss is already treated everywhere else in this
+  // system as "the single most consequential fact in the case" (see
+  // analysis.js's layerRisk) — the review keeps that same priority rather
+  // than letting a smaller market factor outrank it.
+  const strongestRisk = noStop ? pick(lang, {
+    en: 'There is no Stop Loss on this position — the maximum loss is currently undefined.',
+    ur: 'اس position پر کوئی Stop Loss نہیں ہے — زیادہ سے زیادہ loss فی الحال غیر متعین ہے۔',
+    ar: 'لا يوجد وقف خسارة على هذا المركز — الخسارة القصوى غير محددة حالياً.',
+  }) : opposing.length ? opposing[0].text : pick(lang, {
+    en: 'No opposing item currently stands out from the verified evidence.',
+    ur: 'موجودہ verified evidence میں فی الحال کوئی opposing item نمایاں نہیں ہے۔',
+    ar: 'لا يبرز حالياً أي عنصر معارض من الأدلة الموثقة.',
+  });
+
+  const takeaway = pick(lang, {
+    en: noStop ? 'Before weighing the market evidence at all, define the price at which this trade is wrong — an undefined maximum loss outranks every other consideration below.'
+      : balance === 'against' ? 'Worth re-examining the original thesis against what the market is doing now — the evidence leaning against you is a reason to look again, not by itself an instruction to close.'
+      : balance === 'favours' ? 'The management question here is protecting the position rather than justifying it.'
+      : balance === 'mixed' ? 'With genuinely mixed evidence, sizing and invalidation matter more than direction — a position you can hold calmly through a mixed tape is one you can still manage.'
+      : 'Confirm the missing figures on your own platform before leaning on this evidence for a management decision.',
+    ur: noStop ? 'Market evidence کو تولنے سے پہلے، وہ price طے کریں جس پر یہ trade غلط ثابت ہو — ایک غیر متعین زیادہ سے زیادہ loss نیچے دیے گئے ہر دوسرے consideration پر حاوی ہے۔'
+      : balance === 'against' ? 'اصل thesis کو موجودہ market کے مقابلے میں دوبارہ دیکھنا قابل قدر ہے — آپ کے خلاف جھکاؤ رکھنے والی evidence دوبارہ دیکھنے کی وجہ ہے، خود بند کرنے کی ہدایت نہیں۔'
+      : balance === 'favours' ? 'یہاں management کا سوال position کو justify کرنے کی بجائے اسے protect کرنا ہے۔'
+      : balance === 'mixed' ? 'حقیقی معنوں میں mixed evidence کے ساتھ، sizing اور invalidation سمت سے زیادہ اہم ہیں — جس position کو آپ mixed tape میں سکون سے hold کر سکیں وہی manageable ہے۔'
+      : 'اس evidence پر management فیصلہ کرنے سے پہلے missing figures اپنے platform پر خود confirm کریں۔',
+    ar: noStop ? 'قبل تقييم أدلة السوق إطلاقاً، حدد السعر الذي تصبح عنده هذه الصفقة خاطئة — فالخسارة القصوى غير المحددة تتفوق على أي اعتبار آخر أدناه.'
+      : balance === 'against' ? 'يستحق إعادة فحص الفرضية الأصلية مقابل ما يفعله السوق الآن — ميل الأدلة ضدك سبب لإعادة النظر، وليس بحد ذاته أمراً بالإغلاق.'
+      : balance === 'favours' ? 'سؤال الإدارة هنا هو حماية المركز لا تبريره.'
+      : balance === 'mixed' ? 'مع أدلة مختلطة فعلاً، يهم الحجم ونقطة الإبطال أكثر من الاتجاه — المركز الذي يمكنك الاحتفاظ به بهدوء خلال سوق مختلط هو مركز يمكنك إدارته.'
+      : 'أكّد الأرقام الناقصة على منصتك الخاصة قبل الاعتماد على هذه الأدلة لقرار إداري.',
+  });
+
+  return {
+    whereNow, strongestSupport, strongestRisk, takeaway,
+    disclaimer: pick(lang, {
+      en: 'This is decision-support based on the evidence available right now — not a guaranteed outcome, and not financial advice. Market conditions can change at any time, and the decision on your own position is always yours.',
+      ur: 'یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔',
+      ar: 'هذا دعم لاتخاذ القرار بناءً على الأدلة المتاحة الآن — وليس نتيجة مضمونة ولا نصيحة مالية. ظروف السوق قد تتغير في أي وقت، والقرار بشأن مركزك يبقى قرارك أنت.',
+    }),
+  };
 }
 
 // ── PER-LAYER TABLE ──────────────────────────────────────────────────────────

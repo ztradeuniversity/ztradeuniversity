@@ -220,6 +220,46 @@
   .impactPlain:last-child{border-bottom:0}
   .impactUnavail{font-size:11.5px;color:var(--muted2);font-style:italic;padding:6px 0 0}
 
+  /* evidence section header — label + meter lean/coverage, consolidated with
+     the FACT/IMPACT/REASON/TRADE-EFFECT rows below it so nothing is stated
+     in two separate cards any more */
+  .secHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .secHead h4{margin:0}
+  .secLean{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+  .secLean.bullish{color:var(--bull)} .secLean.bearish{color:var(--bear)} .secLean.neutral{color:var(--muted)}
+  .secCov{font-size:11px;color:var(--muted2)}
+
+  /* upcoming economic data — event rows (distinct shape from the FACT/IMPACT
+     evidence rows: what/when, what it means, both scenarios, trade relevance) */
+  .eventRow{padding:10px 0;border-bottom:1px dashed var(--line)}
+  .eventRow:last-child{border-bottom:0}
+  .eventWhat{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:2px}
+  .eventWhen{font-size:11.5px;color:var(--muted2);margin-bottom:6px}
+  .eventLine{font-size:12px;color:var(--muted);line-height:1.55;margin-top:4px}
+  .eventLine b{color:var(--muted);font-weight:700}
+
+  /* five-factor evidence snapshot (§9) */
+  .snapshotCard{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:16px 18px;margin-bottom:16px}
+  .snapshotRow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .snapshotRow:last-child{border-bottom:0}
+  .snapshotLabel{color:var(--muted2);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.06em}
+  .snapshotWord{font-weight:800}
+  .snapshotWord.bullish{color:var(--bull)} .snapshotWord.bearish{color:var(--bear)} .snapshotWord.neutral{color:var(--muted)}
+  .snapshotOverall{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13.5px;font-weight:600;color:var(--text)}
+
+  /* final mentor review — visually the strongest card on the page (§23) */
+  .mentorCard{border:1.5px solid var(--accent);border-radius:var(--r);background:var(--accent-soft);padding:24px 26px;margin-bottom:16px}
+  .mentorCard h3{margin:0 0 12px;font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent2)}
+  .mentorProse{font-size:15.5px;line-height:1.65;color:var(--text);margin:0 0 16px;white-space:pre-line}
+  .mentorRow{font-size:13.5px;line-height:1.6;margin-bottom:7px;color:var(--text)}
+  .mentorRow b{color:var(--accent2)}
+  .mentorDisclaimer{font-size:11.5px;color:var(--muted2);font-style:italic;margin-top:14px;padding-top:14px;border-top:1px solid rgba(247,147,26,.22)}
+
+  /* management fit badge — a rating, deliberately NOT styled like the
+     bullish/bearish evidence badges, so it can never be mistaken for one */
+  .fitBadge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 11px;
+    border-radius:20px;background:var(--bg2);color:var(--text);border:1px solid var(--line2);cursor:help}
+
   /* overall evidence + market direction (§5, §6) */
   .overallCard{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:18px 20px;margin-bottom:16px}
   .overallTop{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -252,20 +292,27 @@
   .overviewSep::before,.overviewSep::after{content:'';flex:1;height:1px;background:var(--line)}
 
   .report{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:22px 24px}
-  .report h3{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent2);font-weight:700;
+  /* .mentorCard shares these tag styles: history saved before the Final
+     Mentor Review redesign has only the old long-form `d.report` markdown,
+     which now renders inside .mentorCard as a graceful fallback (§36) and
+     needs the same heading/list/table treatment `.report` already defines. */
+  .report h3,.mentorCard h3{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent2);font-weight:700;
     margin:22px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-  .report h3:first-child{margin-top:0}
-  .report p{margin:0 0 10px}
-  .report ul{margin:0 0 12px;padding-inline-start:19px}
-  .report li{margin-bottom:5px}
-  .report table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:13px;display:block;overflow-x:auto}
-  .report th,.report td{border:1px solid var(--line);padding:7px 9px;text-align:start;white-space:nowrap}
-  .report th{background:var(--bg2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2)}
-  .report em{color:var(--muted);font-size:13px}
-  .report code{background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:13px}
+  .report h3:first-child,.mentorCard h3:first-child{margin-top:0}
+  .report p,.mentorCard p{margin:0 0 10px}
+  .report ul,.mentorCard ul{margin:0 0 12px;padding-inline-start:19px}
+  .report li,.mentorCard li{margin-bottom:5px}
+  .report table,.mentorCard table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:13px;display:block;overflow-x:auto}
+  .report th,.report td,.mentorCard th,.mentorCard td{border:1px solid var(--line);padding:7px 9px;text-align:start;white-space:nowrap}
+  .report th,.mentorCard th{background:var(--bg2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2)}
+  .report em,.mentorCard em{color:var(--muted);font-size:13px}
+  .report code,.mentorCard code{background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:13px}
   .prov{margin-top:16px;font-size:11.5px;color:var(--muted2);border-top:1px solid var(--line);padding-top:12px}
   .prov b{display:block;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px;color:var(--muted)}
   .prov div{margin-bottom:3px}
+  /* Sources as its own standalone card (§26) rather than nested at the foot
+     of the old long report — no leading border/margin needed here. */
+  .prov.standalone{margin-top:0;border-top:0;padding-top:0}
 
   .gate{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:20px;margin-bottom:16px}
   .gate h4{margin:0 0 8px;font-size:16px;color:var(--accent2)}
@@ -908,46 +955,16 @@ function renderResult() {
     p.floatingPoints > 0 ? ' pos' : p.floatingPoints < 0 ? ' neg' : '');
   h += '</div></div>';
 
-  // ── TECHNICAL / FUNDAMENTAL / SENTIMENT — always expanded, FACT → IMPACT →
-  // SCORE per row. `impact`/`tooltip`/`scoreStr` are pre-localized server-side
-  // (RI.meterInputExplain, applied to meters.js's own unmodified `lean` field
-  // in rescue-assess.js) — an older cached entry without them still renders
-  // correctly from `i.lean` alone, just without the impact tag/tooltip text.
-  h += '<div class="meters">';
-  for (const k of ['technical', 'fundamental', 'sentiment']) {
-    const m = d.meters[k];
-    const pct = m.score == null ? 50 : Math.round((m.score + 1) / 2 * 100);
-    h += '<div class="meter"><h5>' + esc(m.label) + '</h5>' +
-      '<div class="lean ' + esc(m.lean || 'neutral') + '">' + esc(m.lean || t('unavailable')) + '</div>' +
-      '<div class="track"><span class="pin ' + esc(m.lean || '') + '" style="left:' + pct + '%"></span></div>' +
-      '<div class="sub"><span>' + esc(t('strength')) + ': <b>' + esc(m.strength) + '</b></span>' +
-      '<span>' + esc(t('coverage')) + ' ' + Math.round(m.coverage * 100) + '%</span></div>' +
-      '<div class="measured"><div class="capt">' + esc(t('howMeasured')) + '</div>' +
-      (m.inputsUsed || []).map(i => {
-        const cls = i.lean > 0 ? 'pos' : i.lean < 0 ? 'neg' : 'zero';
-        const scoreStr = i.scoreStr || (i.lean > 0 ? '+1' : i.lean < 0 ? '−1' : '0');
-        const impact = i.impact ? '<span class="impact ' + esc(i.stance || 'neutral') + '">' + esc(i.impact) + '</span>' : '';
-        const tip = i.tooltip || '';
-        return '<div class="evRow"><div class="evText">' + esc(i.basis) + impact + '</div>' +
-          '<span class="scoreWrap"><button type="button" class="scoreBtn ' + cls + '"' +
-          (tip ? ' title="' + esc(tip) + '"' : '') + ' aria-label="' + esc(uiT('evidenceExplainAria')) + '">' + esc(scoreStr) + '</button>' +
-          (tip ? '<span class="scoreTip" role="tooltip">' + esc(tip) + '</span>' : '') + '</span></div>';
-      }).join('') +
-      ((m.inputsUnavailable || []).length ? '<div class="unavailLine">' + esc(t('unavailable')) + ': ' + esc(m.inputsUnavailable.join(', ')) + '</div>' : '') +
-      '</div></div>';
-  }
-  h += '</div>';
-
-  // ── EVIDENCE IMPACT — FACT → IMPACT ON INSTRUMENT → WHY → TRADE EFFECT.
-  // `d.evidenceImpact` is computed server-side (rescue-assess.js) from the
-  // exact same localized Technical/Fundamental/Sentiment/News evidence the
-  // written report below is built from — `impact` (bullish/bearish/neutral)
-  // is a deterministic inversion of the `stance` those sections already
-  // compute, never a new judgement, so this can never disagree with the
-  // report text. Rendered as real HTML — never parsed out of markdown — so
-  // the colour and label are never at the mercy of the model's own wording.
-  // Older cached history entries saved before this existed simply omit the
-  // block rather than showing anything stale or guessed.
+  // ── FIVE EVIDENCE SECTIONS — Technical / Fundamental / Sentiment /
+  // Upcoming Economic Data / General News. Each section header carries the
+  // meter's own lean + coverage (meters.js — unmodified) where a meter
+  // exists; the body is the SAME localized FACT → IMPACT ON INSTRUMENT →
+  // WHY → TRADE EFFECT rows the evidence-impact layer already computes
+  // server-side, so nothing here is a new judgement and nothing is stated
+  // in a separate card any more (§3). `d.evidenceImpact` is absent on
+  // history saved before this existed; that case falls through to the old
+  // long-form `d.report` rendering near the bottom of this function so an
+  // old entry still shows something coherent rather than an empty page.
   const EI = d.evidenceImpact;
   if (EI) {
     const instName = EI.instrumentName || d.instrument;
@@ -963,58 +980,107 @@ function renderResult() {
       }
       return '<div class="impactPlain">' + esc(b.text) + ' — <span class="impactTag">' + esc(b.tag) + '</span></div>';
     };
-    const sectionCard = (headKey, sec) => {
+    const secHead = (headKey, m) => {
+      let s = '<div class="secHead"><h4>' + esc(uiT(headKey)) + '</h4>';
+      if (m && m.lean != null) {
+        s += '<span class="secLean ' + esc(m.lean) + '">' + esc(m.lean) + '</span>' +
+          '<span class="secCov">' + esc(t('strength')) + ': ' + esc(m.strength) + ' · ' + esc(t('coverage')) + ' ' + Math.round(m.coverage * 100) + '%</span>';
+      }
+      s += '</div>';
+      return s;
+    };
+    const sectionCard = (headKey, sec, m) => {
       if (!sec || (!sec.evidence.length && !sec.uncertainty.length)) return '';
-      let c = '<div class="impactCard"><h4>' + esc(uiT(headKey)) + '</h4>';
+      let c = '<div class="impactCard">' + secHead(headKey, m);
       c += sec.evidence.map(impactRow).join('');
       c += sec.uncertainty.map(u => '<div class="impactUnavail">' + esc(uiT('unavailable')) + ' — ' + esc(u) + '</div>').join('');
       c += '</div>';
       return c;
     };
+
+    // D. UPCOMING ECONOMIC DATA — per-event rows, distinct shape from the
+    // FACT/IMPACT rows above (no consensus figure exists to score against,
+    // so no impact badge is shown here — see calendarSection() server-side).
+    const UD = EI.upcomingData;
+    let upcomingCard = '';
+    if (UD) {
+      upcomingCard = '<div class="impactCard">' + secHead('upcomingData', null);
+      if (UD.events && UD.events.length) {
+        upcomingCard += UD.events.map(e => '<div class="eventRow"><div class="eventWhat">' + esc(e.what) + '</div>' +
+          '<div class="eventWhen">' + esc(e.when) + (e.impact ? ' · ' + esc(e.impact) : '') + '</div>' +
+          '<div class="eventLine"><b>' + esc(uiT('whatItMeans')) + ':</b> ' + esc(e.whatItMeans) + '</div>' +
+          '<div class="eventLine"><b>' + esc(uiT('possibleBullish')) + ':</b> ' + esc(e.possibleBullish) + '</div>' +
+          '<div class="eventLine"><b>' + esc(uiT('possibleBearish')) + ':</b> ' + esc(e.possibleBearish) + '</div>' +
+          '<div class="eventLine"><b>' + esc(uiT('tradeRelevance')) + ':</b> ' + esc(e.tradeRelevance) + '</div></div>').join('');
+      } else {
+        upcomingCard += '<div class="impactUnavail">' + esc(UD.unavailableText || '') + '</div>';
+      }
+      upcomingCard += '</div>';
+    }
+
+    // E. GENERAL NEWS — every headline is Neutral/Uncertain by design (a
+    // headline is never converted into a directional call — see newsItems()).
     let newsCard = '';
     if ((EI.news || []).length) {
-      newsCard = '<div class="impactCard"><h4>' + esc(uiT('news')) + '</h4>' +
+      newsCard = '<div class="impactCard">' + secHead('news', null) +
         EI.news.map(n => '<div class="impactRow"><div class="impactFact">"' + esc(n.what) + '" — ' + esc(n.source) + '</div>' +
           '<div class="impactMeta"><span class="impactBadge ' + esc(n.impact || 'neutral') + '">' + esc(n.impactLabel) + '</span></div>' +
           '<div class="impactReason"><b>' + esc(uiT('why')) + ':</b> ' + esc(n.why) + ' ' + esc(n.effect) + '</div></div>').join('') +
         '</div>';
     }
-    const cards = sectionCard('technical', EI.technical) + sectionCard('fundamental', EI.fundamental) + sectionCard('sentiment', EI.sentiment) + newsCard;
+
+    const cards = sectionCard('technical', EI.technical, d.meters.technical) +
+      sectionCard('fundamental', EI.fundamental, d.meters.fundamental) +
+      sectionCard('sentiment', EI.sentiment, d.meters.sentiment) +
+      upcomingCard + newsCard;
     if (cards) h += '<div class="impactWrap">' + cards + '</div>';
+
+    // ── FIVE-FACTOR EVIDENCE SNAPSHOT (§9) — one row per category, then the
+    // existing Overall Evidence line (meters.js's own lean, summed — unchanged).
+    if (d.fiveFactor && d.fiveFactor.length) {
+      h += '<div class="snapshotCard">';
+      for (const row of d.fiveFactor) {
+        h += '<div class="snapshotRow"><span class="snapshotLabel">' + esc(row.label) + '</span>' +
+          '<span class="snapshotWord ' + esc(row.lean || 'neutral') + '">' + esc(row.word) + '</span></div>';
+      }
+      if (d.overallEvidence) h += '<div class="snapshotOverall">' + esc(uiT('overallEvidence')) + ': ' + esc(d.overallEvidence.text) + '</div>';
+      h += '</div>';
+    }
   }
 
-  // ── OVERALL EVIDENCE (sum of the three meters' own lean, display-only) +
-  // MARKET DIRECTION (the existing average-based read, unchanged) ──
-  const oe = d.overallEvidence, mdir = d.marketDirection;
-  if (oe || mdir) {
-    h += '<div class="overallCard">';
-    if (oe && oe.score != null) {
-      const cls = oe.score > 0 ? 'pos' : oe.score < 0 ? 'neg' : 'zero';
-      h += '<div class="overallTop"><div class="overallScoreWrap"><div class="overallScore ' + cls + '">' +
-        esc((oe.score > 0 ? '+' : '') + oe.score) + '</div><div class="overallLabel">' + esc(uiT('overallEvidenceScoreLabel')) + '</div></div>' +
-        '<div><div class="overallHead">' + esc(uiT('overallEvidence')) + '</div><div class="overallText">' + esc(oe.text) + '</div></div></div>';
-    } else if (oe) {
-      h += '<div class="overallHead">' + esc(uiT('overallEvidence')) + '</div><div class="overallText">' + esc(oe.text) + '</div>';
-    }
-    if (mdir) {
-      const mdLineHtml = esc(String(mdir.line || '')).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      h += '<div class="mdRow"><div class="mdHead">' + esc(uiT('marketDirection')) + '</div>' +
-        '<div class="mdLine">' + mdLineHtml + '</div>' +
-        ((mdir.drivers || []).length ? '<ul>' + mdir.drivers.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') +
-        '</div>';
-    }
-    h += '</div>';
+  // ── FINAL MENTOR REVIEW — the most prominent card on the page (§23).
+  // `d.finalMentorReview` is the structured version (whereNow/strongestSupport
+  // /strongestRisk/takeaway/disclaimer); `d.report` is the short flowing-prose
+  // version of the same facts (the LLM's paraphrase, or a deterministic
+  // fallback built from those same fields — never a disagreement). History
+  // saved before this redesign has neither structured field, only the old
+  // long `report` text — that still renders here via the markdown helper,
+  // so an old entry degrades gracefully instead of showing nothing.
+  const FMR = d.finalMentorReview;
+  h += '<div class="mentorCard"><h3>' + esc(uiT('finalView')) + '</h3>';
+  if (FMR) {
+    if (d.report) h += '<p class="mentorProse">' + esc(d.report) + '</p>';
+    h += '<div class="mentorRow"><b>' + esc(uiT('strongestSupport')) + ':</b> ' + esc(FMR.strongestSupport) + '</div>';
+    h += '<div class="mentorRow"><b>' + esc(uiT('strongestRisk')) + ':</b> ' + esc(FMR.strongestRisk) + '</div>';
+    h += '<div class="mentorDisclaimer">' + esc(FMR.disclaimer) + '</div>';
+  } else {
+    h += md(d.report || '');
   }
+  h += '</div>';
 
-  // ── TRADE MANAGEMENT OPTIONS — structured JSON, real typography, never
-  // parsed out of markdown, so no "####" or "**" artifact can ever appear. ──
+  // ── TRADE MANAGEMENT SOLUTIONS — three named, genuinely different
+  // strategies, each with a transparent Management Fit rating (§12–§14).
+  // `o.rating` is absent on history saved before this redesign; the badge is
+  // simply omitted then; What/Why/Trigger/Risk still render as before. ──
   const opts = d.managementOptions || [];
   if (opts.length) {
     h += '<div class="optsWrap">';
     opts.forEach((o, i) => {
       h += '<div class="optCard' + (o.refused ? ' refused' : '') + '">' +
         '<div class="optNum">' + esc(uiT('option')) + ' ' + (i + 1) + '</div>' +
-        '<div class="optTitle">' + esc(o.title) + '</div>' +
+        '<div class="optTitle">' + esc(o.title) +
+        (o.rating != null ? ' <span class="fitBadge" title="' + esc(uiT('managementFitNote')) + '">' + esc(uiT('managementFit')) + ' ' + esc(o.rating) + '/10</span>' : '') +
+        '</div>' +
         '<div class="optSub">' + esc(uiT('readReason')) + '</div>' +
         '<div class="optField"><b>' + esc(uiT('what')) + '</b><p>' + esc(o.what) + '</p></div>' +
         '<div class="optField"><b>' + esc(uiT('why')) + '</b><p>' + esc(o.why) + '</p></div>' +
@@ -1025,9 +1091,8 @@ function renderResult() {
     h += '</div>';
   }
 
-  // ── READ OVERVIEW OF THE MARKET — the deeper, secondary explanation ──
-  h += '<div class="overviewSep">' + esc(uiT('readOverview')) + '</div>';
-
+  // ── SOURCES / PROVENANCE — kept as its own standalone card (§26). ──
+  h += '<div class="overviewSep">' + esc(t('sources')) + '</div>';
   const P = d.providers || {};
   const provRow = (key, label) => {
     const p = P[key]; if (!p) return '';
@@ -1037,7 +1102,7 @@ function renderResult() {
             (p.at ? ', ' + esc(String(p.at).replace('T', ' ').slice(0, 16)) + ' UTC' : '')
           : esc(p.note || t('unavailable'))) + '</div>';
   };
-  h += '<div class="report">' + md(d.report) + '<div class="prov"><b>' + esc(t('sources')) + '</b>' +
+  h += '<div class="report"><div class="prov standalone">' +
     provRow('price', t('current')) + provRow('macro', t('provMacro')) + provRow('news', t('provNews')) +
     provRow('calendar', t('provEvents')) + provRow('history', t('provHistory')) +
     (ev.provenance || []).map(x => '<div>· ' + esc(x) + '</div>').join('') +
@@ -1098,6 +1163,8 @@ function saveHistory(d) {
       instrument: d.instrument, report: d.report,
       managementOptions: d.managementOptions, marketDirection: d.marketDirection,
       overallEvidence: d.overallEvidence, ui: d.ui,
+      evidenceImpact: d.evidenceImpact, finalMentorReview: d.finalMentorReview, fiveFactor: d.fiveFactor,
+      providers: d.providers,
     },
   });
   writeHistory(list);

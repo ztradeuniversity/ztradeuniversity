@@ -33,11 +33,10 @@
 // response; the trader's open-position details never touch a database.
 // ════════════════════════════════════════════════════════════════════════════
 import { collectEvidence, provenanceLines } from '../utils/trade-rescue/evidence.js';
-import { runAnalysis, KIND } from '../utils/trade-rescue/analysis.js';
-import { selectKnowledge } from '../utils/trade-rescue/knowledge.js';
+import { runAnalysis } from '../utils/trade-rescue/analysis.js';
 import { INSTRUMENTS, findWordNumbers } from '../utils/trade-rescue/case.js';
 import { normalizeLayers, analyzePosition, aggregateToCase, positionLines, PROVENANCE } from '../utils/trade-rescue/position.js';
-import { buildMeters, meterLines } from '../utils/trade-rescue/meters.js';
+import { buildMeters } from '../utils/trade-rescue/meters.js';
 import { computeVerifiedRange, defensibleInvalidation } from '../utils/trade-rescue/levels.js';
 import * as RI from '../utils/trade-rescue/result-i18n.js';
 import { generateRescuePlan, interpretTradeMessage, interpretLayers } from '../utils/composer-llm.js';
@@ -87,355 +86,40 @@ async function collectHistory(origin, instrument, dates) {
   return out;
 }
 
-// ── INTERPRETATION HELPERS ───────────────────────────────────────────────────
-// Everything below turns already-computed, already-grounded facts into the
-// FACT → WHY IT MATTERS → POSITION-SPECIFIC IMPACT shape the results page
-// needs. None of it invents a new fact: `layer.evidence` items already carry
-// `text` (the fact plus, in most layers, why it matters — see analysis.js),
-// `basis` (the verified source) and `stance` computed RELATIVE TO THE TRADER'S
-// OWN DIRECTION by the analysis layer that produced it (e.g. layerFundamental
-// already flips real-yield pressure between a BUY and a SELL). This function
-// only adds the explicit "Supports your X / Works against your X" label —
-// the direction-awareness was already done upstream.
-function positionBullets(layer, direction, limit = 5) {
-  if (!layer) return [];
-  const DIR = String(direction || '').toUpperCase();
-  return (layer.evidence || []).slice(0, limit).map((e) => {
-    const tag = e.stance === 'supportive' ? `Supports your ${DIR}`
-      : e.stance === 'opposing' ? `Works against your ${DIR}`
-      : 'Context only';
-    return { text: e.text, tag, basis: e.basis };
-  });
-}
-const topFacts = (layer, limit = 3) => (layer ? (layer.findings || []).filter(f => f.kind === KIND.FACT).slice(0, limit).map(f => f.text) : []);
-const uncertaintyLines = (layer) => (layer ? (layer.findings || []).filter(f => f.kind === KIND.UNCERTAINTY).map(f => f.text) : []);
-
-// NEWS — WHAT / WHY IT MATTERS / POSSIBLE EFFECT per headline, never a
-// directional call from a title. Built straight from the verified article
-// list (ev.news), not from a re-parsed findings string.
-function newsBullets(ev, limit = 5) {
-  if (ev.newsStatus !== 'verified' || !ev.news.length) return [];
-  return ev.news.slice(0, limit).map((n) => ({
-    what: n.title, source: n.source, at: n.publishedAt,
-    why: "Touches this instrument's price drivers.",
-    effect: 'Uncertain — content-dependent; markets typically move before a headline is readable, so no direction is inferred from the title alone.',
-  }));
-}
-function calendarBullets(ev, limit = 5) {
-  if (ev.calendarStatus !== 'verified' || !ev.calendar.length) return [];
-  return ev.calendar.slice(0, limit).map((e) => ({
-    what: e.event || e.title, when: e.time || e.date, impact: e.impact || 'impact not specified',
-  }));
-}
-
-// MARKET DIRECTION — a single qualitative read for the INSTRUMENT (not the
-// trader's position), averaged from the SAME −1…+1 scores the three evidence
-// meters already computed, through the SAME ±0.15 threshold meters.js itself
-// uses for one meter's lean. No new methodology, no percentage — an average of
-// numbers that already exist, reported qualitatively as the task requires.
-function marketDirection(meters) {
-  const avail = ['technical', 'fundamental', 'sentiment'].map(k => meters[k]).filter(m => m && m.score != null);
-  if (!avail.length) return { lean: null, drivers: [] };
-  const avg = avail.reduce((a, m) => a + m.score, 0) / avail.length;
-  const lean = avg > 0.15 ? 'bullish' : avg < -0.15 ? 'bearish' : 'mixed';
-  const drivers = avail.map(m => `${m.label} reads ${m.lean || 'unavailable'} (${m.strength} evidence)`);
-  return { lean, drivers };
-}
-
-// TRADE MANAGEMENT OPTIONS — exactly three, always. Option 2's protective
-// level is either the verified-range invalidation candidate or an explicit,
-// reasoned refusal — it is never a guessed number. Option 3 is a conditional
-// scenario, never framed as a promise.
-function buildManagementOptions(direction, weighed, invalidation) {
-  const DIR = String(direction || '').toUpperCase();
-  const opts = [];
-
-  opts.push({
-    title: 'Exit now', what: 'Close the position (or its losing layers) immediately, removing the open exposure.',
-    why: weighed.balance === 'against'
-      ? `Evidence currently leans against your ${DIR}; if you would not open this position today on the same information, that is itself the case for closing it now.`
-      : weighed.balance === 'insufficient'
-      ? 'There is not yet enough verified evidence to judge the position either way — removing the uncertainty is itself a legitimate reason some traders close here.'
-      : `Even with evidence currently ${weighed.balance === 'favours' ? 'in your favour' : 'mixed'}, exiting removes all further exposure — the option exists regardless of the read.`,
-    risk: 'Any loss on the closed portion is realised immediately rather than remaining open to change.',
-  });
-
-  if (invalidation && invalidation.ok) {
-    opts.push({
-      title: 'Protected hold',
-      what: `Keep the position open, with a protective stop at or beyond the verified level ${invalidation.level} (${invalidation.side} the current price).`,
-      why: `This is the boundary of the verified ${invalidation.sessions}-session trading range — the most defensible invalidation point available from real market data, not an estimate.`,
-      trigger: `A close ${invalidation.side} ${invalidation.level} breaks the verified range this level is anchored to.`,
-      risk: 'A brief spike through the level can still trigger the stop before price returns in your favour — this places a floor on the loss, it does not prevent one.',
-    });
-  } else {
-    opts.push({
-      title: 'Protected hold', what: 'Keep the position open with a protective stop.',
-      why: `An exact protective level cannot be independently justified from the available verified data${invalidation ? `: ${invalidation.reason}` : ''}.`,
-      risk: 'Without a defensible level, any stop placed here would be a guess rather than evidence — so none is proposed.', refused: true,
-    });
-  }
-
-  opts.push({
-    title: 'Conditional continuation / recovery scenario',
-    what: 'Hold the position only while its confirming conditions remain true, on a defined schedule for reassessment — not indefinitely.',
-    why: weighed.balance === 'favours'
-      ? `Evidence currently leans in your favour; the position remains consistent with what is verified right now.`
-      : 'This is not a guaranteed recovery. It names what would need to stay true for continuing to make sense.',
-    trigger: invalidation && invalidation.ok
-      ? `Reassess if the evidence balance flips, or on a close ${invalidation.side} ${invalidation.level}.`
-      : 'Reassess if the evidence balance flips, or at the next verified price/news update, since no independent invalidation level is currently available.',
-    risk: 'Holding without a defined reassessment point is how a stuck trade becomes an indefinite one — this option requires an actual review moment, not just hope.',
-  });
-
-  return opts;
-}
-
-// ── THE GROUNDED BRIEF ───────────────────────────────────────────────────────
-function buildBrief(c, pos, ev, hist, meters, analysis, knowledge, range, invalidation) {
+// ── THE GROUNDED BRIEF FOR THE FINAL MENTOR REVIEW ───────────────────────────
+// Deliberately small. Technical / Fundamental / Sentiment / Upcoming Economic
+// Data / General News and the three named management solutions are ALL
+// already shown to the trader, in full, as their own structured sections on
+// the result page (see evidenceImpact / managementOptions below) — this brief
+// exists only so the model can write ONE short synthesis that references
+// them, never so it can restate them.
+function buildBrief(c, pos, weighed, hasStop, managementOptions) {
   const L = [];
-  const byId = Object.fromEntries(analysis.layers.map(l => [l.id, l]));
-  const md = marketDirection(meters);
-  const w = analysis.weighed;
-  const options = buildManagementOptions(c.direction, w, invalidation);
-
   L.push(`INSTRUMENT: ${c.instrument}`);
-  L.push(`TRADER'S NET DIRECTION: ${String(c.direction || '').toUpperCase()} — every "supports/works against" label below is already relative to THIS side.`);
+  L.push(`TRADER'S NET DIRECTION: ${String(c.direction || '').toUpperCase()}`);
   L.push('');
-
-  // Break-even is a computation aid, not something the trader asked to see as
-  // a headline — deliberately excluded from this narrative summary. It stays
-  // fully available on pos.breakevenPrice for the maths above and is never
-  // referenced by name in the sections that follow.
-  L.push('POSITION STRUCTURE (DERIVED — arithmetic on the trader\'s own figures plus the verified current price):');
+  L.push('POSITION (DERIVED):');
   for (const line of positionLines(pos, c.instrument, { includeBreakeven: false })) L.push(`• ${line}`);
   L.push('');
-  L.push('PER-LAYER RESULT (DERIVED):');
-  for (const r of pos.perLayer) {
-    L.push(`• ${r.id} ${String(r.direction).toUpperCase()} ${r.size} @ ${r.entry}${r.opened_at ? ` opened ${r.opened_at}` : ''}${r.purpose ? ` [${r.purpose}]` : ''} → ${r.points == null ? 'result unavailable (no verified price)' : `${r.points} lot-points${r.money != null ? ` ≈ ${r.money}` : ''}, ${r.helping ? 'helping' : r.helping === false ? 'hurting' : 'flat'}`}`);
+  L.push(`EVIDENCE BALANCE: ${weighed.balance}`);
+  if (weighed.supportive.length) L.push(`STRONGEST SUPPORT: ${weighed.supportive[0].text}`);
+  if (weighed.opposing.length) L.push(`STRONGEST MARKET-EVIDENCE RISK: ${weighed.opposing[0].text}`);
+  if (hasStop === false) {
+    L.push('CRITICAL RISK: No stop loss is set — the maximum loss on this position is currently undefined. This outranks every market-evidence consideration below.');
   }
   L.push('');
-
-  if (c.account && Object.keys(c.account).length) {
-    L.push('ACCOUNT CONTEXT (USER_PROVIDED, unverified):');
-    for (const [k, v] of Object.entries(c.account)) if (v !== null && v !== '') L.push(`• ${k}: ${v}`);
-    L.push('');
-  }
-  if (c.context && Object.keys(c.context).length) {
-    L.push('TRADE CONTEXT (USER_PROVIDED):');
-    for (const [k, v] of Object.entries(c.context)) if (v !== null && v !== '') L.push(`• ${k}: ${v}`);
-    L.push('');
-  }
-
-  if (ev.unavailable.length) {
-    L.push('COULD NOT BE VERIFIED (state as unavailable — never fill in):');
-    for (const u of ev.unavailable) L.push(`• ${u}`);
-    L.push('');
-  }
-
-  // ── MARKET DIRECTION — the ONLY place a combined instrument-level read
-  // appears; it is an average of the meters' own scores, nothing new.
-  L.push('MARKET DIRECTION FOR THE INSTRUMENT (from the evidence meters below; write ONE sentence from this, no invented number):');
-  L.push(md.lean ? `• Combined read: ${md.lean.toUpperCase()}.` : '• Not enough verified evidence to form a combined read.');
-  for (const d of md.drivers) L.push(`• ${d}`);
-  L.push('');
-
-  L.push('EVIDENCE METERS (methodology is fixed and declared; these are NOT probabilities):');
-  L.push(`• Formula: ${meters.methodology.formula}`);
-  L.push(`• Strength: ${meters.methodology.strength}`);
-  L.push(`• Horizon: ${meters.methodology.horizon}`);
-  for (const line of meterLines(meters)) L.push(line.startsWith('   ') ? line : `• ${line}`);
-  L.push('');
-
-  // ── TECHNICAL — top facts, then position-tagged interpretation. If the
-  // caller supplied verified OHLC, layerTechnical already computed a real
-  // range and, where defensible, an invalidation candidate (see levels.js).
-  L.push('TECHNICAL — write: what is happening, why it matters, the verified range if given, then the invalidation candidate or its refusal exactly as stated:');
-  for (const t of topFacts(byId.technical, 4)) L.push(`• FACT: ${t}`);
-  if (hist.status === 'verified' && hist.volatility) {
-    L.push(`• FACT: Realised volatility ${hist.volatility.dailyPct}% daily / ${hist.volatility.annualisedPct}% annualised, over ${hist.volatility.samples} verified sessions (${hist.source}).`);
-  }
-  for (const b of positionBullets(byId.technical, c.direction)) L.push(`• ${b.text} → ${b.tag}. (basis: ${b.basis})`);
-  for (const u of uncertaintyLines(byId.technical)) L.push(`• UNVERIFIED: ${u}`);
-  if (invalidation) {
-    L.push(invalidation.ok
-      ? `• INVALIDATION CANDIDATE: ${invalidation.level} (${invalidation.side} current price), from the verified ${invalidation.sessions}-session range. Present this as the candidate protective level in Option 2 — do not alter the number.`
-      : `• NO DEFENSIBLE INVALIDATION LEVEL: ${invalidation.reason} State this plainly in Option 2 — do NOT propose a number.`);
-  }
-  L.push('');
-
-  L.push('FUNDAMENTAL — write: each verified driver as FACT, why it matters, and whether it supports or works against the trader\'s net direction. Include the supply/demand line exactly as given, do not omit it:');
-  for (const t of topFacts(byId.fundamental, 4)) L.push(`• FACT: ${t}`);
-  for (const b of positionBullets(byId.fundamental, c.direction)) L.push(`• ${b.text} → ${b.tag}. (basis: ${b.basis})`);
-  for (const u of uncertaintyLines(byId.fundamental)) L.push(`• UNVERIFIED: ${u}`);
-  L.push('');
-
-  L.push('SENTIMENT — write: current reading, why, then position impact:');
-  for (const t of topFacts(byId.sentiment, 3)) L.push(`• FACT: ${t}`);
-  for (const b of positionBullets(byId.sentiment, c.direction)) L.push(`• ${b.text} → ${b.tag}. (basis: ${b.basis})`);
-  for (const u of uncertaintyLines(byId.sentiment)) L.push(`• UNVERIFIED: ${u}`);
-  L.push('');
-
-  const newsItems = newsBullets(ev);
-  const calItems = calendarBullets(ev);
-  L.push('NEWS / EVENTS — for EACH item write WHAT, WHY IT MATTERS, POSSIBLE EFFECT exactly as "uncertain/content-dependent" (never a directional call from a headline):');
-  if (newsItems.length) for (const n of newsItems) L.push(`• "${n.what}" (${n.source}, ${n.at}) — why: ${n.why} — effect: ${n.effect}`);
-  else L.push('• No instrument-specific headline could be verified in the current feed.');
-  if (calItems.length) for (const ev2 of calItems) L.push(`• Scheduled: ${ev2.what} — ${ev2.when} (${ev2.impact})`);
-  else L.push(`• Upcoming economic events could not be verified${ev.calendarNote ? ` — ${ev.calendarNote}` : ''}.`);
-  L.push('');
-
-  L.push('EVIDENCE BALANCE (top 3-5 each — do not list more):');
-  L.push(`Methodology: ${w.methodology}`);
-  if (w.supportive.length) { L.push(`Supportive of the net position (${w.supportive.length} total, showing top 5):`); for (const e of w.supportive.slice(0, 5)) L.push(`• ${e.text}`); }
-  if (w.opposing.length) { L.push(`Against the net position (${w.opposing.length} total, showing top 5):`); for (const e of w.opposing.slice(0, 5)) L.push(`• ${e.text}`); }
-  L.push('');
-
-  if (byId.risk) {
-    L.push('RISK:');
-    for (const f of byId.risk.findings) L.push(`• [${f.kind}] ${f.text}`);
-    L.push('');
-  }
-  if (byId.behaviour) {
-    L.push('TRADER STRENGTH / WEAKNESS:');
-    for (const s of byId.behaviour.strengths || []) L.push(`• Strength: ${s}`);
-    for (const wk of byId.behaviour.weaknesses || []) L.push(`• Weakness: ${wk}`);
-    L.push('');
-  }
-
-  if (knowledge && knowledge.length) {
-    L.push('RELEVANT TRADE-MANAGEMENT PRINCIPLES (stored knowledge — NOT current market data):');
-    for (const k of knowledge) L.push(`• ${k.title}: ${k.body}`);
-    L.push('');
-  }
-
-  L.push('TRADE MANAGEMENT OPTIONS — write EXACTLY these three, in this order, using ONLY the reasons/triggers/risks given (Option 2 must refuse a level if told to refuse — never invent one):');
-  options.forEach((o, i) => {
-    L.push(`Option ${i + 1} — ${o.title}:`);
-    L.push(`  what: ${o.what}`);
-    L.push(`  why: ${o.why}`);
-    if (o.trigger) L.push(`  trigger: ${o.trigger}`);
-    L.push(`  risk: ${o.risk}`);
-  });
+  L.push('THE THREE MANAGEMENT SOLUTIONS ALREADY SHOWN TO THE TRADER IN FULL (refer to by name only if useful — never redescribe their What/Why/Trigger/Risk, they are rendered in full below your text):');
+  managementOptions.forEach((o, i) => L.push(`${i + 1}. ${o.title} — Management Fit ${o.rating}/10`));
   return L.join('\n');
 }
 
-// Deterministic report — always produced, and the whole answer when the model
-// is unavailable. UNLIKE buildBrief() (an English instruction document the
-// model translates), this is genuinely trilingual on its own: every section is
-// generated by result-i18n.js directly from the same verified objects
-// (ev/pos/meters/range/invalidation) — it does not pull English strings from
-// analysis.js and does not depend on the LLM to translate anything. Only
-// `analysis.weighed.balance` is read from analysis.js, and only as a symbolic
-// label ('favours'/'against'/'mixed'/'insufficient'), never as English text.
-function renderDeterministic(lang, c, pos, ev, hist, meters, analysis, range, invalidation) {
-  const H = RI.headings(lang), Lb = RI.labels(lang);
-  const L = [];
-  const bullet = (b) => `- ${b.text} — **${b.tag}**${b.basis ? ` _(${b.basis})_` : ''}`;
-
-  // Collected as sections are built, so "What Supports/Against" is drawn from
-  // the SAME localized bullets shown in each section — never a separate,
-  // possibly-out-of-sync English list.
-  const allEvidence = [];
-  const collect = (items) => { for (const it of items) allEvidence.push(it); return items; };
-
-  L.push(`### ${H.position}`);
-  for (const line of RI.positionSummaryLines(lang, pos)) L.push(`- ${line}`);
-  if (pos.perLayer.length) {
-    L.push('');
-    L.push(`**${H.layerByLayer}**`);
-    L.push('');
-    L.push(`| ${Lb.layer} | ${Lb.side} | ${Lb.size} | ${Lb.entry} | ${Lb.result} | |`);
-    L.push('| --- | --- | --- | --- | --- | --- |');
-    for (const r of pos.perLayer) {
-      const { res, mark, size } = RI.perLayerRow(lang, r);
-      L.push(`| ${r.id}${r.purpose ? ` (${r.purpose})` : ''} | ${String(r.direction).toUpperCase()} | ${size} | ${r.entry} | ${res} | ${mark} |`);
-    }
-  }
-  L.push('');
-
-  // Market Direction is now rendered separately at the top of the results page
-  // (from the `marketDirection` field in the response, computed once in
-  // onRequest() with the exact same RI.marketDirectionText() call) — so it is
-  // deliberately NOT repeated here, to avoid showing it twice.
-
-  L.push(`### ${H.currentMarket}`);
-  if (ev.priceStatus === 'verified') {
-    L.push(`- **${c.instrument} ${ev.price}** — ${ev.priceAt}`);
-    if (ev.session) L.push(`- ${pick3(lang, `Session range **${ev.session.low} – ${ev.session.high}** (${ev.session.changePct}% today)`, `Session range **${ev.session.low} – ${ev.session.high}** (آج ${ev.session.changePct}%)`, `نطاق الجلسة **${ev.session.low} – ${ev.session.high}** (${ev.session.changePct}% اليوم)`)}`);
-  } else L.push(`- ${pick3(lang, 'Current price could not be verified.', 'موجودہ price verify نہیں ہو سکی۔', 'تعذّر التحقق من السعر الحالي.')}`);
-  for (const u of ev.unavailable) L.push(`- ⚠️ ${RI.localizeUnavailable(lang, u)}`);
-  L.push('');
-
-  L.push(`### ${H.technical}`);
-  const tech = RI.technicalSection(lang, c, ev, range, invalidation);
-  for (const t of tech.facts) L.push(`- ${t}`);
-  if (hist.status === 'verified' && hist.volatility) {
-    L.push(`- ${pick3(lang,
-      `Realised volatility **${hist.volatility.dailyPct}% daily / ${hist.volatility.annualisedPct}% annualised**, over ${hist.volatility.samples} verified sessions (${hist.source}).`,
-      `Realised volatility **${hist.volatility.dailyPct}% daily / ${hist.volatility.annualisedPct}% annualised**، ${hist.volatility.samples} verified sessions پر (${hist.source})۔`,
-      `التقلب المحقق **${hist.volatility.dailyPct}% يومياً / ${hist.volatility.annualisedPct}% سنوياً**، عبر ${hist.volatility.samples} جلسة موثقة (${hist.source}).`)}`);
-  }
-  for (const b of collect(tech.evidence)) L.push(bullet(b));
-  for (const u of tech.uncertainty) L.push(`- ⚠️ ${u}`);
-  L.push('');
-
-  L.push(`### ${H.fundamental}`);
-  const fund = RI.fundamentalSection(lang, c, ev);
-  for (const t of fund.facts) L.push(`- ${t}`);
-  for (const b of collect(fund.evidence)) L.push(bullet(b));
-  for (const u of fund.uncertainty) L.push(`- ⚠️ ${u}`);
-  L.push('');
-
-  L.push(`### ${H.sentiment}`);
-  const sent = RI.sentimentSection(lang, ev);
-  for (const t of sent.facts) L.push(`- ${t}`);
-  for (const b of collect(sent.evidence)) L.push(bullet(b));
-  for (const u of sent.uncertainty) L.push(`- ⚠️ ${u}`);
-  L.push('');
-
-  L.push(`### ${H.news}`);
-  const newsIt = RI.newsItems(lang, ev);
-  if (newsIt.length) for (const n of newsIt) L.push(`- **${n.what}** (${n.source}, ${n.at}) — ${n.why} ${pick3(lang, 'Possible effect:', 'ممکنہ اثر:', 'التأثير المحتمل:')} ${n.effect}`);
-  else L.push(`- ${RI.newsUnavailable(lang)}`);
-  const calIt = RI.calendarItems(lang, ev);
-  if (calIt.length) for (const e2 of calIt) L.push(`- ${pick3(lang, 'Scheduled:', 'طے شدہ:', 'مجدول:')} ${e2.what} — ${e2.when} (${e2.impact})`);
-  else L.push(`- ⚠️ ${RI.calendarUnavailable(lang, ev.calendarNote)}`);
-  L.push('');
-
-  // Also fold in the risk-section evidence item (e.g. "no stop loss") into the
-  // same collected pool, so it can appear in the aggregate lists below exactly
-  // as it appears in the Risk section itself.
-  const risk = RI.riskSection(lang, c);
-  collect(risk.evidence);
-
-  const supportiveList = allEvidence.filter(b => b.stance === 'supportive');
-  const opposingList = allEvidence.filter(b => b.stance === 'opposing');
-  if (supportiveList.length) { L.push(`### ${H.supports}`); for (const b of supportiveList.slice(0, 5)) L.push(`- ${b.text}`); L.push(''); }
-  if (opposingList.length) { L.push(`### ${H.against}`); for (const b of opposingList.slice(0, 5)) L.push(`- ${b.text}`); L.push(''); }
-
-  L.push(`### ${H.risk}`);
-  for (const t of risk.facts) L.push(`- ${t}`);
-  L.push('');
-
-  const behaviour = RI.behaviourSection(lang, c);
-  if (behaviour.strengths.length) { L.push(`### ${H.strength}`); for (const s of behaviour.strengths) L.push(`- ${s}`); L.push(''); }
-  if (behaviour.weaknesses.length) { L.push(`### ${H.weakness}`); for (const w2 of behaviour.weaknesses) L.push(`- ${w2}`); L.push(''); }
-
-  const balance = analysis.weighed.balance; // symbolic only: 'favours'|'against'|'mixed'|'insufficient'
-  // Trade Management Options are now rendered separately, directly under the
-  // meters, from the structured `managementOptions` field in the response
-  // (computed once in onRequest() via RI.managementOptionsLocalized(), and
-  // reused there for both the response field and this function's own
-  // `balance` input) — never as free markdown text here, so no heading-marker
-  // artifact can leak into the UI and the WHAT/WHY/TRIGGER/RISK fields always
-  // render with real typography instead of being parsed back out of prose.
-
-  L.push(`### ${H.finalView}`);
-  L.push(RI.finalMentorView(lang, c.direction, balance));
-  return L.join('\n');
+// Deterministic fallback for when the model is unavailable — built directly
+// from the SAME structured finalMentorReview object the JSON response sends,
+// so the fallback prose can never disagree with the labelled fields next to
+// it on the page.
+function deterministicMentorProse(review) {
+  return `${review.whereNow} ${review.takeaway}`;
 }
-const pick3 = (lang, en, ur, ar) => RI.normLang(lang) === 'ur' ? ur : RI.normLang(lang) === 'ar' ? ar : en;
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -537,7 +221,6 @@ export async function onRequest(context) {
   // unchanged (see analysis.js).
   const tradeCase = aggregateToCase(position, baseCase);
   const analysis = runAnalysis(tradeCase, evidence, history);
-  const knowledge = selectKnowledge(tradeCase, evidence, 6);
   const meters = buildMeters(evidence, ins.id, history);
 
   // The one defensible protective level this system will ever propose: the
@@ -548,12 +231,18 @@ export async function onRequest(context) {
   const invalidation = defensibleInvalidation(
     tradeCase.direction, evidence.priceStatus === 'verified' ? evidence.price : null, range);
 
-  // Computed ONCE here so the JSON fields sent to the UI (managementOptions,
-  // marketDirection, overallEvidence, and the per-meter-input impact/tooltip
-  // below) and the deterministic report text are always the exact same
-  // values — never recomputed a second time and never allowed to diverge.
+  // Computed ONCE here so every JSON field sent to the UI and the mentor
+  // review text below are always the exact same values — never recomputed a
+  // second time and never allowed to diverge.
   const balance = analysis.weighed.balance; // symbolic only: 'favours'|'against'|'mixed'|'insufficient'
-  const managementOptions = RI.managementOptionsLocalized(lang, tradeCase.direction, balance, invalidation);
+  const managementOptions = RI.managementOptionsLocalized(lang, tradeCase.direction, balance, invalidation, position);
+  // Management Fit — deterministic 1-10 (NOT a probability), attached in the
+  // SAME fixed order managementOptionsLocalized() always returns its three
+  // options in (Immediate Risk Reduction, Protected Continuation, Structured
+  // Reassessment — see result-i18n.js's managementFitRatings() for the formula).
+  const fit = RI.managementFitRatings({ balance, meters, hasStop: tradeCase.has_stop_loss !== false, invalidation });
+  const fitOrder = [fit.exit, fit.protectedContinuation, fit.reassessment];
+  managementOptions.forEach((o, i) => { o.rating = fitOrder[i]; });
   const marketDirection = RI.marketDirectionText(lang, meters, ins.id);
   const overallEvidence = RI.overallEvidence(lang, meters);
   // Enriches (never replaces) meters.js's own `inputsUsed` rows with a
@@ -569,49 +258,64 @@ export async function onRequest(context) {
 
   // 4 ── SYNTHESIS. One model call, retried internally; deterministic on failure.
   const reportCase = { instrument: ins.id, direction: tradeCase.direction, account, context: ctx };
+  const instrumentName = RI.instrumentDisplayName(lang, ins.id);
 
-  // EVIDENCE IMPACT — a compact, deterministic FACT → IMPACT ON INSTRUMENT →
-  // WHY → TRADE EFFECT reading for the Technical/Fundamental/Sentiment/News
-  // sections, for the quick-read card above the full report. Reuses the exact
-  // same section builders renderDeterministic() below already calls for the
-  // written report — no second analysis pipeline, just the same localized
-  // evidence objects exposed to the client as structured JSON (same pattern
-  // already used for managementOptions/marketDirection/overallEvidence) so a
-  // colour/label never has to be parsed back out of markdown. `impact` on
-  // each item is instrumentImpact(stance, direction) — a deterministic
-  // inversion of the stance this file's evidence already carries, not a new
-  // judgement — so Technical/Fundamental/Sentiment/News here can never
-  // disagree with the same sections in the written report below.
+  // EVIDENCE IMPACT — the five evidence sections (Technical / Fundamental /
+  // Sentiment / Upcoming Economic Data / General News), each a compact,
+  // deterministic FACT → IMPACT ON INSTRUMENT → WHY → TRADE EFFECT reading.
+  // No second analysis pipeline — these are the exact same localized section
+  // builders and evidence objects the rest of this file already produces.
+  const calendarUpcoming = RI.calendarSection(lang, evidence, instrumentName);
   const evidenceImpact = {
-    instrumentName: RI.instrumentDisplayName(lang, ins.id),
+    instrumentName,
     technical: RI.technicalSection(lang, reportCase, evidence, range, invalidation),
     fundamental: RI.fundamentalSection(lang, reportCase, evidence),
     sentiment: RI.sentimentSection(lang, evidence),
+    upcomingData: calendarUpcoming,
     news: RI.newsItems(lang, evidence),
   };
+  const fiveFactor = RI.fiveFactorOverview(lang, meters, calendarUpcoming.events.length > 0, evidenceImpact.news.length > 0);
 
-  const brief = buildBrief(reportCase, position, evidence, history, meters, analysis, knowledge, range, invalidation);
-  const deterministic = renderDeterministic(lang, reportCase, position, evidence, history, meters, analysis, range, invalidation);
+  // FINAL MENTOR REVIEW — structured (whereNow/strongestSupport/strongestRisk/
+  // takeaway). Deliberately built from the LOCALIZED evidence bullets already
+  // collected into evidenceImpact above, NOT analysis.js's own weighEvidence()
+  // list — that list is intentionally English-only (it only ever fed the LLM
+  // brief before this redesign); reading it directly here would leak
+  // untranslated English into an Urdu/Arabic review. `report` is the short
+  // flowing-prose version of the SAME facts: the LLM's paraphrase when
+  // available, or a deterministic concatenation of the structured fields when
+  // it is not — so the two can never disagree.
+  const localizedEvidence = [
+    ...evidenceImpact.technical.evidence,
+    ...evidenceImpact.fundamental.evidence,
+    ...evidenceImpact.sentiment.evidence,
+  ];
+  const localizedWeighed = {
+    supportive: localizedEvidence.filter((b) => b.stance === 'supportive'),
+    opposing: localizedEvidence.filter((b) => b.stance === 'opposing'),
+  };
+  const finalMentorReview = RI.finalMentorReview(lang, tradeCase.direction, balance, localizedWeighed, tradeCase);
+  const brief = buildBrief(reportCase, position, analysis.weighed, tradeCase.has_stop_loss, managementOptions);
   const plan = await generateRescuePlan(env, brief, lang);
 
-  let report = plan.text || deterministic;
-  if (plan.degraded) report = `${T.degraded}\n\n${deterministic}`;
-  report += `\n\n${T.disclaimer}`;
+  let report = plan.text || deterministicMentorProse(finalMentorReview);
+  if (plan.degraded) report = `${T.degraded}\n\n${report}`;
 
   return respond({
     mode: 'assessment',
     instrument: ins.id,
     report,
+    finalMentorReview,
     position,
     meters: metersOut,
-    // Structured, non-markdown fields for the top-of-page UI — rendered with
-    // real HTML/CSS rather than parsed out of free text, so formatting is
-    // never at the mercy of the model's own markdown choices. Each is the
-    // exact same value the deterministic report text is built from.
+    // Structured, non-markdown fields for the page UI — rendered with real
+    // HTML/CSS rather than parsed out of free text, so formatting is never
+    // at the mercy of the model's own markdown choices.
     managementOptions,
     marketDirection,
     overallEvidence,
     evidenceImpact,
+    fiveFactor,
     // Shared localized labels the client uses to render the sections above,
     // so no UI string is ever hand-duplicated in trade-rescue.html and
     // allowed to drift from the language this response was built in.
