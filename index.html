@@ -105,6 +105,13 @@
     }
 
     .head-right { display: flex; align-items: center; gap: 12px; }
+    /* Explicit visual order — Theme, then Language, then License Request /
+       How to Join Us — independent of DOM order (ztu-lang.js inserts the
+       language selector as .head-right's first child; ordering it here
+       keeps that shared, site-wide script untouched). */
+    .head-right .theme-toggle { order: 1; }
+    .head-right #ztuLangSel   { order: 2; }
+    .head-right .head-cta     { order: 3; }
 
     .theme-toggle {
       width: 44px; height: 44px; border-radius: 50%;
@@ -391,28 +398,48 @@
        Clean, minimal, unmistakably a DIFFERENT offer from "Paid Courses"
        (the IB panel's free-with-membership video library): its own price,
        its own admissions state, its own CTA. No false urgency — the status
-       line states the real, current, closed-admissions fact plainly. */
+       pill states the real, current admissions fact plainly, colour-coded
+       so CLOSED can never be mistaken for an open enrolment window.
+       Three blocks (course info, next batch, price+CTA) are placed with
+       CSS grid-template-areas so desktop and mobile can each use their own
+       order from the SAME markup — nothing is duplicated, and a mobile
+       column sizes itself from its content (no fixed/stretched height). */
     .premium-offer {
       position: relative; overflow: hidden;
       background: var(--surface); border: 1.5px solid rgba(247,147,26,.32);
       border-radius: var(--radius-lg); box-shadow: 0 10px 30px rgba(247,147,26,.09);
-      padding: 26px 28px;
+      padding: 30px 32px;
     }
     .premium-offer::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
       background: linear-gradient(90deg, transparent, var(--orange), transparent);
     }
-    .po-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+    .po-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+
+    /* Admissions status. is-closed / is-open are the only two colour states;
+       with neither class the pill stays neutral grey rather than guessing. */
     .po-status {
       display: inline-flex; align-items: center; gap: 7px;
-      font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+      font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      padding: 5px 12px 5px 10px; border-radius: 100px; color: var(--muted); background: var(--bg2, var(--surface-2));
     }
     .po-status .po-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted2, var(--muted)); flex-shrink: 0; }
-    .po-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-top: 10px; }
-    .po-body { flex: 1 1 320px; min-width: 0; }
+    .po-status.is-closed { color: #b91c1c; background: rgba(220,38,38,.10); }
+    .po-status.is-closed .po-dot { background: #dc2626; }
+    [data-theme="dark"] .po-status.is-closed { color: #fca5a5; background: rgba(220,38,38,.18); }
+    .po-status.is-open { color: #16a34a; background: rgba(22,163,74,.10); }
+    .po-status.is-open .po-dot { background: #16a34a; }
+    [data-theme="dark"] .po-status.is-open { color: #6ee7b7; background: rgba(22,163,74,.18); }
+
+    .po-layout {
+      display: grid; gap: 26px; align-items: start;
+      grid-template-columns: 1.3fr .95fr .9fr;
+      grid-template-areas: "info batch price" "info batch cta";
+    }
+    .po-info { grid-area: info; min-width: 0; }
     .po-title {
-      font-family: 'Poppins','Inter',sans-serif; font-size: clamp(19px, 2.4vw, 23px);
-      font-weight: 800; color: var(--heading); letter-spacing: -.4px; margin: 0 0 7px;
+      font-family: 'Poppins','Inter',sans-serif; font-size: clamp(19px, 2.2vw, 22px);
+      font-weight: 800; color: var(--heading); letter-spacing: -.4px; margin: 0 0 8px;
     }
     .po-desc { font-size: 13.5px; color: var(--muted); line-height: 1.6; max-width: 48ch; }
     .po-chip {
@@ -422,20 +449,31 @@
       border-radius: 100px; padding: 5px 13px;
     }
     .po-chip svg { width: 13px; height: 13px; color: var(--orange); flex-shrink: 0; }
-    .po-price { flex: 0 0 auto; display: flex; align-items: baseline; gap: 6px; }
+    /* What the course builds — safe, factual language only (no profit or
+       performance promise; see the audit note in §4G of the report this
+       redesign shipped with). */
+    .po-benefits { margin: 16px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .po-benefits li { display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+    .po-benefits svg { width: 15px; height: 15px; color: var(--orange); flex-shrink: 0; margin-top: 1px; }
+
+    .po-batch {
+      grid-area: batch; background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px 18px; height: 100%; box-sizing: border-box;
+    }
+    .po-batch-label { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted2, var(--muted)); }
+    .po-batch-name { font-family: 'Poppins','Inter',sans-serif; font-size: 17px; font-weight: 800; color: var(--heading); margin: 3px 0 8px; }
+    .po-batch-note { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+    .po-price { grid-area: price; display: flex; align-items: baseline; gap: 6px; }
     .po-price b {
-      font-family: 'Poppins','Inter',sans-serif; font-size: 36px; font-weight: 800;
-      color: var(--heading); letter-spacing: -1.5px; line-height: 1;
+      font-family: 'Poppins','Inter',sans-serif; font-size: 30px; font-weight: 800;
+      color: var(--heading); letter-spacing: -1px; line-height: 1;
     }
-    .po-price span { font-size: 13px; font-weight: 700; color: var(--muted); }
-    .po-enroll {
-      display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
-      margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);
-    }
-    .po-enroll-copy { flex: 1 1 280px; min-width: 0; font-size: 13px; color: var(--muted); line-height: 1.55; }
-    .po-enroll-copy b { color: var(--heading); font-weight: 700; }
+    .po-price span { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+
     .po-cta {
-      display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
+      grid-area: cta;
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
       padding: 13px 24px; border-radius: 100px; white-space: nowrap;
       background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
       color: #fff; font-size: 14px; font-weight: 700;
@@ -445,11 +483,17 @@
     .po-cta svg { width: 15px; height: 15px; }
     .po-cta:hover, .po-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(247,147,26,.42); }
     .po-cta:hover svg { transform: translateX(2px); }
+
+    @media (max-width: 860px) {
+      .po-layout { grid-template-columns: 1.2fr 1fr; grid-template-areas: "info price" "info batch" "info cta"; }
+    }
     @media (max-width: 700px) {
-      .premium-offer { padding: 22px 18px; }
-      .po-price { align-items: baseline; }
-      .po-enroll { flex-direction: column; align-items: stretch; }
-      .po-cta { justify-content: center; width: 100%; }
+      .premium-offer { padding: 24px 20px; }
+      /* One column, sized purely by its own content — no forced height. */
+      .po-layout { grid-template-columns: 1fr; grid-template-areas: "info" "price" "batch" "cta"; gap: 16px; }
+      .po-batch { height: auto; }
+      .po-price { padding-top: 2px; }
+      .po-cta { width: 100%; }
     }
 
     @media (max-width: 780px) {
@@ -644,7 +688,11 @@
     }
     .ibg-highlight b { color: #16a34a; font-weight: 800; }
 
-    .ibg-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 44px; max-width: 1040px; margin: 0 auto; }
+    /* Single column now that the redundant Member Benefits column has been
+       removed (those benefits already live in the Free/IB panels above) —
+       the steps read as one centred flow instead of leaving an empty
+       second column. */
+    .ibg-grid { display: grid; grid-template-columns: 1fr; max-width: 620px; margin: 0 auto; }
     .ibg-col h4 {
       font-family: 'Poppins','Inter',sans-serif; font-size: 18px; font-weight: 700;
       color: var(--heading); letter-spacing: -.2px; margin-bottom: 18px;
@@ -715,24 +763,6 @@
     .ibg-actions .ib-primary { box-shadow: 0 10px 24px rgba(247,147,26,.36); }
     .ibg-actions .ib-primary:hover { box-shadow: 0 14px 30px rgba(247,147,26,.48); }
     .ibg-actions .ib-secondary { background: var(--surface); font-weight: 800; }
-
-    /* Benefits — right column */
-    .ibg-benefits { display: flex; flex-direction: column; gap: 10px; }
-    .ibg-benefit {
-      display: flex; align-items: flex-start; gap: 12px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: 14px; padding: 13px 15px;
-      transition: transform .18s, border-color .18s, box-shadow .18s;
-    }
-    .ibg-benefit:hover { transform: translateY(-2px); border-color: rgba(247,147,26,.35); box-shadow: var(--shadow-sm); }
-    .ibg-benefit-ic {
-      width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-      background: var(--orange-soft); color: var(--orange);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .ibg-benefit-ic svg { width: 19px; height: 19px; }
-    .ibg-benefit-body h5 { font-size: 14px; font-weight: 700; color: var(--heading); margin-bottom: 2px; }
-    .ibg-benefit-body p { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
 
     .ibg-actions {
       display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
@@ -1038,18 +1068,38 @@
         <div class="premium-offer">
           <div class="po-top">
             <span class="hub-tag hub-ib-tag" style="margin-bottom:0">Premium · Paid course</span>
-            <span class="po-status"><span class="po-dot"></span>Admissions Closed</span>
+            <!-- ADMISSION STATUS — single source of truth. No admin-configurable
+                 status field exists yet for this (audited: course-enrollment.js's
+                 site_settings only stores the WhatsApp verification number), and
+                 this value lives in exactly this one place already — building a
+                 new backend/admin screen to move a single text label would be
+                 more risk than the label itself. When the real status changes,
+                 flip BOTH the class ("is-closed" ↔ "is-open") and the visible
+                 text together, here only. -->
+            <span class="po-status is-closed"><span class="po-dot"></span>Admissions Closed</span>
           </div>
-          <div class="po-main">
-            <div class="po-body">
+          <div class="po-layout">
+            <div class="po-info">
               <h3 class="po-title">Premium Course + Live Mentorship</h3>
               <p class="po-desc">A structured course taught with live mentorship sessions — learn the method, then apply it with guidance while you trade.</p>
               <span class="po-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Live mentorship included</span>
+              <!-- Safe, factual value statements — no profit/performance promise
+                   (none is a verified business term; see the enrollment page's
+                   own disclaimer: "no guarantee of trading profit"). No
+                   money-back guarantee is shown for the same reason: none is
+                   documented anywhere in this codebase. -->
+              <ul class="po-benefits">
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/></svg>Build the skills and confidence to manage your own trades.</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Learn directly through live mentorship — not just recorded videos.</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Structured, batch-based curriculum with a clear schedule.</li>
+              </ul>
+            </div>
+            <div class="po-batch">
+              <div class="po-batch-label">Next batch</div>
+              <div class="po-batch-name">Batch 30</div>
+              <p class="po-batch-note">Admissions for the current batch are closed. Pre-enrollment for Batch 30 is open now.</p>
             </div>
             <div class="po-price"><b>$150</b><span>one-time</span></div>
-          </div>
-          <div class="po-enroll">
-            <p class="po-enroll-copy">Admissions for the current batch are closed. Want to join the next batch? <b>Next batch — Batch 30.</b> Pre-enroll now.</p>
             <a class="po-cta" href="premium-course-enrollment.html">
               Pre-Enroll for Batch 30
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -1099,7 +1149,7 @@
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                       Complete Guide
                     </a>
-                  </p>
+                    <br>Once your IB account is created, move to Step 2.</p>
                 </div>
               </div>
               <div class="ibg-step">
@@ -1108,14 +1158,15 @@
                   <h5>Submit your License Request.</h5>
                   <p>Submit your <b>IB account number</b> and <b>registered email</b> on the
                     <a class="ibg-inline-link" href="license-request.html">License Request page</a>.
-                    Once approved, you will receive your <b>approval confirmation by email</b>.</p>
+                    Once approved, you will receive your <b>approval confirmation by email</b>.
+                    Once your License Request is submitted and approved, move to Step 3.</p>
                 </div>
               </div>
               <div class="ibg-step">
                 <div class="ibg-step-num">3</div>
                 <div class="ibg-step-body">
                   <h5>Get Your OTP Authentication</h5>
-                  <p>After your License Request has been approved, click the button below to verify your account. Enter your <b>IB Account Number</b>, receive your <b>OTP by email</b>, and verify it to activate all Premium features.</p>
+                  <p>After your License Request is approved, click the button below to verify your account. Enter your <b>IB Account Number</b>, receive your <b>OTP by email</b>, and complete verification to unlock your member access.</p>
                   <button type="button" class="ibg-otp-btn" onclick="if(window.ZTUPremiumCard) ZTUPremiumCard.open({ dismissible: true });" aria-label="Verify Premium Access with secure OTP authentication">
                     <span class="ibg-otp-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></span>
                     <span class="ibg-otp-copy"><span class="ibg-otp-title">Verify Premium Access</span><span class="ibg-otp-subtitle">Secure OTP authentication</span></span>
@@ -1135,51 +1186,6 @@
                     <li>MT5 Trade Management EA</li>
                     <li>Future Premium Features</li>
                   </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- RIGHT — Member Benefits -->
-          <div class="ibg-col">
-            <h4>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16.5 13.5 18.5 21 12 16.5 5.5 21 7.5 13.5 2 9 9 9 12 2" fill="currentColor" stroke="none"/></svg>
-              Member Benefits
-            </h4>
-            <div class="ibg-benefits">
-              <div class="ibg-benefit">
-                <div class="ibg-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="3"/><circle cx="9" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1.5" fill="currentColor" stroke="none"/><path d="M9 16h6M12 6V3M8 3h8"/></svg></div>
-                <div class="ibg-benefit-body">
-                  <h5>Free Trade Management EA</h5>
-                  <p>Automatically manages SL, TP and trade management with high accuracy.</p>
-                </div>
-              </div>
-              <div class="ibg-benefit">
-                <div class="ibg-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg></div>
-                <div class="ibg-benefit-body">
-                  <h5>Free Access to Premium Library</h5>
-                  <p>Paid courses, books, premium videos and audios — free for members.</p>
-                </div>
-              </div>
-              <div class="ibg-benefit">
-                <div class="ibg-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-                <div class="ibg-benefit-body">
-                  <h5>Trading Journal</h5>
-                  <p>AI trade review, mentor feedback, permanent trade history and performance tracking.</p>
-                </div>
-              </div>
-              <div class="ibg-benefit">
-                <div class="ibg-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="11" r="1.4"/><circle cx="15" cy="11" r="1.4"/><path d="M9 16h6M12 4V1"/></svg></div>
-                <div class="ibg-benefit-body">
-                  <h5>Unlimited AI Chatbot</h5>
-                  <p>Unlimited questions after joining our IB.</p>
-                </div>
-              </div>
-              <div class="ibg-benefit">
-                <div class="ibg-benefit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-                <div class="ibg-benefit-body">
-                  <h5>Priority Support</h5>
-                  <p>Team members receive priority support through official WhatsApp support.</p>
                 </div>
               </div>
             </div>
