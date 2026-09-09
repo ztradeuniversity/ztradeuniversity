@@ -85,6 +85,7 @@ export async function collectEvidence(origin, tradeCase) {
     yields: null,
     news: [], newsStatus: EV.UNAVAILABLE, newsAt: null,
     calendar: [], calendarStatus: EV.UNAVAILABLE, calendarAt: null, calendarNote: null,
+    calendarProvider: null, calendarViaFallback: false,
     facts,
     unavailable: [],
   };
@@ -168,12 +169,21 @@ export async function collectEvidence(origin, tradeCase) {
   }
 
   // ── ECONOMIC CALENDAR ────────────────────────────────────────────────────
-  // Known-broken in production (Finnhub free plan → 403). Reported honestly.
+  // Finnhub's calendar is known-broken in production (free plan → 403);
+  // /api/calendar now falls back to FRED's own release calendar (same
+  // FRED_API_KEY already used for yields/VIX — no new credential). Reported
+  // honestly either way: `calendarProvider`/`calendarViaFallback` mirror the
+  // SAME pattern already used for price (TwelveData→gold-api.com) and news
+  // (Finnhub→GNews), so the Sources panel never presents a FRED-sourced
+  // event as if Finnhub had answered.
   const calOk = cal.status === 'fulfilled' && cal.value.ok ? cal.value.data : null;
   if (calOk && Array.isArray(calOk.events) && calOk.events.length) {
     bundle.calendar = calOk.events.slice(0, 8);
     bundle.calendarStatus = EV.VERIFIED;
     bundle.calendarAt = calOk.updatedAt || startedAt;
+    const calStatus = calOk.sourceStatus || {};
+    bundle.calendarViaFallback = calStatus.finnhub !== 'ok' && calStatus.fred === 'ok';
+    bundle.calendarProvider = bundle.calendarViaFallback ? 'FRED (release calendar)' : 'Finnhub';
   } else {
     const note = calOk && calOk._finnhubDiag
       ? (calOk._finnhubDiag.rootCause || 'calendar provider unavailable')
@@ -195,6 +205,8 @@ export function provenanceLines(bundle) {
   if (bundle.newsStatus === EV.VERIFIED) {
     L.push(`News — ZTU /api/news — ${bundle.newsProvider || 'Finnhub'}${bundle.newsViaFallback ? ' [primary feed unavailable, backup used]' : ''}, retrieved ${bundle.newsAt}`);
   }
-  if (bundle.calendarStatus === EV.VERIFIED) L.push(`Economic calendar — ZTU /api/calendar, retrieved ${bundle.calendarAt}`);
+  if (bundle.calendarStatus === EV.VERIFIED) {
+    L.push(`Economic calendar — ZTU /api/calendar — ${bundle.calendarProvider || 'Finnhub'}${bundle.calendarViaFallback ? ' [primary feed unavailable, backup used]' : ''}, retrieved ${bundle.calendarAt}`);
+  }
   return L;
 }

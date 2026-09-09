@@ -80,7 +80,9 @@ export function labels(lang) {
       managementFit: 'Management Fit', managementFitNote: 'How defensible this approach is given the evidence right now — not a probability of success.',
       strongestSupport: 'Strongest support', strongestRisk: 'Biggest risk',
       eventLabel: 'Event', whenLabel: 'When', whatItMeans: 'What this means', possibleBullish: 'If stronger than expected',
-      possibleBearish: 'If weaker than expected', tradeRelevance: 'Trade relevance', impactLabel: 'Impact', impactReason: 'Why / Reason', tradeEffect: 'Trade effect' },
+      possibleBearish: 'If weaker than expected', tradeRelevance: 'Trade relevance', impactLabel: 'Impact', impactReason: 'Why / Reason', tradeEffect: 'Trade effect',
+      hawkish: 'Hawkish', dovish: 'Dovish', stronger: 'Stronger than expected', weaker: 'Weaker than expected',
+      conditionalMixed: 'Conditional / Mixed', calendarBackupNote: 'From FRED\'s release calendar — no forecast/consensus figure is available from this source.' },
     ur: { supportsYour: (d) => `آپ کی ${d} کو Support کرتا ہے`, worksAgainst: (d) => `آپ کی ${d} کے خلاف جاتا ہے`, contextOnly: 'صرف Context',
       layer: 'Layer', side: 'Side', size: 'Size', entry: 'Entry', result: 'نتیجہ', helping: 'مدد گار', hurting: 'نقصان دہ', flat: '—',
       what: 'کیا', why: 'کیوں / وجہ', trigger: 'کس چیز پر نظر رکھیں', risk: 'Risk', option: 'آپشن',
@@ -93,7 +95,9 @@ export function labels(lang) {
       managementFit: 'Management Fit', managementFitNote: 'موجودہ evidence کو دیکھتے ہوئے یہ approach کتنی قابل دفاع ہے — کامیابی کی probability نہیں۔',
       strongestSupport: 'سب سے مضبوط Support', strongestRisk: 'سب سے بڑا خطرہ',
       eventLabel: 'Event', whenLabel: 'کب', whatItMeans: 'اس کا مطلب', possibleBullish: 'اگر توقع سے مضبوط ہو',
-      possibleBearish: 'اگر توقع سے کمزور ہو', tradeRelevance: 'Trade سے تعلق', impactLabel: 'Impact', impactReason: 'کیوں / وجہ', tradeEffect: 'Trade Effect' },
+      possibleBearish: 'اگر توقع سے کمزور ہو', tradeRelevance: 'Trade سے تعلق', impactLabel: 'Impact', impactReason: 'کیوں / وجہ', tradeEffect: 'Trade Effect',
+      hawkish: 'Hawkish', dovish: 'Dovish', stronger: 'توقع سے مضبوط', weaker: 'توقع سے کمزور',
+      conditionalMixed: 'Conditional / ملا جلا', calendarBackupNote: 'FRED کے release calendar سے — اس ذریعے سے کوئی forecast/consensus figure دستیاب نہیں۔' },
     ar: { supportsYour: (d) => `يدعم صفقة ${d} الخاصة بك`, worksAgainst: (d) => `يعمل ضد صفقة ${d} الخاصة بك`, contextOnly: 'سياق فقط',
       layer: 'طبقة', side: 'الجهة', size: 'الحجم', entry: 'الدخول', result: 'النتيجة', helping: 'يساعد', hurting: 'يضر', flat: '—',
       what: 'ماذا', why: 'لماذا / السبب', trigger: 'ما يجب مراقبته', risk: 'المخاطرة', option: 'خيار',
@@ -106,7 +110,9 @@ export function labels(lang) {
       managementFit: 'ملاءمة الإدارة', managementFitNote: 'مدى إمكانية الدفاع عن هذا النهج بناءً على الأدلة الحالية — وليس احتمال النجاح.',
       strongestSupport: 'أقوى دعم', strongestRisk: 'أكبر خطر',
       eventLabel: 'الحدث', whenLabel: 'الموعد', whatItMeans: 'ماذا يعني هذا', possibleBullish: 'إذا كانت أقوى من المتوقع',
-      possibleBearish: 'إذا كانت أضعف من المتوقع', tradeRelevance: 'صلته بصفقتك', impactLabel: 'التأثير', impactReason: 'لماذا / السبب', tradeEffect: 'تأثير الصفقة' },
+      possibleBearish: 'إذا كانت أضعف من المتوقع', tradeRelevance: 'صلته بصفقتك', impactLabel: 'التأثير', impactReason: 'لماذا / السبب', tradeEffect: 'تأثير الصفقة',
+      hawkish: 'متشدد (Hawkish)', dovish: 'متساهل (Dovish)', stronger: 'أقوى من المتوقع', weaker: 'أضعف من المتوقع',
+      conditionalMixed: 'مشروط / مختلط', calendarBackupNote: 'من تقويم إصدارات FRED — لا يتوفر رقم توقعات/إجماع من هذا المصدر.' },
   });
 }
 
@@ -492,46 +498,135 @@ export function calendarUnavailable(lang, note) {
 }
 
 // ── UPCOMING ECONOMIC DATA — a category distinct from GENERAL NEWS ──────────
-// evidence.js's calendar feed (Finnhub /calendar/economic) is honestly
-// documented elsewhere in this codebase as unavailable on the current plan
-// (HTTP 403) — so this almost always renders its unavailable branch, and
-// that is stated plainly rather than backfilled from memory. When a real
-// verified event IS present, this deliberately does NOT predict a result or
-// invent a consensus figure to compare against (none is provided by the
-// feed): "possible bullish / possible bearish" is a generic, honest
-// explanation of how a stronger/weaker-than-expected print could move the
-// instrument in either direction — not a forecast of which one will happen.
-export function calendarSection(lang, ev, instrumentName) {
-  const out = { events: [], unavailableText: null };
+// evidence.js's calendar feed is PRIMARY Finnhub / BACKUP FRED (see
+// evidence.js + functions/api/calendar.js) — genuinely unavailable only when
+// BOTH fail, and that is stated plainly rather than backfilled from memory.
+// Every event carries a real, verified `category` (calendar.js's own
+// keyword classification, never guessed here) that selects one of two
+// scenario frameworks:
+//   'policy'                                    → Hawkish / Dovish
+//   'inflation'/'employment'/'growth'/           → Stronger / Weaker than
+//   'consumer'/'manufacturing'                     expected
+//   anything else                                → no scenario framework;
+//                                                   WHAT/WHEN only.
+// Instrument transmission-channel reasoning is applied ONLY for Gold
+// (XAU/USD) — the same real-yield/USD relationship already used in
+// fundamentalSection() above, extended to a scheduled-event context, never
+// a new claim. Every other instrument, BTC included, is deliberately marked
+// Conditional/Mixed rather than copying Gold's model onto it (§11 of the
+// task this shipped with) — BTC's relationship to rate/inflation surprises
+// is genuinely inconsistent in practice, so no consistent direction is
+// asserted. No forecast/consensus/actual figure is ever shown unless the
+// provider itself supplied it (FRED never does; Finnhub sometimes does).
+const EVENT_SCENARIO_CATEGORY = {
+  policy: 'hawkishDovish',
+  inflation: 'strongerWeaker', employment: 'strongerWeaker', growth: 'strongerWeaker',
+  consumer: 'strongerWeaker', manufacturing: 'strongerWeaker',
+};
+const HIGH_PRIORITY_CATEGORY = new Set(['policy', 'inflation', 'employment', 'growth']);
+
+function goldTransmissionReason(lang, sideWord) {
+  // sideWord: 'up' (hawkish/stronger) or 'down' (dovish/weaker)
+  return sideWord === 'up'
+    ? pick(lang, {
+        en: 'A more hawkish tone or a stronger print tends to support real yields and the US dollar — a headwind for non-yielding Gold.',
+        ur: 'زیادہ hawkish tone یا مضبوط print عام طور پر real yields اور US dollar کو support کرتی ہے — non-yielding Gold کے لیے headwind۔',
+        ar: 'يميل نبرة أكثر تشدداً أو نتيجة أقوى إلى دعم العوائد الحقيقية والدولار الأمريكي — وهو عائق أمام الذهب غير المُدر للعائد.',
+      })
+    : pick(lang, {
+        en: 'A more dovish tone or a weaker print tends to ease pressure on real yields and the US dollar — a tailwind for Gold.',
+        ur: 'زیادہ dovish tone یا کمزور print عام طور پر real yields اور US dollar پر دباؤ کم کرتی ہے — Gold کے لیے tailwind۔',
+        ar: 'تميل نبرة أكثر تساهلاً أو نتيجة أضعف إلى تخفيف الضغط عن العوائد الحقيقية والدولار — وهو داعم للذهب.',
+      });
+}
+function conditionalReason(lang, instrumentName, isBTC) {
+  return isBTC
+    ? pick(lang, {
+        en: `Bitcoin's reaction to this kind of event is inconsistent — it has traded as a risk-on asset in some periods and as an inflation/dollar hedge in others, so no consistent direction is assumed here.`,
+        ur: `اس طرح کے event پر Bitcoin کا ردعمل غیر مستقل ہے — کبھی یہ risk-on asset کی طرح چلتا ہے اور کبھی inflation/dollar hedge کی طرح، اس لیے یہاں کوئی مستقل سمت فرض نہیں کی جا رہی۔`,
+        ar: `استجابة البيتكوين لهذا النوع من الأحداث غير ثابتة — يتداول كأصل إقبال على المخاطرة في بعض الفترات وكتحوط من التضخم/الدولار في أخرى، لذا لا يُفترض اتجاه ثابت هنا.`,
+      })
+    : pick(lang, {
+        en: `No established directional relationship is used for ${instrumentName} here, so this is shown as context only.`,
+        ur: `${instrumentName} کے لیے یہاں کوئی established directional تعلق استعمال نہیں کیا جا رہا، اس لیے یہ صرف context کے طور پر دکھایا گیا ہے۔`,
+        ar: `لا تُستخدم علاقة اتجاهية ثابتة لـ ${instrumentName} هنا، لذا يُعرض هذا كسياق فقط.`,
+      });
+}
+// impact ('bullish'|'bearish'|'conditional') + direction → the same
+// Supports/Works-against/Context-only tag used everywhere else in this file.
+function eventTradeEffect(lang, impact, direction) {
+  const stance = impact === 'bullish' ? (direction === 'buy' ? 'supportive' : direction === 'sell' ? 'opposing' : 'neutral')
+    : impact === 'bearish' ? (direction === 'sell' ? 'supportive' : direction === 'buy' ? 'opposing' : 'neutral')
+    : 'neutral';
+  return tag(lang, stance, direction);
+}
+function buildScenario(lang, sideLabel, sideWord, isGold, isBTC, instrumentName, direction) {
+  const impact = isGold ? (sideWord === 'up' ? 'bearish' : 'bullish') : 'conditional';
+  const reason = isGold ? goldTransmissionReason(lang, sideWord) : conditionalReason(lang, instrumentName, isBTC);
+  return {
+    label: sideLabel,
+    impact, impactLabel: impact === 'conditional' ? pick(lang, { en: 'Conditional / Mixed', ur: 'Conditional / ملا جلا', ar: 'مشروط / مختلط' }) : impactLabel(lang, impact),
+    reason, tradeEffect: eventTradeEffect(lang, impact, direction),
+  };
+}
+
+// One short, optional sentence for the Final Mentor Review (§25) — built
+// from the SAME event + scenario calendarSection() already produced, never
+// a new judgement. Callers pass this only when the qualifying scenario is
+// genuinely "opposing" the trader's direction; see rescue-assess.js.
+export function eventRiskSentence(lang, eventName, scenarioLabel, direction) {
+  const d = dirWord(lang, direction);
+  return pick(lang, {
+    en: `Your near-term evidence also includes the upcoming ${eventName} — a ${scenarioLabel} outcome could work against your ${d}.`,
+    ur: `آپ کی near-term evidence میں آنے والا ${eventName} بھی شامل ہے — ${scenarioLabel} outcome آپ کی ${d} کے خلاف جا سکتا ہے۔`,
+    ar: `تشمل أدلتك القريبة المدى أيضاً حدث ${eventName} القادم — قد تعمل نتيجة ${scenarioLabel} ضد صفقة ${d} الخاصة بك.`,
+  });
+}
+
+export function calendarSection(lang, ev, instrument, instrumentName, direction) {
+  const out = { events: [], unavailableText: null, backupNote: null };
   if (ev.calendarStatus !== 'verified' || !ev.calendar || !ev.calendar.length) {
     out.unavailableText = calendarUnavailable(lang, ev.calendarNote);
     return out;
   }
-  out.events = ev.calendar.slice(0, 5).map((e) => ({
-    what: e.event || e.title,
-    when: e.time || e.date,
-    impact: e.impact || pick(lang, { en: 'impact not specified', ur: 'impact واضح نہیں', ar: 'التأثير غير محدد' }),
-    whatItMeans: pick(lang, {
-      en: 'A scheduled data release that can move markets once the actual figure is known.',
-      ur: 'ایک طے شدہ data release جو اصل figure معلوم ہونے کے بعد markets کو move کر سکتی ہے۔',
-      ar: 'إصدار بيانات مجدول يمكن أن يحرك الأسواق بمجرد معرفة الرقم الفعلي.',
-    }),
-    possibleBullish: pick(lang, {
-      en: `A stronger-than-expected result could pressure ${instrumentName} — direction depends on the actual number, which is not known in advance.`,
-      ur: `توقع سے مضبوط result ${instrumentName} پر دباؤ ڈال سکتا ہے — سمت اصل number پر منحصر ہے، جو پہلے سے معلوم نہیں۔`,
-      ar: `قد تضغط نتيجة أقوى من المتوقع على ${instrumentName} — يعتمد الاتجاه على الرقم الفعلي، وهو غير معروف مسبقاً.`,
-    }),
-    possibleBearish: pick(lang, {
-      en: `A weaker-than-expected result could support ${instrumentName} — again, this depends entirely on the actual release, not a prediction made here.`,
-      ur: `توقع سے کمزور result ${instrumentName} کو support دے سکتا ہے — یہ مکمل طور پر اصل release پر منحصر ہے، یہاں کوئی پیشگوئی نہیں کی جا رہی۔`,
-      ar: `قد تدعم نتيجة أضعف من المتوقع ${instrumentName} — يعتمد هذا بالكامل على الإصدار الفعلي، وليس تنبؤاً هنا.`,
-    }),
-    tradeRelevance: pick(lang, {
-      en: 'Worth watching if this falls inside your holding window — volatility around the release can widen normal price movement either way.',
-      ur: 'اگر یہ آپ کی holding window کے اندر آتا ہے تو دیکھنے کے قابل ہے — release کے ارد گرد volatility معمول کی price movement کو دونوں طرف وسیع کر سکتی ہے۔',
-      ar: 'يستحق المراقبة إذا وقع ضمن فترة احتفاظك — قد يوسّع التقلب حول الإصدار حركة السعر الطبيعية في أي الاتجاهين.',
-    }),
-  }));
+  const L = labels(lang);
+  if (ev.calendarViaFallback) out.backupNote = L.calendarBackupNote;
+
+  const isGold = instrument === 'XAU/USD';
+  const isBTC = instrument === 'BTC/USD';
+  const sorted = [...ev.calendar].sort((a, b) => {
+    const pa = HIGH_PRIORITY_CATEGORY.has(a.category) ? 0 : 1;
+    const pb = HIGH_PRIORITY_CATEGORY.has(b.category) ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    return (new Date(a.time).getTime() || 0) - (new Date(b.time).getTime() || 0);
+  });
+
+  out.events = sorted.slice(0, 5).map((e) => {
+    const framework = EVENT_SCENARIO_CATEGORY[e.category] || null;
+    const base = {
+      what: e.event, when: e.time,
+      impact: e.impact || null, // Finnhub-only; FRED never supplies one — never guessed
+      forecast: e.estimate != null ? `${e.estimate}${e.unit || ''}` : null,
+      previous: e.prev != null ? `${e.prev}${e.unit || ''}` : null,
+      source: e.source || 'finnhub',
+      whatItMeans: pick(lang, {
+        en: 'A scheduled data release that can move markets once the actual figure is known.',
+        ur: 'ایک طے شدہ data release جو اصل figure معلوم ہونے کے بعد markets کو move کر سکتی ہے۔',
+        ar: 'إصدار بيانات مجدول يمكن أن يحرك الأسواق بمجرد معرفة الرقم الفعلي.',
+      }),
+      tradeRelevance: pick(lang, {
+        en: 'Worth watching if this falls inside your holding window — volatility around the release can widen normal price movement either way.',
+        ur: 'اگر یہ آپ کی holding window کے اندر آتا ہے تو دیکھنے کے قابل ہے — release کے ارد گرد volatility معمول کی price movement کو دونوں طرف وسیع کر سکتی ہے۔',
+        ar: 'يستحق المراقبة إذا وقع ضمن فترة احتفاظك — قد يوسّع التقلب حول الإصدار حركة السعر الطبيعية في أي الاتجاهين.',
+      }),
+    };
+    if (!framework) return base;
+    const upLabel = framework === 'hawkishDovish' ? L.hawkish : L.stronger;
+    const downLabel = framework === 'hawkishDovish' ? L.dovish : L.weaker;
+    base.scenario1 = buildScenario(lang, upLabel, 'up', isGold, isBTC, instrumentName, direction);
+    base.scenario2 = buildScenario(lang, downLabel, 'down', isGold, isBTC, instrumentName, direction);
+    return base;
+  });
   return out;
 }
 
@@ -946,7 +1041,7 @@ export function finalMentorViewLine(lang, direction, balance) {
 // `c.has_stop_loss`) — nothing here is a new judgement, only a compact
 // re-statement of the strongest single item already on each list, so this
 // can never disagree with the evidence sections above it.
-export function finalMentorReview(lang, direction, balance, weighed, tradeCase) {
+export function finalMentorReview(lang, direction, balance, weighed, tradeCase, eventRiskNote) {
   const d = dirWord(lang, direction);
   const whereNow = pick(lang, {
     en: balance === 'against' ? `The evidence currently leans against your ${d}.` : balance === 'favours' ? `The evidence currently leans in favour of your ${d}.` : balance === 'mixed' ? 'The evidence is genuinely mixed — supportive and opposing factors are close in number.' : 'There is not yet enough verified evidence to form a clear balance.',
@@ -996,8 +1091,17 @@ export function finalMentorReview(lang, direction, balance, weighed, tradeCase) 
       : 'أكّد الأرقام الناقصة على منصتك الخاصة قبل الاعتماد على هذه الأدلة لقرار إداري.',
   });
 
+  // Upcoming-event risk (§25 of the task this shipped with): mentioned only
+  // when a real qualifying event exists AND the no-stop-loss fact isn't
+  // already occupying the top-priority slot — that fact always outranks a
+  // scheduled event, exactly as it outranks every other market consideration
+  // above. `eventRiskNote` is a caller-supplied, already-localized sentence
+  // (built in rescue-assess.js from the SAME evidenceImpact.upcomingData
+  // this file's own calendarSection() produces) — never invented here.
+  const finalTakeaway = (!noStop && eventRiskNote) ? `${takeaway} ${eventRiskNote}` : takeaway;
+
   return {
-    whereNow, strongestSupport, strongestRisk, takeaway,
+    whereNow, strongestSupport, strongestRisk, takeaway: finalTakeaway,
     disclaimer: pick(lang, {
       en: 'This is decision-support based on the evidence available right now — not a guaranteed outcome, and not financial advice. Market conditions can change at any time, and the decision on your own position is always yours.',
       ur: 'یہ اس وقت دستیاب evidence کی بنیاد پر decision-support ہے — کوئی guaranteed نتیجہ نہیں، اور نہ ہی financial advice۔ Market حالات کسی بھی وقت بدل سکتے ہیں، اور آپ کی اپنی position کا فیصلہ ہمیشہ آپ کا ہے۔',
@@ -1129,6 +1233,17 @@ export function localizeProvenanceLine(lang, line) {
       ar: `الأخبار — ${provider}${fb(fallback)}, تم الجلب في ${at}`,
     });
   }
+  if ((m = s.match(/^Economic calendar — (.+?) — (.+?)(\s\[primary feed unavailable, backup used\])?, retrieved (.+)$/))) {
+    const [, endpoint, provider, fallback, at] = m;
+    return pick(lang, {
+      en: `Economic calendar — ${endpoint} — ${provider}${fb(fallback)}, retrieved ${at}`,
+      ur: `Economic Calendar — ${endpoint} — ${provider}${fb(fallback)}, حاصل کردہ ${at}`,
+      ar: `التقويم الاقتصادي — ${endpoint} — ${provider}${fb(fallback)}, تم الجلب في ${at}`,
+    });
+  }
+  // Older-shaped line (before the FRED backup existed) — kept recognised so
+  // history saved before this change still localizes instead of falling
+  // through to the unrecognised/verbatim branch below.
   if ((m = s.match(/^Economic calendar — (.+?), retrieved (.+)$/))) {
     const [, src, at] = m;
     return pick(lang, {

@@ -118,6 +118,48 @@ export async function fetchFRED(seriesId, apiKey) {
   };
 }
 
+/**
+ * Fetch REAL, scheduled upcoming release dates across ALL FRED data series
+ * (not one series — the general release calendar). Used as the backup
+ * economic-calendar source for /api/calendar when Finnhub's calendar
+ * endpoint is unavailable (it requires a paid Finnhub plan — see
+ * functions/api/calendar.js). Same FRED_API_KEY already used for yields/VIX
+ * elsewhere in this project — no new credential.
+ *
+ * FRED does NOT provide a forecast/consensus figure or an importance rating
+ * for release dates the way Finnhub does — this function never invents
+ * either; callers receive only `release_name` + `date`, verified from FRED
+ * itself, and nothing else.
+ *
+ * Documentation: https://fred.stlouisfed.org/docs/api/fred/releases_dates.html
+ *
+ * @param {string} apiKey     - FRED API key (env.FRED_API_KEY)
+ * @param {string} fromDate   - 'YYYY-MM-DD', inclusive
+ * @param {string} toDate     - 'YYYY-MM-DD', inclusive
+ * @returns {Promise<{release_id:number, release_name:string, date:string}[]>}
+ */
+export async function fetchFREDReleaseDates(apiKey, fromDate, toDate) {
+  const key = String(apiKey || '').trim();
+  const url = [
+    'https://api.stlouisfed.org/fred/releases/dates',
+    `?api_key=${encodeURIComponent(key)}`,
+    `&realtime_start=${encodeURIComponent(fromDate)}`,
+    `&realtime_end=${encodeURIComponent(toDate)}`,
+    '&sort_order=asc',
+    '&include_release_dates_with_no_data=true',
+    '&file_type=json',
+  ].join('');
+
+  const data = await fetchJSON(url);
+  if (!Array.isArray(data.release_dates)) {
+    throw new Error('FRED: release_dates array missing or malformed');
+  }
+  // Defensive re-filter to the requested window regardless of how the API
+  // itself interpreted realtime_start/realtime_end — every date shown is
+  // still a real FRED-reported date, just guaranteed to fall in-window.
+  return data.release_dates.filter((r) => r && typeof r.date === 'string' && r.date >= fromDate && r.date <= toDate);
+}
+
 // ─── FINNHUB ──────────────────────────────────────────────────────────────────
 // Documentation : https://finnhub.io/docs/api
 // Used for      : VIX real-time quote + upcoming economic calendar events.

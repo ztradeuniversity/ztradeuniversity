@@ -1005,13 +1005,28 @@ function renderResult() {
     let upcomingCard = '';
     if (UD) {
       upcomingCard = '<div class="impactCard">' + secHead('upcomingData', null);
+      if (UD.backupNote) upcomingCard += '<div class="impactUnavail">' + esc(UD.backupNote) + '</div>';
       if (UD.events && UD.events.length) {
-        upcomingCard += UD.events.map(e => '<div class="eventRow"><div class="eventWhat">' + esc(e.what) + '</div>' +
-          '<div class="eventWhen">' + esc(e.when) + (e.impact ? ' · ' + esc(e.impact) : '') + '</div>' +
-          '<div class="eventLine"><b>' + esc(uiT('whatItMeans')) + ':</b> ' + esc(e.whatItMeans) + '</div>' +
-          '<div class="eventLine"><b>' + esc(uiT('possibleBullish')) + ':</b> ' + esc(e.possibleBullish) + '</div>' +
-          '<div class="eventLine"><b>' + esc(uiT('possibleBearish')) + ':</b> ' + esc(e.possibleBearish) + '</div>' +
-          '<div class="eventLine"><b>' + esc(uiT('tradeRelevance')) + ':</b> ' + esc(e.tradeRelevance) + '</div></div>').join('');
+        const scenarioRow = (s) => '<div class="impactMeta"><span class="impactBadge ' + esc(s.impact === 'conditional' ? 'neutral' : s.impact) + '">' +
+          esc(s.label) + ': ' + esc(s.impactLabel) + '</span><span class="impactTag">' + esc(s.tradeEffect) + '</span></div>' +
+          '<div class="impactReason">' + esc(s.reason) + '</div>';
+        upcomingCard += UD.events.map(e => {
+          let row = '<div class="eventRow"><div class="eventWhat">' + esc(e.what) + '</div>' +
+            '<div class="eventWhen">' + esc(e.when) + (e.impact ? ' · ' + esc(e.impact) : '') +
+            (e.source === 'fred' ? ' · FRED' : '') + '</div>';
+          if (e.forecast != null || e.previous != null) {
+            row += '<div class="eventWhen">' +
+              (e.forecast != null ? 'Forecast: ' + esc(e.forecast) : '') +
+              (e.forecast != null && e.previous != null ? ' · ' : '') +
+              (e.previous != null ? 'Previous: ' + esc(e.previous) : '') + '</div>';
+          }
+          row += '<div class="eventLine"><b>' + esc(uiT('whatItMeans')) + ':</b> ' + esc(e.whatItMeans) + '</div>';
+          if (e.scenario1 && e.scenario2) {
+            row += scenarioRow(e.scenario1) + scenarioRow(e.scenario2);
+          }
+          row += '<div class="eventLine"><b>' + esc(uiT('tradeRelevance')) + ':</b> ' + esc(e.tradeRelevance) + '</div></div>';
+          return row;
+        }).join('');
       } else {
         upcomingCard += '<div class="impactUnavail">' + esc(UD.unavailableText || '') + '</div>';
       }

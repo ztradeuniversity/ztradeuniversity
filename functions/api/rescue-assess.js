@@ -93,7 +93,7 @@ async function collectHistory(origin, instrument, dates) {
 // the result page (see evidenceImpact / managementOptions below) — this brief
 // exists only so the model can write ONE short synthesis that references
 // them, never so it can restate them.
-function buildBrief(c, pos, weighed, hasStop, managementOptions) {
+function buildBrief(c, pos, weighed, hasStop, managementOptions, eventRiskNote) {
   const L = [];
   L.push(`INSTRUMENT: ${c.instrument}`);
   L.push(`TRADER'S NET DIRECTION: ${String(c.direction || '').toUpperCase()}`);
@@ -106,6 +106,8 @@ function buildBrief(c, pos, weighed, hasStop, managementOptions) {
   if (weighed.opposing.length) L.push(`STRONGEST MARKET-EVIDENCE RISK: ${weighed.opposing[0].text}`);
   if (hasStop === false) {
     L.push('CRITICAL RISK: No stop loss is set — the maximum loss on this position is currently undefined. This outranks every market-evidence consideration below.');
+  } else if (eventRiskNote) {
+    L.push(`NEAR-TERM EVENT RISK (mention briefly if it fits, do not elaborate — the full event is already shown in its own section above): ${eventRiskNote}`);
   }
   L.push('');
   L.push('THE THREE MANAGEMENT SOLUTIONS ALREADY SHOWN TO THE TRADER IN FULL (refer to by name only if useful — never redescribe their What/Why/Trigger/Risk, they are rendered in full below your text):');
@@ -265,7 +267,7 @@ export async function onRequest(context) {
   // deterministic FACT → IMPACT ON INSTRUMENT → WHY → TRADE EFFECT reading.
   // No second analysis pipeline — these are the exact same localized section
   // builders and evidence objects the rest of this file already produces.
-  const calendarUpcoming = RI.calendarSection(lang, evidence, instrumentName);
+  const calendarUpcoming = RI.calendarSection(lang, evidence, ins.id, instrumentName, tradeCase.direction);
   const evidenceImpact = {
     instrumentName,
     technical: RI.technicalSection(lang, reportCase, evidence, range, invalidation),
@@ -294,8 +296,24 @@ export async function onRequest(context) {
     supportive: localizedEvidence.filter((b) => b.stance === 'supportive'),
     opposing: localizedEvidence.filter((b) => b.stance === 'opposing'),
   };
-  const finalMentorReview = RI.finalMentorReview(lang, tradeCase.direction, balance, localizedWeighed, tradeCase);
-  const brief = buildBrief(reportCase, position, analysis.weighed, tradeCase.has_stop_loss, managementOptions);
+  // Event risk for the review (§25): only the FIRST qualifying upcoming
+  // event whose scenario genuinely opposes the trader's net direction —
+  // never invented, read straight from calendarUpcoming's own `impact`.
+  let eventRiskNote = null;
+  const dir = tradeCase.direction;
+  const riskyEvent = calendarUpcoming.events.find((e) => {
+    const s = e.scenario1 && ((e.scenario1.impact === 'bearish' && dir === 'buy') || (e.scenario1.impact === 'bullish' && dir === 'sell')) ? e.scenario1
+      : e.scenario2 && ((e.scenario2.impact === 'bearish' && dir === 'buy') || (e.scenario2.impact === 'bullish' && dir === 'sell')) ? e.scenario2
+      : null;
+    return !!s;
+  });
+  if (riskyEvent) {
+    const s = (riskyEvent.scenario1.impact === 'bearish' && dir === 'buy') || (riskyEvent.scenario1.impact === 'bullish' && dir === 'sell')
+      ? riskyEvent.scenario1 : riskyEvent.scenario2;
+    eventRiskNote = RI.eventRiskSentence(lang, riskyEvent.what, s.label, dir);
+  }
+  const finalMentorReview = RI.finalMentorReview(lang, tradeCase.direction, balance, localizedWeighed, tradeCase, eventRiskNote);
+  const brief = buildBrief(reportCase, position, analysis.weighed, tradeCase.has_stop_loss, managementOptions, eventRiskNote);
   const plan = await generateRescuePlan(env, brief, lang);
 
   let report = plan.text || deterministicMentorProse(finalMentorReview);
