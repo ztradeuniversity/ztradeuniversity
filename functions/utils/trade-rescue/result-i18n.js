@@ -103,7 +103,52 @@ function tag(lang, stance, direction) {
   if (stance === 'opposing') return L.worksAgainst(d);
   return L.contextOnly;
 }
-const bullet = (text, stance, basis, lang, direction) => ({ text, stance, basis, tag: tag(lang, stance, direction) });
+
+// ── INSTRUMENT-LEVEL IMPACT (bullish/bearish/neutral) ───────────────────────
+// `stance` is already computed everywhere in this file RELATIVE TO THE
+// TRADER'S OWN DIRECTION ('supportive'/'opposing'/'neutral' — see `tag()`
+// above). The instrument's own bullish/bearish/neutral reading is simply that
+// same judgement with the direction un-applied — this is a pure inversion of
+// logic that already exists, not a new financial claim: a fact that is
+// 'supportive' of a BUY is by definition bullish for the instrument; one that
+// is 'supportive' of a SELL is by definition bearish for it, and so on. When
+// direction is unknown (e.g. an instrument-only note with no trader side
+// attached) this can't be inferred and reports 'neutral' rather than guessing.
+export function instrumentImpact(stance, direction) {
+  if (stance !== 'supportive' && stance !== 'opposing') return 'neutral';
+  const buy = direction === 'buy', sell = direction === 'sell';
+  if (stance === 'supportive') return buy ? 'bullish' : sell ? 'bearish' : 'neutral';
+  return buy ? 'bearish' : sell ? 'bullish' : 'neutral';
+}
+export function impactLabel(lang, impact) {
+  return pick(lang, {
+    en: { bullish: 'Bullish', bearish: 'Bearish', neutral: 'Neutral / Context' }[impact] || 'Neutral / Context',
+    ur: { bullish: 'Bullish', bearish: 'Bearish', neutral: 'Neutral / Context' }[impact] || 'Neutral / Context',
+    ar: { bullish: 'صاعد', bearish: 'هابط', neutral: 'محايد / سياق' }[impact] || 'محايد / سياق',
+  });
+}
+const INSTRUMENT_NAME = { 'XAU/USD': { en: 'Gold', ur: 'Gold', ar: 'الذهب' }, 'BTC/USD': { en: 'Bitcoin', ur: 'Bitcoin', ar: 'بيتكوين' } };
+export function instrumentDisplayName(lang, instrument) {
+  const n = INSTRUMENT_NAME[instrument];
+  return n ? pick(lang, n) : (instrument || pick(lang, { en: 'the instrument', ur: 'اس instrument', ar: 'هذه الأداة' }));
+}
+
+// `reason` is optional and, when supplied, marks a bullet as an INSTRUMENT-
+// LEVEL directional fact eligible for the compact impact badge (FACT → IMPACT
+// → REASON → TRADE EFFECT). Bullets that describe something specific to the
+// trader's own entry (not a general market reading — e.g. price vs YOUR
+// entry) intentionally omit `reason` and keep their existing text-only
+// rendering, because labelling personal P&L as "instrument impact" would
+// misrepresent it as a market signal nobody else could read the same way.
+const bullet = (text, stance, basis, lang, direction, reason) => {
+  const b = { text, stance, basis, tag: tag(lang, stance, direction) };
+  if (reason) {
+    b.impact = instrumentImpact(stance, direction);
+    b.impactLabel = impactLabel(lang, b.impact);
+    b.reason = reason;
+  }
+  return b;
+};
 
 // ── TECHNICAL ────────────────────────────────────────────────────────────────
 // Mirrors layerTechnical()'s branches exactly (entry distance, session
@@ -164,19 +209,28 @@ export function technicalSection(lang, c, ev, range, invalidation) {
           pick(lang, { en: `Price is in the upper ${up}% of today's range${c.direction === 'sell' ? ', against a short' : ''}.`,
             ur: `Price آج کی range کے اوپری ${up}% میں ہے${c.direction === 'sell' ? '، جو short کے خلاف ہے' : ''}۔`,
             ar: `السعر ضمن أعلى ${up}% من نطاق اليوم${c.direction === 'sell' ? '، وهذا ضد صفقة البيع' : ''}.` }),
-          c.direction === 'buy' ? 'supportive' : 'opposing', basisRange, lang, c.direction));
+          c.direction === 'buy' ? 'supportive' : 'opposing', basisRange, lang, c.direction,
+          pick(lang, { en: "Price sitting near the top of today's range often reflects short-term buying pressure.",
+            ur: 'آج کی range کی چوٹی کے قریب price اکثر short-term خریداری کے دباؤ کو ظاہر کرتا ہے۔',
+            ar: 'وقوف السعر قرب أعلى نطاق اليوم غالباً ما يعكس ضغط شراء قصير المدى.' })));
       } else if (posPct <= 30) {
         out.evidence.push(bullet(
           pick(lang, { en: `Price is in the lower ${posPct}% of today's range${c.direction === 'buy' ? ', against a long' : ''}.`,
             ur: `Price آج کی range کے نچلے ${posPct}% میں ہے${c.direction === 'buy' ? '، جو long کے خلاف ہے' : ''}۔`,
             ar: `السعر ضمن أدنى ${posPct}% من نطاق اليوم${c.direction === 'buy' ? '، وهذا ضد صفقة الشراء' : ''}.` }),
-          c.direction === 'sell' ? 'supportive' : 'opposing', basisRange, lang, c.direction));
+          c.direction === 'sell' ? 'supportive' : 'opposing', basisRange, lang, c.direction,
+          pick(lang, { en: "Price sitting near the bottom of today's range often reflects short-term selling pressure.",
+            ur: 'آج کی range کے نچلے حصے کے قریب price اکثر short-term فروخت کے دباؤ کو ظاہر کرتا ہے۔',
+            ar: 'وقوف السعر قرب أسفل نطاق اليوم غالباً ما يعكس ضغط بيع قصير المدى.' })));
       } else {
         out.evidence.push(bullet(
           pick(lang, { en: "Price is mid-range for the session — no directional edge from range position.",
             ur: 'Price سیشن کی درمیانی range میں ہے — range کی بنیاد پر کوئی directional فائدہ نہیں۔',
             ar: 'السعر في منتصف نطاق الجلسة — لا ميزة اتجاهية من موقعه ضمن النطاق.' }),
-          'neutral', basisRange, lang, c.direction));
+          'neutral', basisRange, lang, c.direction,
+          pick(lang, { en: "Price is neither near today's high nor low, so this alone doesn't lean either way.",
+            ur: 'Price نہ آج کی high کے قریب ہے نہ low کے — اس لیے یہ اکیلے کسی سمت کا اشارہ نہیں دیتا۔',
+            ar: 'السعر ليس قرب أعلى اليوم ولا أدناه، لذا هذا وحده لا يميل لأي جهة.' })));
       }
     }
     if (ev.session.changePct != null) {
@@ -184,11 +238,22 @@ export function technicalSection(lang, c, ev, range, invalidation) {
       const withUs = (c.direction === 'buy' && cp > 0) || (c.direction === 'sell' && cp < 0);
       const flat = Math.abs(cp) < 0.15;
       const basisChange = pick(lang, { en: 'verified daily change from the market provider', ur: 'market provider سے verified روزانہ change', ar: 'التغير اليومي الموثق من مزود السوق' });
+      const changeReason = flat
+        ? pick(lang, { en: 'A near-flat move gives no meaningful directional signal today.',
+            ur: 'تقریباً flat move آج کوئی معنی خیز directional اشارہ نہیں دیتا۔',
+            ar: 'حركة شبه ثابتة لا تعطي إشارة اتجاهية ذات معنى اليوم.' })
+        : cp > 0
+        ? pick(lang, { en: 'A positive move on the day reflects more buying than selling pressure right now.',
+            ur: 'دن میں مثبت move موجودہ وقت میں فروخت سے زیادہ خریداری کے دباؤ کو ظاہر کرتا ہے۔',
+            ar: 'الحركة الإيجابية خلال اليوم تعكس ضغط شراء أكبر من ضغط البيع حالياً.' })
+        : pick(lang, { en: 'A negative move on the day reflects more selling than buying pressure right now.',
+            ur: 'دن میں منفی move موجودہ وقت میں خریداری سے زیادہ فروخت کے دباؤ کو ظاہر کرتا ہے۔',
+            ar: 'الحركة السلبية خلال اليوم تعكس ضغط بيع أكبر من ضغط الشراء حالياً.' });
       out.evidence.push(bullet(
         pick(lang, { en: `Today's move (${cp}%) is ${flat ? 'effectively flat' : withUs ? 'in your direction' : 'against your direction'}.`,
           ur: `آج کا move (${cp}%) ${flat ? 'تقریباً flat ہے' : withUs ? 'آپ کی سمت میں ہے' : 'آپ کی سمت کے خلاف ہے'}۔`,
           ar: `حركة اليوم (${cp}%) ${flat ? 'شبه ثابتة' : withUs ? 'في اتجاهك' : 'ضد اتجاهك'}.` }),
-        flat ? 'neutral' : withUs ? 'supportive' : 'opposing', basisChange, lang, c.direction));
+        flat ? 'neutral' : withUs ? 'supportive' : 'opposing', basisChange, lang, c.direction, changeReason));
     }
   }
 
@@ -217,7 +282,10 @@ export function technicalSection(lang, c, ev, range, invalidation) {
         ar: `النطاق الموثق ${range.low}–${range.high} خلال ${range.sessions} جلسات؛ كسر ${sideWord} ${invalidation.level} سيبطل هذا النطاق.`,
       }), 'neutral',
       pick(lang, { en: 'TwelveData /time_series — verified daily closes', ur: 'TwelveData /time_series — verified روزانہ closes', ar: 'TwelveData /time_series — إغلاقات يومية موثقة' }),
-      lang, c.direction));
+      lang, c.direction,
+      pick(lang, { en: "This states the boundaries of the recently verified range — a reference level, not a directional signal on its own.",
+        ur: 'یہ حال ہی میں verified range کی حدود بتاتا ہے — ایک reference level ہے، خود کوئی directional اشارہ نہیں۔',
+        ar: 'هذا يحدد حدود النطاق الموثق مؤخراً — مستوى مرجعي، وليس إشارة اتجاهية بحد ذاته.' })));
   } else if (invalidation) {
     out.uncertainty.push(invalidationRefusalText(lang, invalidation));
   }
@@ -260,22 +328,31 @@ export function fundamentalSection(lang, c, ev) {
       ar: `العوائد الحقيقية عند ${rr}% تشكل عائقاً هيكلياً للذهب عند المستويات المرتفعة وداعماً عند المستويات المنخفضة، لأن الذهب لا يدفع عائداً. هذا ميل عبر الدورات، وليس قاعدة يومية.`,
     }));
     const basisYield = pick(lang, { en: 'FRED DFII10 + the gold/real-yield relationship', ur: 'FRED DFII10 + gold/real-yield تعلق', ar: 'FRED DFII10 + علاقة الذهب بالعائد الحقيقي' });
+    const yieldReasonUp = pick(lang, { en: 'Gold pays no yield, so when real yields rise, holding non-yielding gold becomes relatively less attractive.',
+      ur: 'Gold کوئی yield نہیں دیتا، اس لیے جب real yields بڑھتی ہیں تو non-yielding gold رکھنا نسبتاً کم پرکشش ہو جاتا ہے۔',
+      ar: 'الذهب لا يدفع عائداً، لذا عندما ترتفع العوائد الحقيقية يصبح الاحتفاظ بالذهب غير المُدر للعائد أقل جاذبية نسبياً.' });
+    const yieldReasonDown = pick(lang, { en: 'Gold pays no yield, so when real yields fall, the cost of holding non-yielding gold instead of interest-bearing assets shrinks.',
+      ur: 'Gold کوئی yield نہیں دیتا، اس لیے جب real yields گرتی ہیں تو interest-bearing assets کی بجائے non-yielding gold رکھنے کی cost کم ہو جاتی ہے۔',
+      ar: 'الذهب لا يدفع عائداً، لذا عندما تنخفض العوائد الحقيقية تقل تكلفة الاحتفاظ بالذهب غير المُدر بدلاً من الأصول المُدرة للفائدة.' });
+    const yieldReasonMid = pick(lang, { en: "Real yields are in a middle zone that historically hasn't leaned clearly for or against gold.",
+      ur: 'Real yields ایک درمیانی zone میں ہیں جو تاریخی طور پر gold کے حق میں یا خلاف واضح جھکاؤ نہیں رکھتی۔',
+      ar: 'العوائد الحقيقية في منطقة وسطى لم تُظهر تاريخياً ميلاً واضحاً لصالح الذهب أو ضده.' });
     if (rr >= 2.0) {
       out.evidence.push(bullet(
         pick(lang, { en: c.direction === 'buy' ? `Real 10Y yield is elevated at ${rr}%, historically a headwind for gold.` : `Elevated real yields (${rr}%) lean against gold.`,
           ur: c.direction === 'buy' ? `Real 10Y yield ${rr}% پر بلند ہے، جو تاریخی طور پر gold کے لیے headwind ہے۔` : `بلند real yields (${rr}%) gold کے خلاف جھکاؤ رکھتی ہیں۔`,
           ar: c.direction === 'buy' ? `عائد 10 سنوات الحقيقي مرتفع عند ${rr}%، وهو تاريخياً عائق أمام الذهب.` : `العوائد الحقيقية المرتفعة (${rr}%) تميل ضد الذهب.` }),
-        c.direction === 'buy' ? 'opposing' : 'supportive', basisYield, lang, c.direction));
+        c.direction === 'buy' ? 'opposing' : 'supportive', basisYield, lang, c.direction, yieldReasonUp));
     } else if (rr <= 1.0) {
       out.evidence.push(bullet(
         pick(lang, { en: c.direction === 'buy' ? `Low real yields (${rr}%) reduce the opportunity cost of holding gold.` : `Low real yields (${rr}%) lean in gold's favour, against a short.`,
           ur: c.direction === 'buy' ? `کم real yields (${rr}%) gold رکھنے کی opportunity cost کم کرتی ہیں۔` : `کم real yields (${rr}%) gold کے حق میں ہیں، جو short کے خلاف ہے۔`,
           ar: c.direction === 'buy' ? `العوائد الحقيقية المنخفضة (${rr}%) تقلل تكلفة فرصة الاحتفاظ بالذهب.` : `العوائد الحقيقية المنخفضة (${rr}%) تميل لصالح الذهب، وهذا ضد صفقة البيع.` }),
-        c.direction === 'buy' ? 'supportive' : 'opposing', basisYield, lang, c.direction));
+        c.direction === 'buy' ? 'supportive' : 'opposing', basisYield, lang, c.direction, yieldReasonDown));
     } else {
       out.evidence.push(bullet(
         pick(lang, { en: `Real yields at ${rr}% are mid-range — no clear fundamental lean for gold.`, ur: `${rr}% پر real yields درمیانی سطح پر ہیں — gold کے لیے کوئی واضح fundamental جھکاؤ نہیں۔`, ar: `العوائد الحقيقية عند ${rr}% متوسطة — لا ميل أساسي واضح للذهب.` }),
-        'neutral', pick(lang, { en: 'FRED DFII10', ur: 'FRED DFII10', ar: 'FRED DFII10' }), lang, c.direction));
+        'neutral', pick(lang, { en: 'FRED DFII10', ur: 'FRED DFII10', ar: 'FRED DFII10' }), lang, c.direction, yieldReasonMid));
     }
   }
 
@@ -283,7 +360,9 @@ export function fundamentalSection(lang, c, ev) {
     const riskOn = /risk-on/i.test(ev.regime.label);
     const basisRegime = pick(lang, { en: 'VIX-derived regime from /api/sentiment', ur: 'VIX سے اخذ کردہ regime (/api/sentiment)', ar: 'نظام السوق المشتق من VIX عبر /api/sentiment' });
     if (c.instrument === 'BTC/USD') {
-      const buyGood = riskOn;
+      const regimeReason = riskOn
+        ? pick(lang, { en: 'Risk-on conditions tend to favour higher-beta assets like BTC.', ur: 'Risk-on حالات عام طور پر BTC جیسے high-beta assets کے حق میں ہوتی ہیں۔', ar: 'ظروف الإقبال على المخاطرة تميل لصالح الأصول عالية التقلب مثل BTC.' })
+        : pick(lang, { en: 'Risk-off conditions tend to pressure higher-beta assets like BTC.', ur: 'Risk-off حالات عام طور پر BTC جیسے high-beta assets پر دباؤ ڈالتی ہیں۔', ar: 'ظروف تجنب المخاطرة تضغط عادة على الأصول عالية التقلب مثل BTC.' });
       out.evidence.push(bullet(
         pick(lang, {
           en: riskOn
@@ -297,19 +376,25 @@ export function fundamentalSection(lang, c, ev) {
             : (c.direction === 'sell' ? 'خلفية تجنب المخاطرة تضغط على الأصول عالية التقلب مثل BTC.' : 'خلفية تجنب المخاطرة عائق أمام صفقة شراء BTC.'),
         }),
         (riskOn && c.direction === 'buy') || (!riskOn && c.direction === 'sell') ? 'supportive' : 'opposing',
-        basisRegime, lang, c.direction));
+        basisRegime, lang, c.direction, regimeReason));
     } else if (c.instrument === 'XAU/USD') {
       out.evidence.push(bullet(
         pick(lang, {
           en: `Regime reads ${ev.regime.label}. Gold's response to risk regime is inconsistent — it trades as a defensive asset in some episodes and with real yields in others — so this is context, not a directional signal.`,
           ur: `Regime ${ev.regime.label} دکھا رہا ہے۔ Gold کا risk regime پر ردعمل غیر مستقل ہے — کبھی یہ defensive asset کی طرح چلتا ہے اور کبھی real yields کے ساتھ — اس لیے یہ صرف context ہے، directional signal نہیں۔`,
           ar: `يقرأ النظام ${ev.regime.label}. استجابة الذهب لنظام المخاطرة غير ثابتة — يتداول كأصل دفاعي في بعض الفترات ومع العوائد الحقيقية في أخرى — لذا هذا سياق فقط، وليس إشارة اتجاهية.`,
-        }), 'neutral', basisRegime, lang, c.direction));
+        }), 'neutral', basisRegime, lang, c.direction,
+        pick(lang, { en: "Gold's reaction to risk sentiment is inconsistent across cycles, so this reading is kept as context rather than a directional call.",
+          ur: 'Gold کا risk sentiment پر ردعمل مختلف cycles میں غیر مستقل رہتا ہے، اس لیے اسے directional call کی بجائے context کے طور پر رکھا گیا ہے۔',
+          ar: 'استجابة الذهب لمعنويات المخاطرة غير ثابتة عبر الدورات، لذا تُعامل هذه القراءة كسياق وليست إشارة اتجاهية.' })));
     } else {
       out.evidence.push(bullet(
         pick(lang, { en: `Regime reads ${ev.regime.label} — background context for ${c.instrument || 'this instrument'}.`,
           ur: `Regime ${ev.regime.label} دکھا رہا ہے — ${c.instrument || 'اس instrument'} کے لیے پس منظر context۔`,
-          ar: `يقرأ النظام ${ev.regime.label} — سياق خلفي لـ ${c.instrument || 'هذه الأداة'}.` }), 'neutral', basisRegime, lang, c.direction));
+          ar: `يقرأ النظام ${ev.regime.label} — سياق خلفي لـ ${c.instrument || 'هذه الأداة'}.` }), 'neutral', basisRegime, lang, c.direction,
+        pick(lang, { en: 'No established directional relationship is used for this instrument, so the regime is shown as context only.',
+          ur: 'اس instrument کے لیے کوئی established directional تعلق استعمال نہیں کیا جاتا، اس لیے regime کو صرف context کے طور پر دکھایا گیا ہے۔',
+          ar: 'لا تُستخدم علاقة اتجاهية ثابتة لهذه الأداة، لذا يُعرض النظام كسياق فقط.' })));
     }
   }
 
@@ -343,11 +428,17 @@ export function sentimentSection(lang, ev) {
     }));
     out.evidence.push(bullet(
       pick(lang, { en: `Volatility is ${bandWord} (VIX ${v}) — wider adverse excursions are normal right now.`, ur: `Volatility ${bandWord} ہے (VIX ${v}) — اس وقت وسیع adverse excursions معمول ہیں۔`, ar: `التقلب ${bandWord} (VIX ${v}) — التحركات المعاكسة الأوسع طبيعية الآن.` }),
-      'neutral', basisVix, lang, null));
+      'neutral', basisVix, lang, null,
+      pick(lang, { en: "Elevated volatility widens how far price can move either way — it doesn't pick a direction.",
+        ur: 'بلند volatility اس بات کو وسیع کر دیتی ہے کہ price کسی بھی طرف کتنا move کر سکتا ہے — یہ کوئی سمت طے نہیں کرتی۔',
+        ar: 'التقلب المرتفع يوسّع المدى الذي يمكن أن يتحرك فيه السعر في أي الاتجاهين — لا يحدد اتجاهاً بعينه.' })));
   } else {
     out.evidence.push(bullet(
       pick(lang, { en: `Volatility is ${bandWord} (VIX ${v}).`, ur: `Volatility ${bandWord} ہے (VIX ${v})۔`, ar: `التقلب ${bandWord} (VIX ${v}).` }),
-      'neutral', basisVix, lang, null));
+      'neutral', basisVix, lang, null,
+      pick(lang, { en: 'Volatility is in a normal/calm range right now — this is background context, not a directional signal.',
+        ur: 'اس وقت volatility ایک normal/calm range میں ہے — یہ پس منظر context ہے، directional اشارہ نہیں۔',
+        ar: 'التقلب حالياً ضمن نطاق طبيعي/هادئ — هذا سياق خلفي، وليس إشارة اتجاهية.' })));
   }
   return out;
 }
@@ -355,6 +446,7 @@ export function sentimentSection(lang, ev) {
 // ── NEWS / EVENTS ────────────────────────────────────────────────────────────
 export function newsItems(lang, ev, limit = 5) {
   if (ev.newsStatus !== 'verified' || !ev.news.length) return [];
+  const impactLabelUncertain = pick(lang, { en: 'Neutral / Uncertain', ur: 'Neutral / غیر یقینی', ar: 'محايد / غير مؤكد' });
   return ev.news.slice(0, limit).map((n) => ({
     what: n.title, source: n.source, at: n.publishedAt,
     why: pick(lang, { en: "Touches this instrument's price drivers.", ur: 'یہ instrument کے price drivers کو چھوتی ہے۔', ar: 'تتعلق بمحركات سعر هذه الأداة.' }),
@@ -363,6 +455,7 @@ export function newsItems(lang, ev, limit = 5) {
       ur: 'غیر یقینی — مواد پر منحصر؛ عام طور پر market headline پڑھے جانے سے پہلے حرکت کر چکی ہوتی ہے، اس لیے صرف title سے کوئی سمت اخذ نہیں کی جاتی۔',
       ar: 'غير مؤكد — يعتمد على المحتوى؛ عادةً ما تتحرك الأسواق قبل أن يصبح العنوان قابلاً للقراءة، لذا لا يُستنتج أي اتجاه من العنوان وحده.',
     }),
+    impact: 'neutral', impactLabel: impactLabelUncertain,
   }));
 }
 export function calendarItems(lang, ev, limit = 5) {

@@ -569,6 +569,27 @@ export async function onRequest(context) {
 
   // 4 ── SYNTHESIS. One model call, retried internally; deterministic on failure.
   const reportCase = { instrument: ins.id, direction: tradeCase.direction, account, context: ctx };
+
+  // EVIDENCE IMPACT — a compact, deterministic FACT → IMPACT ON INSTRUMENT →
+  // WHY → TRADE EFFECT reading for the Technical/Fundamental/Sentiment/News
+  // sections, for the quick-read card above the full report. Reuses the exact
+  // same section builders renderDeterministic() below already calls for the
+  // written report — no second analysis pipeline, just the same localized
+  // evidence objects exposed to the client as structured JSON (same pattern
+  // already used for managementOptions/marketDirection/overallEvidence) so a
+  // colour/label never has to be parsed back out of markdown. `impact` on
+  // each item is instrumentImpact(stance, direction) — a deterministic
+  // inversion of the stance this file's evidence already carries, not a new
+  // judgement — so Technical/Fundamental/Sentiment/News here can never
+  // disagree with the same sections in the written report below.
+  const evidenceImpact = {
+    instrumentName: RI.instrumentDisplayName(lang, ins.id),
+    technical: RI.technicalSection(lang, reportCase, evidence, range, invalidation),
+    fundamental: RI.fundamentalSection(lang, reportCase, evidence),
+    sentiment: RI.sentimentSection(lang, evidence),
+    news: RI.newsItems(lang, evidence),
+  };
+
   const brief = buildBrief(reportCase, position, evidence, history, meters, analysis, knowledge, range, invalidation);
   const deterministic = renderDeterministic(lang, reportCase, position, evidence, history, meters, analysis, range, invalidation);
   const plan = await generateRescuePlan(env, brief, lang);
@@ -590,6 +611,7 @@ export async function onRequest(context) {
     managementOptions,
     marketDirection,
     overallEvidence,
+    evidenceImpact,
     // Shared localized labels the client uses to render the sections above,
     // so no UI string is ever hand-duplicated in trade-rescue.html and
     // allowed to drift from the language this response was built in.

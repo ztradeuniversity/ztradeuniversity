@@ -201,6 +201,25 @@
   .scoreWrap:hover .scoreTip,.scoreWrap:focus-within .scoreTip{display:block}
   .unavailLine{font-size:11.5px;color:var(--muted2);font-style:italic;padding:6px 0 0}
 
+  /* evidence impact cards — FACT / IMPACT ON INSTRUMENT / WHY / TRADE EFFECT */
+  .impactWrap{margin-bottom:16px}
+  .impactCard{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:16px 18px;margin-bottom:12px}
+  .impactCard:last-child{margin-bottom:0}
+  .impactCard h4{margin:0 0 4px;font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent2);font-weight:700}
+  .impactRow{padding:10px 0;border-bottom:1px dashed var(--line)}
+  .impactRow:last-child{border-bottom:0}
+  .impactFact{font-size:13.5px;line-height:1.5;margin-bottom:6px}
+  .impactMeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:5px}
+  .impactBadge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:2px 9px;border-radius:20px;white-space:nowrap}
+  .impactBadge.bullish{background:var(--ok-bg);color:var(--ok)}
+  .impactBadge.bearish{background:var(--bear-bg);color:var(--bear)}
+  .impactBadge.neutral{background:var(--bg2);color:var(--muted2)}
+  .impactTag{font-size:11.5px;font-weight:600;color:var(--muted)}
+  .impactReason{font-size:12px;color:var(--muted2);line-height:1.5}
+  .impactPlain{font-size:13px;line-height:1.5;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .impactPlain:last-child{border-bottom:0}
+  .impactUnavail{font-size:11.5px;color:var(--muted2);font-style:italic;padding:6px 0 0}
+
   /* overall evidence + market direction (§5, §6) */
   .overallCard{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:18px 20px;margin-bottom:16px}
   .overallTop{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -414,6 +433,7 @@ const I18N = {
     overallEvidence: 'Overall Evidence', readOverview: 'Read Overview of the Market',
     readReason: 'Read the reason below.', what: 'What', why: 'Why / Reason', trigger: 'Trigger to watch', risk: 'Risk', option: 'Option',
     overallEvidenceScoreLabel: 'Overall Evidence Score', evidenceExplainAria: 'Why this evidence has this score',
+    impactOn: 'Impact on {instrument}',
   },
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
@@ -448,6 +468,7 @@ const I18N = {
     overallEvidence: 'مجموعی Evidence', readOverview: 'مارکیٹ کا تفصیلی جائزہ پڑھیں',
     readReason: 'نیچے وجہ پڑھیں۔', what: 'کیا', why: 'کیوں / وجہ', trigger: 'کس چیز پر نظر رکھیں', risk: 'Risk', option: 'آپشن',
     overallEvidenceScoreLabel: 'مجموعی Evidence Score', evidenceExplainAria: 'یہ evidence یہ score کیوں رکھتی ہے',
+    impactOn: '{instrument} پر اثر',
   },
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
@@ -482,6 +503,7 @@ const I18N = {
     overallEvidence: 'الأدلة الإجمالية', readOverview: 'اقرأ نظرة عامة على السوق',
     readReason: 'اقرأ السبب أدناه.', what: 'ماذا', why: 'لماذا / السبب', trigger: 'ما يجب مراقبته', risk: 'المخاطرة', option: 'خيار',
     overallEvidenceScoreLabel: 'درجة الأدلة الإجمالية', evidenceExplainAria: 'لماذا حصل هذا الدليل على هذه الدرجة',
+    impactOn: 'التأثير على {instrument}',
   },
 };
 const lang = () => langSel.value || 'en';
@@ -915,6 +937,51 @@ function renderResult() {
       '</div></div>';
   }
   h += '</div>';
+
+  // ── EVIDENCE IMPACT — FACT → IMPACT ON INSTRUMENT → WHY → TRADE EFFECT.
+  // `d.evidenceImpact` is computed server-side (rescue-assess.js) from the
+  // exact same localized Technical/Fundamental/Sentiment/News evidence the
+  // written report below is built from — `impact` (bullish/bearish/neutral)
+  // is a deterministic inversion of the `stance` those sections already
+  // compute, never a new judgement, so this can never disagree with the
+  // report text. Rendered as real HTML — never parsed out of markdown — so
+  // the colour and label are never at the mercy of the model's own wording.
+  // Older cached history entries saved before this existed simply omit the
+  // block rather than showing anything stale or guessed.
+  const EI = d.evidenceImpact;
+  if (EI) {
+    const instName = EI.instrumentName || d.instrument;
+    const impactOnLabel = esc(uiT('impactOn').replace('{instrument}', instName));
+    const impactRow = (b) => {
+      if (b.impact) {
+        return '<div class="impactRow"><div class="impactFact">' + esc(b.text) + '</div>' +
+          '<div class="impactMeta"><span class="impactBadge ' + esc(b.impact) + '">' +
+          impactOnLabel + ': ' + esc(b.impactLabel) + '</span>' +
+          '<span class="impactTag">' + esc(b.tag) + '</span></div>' +
+          (b.reason ? '<div class="impactReason"><b>' + esc(uiT('why')) + ':</b> ' + esc(b.reason) + '</div>' : '') +
+          '</div>';
+      }
+      return '<div class="impactPlain">' + esc(b.text) + ' — <span class="impactTag">' + esc(b.tag) + '</span></div>';
+    };
+    const sectionCard = (headKey, sec) => {
+      if (!sec || (!sec.evidence.length && !sec.uncertainty.length)) return '';
+      let c = '<div class="impactCard"><h4>' + esc(uiT(headKey)) + '</h4>';
+      c += sec.evidence.map(impactRow).join('');
+      c += sec.uncertainty.map(u => '<div class="impactUnavail">' + esc(uiT('unavailable')) + ' — ' + esc(u) + '</div>').join('');
+      c += '</div>';
+      return c;
+    };
+    let newsCard = '';
+    if ((EI.news || []).length) {
+      newsCard = '<div class="impactCard"><h4>' + esc(uiT('news')) + '</h4>' +
+        EI.news.map(n => '<div class="impactRow"><div class="impactFact">"' + esc(n.what) + '" — ' + esc(n.source) + '</div>' +
+          '<div class="impactMeta"><span class="impactBadge ' + esc(n.impact || 'neutral') + '">' + esc(n.impactLabel) + '</span></div>' +
+          '<div class="impactReason"><b>' + esc(uiT('why')) + ':</b> ' + esc(n.why) + ' ' + esc(n.effect) + '</div></div>').join('') +
+        '</div>';
+    }
+    const cards = sectionCard('technical', EI.technical) + sectionCard('fundamental', EI.fundamental) + sectionCard('sentiment', EI.sentiment) + newsCard;
+    if (cards) h += '<div class="impactWrap">' + cards + '</div>';
+  }
 
   // ── OVERALL EVIDENCE (sum of the three meters' own lean, display-only) +
   // MARKET DIRECTION (the existing average-based read, unchanged) ──
