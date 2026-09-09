@@ -95,6 +95,10 @@
     /* ── SECTION LAYOUT ── */
     .lib-section { padding:72px 0 80px; }
     .lib-section.alt { background:var(--bg); }
+    /* Deep-link targets (homepage "Free Class" / "Free Book" cards land here
+       directly) — offsets the sticky header (72px) + sticky filter bar so the
+       section heading is never hidden underneath them. */
+    #videosTitle, #booksTitle { scroll-margin-top: 150px; }
     .section-head { margin-bottom:38px; }
     .sec-eyebrow { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--purple); margin-bottom:10px; }
     .section-title { font-family:'Manrope','Inter',sans-serif; font-size:clamp(24px,2.8vw,34px); font-weight:900; color:var(--text); letter-spacing:-1px; margin-bottom:8px; }
