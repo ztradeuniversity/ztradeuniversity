@@ -61,6 +61,7 @@ const LIMITS = {
   full_name: 120, father_name: 120, contact: 160,
   background: 1500, goals: 1500, expectations: 1500, referral_source: 300,
   payment_sender_name: 120, payment_method: 20, bank_name: 120, transaction_id: 120,
+  payment_source_details: 240,
 };
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: CORS });
@@ -116,6 +117,7 @@ async function submit(sb, body, request) {
   const paymentMethod = clean(e.payment_method, LIMITS.payment_method);
   const isBank = paymentMethod === 'Bank Transfer';
   const isCash = paymentMethod === 'Cash';
+  const isOther = paymentMethod === 'Other';
 
   const amount = Number(e.amount_paid);
 
@@ -135,6 +137,7 @@ async function submit(sb, body, request) {
     payment_date:        clean(e.payment_date, 32),          // 'YYYY-MM-DD' from <input type=date>
     payment_method:      paymentMethod,
     bank_name:           isBank ? clean(e.bank_name, LIMITS.bank_name) : null,
+    payment_source_details: (isCash || isOther) ? clean(e.payment_source_details, LIMITS.payment_source_details) : null,
     transaction_id:      clean(e.transaction_id, LIMITS.transaction_id) || null,
     amount_paid:         Number.isFinite(amount) ? Math.round(amount * 100) / 100 : null,
 
@@ -147,6 +150,7 @@ async function submit(sb, body, request) {
   if (!row.payment_date)                                 return json({ ok: false, error: 'missing_payment_date' }, 400);
   if (!PAYMENT_METHODS.includes(row.payment_method))     return json({ ok: false, error: 'missing_payment_method' }, 400);
   if (isBank && !row.bank_name)                          return json({ ok: false, error: 'missing_bank_name' }, 400);
+  if ((isCash || isOther) && !row.payment_source_details) return json({ ok: false, error: 'missing_payment_source_details' }, 400);
   if (!isCash && !row.transaction_id)                    return json({ ok: false, error: 'missing_transaction_id' }, 400);
   if (row.amount_paid == null || row.amount_paid <= 0)   return json({ ok: false, error: 'invalid_amount' }, 400);
 

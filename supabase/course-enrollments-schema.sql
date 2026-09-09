@@ -67,6 +67,9 @@ CREATE TABLE IF NOT EXISTS public.course_enrollments (
   payment_date         date NOT NULL,
   payment_method        text NOT NULL CHECK (payment_method IN ('Bank Transfer','Cash','Other')),
   bank_name             text,                  -- required only when payment_method = 'Bank Transfer' (app-enforced)
+  payment_source_details text,                 -- required when payment_method = 'Other' or 'Cash' (app-enforced) —
+                                                -- free text: "Other" payment platform/wallet (e.g. Binance,
+                                                -- EasyPaisa) or a description of how the cash was paid
   transaction_id        text,                  -- required unless payment_method = 'Cash' (app-enforced)
   amount_paid            numeric(10,2) NOT NULL CHECK (amount_paid > 0),
 
@@ -94,6 +97,31 @@ ALTER TABLE public.course_enrollments ENABLE ROW LEVEL SECURITY;
 --
 -- DROP INDEX IF EXISTS public.idx_course_enrollments_status_submitted;
 -- DROP TABLE IF EXISTS public.course_enrollments;
+
+
+-- =============================================================================
+-- RETROFIT — "payment_source_details" column
+--   Needed ONLY if public.course_enrollments already exists in the System A
+--   Supabase project WITHOUT this column (i.e. it was created from an earlier
+--   copy of this file, before this column was added above). Run the CREATE
+--   TABLE block above instead if the table does not exist yet — it already
+--   includes this column, so this ALTER is not needed on a fresh table.
+--
+-- SAFETY: purely additive, nullable, no default. Existing rows get NULL in
+-- this column and remain fully readable; nothing existing is renamed, typed,
+-- constrained or dropped. No downtime, no lock beyond a fast metadata change.
+--
+-- DO NOT AUTO-EXECUTE — run manually in the System A Supabase SQL editor,
+-- then redeploy the site (functions/api/course-enrollment.js already expects
+-- this column to exist once this is applied).
+-- =============================================================================
+
+-- ALTER TABLE public.course_enrollments
+--   ADD COLUMN IF NOT EXISTS payment_source_details text;
+
+-- Rollback (only if you need to fully undo the retrofit — safe even with data,
+-- since the column is nullable and app-only; no other column depends on it):
+-- ALTER TABLE public.course_enrollments DROP COLUMN IF EXISTS payment_source_details;
 
 
 -- =============================================================================

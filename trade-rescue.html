@@ -64,6 +64,14 @@
   .verifyBtn{font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--accent);
     background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap}
   .verifyBtn:hover{background:var(--accent2);border-color:var(--accent2)}
+  .navGroup{display:flex;align-items:center;gap:4px;flex-shrink:0}
+  .navBtn{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border:1px solid var(--line2);
+    border-radius:9px;background:var(--bg);color:var(--text);font:600 12.5px/1 inherit;cursor:pointer;
+    white-space:nowrap;text-decoration:none;flex-shrink:0}
+  .navBtn:hover{border-color:var(--accent);color:var(--accent2)}
+  .navBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .navBtn svg{flex-shrink:0}
+  [dir=rtl] .navBtn.back svg{transform:scaleX(-1)}
   .sp{flex:1}
   .langWrap{display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:20px;padding:4px 10px}
   .langWrap select{border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--text);cursor:pointer;outline:none}
@@ -346,12 +354,15 @@
     .scoreTip{max-width:78vw}
   }
   @media(max-width:560px){
-    header.bar{padding:10px 12px;gap:8px}
+    header.bar{padding:10px 12px;gap:8px;flex-wrap:wrap;row-gap:8px}
     .brand{font-size:14.5px}
     .acc{font-size:10.5px;padding:3px 8px}
     .acc .detail{display:none}
     .verifyBtn{font-size:10.5px;padding:4px 9px}
     h1{font-size:21px}
+    .navGroup{gap:6px}
+    .navBtn{width:30px;height:30px;padding:0;justify-content:center;border-radius:8px}
+    .navBtn .navLbl{display:none}
   }
   @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -374,6 +385,16 @@
       <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
+      <span class="navGroup">
+        <button class="navBtn back" id="backBtn" type="button" data-i18n-aria="navBack" aria-label="Back" title="Back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19l-7-7 7-7M5 12h15"/></svg>
+          <span class="navLbl" data-i18n="navBack" aria-hidden="true">Back</span>
+        </button>
+        <a class="navBtn" id="homeBtn" href="index.html" data-i18n-aria="navHome" aria-label="Home" title="Home">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+          <span class="navLbl" data-i18n="navHome" aria-hidden="true">Home</span>
+        </a>
+      </span>
       <span class="brand">ZTU <span>Rescue</span></span>
       <span class="acc" id="accBadge" aria-live="polite">…</span>
       <button class="verifyBtn" id="verifyBtn" type="button" hidden data-i18n="verifyIb">Verify with IB</button>
@@ -449,6 +470,7 @@ function blankLayer(dir) {
 const I18N = {
   en: {
     newAssessment: 'New assessment', yourAssessments: 'Your assessments', verifyIb: 'Verify with IB',
+    navBack: 'Back', navHome: 'Home',
     pageTitle: 'Trade Rescue Assessment',
     pageLede: 'Describe the position once. Current price, macro context, news and market history are retrieved for you — nothing you can look up is asked for here.',
     secAsset: 'Asset', secPosition: 'Position',
@@ -484,6 +506,7 @@ const I18N = {
   },
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
+    navBack: 'واپس', navHome: 'ہوم',
     pageTitle: 'Trade Rescue تجزیہ',
     pageLede: 'اپنی position ایک بار بتائیں۔ موجودہ price، macro context، news اور market history خود لے لی جاتی ہے — جو چیز system خود دیکھ سکتا ہے وہ آپ سے نہیں پوچھی جاتی۔',
     secAsset: 'Asset', secPosition: 'Position',
@@ -519,6 +542,7 @@ const I18N = {
   },
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
+    navBack: 'رجوع', navHome: 'الرئيسية',
     pageTitle: 'تقييم إنقاذ الصفقة',
     pageLede: 'صِف المركز مرة واحدة. السعر الحالي والسياق الكلي والأخبار وتاريخ السوق تُجلب لك — ولا يُطلب منك شيء يمكن للنظام جلبه بنفسه.',
     secAsset: 'الأداة', secPosition: 'المركز',
@@ -1220,6 +1244,15 @@ function renderHistory() {
 function startNew() { result = null; C = newCase(); render(); closeSide(); }
 
 /* ── shell ───────────────────────────────────────────────────────────── */
+$('backBtn').addEventListener('click', () => {
+  let hasMeaningfulHistory = false;
+  try {
+    hasMeaningfulHistory = window.history.length > 1 && !!document.referrer &&
+      new URL(document.referrer).origin === window.location.origin;
+  } catch { hasMeaningfulHistory = false; }
+  if (hasMeaningfulHistory) window.history.back();
+  else window.location.href = 'index.html';
+});
 function openSide() { side.classList.add('open'); scrim.classList.add('open'); burger.setAttribute('aria-expanded', 'true'); }
 function closeSide() { side.classList.remove('open'); scrim.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); }
 burger.addEventListener('click', () => (side.classList.contains('open') ? closeSide() : openSide()));
@@ -1230,12 +1263,14 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSide(
 langSel.addEventListener('change', () => {
   try { localStorage.setItem(LANG_KEY, langSel.value); } catch {}
   document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(n => { const s = t(n.dataset.i18nAria); n.setAttribute('aria-label', s); n.setAttribute('title', s); });
   syncFromDom(); render();
 });
 
 /* ── boot ────────────────────────────────────────────────────────────── */
 try { const l = localStorage.getItem(LANG_KEY); if (l && I18N[l]) langSel.value = l; } catch {}
 document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+document.querySelectorAll('[data-i18n-aria]').forEach(n => { const s = t(n.dataset.i18nAria); n.setAttribute('aria-label', s); n.setAttribute('title', s); });
 paintAccess();
 refreshAccess();
 renderHistory();

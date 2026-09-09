@@ -269,6 +269,10 @@
             <label for="bankName">Bank name <span class="req">*</span></label>
             <input type="text" id="bankName" maxlength="120" placeholder="e.g. HBL, Meezan, Easypaisa" />
           </div>
+          <div class="field" id="sourceField">
+            <label for="paySource" id="sourceLabel">Payment source <span class="req">*</span></label>
+            <input type="text" id="paySource" maxlength="240" placeholder="" />
+          </div>
         </div>
         <div class="grid2">
           <div class="field" id="txnField">
@@ -363,18 +367,39 @@ async function callApi(payload) {
 }
 
 /* ── payment method → conditional fields ──
-   Bank Transfer: bank name required. Cash: bank name hidden, transaction id
-   optional (cash often has no reference number). Other: transaction id
-   required, no bank name. */
+   Bank Transfer: bank name required. Other: a free-text "Other Payment
+   Source" required (Binance, EasyPaisa, JazzCash, ...). Cash: a free-text
+   "Cash Payment Details" required (who received it / how it was paid).
+   Other and Cash share one input (#paySource) since both are the same kind
+   of answer — a human description of the payment source/path — just with a
+   different label; its value is always cleared on method change so a value
+   typed for one method can never be submitted under another. Transaction ID
+   stays exactly as before (required for Bank Transfer/Other, optional for
+   Cash). */
 const payMethod = $('payMethod'), bankField = $('bankNameField'), bankInput = $('bankName');
 const txnField = $('txnField'), txnInput = $('txnId');
+const sourceField = $('sourceField'), sourceLabel = $('sourceLabel'), sourceInput = $('paySource');
 function syncPaymentFields() {
   const m = payMethod.value;
   const isBank = m === 'Bank Transfer';
   const isCash = m === 'Cash';
+  const isOther = m === 'Other';
+
   bankField.classList.toggle('is-hidden', !isBank);
   bankInput.required = isBank;
   if (!isBank) bankInput.value = '';
+
+  sourceField.classList.toggle('is-hidden', !(isCash || isOther));
+  sourceInput.required = isCash || isOther;
+  sourceInput.value = '';
+  if (isOther) {
+    sourceLabel.innerHTML = 'Other payment source <span class="req">*</span>';
+    sourceInput.placeholder = 'e.g. Binance, EasyPaisa, JazzCash';
+  } else if (isCash) {
+    sourceLabel.innerHTML = 'Cash payment details <span class="req">*</span>';
+    sourceInput.placeholder = 'Who received the cash and how? e.g. paid in cash to Ahmed';
+  }
+
   txnInput.required = !isCash && !!m;
   txnField.querySelector('.req').style.display = isCash ? 'none' : '';
 }
@@ -431,6 +456,7 @@ $('enrollForm').addEventListener('submit', async (e) => {
   const payDate    = $('payDate').value;
   const method     = $('payMethod').value;
   const bank       = $('bankName').value.trim();
+  const source     = $('paySource').value.trim();
   const txn        = $('txnId').value.trim();
   const amount     = parseFloat($('amountPaid').value);
 
@@ -440,6 +466,8 @@ $('enrollForm').addEventListener('submit', async (e) => {
   if (!payDate)     { say('Please enter the payment date.', 'err'); $('payDate').focus(); return; }
   if (!method)      { say('Please select a payment method.', 'err'); $('payMethod').focus(); return; }
   if (method === 'Bank Transfer' && !bank) { say('Please enter the bank name.', 'err'); $('bankName').focus(); return; }
+  if (method === 'Other' && !source) { say('Please enter the payment source.', 'err'); $('paySource').focus(); return; }
+  if (method === 'Cash' && !source)  { say('Please enter the cash payment details.', 'err'); $('paySource').focus(); return; }
   if (method !== 'Cash' && !txn)   { say('Please enter the transaction ID.', 'err'); $('txnId').focus(); return; }
   if (!Number.isFinite(amount) || amount <= 0) { say('Please enter a valid amount paid.', 'err'); $('amountPaid').focus(); return; }
 
@@ -460,6 +488,7 @@ $('enrollForm').addEventListener('submit', async (e) => {
         payment_date: payDate,
         payment_method: method,
         bank_name: method === 'Bank Transfer' ? bank : '',
+        payment_source_details: (method === 'Other' || method === 'Cash') ? source : '',
         transaction_id: txn,
         amount_paid: amount,
       },
@@ -490,6 +519,7 @@ function explain(res) {
     case 'missing_payment_date':    return 'Please enter the payment date.';
     case 'missing_payment_method':  return 'Please select a payment method.';
     case 'missing_bank_name':       return 'Please enter the bank name.';
+    case 'missing_payment_source_details': return 'Please enter the payment source or cash payment details.';
     case 'missing_transaction_id':  return 'Please enter the transaction ID.';
     case 'invalid_amount':          return 'Please enter a valid amount paid.';
     default: return 'Enrollment could not be completed right now. Please try again shortly.';
