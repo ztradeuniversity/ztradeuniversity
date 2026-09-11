@@ -284,6 +284,17 @@
   }
 
   function applyTranslation(lang) {
+    // A page can declare languages it renders NATIVELY (its own hand-built
+    // translations, e.g. ZTU Rescue's EN/UR/AR i18n for financial content
+    // Google Translate would otherwise mangle) by setting
+    // window.ZTU_LANG_NATIVE = ['ur','ar'] BEFORE this script runs. For
+    // those codes, Google Translate is skipped entirely on this page — the
+    // page's own renderer is the source of truth for the rendered text, so
+    // running the generic engine over it too would risk double-translating
+    // already-correct localized content (Google assumes English source).
+    if (Array.isArray(window.ZTU_LANG_NATIVE) && window.ZTU_LANG_NATIVE.indexOf(lang) !== -1) {
+      return;
+    }
     protectTerms();                          // must run before Google's first DOM scan
     writeCookie(lang);
     ensureWidget(function () {
@@ -305,6 +316,9 @@
     try { localStorage.setItem(LANG_KEY, JSON.stringify({ lang: lang, short: short })); } catch (e) {}
     closeMenu();
     applyTranslation(lang);                  // 'en' restores the original text
+    // Lets a page react to the language changing (e.g. ZTU Rescue re-renders
+    // its own natively-localized UI) without polling localStorage.
+    try { window.dispatchEvent(new CustomEvent('ztulang:change', { detail: { lang: lang, short: short } })); } catch (e) {}
   }
 
   /* Keep brand names in English wherever headers expose them (cheap, always-on). */
@@ -407,7 +421,12 @@
         applyTranslation(saved.lang);
       }
 
-      window.ZTULang = { pick: pick, apply: applyTranslation, langs: LANGS };
+      window.ZTULang = {
+        pick: pick, apply: applyTranslation, langs: LANGS, storageKey: LANG_KEY,
+        current: function () {
+          try { return JSON.parse(localStorage.getItem(LANG_KEY) || 'null'); } catch (e) { return null; }
+        },
+      };
     } catch (e) {
       /* Never let a page-specific DOM quirk throw — the site must keep working. */
     }

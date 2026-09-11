@@ -263,6 +263,7 @@
     border-color: var(--cyan2);
     box-shadow: 0 0 0 4px rgba(212,174,94,0.10);
   }
+  .opt:focus-visible { outline: 2px solid var(--cyan2); outline-offset: 2px; }
   .opt-mark {
     width: 22px; height: 22px; border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.20);
@@ -294,33 +295,48 @@
   .opt-grid .opt { padding: 12px 14px; }
   .opt-grid .opt-label { font-size: 13.5px; }
 
-  /* SL scale for Q12 */
-  .scale-row {
+  /* SL scale for Q12 — renamed .scale-btn -> .tsa-scale-btn: this is the
+     Question 12 contrast bug. assets/lux-global.css has an unconditional
+     "html body .scale-btn {background:#fff!important; color:#2b2520!important}"
+     rule (meant for a different page's cream/gold quiz styling) that forced
+     this element's background to solid white, but does NOT touch the child
+     .scale-num/.scale-lbl text (those keep their own white/near-white
+     colors) — the result was white text on a white background, i.e. blank-
+     looking option boxes. Namespacing the classes avoids the collision
+     instead of editing the shared stylesheet other pages may rely on. */
+  .tsa-scale-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* minmax(0,1fr), not bare 1fr: grid items default to min-width:auto, so
+       a bare 1fr track can be forced wider than its fair share by the
+       .tsa-scale-lbl text ("Sometimes", "Always"), blowing the row past its
+       container on narrow screens. minmax(0,1fr) lets the column actually
+       shrink to the space available and wrap its label instead. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
     margin-top: 6px;
   }
-  .scale-btn {
+  .tsa-scale-btn {
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     padding: 16px 8px; border-radius: 14px;
     background: rgba(255,255,255,0.03);
     border: 1.5px solid var(--border);
     cursor: pointer; user-select: none;
+    min-width: 0;
     transition: background .18s, border-color .18s, transform .12s;
   }
-  .scale-btn:hover { background: rgba(212,174,94,0.06); border-color: rgba(212,174,94,0.32); }
-  .scale-btn.is-selected {
+  .tsa-scale-btn:hover { background: rgba(212,174,94,0.06); border-color: rgba(212,174,94,0.32); }
+  .tsa-scale-btn.is-selected {
     background: rgba(212,174,94,0.12);
     border-color: var(--cyan2);
     box-shadow: 0 0 0 4px rgba(212,174,94,0.10);
   }
-  .scale-num {
+  .tsa-scale-btn:focus-visible { outline: 2px solid var(--cyan2); outline-offset: 2px; }
+  .tsa-scale-num {
     font-family: 'Manrope', sans-serif;
     font-size: 22px; font-weight: 800; color: #fff; line-height: 1;
   }
-  .scale-btn.is-selected .scale-num { color: var(--cyan2); }
-  .scale-lbl {
+  .tsa-scale-btn.is-selected .tsa-scale-num { color: var(--cyan2); }
+  .tsa-scale-lbl {
     font-size: 10.5px; font-weight: 700; letter-spacing: 1px;
     color: var(--muted2); text-transform: uppercase; text-align: center;
   }
@@ -490,7 +506,13 @@
     -webkit-text-fill-color: transparent;
   }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
+  /* Renamed .chip -> .tsa-chip: assets/lux-global.css has an unconditional
+     "html body .chip {background:...!important; color:...!important}" rule
+     (meant for other pages) that silently overrode these confidence/growth
+     colors, flattening every chip to the same cream tone. Namespacing this
+     page's own classes avoids the collision instead of editing the shared
+     stylesheet (which other pages may correctly rely on). */
+  .tsa-chip {
     display: inline-flex; align-items: center; gap: 7px;
     font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
     padding: 7px 13px; border-radius: 100px;
@@ -648,6 +670,48 @@
     font-size: 14px; color: rgba(255,255,255,0.86); line-height: 1.65;
   }
 
+  /* ── NEXT ACTION PLAN (ranked, gap -> change -> action) ── */
+  .action-plan { margin-top: 22px; }
+  .ap-lead {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    color: var(--cyan2); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .ap-sub { font-size: 12.5px; color: var(--muted2); line-height: 1.5; }
+  .ap-list { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+  .ap-item {
+    padding: 16px 18px; border-radius: 14px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-left: 3px solid var(--bear2);
+  }
+  .ap-item-head { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; flex-wrap: wrap; }
+  .ap-priority {
+    font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: 1px;
+    color: #0d0902; background: var(--cyan2); padding: 3px 10px; border-radius: 100px; text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .ap-bucket { font-size: 14.5px; font-weight: 700; color: #fff; }
+  .ap-row { margin-bottom: 9px; }
+  .ap-row:last-of-type { margin-bottom: 0; }
+  .ap-row-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted2); margin-bottom: 3px;
+  }
+  .ap-row-text { font-size: 13.5px; color: rgba(255,255,255,0.84); line-height: 1.55; }
+  .ap-tool {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+    padding: 9px 15px; border-radius: 100px; font-size: 12.5px; font-weight: 700;
+    background: rgba(212,174,94,0.10); border: 1px solid rgba(212,174,94,0.32); color: var(--cyan2);
+    text-decoration: none; transition: background .18s, border-color .18s;
+  }
+  .ap-tool:hover { background: rgba(212,174,94,0.18); border-color: var(--cyan2); }
+  .ap-tool svg { flex-shrink: 0; }
+  .ap-target {
+    margin-top: 16px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(255,255,255,0.03); border: 1px dashed var(--border-strong);
+    font-size: 12.5px; color: var(--muted); line-height: 1.55;
+  }
+  .ap-empty { font-size: 13px; color: var(--muted2); font-style: italic; }
+
   /* ── ROADMAP ── */
   .roadmap-section {
     padding: 60px 0;
@@ -790,8 +854,8 @@
     .survey-shell { padding: 24px 20px 22px; border-radius: 18px; }
     .q-text { font-size: 17px; }
     .opt-grid { grid-template-columns: 1fr; }
-    .scale-num { font-size: 19px; }
-    .scale-lbl { font-size: 9.5px; letter-spacing: .6px; }
+    .tsa-scale-num { font-size: 19px; }
+    .tsa-scale-lbl { font-size: 9.5px; letter-spacing: .6px; }
     .scoring-grid { grid-template-columns: 1fr; }
     .result-wrap { padding: 24px 20px; border-radius: 18px; }
     .level-badge { font-size: 26px; }
@@ -957,9 +1021,9 @@
           <div class="result-headline">Your Trader Level</div>
           <div class="level-badge" id="levelBadge">Beginner</div>
           <div class="chips">
-            <span class="chip chip-profile" id="profileChip"><span class="chip-dot"></span><span id="profileText">Profile</span></span>
-            <span class="chip" id="confChip"><span class="chip-dot"></span><span id="confText">Confidence</span></span>
-            <span class="chip" id="growthChip"><span class="chip-dot"></span><span id="growthText">Growth</span></span>
+            <span class="tsa-chip chip-profile" id="profileChip"><span class="chip-dot"></span><span id="profileText">Profile</span></span>
+            <span class="tsa-chip" id="confChip"><span class="chip-dot"></span><span id="confText">Confidence</span></span>
+            <span class="tsa-chip" id="growthChip"><span class="chip-dot"></span><span id="growthText">Growth</span></span>
           </div>
         </div>
         <div class="composite">
@@ -992,6 +1056,13 @@
       <div class="ai-summary">
         <div class="ai-lead">AI Diagnostic Summary</div>
         <div class="ai-body" id="aiSummary"></div>
+      </div>
+
+      <div class="action-plan">
+        <div class="ap-lead">Next Action Plan</div>
+        <div class="ap-sub">Ranked by what will move your profile the most. Start at Priority 1.</div>
+        <div class="ap-list" id="actionPlanList"></div>
+        <div class="ap-target" id="apTarget"></div>
       </div>
     </div>
   </div>
@@ -1237,10 +1308,11 @@ function renderQuestion() {
   let inner = `<div class="q-text">${q.text}</div><div class="q-hint">${q.hint}</div>`;
 
   if (q.fmt === 'SC') {
-    inner += `<div class="opt-list">`;
+    inner += `<div class="opt-list" role="radiogroup" aria-label="${q.text}">`;
     q.options.forEach(opt => {
-      const sel = state.answers[q.id] === opt.v ? ' is-selected' : '';
-      inner += `<div class="opt${sel}" data-q="${q.id}" data-v="${opt.v}" data-multi="false">
+      const isSel = state.answers[q.id] === opt.v;
+      inner += `<div class="opt${isSel ? ' is-selected' : ''}" data-q="${q.id}" data-v="${opt.v}" data-multi="false"
+        tabindex="0" role="radio" aria-checked="${isSel}">
         <span class="opt-mark"></span><span class="opt-label">${opt.label}</span>
       </div>`;
     });
@@ -1248,10 +1320,11 @@ function renderQuestion() {
   }
   else if (q.fmt === 'MS') {
     const sel = state.answers[q.id] || [];
-    inner += `<div class="opt-grid">`;
+    inner += `<div class="opt-grid" role="group" aria-label="${q.text}">`;
     q.options.forEach(opt => {
-      const isSel = sel.includes(opt.v) ? ' is-selected' : '';
-      inner += `<div class="opt${isSel}" data-q="${q.id}" data-v="${opt.v}" data-multi="true">
+      const isSel = sel.includes(opt.v);
+      inner += `<div class="opt${isSel ? ' is-selected' : ''}" data-q="${q.id}" data-v="${opt.v}" data-multi="true"
+        tabindex="0" role="checkbox" aria-checked="${isSel}">
         <span class="opt-mark"></span><span class="opt-label">${opt.label}</span>
       </div>`;
     });
@@ -1259,12 +1332,13 @@ function renderQuestion() {
   }
   else if (q.fmt === 'SL') {
     const cur = state.answers[q.id];
-    inner += `<div class="scale-row">`;
+    inner += `<div class="tsa-scale-row" role="radiogroup" aria-label="${q.text}">`;
     q.scale.forEach(s => {
-      const sel = cur === s.v ? ' is-selected' : '';
-      inner += `<div class="scale-btn${sel}" data-q="${q.id}" data-v="${s.v}">
-        <span class="scale-num">${s.v}</span>
-        <span class="scale-lbl">${s.label}</span>
+      const isSel = cur === s.v;
+      inner += `<div class="tsa-scale-btn${isSel ? ' is-selected' : ''}" data-q="${q.id}" data-v="${s.v}"
+        tabindex="0" role="radio" aria-checked="${isSel}" aria-label="${s.v} - ${s.label}">
+        <span class="tsa-scale-num">${s.v}</span>
+        <span class="tsa-scale-lbl">${s.label}</span>
       </div>`;
     });
     inner += `</div>`;
@@ -1272,12 +1346,18 @@ function renderQuestion() {
 
   qBlock.innerHTML = inner;
 
-  // attach listeners
+  // attach listeners — click AND keyboard (Enter/Space), since these are
+  // custom div-based controls, not native inputs.
+  const activateOnKey = (handler) => (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e.currentTarget); }
+  };
   qBlock.querySelectorAll('.opt').forEach(el => {
     el.addEventListener('click', () => handleOption(el));
+    el.addEventListener('keydown', activateOnKey(handleOption));
   });
-  qBlock.querySelectorAll('.scale-btn').forEach(el => {
+  qBlock.querySelectorAll('.tsa-scale-btn').forEach(el => {
     el.addEventListener('click', () => handleScale(el));
+    el.addEventListener('keydown', activateOnKey(handleScale));
   });
 
   btnBack.disabled = state.current === 0;
@@ -1570,6 +1650,79 @@ function buildSummary(level, profile, scores, weakKeys) {
   return `${intro} ${profDesc} Your strongest dimension is <strong>${BUCKET_LABEL[topBucketKey]}</strong> and your weakest is <strong>${BUCKET_LABEL[lowBucketKey]}</strong>. ${advice}`;
 }
 
+/* ===== 12b. NEXT ACTION PLAN — ranked, gap -> change -> next action =====
+   Reuses WEAK_LINE ("current gap") and WEAK_ADVICE ("what to change") —
+   already written per-bucket above — and adds one concrete next action
+   plus, where genuinely relevant, a link to an existing ZTU tool. Never
+   invents a tool: Trading Journal is only offered when q9 itself shows
+   weak/no journaling (the direct signal for "review would help"), and only
+   for whichever weak bucket journaling actually affects (execution/
+   learning) — not merely because some other dimension is weak. */
+const NEXT_ACTION = {
+  knowledge:  'Read one structured lesson on market structure or sessions this week and write a 2-line summary of what you learned.',
+  riskMgmt:   'Before your next trade, calculate lot size from your account % and stop-loss distance — write the number down before you enter.',
+  psychology: 'After your next loss, set a 30-minute cool-down rule before opening a new chart, and log how you felt.',
+  execution:  'Write your entry checklist down and reject any setup that fails it — starting with your very next trade.',
+  learning:   'Book one fixed weekly study session this week and log the single biggest takeaway afterward.',
+};
+// Default tool recommendation per bucket (task 15's mapping) — Trading
+// Journal is deliberately NOT here; it's only attached via the q9 signal
+// below, never automatically for a bucket alone.
+const TOOL_REC = {
+  knowledge:  { title:'Free Classes', reason:'Build your foundation with a short, structured lesson.', href:'free-classes.html' },
+  riskMgmt:   { title:'Risk-Reward Guide', reason:'A practical breakdown that turns your risk % into an actual sizing rule.', href:'best-risk-reward-ratio-forex-trading.html' },
+  psychology: { title:'Emotional Trading Guide', reason:'Short, practical read on breaking the loss-reaction loop.', href:'how-to-avoid-emotional-trading.html' },
+  execution:  { title:'Build a Trading Plan', reason:'Turn your rules into a written plan you can actually follow.', href:'how-to-build-forex-trading-plan.html' },
+  learning:   { title:'Free Classes', reason:'A consistent, structured way to keep learning every week.', href:'free-classes.html' },
+};
+const TRADING_JOURNAL_TOOL = { title:'Trading Journal', reason:'Log every trade and its reasoning so recurring mistakes become visible instead of repeating.', href:'trading-journal-intro.html' };
+
+function buildActionPlan(weakKeys, answers) {
+  if (!weakKeys.length) return [];
+  const weakJournaling = answers.q9 === 'a' || answers.q9 === 'b';
+  let journalUsed = false;
+  return weakKeys.slice(0, 3).map((key, i) => {
+    let tool = TOOL_REC[key];
+    if (weakJournaling && !journalUsed && (key === 'execution' || key === 'learning')) {
+      tool = TRADING_JOURNAL_TOOL;
+      journalUsed = true;
+    }
+    return {
+      priority: i + 1,
+      bucket: BUCKET_LABEL[key],
+      gap: WEAK_LINE[key],
+      change: WEAK_ADVICE[key],
+      action: NEXT_ACTION[key],
+      tool,
+    };
+  });
+}
+
+function renderActionPlan(items) {
+  const list = document.getElementById('actionPlanList');
+  const target = document.getElementById('apTarget');
+  if (!items.length) {
+    list.innerHTML = `<p class="ap-empty">No dimension is below 50% right now — keep reinforcing what already works.</p>`;
+  } else {
+    list.innerHTML = items.map(it => `
+      <div class="ap-item">
+        <div class="ap-item-head">
+          <span class="ap-priority">Priority ${it.priority}</span>
+          <span class="ap-bucket">${it.bucket}</span>
+        </div>
+        <div class="ap-row"><div class="ap-row-label">Current Gap</div><div class="ap-row-text">${it.gap}</div></div>
+        <div class="ap-row"><div class="ap-row-label">What to Change</div><div class="ap-row-text">${it.change}</div></div>
+        <div class="ap-row"><div class="ap-row-label">Next Action</div><div class="ap-row-text">${it.action}</div></div>
+        ${it.tool ? `<a class="ap-tool" href="${it.tool.href}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Open ${it.tool.title} — ${it.tool.reason}
+        </a>` : ''}
+      </div>
+    `).join('');
+  }
+  target.textContent = 'Reaching 100% here means Knowledge, Risk Management, Psychology, Execution and Learning are all consistently strong — it is a measure of how complete and disciplined your process is, not a guarantee of trading profit.';
+}
+
 /* ===== 13. ROADMAP ROUTER ===== */
 const ROADMAP_LIB = {
   knowledge: [
@@ -1647,8 +1800,9 @@ function finishAssessment() {
     const sw = buildStrengthsWeaknesses(scores);
     const summaryHTML = buildSummary(level, profile, scores, sw.weakKeys);
     const roadmap = buildRoadmap(level, sw.weakKeys.length ? sw.weakKeys : ['execution']);
+    const actionPlan = buildActionPlan(sw.weakKeys, state.answers);
 
-    renderResult({ scores, level, profile, conf, growth, critical, sw, summaryHTML, roadmap });
+    renderResult({ scores, level, profile, conf, growth, critical, sw, summaryHTML, roadmap, actionPlan });
 
     calcOverlay.classList.remove('is-on');
     state.done = true;
@@ -1669,11 +1823,11 @@ function renderResult(r) {
   // Chips
   document.getElementById('profileText').textContent = r.profile;
   const confChip = document.getElementById('confChip');
-  confChip.className = 'chip chip-conf-' + r.conf.tone;
+  confChip.className = 'tsa-chip chip-conf-' + r.conf.tone;
   document.getElementById('confText').textContent = r.conf.level + ' Confidence';
 
   const growthChip = document.getElementById('growthChip');
-  growthChip.className = 'chip chip-growth-' + r.growth.tone;
+  growthChip.className = 'tsa-chip chip-growth-' + r.growth.tone;
   document.getElementById('growthText').textContent = r.growth.label;
 
   // Critical banner
@@ -1729,6 +1883,9 @@ function renderResult(r) {
 
   // Summary
   document.getElementById('aiSummary').innerHTML = r.summaryHTML;
+
+  // Next Action Plan
+  renderActionPlan(r.actionPlan);
 
   // Roadmap
   const roadEl = document.getElementById('roadList');

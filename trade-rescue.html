@@ -73,8 +73,16 @@
   .navBtn svg{flex-shrink:0}
   [dir=rtl] .navBtn.back svg{transform:scaleX(-1)}
   .sp{flex:1}
-  .langWrap{display:flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:20px;padding:4px 10px}
-  .langWrap select{border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--text);cursor:pointer;outline:none}
+  /* Compact skin for the injected global language selector (assets/ztu-lang.js)
+     so it matches Rescue's smaller 30-34px header controls instead of the
+     default 44px marketing-header size. Same DOM/behavior everywhere — this
+     only restyles it, it does not create a second implementation. Selectors
+     are scoped under header.bar so they win over the widget's own injected
+     (later-in-source) base rule regardless of stylesheet order. */
+  header.bar .ztu-lang__btn{height:30px;padding:0 10px;font-size:12px;border-color:var(--line2);color:var(--text);background:var(--bg)}
+  header.bar .ztu-lang__globe{width:14px;height:14px}
+  header.bar .ztu-lang__code{font-size:11.5px}
+  [dir=rtl] header.bar .ztu-lang__menu{right:auto;left:0}
 
   .scroll{flex:1;overflow-y:auto}
   .wrap{max-width:860px;margin:0 auto;padding:26px 22px 64px}
@@ -399,15 +407,10 @@
       <span class="acc" id="accBadge" aria-live="polite">…</span>
       <button class="verifyBtn" id="verifyBtn" type="button" hidden data-i18n="verifyIb">Verify with IB</button>
       <span class="sp"></span>
-      <span class="langWrap">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true" style="color:var(--muted)"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
-        <label class="sr-only" for="lang">Language</label>
-        <select id="lang">
-          <option value="en">English</option>
-          <option value="ur">اردو</option>
-          <option value="ar">العربية</option>
-        </select>
-      </span>
+      <!-- Global site-wide language selector (assets/ztu-lang.js) mounts
+           itself here — same options, same behavior as every other page.
+           Rescue no longer has its own separate EN/UR/AR dropdown. -->
+      <span class="head-right"></span>
     </header>
 
     <div class="scroll" id="scrollArea">
@@ -418,6 +421,13 @@
   </main>
 </div>
 
+<script>
+  // Rescue renders these two languages itself (see the I18N object below) —
+  // the site-wide translation engine must skip them, not double-translate
+  // already-correct Urdu/Arabic. Must run before ztu-lang.js below.
+  window.ZTU_LANG_NATIVE = ['ur', 'ar'];
+</script>
+<script src="/assets/ztu-lang.js" defer></script>
 <script src="/assets/ztu-premium-card.js" defer></script>
 <script>
 /* ══════════════════════════════════════════════════════════════════════════
@@ -438,12 +448,20 @@
    ══════════════════════════════════════════════════════════════════════════ */
 const API          = '/api/rescue-assess';
 const HIST_KEY     = 'ztu_rescue_cases_v1';
-const LANG_KEY     = 'ztu_rescue_lang';
+// Rescue used to keep its own separate 'ztu_rescue_lang' key here — replaced
+// by the SAME site-wide key assets/ztu-lang.js already uses ('ztu-lang',
+// { lang, short }), so a language chosen on any page persists into Rescue
+// and vice versa instead of living in a second, disconnected silo.
+const LANG_KEY     = 'ztu-lang';
 const IDENTITY_KEY = 'ztu_ai_identity';      // the EXISTING shared identity token
 
 const $ = (id) => document.getElementById(id);
 const view = $('view'), histList = $('histList');
-const accBadge = $('accBadge'), verifyBtn = $('verifyBtn'), langSel = $('lang');
+const accBadge = $('accBadge'), verifyBtn = $('verifyBtn');
+// Rescue natively renders en/ur/ar (see I18N below) — it has no dropdown of
+// its own any more; the global selector injected by assets/ztu-lang.js into
+// .head-right drives this via the 'ztulang:change' event (bound further down).
+let currentLang = 'en';
 const side = $('side'), scrim = $('scrim'), burger = $('burger');
 
 let tier = 'visitor', freeLimit = 5;
@@ -577,7 +595,7 @@ const I18N = {
     impactOn: 'التأثير على {instrument}',
   },
 };
-const lang = () => langSel.value || 'en';
+const lang = () => currentLang || 'en';
 const t = (k) => (I18N[lang()] && I18N[lang()][k]) || I18N.en[k] || k;
 const rtl = () => lang() === 'ur' || lang() === 'ar';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1260,15 +1278,29 @@ scrim.addEventListener('click', closeSide);
 $('newBtn').addEventListener('click', startNew);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSide(); });
 
-langSel.addEventListener('change', () => {
-  try { localStorage.setItem(LANG_KEY, langSel.value); } catch {}
+/* Global language state comes from assets/ztu-lang.js (window.ZTULang),
+   included at the bottom of <head>/body — see the .head-right anchor in the
+   header above. Rescue natively renders en/ur/ar (I18N above); any other
+   globally-selected language falls back to English here and is translated
+   by the global Google-Translate engine like the rest of the site (Rescue
+   declares window.ZTU_LANG_NATIVE = ['ur','ar'] before ztu-lang.js loads,
+   so the engine skips exactly those two codes and leaves them to this
+   renderer instead of double-translating already-correct Urdu/Arabic). */
+function applyGlobalLang(code) {
+  currentLang = I18N[code] ? code : 'en';
   document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
   document.querySelectorAll('[data-i18n-aria]').forEach(n => { const s = t(n.dataset.i18nAria); n.setAttribute('aria-label', s); n.setAttribute('title', s); });
   syncFromDom(); render();
+}
+window.addEventListener('ztulang:change', (e) => {
+  applyGlobalLang(e && e.detail && e.detail.lang);
 });
 
 /* ── boot ────────────────────────────────────────────────────────────── */
-try { const l = localStorage.getItem(LANG_KEY); if (l && I18N[l]) langSel.value = l; } catch {}
+try {
+  const saved = JSON.parse(localStorage.getItem(LANG_KEY) || 'null');
+  if (saved && saved.lang && I18N[saved.lang]) currentLang = saved.lang;
+} catch {}
 document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
 document.querySelectorAll('[data-i18n-aria]').forEach(n => { const s = t(n.dataset.i18nAria); n.setAttribute('aria-label', s); n.setAttribute('title', s); });
 paintAccess();
