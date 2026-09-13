@@ -67,17 +67,17 @@
   }
   .topbar-inner {
     display: flex; align-items: center; justify-content: space-between;
-    height: 66px;
+    height: 54px;
   }
   .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: inherit; }
   .brand-mark {
-    width: 36px; height: 36px; border-radius: 9px;
+    width: 30px; height: 30px; border-radius: 8px;
     background: linear-gradient(150deg, #3d2a08 0%, #8c6c1f 55%, #d4ae5e 100%);
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 14px rgba(200,156,63,0.36);
   }
   .brand-mark span {
-    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 900;
+    font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 900;
     color: #d4ae5e; line-height: 1;
   }
   .brand-text { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
@@ -189,14 +189,14 @@
 
   /* ── SURVEY ── */
   .survey-wrap {
-    padding: 30px 0 70px;
+    padding: 14px 0 40px;
   }
   .survey-shell {
-    max-width: 760px; margin: 0 auto;
+    max-width: 820px; margin: 0 auto;
     background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-panel) 100%);
     border: 1px solid var(--border-strong);
     border-radius: 22px;
-    padding: 30px 32px 28px;
+    padding: 20px 24px 18px;
     box-shadow: 0 22px 60px rgba(0,0,0,0.45);
     position: relative;
   }
@@ -205,7 +205,7 @@
   }
   .survey-head {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
   }
   .q-counter {
     font-size: 11px; font-weight: 800; letter-spacing: 2px;
@@ -217,12 +217,12 @@
     color: var(--cyan3); text-transform: uppercase;
     background: rgba(212,174,94,0.08);
     border: 1px solid rgba(212,174,94,0.22);
-    padding: 5px 12px; border-radius: 100px;
+    padding: 4px 11px; border-radius: 100px;
   }
   .progress-track {
-    height: 6px; border-radius: 100px;
+    height: 5px; border-radius: 100px;
     background: rgba(255,255,255,0.06);
-    overflow: hidden; margin-bottom: 24px;
+    overflow: hidden; margin-bottom: 14px;
   }
   .progress-fill {
     height: 100%;
@@ -239,20 +239,20 @@
     to   { opacity: 1; transform: translateY(0); }
   }
   .q-text {
-    font-size: 19px; font-weight: 700; letter-spacing: -.3px;
-    color: #fff; margin-bottom: 6px;
+    font-size: 18px; font-weight: 700; letter-spacing: -.3px;
+    color: #fff; margin-bottom: 4px; line-height: 1.3;
   }
   .q-hint {
-    font-size: 13px; color: var(--muted2); margin-bottom: 18px;
+    font-size: 12.5px; color: var(--muted2); margin-bottom: 12px; line-height: 1.4;
   }
 
-  .opt-list { display: flex; flex-direction: column; gap: 10px; }
+  .opt-list { display: flex; flex-direction: column; gap: 7px; }
   .opt {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
     background: rgba(255,255,255,0.03);
     border: 1.5px solid var(--border);
-    border-radius: 14px;
+    border-radius: 12px;
     cursor: pointer;
     transition: background .18s, border-color .18s, transform .14s;
     user-select: none;
@@ -265,7 +265,7 @@
   }
   .opt:focus-visible { outline: 2px solid var(--cyan2); outline-offset: 2px; }
   .opt-mark {
-    width: 22px; height: 22px; border-radius: 50%;
+    width: 19px; height: 19px; border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.20);
     flex-shrink: 0; position: relative;
     transition: border-color .18s, background .18s;
@@ -274,26 +274,28 @@
   .opt.is-selected .opt-mark::after {
     content:''; position: absolute;
     top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 8px; height: 8px; border-radius: 50%;
+    width: 7px; height: 7px; border-radius: 50%;
     background: #0d0902;
   }
   .opt[data-multi="true"] .opt-mark { border-radius: 6px; }
   .opt[data-multi="true"].is-selected .opt-mark::after {
-    width: 12px; height: 7px;
+    width: 10px; height: 6px;
     border: 0; background: transparent;
-    border-bottom: 2.4px solid #0d0902;
-    border-left:   2.4px solid #0d0902;
+    border-bottom: 2.2px solid #0d0902;
+    border-left:   2.2px solid #0d0902;
     transform: translate(-50%, -65%) rotate(-45deg);
     border-radius: 0;
   }
-  .opt-label { font-size: 14.5px; font-weight: 600; color: rgba(255,255,255,0.88); }
+  .opt-label { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.88); }
 
-  /* MS grid for Q2 / Q13 */
-  .opt-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  }
-  .opt-grid .opt { padding: 12px 14px; }
-  .opt-grid .opt-label { font-size: 13.5px; }
+  /* MS (multi-select) questions use a dense wrapping chip layout instead of
+     full-width rows — this is what makes a 14-option question (Q2) fit in
+     one viewport: each chip is only as wide as its own label, so far more
+     of them fit per row than a fixed 1-2 column grid ever could. */
+  .opt-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+  .opt-grid .opt { flex: 0 0 auto; padding: 8px 13px; gap: 7px; }
+  .opt-grid .opt-mark { width: 15px; height: 15px; }
+  .opt-grid .opt-label { font-size: 12.5px; white-space: nowrap; }
 
   /* SL scale for Q12 — renamed .scale-btn -> .tsa-scale-btn: this is the
      Question 12 contrast bug. assets/lux-global.css has an unconditional
@@ -312,12 +314,12 @@
        container on narrow screens. minmax(0,1fr) lets the column actually
        shrink to the space available and wrap its label instead. */
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 6px;
+    gap: 8px;
+    margin-top: 4px;
   }
   .tsa-scale-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    padding: 16px 8px; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 6px; border-radius: 14px;
     background: rgba(255,255,255,0.03);
     border: 1.5px solid var(--border);
     cursor: pointer; user-select: none;
@@ -343,12 +345,12 @@
 
   .survey-nav {
     display: flex; justify-content: space-between; align-items: center;
-    margin-top: 26px; padding-top: 22px;
+    margin-top: 16px; padding-top: 14px;
     border-top: 1px solid var(--border);
   }
   .btn-back, .btn-next {
     font-size: 13px; font-weight: 700;
-    padding: 12px 24px; border-radius: 100px;
+    padding: 10px 22px; border-radius: 100px;
     cursor: pointer; border: 0;
     transition: background .18s, transform .14s, border-color .18s, box-shadow .22s;
   }
@@ -851,11 +853,23 @@
   @media (max-width: 560px) {
     .container { padding: 0 18px; }
     .hero { padding: 56px 0 50px; }
-    .survey-shell { padding: 24px 20px 22px; border-radius: 18px; }
-    .q-text { font-size: 17px; }
-    .opt-grid { grid-template-columns: 1fr; }
-    .tsa-scale-num { font-size: 19px; }
-    .tsa-scale-lbl { font-size: 9.5px; letter-spacing: .6px; }
+    .survey-wrap { padding: 8px 0 30px; }
+    .survey-shell { padding: 16px 15px 13px; border-radius: 16px; }
+    .survey-head { margin-bottom: 6px; }
+    .progress-track { margin-bottom: 11px; }
+    .q-text { font-size: 16px; margin-bottom: 3px; }
+    .q-hint { font-size: 11.5px; margin-bottom: 10px; }
+    .opt-list { gap: 6px; }
+    .opt { padding: 9px 12px; gap: 10px; }
+    .opt-grid { gap: 6px; }
+    .opt-grid .opt { padding: 7px 11px; }
+    .opt-grid .opt-label { font-size: 12px; }
+    .survey-nav { margin-top: 12px; padding-top: 10px; }
+    .btn-back, .btn-next { padding: 9px 18px; font-size: 12.5px; }
+    .tsa-scale-row { gap: 6px; }
+    .tsa-scale-btn { padding: 10px 4px; }
+    .tsa-scale-num { font-size: 18px; }
+    .tsa-scale-lbl { font-size: 9px; letter-spacing: .5px; }
     .scoring-grid { grid-template-columns: 1fr; }
     .result-wrap { padding: 24px 20px; border-radius: 18px; }
     .level-badge { font-size: 26px; }
@@ -902,7 +916,7 @@
   <div class="container hero-inner">
     <span class="live-pill"><span class="dot"></span>AI Diagnostic Tool</span>
     <h1>Find out what kind of <span class="accent">trader you really are</span>.</h1>
-    <p class="hero-sub">A structured 13-question self-diagnostic that returns your trader level, behavioural profile, risk score, psychology score, assessment confidence and AI growth potential — in under 4 minutes.</p>
+    <p class="hero-sub">A structured 14-question self-diagnostic that returns your trader level, behavioural profile, risk score, psychology score, assessment confidence and AI growth potential — in under 4 minutes.</p>
     <button class="start-btn" id="startBtn" type="button">
       Start Assessment
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -926,7 +940,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </div>
         <div class="ex-title">How it works</div>
-        <div class="ex-body">13 structured questions across knowledge, risk, psychology, execution and learning. Each answer is weighted. Contradictions reduce assessment confidence.</div>
+        <div class="ex-body">14 structured questions across knowledge, risk, psychology, execution and learning. Each answer is weighted. Contradictions reduce assessment confidence.</div>
       </div>
       <div class="ex-card">
         <div class="ex-icon">
@@ -944,7 +958,7 @@
   <div class="container">
     <div class="survey-shell" id="surveyShell">
       <div class="survey-head">
-        <span class="q-counter">Question <strong id="qNum">1</strong> of 13</span>
+        <span class="q-counter">Question <strong id="qNum">1</strong> of <span id="qTotal">13</span></span>
         <span class="q-cat" id="qCat">Trading Experience</span>
       </div>
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
@@ -1281,6 +1295,30 @@ const QUESTIONS = [
       { v:'course',    label:'Completed a structured trading course',  score:{ learning:1 } },
       { v:'none',      label:'None of these',                          score:{ learning:0 } }
     ]
+  },
+  {
+    /* Added after a coverage audit: nothing in Q1-Q13 asked whether a
+       trader trusts and stays with their OWN tested process specifically
+       under pressure (a losing streak) — distinct from Q7 (revenge trading
+       = re-entering fast to recover a SINGLE loss) and Q10 (whether a
+       strategy exists / is written down at all). Appended as q14 rather
+       than inserted earlier so no existing question id needs renumbering
+       (every scoring/profile/confidence check below reads ids by exact
+       string). Scored into `execution` — same family as Q10/Q12 — with a
+       deliberately small max (4) so it adds real signal without needing to
+       change any CAPS value (CAPS is a ceiling, not a required exact sum;
+       adding modest extra headroom to an already-saturated bucket is a
+       valid, mathematically consistent way to grow the question set — see
+       the audit report for the full reasoning). */
+    id: 'q14', cat: 'Strategy Consistency', fmt: 'SC',
+    text: 'When your strategy goes through a losing streak, what do you usually do?',
+    hint: 'A losing streak = 3 or more losses in a row using the same setup.',
+    options: [
+      { v:'a', label:'Switch to a different strategy, indicator, or signal source', score:{ execution:0 } },
+      { v:'b', label:'Keep trading the exact same way, without checking why',       score:{ execution:1 } },
+      { v:'c', label:'Pause and review the recent trades before deciding',          score:{ execution:3 } },
+      { v:'d', label:'Confirm the process was actually followed, then continue',    score:{ execution:4 } }
+    ]
   }
 ];
 
@@ -1298,6 +1336,7 @@ const qCat = document.getElementById('qCat');
 const progressFill = document.getElementById('progressFill');
 const btnBack = document.getElementById('btnBack');
 const btnNext = document.getElementById('btnNext');
+document.getElementById('qTotal').textContent = QUESTIONS.length;
 
 function renderQuestion() {
   const q = QUESTIONS[state.current];
@@ -1536,6 +1575,9 @@ function detectConfidence() {
   // Strategy vs journal
   if (a.q10 === 'd' && a.q9 === 'a')                { contradictions++; notes.push('written plan but no journaling'); }
 
+  // Strategy vs consistency under pressure
+  if (a.q10 === 'd' && a.q14 === 'a')               { contradictions++; notes.push('claims a written tested plan but abandons it after a losing streak'); }
+
   let level, tone;
   if (contradictions === 0)      { level = 'High';   tone = 'High'; }
   else if (contradictions <= 2)  { level = 'Medium'; tone = 'Medium'; }
@@ -1589,14 +1631,14 @@ const STRENGTH_LINE = {
   knowledge:  'Strong grasp of core market concepts and how price actually moves.',
   riskMgmt:   'Solid risk management — sized properly with stop losses in place.',
   psychology: 'Emotionally controlled — you do not let losses dictate the next trade.',
-  execution:  'Disciplined execution — clear plan, journal, and entry checklist.',
+  execution:  'Disciplined execution — clear plan, journal, entry checklist, and you stay with the process through a losing streak.',
   learning:   'Active learning routine — reviewing, studying, improving every week.'
 };
 const WEAK_LINE = {
   knowledge:  'Knowledge gaps in market structure, liquidity, sessions or news impact.',
   riskMgmt:   'Risk management is the biggest threat to your account right now.',
   psychology: 'Emotional reactions and revenge trading are erasing your progress.',
-  execution:  'Execution is inconsistent — no plan, no journal, or no entry checklist.',
+  execution:  'Execution is inconsistent — no plan, no journal, no entry checklist, or the approach changes after every losing streak.',
   learning:   'Learning routine is stagnant — without input, the edge cannot improve.'
 };
 
