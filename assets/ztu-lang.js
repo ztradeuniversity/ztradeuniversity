@@ -92,6 +92,64 @@
     document.head.appendChild(s);
   }
 
+  /* ── SITE-WIDE URDU FONT (single canonical owner) ────────────────────────
+     One @font-face, injected once here (this is the only asset already
+     included on every public page — lux-global.css is not), driven purely
+     by the html[data-ztu-lang="ur"] attribute this file sets below. Because
+     CSS cascades to content added/changed later, this also covers text
+     Google Translate rewrites in place and any page's own dynamically
+     rendered Urdu content (e.g. Rescue's native i18n) — no per-page CSS.
+     `unicode-range` is scoped to Arabic-script code points only, so Latin
+     brand terms, punctuation and Western digits automatically fall through
+     to the existing UI fonts instead of being forced into the Urdu face. */
+  var FONT_CSS = '' +
+    '@font-face{' +
+      'font-family:"Jameel Noori Nastaleeq Kasheeda";' +
+      'src:url("/assets/fonts/urdu/JameelNooriNastaleeqKasheeda.woff2") format("woff2"),' +
+          'url("/assets/fonts/urdu/JameelNooriNastaleeqKasheeda.woff") format("woff"),' +
+          'url("/assets/fonts/urdu/JameelNooriNastaleeqKasheeda.ttf") format("truetype"),' +
+          'url("/assets/fonts/urdu/JameelNooriNastaleeqKasheeda.otf") format("opentype");' +
+      'font-weight:400;font-style:normal;font-display:swap;' +
+      'unicode-range:U+0600-06FF,U+0750-077F,U+08A0-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200F;' +
+    '}' +
+    'html[data-ztu-lang="ur"] body,' +
+    'html[data-ztu-lang="ur"] body *{' +
+      'font-family:"Jameel Noori Nastaleeq Kasheeda","Jameel Noori Nastaleeq","Noto Nastaliq Urdu","Poppins","Inter",system-ui,sans-serif!important;' +
+    '}' +
+    /* Nastaliq renders taller than Latin scripts — give the root a looser
+       default line-height. Only unstyled descendants inherit it; any
+       component that already sets its own line-height (buttons, pills,
+       compact chips, etc.) keeps that value untouched, so nothing that was
+       tuned for a tight box gets forced open and risks overflow. */
+    'html[data-ztu-lang="ur"] body{line-height:1.9;}';
+
+  function injectFontCSS() {
+    if (document.getElementById('ztu-font-css')) return;
+    var s = document.createElement('style');
+    s.id = 'ztu-font-css';
+    s.textContent = FONT_CSS;
+    document.head.appendChild(s);
+  }
+
+  /* Single global font-state flag. Every page sets it the same way (here,
+     once) so there is exactly one mechanism — no homepageFontState /
+     rescueFontState / libraryFontState variants. Setting the attribute is
+     independent of whether Google Translate actually runs for this
+     language (ZTU_LANG_NATIVE pages skip Google but still want the font).
+     No preload is issued here: the project currently supplies only a .ttf
+     (no .woff2), and a preload can only name one fixed URL/format — hard-
+     coding it to .woff2 caused a wasted, always-404 request plus a
+     browser "preloaded but not used" warning on every Urdu page load. The
+     @font-face src list below still tries woff2/woff/ttf/otf in order, so
+     the moment a real .woff2 is added to assets/fonts/urdu/ it is picked
+     up automatically with zero code changes — this only removes the
+     preload hint, not any fallback format support. */
+  function setFontState(lang) {
+    try {
+      document.documentElement.setAttribute('data-ztu-lang', lang);
+    } catch (e) {}
+  }
+
   var TICK = '<svg class="ztu-lang__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
   var GLOBE = '<svg class="ztu-lang__globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
   var CHEV = '<svg class="ztu-lang__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -315,6 +373,7 @@
     markActive(lang, short);
     try { localStorage.setItem(LANG_KEY, JSON.stringify({ lang: lang, short: short })); } catch (e) {}
     closeMenu();
+    setFontState(lang);
     applyTranslation(lang);                  // 'en' restores the original text
     // Lets a page react to the language changing (e.g. ZTU Rescue re-renders
     // its own natively-localized UI) without polling localStorage.
@@ -407,6 +466,7 @@
   function init() {
     try {
       injectCSS();
+      injectFontCSS();
       protectBrand();
       buildSelector();
       mountSelector();
@@ -418,6 +478,7 @@
       var saved = JSON.parse(localStorage.getItem(LANG_KEY) || 'null');
       if (saved && saved.lang && saved.lang !== 'en') {
         markActive(saved.lang, saved.short);
+        setFontState(saved.lang);
         applyTranslation(saved.lang);
       }
 

@@ -394,109 +394,42 @@
       .cmp-note { display: none; }
     }
 
-    /* ── PREMIUM COURSE (the paid tier) ──────────────────────────────
-       A compact horizontal admission strip, not an information card: one
-       flowing block (icon+title+chip → 3 short benefits → a thin divider
-       → a single enroll bar), never three tall columns. No claim appears
-       here unless it is actually true of this product — audited before
-       this redesign shipped: no configured seat limit, no documented
-       money-back policy and no verified turnaround-time rule exist
-       anywhere in this codebase, so none of the three are shown (see the
-       report this redesign shipped with, §4/§5/§6). The admissions status
-       pill is colour-coded so CLOSED can never read as an open window. */
-    .premium-offer {
-      position: relative; overflow: hidden;
-      background: var(--surface); border: 1px solid rgba(247,147,26,.28);
-      border-radius: var(--radius-lg); box-shadow: 0 8px 24px rgba(247,147,26,.08);
-      padding: 26px 30px;
+    /* ── PREMIUM COURSE (the paid tier) — small waiting-list CTA only ──
+       The homepage no longer shows batch/price/admissions-status detail
+       for the paid course (that all still lives on premium-course-
+       enrollment.html, untouched). This is intentionally a single compact
+       green strip, not a card, so it never competes visually with the two
+       free-tier panels above it. */
+    .waitlist-cta {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      max-width: 640px; margin: 0 auto;
+      background: var(--surface); border: 1px solid rgba(22,163,74,.30);
+      border-radius: 16px; padding: 16px 20px;
+      box-shadow: 0 8px 20px rgba(22,163,74,.10);
+      transition: transform .2s ease, box-shadow .2s ease;
     }
-    .premium-offer::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+    .waitlist-cta:hover, .waitlist-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(22,163,74,.18); }
+    .waitlist-left { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .waitlist-eyebrow {
+      display: inline-flex; align-items: center; width: fit-content;
+      font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      color: #16a34a; background: rgba(22,163,74,.12); padding: 4px 10px; border-radius: 100px;
     }
-    .po-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-
-    /* Admissions status. is-closed / is-open are the only two colour states;
-       with neither class the pill stays neutral grey rather than guessing. */
-    .po-status {
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-      padding: 5px 12px 5px 10px; border-radius: 100px; color: var(--muted); background: var(--bg2, var(--surface-2));
+    [data-theme="dark"] .waitlist-eyebrow { color: #6ee7b7; background: rgba(22,163,74,.18); }
+    .waitlist-msg { font-size: 13.5px; font-weight: 600; color: var(--muted); line-height: 1.4; }
+    .waitlist-btn {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+      background: #16a34a; color: #fff; font-size: 13.5px; font-weight: 800;
+      padding: 11px 18px; border-radius: 100px; white-space: nowrap;
+      box-shadow: 0 8px 20px rgba(22,163,74,.30); transition: background .2s;
     }
-    .po-status .po-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted2, var(--muted)); flex-shrink: 0; }
-    .po-status.is-closed { color: #b91c1c; background: rgba(220,38,38,.10); }
-    .po-status.is-closed .po-dot { background: #dc2626; }
-    [data-theme="dark"] .po-status.is-closed { color: #fca5a5; background: rgba(220,38,38,.18); }
-    .po-status.is-open { color: #16a34a; background: rgba(22,163,74,.10); }
-    .po-status.is-open .po-dot { background: #16a34a; }
-    [data-theme="dark"] .po-status.is-open { color: #6ee7b7; background: rgba(22,163,74,.18); }
+    .waitlist-cta:hover .waitlist-btn { background: #15803d; }
+    .waitlist-btn svg { width: 14px; height: 14px; }
 
-    /* Icon + title + chip — one compact header row, not a large hero title. */
-    .po-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-    .po-icon {
-      width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-      background: var(--orange-soft); border: 1px solid rgba(247,147,26,.24);
-      color: var(--orange); display: flex; align-items: center; justify-content: center;
-    }
-    .po-icon svg { width: 19px; height: 19px; }
-    .po-title { font-family: 'Poppins','Inter',sans-serif; font-size: 21px; font-weight: 800; color: var(--heading); letter-spacing: -.4px; }
-    .po-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 700; color: var(--heading);
-      background: var(--bg2, var(--surface-2)); border: 1px solid var(--border);
-      border-radius: 100px; padding: 5px 13px;
-    }
-    .po-chip svg { width: 13px; height: 13px; color: var(--orange); flex-shrink: 0; }
-
-    /* Three short, factual benefit lines — no profit/performance promise. */
-    .po-benefits { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0 0 18px; padding: 0; list-style: none; }
-    .po-benefits li { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; color: var(--muted); line-height: 1.45; flex: 1 1 220px; min-width: 0; }
-    .po-benefits svg { width: 14px; height: 14px; color: var(--orange); flex-shrink: 0; margin-top: 2px; }
-
-    .po-divider { height: 1px; background: var(--border); margin: 0 0 16px; }
-
-    /* One enroll bar: what pre-enrolling means (left) + batch/price/CTA (right). */
-    .po-enroll-row { display: flex; align-items: center; justify-content: space-between; gap: 22px; flex-wrap: wrap; }
-    .po-enroll-info { flex: 1 1 260px; min-width: 0; }
-    .po-enroll-label { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--orange); margin-bottom: 4px; }
-    .po-enroll-text { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
-    .po-enroll-text b { color: var(--heading); font-weight: 700; }
-
-    .po-enroll-action { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; flex-shrink: 0; }
-    .po-batch-pill { display: flex; flex-direction: column; gap: 1px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted2, var(--muted)); }
-    .po-batch-pill b { font-size: 13.5px; font-weight: 800; letter-spacing: 0; text-transform: none; color: var(--heading); }
-    .po-price { display: flex; align-items: baseline; gap: 5px; }
-    .po-price b {
-      font-family: 'Poppins','Inter',sans-serif; font-size: 24px; font-weight: 800;
-      color: var(--heading); letter-spacing: -.6px; line-height: 1;
-    }
-    .po-price span { font-size: 11.5px; font-weight: 700; color: var(--muted); }
-
-    .po-cta {
-      display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex-shrink: 0;
-      padding: 12px 22px; border-radius: 100px; white-space: nowrap;
-      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
-      color: #fff; font-size: 13.5px; font-weight: 700;
-      box-shadow: 0 8px 22px rgba(247,147,26,.3);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .po-cta svg { width: 14px; height: 14px; }
-    .po-cta:hover, .po-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(247,147,26,.42); }
-    .po-cta:hover svg { transform: translateX(2px); }
-
-    @media (max-width: 640px) {
-      .premium-offer { padding: 22px 18px; }
-      /* Every block stacks and sizes itself from its own content only —
-         flex-basis is explicitly reset to none on anything that switches
-         to a column here, so a width-sized basis can never become an
-         oversized height (the exact bug this redesign's predecessor had). */
-      .po-benefits { flex-direction: column; gap: 9px; }
-      .po-benefits li { flex: none; }
-      .po-enroll-row { flex-direction: column; align-items: stretch; gap: 16px; }
-      .po-enroll-info { flex: none; }
-      .po-enroll-action { flex-direction: column; align-items: stretch; gap: 14px; }
-      .po-batch-pill { flex-direction: row; align-items: baseline; justify-content: space-between; }
-      .po-cta { width: 100%; }
+    @media (max-width: 560px) {
+      .waitlist-cta { flex-direction: column; align-items: stretch; text-align: center; padding: 18px 16px; gap: 12px; }
+      .waitlist-eyebrow { margin: 0 auto; }
+      .waitlist-btn { justify-content: center; width: 100%; }
     }
 
     @media (max-width: 780px) {
@@ -1066,58 +999,21 @@
 
       <div class="hub-sep" role="separator"></div>
 
-      <!-- ── LEVEL 3 · PREMIUM COURSE (paid, separate from IB membership) ── -->
+      <!-- ── LEVEL 3 · PREMIUM COURSE (paid, separate from IB membership) ──
+           Small waiting-list CTA only — the full offer (batch, price,
+           admissions status, benefits) still lives on the existing
+           premium-course-enrollment.html, which this links to unchanged. -->
       <div class="hub-group" data-hub-group="premium">
-        <div class="premium-offer">
-          <div class="po-top">
-            <span class="hub-tag hub-ib-tag" style="margin-bottom:0">Premium · Paid course</span>
-            <!-- ADMISSION STATUS — single source of truth. No admin-configurable
-                 status field exists yet for this (audited: course-enrollment.js's
-                 site_settings only stores the WhatsApp verification number), and
-                 this value lives in exactly this one place already — building a
-                 new backend/admin screen to move a single text label would be
-                 more risk than the label itself. When the real status changes,
-                 flip BOTH the class ("is-closed" ↔ "is-open") and the visible
-                 text together, here only. -->
-            <span class="po-status is-closed"><span class="po-dot"></span>Admissions Closed</span>
-          </div>
-
-          <div class="po-head">
-            <span class="po-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/></svg></span>
-            <h3 class="po-title">Premium Course</h3>
-            <span class="po-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Live Mentorship Included</span>
-          </div>
-
-          <!-- Three short, factual benefit lines — no profit/performance promise
-               (none is a verified business term; see the enrollment page's own
-               disclaimer: "no guarantee of trading profit"). "Limited Seats",
-               "Money-back Guarantee" and any turnaround-time claim are
-               deliberately absent: none is a configured or documented fact
-               anywhere in this codebase (audited before this redesign shipped
-               — see the report's §4/§5/§6), and none is invented here. -->
-          <ul class="po-benefits">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Build the skills to manage your own trades.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Learn practical trading with direct mentor guidance.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Follow a structured path instead of guessing.</li>
-          </ul>
-
-          <div class="po-divider"></div>
-
-          <div class="po-enroll-row">
-            <div class="po-enroll-info">
-              <div class="po-enroll-label">How to enroll</div>
-              <p class="po-enroll-text">Pre-enroll now for the next batch. <b>Once admissions open, your enrollment will already be in place.</b></p>
-            </div>
-            <div class="po-enroll-action">
-              <span class="po-batch-pill">Next batch<b>Batch 30</b></span>
-              <span class="po-price"><b>$150</b><span>one-time</span></span>
-              <a class="po-cta" href="premium-course-enrollment.html">
-                Pre-Enroll for Batch 30
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
-            </div>
-          </div>
-        </div>
+        <a class="waitlist-cta" href="premium-course-enrollment.html">
+          <span class="waitlist-left">
+            <span class="waitlist-eyebrow">Coming Batch</span>
+            <span class="waitlist-msg">Enroll yourself for the coming batch waiting list.</span>
+          </span>
+          <span class="waitlist-btn">
+            Join Waiting List
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+        </a>
       </div>
 
     </div>
