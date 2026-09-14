@@ -321,23 +321,58 @@ function ensurePopover() {
 
 function hidePopover() { if (popoverEl) popoverEl.style.display = 'none'; }
 
-function showPopover(anchor, term) {
-  const g = GLOSSARY[term];
+// Shared positioning + display for any popover anchored to a small trigger
+// element — extracted so a second, simpler kind of info popover (see
+// makeInfoIcon below) reuses the exact same viewport-safe placement and
+// open/close lifecycle (outside-click, Escape, scroll, resize) instead of
+// re-implementing it.
+function showPopoverContent(anchor, innerHTML) {
   const el = ensurePopover();
-  el.innerHTML = `
-    <div style="font-weight: 700; margin-bottom: 6px;">${esc(term)} — ${esc(g.full)}</div>
-    <div style="margin-bottom: 8px;">${esc(g.simple)}</div>
-    <div style="margin-bottom: 8px;"><strong>Why it is used here:</strong> ${esc(g.why)}</div>
-    <div style="margin-bottom: 10px;"><strong>How to read it in this context:</strong> ${esc(g.how)}</div>
-    <button type="button" class="ceo-btn ceo-btn-secondary" data-glossary-close style="font-size: 0.72rem; padding: 2px 10px;">Close</button>`;
+  el.innerHTML = innerHTML;
   el.style.display = 'block';
-  el.querySelector('[data-glossary-close]').addEventListener('click', hidePopover);
+  const closeBtn = el.querySelector('[data-popover-close]');
+  if (closeBtn) closeBtn.addEventListener('click', hidePopover);
 
   const r = anchor.getBoundingClientRect();
   const top = r.bottom + window.scrollY + 6;
   const maxLeft = window.scrollX + document.documentElement.clientWidth - el.offsetWidth - 12;
   el.style.top = `${top}px`;
   el.style.left = `${Math.max(window.scrollX + 8, Math.min(r.left + window.scrollX, maxLeft))}px`;
+}
+
+function showPopover(anchor, term) {
+  const g = GLOSSARY[term];
+  showPopoverContent(anchor, `
+    <div style="font-weight: 700; margin-bottom: 6px;">${esc(term)} — ${esc(g.full)}</div>
+    <div style="margin-bottom: 8px;">${esc(g.simple)}</div>
+    <div style="margin-bottom: 8px;"><strong>Why it is used here:</strong> ${esc(g.why)}</div>
+    <div style="margin-bottom: 10px;"><strong>How to read it in this context:</strong> ${esc(g.how)}</div>
+    <button type="button" class="ceo-btn ceo-btn-secondary" data-popover-close style="font-size: 0.72rem; padding: 2px 10px;">Close</button>`);
+}
+
+// A small, generic ⓘ trigger for a ONE-TO-TWO-SENTENCE explanation — for
+// short/ambiguous checklist step text (e.g. "trim ends only"), not full
+// abbreviations. Deliberately a much lighter popover than showPopover's
+// 4-field glossary card (Section 1F: never turn a compact step into a
+// paragraph on the page itself — the explanation only appears on request).
+// Same trigger semantics as makeAbbr: hover shows a native title tooltip on
+// desktop; click/tap or Enter/Space opens the shared popover on any device;
+// closes on outside click, Escape, scroll, or resize (ensurePopover's own
+// listeners, already wired once).
+export function makeInfoIcon(explanation) {
+  const el = document.createElement('span');
+  el.textContent = 'ⓘ';
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', `More info: ${explanation}`);
+  el.setAttribute('title', explanation);
+  el.style.cssText = 'display: inline-block; margin-left: 5px; font-size: 0.85em; color: var(--ceo-text-muted); cursor: help; vertical-align: middle;';
+  const open = (e) => { e.preventDefault(); e.stopPropagation(); showPopoverContent(el, `
+    <div style="margin-bottom: 8px;">${esc(explanation)}</div>
+    <button type="button" class="ceo-btn ceo-btn-secondary" data-popover-close style="font-size: 0.72rem; padding: 2px 10px;">Close</button>`); };
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+  return el;
 }
 
 function esc(str) {

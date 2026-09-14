@@ -61,6 +61,18 @@
           </div>
           <div id="home-trading-checkin" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
         </section>
+
+        <!-- 4. Social Engagement — poll planning for Facebook/WhatsApp/Telegram
+             groups. Its own isolated fetch (/api/ceo/growth), same failure
+             isolation as Physical/Trading above: this never blocks the other
+             three sections, and nothing here changes IB Growth's own logic. -->
+        <section class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+          <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+            <h3 style="margin: 0; flex: 1;">Social Engagement</h3>
+            <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/growth/index.html#social">Manage polls →</a>
+          </div>
+          <div id="home-social" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 6em;"></div></div>
+        </section>
       </div>
     </main>
     <footer class="ceo-app-footer" id="ceo-footer-slot"></footer>

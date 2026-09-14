@@ -177,8 +177,13 @@ export function computeExpectedMembers({ planStartDate, today, actualMembers }) 
   const horizonDays = FEASIBILITY.horizonDays;
   const start = planStartDate ? Date.parse(planStartDate) : NaN;
   const now = Date.parse(today);
+  // 1-indexed plan-day number (today === start -> day 1), matching the SAME
+  // convention plan-logic.js's planDayForDate/currentPhaseContext already
+  // use (plan.js's own dayNumber fallback is the identical "+1" expression).
+  // A raw 0-indexed "days elapsed" would show "plan day 0" the moment the
+  // founder resets — never actually reaching "Day 1" until the day after.
   const daysElapsed = Number.isFinite(start) && Number.isFinite(now)
-    ? Math.max(0, Math.min(horizonDays, Math.floor((now - start) / DAY_MS)))
+    ? Math.max(1, Math.min(horizonDays, Math.floor((now - start) / DAY_MS) + 1))
     : null;
   if (daysElapsed === null) {
     return { known: false, target, horizonDays, daysElapsed: null, planProgressPct: 0, expectedMembers: null, actualMembers, remainingMembers: Math.max(0, target - actualMembers) };
@@ -370,9 +375,14 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
   const present = new Set(activityTypes || []);
   const start = planStartDate ? Date.parse(planStartDate) : NaN;
   const now = Date.parse(today);
+  // 1-indexed, same fix/reasoning as computeExpectedMembers above — this is
+  // what home.js displays directly as "Day N" and compares against
+  // phases[].fromDay/untilDay (also 1-indexed, from plan-logic.js's PHASES),
+  // so a 0-indexed value here would both mislabel "today" as day 0 AND be
+  // one day out of step with the phase boundaries it's compared against.
   const currentDay = Number.isFinite(start) && Number.isFinite(now)
-    ? Math.max(0, Math.min(horizonDays, Math.floor((now - start) / DAY_MS)))
-    : 0;
+    ? Math.max(1, Math.min(horizonDays, Math.floor((now - start) / DAY_MS) + 1))
+    : 1;
 
   // Phases straight from the planning engine's own PHASES rows — name,
   // markets, language, budget and exit gate are quoted, never restated.

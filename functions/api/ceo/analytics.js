@@ -42,7 +42,13 @@ export async function onRequestGet({ request, env }) {
     const settingRows = await db.select('settings', `select=key,value&scope=eq.global&key=in.(growth.reset_date,plan.start_date)`);
     const settingByKey = Object.fromEntries((settingRows || []).map((r) => [r.key, r.value]));
     const resetDate = settingByKey['growth.reset_date'] || null;
-    const planStartDate = settingByKey['plan.start_date'] || null;
+    // Unquote defensively, matching mission.js/plan.js/growth.js's own reads
+    // of this same setting — a stray literal quote (the same class of bug
+    // documented in activities.js's upsertSetting comment, previously seen on
+    // institutes.js's queue.map crash) silently breaks Date.parse() below,
+    // freezing the roadmap at "day 0" forever instead of advancing past a
+    // reset. This site was the one place that didn't defend against it.
+    const planStartDate = String(settingByKey['plan.start_date'] || '').replace(/"/g, '') || null;
     const dailyFloor = resetDate && resetDate > since30 ? resetDate : since30;
     // Pareto/funnel (do-more, remove, leak recs) are sourced from this
     // month's daily_activities — same reset floor applies so a leak or a

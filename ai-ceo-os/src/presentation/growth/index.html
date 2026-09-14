@@ -22,6 +22,7 @@
           <div class="ceo-tabs">
             <button class="ceo-tab" data-tab="acquisition" aria-selected="true">Acquisition</button>
             <button class="ceo-tab" data-tab="retention">Retention</button>
+            <button class="ceo-tab" data-tab="social">Social Engagement</button>
           </div>
 
           <!-- ACQUISITION: new IB clients — content engine + funnel + pre-activation directory -->
@@ -84,6 +85,31 @@
               <div id="gr-retained-table"><div class="ceo-skeleton" style="height: 6em;"></div></div>
             </div>
           </div>
+
+          <!-- SOCIAL ENGAGEMENT: trading-related vote-poll planning for Facebook/WhatsApp/Telegram groups —
+               polls are content_library rows (content_type='poll'); the same kanban's move/edit actions and
+               Reset Plan behavior already apply, so nothing here is a second scheduling system. -->
+          <div class="ceo-tab-panel" data-tab-panel="social" hidden>
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Poll Planning <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Strategic vote-polls for engagement + audience insight — never random entertainment polls. Target: 200+/year, 1,000+ over the 5-year plan.">ⓘ</span></h3>
+              <div id="gr-poll-summary"><div class="ceo-skeleton" style="height: 4em;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>Poll of the Day</h3>
+              <div id="gr-poll-today"><div class="ceo-skeleton" style="height: 4em;"></div></div>
+            </div>
+
+            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
+              <h3>This Week's Polls</h3>
+              <div id="gr-poll-week"><div class="ceo-skeleton" style="height: 4em;"></div></div>
+            </div>
+
+            <div class="ceo-card">
+              <h3>5-Year Poll Audit <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);">— Target 200+/year, minimum 1,000 over 5 years</span></h3>
+              <div id="gr-poll-years"><div class="ceo-skeleton" style="height: 6em;"></div></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -98,6 +124,9 @@
       initTabs('#ceo-growth-tabs-group');
       if (location.hash === '#retention') {
         document.querySelector('[data-tab="retention"]')?.click();
+      }
+      if (location.hash === '#social') {
+        document.querySelector('[data-tab="social"]')?.click();
       }
       initGrowthPage();
     });

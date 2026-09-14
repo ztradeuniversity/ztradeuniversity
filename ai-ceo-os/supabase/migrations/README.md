@@ -62,4 +62,10 @@ finding): drops `settings_admin_delete`, the one DELETE policy that existed anyw
 No other migration was modified — per the Database Engineering Constitution, a correction is
 always a new migration, never a rewrite of an applied one.
 
+**`036_content_library_scheduled_date.sql`** — Social Engagement Poll Planning: adds one nullable
+`scheduled_date date` column (+ index) to `content_library`. Polls are `content_library` rows
+(`content_type = 'poll'`) like any other content idea — this was the one genuine gap (a kanban has
+no due/calendar date). Additive and backward-compatible: every existing video/article row is
+unaffected, RLS is unchanged (policies are per-row, already covering the new column).
+
 Nothing further is scheduled until a genuinely new requirement is approved.

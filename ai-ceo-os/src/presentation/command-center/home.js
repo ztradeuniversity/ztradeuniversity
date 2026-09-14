@@ -13,7 +13,78 @@
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
 import { confirmDialog } from '../shared/components/confirm-dialog.js';
-import { wireGlossary } from '../shared/glossary.js';
+import { wireGlossary, makeInfoIcon } from '../shared/glossary.js';
+
+// Plain-English explanations for the short, compressed checklist-step phrases
+// mission.js surfaces (from the seeded execution-checklist STEPS field —
+// ai-ceo-os/supabase/seed/seed-02-operations.sql — and the GUIDE_STEPS
+// fallback in functions/api/ceo/mission.js). Keyed by the EXACT trimmed step
+// text so lookup is a simple match, never a guess; a step with no entry here
+// simply renders with no ⓘ (already-clear GUIDE_STEPS sentences like "Open
+// the gold (XAUUSD) or BTC chart" are left alone on purpose — Section 1F).
+// Every explanation is derived from that same seed row's own WHY/PREP/
+// EXAMPLE/MISTAKES fields — nothing here invents a new operational rule.
+const STEP_EXPLANATIONS = {
+  // weekly_video
+  'pick card': "Choose which topic card from your content backlog you'll film today — don't invent a new topic on the spot.",
+  'outline 20m': 'Spend up to 20 minutes writing about 10 bullet points of what you\'ll say — a quick outline, not a full script.',
+  'film ONE take (imperfect fine) 60m': 'Record the video in a single take, up to 60 minutes. Small mistakes are fine — do not re-record for polish.',
+  'trim ends only 30m': "Only cut the dead space at the start and end of the recording — don't try to edit the middle.",
+  'thumbnail = question text 15m': "Use the exact question your video answers as the thumbnail text — don't design a separate clickbait title.",
+  'upload+schedule 15m': 'Upload the finished video and set it to publish at the usual time.',
+  // live_class
+  '30m teach': "Spend the first 30 minutes teaching this week's topic to the class.",
+  '15m market review vs public track record': 'Spend 15 minutes reviewing recent market calls honestly against your public track record — wins and losses both.',
+  '15m Q&A': 'Open the floor for 15 minutes of live questions from attendees.',
+  'post replay to TG': 'Upload the class recording and post the link to Telegram so members who missed it can watch.',
+  // publish_chain
+  transcript: "Get a text transcript of this week's video — the base material the article and clips are built from.",
+  'article draft (GEO: 2500-4000w pillar or cluster)': "Turn the transcript into a 2,500–4,000-word website article — a full pillar page or a smaller cluster page.",
+  'founder polish': 'Personally read and edit the AI-assisted draft before it goes live — never publish it unedited.',
+  publish: 'Make the finished article live on the website.',
+  'cut 3-5 clips': "Cut 3 to 5 short clips from this week's video for social media.",
+  'queue TG/FB/IG': 'Schedule those clips to post on Telegram, Facebook and Instagram.',
+  'digest mention': "Reference this week's new article or video in the weekly email digest.",
+  // community_touch
+  'answer everything <24h': 'Reply to every question and comment in the community within 24 hours — no exceptions.',
+  '1 insight/clip post': 'Post one useful insight or video clip to the community today.',
+  '(2-3x/wk) engagement question': 'A few times a week, post a simple question that invites replies — the same kind of poll the Social Engagement plan schedules.',
+  // transparency_report
+  "pull month's calls+outcomes": 'Gather every trade call you made this month along with how each one actually turned out.',
+  'wins AND losses identical format': 'Present winning and losing calls in exactly the same format — never make losses look smaller than wins.',
+  '"what I got wrong" segment': 'Include an honest segment specifically about what you got wrong this month.',
+  'film 10m': 'Film a short, roughly 10-minute video walking through the report.',
+  'pin to TG': 'Pin the report/video to the top of the Telegram channel so every member sees it.',
+  // retention_touch
+  'open due item': "Open the next client touch that's due today from your retention due-list.",
+  "use segment-matched template (adapt, don't recite)": "Start from the message template written for that client's segment, but personalize it — never send it word-for-word.",
+  'send personal': 'Send the message from your own account, personally — not a broadcast.',
+  'log touch': 'Record in the CRM that you made this contact, so the next follow-up date is tracked correctly.',
+  // ib_conversation
+  'WA personal': 'Message the person directly on WhatsApp, one-to-one.',
+  'frame as verification+supervision ("jahan hum khud trade karte hain")': 'Frame joining as verification and supervision under your own trading, not as a sales pitch.',
+  'answer objections from audience card': "Use the researched audience objections/answers as your reference — don't improvise responses to common concerns.",
+  'never pressure': 'If they hesitate, back off completely — do not push or create urgency.',
+  'log stage transition': 'Record in the CRM that this client moved to a new pipeline stage.',
+  // weekly_review
+  'read draft': 'Read the auto-prefilled weekly review draft before making any changes.',
+  'confirm/edit wins+problems': "Confirm or edit the wins and problems the draft pulled in — this is your chance to correct anything wrong.",
+  'check numbers strip': "Glance over this week's KPI numbers strip to catch anything off before finishing the review.",
+  'pick next week Focus (from offered 3)': "Choose next week's single Focus item from the 3 the system suggests.",
+  'mark complete': 'Mark the weekly review as done once every step above is finished.',
+  // kpi_entry
+  M1: 'Open the M1 KPI-entry screen (the weekly numbers module).',
+  'enter manual values (source=manual)': "Type in this week's numbers by hand for any KPI that isn't tracked automatically.",
+  'glance threshold states': 'Quickly check which KPIs are flagged red/yellow against their targets.',
+  // monthly_audit
+  'bottom-20% content by watch-time': 'Pull up the lowest-performing 20% of your content, ranked by watch-time.',
+  'kill or rework decision each': "For each low-performer, decide once: retire it, or rework its angle — don't leave it undecided.",
+  "double the top performer's angle": "Identify what made this month's best-performing content work, and plan more content using that same angle.",
+  'log decisions in M5': "Record each kill/rework decision in the M5 Decision Log so the reasoning isn't lost.",
+  // GUIDE_STEPS fallback (weekly.email_digest) — the only GUIDE_STEPS phrase
+  // terse enough to warrant one; the rest already read as plain sentences.
+  'Write the one founder paragraph': "Write a short, personal paragraph in your own voice for this week's email — the automated parts handle the rest.",
+};
 
 const TIER_BADGE = { 0: 'ceo-badge-critical', 1: 'ceo-badge-warning', 2: 'ceo-badge-neutral' };
 const IMPACT_RANK = { high: 0, medium: 1, low: 2 };
@@ -96,7 +167,7 @@ function renderStepList(box) {
     return `
       <div class="ceo-flex ceo-items-center ceo-gap-2" data-step-i="${i}" style="padding: 2px 0; font-size: var(--ceo-font-size-sm);">
         <button class="ceo-btn ceo-btn-secondary" data-step-done title="Mark done" style="padding: 0 8px;">☐</button>
-        <span style="flex: 1; min-width: 10em;">${escapeHtml(text)}</span>
+        <span style="flex: 1; min-width: 10em;">${escapeHtml(text)}${STEP_EXPLANATIONS[text.trim()] ? '<span data-step-info></span>' : ''}</span>
         <button class="ceo-btn ceo-btn-secondary" data-step-skip title="Skip this step" style="padding: 0 8px; font-size: 0.72rem;">Skip</button>
       </div>`;
   }).join('');
@@ -104,6 +175,16 @@ function renderStepList(box) {
     ? `<div class="ceo-text-muted" style="font-size: 0.72rem; margin-top: 2px;">✓ ${doneN} done${skipN ? ` · ⤫ ${skipN} skipped` : ''} · <a href="#" data-step-reset style="color: inherit; text-decoration: underline;">reset</a></div>`
     : '';
   box.innerHTML = (openRows || (summary ? '' : '')) + summary;
+  // Info icons (Section 1A/1B): built as real elements via makeInfoIcon
+  // (click/tap popover + keyboard, not just a string) and dropped into the
+  // placeholder span next to each step whose exact text has an explanation.
+  box.querySelectorAll('[data-step-i]').forEach((row) => {
+    const i = Number(row.getAttribute('data-step-i'));
+    const text = (steps[i] || '').trim();
+    const explanation = STEP_EXPLANATIONS[text];
+    const placeholder = row.querySelector('[data-step-info]');
+    if (explanation && placeholder) placeholder.replaceWith(makeInfoIcon(explanation));
+  });
   box.querySelectorAll('[data-step-done]').forEach((b) =>
     b.addEventListener('click', () => { setStepState(taskKey, Number(b.closest('[data-step-i]').getAttribute('data-step-i')), 'done'); renderStepList(box); }));
   box.querySelectorAll('[data-step-skip]').forEach((b) =>
@@ -230,7 +311,7 @@ function wireResetButton(picker) {
   document.getElementById('home-reset-btn').addEventListener('click', async () => {
     const ok = await confirmDialog({
       title: 'Reset the entire plan?',
-      message: 'The complete execution roadmap restarts from Day 1 — today becomes Day 1, the yearly IB Growth plan and the Physical IB Expansion cycle both regenerate from today, and every old pending task is closed out. This cannot be undone.',
+      message: 'Resetting the plan starts the operating roadmap again from Day 1 beginning today — the yearly IB Growth plan and the Physical IB Expansion cycle both regenerate from today. Historical records are preserved (completed work, past polls, audit history). This cannot be undone.',
       confirmLabel: 'Reset — today is Day 1',
       destructive: true,
     });
@@ -285,6 +366,24 @@ async function loadDay(date) {
   } catch (err) {
     document.getElementById('home-trading-checkin').innerHTML =
       `<div class="ceo-alert ceo-alert-critical">Trading check-in load nahin hui: ${escapeHtml(err.message)}.</div>`;
+  }
+
+  // Social Engagement (poll planning) — its own isolated fetch, same pattern
+  // as Physical/Trading above. Reuses /api/ceo/growth exactly as the Growth
+  // page does (polls are content_library rows); nothing here touches
+  // mission.js or renderIbGrowth's own aggregation. Only rendered for the
+  // real today — a picked past/future date has no "today's poll" concept.
+  if (date === realToday) {
+    try {
+      const growth = await getJson('/api/ceo/growth');
+      renderSocial(growth.polls);
+    } catch (err) {
+      document.getElementById('home-social').innerHTML =
+        `<div class="ceo-empty-state"><p>Social Engagement load nahin hua.</p></div>`;
+    }
+  } else {
+    const el = document.getElementById('home-social');
+    if (el) el.innerHTML = '<div class="ceo-empty-state"><p>Poll planning shows for today only — open the date picker\'s real today, or manage the full schedule on the Growth page.</p></div>';
   }
 
   // Founder Success Bar — its own isolated fetch, like Physical/Trading: if
@@ -452,7 +551,7 @@ function renderSuccessBar(el, s) {
       </div>
       ${rm ? `<div class="ceo-success-legend">
         <span><i class="ceo-dot ceo-dot-done"></i>✓ Completed</span>
-        <span><i class="ceo-dot ceo-dot-now"></i>● You are here${isToday ? '' : ` (day ${num(rm.currentDay)})`}</span>
+        <span><i class="ceo-dot ceo-dot-now"></i>● You are here (day ${num(rm.currentDay)} of ${num(rm.horizonDays)})</span>
         <span><i class="ceo-dot ceo-dot-todo"></i>○ Remaining</span>
         <span class="ceo-text-muted">${isToday ? 'Drag or tap the bar to explore the roadmap' : 'Drag or tap anywhere on the bar'}</span>
       </div>` : ''}
@@ -1136,6 +1235,46 @@ function renderPhysical(institutes, m, isRealToday) {
   el.innerHTML = parts.join('');
   if (physicalTask) wireTaskButtons(el.querySelectorAll('[data-task-id]'));
   renderAllStepLists(el);
+}
+
+// ============================================================
+// 4) SOCIAL ENGAGEMENT — poll-of-the-day + the annual/5-year counters
+//    (Section 23's own example shape). Read-only here: posting/rescheduling
+//    happens on the Growth page's Social Engagement tab — this card exists
+//    so "what poll do I post today" never requires leaving Today.
+// ============================================================
+function renderSocial(polls) {
+  const el = document.getElementById('home-social');
+  if (!el) return;
+  if (!polls || !polls.seeded) {
+    el.innerHTML = `<div class="ceo-empty-state"><p>No poll plan yet.</p><a class="ceo-btn ceo-btn-secondary" href="/ai-ceo-os/src/presentation/growth/index.html#social">Generate the 5-year poll plan →</a></div>`;
+    return;
+  }
+  const a = polls.annual || {};
+  const fy = polls.fiveYear || {};
+  const t = polls.today;
+  const pollBlock = t
+    ? `<div class="ceo-card" style="box-shadow:none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-3);">
+        <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">Poll of the Day</div>
+        <div style="font-weight: 600; margin: 2px 0 4px;">${escapeHtml(t.title)}</div>
+        ${(t.options || []).length ? `<ol style="margin: 0 0 4px; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${t.options.map((o) => `<li>${escapeHtml(o)}</li>`).join('')}</ol>` : ''}
+        <div class="ceo-flex ceo-gap-2" style="flex-wrap: wrap; margin-top: 4px;">
+          <span class="ceo-badge ceo-badge-neutral">${escapeHtml(t.target_audience || 'All')}</span>
+          <span class="ceo-badge ceo-badge-neutral">${escapeHtml(t.pillar || '')}</span>
+        </div>
+        ${t.purpose ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 4px;">Purpose: ${escapeHtml(t.purpose)}</div>` : ''}
+      </div>`
+    : '<div class="ceo-empty-state" style="margin-bottom: var(--ceo-space-3);"><p>No poll scheduled for today.</p></div>';
+
+  el.innerHTML = `
+    ${pollBlock}
+    <div class="ceo-success-stats">
+      <div><div class="ceo-success-stat-label">Polls this week</div><div class="ceo-success-stat-value">${(polls.thisWeek || []).length}</div></div>
+      <div><div class="ceo-success-stat-label">Polls this year</div><div class="ceo-success-stat-value">${a.completed ?? 0}<span class="ceo-text-muted" style="font-size:0.7rem;"> / ${a.target ?? 200}+</span></div></div>
+      <div><div class="ceo-success-stat-label">5-Year plan</div><div class="ceo-success-stat-value">${fy.totalCompleted ?? 0}<span class="ceo-text-muted" style="font-size:0.7rem;"> / ${fy.minimum ?? 1000}+</span></div></div>
+      <div><div class="ceo-success-stat-label">Pending this year</div><div class="ceo-success-stat-value">${a.remaining ?? 0}</div></div>
+    </div>
+    <a class="ceo-btn ceo-btn-secondary" style="margin-top: var(--ceo-space-3);" href="/ai-ceo-os/src/presentation/growth/index.html#social">Manage poll plan →</a>`;
 }
 
 // ============================================================

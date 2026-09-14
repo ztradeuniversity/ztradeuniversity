@@ -127,6 +127,7 @@ export async function initGrowthPage() {
       renderTasks(growth.tasks);
       renderCampaigns(growth.campaigns);
       renderPhysicalEngine(physical);
+      renderPollPlanning(growth.polls);
     } catch (err) {
       document.getElementById('gr-funnel').innerHTML =
         `<div class="ceo-alert ceo-alert-critical">Load fail: ${esc(err.message)}</div>`;
@@ -467,6 +468,141 @@ export async function initGrowthPage() {
           <td><span class="ceo-badge ceo-badge-neutral">${esc(c.status)}</span></td>
           <td>${esc(c.start_date || '')}</td></tr>`).join('')}
         </tbody></table></div>`;
+  }
+
+  // --- Social Engagement — Poll Planning ---------------------------------
+  // Polls are content_library rows (content_type='poll'); growth.js's
+  // buildPollSummary() already computed everything below from real rows —
+  // this only renders. Options/purpose ride in the same #META# notes tag
+  // buildContentMeta/parseContentMeta already handle (poll-bank.js's
+  // buildPollNotes on the server writes the identical format), so no new
+  // parsing logic is needed here.
+  const POLL_STATUS_BADGE = { idea: 'ceo-badge-warning', production: 'ceo-badge-warning', published: 'ceo-badge-success', evergreen: 'ceo-badge-success', retired: 'ceo-badge-neutral' };
+  // Never show "Published" unless the row's real status says so (Section 31) —
+  // this label, not the raw DB status word, is what the UI actually prints.
+  const pollStatusLabel = (s) => (s === 'published' || s === 'evergreen') ? 'Published' : (s === 'retired' ? 'Retired' : 'Scheduled — Pending Publication');
+
+  function pollCard(p) {
+    const opts = p.options || [];
+    return `
+      <div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-2);">
+        <div class="ceo-flex ceo-items-center ceo-gap-2" style="flex-wrap: wrap; margin-bottom: 4px;">
+          <span class="ceo-badge ${POLL_STATUS_BADGE[p.status] || 'ceo-badge-neutral'}" style="font-size: 0.7em;">${esc(pollStatusLabel(p.status))}</span>
+          <span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(p.pillar || '')}</span>
+          <span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(p.target_audience || 'All')}</span>
+          <span class="ceo-text-muted" style="font-size: 0.72rem;">${esc(p.scheduled_date || '')}</span>
+        </div>
+        <div style="font-weight: 600;">${esc(p.title)}</div>
+        ${opts.length ? `<ul style="margin: 4px 0 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${opts.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>` : ''}
+        ${p.purpose ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 4px;">Purpose: ${esc(p.purpose)}</div>` : ''}
+        ${p.status === 'idea' || p.status === 'production' ? `<button class="ceo-btn ceo-btn-secondary" data-poll-post="${p.id}" style="font-size: 0.75em; padding: 2px 8px; margin-top: 6px;">Mark posted</button>` : ''}
+      </div>`;
+  }
+
+  function wirePollPostButtons(el) {
+    el.querySelectorAll('[data-poll-post]').forEach((b) =>
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try {
+          // Reuses the existing move action untouched — a poll is a
+          // content_library row like any other; "posted" IS status='published',
+          // set only on a real operator click (Section 31, no fake automation).
+          await postJson('/api/ceo/growth', { action: 'move', id: b.getAttribute('data-poll-post'), status: 'published' });
+          showToast('Marked posted.', 'success');
+          await load();
+        } catch (err) {
+          showToast('Mark-posted fail: ' + err.message, 'critical');
+          b.disabled = false;
+        }
+      })
+    );
+  }
+
+  function renderPollPlanning(polls) {
+    renderPollSummary(polls);
+    renderPollToday(polls);
+    renderPollWeek(polls);
+    renderPollYears(polls);
+  }
+
+  function renderPollSummary(polls) {
+    const el = document.getElementById('gr-poll-summary');
+    if (!polls) { el.innerHTML = ''; return; }
+    if (!polls.seeded) {
+      el.innerHTML = `
+        <div class="ceo-empty-state">
+          <h3>No poll plan yet</h3>
+          <p>Generate a constrained-randomized, category-balanced 5-year poll schedule (200+/year, never repeating a question inside 90 days, never more than 2 same-category polls in any 2-week span).</p>
+          <button class="ceo-btn ceo-btn-primary" id="gr-seed-polls">Generate 5-Year Poll Plan</button>
+        </div>`;
+      document.getElementById('gr-seed-polls').addEventListener('click', async (e) => {
+        e.target.disabled = true;
+        try {
+          const res = await postJson('/api/ceo/growth', { action: 'seed_polls' });
+          showToast(`Poll plan generated — ${res.added} polls scheduled across 5 years.`, 'success');
+          await load();
+        } catch (err) {
+          showToast('Generate fail: ' + err.message, 'critical');
+          e.target.disabled = false;
+        }
+      });
+      return;
+    }
+    const a = polls.annual || {};
+    el.innerHTML = `
+      <div class="ceo-success-stats">
+        <div><div class="ceo-success-stat-label">Year ${polls.currentYear} target</div><div class="ceo-success-stat-value">${a.target ?? 200}+</div></div>
+        <div><div class="ceo-success-stat-label">Planned</div><div class="ceo-success-stat-value">${a.planned ?? 0}</div></div>
+        <div><div class="ceo-success-stat-label">Completed</div><div class="ceo-success-stat-value">${a.completed ?? 0}</div></div>
+        <div><div class="ceo-success-stat-label">Remaining</div><div class="ceo-success-stat-value">${a.remaining ?? 0}</div></div>
+      </div>
+      ${polls.overdueCount > 0 ? `<div class="ceo-alert ceo-alert-warning" style="margin-top: var(--ceo-space-3);">${polls.overdueCount} poll${polls.overdueCount > 1 ? 's are' : ' is'} past its scheduled date and not yet marked posted — post it (even late) or reschedule from the poll list; the plan never auto-duplicates a missed poll.</div>` : ''}`;
+  }
+
+  function renderPollToday(polls) {
+    const el = document.getElementById('gr-poll-today');
+    if (!polls) { el.innerHTML = ''; return; }
+    if (!polls.today) {
+      el.innerHTML = '<div class="ceo-empty-state"><p>No poll scheduled for today.</p></div>';
+      return;
+    }
+    el.innerHTML = pollCard(polls.today);
+    wirePollPostButtons(el);
+  }
+
+  function renderPollWeek(polls) {
+    const el = document.getElementById('gr-poll-week');
+    if (!polls) { el.innerHTML = ''; return; }
+    if (!polls.thisWeek || polls.thisWeek.length === 0) {
+      el.innerHTML = '<div class="ceo-empty-state"><p>No polls scheduled for the next 7 days.</p></div>';
+      return;
+    }
+    el.innerHTML = polls.thisWeek.map(pollCard).join('');
+    wirePollPostButtons(el);
+  }
+
+  function renderPollYears(polls) {
+    const el = document.getElementById('gr-poll-years');
+    if (!polls || !polls.fiveYear) { el.innerHTML = ''; return; }
+    const { years, totalPlanned, totalCompleted, minimum, status } = polls.fiveYear;
+    const statusBadge = status === 'above_minimum' ? 'ceo-badge-success' : status === 'on_minimum' ? 'ceo-badge-success' : 'ceo-badge-critical';
+    const statusLabel = status === 'above_minimum' ? 'Above minimum' : status === 'on_minimum' ? 'On minimum' : 'Below minimum';
+    el.innerHTML = `
+      <div style="overflow-x:auto;"><table class="ceo-table">
+        <thead><tr><th>Year</th><th>Dates</th><th>Target</th><th>Planned</th><th>Completed</th><th>Remaining</th></tr></thead>
+        <tbody>${years.map((y) => `
+          <tr${y.year === polls.currentYear ? ' style="font-weight:600;"' : ''}>
+            <td>Year ${y.year}${y.year === polls.currentYear ? ' (current)' : ''}</td>
+            <td class="ceo-text-muted" style="font-size:0.8em;">${esc(y.from)} → ${esc(y.to)}</td>
+            <td>${y.target}+</td><td>${y.planned}</td><td>${y.completed}</td><td>${y.remaining}</td>
+          </tr>`).join('')}
+        </tbody></table></div>
+      <div class="ceo-flex ceo-items-center ceo-gap-3" style="margin-top: var(--ceo-space-3); flex-wrap: wrap;">
+        <span><strong>Total planned:</strong> ${totalPlanned}</span>
+        <span><strong>Total completed:</strong> ${totalCompleted}</span>
+        <span><strong>Minimum required:</strong> ${minimum}</span>
+        <span class="ceo-badge ${statusBadge}">${statusLabel}</span>
+      </div>`;
   }
 
   // --- Physical Growth Engine (institutes + 15-day area cycle) ----------
