@@ -86,23 +86,17 @@
             </div>
           </div>
 
-          <!-- SOCIAL ENGAGEMENT: trading-related vote-poll planning for Facebook/WhatsApp/Telegram groups —
-               polls are content_library rows (content_type='poll'); the same kanban's move/edit actions and
-               Reset Plan behavior already apply, so nothing here is a second scheduling system. -->
+          <!-- SOCIAL ENGAGEMENT: the PLANNING/AUDIT view only — target vs. actual,
+               and the 5-year breakdown. The day-to-day DOING of a poll happens where
+               every other daily task does: as a "Today's Vote Poll" checklist item
+               injected into Community Touch on the Command Center (home.js), which
+               marks the same underlying content_library row posted. Polls are
+               content_library rows (content_type='poll'); the kanban's move/edit
+               actions and Reset Plan behavior already apply — no second system. -->
           <div class="ceo-tab-panel" data-tab-panel="social" hidden>
             <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-              <h3>Poll Planning <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Strategic vote-polls for engagement + audience insight — never random entertainment polls. Target: 200+/year, 1,000+ over the 5-year plan.">ⓘ</span></h3>
+              <h3>Poll Planning <span class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm);" title="Strategic vote-polls for engagement + audience insight — never random entertainment polls. Target: 200+/year, 1,000+ over the 5-year plan. Today's poll itself appears on the Command Center, inside Community Touch.">ⓘ</span></h3>
               <div id="gr-poll-summary"><div class="ceo-skeleton" style="height: 4em;"></div></div>
-            </div>
-
-            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-              <h3>Poll of the Day</h3>
-              <div id="gr-poll-today"><div class="ceo-skeleton" style="height: 4em;"></div></div>
-            </div>
-
-            <div class="ceo-card" style="margin-bottom: var(--ceo-space-6);">
-              <h3>This Week's Polls</h3>
-              <div id="gr-poll-week"><div class="ceo-skeleton" style="height: 4em;"></div></div>
             </div>
 
             <div class="ceo-card">

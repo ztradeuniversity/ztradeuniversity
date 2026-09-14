@@ -360,22 +360,38 @@ function showPopover(anchor, term) {
 // closes on outside click, Escape, scroll, or resize (ensurePopover's own
 // listeners, already wired once).
 export function makeInfoIcon(explanation) {
+  return makeInfoTrigger(explanation, `
+    <div style="margin-bottom: 8px;">${esc(explanation)}</div>
+    <button type="button" class="ceo-btn ceo-btn-secondary" data-popover-close style="font-size: 0.72rem; padding: 2px 10px;">Close</button>`);
+}
+
+// Same trigger, but for structured content (e.g. a poll's question/options/
+// channel/purpose) that doesn't fit a single plain-text sentence — the
+// caller supplies already-escaped inner HTML plus a plain-text string for
+// the native hover title / aria-label. Still the exact same lightweight
+// popover as makeInfoIcon (Section 1F still applies: nothing this triggers
+// ever appears on the page itself until the icon is activated).
+export function makeInfoIconHtml(innerHtml, hoverText) {
+  return makeInfoTrigger(hoverText, `
+    ${innerHtml}
+    <button type="button" class="ceo-btn ceo-btn-secondary" data-popover-close style="font-size: 0.72rem; padding: 2px 10px; margin-top: 4px;">Close</button>`);
+}
+
+function makeInfoTrigger(hoverText, popoverHtml) {
   const el = document.createElement('span');
   el.textContent = 'ⓘ';
   el.setAttribute('tabindex', '0');
   el.setAttribute('role', 'button');
-  el.setAttribute('aria-label', `More info: ${explanation}`);
-  el.setAttribute('title', explanation);
+  el.setAttribute('aria-label', `More info: ${hoverText}`);
+  el.setAttribute('title', hoverText);
   el.style.cssText = 'display: inline-block; margin-left: 5px; font-size: 0.85em; color: var(--ceo-text-muted); cursor: help; vertical-align: middle;';
-  const open = (e) => { e.preventDefault(); e.stopPropagation(); showPopoverContent(el, `
-    <div style="margin-bottom: 8px;">${esc(explanation)}</div>
-    <button type="button" class="ceo-btn ceo-btn-secondary" data-popover-close style="font-size: 0.72rem; padding: 2px 10px;">Close</button>`); };
+  const open = (e) => { e.preventDefault(); e.stopPropagation(); showPopoverContent(el, popoverHtml); };
   el.addEventListener('click', open);
   el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') open(e); });
   return el;
 }
 
-function esc(str) {
+export function esc(str) {
   const d = document.createElement('div');
   d.textContent = String(str ?? '');
   return d.innerHTML;

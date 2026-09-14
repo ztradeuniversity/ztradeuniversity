@@ -13,7 +13,7 @@
 import { getJson, postJson } from '../shared/api.js';
 import { showToast } from '../shared/components/toast.js';
 import { confirmDialog } from '../shared/components/confirm-dialog.js';
-import { wireGlossary, makeInfoIcon } from '../shared/glossary.js';
+import { wireGlossary, makeInfoIcon, makeInfoIconHtml } from '../shared/glossary.js';
 
 // Plain-English explanations for the short, compressed checklist-step phrases
 // mission.js surfaces (from the seeded execution-checklist STEPS field —
@@ -141,6 +141,11 @@ let currentLeavePeriods = [];
 // day starts fresh — unchecked steps naturally return when the task recurs).
 const stepData = {};
 let currentViewDate = new Date().toISOString().slice(0, 10);
+// Today's scheduled poll (content_library row, content_type='poll'), set by
+// loadDay() before renderIbGrowth runs. null when none is scheduled today —
+// the Community Touch step injection below simply doesn't fire in that case.
+let todaysPoll = null;
+const POLL_STEP_TEXT = "Today's Vote Poll";
 
 function stepKey(taskKey, i) { return `ceo-step:${currentViewDate}:${taskKey}:${i}`; }
 function getStepState(taskKey, i) {
@@ -167,7 +172,7 @@ function renderStepList(box) {
     return `
       <div class="ceo-flex ceo-items-center ceo-gap-2" data-step-i="${i}" style="padding: 2px 0; font-size: var(--ceo-font-size-sm);">
         <button class="ceo-btn ceo-btn-secondary" data-step-done title="Mark done" style="padding: 0 8px;">☐</button>
-        <span style="flex: 1; min-width: 10em;">${escapeHtml(text)}${STEP_EXPLANATIONS[text.trim()] ? '<span data-step-info></span>' : ''}</span>
+        <span style="flex: 1; min-width: 10em;">${escapeHtml(text)}${(STEP_EXPLANATIONS[text.trim()] || text.trim() === POLL_STEP_TEXT) ? '<span data-step-info></span>' : ''}</span>
         <button class="ceo-btn ceo-btn-secondary" data-step-skip title="Skip this step" style="padding: 0 8px; font-size: 0.72rem;">Skip</button>
       </div>`;
   }).join('');
@@ -178,20 +183,71 @@ function renderStepList(box) {
   // Info icons (Section 1A/1B): built as real elements via makeInfoIcon
   // (click/tap popover + keyboard, not just a string) and dropped into the
   // placeholder span next to each step whose exact text has an explanation.
+  // The poll step is a special case: its "explanation" is the actual poll
+  // content (question/options/channel/purpose), not a static dictionary
+  // entry — built fresh from todaysPoll each render.
   box.querySelectorAll('[data-step-i]').forEach((row) => {
     const i = Number(row.getAttribute('data-step-i'));
     const text = (steps[i] || '').trim();
-    const explanation = STEP_EXPLANATIONS[text];
     const placeholder = row.querySelector('[data-step-info]');
-    if (explanation && placeholder) placeholder.replaceWith(makeInfoIcon(explanation));
+    if (!placeholder) return;
+    if (text === POLL_STEP_TEXT && todaysPoll) {
+      placeholder.replaceWith(makeInfoIconHtml(pollPopoverHtml(todaysPoll), `Today's poll: ${todaysPoll.title}`));
+    } else if (STEP_EXPLANATIONS[text]) {
+      placeholder.replaceWith(makeInfoIcon(STEP_EXPLANATIONS[text]));
+    }
   });
   box.querySelectorAll('[data-step-done]').forEach((b) =>
-    b.addEventListener('click', () => { setStepState(taskKey, Number(b.closest('[data-step-i]').getAttribute('data-step-i')), 'done'); renderStepList(box); }));
+    b.addEventListener('click', () => {
+      const i = Number(b.closest('[data-step-i]').getAttribute('data-step-i'));
+      setStepState(taskKey, i, 'done');
+      // The poll step's "done" IS real completion evidence (Section 31, no
+      // fake automation): reuse the exact same /api/ceo/growth move action
+      // the Growth page's own "Mark posted" button calls — best-effort, the
+      // local checklist state still saves even if this call fails.
+      if ((steps[i] || '').trim() === POLL_STEP_TEXT && todaysPoll) markPollPosted(todaysPoll);
+      renderStepList(box);
+    }));
   box.querySelectorAll('[data-step-skip]').forEach((b) =>
     b.addEventListener('click', () => { setStepState(taskKey, Number(b.closest('[data-step-i]').getAttribute('data-step-i')), 'skip'); renderStepList(box); }));
   const reset = box.querySelector('[data-step-reset]');
   if (reset) reset.addEventListener('click', (e) => { e.preventDefault(); steps.forEach((_, i) => setStepState(taskKey, i, 'open')); renderStepList(box); });
   wireGlossary(box); // re-annotate: this box was just rebuilt
+}
+
+// TODAY'S VOTE POLL popover content (Section 2's exact structure — Question,
+// Options, Channel, Purpose) — built from the real content_library row
+// (todaysPoll), never invented copy. Options/purpose already arrive parsed
+// (parsePollNotes ran server-side in growth.js's buildPollSummary).
+function pollPopoverHtml(poll) {
+  const opts = poll.options || [];
+  return `
+    <div style="font-weight: 700; margin-bottom: 6px;">Today's Vote Poll</div>
+    <div class="ceo-text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Question</div>
+    <div style="margin-bottom: 8px;">${escapeHtml(poll.title)}</div>
+    ${opts.length ? `
+    <div class="ceo-text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Options</div>
+    <ol style="margin: 0 0 8px; padding-left: 1.2em;">${opts.map((o) => `<li>${escapeHtml(o)}</li>`).join('')}</ol>` : ''}
+    <div class="ceo-text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Channel</div>
+    <div style="margin-bottom: 8px;">${escapeHtml(poll.target_audience || 'All')}</div>
+    ${poll.purpose ? `
+    <div class="ceo-text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Purpose</div>
+    <div style="margin-bottom: 4px;">${escapeHtml(poll.purpose)}</div>` : ''}`;
+}
+
+// Marks the real poll row published — the same action the Growth page's own
+// "Mark posted" button performs (functions/api/ceo/growth.js's existing
+// `move` action; no new endpoint). Best-effort: the checklist step already
+// saved locally regardless of whether this network call succeeds, since a
+// flaky connection shouldn't block the founder's local progress — but we do
+// surface a toast on failure so a real miss isn't silent.
+async function markPollPosted(poll) {
+  try {
+    await postJson('/api/ceo/growth', { action: 'move', id: poll.id, status: 'published' });
+    showToast('Poll marked posted.', 'success');
+  } catch (err) {
+    showToast('Poll status update fail (checklist still saved): ' + err.message, 'critical');
+  }
 }
 
 function wireLeaveButton(picker) {
@@ -330,6 +386,22 @@ function wireResetButton(picker) {
 
 async function loadDay(date) {
   const realToday = new Date().toISOString().slice(0, 10);
+
+  // Today's scheduled poll (if any) — fetched BEFORE the mission call so it
+  // can be injected as an extra checklist item inside Community Touch below,
+  // instead of living in its own separate section the founder has to
+  // remember to visit. Isolated try/catch: a poll-fetch failure must never
+  // block the rest of Today from rendering. Only meaningful for the real
+  // today — a picked past/future date has no "today's poll" concept, and
+  // mission.js never instantiates tasks for a non-today date anyway.
+  todaysPoll = null;
+  if (date === realToday) {
+    try {
+      const growth = await getJson('/api/ceo/growth');
+      todaysPoll = growth.polls?.today || null;
+    } catch (err) { /* silent — the poll step just won't appear today */ }
+  }
+
   let m = null;
   try {
     m = await getJson('/api/ceo/mission?date=' + encodeURIComponent(date));
@@ -366,24 +438,6 @@ async function loadDay(date) {
   } catch (err) {
     document.getElementById('home-trading-checkin').innerHTML =
       `<div class="ceo-alert ceo-alert-critical">Trading check-in load nahin hui: ${escapeHtml(err.message)}.</div>`;
-  }
-
-  // Social Engagement (poll planning) — its own isolated fetch, same pattern
-  // as Physical/Trading above. Reuses /api/ceo/growth exactly as the Growth
-  // page does (polls are content_library rows); nothing here touches
-  // mission.js or renderIbGrowth's own aggregation. Only rendered for the
-  // real today — a picked past/future date has no "today's poll" concept.
-  if (date === realToday) {
-    try {
-      const growth = await getJson('/api/ceo/growth');
-      renderSocial(growth.polls);
-    } catch (err) {
-      document.getElementById('home-social').innerHTML =
-        `<div class="ceo-empty-state"><p>Social Engagement load nahin hua.</p></div>`;
-    }
-  } else {
-    const el = document.getElementById('home-social');
-    if (el) el.innerHTML = '<div class="ceo-empty-state"><p>Poll planning shows for today only — open the date picker\'s real today, or manage the full schedule on the Growth page.</p></div>';
   }
 
   // Founder Success Bar — its own isolated fetch, like Physical/Trading: if
@@ -907,6 +961,21 @@ function renderIbGrowth(m) {
   const cadenceItems = [...(m.top || []), ...(m.rest || []), ...(m.overdue || []), ...(m.done || [])]
     .filter((t) => !HIDDEN_ON_HOME.has(t.key));
 
+  // Inject today's scheduled poll as one more Community Touch checklist step
+  // (Section 2/3/4 — polls are an activity layer INSIDE the existing daily
+  // engagement task, never a separate module the founder has to remember to
+  // visit). Community Touch is exactly where the seeded checklist already
+  // lists "(2-3x/wk) engagement question" — a poll IS that engagement
+  // question, made concrete for today. Only added when a real poll is
+  // actually scheduled for today (todaysPoll, set in loadDay) and the step
+  // isn't already present (defensive against a double-render).
+  if (todaysPoll) {
+    const touch = cadenceItems.find((t) => t.key === 'daily.community_touch');
+    if (touch && Array.isArray(touch.steps) && !touch.steps.includes(POLL_STEP_TEXT)) {
+      touch.steps = [...touch.steps, POLL_STEP_TEXT];
+    }
+  }
+
   // Date-first execution: a date with no stored rows (any past day never
   // opened, or any future day) shows its deterministic roadmap day —
   // exactly what the Complete Plan holds for that date, leave-shifted.
@@ -1235,46 +1304,6 @@ function renderPhysical(institutes, m, isRealToday) {
   el.innerHTML = parts.join('');
   if (physicalTask) wireTaskButtons(el.querySelectorAll('[data-task-id]'));
   renderAllStepLists(el);
-}
-
-// ============================================================
-// 4) SOCIAL ENGAGEMENT — poll-of-the-day + the annual/5-year counters
-//    (Section 23's own example shape). Read-only here: posting/rescheduling
-//    happens on the Growth page's Social Engagement tab — this card exists
-//    so "what poll do I post today" never requires leaving Today.
-// ============================================================
-function renderSocial(polls) {
-  const el = document.getElementById('home-social');
-  if (!el) return;
-  if (!polls || !polls.seeded) {
-    el.innerHTML = `<div class="ceo-empty-state"><p>No poll plan yet.</p><a class="ceo-btn ceo-btn-secondary" href="/ai-ceo-os/src/presentation/growth/index.html#social">Generate the 5-year poll plan →</a></div>`;
-    return;
-  }
-  const a = polls.annual || {};
-  const fy = polls.fiveYear || {};
-  const t = polls.today;
-  const pollBlock = t
-    ? `<div class="ceo-card" style="box-shadow:none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-3);">
-        <div class="ceo-text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">Poll of the Day</div>
-        <div style="font-weight: 600; margin: 2px 0 4px;">${escapeHtml(t.title)}</div>
-        ${(t.options || []).length ? `<ol style="margin: 0 0 4px; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${t.options.map((o) => `<li>${escapeHtml(o)}</li>`).join('')}</ol>` : ''}
-        <div class="ceo-flex ceo-gap-2" style="flex-wrap: wrap; margin-top: 4px;">
-          <span class="ceo-badge ceo-badge-neutral">${escapeHtml(t.target_audience || 'All')}</span>
-          <span class="ceo-badge ceo-badge-neutral">${escapeHtml(t.pillar || '')}</span>
-        </div>
-        ${t.purpose ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 4px;">Purpose: ${escapeHtml(t.purpose)}</div>` : ''}
-      </div>`
-    : '<div class="ceo-empty-state" style="margin-bottom: var(--ceo-space-3);"><p>No poll scheduled for today.</p></div>';
-
-  el.innerHTML = `
-    ${pollBlock}
-    <div class="ceo-success-stats">
-      <div><div class="ceo-success-stat-label">Polls this week</div><div class="ceo-success-stat-value">${(polls.thisWeek || []).length}</div></div>
-      <div><div class="ceo-success-stat-label">Polls this year</div><div class="ceo-success-stat-value">${a.completed ?? 0}<span class="ceo-text-muted" style="font-size:0.7rem;"> / ${a.target ?? 200}+</span></div></div>
-      <div><div class="ceo-success-stat-label">5-Year plan</div><div class="ceo-success-stat-value">${fy.totalCompleted ?? 0}<span class="ceo-text-muted" style="font-size:0.7rem;"> / ${fy.minimum ?? 1000}+</span></div></div>
-      <div><div class="ceo-success-stat-label">Pending this year</div><div class="ceo-success-stat-value">${a.remaining ?? 0}</div></div>
-    </div>
-    <a class="ceo-btn ceo-btn-secondary" style="margin-top: var(--ceo-space-3);" href="/ai-ceo-os/src/presentation/growth/index.html#social">Manage poll plan →</a>`;
 }
 
 // ============================================================

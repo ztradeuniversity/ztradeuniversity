@@ -473,56 +473,21 @@ export async function initGrowthPage() {
   // --- Social Engagement — Poll Planning ---------------------------------
   // Polls are content_library rows (content_type='poll'); growth.js's
   // buildPollSummary() already computed everything below from real rows —
-  // this only renders. Options/purpose ride in the same #META# notes tag
-  // buildContentMeta/parseContentMeta already handle (poll-bank.js's
-  // buildPollNotes on the server writes the identical format), so no new
-  // parsing logic is needed here.
-  const POLL_STATUS_BADGE = { idea: 'ceo-badge-warning', production: 'ceo-badge-warning', published: 'ceo-badge-success', evergreen: 'ceo-badge-success', retired: 'ceo-badge-neutral' };
-  // Never show "Published" unless the row's real status says so (Section 31) —
-  // this label, not the raw DB status word, is what the UI actually prints.
-  const pollStatusLabel = (s) => (s === 'published' || s === 'evergreen') ? 'Published' : (s === 'retired' ? 'Retired' : 'Scheduled — Pending Publication');
-
-  function pollCard(p) {
-    const opts = p.options || [];
-    return `
-      <div class="ceo-card" style="box-shadow: none; background: var(--ceo-surface-raised); padding: var(--ceo-space-3); margin-bottom: var(--ceo-space-2);">
-        <div class="ceo-flex ceo-items-center ceo-gap-2" style="flex-wrap: wrap; margin-bottom: 4px;">
-          <span class="ceo-badge ${POLL_STATUS_BADGE[p.status] || 'ceo-badge-neutral'}" style="font-size: 0.7em;">${esc(pollStatusLabel(p.status))}</span>
-          <span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(p.pillar || '')}</span>
-          <span class="ceo-badge ceo-badge-neutral" style="font-size: 0.7em;">${esc(p.target_audience || 'All')}</span>
-          <span class="ceo-text-muted" style="font-size: 0.72rem;">${esc(p.scheduled_date || '')}</span>
-        </div>
-        <div style="font-weight: 600;">${esc(p.title)}</div>
-        ${opts.length ? `<ul style="margin: 4px 0 0; padding-left: 1.2em; font-size: var(--ceo-font-size-sm);">${opts.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>` : ''}
-        ${p.purpose ? `<div class="ceo-text-muted" style="font-size: 0.75rem; margin-top: 4px;">Purpose: ${esc(p.purpose)}</div>` : ''}
-        ${p.status === 'idea' || p.status === 'production' ? `<button class="ceo-btn ceo-btn-secondary" data-poll-post="${p.id}" style="font-size: 0.75em; padding: 2px 8px; margin-top: 6px;">Mark posted</button>` : ''}
-      </div>`;
-  }
-
-  function wirePollPostButtons(el) {
-    el.querySelectorAll('[data-poll-post]').forEach((b) =>
-      b.addEventListener('click', async () => {
-        b.disabled = true;
-        try {
-          // Reuses the existing move action untouched — a poll is a
-          // content_library row like any other; "posted" IS status='published',
-          // set only on a real operator click (Section 31, no fake automation).
-          await postJson('/api/ceo/growth', { action: 'move', id: b.getAttribute('data-poll-post'), status: 'published' });
-          showToast('Marked posted.', 'success');
-          await load();
-        } catch (err) {
-          showToast('Mark-posted fail: ' + err.message, 'critical');
-          b.disabled = false;
-        }
-      })
-    );
-  }
-
+  // this only renders. This tab is the PLANNING/AUDIT view (target vs.
+  // actual, generate the schedule) — the day-to-day DOING of a poll (seeing
+  // today's question and marking it posted) lives inside the Command
+  // Center's Community Touch checklist (home.js), not here, so completing a
+  // poll never requires a separate trip to this page.
+  //
+  // Each render call below is wrapped in its own try/catch — one card
+  // failing must never leave a sibling card stuck on its skeleton forever
+  // (the isolation pattern this file already uses for institutes/physical),
+  // which is exactly what happened before: an unguarded throw in one of the
+  // (now-removed) Poll of the Day / This Week's Polls cards left every call
+  // after it in the same synchronous chain never running.
   function renderPollPlanning(polls) {
-    renderPollSummary(polls);
-    renderPollToday(polls);
-    renderPollWeek(polls);
-    renderPollYears(polls);
+    try { renderPollSummary(polls); } catch (err) { showToast('Poll summary render fail: ' + err.message, 'critical'); }
+    try { renderPollYears(polls); } catch (err) { showToast('Poll audit render fail: ' + err.message, 'critical'); }
   }
 
   function renderPollSummary(polls) {
@@ -556,29 +521,8 @@ export async function initGrowthPage() {
         <div><div class="ceo-success-stat-label">Completed</div><div class="ceo-success-stat-value">${a.completed ?? 0}</div></div>
         <div><div class="ceo-success-stat-label">Remaining</div><div class="ceo-success-stat-value">${a.remaining ?? 0}</div></div>
       </div>
-      ${polls.overdueCount > 0 ? `<div class="ceo-alert ceo-alert-warning" style="margin-top: var(--ceo-space-3);">${polls.overdueCount} poll${polls.overdueCount > 1 ? 's are' : ' is'} past its scheduled date and not yet marked posted — post it (even late) or reschedule from the poll list; the plan never auto-duplicates a missed poll.</div>` : ''}`;
-  }
-
-  function renderPollToday(polls) {
-    const el = document.getElementById('gr-poll-today');
-    if (!polls) { el.innerHTML = ''; return; }
-    if (!polls.today) {
-      el.innerHTML = '<div class="ceo-empty-state"><p>No poll scheduled for today.</p></div>';
-      return;
-    }
-    el.innerHTML = pollCard(polls.today);
-    wirePollPostButtons(el);
-  }
-
-  function renderPollWeek(polls) {
-    const el = document.getElementById('gr-poll-week');
-    if (!polls) { el.innerHTML = ''; return; }
-    if (!polls.thisWeek || polls.thisWeek.length === 0) {
-      el.innerHTML = '<div class="ceo-empty-state"><p>No polls scheduled for the next 7 days.</p></div>';
-      return;
-    }
-    el.innerHTML = polls.thisWeek.map(pollCard).join('');
-    wirePollPostButtons(el);
+      <p class="ceo-text-muted" style="font-size: var(--ceo-font-size-sm); margin: var(--ceo-space-3) 0 0;">Today's actual poll question appears on the Command Center, inside Community Touch — mark it done there and it counts here automatically.</p>
+      ${polls.overdueCount > 0 ? `<div class="ceo-alert ceo-alert-warning" style="margin-top: var(--ceo-space-2);">${polls.overdueCount} poll${polls.overdueCount > 1 ? 's are' : ' is'} past its scheduled date and not yet marked posted — the plan never auto-duplicates a missed poll.</div>` : ''}`;
   }
 
   function renderPollYears(polls) {
