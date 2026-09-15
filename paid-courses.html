@@ -203,6 +203,7 @@
           <p id="pcStateSub">Verify your IB account once — the same verification also unlocks the Library, Trading Journal, Amplify Bot and unlimited ZTU Rescue.</p>
         </div>
         <button class="pc-verify" type="button" id="pcVerifyBtn" onclick="openVerify()">Already Verified Member — Get Access</button>
+        <button class="pc-verify" type="button" id="pcSignOutBtn" style="display:none;background:transparent;border:1px solid var(--line,rgba(0,0,0,0.15));color:inherit;box-shadow:none;" onclick="signOutPC()">Sign Out</button>
       </div>
 
       <!-- Buttons 1-3 (Section 4) — the verified-state banner above already
@@ -327,6 +328,21 @@ function paintAccess() {
     ? 'Your IB verification is active. Every course video below is unlocked.'
     : 'Verify your IB account once — the same verification also unlocks the Library, Trading Journal, Amplify Bot and unlimited ZTU Rescue.';
   $('pcVerifyBtn').style.display = granted ? 'none' : '';
+  const signOutBtn = $('pcSignOutBtn');
+  if (signOutBtn) signOutBtn.style.display = granted ? '' : 'none';
+}
+
+// Sign Out — the SAME unified logout Journal/Rescue already use: clears every
+// shared Premium session key so all surfaces re-gate together, then reloads.
+function signOutPC() {
+  if (window.ZTUPremiumCard && typeof window.ZTUPremiumCard.logout === 'function') {
+    window.ZTUPremiumCard.logout();
+  } else {
+    try {
+      ['ztu_journal_v1', 'ztu_lib_v3', 'ztu_ai_verified', 'ztu_ai_identity', 'ztu_ai_acct'].forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+    location.reload();
+  }
 }
 
 /* Opens the SHARED premium card (the one Journal / Rescue / Library use).

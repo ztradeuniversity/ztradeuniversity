@@ -304,6 +304,7 @@
              Never claims a delivery channel this codebase doesn't evidence. -->
         <div class="mb-verified-note" id="mbVerifiedNote" hidden>
           ✓ Verified member — your MT5 Bot delivery email (setup file, activation guide and tutorial) is sent to your registered email. Check your inbox or WhatsApp support if you can't find it.
+          <button type="button" id="mbSignOutBtn" style="margin-inline-start:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:inherit;border-radius:6px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">Sign Out</button>
         </div>
       </div>
 
@@ -465,6 +466,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       var btn = document.getElementById('mbVerifiedBtn');
       var note = document.getElementById('mbVerifiedNote');
+      var signOutBtn = document.getElementById('mbSignOutBtn');
       if (!btn) return;
       btn.addEventListener('click', function () {
         btn.disabled = true;
@@ -473,9 +475,30 @@
           onVerified: function () {
             btn.disabled = false;
             if (note) note.hidden = false;
+            if (btn) btn.hidden = true;
           },
         });
         setTimeout(function () { btn.disabled = false; }, 4000);
+      });
+      // AUTO-DETECTION: MT5 Bot has no session of its own to hydrate — it only
+      // ever reads the SAME shared badge every other Premium surface reads
+      // (ZTUPremiumBadge.isPremium(), assets/ztu-premium-badge.js). If the
+      // member already verified on Library/Rescue/Journal/Paid-Courses, show
+      // the delivery note immediately on load — no click needed, no OTP.
+      if (window.ZTUPremiumBadge && window.ZTUPremiumBadge.isPremium()) {
+        if (note) note.hidden = false;
+        btn.hidden = true;
+      }
+      // Sign Out — the SAME unified logout every other Premium surface uses.
+      if (signOutBtn) signOutBtn.addEventListener('click', function () {
+        if (window.ZTUPremiumCard && typeof window.ZTUPremiumCard.logout === 'function') {
+          window.ZTUPremiumCard.logout({ onLogout: function () { if (btn) btn.hidden = false; if (note) note.hidden = true; } });
+        } else {
+          try {
+            ['ztu_journal_v1', 'ztu_lib_v3', 'ztu_ai_verified', 'ztu_ai_identity', 'ztu_ai_acct'].forEach(function (k) { localStorage.removeItem(k); });
+          } catch (e) {}
+          location.reload();
+        }
       });
     });
   </script>

@@ -406,6 +406,14 @@
       <span class="brand">ZTU <span>Rescue</span></span>
       <span class="acc" id="accBadge" aria-live="polite">…</span>
       <button class="verifyBtn" id="verifyBtn" type="button" hidden data-i18n="verifyIb">Verify with IB</button>
+      <!-- Compact Sign Out — shown only once verified (mirror of verifyBtn's
+           opposite visibility, toggled in paintAccess()). Reuses the SAME
+           unified logout every other Premium surface uses: clears all shared
+           session keys server/architecture-wide, no separate sign-out logic. -->
+      <button class="navBtn" id="signOutBtn" type="button" hidden data-i18n-aria="signOut" aria-label="Sign out" title="Sign out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="navLbl" data-i18n="signOut" aria-hidden="true">Sign Out</span>
+      </button>
       <!-- Buttons 1-3 (Section 4). Button 4 is verifyBtn above (already
            existing, already auto-hides once verified). Buttons 1-2 only
            make sense pre-verification (paintAccess toggles them). Button 3
@@ -477,7 +485,7 @@ const IDENTITY_KEY = 'ztu_ai_identity';      // the EXISTING shared identity tok
 
 const $ = (id) => document.getElementById(id);
 const view = $('view'), histList = $('histList');
-const accBadge = $('accBadge'), verifyBtn = $('verifyBtn');
+const accBadge = $('accBadge'), verifyBtn = $('verifyBtn'), signOutBtn = $('signOutBtn');
 const joinIbBtn = $('joinIbBtn'), licenseBtn = $('licenseBtn');
 // Rescue natively renders en/ur/ar (see I18N below) — it has no dropdown of
 // its own any more; the global selector injected by assets/ztu-lang.js into
@@ -510,7 +518,7 @@ const I18N = {
   en: {
     newAssessment: 'New assessment', yourAssessments: 'Your assessments', verifyIb: 'Verify with IB',
     rescueJoinIb: 'Join IB', rescueLicense: 'Get License', rescueBenefits: 'Benefits',
-    navBack: 'Back', navHome: 'Home',
+    navBack: 'Back', navHome: 'Home', signOut: 'Sign Out',
     pageTitle: 'Trade Rescue Assessment',
     pageLede: 'Describe the position once. Current price, macro context, news and market history are retrieved for you — nothing you can look up is asked for here.',
     secAsset: 'Asset', secPosition: 'Position',
@@ -547,7 +555,7 @@ const I18N = {
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
     rescueJoinIb: 'IB جوائن کریں', rescueLicense: 'لائسنس حاصل کریں', rescueBenefits: 'فوائد',
-    navBack: 'واپس', navHome: 'ہوم',
+    navBack: 'واپس', navHome: 'ہوم', signOut: 'Sign Out',
     pageTitle: 'Trade Rescue تجزیہ',
     pageLede: 'اپنی position ایک بار بتائیں۔ موجودہ price، macro context، news اور market history خود لے لی جاتی ہے — جو چیز system خود دیکھ سکتا ہے وہ آپ سے نہیں پوچھی جاتی۔',
     secAsset: 'Asset', secPosition: 'Position',
@@ -584,7 +592,7 @@ const I18N = {
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
     rescueJoinIb: 'انضم عبر IB', rescueLicense: 'احصل على الترخيص', rescueBenefits: 'المزايا',
-    navBack: 'رجوع', navHome: 'الرئيسية',
+    navBack: 'رجوع', navHome: 'الرئيسية', signOut: 'تسجيل الخروج',
     pageTitle: 'تقييم إنقاذ الصفقة',
     pageLede: 'صِف المركز مرة واحدة. السعر الحالي والسياق الكلي والأخبار وتاريخ السوق تُجلب لك — ولا يُطلب منك شيء يمكن للنظام جلبه بنفسه.',
     secAsset: 'الأداة', secPosition: 'المركز',
@@ -654,6 +662,7 @@ function paintAccess() {
     verifyBtn.hidden = true;
     if (joinIbBtn) joinIbBtn.hidden = true;
     if (licenseBtn) licenseBtn.hidden = true;
+    if (signOutBtn) signOutBtn.hidden = false;
   } else {
     accBadge.className = 'acc no';
     accBadge.innerHTML = '× <b>Unverified</b><span class="detail"> · ' + freeLimit + ' free</span>';
@@ -662,6 +671,7 @@ function paintAccess() {
     // verified member has no use for "join"/"get license" prompts.
     if (joinIbBtn) joinIbBtn.hidden = false;
     if (licenseBtn) licenseBtn.hidden = false;
+    if (signOutBtn) signOutBtn.hidden = true;
   }
 }
 function applyTier(next) {
@@ -721,6 +731,19 @@ function openVerify() {
   } else window.location.href = 'license-request.html';
 }
 verifyBtn.addEventListener('click', openVerify);
+// Sign Out — the SAME unified logout Journal already uses: clears every
+// shared Premium session key (ztu_journal_v1, ztu_lib_v3, ztu_ai_verified,
+// ztu_ai_identity, ztu_ai_acct) so all Premium surfaces re-gate together,
+// then reloads so this page immediately shows the unverified state.
+if (signOutBtn) signOutBtn.addEventListener('click', () => {
+  if (window.ZTUPremiumCard && typeof window.ZTUPremiumCard.logout === 'function') {
+    window.ZTUPremiumCard.logout();
+  } else {
+    clearIdentity(); clearLibSession();
+    localStorage.removeItem('ztu_journal_v1');
+    location.reload();
+  }
+});
 
 /* ── VOICE — fills structured fields, never bypasses them ────────────────
    The transcript lands in the field as an editable draft. Numbers spoken as

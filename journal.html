@@ -1209,6 +1209,8 @@
     // dead zone at restore time, so the silent session restore threw and every
     // reopen fell through to the OTP card — the root cause of this fix.)
     const JOURNAL_STORE_KEY = 'ztu_journal_v1';
+    const LIB_STORE_KEY = 'ztu_lib_v3';                     // Library's own session — shared source of truth
+    const LIB_TTL_MS = 15 * 24 * 60 * 60 * 1000;            // same 15-day hard expiry Library itself uses
     const INACTIVITY_MS = 48 * 60 * 60 * 1000;              // 48h sliding window
     const ABSOLUTE_MAX_MS = 15 * 24 * 60 * 60 * 1000;       // 15-day hard cap (lockstep)
 
@@ -1290,6 +1292,27 @@
     }
     function clearStoredAccess() {
       try { localStorage.removeItem(JOURNAL_STORE_KEY); } catch {}
+    }
+    // Root-cause fix (cross-resource auto-detection audit): unlike ZTU Rescue
+    // (bridgeFromLibrary()) and Paid Courses (which reads 'ztu_lib_v3' as its
+    // own primary key), the Journal previously had NO fallback to the shared
+    // Library session — it trusted 'ztu_journal_v1' alone. That key is written
+    // by the SAME event as 'ztu_lib_v3' (ZTUPremiumCard.persistSessions(), on
+    // every approval, from every entry point), so in the ordinary case both
+    // exist together and this fallback never fires. It exists for the cases
+    // where they can drift apart — a pre-unification legacy record, a
+    // selective/partial localStorage clear, private-window quirks, or any
+    // other reason 'ztu_journal_v1' alone is absent or unparseable while the
+    // canonical 'ztu_lib_v3' session is still present and valid. This is the
+    // exact asymmetry that reproduced "Library → Rescue/Paid Courses still
+    // recognized, Library → Journal asks for OTP again" in testing.
+    function readLibSession() {
+      try {
+        const v = JSON.parse(localStorage.getItem(LIB_STORE_KEY) || 'null');
+        if (!v || !v.account || !v.createdAt) return null;
+        if (Date.now() - v.createdAt > LIB_TTL_MS) { localStorage.removeItem(LIB_STORE_KEY); return null; }
+        return v;
+      } catch { return null; }
     }
     // Slide the 48h window forward on real user activity (throttled to 1/min).
     function touchActivity() {
@@ -1388,8 +1411,19 @@
     }
 
     async function hydrateUnifiedAccess() {
-      const stored = readStoredAccess();
-      if (!stored) { showUnifiedAuth(); return; }   // no session, or 48h elapsed → OTP
+      let stored = readStoredAccess();
+      if (!stored) {
+        // AUTO-DETECTION FALLBACK: no Journal-specific session, but the
+        // canonical Library session may still be valid (see readLibSession's
+        // comment above) — bridge from it exactly like Rescue's
+        // bridgeFromLibrary(), via the SAME /api/journal-access 'session'
+        // action already used below. Never a second OTP, never a new
+        // verification path: the SAME server-side re-check
+        // (verify-session → EA) that already backs every other path here.
+        const lib = readLibSession();
+        if (!lib) { showUnifiedAuth(); return; }   // no session anywhere → OTP
+        stored = { account: lib.account, sessionStart: lib.createdAt };
+      }
 
       // FAST PATH — a still-valid stored JWT restores the session instantly,
       // with no server round-trip and no OTP, even if the network is briefly
