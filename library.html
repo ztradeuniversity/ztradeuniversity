@@ -239,7 +239,7 @@
     .lib-access-head h2 b { color: var(--purple2); }
     .lib-access-head p { margin-top: 10px; font-size: 14px; color: var(--muted); }
 
-    .lib-access-ctas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 920px; margin: 0 auto 30px; }
+    .lib-access-ctas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 1080px; margin: 0 auto 30px; }
     .lib-access-cta {
       background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-lg);
       padding: 22px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
@@ -257,8 +257,11 @@
     .lib-access-cta.joined a { background: linear-gradient(135deg,var(--lime),var(--lime2)); color: #1a2400; box-shadow: 0 6px 16px rgba(172,212,0,0.32); }
     .lib-access-cta.new a { border: 1.5px solid var(--purple2); color: var(--purple2); }
     .lib-access-cta.verify button { background: linear-gradient(135deg,var(--navy),var(--navy2)); color: var(--lime); box-shadow: 0 6px 16px rgba(11,17,32,0.28); border: 1.5px solid rgba(172,212,0,0.35); }
+    /* 4th card ("Explore Benefits") — neutral tertiary style, same base card. */
+    .lib-access-cta:not(.joined):not(.new):not(.verify) a { border: 1.5px solid var(--border); color: var(--text); }
     .lib-access-cta a:hover, .lib-access-cta button:hover { transform: translateY(-2px); }
-    @media (max-width: 900px) { .lib-access-ctas { grid-template-columns: 1fr; max-width: 420px; } }
+    @media (max-width: 900px) { .lib-access-ctas { grid-template-columns: 1fr 1fr; max-width: 520px; } }
+    @media (max-width: 560px) { .lib-access-ctas { grid-template-columns: 1fr; max-width: 420px; } }
 
     .lib-access-flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 900px; margin: 0 auto 28px; }
     .lib-flow-step {
@@ -1119,27 +1122,39 @@
       <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">4</div><span>Library Access</span></div>
     </div>
 
+    <!-- Four access actions (Section 4) — the "verified" card is FIRST/
+         primary since a returning verified member is the most common case;
+         its click reuses openGate() untouched (same shared OTP component),
+         just adding an "already granted → skip modal, scroll to content"
+         fast path via requestVerifiedAccess() below. -->
     <div class="lib-access-ctas">
-      <div class="lib-access-cta new">
-        <h4>Not Joined Yet?</h4>
-        <a href="index.html#how-to-join">
-          How to Join Us
+      <div class="lib-access-cta verify">
+        <h4>Already Verified Member</h4>
+        <button type="button" onclick="requestVerifiedAccess()">
+          Get Access
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
+        </button>
       </div>
       <div class="lib-access-cta joined">
         <h4>Already Joined?</h4>
         <a href="license-request.html">
-          Submit License Request
+          Get Your License
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
       </div>
-      <div class="lib-access-cta verify">
-        <h4>License Request Approved?</h4>
-        <button type="button" onclick="openGate()">
-          Verify with OTP
+      <div class="lib-access-cta new">
+        <h4>Not Joined Yet?</h4>
+        <a href="index.html#how-to-join">
+          How to Access Free with IB
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
+        </a>
+      </div>
+      <div class="lib-access-cta">
+        <h4>Not Sure Yet?</h4>
+        <a href="#filterBar">
+          Explore Benefits
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
       </div>
     </div>
 
@@ -1825,6 +1840,20 @@ function stopTimers() {
    On approval we reuse the Library's existing grant path (saveSession +
    updateAccessUI + pending callback). The legacy gate popup is retained as a
    fallback only if the shared component fails to load. */
+// Button 4 ("Already Verified Member — Get Access"): if this browser already
+// holds a verified session (the exact signal updateAccessUI/hydrateSession
+// already computed on page load), skip the OTP modal entirely and just
+// reveal/scroll to the already-unlocked content. Otherwise this is
+// IDENTICAL to the existing "Verify with OTP" card's openGate() call — no
+// new verification logic, just a fast path in front of the same one.
+function requestVerifiedAccess() {
+  if (LIB.session) {
+    document.getElementById('filterBar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  openGate(() => document.getElementById('filterBar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
 function openGate(cb) {
   LIB.pendingCb = cb;
   if (window.ZTUPremiumCard) {

@@ -90,6 +90,12 @@
     font-size:14px;font-weight:700;border:0;cursor:pointer;font-family:inherit;white-space:nowrap;
     box-shadow:0 6px 18px rgba(247,147,26,.3);transition:transform .2s,box-shadow .2s}
   .pc-verify:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(247,147,26,.42)}
+  .pc-links{max-width:780px;margin:12px auto 0;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+  .pc-links a{display:inline-flex;align-items:center;padding:9px 16px;border-radius:100px;
+    border:1.5px solid var(--border);color:var(--text);font-size:12.5px;font-weight:700;
+    transition:border-color .2s,color .2s}
+  .pc-links a:hover{border-color:var(--orange);color:var(--orange)}
+  @media (max-width:560px){ .pc-links{flex-direction:column;align-items:stretch} .pc-links a{justify-content:center} }
 
   /* ── course grid ── */
   .pc-section{padding:34px 0 70px}
@@ -196,7 +202,16 @@
           <h4 id="pcStateTitle">Courses are locked</h4>
           <p id="pcStateSub">Verify your IB account once — the same verification also unlocks the Library, Trading Journal, Amplify Bot and unlimited ZTU Rescue.</p>
         </div>
-        <button class="pc-verify" type="button" id="pcVerifyBtn" onclick="openVerify()">Verify IB Access</button>
+        <button class="pc-verify" type="button" id="pcVerifyBtn" onclick="openVerify()">Already Verified Member — Get Access</button>
+      </div>
+
+      <!-- Buttons 1-3 (Section 4) — the verified-state banner above already
+           covers Button 4; these three cover the other cases without
+           duplicating any access logic. -->
+      <div class="pc-links">
+        <a href="license-request.html">Already Joined IB? Get Your License</a>
+        <a href="index.html#how-to-join">How to Access Free with IB</a>
+        <a href="#courseGrid">Explore Benefits</a>
       </div>
     </div>
   </section>

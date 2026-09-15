@@ -406,6 +406,26 @@
       <span class="brand">ZTU <span>Rescue</span></span>
       <span class="acc" id="accBadge" aria-live="polite">…</span>
       <button class="verifyBtn" id="verifyBtn" type="button" hidden data-i18n="verifyIb">Verify with IB</button>
+      <!-- Buttons 1-3 (Section 4). Button 4 is verifyBtn above (already
+           existing, already auto-hides once verified). Buttons 1-2 only
+           make sense pre-verification (paintAccess toggles them). Button 3
+           ("Explore Benefits") stays visible regardless of verification
+           state and points to Rescue's own existing real description card
+           on the homepage (index.html#rescue-benefit) — the smallest
+           suitable existing destination; no new page, no protected content
+           exposed. -->
+      <a class="navBtn" id="joinIbBtn" href="index.html#how-to-join" data-i18n-aria="rescueJoinIb" aria-label="How to access free with IB" title="How to access free with IB" hidden>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+        <span class="navLbl" data-i18n="rescueJoinIb" aria-hidden="true">Join IB</span>
+      </a>
+      <a class="navBtn" id="licenseBtn" href="license-request.html" data-i18n-aria="rescueLicense" aria-label="Already joined IB? Get your license" title="Already joined IB? Get your license" hidden>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        <span class="navLbl" data-i18n="rescueLicense" aria-hidden="true">Get License</span>
+      </a>
+      <a class="navBtn" id="benefitsBtn" href="index.html#rescue-benefit" data-i18n-aria="rescueBenefits" aria-label="Explore benefits" title="Explore benefits">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span class="navLbl" data-i18n="rescueBenefits" aria-hidden="true">Benefits</span>
+      </a>
       <span class="sp"></span>
       <!-- Global site-wide language selector (assets/ztu-lang.js) mounts
            itself here — same options, same behavior as every other page.
@@ -458,6 +478,7 @@ const IDENTITY_KEY = 'ztu_ai_identity';      // the EXISTING shared identity tok
 const $ = (id) => document.getElementById(id);
 const view = $('view'), histList = $('histList');
 const accBadge = $('accBadge'), verifyBtn = $('verifyBtn');
+const joinIbBtn = $('joinIbBtn'), licenseBtn = $('licenseBtn');
 // Rescue natively renders en/ur/ar (see I18N below) — it has no dropdown of
 // its own any more; the global selector injected by assets/ztu-lang.js into
 // .head-right drives this via the 'ztulang:change' event (bound further down).
@@ -488,6 +509,7 @@ function blankLayer(dir) {
 const I18N = {
   en: {
     newAssessment: 'New assessment', yourAssessments: 'Your assessments', verifyIb: 'Verify with IB',
+    rescueJoinIb: 'Join IB', rescueLicense: 'Get License', rescueBenefits: 'Benefits',
     navBack: 'Back', navHome: 'Home',
     pageTitle: 'Trade Rescue Assessment',
     pageLede: 'Describe the position once. Current price, macro context, news and market history are retrieved for you — nothing you can look up is asked for here.',
@@ -524,6 +546,7 @@ const I18N = {
   },
   ur: {
     newAssessment: 'نیا تجزیہ', yourAssessments: 'آپ کے تجزیے', verifyIb: 'IB سے verify کریں',
+    rescueJoinIb: 'IB جوائن کریں', rescueLicense: 'لائسنس حاصل کریں', rescueBenefits: 'فوائد',
     navBack: 'واپس', navHome: 'ہوم',
     pageTitle: 'Trade Rescue تجزیہ',
     pageLede: 'اپنی position ایک بار بتائیں۔ موجودہ price، macro context، news اور market history خود لے لی جاتی ہے — جو چیز system خود دیکھ سکتا ہے وہ آپ سے نہیں پوچھی جاتی۔',
@@ -560,6 +583,7 @@ const I18N = {
   },
   ar: {
     newAssessment: 'تقييم جديد', yourAssessments: 'تقييماتك', verifyIb: 'التحقق عبر IB',
+    rescueJoinIb: 'انضم عبر IB', rescueLicense: 'احصل على الترخيص', rescueBenefits: 'المزايا',
     navBack: 'رجوع', navHome: 'الرئيسية',
     pageTitle: 'تقييم إنقاذ الصفقة',
     pageLede: 'صِف المركز مرة واحدة. السعر الحالي والسياق الكلي والأخبار وتاريخ السوق تُجلب لك — ولا يُطلب منك شيء يمكن للنظام جلبه بنفسه.',
@@ -628,10 +652,16 @@ function paintAccess() {
     accBadge.className = 'acc ok';
     accBadge.innerHTML = '✓ <b>Verified</b><span class="detail"> · Unlimited access</span>';
     verifyBtn.hidden = true;
+    if (joinIbBtn) joinIbBtn.hidden = true;
+    if (licenseBtn) licenseBtn.hidden = true;
   } else {
     accBadge.className = 'acc no';
     accBadge.innerHTML = '× <b>Unverified</b><span class="detail"> · ' + freeLimit + ' free</span>';
     verifyBtn.hidden = false;
+    // Buttons 1-2 (Section 4) — only meaningful before verification; a
+    // verified member has no use for "join"/"get license" prompts.
+    if (joinIbBtn) joinIbBtn.hidden = false;
+    if (licenseBtn) licenseBtn.hidden = false;
   }
 }
 function applyTier(next) {

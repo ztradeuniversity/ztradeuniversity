@@ -344,8 +344,8 @@
       .tj-benefit-card { padding: 18px 14px; }
       .tj-steps { grid-template-columns: 1fr; }
       .tj-demo-stats { grid-template-columns: repeat(2, 1fr); }
-      .tj-hero-ctas { flex-direction: column; align-items: stretch; }
-      .tj-hero-ctas .tj-btn-primary, .tj-hero-ctas .tj-btn-ghost { justify-content: center; }
+      .tj-hero-ctas { flex-direction: column; align-items: stretch; gap: 10px; }
+      .tj-hero-ctas .tj-btn-primary, .tj-hero-ctas .tj-btn-ghost { justify-content: center; padding: 13px 20px; font-size: 14px; }
       .tj-detail { display: none; }
       .tj-section#get-access { padding: 26px 0; }
       .tj-section#get-access .tj-head { margin-bottom: 14px; }
@@ -399,12 +399,18 @@
         </span>
         <h1>Trading <span class="accent">Journal</span></h1>
         <p class="sub">Improve your trading by recording every trade, reviewing your mistakes, and receiving professional feedback from both your Mentor and our Advanced AI.</p>
+        <!-- Four access actions (Section 4) — same meaning as every other
+             resource entry page. Button 4 reuses the page's own existing
+             handleGetAccess() unchanged (badge check → shared OTP modal →
+             journal.html), just relabeled and promoted into the hero. -->
         <div class="tj-hero-ctas">
-          <a class="tj-btn-primary" href="#get-access">
-            Get Trading Journal Access
+          <button class="tj-btn-primary" type="button" id="btnGetAccessHero" onclick="handleGetAccess('btnGetAccessHero')">
+            Already Verified Member — Get Access
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a class="tj-btn-ghost" href="#benefits">View Benefits</a>
+          </button>
+          <a class="tj-btn-ghost" href="license-request.html">Already Joined IB? Get Your License</a>
+          <a class="tj-btn-ghost" href="index.html#how-to-join">How to Access Free with IB</a>
+          <a class="tj-btn-ghost" href="#benefits">Explore Benefits</a>
         </div>
       </div>
 
@@ -443,7 +449,7 @@
   </section>
 
   <!-- ════════════════ SECTION 2 — WHY PROFESSIONALS USE A JOURNAL ════════════════ -->
-  <section class="tj-section">
+  <section class="tj-section" id="benefits">
     <div class="container">
       <div class="tj-head">
         <span class="tj-eyebrow">The Professional Edge</span>
@@ -761,8 +767,8 @@
       document.getElementById('tjToastBg').classList.add('on');
     }
 
-    function handleGetAccess() {
-      var btn = document.getElementById('btnGetAccess');
+    function handleGetAccess(btnId) {
+      var btn = document.getElementById(btnId || 'btnGetAccess');
       btn.disabled = true;
 
       if (window.ZTUPremiumBadge && window.ZTUPremiumBadge.isPremium()) {

@@ -130,6 +130,9 @@
     }
     .mb-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(247,147,26,0.44); }
     .mb-btn-primary svg { width: 15px; height: 15px; flex-shrink: 0; }
+    /* .mb-btn-primary is also used on a real <button> (Button 4) — resets so
+       it renders identically to the <a> version. */
+    button.mb-btn-primary { font-family: inherit; }
     .mb-btn-ghost {
       display: inline-flex; align-items: center; gap: 9px;
       padding: 15px 26px; border-radius: 100px; border: 1.5px solid var(--border);
@@ -137,6 +140,11 @@
       transition: border-color .2s, color .2s, transform .2s;
     }
     .mb-btn-ghost:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-2px); }
+    .mb-verified-note {
+      margin-top: 16px; padding: 13px 18px; border-radius: 14px;
+      background: var(--green-soft); border: 1px solid rgba(22,163,74,.3);
+      color: var(--heading); font-size: 13.5px; font-weight: 600; line-height: 1.5; max-width: 520px;
+    }
 
     .mb-illust-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
     .mb-illust-blob {
@@ -221,8 +229,9 @@
       .mb-benefit-card { padding: 13px 11px; gap: 9px; }
       .mb-benefit-ic { width: 36px; height: 36px; border-radius: 10px; }
       .mb-benefit-card h4 { font-size: 12.5px; }
-      .mb-hero-ctas { flex-direction: column; align-items: stretch; }
-      .mb-hero-ctas .mb-btn-primary, .mb-hero-ctas .mb-btn-ghost { justify-content: center; }
+      .mb-hero-ctas { flex-direction: column; align-items: stretch; gap: 10px; }
+      .mb-hero-ctas .mb-btn-primary, .mb-hero-ctas .mb-btn-ghost { justify-content: center; padding: 13px 20px; font-size: 14px; }
+      .mb-verified-note { max-width: none; }
       .mb-section#get-access { padding: 26px 0; }
       .mb-section#get-access .mb-head { margin-bottom: 14px; }
       .mb-access-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
@@ -275,12 +284,26 @@
         </span>
         <h1>MT5 <span class="accent">Bot</span></h1>
         <p class="sub">High-accuracy automatic trade management for MetaTrader 5 — automatic stop loss and take profit, zone-based entries, layered positions and one-click control, so every trade is managed with professional discipline.</p>
+        <!-- Four access actions (Section 4): identical meaning to every other
+             resource's entry page — not joined yet / joined but no license /
+             want to learn more first / already a verified member. -->
         <div class="mb-hero-ctas">
-          <a class="mb-btn-primary" href="#get-access">
-            Get License Access
+          <button class="mb-btn-primary" type="button" id="mbVerifiedBtn">
+            Already Verified Member — Get Access
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a class="mb-btn-ghost" href="#benefits">View Benefits</a>
+          </button>
+          <a class="mb-btn-ghost" href="license-request.html">Already Joined IB? Get Your License</a>
+          <a class="mb-btn-ghost" href="index.html#how-to-join">How to Access Free with IB</a>
+          <a class="mb-btn-ghost" href="#benefits">Explore Benefits</a>
+        </div>
+        <!-- Verified-member confirmation (Section 45) — shown in place of a
+             redirect: MT5 Bot has no separate protected page on this site,
+             the bot itself is delivered by the existing automated email
+             (automation/templates/success_email.html, "MT5 Bot Delivery" —
+             PDF guide + tutorial + WhatsApp/email support), not hosted here.
+             Never claims a delivery channel this codebase doesn't evidence. -->
+        <div class="mb-verified-note" id="mbVerifiedNote" hidden>
+          ✓ Verified member — your MT5 Bot delivery email (setup file, activation guide and tutorial) is sent to your registered email. Check your inbox or WhatsApp support if you can't find it.
         </div>
       </div>
 
@@ -427,6 +450,33 @@
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].indexOf(e.key) !== -1) || (e.ctrlKey && e.key === 'U')) { e.preventDefault(); }
+    });
+  </script>
+
+  <!-- ── Button 4: "Already Verified Member — Get Access" ──
+       Reuses the site's existing badge/OTP components (no new auth) — see
+       assets/ztu-access-gate.js. MT5 Bot has no separate protected page on
+       this site, so "direct access" here means revealing the existing,
+       evidenced delivery note (automated email) rather than a redirect. -->
+  <script src="/assets/ztu-premium-badge.js" defer></script>
+  <script src="/assets/ztu-premium-card.js" defer></script>
+  <script src="/assets/ztu-access-gate.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var btn = document.getElementById('mbVerifiedBtn');
+      var note = document.getElementById('mbVerifiedNote');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        window.ZTUAccessGate.requestAccess({
+          entry: 'mt5bot',
+          onVerified: function () {
+            btn.disabled = false;
+            if (note) note.hidden = false;
+          },
+        });
+        setTimeout(function () { btn.disabled = false; }, 4000);
+      });
     });
   </script>
 
