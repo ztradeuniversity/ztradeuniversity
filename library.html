@@ -158,86 +158,69 @@
       cursor: pointer; color: var(--text); line-height: 1;
     }
 
-    /* ── HERO ────────────────────────────────────────────── */
+    /* ── HERO — compact member-resource identity strip, not a marketing
+       landing hero (Task 1B/1C: access controls → compact identity →
+       content, fast). Was 138px/92px vertical padding with 3 decorative
+       blobs + a full dot-pattern background; a verified member re-visiting
+       Library doesn't need to scroll past a landing page every time. ── */
     .lib-hero {
-      padding: 138px 0 92px;
-      background: linear-gradient(145deg, #060a14 0%, #0b1120 40%, #130832 70%, #1a0b44 100%);
+      padding: 28px 0;
+      background: linear-gradient(145deg, #0b1120 0%, #130832 100%);
       position: relative; overflow: hidden; text-align: center;
     }
-    .h-blob {
-      position: absolute; border-radius: 50%; pointer-events: none;
-    }
-    .hb1 {
-      top: -120px; left: -100px; width: 540px; height: 540px;
-      background: radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 68%);
-    }
-    .hb2 {
-      bottom: -80px; right: -80px; width: 440px; height: 440px;
-      background: radial-gradient(circle, rgba(172,212,0,0.10) 0%, transparent 68%);
-    }
-    .hb3 {
-      top: 25%; right: 12%; width: 320px; height: 320px;
-      background: radial-gradient(circle, rgba(91,26,200,0.14) 0%, transparent 70%);
-    }
-    .hero-dots {
-      position: absolute; inset: 0;
-      background-image: radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px);
-      background-size: 34px 34px; pointer-events: none;
-    }
+    .h-blob, .hero-dots { display: none; }
     .hero-inner { position: relative; z-index: 2; }
 
     .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: 11px;
-      font-size: 11.5px; font-weight: 700; color: var(--lime);
-      letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 20px;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 10px; font-weight: 700; color: var(--lime);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
     }
     .hero-eyebrow::before,
     .hero-eyebrow::after {
-      content: ''; width: 24px; height: 1.5px;
+      content: ''; width: 16px; height: 1.5px;
       background: var(--lime); border-radius: 1px; flex-shrink: 0;
     }
 
     .hero-title {
       font-family: 'Manrope', 'Inter', sans-serif;
-      font-size: clamp(40px, 5.8vw, 68px);
+      font-size: clamp(24px, 3.4vw, 32px);
       font-weight: 900; color: #fff;
-      letter-spacing: -2px; line-height: 1.06; margin-bottom: 14px;
+      letter-spacing: -1px; line-height: 1.1; margin-bottom: 4px;
     }
     .hero-title .hl { color: var(--lime); }
 
     .hero-sub {
-      font-size: 18px; color: rgba(255,255,255,0.50);
-      font-weight: 400; margin-bottom: 38px; letter-spacing: .2px;
+      font-size: 13.5px; color: rgba(255,255,255,0.55);
+      font-weight: 400; margin-bottom: 14px; letter-spacing: .1px;
     }
 
     .hero-stats {
-      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+      display: flex; justify-content: center; gap: 7px; flex-wrap: wrap;
     }
     .hero-stat {
-      display: inline-flex; align-items: center; gap: 8px;
+      display: inline-flex; align-items: center; gap: 5px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.10);
-      padding: 10px 20px; border-radius: var(--r-pill);
-      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.70);
-      backdrop-filter: blur(6px); white-space: nowrap;
+      padding: 5px 12px; border-radius: var(--r-pill);
+      font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.65);
+      white-space: nowrap;
     }
     .hero-stat b { color: var(--lime); font-weight: 800; }
 
-    /* ── ACCESS EXPLAINER — who gets in, and how (Task: Library access clarity) ── */
-    .lib-access { background: var(--bg); padding: 40px 0; border-bottom: 1px solid var(--border); }
-    .lib-access-head { text-align: center; max-width: 640px; margin: 0 auto 24px; }
+    /* ── ACCESS EXPLAINER — compact controls, not a repeated explanation
+       (Task 1C/1F). Was a centered eyebrow + h2 headline + subtitle + a
+       numbered 1-2-3-4 flow diagram (now removed) above the 4-card grid;
+       now a single eyebrow + one-line sentence. ── */
+    .lib-access { background: var(--bg); padding: 22px 0 28px; border-bottom: 1px solid var(--border); }
+    .lib-access-head { text-align: center; max-width: 640px; margin: 0 auto 16px; }
     .lib-access-eyebrow {
       display: inline-flex; align-items: center; gap: 7px;
       font-size: 11px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
       color: var(--purple); background: rgba(91,26,200,0.08); border: 1px solid rgba(91,26,200,0.16);
-      padding: 6px 14px; border-radius: var(--r-pill); margin-bottom: 14px;
+      padding: 6px 14px; border-radius: var(--r-pill); margin-bottom: 10px;
     }
-    .lib-access-head h2 {
-      font-family: 'Manrope','Inter',sans-serif; font-size: clamp(21px,2.6vw,28px); font-weight: 900;
-      color: var(--text); letter-spacing: -.4px; line-height: 1.3;
-    }
-    .lib-access-head h2 b { color: var(--purple2); }
-    .lib-access-head p { margin-top: 10px; font-size: 14px; color: var(--muted); }
+    .lib-access-oneline { font-size: 14.5px; font-weight: 600; color: var(--text); line-height: 1.5; }
 
     .lib-access-ctas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 1080px; margin: 0 auto 30px; }
     .lib-access-cta {
@@ -262,28 +245,6 @@
     .lib-access-cta a:hover, .lib-access-cta button:hover { transform: translateY(-2px); }
     @media (max-width: 900px) { .lib-access-ctas { grid-template-columns: 1fr 1fr; max-width: 520px; } }
     @media (max-width: 560px) { .lib-access-ctas { grid-template-columns: 1fr; max-width: 420px; } }
-
-    .lib-access-flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 900px; margin: 0 auto 28px; }
-    .lib-flow-step {
-      display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; width: 140px;
-    }
-    .lib-flow-num {
-      width: 42px; height: 42px; border-radius: 50%;
-      background: linear-gradient(135deg,var(--purple),var(--purple2)); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Manrope',sans-serif; font-weight: 800; font-size: 15px;
-      box-shadow: 0 6px 16px rgba(91,26,200,0.3);
-    }
-    .lib-flow-step span { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.35; }
-    .lib-flow-arrow { color: var(--border); flex-shrink: 0; }
-    .lib-flow-arrow svg { width: 18px; height: 18px; display: block; }
-    @media (max-width: 760px) {
-      .lib-access-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 22px; }
-      .lib-flow-step { width: auto; gap: 4px; }
-      .lib-flow-num { width: 30px; height: 30px; font-size: 12px; }
-      .lib-flow-step span { font-size: 9.5px; line-height: 1.2; }
-      .lib-flow-arrow { display: none; }
-    }
 
     .lib-access-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 780px; margin: 0 auto; }
     .lib-split-card { border-radius: var(--r-lg); padding: 20px 22px; border: 1.5px solid var(--border); }
@@ -1075,18 +1036,17 @@
 <!-- ════════════════════════════════════════════════════════
      HERO
 ════════════════════════════════════════════════════════ -->
+<!-- Compact member-resource identity strip (Task 1B/1C) — resource name +
+     one-line description + a small useful stat row, not a marketing hero.
+     The decorative blobs/dot-pattern background this section used to carry
+     are gone (their CSS is now display:none — see .lib-hero above). -->
 <section class="lib-hero" aria-labelledby="heroTitle">
-  <div class="h-blob hb1" aria-hidden="true"></div>
-  <div class="h-blob hb2" aria-hidden="true"></div>
-  <div class="h-blob hb3" aria-hidden="true"></div>
-  <div class="hero-dots" aria-hidden="true"></div>
-
   <div class="container hero-inner">
     <div class="hero-eyebrow" aria-hidden="true">Members Library</div>
     <h1 class="hero-title" id="heroTitle">
-      Z Trade <span class="hl">University</span>
+      <span class="hl">Library</span>
     </h1>
-    <p class="hero-sub">Videos, Audio &amp; Books Library</p>
+    <p class="hero-sub">Videos, audio and books — free for verified IB members.</p>
     <div class="hero-stats" role="list">
       <div class="hero-stat" role="listitem"><b id="statV">4</b>&nbsp;Video Lessons</div>
       <div class="hero-stat" role="listitem"><b id="statA">4</b>&nbsp;Audio Sessions</div>
@@ -1103,23 +1063,17 @@
 <section class="lib-access" aria-labelledby="accessTitle">
   <div class="container">
 
+    <!-- Compact head (Task 1C/1F): the numbered 1→2→3→4 process diagram
+         that used to sit here was removed — the 4-card grid below already
+         communicates the same 4 choices without a separate illustration,
+         and dropping it is pure vertical-space reduction with zero loss of
+         real information or access logic. -->
     <div class="lib-access-head">
       <span class="lib-access-eyebrow">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Access &amp; Membership
       </span>
-      <h2 id="accessTitle">This Library is <b>FREE</b> for members who joined under our IB.</h2>
-      <p>No subscription, no fees — just an active account under our IB network.</p>
-    </div>
-
-    <div class="lib-access-flow" role="list" aria-label="Access process">
-      <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">1</div><span>License Request</span></div>
-      <div class="lib-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-      <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">2</div><span>Approval</span></div>
-      <div class="lib-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-      <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">3</div><span>OTP Verification</span></div>
-      <div class="lib-flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-      <div class="lib-flow-step" role="listitem"><div class="lib-flow-num">4</div><span>Library Access</span></div>
+      <p id="accessTitle" class="lib-access-oneline">Free for members who joined under our IB — no subscription, no fees.</p>
     </div>
 
     <!-- Four access actions (Section 4) — the "verified" card is FIRST/

@@ -13,8 +13,18 @@
        styles are inline (no separate .js/.css build step exists for this
        static site) — it does not defend against inline-script injection,
        but script-src/connect-src host allowlisting still meaningfully
-       narrows the blast radius of any future XSS. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com; base-uri 'self'; frame-ancestors 'none';" />
+       narrows the blast radius of any future XSS.
+       Google Translate additions (root-cause fix): this page is the ONLY
+       HTML file in the codebase with a CSP meta tag, and it predates the
+       later site-wide assets/ztu-lang.js requirement to load Google's free
+       Website Translator widget from translate.google.com/translate.
+       googleapis.com/www.gstatic.com. Every other page has no CSP at all,
+       so the widget always worked there; here it was silently blocked,
+       producing ztu-lang.js's own "Translation is temporarily unavailable"
+       toast. Adding exactly those 3 Google domains (script-src, connect-src,
+       plus img/font/style-src for the widget's own icons/CSS) is the
+       narrowest fix — no other origin, no relaxed directive. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://translate.google.com https://translate.googleapis.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com https://www.gstatic.com; img-src 'self' data: https://www.gstatic.com https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://translate.google.com https://translate.googleapis.com; base-uri 'self'; frame-ancestors 'none';" />
   <link rel="icon" type="image/png" href="assets/ztu-logo.png" />
   <link rel="apple-touch-icon" href="assets/ztu-logo.png" />
   <link rel="manifest" href="/manifest.json" />

@@ -106,7 +106,204 @@ export async function initHome() {
   wireLeaveButton(picker);
   wireResetButton(picker);
   wireRoadmapToggle();
+  wireTodayUpdate();
   await loadDay(picker.value);
+}
+
+// --- Today Update ----------------------------------------------------------
+// One-click Gold/BTC scalping check built on ZTU Rescue's own pipeline
+// (functions/api/ceo/today-update.js). Plain fetch, deliberately NOT
+// apiFetch: the endpoint is public and takes no CEO session. Two requests:
+// the verified evidence renders as soon as it arrives; the Expert View (the
+// slow, OpenAI-backed part) fills in afterwards, so it can never block or
+// break the evidence. The server returns en/ur/ar text in one payload, so a
+// language switch re-renders from memory with no new provider calls.
+const TU_INSTRUMENTS = ['gold', 'btc'];
+const TU_LEAN_BADGE = { bullish: 'ceo-badge-success', bearish: 'ceo-badge-critical', neutral: 'ceo-badge-neutral', mixed: 'ceo-badge-warning' };
+const TU_IMPACT_BADGE = { buy: 'ceo-badge-success', sell: 'ceo-badge-critical', neutral: 'ceo-badge-neutral', context: 'ceo-badge-neutral' };
+const TU_EVENT_BADGE = { bullish: 'ceo-badge-success', bearish: 'ceo-badge-critical', conditional: 'ceo-badge-warning' };
+const TU_BIAS_CLASS = { BUY: 'tu-bias-buy', SELL: 'tu-bias-sell', 'NO CLEAR EDGE': 'tu-bias-none' };
+const TU_LOADING = {
+  en: { evidence: 'Checking live market evidence…', expert: 'Researching current expert views…', failed: 'Today Update could not be loaded right now. Please try again.' },
+  ur: { evidence: 'Live market evidence چیک ہو رہی ہے…', expert: 'موجودہ expert آراء تلاش کی جا رہی ہیں…', failed: 'Today Update اس وقت load نہیں ہو سکا۔ دوبارہ کوشش کریں۔' },
+  ar: { evidence: 'جارٍ فحص أدلة السوق الحية…', expert: 'جارٍ البحث عن آراء الخبراء الحالية…', failed: 'تعذّر تحميل تحديث اليوم الآن. حاول مرة أخرى.' },
+};
+let tuData = null;
+let tuExpert = null; // null | 'loading' | payload | { error: true }
+
+function tuLang() {
+  try {
+    const s = (window.ZTULang && window.ZTULang.current && window.ZTULang.current()) || JSON.parse(localStorage.getItem('ztu-lang') || 'null');
+    return s && ['en', 'ur', 'ar'].includes(s.lang) ? s.lang : 'en';
+  } catch { return 'en'; }
+}
+
+function wireTodayUpdate() {
+  const btn = document.getElementById('today-update-btn');
+  const again = document.getElementById('today-update-again');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const panel = document.getElementById('today-update-panel');
+    if (panel) { panel.hidden = false; panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    loadTodayUpdate();
+  });
+  if (again) again.addEventListener('click', () => loadTodayUpdate());
+  window.addEventListener('ztulang:change', () => { if (tuData) renderTodayUpdate(); });
+}
+
+async function loadTodayUpdate() {
+  const box = document.getElementById('today-update-result');
+  const btns = [document.getElementById('today-update-btn'), document.getElementById('today-update-again')].filter(Boolean);
+  if (!box) return;
+  const lang = tuLang();
+  btns.forEach((b) => { b.disabled = true; });
+  tuData = null; tuExpert = null;
+  box.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+  box.innerHTML = `<div class="ceo-skeleton" style="height: 10em;"></div><p class="tu-muted">${escapeHtml(TU_LOADING[lang].evidence)}</p>`;
+  try {
+    const res = await fetch('/api/ceo/today-update');
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.instruments) throw new Error('request_failed');
+    tuData = data;
+    tuExpert = 'loading';
+    renderTodayUpdate();
+  } catch {
+    box.innerHTML = `<div class="ceo-alert ceo-alert-critical">${escapeHtml(TU_LOADING[lang].failed)}</div>`;
+    return;
+  } finally {
+    btns.forEach((b) => { b.disabled = false; });
+  }
+
+  const q = new URLSearchParams({ part: 'expert' });
+  for (const k of TU_INSTRUMENTS) {
+    const bias = tuData.instruments[k] && tuData.instruments[k].bias;
+    if (bias) q.set(k, bias.replace(/ /g, '_'));
+  }
+  try {
+    const res = await fetch(`/api/ceo/today-update?${q}`);
+    const data = await res.json().catch(() => null);
+    tuExpert = res.ok && data && data.instruments ? data : { error: true };
+  } catch {
+    tuExpert = { error: true };
+  }
+  renderTodayUpdate();
+}
+
+function tuFmtUtc(iso) {
+  const s = String(iso || '');
+  if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s : `${d.toISOString().slice(0, 10)} ${d.toISOString().slice(11, 16)} UTC`;
+}
+
+function renderTodayUpdate() {
+  const box = document.getElementById('today-update-result');
+  if (!box || !tuData) return;
+  const lang = tuLang();
+  box.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+  box.setAttribute('lang', lang);
+  box.innerHTML = TU_INSTRUMENTS.map((k) => tuCard(k, lang)).join('');
+  const checked = document.getElementById('today-update-checked');
+  if (checked && tuData.checkedAt) checked.textContent = `Last checked: ${tuFmtUtc(tuData.checkedAt)}`;
+  const disc = document.getElementById('today-update-disclaimer');
+  const anyView = TU_INSTRUMENTS.map((k) => tuData.instruments[k] && tuData.instruments[k].views).find(Boolean);
+  if (disc && anyView) { disc.textContent = (anyView[lang] || anyView.en).labels.disclaimer; disc.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl'); }
+}
+
+function tuCard(key, lang) {
+  const r = tuData.instruments[key];
+  if (!r || r.error || !r.views) return '';
+  const v = r.views[lang] || r.views.en;
+  const L = v.labels;
+  const section = (title, badgeHtml, body, open = false) =>
+    `<details class="tu-sec"${open ? ' open' : ''}><summary>${escapeHtml(title)} ${badgeHtml || ''}</summary>${body}</details>`;
+
+  const category = (c) => section(c.label,
+    `<span class="ceo-badge ${TU_LEAN_BADGE[c.lean] || 'ceo-badge-neutral'}">${escapeHtml(c.leanWord)}</span>`,
+    c.rows.length
+      ? c.rows.map((row) => `<div class="tu-row">
+          <div>${escapeHtml(row.text)}</div>
+          <div style="margin-top:2px;"><bdi>${escapeHtml(L.impact)}</bdi>: <span class="ceo-badge ${TU_IMPACT_BADGE[row.impactKey] || 'ceo-badge-neutral'}">${escapeHtml(row.impactLabel)}</span></div>
+          <div class="tu-why"><bdi>${escapeHtml(L.reason)}</bdi>: <bdi>${escapeHtml(row.reason)}</bdi></div>
+        </div>`).join('')
+      : `<p class="tu-muted">${escapeHtml(L.unavailable)}</p>`);
+
+  const news = section(L.news, '',
+    v.news.length
+      ? v.news.map((n) => `<div class="tu-row">
+          <div>${escapeHtml(n.what)} <span class="tu-muted">(${escapeHtml(n.source || '')}${n.at ? ', ' + escapeHtml(tuFmtUtc(n.at)) : ''})</span></div>
+          <div style="margin-top:2px;"><bdi>${escapeHtml(L.impact)}</bdi>: <span class="ceo-badge ceo-badge-neutral">${escapeHtml(n.impactLabel)}</span></div>
+          <div class="tu-why"><bdi>${escapeHtml(L.reason)}</bdi>: <bdi>${escapeHtml(n.reason)}</bdi></div>
+        </div>`).join('')
+      : `<p class="tu-muted">${escapeHtml(v.newsNote || '')}</p>`);
+
+  const events = section(L.comingData, v.events.length ? `<span class="ceo-badge ceo-badge-warning">${v.events.length}</span>` : '',
+    (v.events.length
+      ? v.events.map((e) => `<div class="tu-row">
+          <div><strong>${escapeHtml(e.what)}</strong> — <span class="tu-muted">${escapeHtml(tuFmtUtc(e.when))}</span>${e.forecast ? ` <span class="tu-muted">(f ${escapeHtml(e.forecast)}${e.previous ? ' / p ' + escapeHtml(e.previous) : ''})</span>` : ''}</div>
+          <div class="tu-why">${escapeHtml(e.whatItMeans)}</div>
+          ${e.scenarios.map((s) => `<div style="margin-top:4px;">${escapeHtml(L.ifUp)} ${escapeHtml(s.label)}: <span class="ceo-badge ${TU_EVENT_BADGE[s.impact] || 'ceo-badge-neutral'}">${escapeHtml(s.impactLabel)}</span><div class="tu-why">${escapeHtml(s.reason)}</div></div>`).join('')}
+        </div>`).join('')
+      : '') + (v.eventsNote ? `<p class="tu-muted">${escapeHtml(v.eventsNote)}</p>` : ''));
+
+  const levels = v.levels.length
+    ? `<div class="tu-k">${escapeHtml(L.keyLevels)}</div><div class="tu-kv">${v.levels.map((l) => `<span>${escapeHtml(l.label)}</span><span>${escapeHtml(l.value)}</span>`).join('')}</div>`
+    : '';
+
+  // Expert View Today — kept visually separate from the verified evidence.
+  let expertBody;
+  let overall = v.overall;
+  let expertSource = null;
+  if (tuExpert === 'loading') {
+    expertBody = `<p class="tu-muted">${escapeHtml(TU_LOADING[lang].expert)}</p>`;
+  } else {
+    const ex = tuExpert && !tuExpert.error && tuExpert.instruments ? tuExpert.instruments[key] : null;
+    const ev = ex && (ex.views[lang] || ex.views.en);
+    if (ev && ev.overall) overall = ev.overall;
+    if (ev && ev.source) expertSource = ev.source;
+    if (ex && ex.status === 'verified') {
+      expertBody = `<div><span class="ceo-badge ${TU_LEAN_BADGE[ex.consensus] || 'ceo-badge-neutral'}">${escapeHtml(ev.headline)}</span> <span class="tu-muted">${escapeHtml(ev.counts || '')}</span></div>` +
+        ex.items.map((it) => {
+          const who = [it.analyst, it.institution].filter(Boolean).join(', ');
+          const url = /^https:\/\//.test(it.url) ? it.url : null;
+          return `<div class="tu-row">
+            <div><span class="ceo-badge ${TU_LEAN_BADGE[it.stance] || 'ceo-badge-neutral'}">${escapeHtml(it.stance)}</span> ${escapeHtml(who)} — ${escapeHtml(it.outlet)}</div>
+            <div class="tu-why">${escapeHtml((it.summary && (it.summary[lang] || it.summary.en)) || '')}</div>
+            <div class="tu-muted"><bdi>${escapeHtml(L.published)}</bdi>: <bdi>${escapeHtml(tuFmtUtc(it.published))}</bdi>${it.publishedVerified ? '' : ` (${escapeHtml(L.dateUnconfirmed)})`}${url ? ` · <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(L.source)}</a>` : ''}</div>
+          </div>`;
+        }).join('');
+    } else {
+      const text = ev ? ev.headline : ({ en: 'Not available from a verified current source.', ur: 'کسی verified موجودہ ذریعے سے دستیاب نہیں۔', ar: 'غير متاح من مصدر حالي موثق.' })[lang];
+      expertBody = `<p class="tu-muted">${escapeHtml(text)}</p>`;
+    }
+  }
+
+  const sources = section(L.sources, '',
+    `<ul class="tu-list">${[...v.sources, expertSource].filter(Boolean).map((s) => `<li class="tu-muted">${escapeHtml(s)}</li>`).join('')}</ul>` +
+    (v.unavailable.length ? `<ul class="tu-list">${v.unavailable.map((u) => `<li class="tu-muted">⚠ ${escapeHtml(u)}</li>`).join('')}</ul>` : ''));
+
+  return `<article class="tu-card">
+    <div class="tu-head">
+      <span class="tu-name">${escapeHtml(v.instrumentName)}</span>
+      ${r.price != null ? `<span class="tu-muted">${escapeHtml(L.price)} ${escapeHtml(r.price)}</span>` : ''}
+    </div>
+    <div class="tu-k">${escapeHtml(L.bias)}</div>
+    <div class="tu-head"><span class="tu-bias ${TU_BIAS_CLASS[r.bias] || 'tu-bias-none'}">${escapeHtml(v.biasWord)}</span>
+      <span class="tu-muted"><bdi>${escapeHtml(L.evidenceStrength)}</bdi>: <bdi>${escapeHtml(v.evidenceStrength)}</bdi></span></div>
+    <div class="tu-k">${escapeHtml(L.why)}</div>
+    <ul class="tu-list">${v.why.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}</ul>
+    ${category(v.categories.technical)}
+    ${category(v.categories.fundamental)}
+    ${category(v.categories.sentiment)}
+    ${news}
+    ${events}
+    ${levels}
+    <div class="tu-k">${escapeHtml(L.expert)}</div>
+    ${expertBody}
+    <div class="tu-k">${escapeHtml(L.overall)}</div>
+    <div class="tu-overall">${escapeHtml(overall)}</div>
+    ${sources}
+  </article>`;
 }
 
 // Show/Hide Roadmap. sessionStorage, so the choice survives navigation within
@@ -1382,3 +1579,4 @@ function escapeHtml(str) {
 function escapeAttr(str) {
   return escapeHtml(str).replace(/"/g, '&quot;');
 }
+

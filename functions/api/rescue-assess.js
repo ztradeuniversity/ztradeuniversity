@@ -38,6 +38,7 @@ import { INSTRUMENTS, findWordNumbers } from '../utils/trade-rescue/case.js';
 import { normalizeLayers, analyzePosition, aggregateToCase, positionLines, PROVENANCE } from '../utils/trade-rescue/position.js';
 import { buildMeters } from '../utils/trade-rescue/meters.js';
 import { computeVerifiedRange, defensibleInvalidation } from '../utils/trade-rescue/levels.js';
+import { collectHistory } from '../utils/trade-rescue/history.js';
 import * as RI from '../utils/trade-rescue/result-i18n.js';
 import { generateRescuePlan, interpretTradeMessage, interpretLayers } from '../utils/composer-llm.js';
 import { resolveTier, readGuestCount, buildGuestCookie } from '../utils/identity-session.js';
@@ -52,39 +53,8 @@ const JSON_H = { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Ca
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: JSON_H });
 
 // ── HISTORICAL / OHLC ────────────────────────────────────────────────────────
-// Its own endpoint so a plan restriction there degrades this one section rather
-// than the whole assessment.
-async function collectHistory(origin, instrument, dates) {
-  const out = { status: 'unavailable', note: null, candles: [], closes: [], volatility: null, dateContext: [] };
-  const ins = INSTRUMENTS.find(i => i.id === instrument);
-  if (!ins || !ins.live) { out.note = 'Historical context is offered only for instruments the live feed also covers.'; return out; }
-  try {
-    const qs = new URLSearchParams({ symbol: instrument, interval: '1day', outputsize: '60' });
-    if (dates.length) qs.set('dates', dates.join(','));
-    const url = `${origin}/api/market-history?${qs}`;
-    // Same retry-once-on-transient-failure rule as collectEvidence()'s
-    // getJson(): a 5xx or network/timeout error gets one retry; a definitive
-    // 4xx (plan restriction, bad request) does not, since retrying it cannot
-    // succeed differently.
-    const attempt = () => fetch(url, { signal: AbortSignal.timeout(9000) }).catch(() => null);
-    let r = await attempt();
-    if (!r || (!r.ok && r.status >= 500)) r = await attempt();
-    if (!r) { out.note = 'Historical market data could not be independently verified: the market-history endpoint did not respond.'; return out; }
-    if (!r.ok) { out.note = `Historical market data could not be independently verified (HTTP ${r.status}).`; return out; }
-    const d = await r.json();
-    if (d.status !== 'verified') { out.note = d.note || 'Historical market data could not be independently verified.'; return out; }
-    out.status = 'verified';
-    out.candles = d.candles || [];
-    out.closes = out.candles.map(c => c.close);
-    out.volatility = d.volatility || null;
-    out.dateContext = d.dateContext || [];
-    out.source = d.source; out.retrievedAt = d.retrievedAt;
-    out.firstAt = d.firstAt; out.lastAt = d.lastAt;
-  } catch (e) {
-    out.note = `Historical market data could not be independently verified: ${String(e.message || e).slice(0, 140)}`;
-  }
-  return out;
-}
+// collectHistory() now lives in ../utils/trade-rescue/history.js (moved there
+// verbatim so the AI CEO OS Today Update can reuse it) — imported above.
 
 // ── THE GROUNDED BRIEF FOR THE FINAL MENTOR REVIEW ───────────────────────────
 // Deliberately small. Technical / Fundamental / Sentiment / Upcoming Economic

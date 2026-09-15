@@ -8,9 +8,41 @@
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/theme.css" />
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/base.css" />
   <link rel="stylesheet" href="/ai-ceo-os/src/presentation/shared/styles/components.css" />
+  <style>
+    /* Today Update — layout only; colours/fonts come from the shared theme
+       (and, for Urdu, from the global html[data-ztu-lang] font rule). */
+    .tu-panel { margin-bottom: var(--ceo-space-6); border-color: var(--ceo-accent); }
+    .tu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--ceo-space-4); margin-top: var(--ceo-space-3); }
+    .tu-card { border: 1px solid var(--ceo-border); border-radius: var(--ceo-radius-md); background: var(--ceo-surface-raised); padding: var(--ceo-space-4); min-width: 0; }
+    .tu-head { display: flex; align-items: center; gap: var(--ceo-space-2); flex-wrap: wrap; }
+    .tu-name { font-weight: 700; flex: 1; min-width: 0; }
+    .tu-bias { font-size: var(--ceo-font-size-lg); font-weight: 800; letter-spacing: 0.02em; padding: 2px 12px; border-radius: var(--ceo-radius-full); }
+    .tu-bias-buy { background: var(--ceo-status-success-bg); color: var(--ceo-status-success); }
+    .tu-bias-sell { background: var(--ceo-status-critical-bg); color: var(--ceo-status-critical); }
+    .tu-bias-none { background: var(--ceo-secondary); color: var(--ceo-text-secondary); }
+    .tu-k { font-size: var(--ceo-font-size-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ceo-text-muted); margin: var(--ceo-space-3) 0 4px; font-weight: 700; }
+    .tu-sec { border-top: 1px solid var(--ceo-border-subtle); margin-top: var(--ceo-space-3); padding-top: var(--ceo-space-2); }
+    .tu-sec > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--ceo-space-2); font-weight: 600; }
+    .tu-sec > summary::-webkit-details-marker { display: none; }
+    .tu-sec > summary::after { content: '▾'; margin-inline-start: auto; color: var(--ceo-text-muted); }
+    .tu-sec:not([open]) > summary::after { content: '▸'; }
+    .tu-row { margin-top: var(--ceo-space-2); font-size: var(--ceo-font-size-sm); overflow-wrap: anywhere; }
+    .tu-row .tu-why { color: var(--ceo-text-secondary); margin-top: 2px; }
+    .tu-muted { color: var(--ceo-text-secondary); font-size: var(--ceo-font-size-sm); overflow-wrap: anywhere; }
+    .tu-list { margin: 4px 0 0; padding-inline-start: 1.1em; font-size: var(--ceo-font-size-sm); }
+    .tu-kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--ceo-space-3); font-size: var(--ceo-font-size-sm); }
+    .tu-kv > span:nth-child(odd) { color: var(--ceo-text-muted); }
+    .tu-overall { margin-top: var(--ceo-space-3); padding: var(--ceo-space-2) var(--ceo-space-3); border-radius: var(--ceo-radius-sm); background: var(--ceo-surface); font-weight: 600; font-size: var(--ceo-font-size-sm); }
+    .tu-disclaimer { font-size: var(--ceo-font-size-xs); margin: var(--ceo-space-3) 0 0; }
+    .tu-grid a { overflow-wrap: anywhere; }
+  </style>
 </head>
 <body class="ceo-auth-pending">
-  <div class="ceo-app-shell">
+  <!-- translate="no": this is a private admin page. The global language
+       selector (assets/ztu-lang.js, loaded below) is used here only for its
+       native-render mode + Urdu font state; Google's page translator must
+       never receive founder/business data from this page. -->
+  <div class="ceo-app-shell notranslate" translate="no">
     <aside class="ceo-app-sidebar" id="ceo-sidebar-slot"></aside>
     <header class="ceo-app-header" id="ceo-header-slot"></header>
     <main class="ceo-app-main">
@@ -21,9 +53,24 @@
             <input class="ceo-input" type="date" id="home-date-picker" style="max-width: 12em;" />
           </div>
           <span style="flex: 1;"></span>
+          <button class="ceo-btn ceo-btn-primary" id="today-update-btn" aria-controls="today-update-panel">Today Update</button>
           <button class="ceo-btn ceo-btn-secondary" id="home-leave-btn">Submit Leave</button>
           <button class="ceo-btn ceo-btn-destructive" id="home-reset-btn">Reset Plan</button>
         </div>
+
+        <!-- Today Update — one-click Gold/BTC scalping check. Public (no IB,
+             OTP, License Request or premium gate); the evidence is ZTU Rescue's
+             own pipeline — see functions/api/ceo/today-update.js. -->
+        <section class="ceo-card tu-panel" id="today-update-panel" hidden>
+          <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
+            <h3 style="margin: 0; flex: 1;">Today Update</h3>
+            <span id="today-update-checked" class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"></span>
+            <button class="ceo-btn ceo-btn-secondary" id="today-update-again">Check Again</button>
+          </div>
+          <div id="today-update-result" class="tu-grid"></div>
+          <p id="today-update-disclaimer" class="ceo-text-secondary tu-disclaimer"></p>
+        </section>
+
         <!-- 0. Founder Success Bar — the execution roadmap, above every task
              section. Collapsible; the choice is remembered for the session. -->
         <div class="ceo-flex ceo-items-center" style="margin-bottom: var(--ceo-space-2);">
@@ -70,7 +117,26 @@
     import { initLayout } from '/ai-ceo-os/src/presentation/layout/layout.js';
     import { initHome } from '/ai-ceo-os/src/presentation/command-center/home.js';
     const user = await initLayout('command-center');
-    if (user) initHome();
+    if (user) {
+      initHome();
+      // Existing site-wide language architecture, loaded AFTER the layout has
+      // rendered the header it mounts its selector into. Same contract as ZTU
+      // Rescue: the Today Update renders en/ur/ar itself, so the engine skips
+      // Google for them but still sets html[data-ztu-lang] — which is what
+      // applies the global Urdu font. 'en' is native here too (unlike Rescue):
+      // nothing on this translate="no" page is ever Google-translated, so
+      // there is no original text to restore and no reason to load Google.
+      window.ZTU_LANG_NATIVE = ['en', 'ur', 'ar'];
+      // ztu-lang.js's own mount contract: it joins a `.head-right` actions
+      // group when one exists (as on ZTU Rescue). Without it, it would become
+      // a third child of the space-between header and shift the email/logout
+      // group to the centre.
+      const actions = document.querySelector('#ceo-header-slot > .ceo-flex');
+      if (actions) actions.classList.add('head-right');
+      const s = document.createElement('script');
+      s.src = '/assets/ztu-lang.js';
+      document.body.appendChild(s);
+    }
   </script>
 </body>
 </html>

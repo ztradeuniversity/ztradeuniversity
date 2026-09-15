@@ -741,3 +741,199 @@ export async function interpretLayers(env, text, allowedNumbers = []) {
   }
   return { layers: out, ambiguous: !!d.ambiguous || dropped > 0, dropped };
 }
+
+// ── AI CEO OS — TODAY UPDATE: EXPERT VIEW TODAY (real, source-backed) ───────
+// The ONLY new intelligence layer in the Today Update. Uses the SAME OpenAI
+// configuration/key as every other caller in this file (resolveOpenAI), via
+// OpenAI's own web-search tool on the Responses API — the model can only
+// report commentary it actually retrieved this minute, never recall it.
+//
+// Anti-fabrication is enforced HERE, in code, not merely requested in the
+// prompt. A view survives only if ALL of these hold:
+//   1. its URL is one the search tool actually cited in this response
+//      (url_citation annotations / search sources) — a URL the model merely
+//      typed is discarded;
+//   2. the page is recent (published ≤ 3 days ago, from the page's own
+//      metadata when fetchable, otherwise the date the search result gave);
+//   3. it is attributed to an identifiable expert — an analyst/strategist
+//      name or a research institution — AND that name appears in retrieved
+//      content (the fetched page text, or the search result's own title).
+//      A name that appears nowhere retrieved is treated as invented and the
+//      whole view is dropped. This also enforces "generic news is not an
+//      expert view": a plain price report has no attributable expert to pass.
+// The outlet shown is derived from the verified URL's host unless the model's
+// outlet name matches that host. Counts are computed from surviving views
+// only; with fewer than 2 no count is shown. With none: status 'unavailable'.
+// Workers AI is never used as a fallback here — it has no search, so any
+// "expert view" it produced would be recalled or invented.
+const EXPERT_RESEARCH_SYSTEM = `You are a financial research assistant with a web search tool. Search the web NOW for CURRENT expert commentary on the short-term (today / this week) direction of the instrument named by the user.
+
+WHAT COUNTS AS AN EXPERT VIEW: an explicit directional view (bullish / bearish / neutral) stated by an identifiable market expert — a named analyst, strategist, economist or trader quoted by a credible outlet, or a named research institution (bank, brokerage, research firm). Credible outlets include Reuters, Bloomberg, CNBC, Financial Times, WSJ, MarketWatch, Kitco, FXStreet, Investing.com, CoinDesk, The Block, Barron's.
+
+ABSOLUTE RULES — these override everything else:
+1. Include a view ONLY if a page you actually opened in this search states it. Never use memory or training data.
+2. NEVER invent or guess an analyst name, institution, quotation, date, URL or consensus. Copy names exactly as written on the page.
+3. A news report of price movement with no attributed expert view is NOT an expert view — exclude it. Anonymous social-media posts are excluded.
+4. Only pages published within the last 2 days relative to TODAY given by the user.
+5. If nothing qualifies, return {"views":[]}. An empty result is a correct answer.
+6. Summaries: one short sentence each describing the view. No names inside the summaries, no price targets presented as certain, no guarantees.
+
+OUTPUT: ONLY this JSON object, no markdown fence, no commentary:
+{"views":[{"stance":"bullish"|"bearish"|"neutral","analyst":"exact name or null","institution":"exact firm or null","outlet":"publication name","url":"exact URL of the page you used","published":"YYYY-MM-DD","summary_en":"...","summary_ur":"... (Urdu; keep Gold, Bitcoin, BUY, SELL, Fed and trading terms in English)","summary_ar":"... (Arabic)"}]}
+At most 4 views.`;
+
+const normUrl = (u) => {
+  try {
+    const x = new URL(String(u));
+    return `${x.hostname.replace(/^www\./, '').toLowerCase()}${x.pathname.replace(/\/+$/, '')}`;
+  } catch { return null; }
+};
+const isPublicHttps = (u) => {
+  try {
+    const x = new URL(String(u));
+    return x.protocol === 'https:' && !/^(localhost|\d{1,3}(\.\d{1,3}){3}|\[.*\])$/i.test(x.hostname);
+  } catch { return false; }
+};
+
+async function responsesWithSearch(oa, model, toolType, instructions, input) {
+  const once = async () => {
+    const res = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${oa.key}` },
+      body: JSON.stringify({ model, tools: [{ type: toolType }], instructions, input, max_output_tokens: 1500 }),
+      signal: AbortSignal.timeout(35000),
+    });
+    if (!res.ok) {
+      const e = new Error(`openai responses http ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`);
+      e.status = res.status;
+      throw e;
+    }
+    return res.json();
+  };
+  // Same retry rule as callOpenAI(): one retry on a transient failure only.
+  try { return await once(); } catch (e1) {
+    if (e1.status && e1.status !== 429 && e1.status < 500) throw e1;
+    return once();
+  }
+}
+
+// Page text + the page's own published date, best-effort (paywalls/bot
+// blocks simply return null — the view then has to pass on the search
+// result's title instead).
+async function fetchPageEvidence(url) {
+  try {
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ZTU-TodayUpdate/1.0; +https://ztradeuniversity.com)' },
+      signal: AbortSignal.timeout(6000), redirect: 'follow',
+    });
+    if (!r.ok) return null;
+    const html = (await r.text()).slice(0, 800000);
+    const dm = html.match(/(?:article:published_time|og:published_time|datePublished|pubdate)["']?\s*(?:content|:)\s*=?\s*["']([^"']{8,40})["']/i);
+    const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/\s+/g, ' ');
+    return { text: text.toLowerCase(), published: dm ? dm[1] : null };
+  } catch { return null; }
+}
+
+/**
+ * @param {string} instrumentLabel e.g. "Gold (XAU/USD)"
+ * @returns {Promise<{status:'verified'|'unavailable', reason:string|null, provider:string, model:string|null,
+ *   searchedAt:string, consensus:'bullish'|'bearish'|'mixed'|'neutral'|null, counts:{bullish:number,bearish:number,neutral:number},
+ *   views:object[]}>}
+ */
+export async function researchExpertView(env, instrumentLabel) {
+  const searchedAt = new Date().toISOString();
+  const empty = (reason, model = null) => ({ status: 'unavailable', reason, provider: 'openai-web-search', model, searchedAt,
+    consensus: null, counts: { bullish: 0, bearish: 0, neutral: 0 }, views: [] });
+
+  const oa = resolveOpenAI(env || {});
+  if (!oa.usable) return empty('not_configured');
+  if (!/^https:\/\/api\.openai\.com\//.test(oa.endpoint)) return empty('web_search_requires_openai_endpoint');
+  const model = (env && env.OPENAI_SEARCH_MODEL) || oa.model;
+  const today = searchedAt.slice(0, 10);
+  const input = `TODAY: ${today}\nINSTRUMENT: ${instrumentLabel}\nFind current expert views on its short-term direction.`;
+
+  let data = null;
+  let lastErr = null;
+  for (const toolType of ['web_search', 'web_search_preview']) {
+    try { data = await responsesWithSearch(oa, model, toolType, EXPERT_RESEARCH_SYSTEM, input); break; }
+    catch (e) { lastErr = e; if (!e.status || e.status !== 400) break; }
+  }
+  if (!data) {
+    logLLMFailure(env, 'openai-web-search', lastErr || new Error('no response'));
+    return empty(lastErr && lastErr.status ? `openai_http_${lastErr.status}` : 'openai_unavailable', model);
+  }
+
+  // Everything the search tool actually retrieved, keyed by normalized URL.
+  const cited = new Map();
+  let text = '';
+  for (const item of data.output || []) {
+    if (item.type === 'web_search_call') {
+      for (const s of (item.action && item.action.sources) || []) {
+        const k = normUrl(s.url); if (k && !cited.has(k)) cited.set(k, { url: s.url, title: s.title || '' });
+      }
+    }
+    if (item.type === 'message') {
+      for (const c of item.content || []) {
+        if (c.type !== 'output_text') continue;
+        text += c.text || '';
+        for (const a of c.annotations || []) {
+          if (a.type !== 'url_citation') continue;
+          const k = normUrl(a.url); if (k) cited.set(k, { url: a.url, title: a.title || (cited.get(k) || {}).title || '' });
+        }
+      }
+    }
+  }
+
+  const m = text.match(/\{[\s\S]*\}/);
+  let parsed = null;
+  try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
+  if (!parsed || !Array.isArray(parsed.views)) return empty('unparseable_research_output', model);
+  if (!cited.size) return empty('no_retrieved_sources', model);
+
+  const now = Date.now();
+  const candidates = parsed.views.slice(0, 4).filter(v => v && ['bullish', 'bearish', 'neutral'].includes(v.stance));
+  const checked = await Promise.all(candidates.map(async (v) => {
+    const key = normUrl(v.url);
+    const hit = key && cited.get(key);
+    if (!hit || !isPublicHttps(hit.url)) return null;                      // rule 1
+
+    const page = await fetchPageEvidence(hit.url);
+    const haystack = `${page ? page.text : ''} ${String(hit.title || '').toLowerCase()}`;
+    const found = (name) => {
+      const n = String(name || '').trim();
+      return n.length >= 3 && haystack.includes(n.toLowerCase()) ? n : null;
+    };
+    const analyst = found(v.analyst);
+    const institution = found(v.institution);
+    if (!analyst && !institution) return null;                              // rule 3
+    // A name the model supplied that is NOT in retrieved content means the
+    // row is partly invented — drop the whole view rather than half-trust it.
+    if ((v.analyst && !analyst) || (v.institution && !institution)) return null;
+
+    const pageDate = page && page.published && !Number.isNaN(Date.parse(page.published)) ? page.published : null;
+    const modelDate = v.published && !Number.isNaN(Date.parse(v.published)) ? v.published : null;
+    const published = pageDate || modelDate;
+    if (!published) return null;
+    if (now - Date.parse(published) > 3 * 86400000 || Date.parse(published) - now > 86400000) return null; // rule 2
+
+    const host = new URL(hit.url).hostname.replace(/^www\./, '');
+    const outletOk = v.outlet && host.replace(/[^a-z]/gi, '').toLowerCase().includes(String(v.outlet).replace(/[^a-z]/gi, '').toLowerCase());
+    const clip = (s) => String(s || '').slice(0, 280);
+    return {
+      stance: v.stance, analyst, institution,
+      outlet: outletOk ? String(v.outlet).slice(0, 60) : host,
+      url: hit.url, title: String(hit.title || '').slice(0, 200),
+      published, publishedVerified: !!pageDate,
+      summary: { en: clip(v.summary_en), ur: clip(v.summary_ur || v.summary_en), ar: clip(v.summary_ar || v.summary_en) },
+    };
+  }));
+
+  const views = checked.filter(Boolean);
+  if (!views.length) return empty('no_verified_expert_source', model);
+  const counts = { bullish: 0, bearish: 0, neutral: 0 };
+  for (const v of views) counts[v.stance]++;
+  const consensus = counts.bullish > counts.bearish && counts.bullish >= counts.neutral ? 'bullish'
+    : counts.bearish > counts.bullish && counts.bearish >= counts.neutral ? 'bearish'
+    : counts.bullish === 0 && counts.bearish === 0 ? 'neutral' : 'mixed';
+  return { status: 'verified', reason: null, provider: 'openai-web-search', model, searchedAt, consensus, counts, views };
+}
