@@ -730,9 +730,82 @@ function normalizeOpts(opts) {
   };
 }
 
+// ── PLAN-RELATIVE DAY INDEX + CADENCE — the single source of truth ──────────
+// Everything that answers "which plan day is this date, and what does that day
+// contain" goes through these two functions: the Home mission generator
+// (mission.js), the roadmap (generateGrowthDays / planDayForDate below), and
+// the Founder Success bar (founder-success.js). No caller computes its own
+// day number or reads the calendar weekday to decide plan content.
+
+// 1-based plan day for a calendar date: the count of NON-leave dates from the
+// plan start through `dateStr` inclusive — the identical walk
+// generateGrowthDays uses, so a leave shifts every later day the same way
+// everywhere. On a leave date this is the last plan day reached. null when
+// the date is before the start or unparseable.
+export function planDayNumberForDate(startDateStr, dateStr, leavePeriods = []) {
+  const start = Date.parse(startDateStr);
+  const end = Date.parse(dateStr);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || dateStr < startDateStr) return null;
+  const leave = Array.isArray(leavePeriods) ? leavePeriods : [];
+  const inLeave = (d) => leave.some((p) => p && p.start <= d && d <= p.end);
+  const span = Math.round((end - start) / DAY_MS);
+  let n = 0;
+  for (let cal = 0; cal <= span; cal++) {
+    if (!inLeave(new Date(start + cal * DAY_MS).toISOString().slice(0, 10))) n += 1;
+  }
+  return n;
+}
+
+// The weekly rhythm is PLAN-RELATIVE: Day 1 is always the production day,
+// Day 2 the publish day, and so on around the 7-day cycle — whatever calendar
+// weekday the plan (or a Reset) happened to start on. Before this, day
+// content keyed off the calendar weekday, so "Day 1" meant "film" after a
+// Monday reset but "publish chain" after a Tuesday one. With the default
+// production day (Monday) and a Monday start, this is identical to the old
+// calendar mapping — the designed week is preserved, only anchored to the plan.
+export function cadenceWeekdayForDay(dayNumber, productionDay = 'monday') {
+  const base = DAY_NAMES.indexOf(productionDay);
+  return DAY_NAMES[((base < 0 ? 1 : base) + (dayNumber - 1)) % 7];
+}
+
+// The current plan RUN, written by Reset Plan (activities.js) into the
+// existing settings table as `plan.run` — no schema change. `excludedIds` are
+// the previous run's daily_activities rows dated on/after the new Day 1 (the
+// rows already instantiated for the reset day, plus any future-dated ones):
+// they stay in the database as history but can never be read as the new run's
+// tasks. Accepts the jsonb object or a JSON-encoded string (see
+// activities.js's upsertSetting note). Missing/invalid → null (no reset has
+// happened since this shipped; behaviour is then exactly as before).
+export function parsePlanRun(value) {
+  let v = value;
+  if (typeof v === 'string') { try { v = JSON.parse(v); } catch { return null; } }
+  if (!v || typeof v !== 'object') return null;
+  const ids = Array.isArray(v.excludedIds) ? v.excludedIds.filter((x) => /^[0-9a-f-]{36}$/i.test(String(x))) : [];
+  return {
+    startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(v.startDate || '')) ? v.startDate : null,
+    startedAt: typeof v.startedAt === 'string' ? v.startedAt : null,
+    excludedIds: ids,
+  };
+}
+
+// Day-type for plan day N — the same production/publish/review/community
+// classification mission.js instantiates templates from.
+export function cadenceForDay(dayNumber, opts = {}) {
+  const o = normalizeOpts(opts);
+  const weekday = cadenceWeekdayForDay(dayNumber, o.productionDay);
+  const dayType = weekday === o.productionDay ? 'production'
+    : weekday === o.publishDay ? 'publish'
+    : weekday === o.reviewDay ? 'review'
+    : 'community';
+  return { weekday, dayType, isClassDay: weekday === o.classDay };
+}
+
 function buildDayRow(dayNumber, dateStr, weekdayName, o, opts) {
   const phase = phaseForDay(dayNumber);
-  const content = dayContent(dayNumber, dateStr, weekdayName, o);
+  // `weekdayName` is the real calendar weekday (display only); plan content
+  // comes from the plan-relative cadence day.
+  const cadence = cadenceForDay(dayNumber, o);
+  const content = dayContent(dayNumber, dateStr, cadence.weekday, o);
   // Self-optimizing layer (Section 6): the caller passes the 28-day
   // learned winners/losers from real completion history; future days get
   // annotated so the plan visibly re-weights itself — never rewritten,
@@ -751,6 +824,8 @@ function buildDayRow(dayNumber, dateStr, weekdayName, o, opts) {
     totalDays: PLAN_TOTAL_DAYS,
     date: dateStr,
     weekday: weekdayName,
+    cadenceDay: cadence.weekday,
+    dayType: cadence.dayType,
     estimatedLoad: content.estimatedLoad,
     stage: phase.stage,
     country: phase.countries,

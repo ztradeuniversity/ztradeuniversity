@@ -20,7 +20,7 @@ import { rest, json, requireFounder, parseExecTag, stripExecTag } from '../../ut
 import { computeRetention } from '../../utils/ceo/retention-logic.js';
 import { delayCostLabel, automationStatusLabel } from '../../utils/ceo/coach-logic.js';
 import { EXECUTION_KITS } from '../../utils/ceo/execution-kits.js';
-import { planDayForDate } from '../../utils/ceo/plan-logic.js';
+import { planDayForDate, planDayNumberForDate, cadenceForDay, parsePlanRun, PLAN_TOTAL_DAYS } from '../../utils/ceo/plan-logic.js';
 import { buildPlannerRecs } from '../../utils/ceo/channel-performance.js';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -30,6 +30,8 @@ const IMPACT_LABEL = ['high', 'medium', 'low'];
 const IMPACT_RANK = { high: 0, medium: 1, low: 2 };
 // Class day is Saturday, review day Friday by convention (documented in the
 // cadence templates); production day comes from settings, publish = day after.
+// These are CADENCE weekdays: plan day N maps onto them via plan-logic.js's
+// cadenceForDay() (Day 1 = production day), never the calendar weekday.
 const CLASS_DAY = 'saturday';
 const REVIEW_DAY = 'friday';
 
@@ -84,8 +86,11 @@ const BEST_TIME = {
   'daily.physical_outreach': '10am–1pm (institute office hours)',
   'weekly.film_video': 'Morning deep-work block, before messages open',
   'weekly.publish_chain': 'Morning after production day',
-  'weekly.live_class': 'Saturday evening fixed slot',
-  'weekly.review': 'Friday, close of day',
+  // The weekly rhythm is plan-relative (Day 1 = production day), so class and
+  // review fall on the same weekday every week of a run — not a fixed
+  // calendar Saturday/Friday.
+  'weekly.live_class': 'Class-day evening — the same fixed slot every week',
+  'weekly.review': 'Review day, close of day',
   'weekly.kpi_entry': 'Inside the review block',
   'weekly.email_digest': 'Inside the review block',
   'weekly.learning_slot': 'Any low-energy slot — freely movable',
@@ -131,7 +136,7 @@ export async function onRequestGet({ request, env }) {
   // viewing a past/future date must never create daily_activities rows.
   const reqUrl = new URL(request.url);
   const viewDate = DATE_RE.test(reqUrl.searchParams.get('date') || '') ? reqUrl.searchParams.get('date') : realToday;
-  const dayName = DAY_NAMES[new Date(viewDate + 'T00:00:00Z').getDay()];
+  const calendarDayName = DAY_NAMES[new Date(viewDate + 'T00:00:00Z').getUTCDay()];
 
   try {
     const settings = await db.select('settings', 'select=key,value&scope=eq.global');
@@ -150,11 +155,38 @@ export async function onRequestGet({ request, env }) {
     const inLeave = (d) => leavePeriods.some((p) => p && p.start <= d && d <= p.end);
     const onLeave = inLeave(viewDate);
 
-    const dayType =
-      dayName === productionDay ? 'production'
-      : dayName === publishDay ? 'publish'
-      : dayName === REVIEW_DAY ? 'review'
-      : 'community';
+    // PLAN DAY — the one plan-relative index (plan-logic.js), shared with the
+    // roadmap and the Founder Success bar. Anchor: plan.start_date (written
+    // by Reset Plan), else the founder's first execution day, else today —
+    // the same fallback order plan.js uses.
+    const planRun = parsePlanRun(setting('plan.run', null));
+    let planStart = String(setting('plan.start_date', '')).replace(/"/g, '');
+    if (!DATE_RE.test(planStart)) {
+      const first = await db.select('daily_activities', `select=activity_date&owner_user_id=eq.${uid}&order=activity_date.asc&limit=1`);
+      planStart = first[0]?.activity_date || realToday;
+    }
+    const planDayRaw = planDayNumberForDate(planStart, viewDate, leavePeriods);
+    const planDayNumber = planDayRaw && planDayRaw <= PLAN_TOTAL_DAYS ? planDayRaw : null;
+
+    // Day type comes from the PLAN-RELATIVE cadence (Day 1 = production day,
+    // whatever the calendar weekday). Only a date outside the plan (before
+    // Day 1 / after the last day) falls back to its calendar weekday.
+    const cadence = planDayNumber
+      ? cadenceForDay(planDayNumber, { productionDay, publishDay, reviewDay: REVIEW_DAY, classDay: CLASS_DAY })
+      : {
+          weekday: calendarDayName,
+          dayType: calendarDayName === productionDay ? 'production'
+            : calendarDayName === publishDay ? 'publish'
+            : calendarDayName === REVIEW_DAY ? 'review' : 'community',
+          isClassDay: calendarDayName === CLASS_DAY,
+        };
+    const dayType = cadence.dayType;
+
+    // Rows from a PREVIOUS run that sit on/after the new Day 1 (Reset Plan
+    // records their ids in plan.run). They stay in the database as history,
+    // but are never read as this run's tasks, overdue items or ranking input.
+    const excludedIds = planRun ? planRun.excludedIds : [];
+    const notExcluded = excludedIds.length ? `&id=not.in.(${excludedIds.join(',')})` : '';
 
     // 1) Instantiate today's activities from templates, once per day. This
     // query stays scoped to viewDate=eq — a separate query below (1c) fetches
@@ -163,22 +195,25 @@ export async function onRequestGet({ request, env }) {
     // Refinement Patch 1 — "nothing disappears automatically").
     let activities = await db.select(
       'daily_activities',
-      `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=eq.${viewDate}&order=created_at.asc`
+      `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=eq.${viewDate}${notExcluded}&order=created_at.asc,id.asc`
     );
     // Never auto-create rows for a past/future date merely being VIEWED —
     // instantiation only fires when the picker is on the real today, and
     // never on an approved leave day.
     if (activities.length === 0 && viewDate === realToday && !onLeave) {
+      // Explicit ORDER BY: without it PostgREST returns heap order, which is
+      // not guaranteed stable — and insert order becomes created_at order,
+      // the display tie-break below.
       const templates = await db.select(
         'knowledge_base',
-        `select=title,content&owner_user_id=eq.${uid}&category=eq.cadence-template&is_active=eq.true`
+        `select=title,content&owner_user_id=eq.${uid}&category=eq.cadence-template&is_active=eq.true&order=title.asc,id.asc`
       );
       const wanted = templates.filter((t) => {
         if (t.title.startsWith('daily.')) return true;
         if (t.title === 'weekly.film_video') return dayType === 'production';
         if (t.title === 'weekly.publish_chain') return dayType === 'publish';
         if (t.title === 'weekly.review') return dayType === 'review';
-        if (t.title === 'weekly.live_class') return dayName === CLASS_DAY;
+        if (t.title === 'weekly.live_class') return cadence.isClassDay;
         if (t.title === 'weekly.kpi_entry' || t.title === 'weekly.email_digest' || t.title === 'weekly.learning_slot')
           return dayType === 'review'; // batched onto review day
         return false; // monthly/quarterly surface via review flow, not the daily list
@@ -213,10 +248,15 @@ export async function onRequestGet({ request, env }) {
       // Capped at 500 (a technical bound only, never a business rule — oldest
       // sorts first via the owner_date index, so a founder who somehow has
       // 500+ backlog rows still sees the most urgent ones first).
-      db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=lt.${realToday}&status=eq.pending&order=activity_date.asc&limit=500`),
+      // Floored at the current run's Day 1: a previous run's backlog is never
+      // this run's overdue work (Reset Plan also closes it out).
+      db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=gte.${planStart}&activity_date=lt.${realToday}&status=eq.pending${notExcluded}&order=activity_date.asc,created_at.asc,id.asc&limit=500`),
       // 1d) 28-day completion history — the self-optimizing layer's input:
       // within a tier, what the founder reliably completes ranks first.
-      db.select('daily_activities', `select=activity_type,status&owner_user_id=eq.${uid}&activity_date=gte.${new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10)}&activity_date=lt.${realToday}&limit=2000`),
+      // Floored at this run's Day 1 so a previous run's history can't reorder
+      // a fresh Day 1 (on Day 1 there is no in-run history → neutral 0.5 for
+      // every task → pure tier/time/key order, identical after every reset).
+      db.select('daily_activities', `select=activity_type,status&owner_user_id=eq.${uid}&activity_date=gte.${[new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10), planStart].sort()[1]}&activity_date=lt.${realToday}${notExcluded}&limit=2000`),
     ]);
     const kpiLabelByKey = Object.fromEntries(kpiDefs.map((k) => [k.key, k.label]));
     const checklistByKey = Object.fromEntries(checklistDocs.map((c) => [c.title, c.content]));
@@ -301,7 +341,9 @@ export async function onRequestGet({ request, env }) {
     const rankable = parsed
       .filter((p) => !core.includes(p) && p.status === 'pending')
       .map((p) => ({ ...p, perfScore: Math.round(perfScoreOf(p.key) * 100) / 100 }))
-      .sort((a, b) => a.tierRank - b.tierRank || b.perfScore - a.perfScore || a.minutes - b.minutes);
+      // Final key tie-break: a total order, so equal tier/score/time can never
+      // fall back on row or engine ordering.
+      .sort((a, b) => a.tierRank - b.tierRank || b.perfScore - a.perfScore || a.minutes - b.minutes || a.key.localeCompare(b.key));
     const done = parsed.filter((p) => p.status !== 'pending' && !core.includes(p));
     const maxTop = Number(setting('mission.max_top_items', 3));
     const totalMinutes = parsed.filter((p) => p.status === 'pending').reduce((s, p) => s + p.minutes, 0);
@@ -316,7 +358,7 @@ export async function onRequestGet({ request, env }) {
     const overdue = overdueRows
       .filter((a) => !inLeave(a.activity_date))
       .map((a) => enrichActivity(a, true))
-      .sort((a, b) => b.daysOverdue - a.daysOverdue || a.tierRank - b.tierRank);
+      .sort((a, b) => b.daysOverdue - a.daysOverdue || a.tierRank - b.tierRank || a.key.localeCompare(b.key));
 
     // 3) Needs attention (silence-based, all clients — unchanged from Step 2).
     const silenceDays = Number(setting('retention.at_risk_silence_days', 14));
@@ -363,11 +405,6 @@ export async function onRequestGet({ request, env }) {
     // scheduled activities, leave-shifted identically everywhere.
     let plannedDay = null;
     if (activities.length === 0 && viewDate !== realToday && !onLeave) {
-      let planStart = String(setting('plan.start_date', '')).replace(/"/g, '');
-      if (!DATE_RE.test(planStart)) {
-        const first = await db.select('daily_activities', `select=activity_date&owner_user_id=eq.${uid}&order=activity_date.asc&limit=1`);
-        planStart = first[0]?.activity_date || realToday;
-      }
       // Data-driven decision fill: when the system already knows the answer
       // (next Idea Bank topic — from the acquisition section computed above —
       // best channel by CRM attribution, stable referral targets), the planned
@@ -382,6 +419,16 @@ export async function onRequestGet({ request, env }) {
     return json({
       date: viewDate,
       dayType,
+      // The plan-relative index this response's tasks were generated from —
+      // the SAME planDayNumberForDate() the Founder Success bar uses. runId
+      // scopes the Home checklist's per-step browser state to this run.
+      planDay: {
+        startDate: planStart,
+        dayNumber: planDayNumber,
+        totalDays: PLAN_TOTAL_DAYS,
+        cadenceDay: cadence.weekday,
+        runId: planRun?.startedAt || null,
+      },
       plannedDay,
       leave: onLeave
         ? { onLeave: true, start: leavePeriod.start, end: leavePeriod.end, reason: leavePeriod.reason || '' }

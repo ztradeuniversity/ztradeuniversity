@@ -17,6 +17,7 @@ import { computePareto, computeFunnel, computeTrajectory, buildLessonsAndImprove
 import { computePerformance } from '../../utils/ceo/performance-logic.js';
 import { computeTrends, detectPatterns, buildRecommendations, applyDecisions, buildPerformanceSummary, planHealth, DAILY_METRICS } from '../../utils/ceo/growth-analytics.js';
 import { computeDailyProgress, computeExpectedMembers, compareExpectedActual, buildSourceBreakdown, buildRemainingWork, buildRoadmap } from '../../utils/ceo/founder-success.js';
+import { parsePlanRun } from '../../utils/ceo/plan-logic.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const REC_KEY_RE = /^[a-z0-9_.:]{1,80}$/i;
@@ -39,7 +40,7 @@ export async function onRequestGet({ request, env }) {
     // plan.start_date rides along in the same lookup — the Founder Success Bar
     // measures goal pace against the plan's own start anchor (reset_plan moves
     // both, so a reset restarts the bar at zero automatically).
-    const settingRows = await db.select('settings', `select=key,value&scope=eq.global&key=in.(growth.reset_date,plan.start_date)`);
+    const settingRows = await db.select('settings', `select=key,value&scope=eq.global&key=in.(growth.reset_date,plan.start_date,leave.periods,plan.run)`);
     const settingByKey = Object.fromEntries((settingRows || []).map((r) => [r.key, r.value]));
     const resetDate = settingByKey['growth.reset_date'] || null;
     // Unquote defensively, matching mission.js/plan.js/growth.js's own reads
@@ -49,6 +50,15 @@ export async function onRequestGet({ request, env }) {
     // freezing the roadmap at "day 0" forever instead of advancing past a
     // reset. This site was the one place that didn't defend against it.
     const planStartDate = String(settingByKey['plan.start_date'] || '').replace(/"/g, '') || null;
+    // Same inputs mission.js uses for its plan day (leave periods) and for
+    // separating runs (plan.run.excludedIds — the previous run's rows dated
+    // on/after the reset day, which must not count in the new run's Day 1).
+    let leavePeriods = settingByKey['leave.periods'] || [];
+    if (typeof leavePeriods === 'string') { try { leavePeriods = JSON.parse(leavePeriods); } catch { leavePeriods = []; } }
+    if (!Array.isArray(leavePeriods)) leavePeriods = [];
+    const planRun = parsePlanRun(settingByKey['plan.run']);
+    const excluded = new Set(planRun ? planRun.excludedIds : []);
+    const inRun = (rows) => (excluded.size ? rows.filter((r) => !excluded.has(r.id)) : rows);
     const dailyFloor = resetDate && resetDate > since30 ? resetDate : since30;
     // Pareto/funnel (do-more, remove, leak recs) are sourced from this
     // month's daily_activities — same reset floor applies so a leak or a
@@ -57,19 +67,22 @@ export async function onRequestGet({ request, env }) {
     // read-only block is untouched — it stays calendar-month scoped by design.
     const activityFloor = resetDate && resetDate > monthStart ? resetDate : monthStart;
 
-    const [dailyRows, signalRows, todayRow, monthActivities, clients, perfActivities, overdueRows, transitions] = await Promise.all([
+    const [dailyRows, signalRows, todayRow, monthActivitiesAll, clients, perfActivitiesAll, overdueRowsAll, transitions] = await Promise.all([
       db.select('growth_daily', `select=entry_date,metrics,wins,problems,observation&owner_user_id=eq.${uid}&entry_date=gte.${dailyFloor}&order=entry_date.desc`),
       db.select('growth_signal', `select=rec_key,status,remind_on&owner_user_id=eq.${uid}${resetDate ? `&updated_at=gte.${resetDate}` : ''}`),
       db.select('growth_daily', `select=*&owner_user_id=eq.${uid}&entry_date=eq.${today}`),
-      db.select('daily_activities', `select=activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${activityFloor}&limit=1000`),
+      db.select('daily_activities', `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${activityFloor}&limit=1000`),
       db.select('ib_clients', `select=stage,referral_source&owner_user_id=eq.${uid}&limit=2000`),
       // Founder Decision Dashboard: reused computePerformance/computeTrajectory
       // need a rolling activity window — same reset floor as growth_daily so a
       // prior plan's execution never influences the new cycle's scores.
-      db.select('daily_activities', `select=activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=gte.${dailyFloor}&limit=2000`),
+      db.select('daily_activities', `select=id,activity_type,description,status,activity_date&owner_user_id=eq.${uid}&activity_date=gte.${dailyFloor}&limit=2000`),
       db.select('daily_activities', `select=id&owner_user_id=eq.${uid}&status=eq.pending&activity_date=lt.${today}&limit=500`),
       db.select('lead_pipeline', `select=to_stage,occurred_at&owner_user_id=eq.${uid}&to_stage=eq.activated&occurred_at=gte.${dailyFloor}&limit=1000`),
     ]);
+    const monthActivities = inRun(monthActivitiesAll);
+    const perfActivities = inRun(perfActivitiesAll);
+    const overdueRows = inRun(overdueRowsAll);
 
     // Reused Monthly-Review computations (no new engine): Pareto + funnel leak.
     const pareto = computePareto(monthActivities);
@@ -96,7 +109,7 @@ export async function onRequestGet({ request, env }) {
     // own declared target/horizon — no second analytics engine, no new query
     // beyond referral_source riding along on the existing ib_clients read.
     const daily = computeDailyProgress({ activities: perfActivities, today });
-    const goal = computeExpectedMembers({ planStartDate, today, actualMembers: trajectory.activeClients });
+    const goal = computeExpectedMembers({ planStartDate, today, actualMembers: trajectory.activeClients, leavePeriods });
     const pace = compareExpectedActual({ expectedMembers: goal.expectedMembers, actualMembers: trajectory.activeClients });
     const activityTypes = [...new Set(perfActivities.map((a) => a.activity_type))];
 
@@ -189,7 +202,7 @@ export async function onRequestGet({ request, env }) {
         // Interactive roadmap: phases + exit gates from the planning engine,
         // one precomputed point per percent so scrubbing never recomputes the
         // member curve in the browser.
-        roadmap: buildRoadmap({ planStartDate, today, actualMembers: trajectory.activeClients, activityTypes, hasRealData: hasEnoughData }),
+        roadmap: buildRoadmap({ planStartDate, today, actualMembers: trajectory.activeClients, activityTypes, hasRealData: hasEnoughData, leavePeriods }),
         // Reused, never regenerated: the same honest recommendation queue the
         // Growth Analytics page shows, so "AI improvement" advice has exactly
         // one source of truth.

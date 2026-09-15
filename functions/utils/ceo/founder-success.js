@@ -16,7 +16,7 @@
 // A source with no CRM rows behind it returns expected=null so the UI can say
 // "not tracked yet" instead of printing a fabricated forecast.
 
-import { FEASIBILITY, SOCIAL_STRATEGY, COUNTRY_STRATEGY, PLAN_TOTAL_DAYS, currentPhaseContext, PHASES } from './plan-logic.js';
+import { FEASIBILITY, SOCIAL_STRATEGY, COUNTRY_STRATEGY, PLAN_TOTAL_DAYS, currentPhaseContext, PHASES, planDayNumberForDate } from './plan-logic.js';
 import { EXECUTION_KITS } from './execution-kits.js';
 import { parseExecTag } from './db.js';
 
@@ -172,7 +172,7 @@ export function funnelForActives(activeCount) {
 // straight line. FEASIBILITY.target / horizonDays still bound it. After a
 // Plan Reset plan.start_date becomes today, so daysElapsed = 0 and the whole
 // bar honestly restarts at zero.
-export function computeExpectedMembers({ planStartDate, today, actualMembers }) {
+export function computeExpectedMembers({ planStartDate, today, actualMembers, leavePeriods = [] }) {
   const target = FEASIBILITY.target;
   const horizonDays = FEASIBILITY.horizonDays;
   const start = planStartDate ? Date.parse(planStartDate) : NaN;
@@ -182,9 +182,10 @@ export function computeExpectedMembers({ planStartDate, today, actualMembers }) 
   // use (plan.js's own dayNumber fallback is the identical "+1" expression).
   // A raw 0-indexed "days elapsed" would show "plan day 0" the moment the
   // founder resets — never actually reaching "Day 1" until the day after.
-  const daysElapsed = Number.isFinite(start) && Number.isFinite(now)
-    ? Math.max(1, Math.min(horizonDays, Math.floor((now - start) / DAY_MS) + 1))
-    : null;
+  // The SAME leave-aware plan-day index mission.js generates today's tasks
+  // from (plan-logic.js planDayNumberForDate) — never a second calculation.
+  const dayIdx = Number.isFinite(start) && Number.isFinite(now) ? planDayNumberForDate(planStartDate, today, leavePeriods) : null;
+  const daysElapsed = dayIdx != null ? Math.max(1, Math.min(horizonDays, dayIdx)) : null;
   if (daysElapsed === null) {
     return { known: false, target, horizonDays, daysElapsed: null, planProgressPct: 0, expectedMembers: null, actualMembers, remainingMembers: Math.max(0, target - actualMembers) };
   }
@@ -369,7 +370,7 @@ const CATEGORY_BY_KEY = Object.fromEntries(
   [DAILY_PLANNER_CATEGORY, ...REMAINING_CATEGORIES].map((c) => [c.key, c])
 );
 
-export function buildRoadmap({ planStartDate, today, actualMembers, activityTypes, hasRealData }) {
+export function buildRoadmap({ planStartDate, today, actualMembers, activityTypes, hasRealData, leavePeriods = [] }) {
   const target = FEASIBILITY.target;
   const horizonDays = PLAN_TOTAL_DAYS;
   const present = new Set(activityTypes || []);
@@ -380,9 +381,9 @@ export function buildRoadmap({ planStartDate, today, actualMembers, activityType
   // phases[].fromDay/untilDay (also 1-indexed, from plan-logic.js's PHASES),
   // so a 0-indexed value here would both mislabel "today" as day 0 AND be
   // one day out of step with the phase boundaries it's compared against.
-  const currentDay = Number.isFinite(start) && Number.isFinite(now)
-    ? Math.max(1, Math.min(horizonDays, Math.floor((now - start) / DAY_MS) + 1))
-    : 1;
+  // Leave-aware plan day from the shared index (see computeExpectedMembers).
+  const dayIdx = Number.isFinite(start) && Number.isFinite(now) ? planDayNumberForDate(planStartDate, today, leavePeriods) : null;
+  const currentDay = dayIdx != null ? Math.max(1, Math.min(horizonDays, dayIdx)) : 1;
 
   // Phases straight from the planning engine's own PHASES rows — name,
   // markets, language, budget and exit gate are quoted, never restated.

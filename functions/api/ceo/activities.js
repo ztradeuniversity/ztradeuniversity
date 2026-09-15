@@ -157,14 +157,33 @@ export async function onRequestPost({ request, env }) {
     // it just moves the floor those reads start from, so trends,
     // observation patterns, and the recommendation queue start from zero on
     // the new plan while old rows stay on record (no-hard-deletes rule).
+    //
+    // A reset is a NEW RUN (plan.run): Day 1's content comes from the plan-
+    // relative cadence (plan-logic.js cadenceForDay — Day 1 is always the
+    // production day), so it is identical whatever weekday the reset happens.
+    // The previous run's rows dated on/after the new Day 1 — the set already
+    // instantiated for today, and any future-dated row — are recorded by id so
+    // mission.js never reads them as the new run's tasks and instantiates a
+    // fresh canonical Day 1 instead of resuming the old one. Every previous-
+    // run row still pending (any date) is closed out as skipped; completed and
+    // skipped rows are never touched, and nothing is deleted.
     if (body.action === 'reset_plan') {
       const today = new Date().toISOString().slice(0, 10);
+      const carried = await db.select(
+        'daily_activities',
+        `select=id&owner_user_id=eq.${uid}&activity_date=gte.${today}&order=id.asc&limit=1000`
+      );
       await upsertSetting(db, 'plan.start_date', today);
       await upsertSetting(db, 'physical.start_date', today);
       await upsertSetting(db, 'growth.reset_date', today);
+      await upsertSetting(db, 'plan.run', {
+        startDate: today,
+        startedAt: new Date().toISOString(),
+        excludedIds: carried.map((r) => r.id),
+      });
       await db.update(
         'daily_activities',
-        `owner_user_id=eq.${uid}&status=eq.pending&activity_date=lt.${today}`,
+        `owner_user_id=eq.${uid}&status=eq.pending`,
         { status: 'skipped' }
       );
       return json({ ok: true, coaching: 'Plan reset — aaj Day 1 hai. Purana backlog band, poora roadmap aaj se dobara shuru.' });

@@ -14,7 +14,7 @@
 // leave/reset, institutes.js for institute records).
 
 import { rest, json, requireFounder } from '../../utils/ceo/db.js';
-import { generateGrowthDays, buildPhysicalRows, planDayForDate, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY, EXECUTIVE_OVERVIEW, SOCIAL_STRATEGY, SHORTFORM_MIX, PROVEN_WORKFLOW, currentPhaseContext } from '../../utils/ceo/plan-logic.js';
+import { generateGrowthDays, buildPhysicalRows, planDayForDate, planDayNumberForDate, parsePlanRun, PLAN_TOTAL_DAYS, COUNTRY_STRATEGY, ASSUMPTION_NOTE, FEASIBILITY, EXECUTIVE_OVERVIEW, SOCIAL_STRATEGY, SHORTFORM_MIX, PROVEN_WORKFLOW, currentPhaseContext } from '../../utils/ceo/plan-logic.js';
 import { CONTENT_LIBRARY, CONTENT_CATEGORIES } from '../../utils/ceo/content-kits.js';
 import { buildPlannerRecs } from '../../utils/ceo/channel-performance.js';
 
@@ -123,6 +123,10 @@ export async function onRequestGet({ request, env }) {
     const productionDay = String(setting('week.production_day', 'monday')).replace(/"/g, '');
     const publishDay = DAY_NAMES[(DAY_NAMES.indexOf(productionDay) + 1) % 7];
     const leavePeriods = asArray(setting('leave.periods', []));
+    // Previous run's rows dated on/after this run's Day 1 (Reset Plan's
+    // plan.run) — never counted in this run's day status or learning.
+    const planRun = parsePlanRun(setting('plan.run', null));
+    const excluded = new Set(planRun ? planRun.excludedIds : []);
 
     // Self-optimizing layer (Section 6): learn the last 28 days' winner and
     // loser from real completion history, and let the generator annotate
@@ -131,7 +135,7 @@ export async function onRequestGet({ request, env }) {
     // Data-driven decision fill (same buildPlannerRecs the Home planner uses):
     // clients also feed the Executive Overview live count below — one fetch.
     const [learn, recClients, nextIdeaRows] = await Promise.all([
-      learnActivityWeights(db, uid, today),
+      learnActivityWeights(db, uid, today, startDate, excluded),
       db.select('ib_clients', `select=referral_source,stage&owner_user_id=eq.${uid}&limit=2000`),
       db.select('content_library', `select=title&owner_user_id=eq.${uid}&status=eq.idea&order=created_at.asc&limit=1`),
     ]);
@@ -153,10 +157,11 @@ export async function onRequestGet({ request, env }) {
     if (pastDates.length > 0) {
       const acts = await db.select(
         'daily_activities',
-        `select=activity_date,status&owner_user_id=eq.${uid}&activity_date=gte.${pastDates[0]}&activity_date=lte.${pastDates[pastDates.length - 1]}`
+        `select=id,activity_date,status&owner_user_id=eq.${uid}&activity_date=gte.${pastDates[0]}&activity_date=lte.${pastDates[pastDates.length - 1]}`
       );
       const byDate = {};
       for (const a of acts) {
+        if (excluded.has(a.id)) continue;
         (byDate[a.activity_date] ||= { done: 0, total: 0 });
         byDate[a.activity_date].total += 1;
         if (a.status === 'completed') byDate[a.activity_date].done += 1;
@@ -180,7 +185,7 @@ export async function onRequestGet({ request, env }) {
       // Reuses the recs fetch above — same table, same limit, one read total.
       const active = recClients.filter((c) => ['activated', 'engaged', 'retained'].includes(c.stage)).length;
       const todayPlan = planDayForDate(startDate, today, { productionDay, publishDay, leavePeriods });
-      const dayNumber = todayPlan?.day || Math.max(1, Math.floor((Date.parse(today) - Date.parse(startDate)) / 86400000) + 1);
+      const dayNumber = todayPlan?.day || Math.max(1, planDayNumberForDate(startDate, today, leavePeriods) || 1);
       overviewLive = currentPhaseContext(dayNumber, active);
     }
 
@@ -208,15 +213,19 @@ export async function onRequestGet({ request, env }) {
 // REDUCE. Pure aggregation over real rows — no model, no randomness, so the
 // plan re-weights the same way every time until the founder's behavior
 // changes it.
-async function learnActivityWeights(db, uid, today) {
-  const since = new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10);
+async function learnActivityWeights(db, uid, today, planStart = null, excluded = new Set()) {
+  // Floored at the current run's Day 1 — a previous run's history never
+  // annotates this run's roadmap (same rule mission.js applies to ranking).
+  const since28 = new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10);
+  const since = planStart && planStart > since28 ? planStart : since28;
   const rows = await db.select(
     'daily_activities',
-    `select=activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${since}&activity_date=lte.${today}&limit=2000`
+    `select=id,activity_type,description,status&owner_user_id=eq.${uid}&activity_date=gte.${since}&activity_date=lte.${today}&limit=2000`
   );
   const TIER_WEIGHT = { CRITICAL: 3, IMPORTANT: 2, OPTIONAL: 1 };
   const agg = {};
   for (const r of rows) {
+    if (excluded.has(r.id)) continue;
     if (r.activity_type === 'daily.shutdown_note' || r.activity_type === 'daily.core_block' || r.activity_type === 'daily.shutdown') continue;
     const tier = String(r.description || '').trim().split('|')[0].trim();
     const a = (agg[r.activity_type] ||= { completed: 0, skipped: 0, weight: TIER_WEIGHT[tier] || 2 });

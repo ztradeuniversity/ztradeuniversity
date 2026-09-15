@@ -344,7 +344,16 @@ let currentViewDate = new Date().toISOString().slice(0, 10);
 let todaysPoll = null;
 const POLL_STEP_TEXT = "Today's Vote Poll";
 
-function stepKey(taskKey, i) { return `ceo-step:${currentViewDate}:${taskKey}:${i}`; }
+// Scoped to the plan run (mission.js planDay.runId, set by Reset Plan): a
+// reset on the same date must start the new Day 1's checklists unticked, not
+// inherit the old run's step progress. No run yet → the original key format,
+// so existing in-progress state isn't discarded by this change.
+let currentRunId = null;
+function stepKey(taskKey, i) {
+  return currentRunId
+    ? `ceo-step:${currentRunId}:${currentViewDate}:${taskKey}:${i}`
+    : `ceo-step:${currentViewDate}:${taskKey}:${i}`;
+}
 function getStepState(taskKey, i) {
   try { return localStorage.getItem(stepKey(taskKey, i)) || 'open'; } catch { return 'open'; }
 }
@@ -605,6 +614,7 @@ async function loadDay(date) {
     document.getElementById('home-mentor-line').textContent = m.mentorMessage || '';
     currentLeavePeriods = m.leavePeriods || [];
     currentViewDate = date;
+    currentRunId = m.planDay?.runId || null;
     const banner = document.getElementById('home-leave-banner');
     banner.innerHTML = m.leave?.onLeave
       ? `<div class="ceo-alert ceo-alert-warning" style="margin-bottom: var(--ceo-space-4);">On leave ${escapeHtml(m.leave.start)} → ${escapeHtml(m.leave.end)}${m.leave.reason ? ' (' + escapeHtml(m.leave.reason) + ')' : ''} — no tasks scheduled; the plan has shifted forward.</div>`
@@ -1579,4 +1589,5 @@ function escapeHtml(str) {
 function escapeAttr(str) {
   return escapeHtml(str).replace(/"/g, '&quot;');
 }
+
 
