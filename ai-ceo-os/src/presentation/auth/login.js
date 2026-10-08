@@ -3,8 +3,16 @@ import { getSupabaseClient } from '../shared/supabase-client.js';
 
 const form = document.getElementById('ceo-login-form');
 const errorBox = document.getElementById('ceo-login-error');
+const noticeBox = document.getElementById('ceo-login-notice');
 const submitBtn = document.getElementById('ceo-login-submit');
 const spinner = document.getElementById('ceo-login-spinner');
+
+// Shown after a successful password reset (reset-password.js redirects here
+// with ?reset=ok). Display-only: it grants nothing.
+if (new URLSearchParams(window.location.search).get('reset') === 'ok') {
+  noticeBox.textContent = 'Password updated. Sign in with your new password.';
+  noticeBox.hidden = false;
+}
 
 // If already signed in, don't make the founder log in again.
 (async () => {
@@ -20,6 +28,7 @@ const spinner = document.getElementById('ceo-login-spinner');
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideError();
+  noticeBox.hidden = true;
   setLoading(true);
 
   const email = document.getElementById('ceo-email').value.trim();
