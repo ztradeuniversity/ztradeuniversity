@@ -105,7 +105,7 @@ export async function initHome() {
   picker.addEventListener('change', () => loadDay(picker.value || realToday));
   wireLeaveButton(picker);
   wireResetButton(picker);
-  wireRoadmapToggle();
+  initCollapsibles();
   wireTodayUpdate();
   await loadDay(picker.value);
 }
@@ -130,6 +130,12 @@ const TU_LOADING = {
 };
 let tuData = null;
 let tuExpert = null; // null | 'loading' | payload | { error: true }
+let tuLoading = 0;   // in-flight Today Update flows (> 0 = busy)
+let tuCheckedAt = 0; // when the displayed result was fetched (ms)
+// A displayed result younger than this is reused instead of re-fetched. Matches
+// the server's shared expert-research cache window (functions/api/ceo/today-update.js).
+const TU_FRESH_MS = 15 * 60 * 1000;
+const tuHasFreshResult = () => Boolean(tuData) && Date.now() - tuCheckedAt < TU_FRESH_MS;
 
 function tuLang() {
   try {
@@ -144,19 +150,33 @@ function wireTodayUpdate() {
   if (!btn) return;
   btn.addEventListener('click', () => {
     const panel = document.getElementById('today-update-panel');
-    if (panel) { panel.hidden = false; panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    // Expand (the collapsible fetches on expand when nothing fresh is shown).
+    // If a fresh result is already displayed this only expands/scrolls — no new request.
+    if (tuCollapsible) tuCollapsible.expand();
+    if (!tuLoading && !tuHasFreshResult()) loadTodayUpdate();
+    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  // Check Again always re-fetches (unchanged); it also opens the panel so the new result is visible.
+  if (again) again.addEventListener('click', () => {
+    if (tuCollapsible) tuCollapsible.expand({ silent: true });
     loadTodayUpdate();
   });
-  if (again) again.addEventListener('click', () => loadTodayUpdate());
   window.addEventListener('ztulang:change', () => { if (tuData) renderTodayUpdate(); });
 }
 
 async function loadTodayUpdate() {
+  tuLoading++;
+  try { await runTodayUpdate(); } finally { tuLoading--; }
+}
+
+async function runTodayUpdate() {
   const box = document.getElementById('today-update-result');
   const btns = [document.getElementById('today-update-btn'), document.getElementById('today-update-again')].filter(Boolean);
   if (!box) return;
   const lang = tuLang();
   btns.forEach((b) => { b.disabled = true; });
+  const againBtn = document.getElementById('today-update-again');
+  if (againBtn) againBtn.hidden = false; // shown once a check has been started
   tuData = null; tuExpert = null;
   box.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
   box.innerHTML = `<div class="ceo-skeleton" style="height: 10em;"></div><p class="tu-muted">${escapeHtml(TU_LOADING[lang].evidence)}</p>`;
@@ -165,10 +185,13 @@ async function loadTodayUpdate() {
     const data = await res.json().catch(() => null);
     if (!res.ok || !data || !data.instruments) throw new Error('request_failed');
     tuData = data;
+    tuCheckedAt = Date.now();
     tuExpert = 'loading';
     renderTodayUpdate();
   } catch {
     box.innerHTML = `<div class="ceo-alert ceo-alert-critical">${escapeHtml(TU_LOADING[lang].failed)}</div>`;
+    const checkedEl = document.getElementById('today-update-checked');
+    if (checkedEl) checkedEl.textContent = 'Check failed — try again';
     return;
   } finally {
     btns.forEach((b) => { b.disabled = false; });
@@ -306,25 +329,173 @@ function tuCard(key, lang) {
   </article>`;
 }
 
-// Show/Hide Roadmap. sessionStorage, so the choice survives navigation within
-// the session but never becomes a permanent preference.
-function wireRoadmapToggle() {
-  const btn = document.getElementById('home-roadmap-toggle');
-  const bar = document.getElementById('home-success-bar');
-  if (!btn || !bar) return;
-  const apply = (shown) => {
-    bar.style.display = shown ? '' : 'none';
-    btn.textContent = shown ? '▲ Hide Roadmap' : '▼ Show Roadmap';
-    btn.setAttribute('aria-expanded', String(shown));
+// --- Collapsible sections + screen-space auto-collapse --------------------
+// Today Update, the Roadmap bar and the day's plan sections (IB Growth, Physical
+// IB Expansion, Personal Trading) are the big blocks on this page. Each starts COLLAPSED on every visit
+// (nothing is remembered between visits) and can be expanded/collapsed by hand.
+// Collapsing only hides the body (class .ceo-collapsed) — it never removes or
+// re-renders it — so task state, checklists and fetched market results are
+// untouched and re-expanding needs no new request.
+//
+// Auto-collapse: an expanded block the user has actually looked at is collapsed
+// again once they have scrolled well past its bottom, so the next block is easy
+// to reach. It never fires mid-interaction (see isInteracting).
+const AC = {
+  PAST_MIN_PX: 120,    // the block must be entirely out of view, this far above the top edge…
+  PAST_VIEWPORT: 0.15, // …or this fraction of the viewport height, whichever is larger
+  VIEW_DWELL_MS: 1500, // block must have been on screen at least this long
+  QUIET_MS: 5000,      // no click/key/focus/input inside the block for this long
+};
+const collapsibles = [];
+let acObserver = null;
+let acLastY = 0;
+let tuCollapsible = null;
+
+function createCollapsible({ body, button, labels, isBusy, onExpand }) {
+  const c = {
+    body, button, labels,
+    isBusy: isBusy || (() => false),
+    expanded: false, viewedAt: 0, lastInteractionAt: 0, pointerDown: false,
   };
-  let shown = true;
-  try { shown = sessionStorage.getItem('ceo-roadmap-hidden') !== '1'; } catch {}
-  apply(shown);
-  btn.addEventListener('click', () => {
-    shown = !shown;
-    try { sessionStorage.setItem('ceo-roadmap-hidden', shown ? '0' : '1'); } catch {}
-    apply(shown);
+  c.apply = () => {
+    body.classList.toggle('ceo-collapsed', !c.expanded);
+    button.textContent = c.expanded ? labels.collapse : labels.expand;
+    button.setAttribute('aria-expanded', String(c.expanded));
+  };
+  c.expand = (opts) => {
+    if (c.expanded) return;
+    c.expanded = true; c.viewedAt = 0; c.apply();
+    if (onExpand && !(opts && opts.silent)) onExpand();
+  };
+  c.collapse = () => {
+    if (!c.expanded) return;
+    c.expanded = false; c.viewedAt = 0; c.apply();
+  };
+  button.addEventListener('click', () => (c.expanded ? c.collapse() : c.expand()));
+  const touch = () => { c.lastInteractionAt = Date.now(); };
+  body.addEventListener('pointerdown', () => { c.pointerDown = true; touch(); });
+  ['click', 'keydown', 'input', 'change', 'focusin'].forEach((ev) => body.addEventListener(ev, touch, true));
+  ['pointerup', 'pointercancel'].forEach((ev) => window.addEventListener(ev, () => { c.pointerDown = false; }, true));
+  if (acObserver) acObserver.observe(body);
+  c.apply();
+  collapsibles.push(c);
+  return c;
+}
+
+function initCollapsibles() {
+  acObserver = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          const c = collapsibles.find((x) => x.body === e.target);
+          if (c && c.expanded && e.isIntersecting && !c.viewedAt) c.viewedAt = Date.now();
+        }
+      }, { threshold: [0, 0.1] })
+    : null;
+  const make = (bodyId, buttonId, labels, extra) => {
+    const body = document.getElementById(bodyId);
+    const button = document.getElementById(buttonId);
+    return body && button ? createCollapsible({ body, button, labels, ...extra }) : null;
+  };
+  const std = { expand: 'Expand', collapse: 'Collapse' };
+  tuCollapsible = make('today-update-body', 'today-update-collapse', std, {
+    isBusy: () => tuLoading > 0,
+    // Expanding by hand fetches only when there is no fresh result to show.
+    onExpand: () => { if (!tuLoading && !tuHasFreshResult()) loadTodayUpdate(); },
   });
+  make('home-ib-growth', 'home-ib-growth-collapse', std);
+  make('home-physical', 'home-physical-collapse', std);
+  make('home-trading-checkin', 'home-trading-collapse', std);
+  make('home-success-bar', 'home-roadmap-toggle', { expand: '▼ Show Roadmap', collapse: '▲ Hide Roadmap' });
+  wireAutoCollapse();
+}
+
+const scrollMain = () => document.querySelector('.ceo-app-main');
+const scrollRoot = () => document.scrollingElement || document.documentElement;
+// Total scroll offset across both possible scrollers (the window normally;
+// .ceo-app-main only if the layout ever gives it a fixed height).
+const currentScrollY = () => scrollRoot().scrollTop + (scrollMain() ? scrollMain().scrollTop : 0);
+
+function scrollerInfo() {
+  const main = scrollMain();
+  const mainScrolls = Boolean(main) && main.scrollHeight > main.clientHeight + 1;
+  return mainScrolls
+    ? { scroller: main, edge: main.getBoundingClientRect().top }
+    : { scroller: scrollRoot(), edge: 0 };
+}
+
+function wireAutoCollapse() {
+  let pending = false;
+  acLastY = currentScrollY();
+  // Capture phase: scroll events do not bubble, this also catches element scrollers.
+  document.addEventListener('scroll', () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      const y = currentScrollY();
+      const down = y > acLastY;
+      acLastY = y;
+      autoCollapseTick(down);
+    });
+  }, { capture: true, passive: true });
+}
+
+function isInteracting(c, now) {
+  if (c.pointerDown) return true;                                  // finger/mouse is down inside it
+  if (now - c.lastInteractionAt < AC.QUIET_MS) return true;        // clicked/typed/focused moments ago
+  const a = document.activeElement;
+  if (a && c.body.contains(a) && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return true; // typing target
+  // An unfinished entry (text typed but not saved) must never be hidden away.
+  const unsaved = c.body.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=hidden]), textarea');
+  for (const i of unsaved) if (i.value !== i.defaultValue) return true;
+  // Likewise a Yes/No answer changed but not yet saved (Personal Trading check-in).
+  for (const i of c.body.querySelectorAll('input[type=radio], input[type=checkbox]')) if (i.checked !== i.defaultChecked) return true;
+  if (c.body.querySelector('[data-act-form]')) return true;     // a Done/Partial/Skip form is open and not yet confirmed
+  if (document.querySelector('[role="dialog"]')) return true;      // a confirm/modal is open
+  return c.isBusy();                                               // request still in flight
+}
+
+// The next visible element below the block: its on-screen position is held
+// constant across the collapse so the page does not jump.
+function findAnchor(body) {
+  for (let n = body; n && n !== document.body; n = n.parentElement) {
+    for (let sib = n.nextElementSibling; sib; sib = sib.nextElementSibling) {
+      if (sib.offsetHeight > 0) return sib;
+    }
+  }
+  return null;
+}
+
+function collapseKeepingPosition(c, scroller) {
+  const anchor = findAnchor(c.body);
+  const heightBefore = scroller.scrollHeight;
+  const topBefore = anchor ? anchor.getBoundingClientRect().top : 0;
+  c.collapse();
+  // Measured AFTER the collapse (and after any browser scroll-anchoring
+  // adjustment), so this corrects exactly what is still off — never double-corrects.
+  const delta = anchor
+    ? anchor.getBoundingClientRect().top - topBefore
+    : scroller.scrollHeight - heightBefore;
+  if (delta) scroller.scrollTop += delta;
+  acLastY = currentScrollY(); // the correction is not a user scroll
+}
+
+function autoCollapseTick(scrollingDown) {
+  const now = Date.now();
+  const vh = window.innerHeight;
+  const { scroller, edge } = scrollerInfo();
+  for (const c of collapsibles) {
+    if (!c.expanded) continue;
+    const r = c.body.getBoundingClientRect();
+    if (r.height === 0) continue;
+    // Fallback viewed-marker when IntersectionObserver is unavailable.
+    if (!c.viewedAt && !acObserver && r.top < vh * 0.8 && r.bottom > edge + 80) c.viewedAt = now;
+    if (!scrollingDown || !c.viewedAt) continue;                   // only while moving down, only after being seen
+    if (now - c.viewedAt < AC.VIEW_DWELL_MS) continue;             // not a fly-by
+    if (r.bottom > edge - Math.max(AC.PAST_MIN_PX, vh * AC.PAST_VIEWPORT)) continue; // not clearly past it yet
+    if (isInteracting(c, now)) continue;
+    collapseKeepingPosition(c, scroller);
+  }
 }
 
 // --- Leave Management (Section 2) ---------------------------------------

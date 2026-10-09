@@ -35,6 +35,14 @@
     .tu-overall { margin-top: var(--ceo-space-3); padding: var(--ceo-space-2) var(--ceo-space-3); border-radius: var(--ceo-radius-sm); background: var(--ceo-surface); font-weight: 600; font-size: var(--ceo-font-size-sm); }
     .tu-disclaimer { font-size: var(--ceo-font-size-xs); margin: var(--ceo-space-3) 0 0; }
     .tu-grid a { overflow-wrap: anywhere; }
+    /* Collapsible sections (Today Update / Roadmap / IB Growth / Physical / Trading). The body is
+       hidden with a class — never removed — so data, tick state and fetched
+       results are untouched while collapsed. */
+    .ceo-collapsed { display: none !important; }
+    .ceo-btn[hidden] { display: none !important; } /* .ceo-btn sets display, which would otherwise override [hidden] */
+    .ceo-collapse-btn { border-color: var(--ceo-accent); color: var(--ceo-accent); font-size: var(--ceo-font-size-sm); white-space: nowrap; }
+    .ceo-collapse-btn::before { content: "▸"; margin-inline-end: 6px; }
+    .ceo-collapse-btn[aria-expanded="true"]::before { content: "▾"; }
   </style>
 </head>
 <body class="ceo-auth-pending">
@@ -61,22 +69,25 @@
         <!-- Today Update — one-click Gold/BTC scalping check. Public (no IB,
              OTP, License Request or premium gate); the evidence is ZTU Rescue's
              own pipeline — see functions/api/ceo/today-update.js. -->
-        <section class="ceo-card tu-panel" id="today-update-panel" hidden>
+        <section class="ceo-card tu-panel" id="today-update-panel">
           <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
             <h3 style="margin: 0; flex: 1;">Today Update</h3>
-            <span id="today-update-checked" class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);"></span>
-            <button class="ceo-btn ceo-btn-secondary" id="today-update-again">Check Again</button>
+            <span id="today-update-checked" class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);">Not checked yet</span>
+            <button class="ceo-btn ceo-btn-secondary" id="today-update-again" hidden>Check Again</button>
+            <button class="ceo-btn ceo-btn-secondary ceo-collapse-btn" id="today-update-collapse" type="button" aria-expanded="false" aria-controls="today-update-body">Expand</button>
           </div>
-          <div id="today-update-result" class="tu-grid"></div>
-          <p id="today-update-disclaimer" class="ceo-text-secondary tu-disclaimer"></p>
+          <div id="today-update-body" class="ceo-collapsed">
+            <div id="today-update-result" class="tu-grid"></div>
+            <p id="today-update-disclaimer" class="ceo-text-secondary tu-disclaimer"></p>
+          </div>
         </section>
 
         <!-- 0. Founder Success Bar — the execution roadmap, above every task
-             section. Collapsible; the choice is remembered for the session. -->
+             section. Collapsible; always starts collapsed (nothing is remembered). -->
         <div class="ceo-flex ceo-items-center" style="margin-bottom: var(--ceo-space-2);">
-          <button class="ceo-btn ceo-btn-secondary" id="home-roadmap-toggle" aria-expanded="true" aria-controls="home-success-bar">▲ Hide Roadmap</button>
+          <button class="ceo-btn ceo-btn-secondary" id="home-roadmap-toggle" aria-expanded="false" aria-controls="home-success-bar">▼ Show Roadmap</button>
         </div>
-        <div id="home-success-bar"></div>
+        <div id="home-success-bar" class="ceo-collapsed"></div>
 
         <div id="home-leave-form" style="display: none; margin-bottom: var(--ceo-space-4);"></div>
         <div id="home-leave-banner"></div>
@@ -87,8 +98,9 @@
           <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
             <h3 style="margin: 0; flex: 1;">IB Growth</h3>
             <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/plan/index.html?tab=growth">See Complete Plan →</a>
+            <button class="ceo-btn ceo-btn-secondary ceo-collapse-btn" id="home-ib-growth-collapse" type="button" aria-expanded="false" aria-controls="home-ib-growth">Expand</button>
           </div>
-          <div id="home-ib-growth" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
+          <div id="home-ib-growth" class="ceo-collapsed" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
         </section>
 
         <!-- 2. Physical IB Expansion -->
@@ -96,8 +108,9 @@
           <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
             <h3 style="margin: 0; flex: 1;">Physical IB Expansion</h3>
             <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/plan/index.html?tab=physical">See Complete Plan →</a>
+            <button class="ceo-btn ceo-btn-secondary ceo-collapse-btn" id="home-physical-collapse" type="button" aria-expanded="false" aria-controls="home-physical">Expand</button>
           </div>
-          <div id="home-physical" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 5em;"></div></div>
+          <div id="home-physical" class="ceo-collapsed" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 5em;"></div></div>
         </section>
 
         <!-- 3. Personal Trading -->
@@ -105,8 +118,9 @@
           <div class="ceo-flex ceo-items-center ceo-gap-3" style="flex-wrap: wrap;">
             <h3 style="margin: 0; flex: 1;">Personal Trading</h3>
             <a class="ceo-text-secondary" style="font-size: var(--ceo-font-size-sm);" href="/ai-ceo-os/src/presentation/trading/index.html">Open full Trading module →</a>
+            <button class="ceo-btn ceo-btn-secondary ceo-collapse-btn" id="home-trading-collapse" type="button" aria-expanded="false" aria-controls="home-trading-checkin">Expand</button>
           </div>
-          <div id="home-trading-checkin" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
+          <div id="home-trading-checkin" class="ceo-collapsed" style="margin-top: var(--ceo-space-3);"><div class="ceo-skeleton" style="height: 8em;"></div></div>
         </section>
       </div>
     </main>
